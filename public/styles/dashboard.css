@@ -1,0 +1,123 @@
+
+:root{
+  --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
+}
+
+body.no-scroll {
+  overflow: hidden !important;
+} 
+
+.sidebar-open {
+  overflow-x: hidden;
+}
+
+#sidebar {
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Mobile and medium sidebar */
+@media (max-width: 1023px) {
+  #sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 250px;
+    transform: translateX(-1000%);
+    z-index: 35; 
+    background: #f7f5f1;
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), 
+    var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+    backdrop-filter: blur(10px);
+  }
+  
+  #sidebar.sidebar-visible {
+    transform: translateX(0);
+  }
+
+  .sidebar-closed .grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 30; /* Lower than submenu overlay (40) */
+  }
+
+ 
+}
+
+/* Desktop sidebar - always visible, content adjusts */
+@media (min-width: 1200px) {
+  .main-container {
+    transition: margin-left 0.3s ease-in-out;
+  }
+  
+  #sidebar.desktop-hidden {
+    transform: translateX(-1000%);
+  }
+
+   .sidebar-closed main {
+    max-width: 1200px !important;
+
+    margin-right: 15rem !important;
+  }
+}
+
+@media (max-width: 1999px) and (min-width: 1024px) {
+  .main-container {
+    transition: margin-left 0.3s ease-in-out;
+  }
+  
+  #sidebar.desktop-hidden {
+    transform: translateX(-1000%);
+  }
+
+   .sidebar-closed main {
+    max-width: 1024px !important;
+
+    margin-right: 4rem !important;
+  }
+}
+
+/* Mobile submenu styles - make scrollable */
+@media (max-width: 768px) {
+  .submenu {
+    border-radius: 8px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    background: white !important;
+    border: 1px solid #fef3c7 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+  
+  .submenu ul {
+    max-height: none !important;
+  }
+  
+  /* Custom scrollbar for mobile submenu */
+  .submenu::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .submenu::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 2px;
+  }
+  
+  .submenu::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+  }
+  
+  .submenu::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+}
+
+.no-scroll {
+  overflow: hidden;
+}

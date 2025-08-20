@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" />
+  <title>HICAD Payroll</title>
+
+  <!-- Tailwind CDN + config -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles/dashboard.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" />
+</head>
+
+<body class="bg-gradient-to-br from-amber-50 to-blue-100 min-h-screen antialiased">
+  <!-- container padded to 1440px on large screens -->
+  <div class="max-w-layout mx-auto min-h-screen">
+
+    <!-- top row: left hamburger + brand, right logo -->
+    <header class="flex items-center justify-between py-4 px-2 lg:px-0">
+      <div class="flex items-center gap-4">
+        <button id="menu-toggle" class="p-2 rounded focus:outline-none" aria-label="Toggle menu">
+            <div class="menu flex flex-col gap-1.5" aria-hidden="true">
+              <img class="line w-6" src="photos/line2i199-45p.svg" alt="" />
+              <img class="img w-3" src="photos/line2i199-45p.svg" alt="" />
+              <img class="line-2 w-6" src="photos/line4i199-83u6.svg" alt="" />
+            </div>
+        </button>
+        <div class="text-2xl lg:text-3xl font-black text-navy select-none">HICAD</div>
+      </div>
+
+      <img src="photos/rectangle171997-waq-200w.png" alt="logo" class="w-[57px] h-[68px] object-contain" />
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[250px_1fr] gap-6">
+
+      <!-- Sidebar -->
+      <aside id="sidebar" class="overlap-wrapper shadow-lg lg:sticky lg:top-6 lg:h-[calc(100vh-48px)] overflow-y-auto">
+        <div class="p-5">
+        </div>
+
+        <nav class="px-4 pb-6">
+          <ul class="flex flex-col gap-4">
+            <li class="relative">
+                <a class="nav-item flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25" href="#">Dashboard</a>
+            </li>
+
+            <li class="relative">
+              <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
+                href="#" aria-expanded="false" role="button" tabindex="0">
+                <span>Administration</span>
+                <img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5 ml-2 self-center transform transition-transform duration-200" />
+              </a>
+
+              <!-- submenu: positioned absolutely inside the li -->
+              <div class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
+              style="position:absolute; left:100%; top:0; margin-left:3px; white-space:nowrap;">
+                <ul class="space-y-2 m-0 p-0 list-none">
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Create User</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Control User</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Close/Open Payroll Period</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Payroll Class Setup</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Change Payroll Class</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Change Registration Number</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Company Profile</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Monthly and Yearly Processing</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="relative">
+              <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
+                href="#" aria-expanded="false" role="button" tabindex="0"><span>Personnel Profile</span>
+                <img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
+              </a>
+
+              <!-- submenu: positioned absolutely inside the li -->
+              <div class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
+              style="position:absolute; left:100%; top:0; margin-left:3px; white-space:nowrap;">
+                <ul class="space-y-2 m-0 p-0 list-none">
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Add New Personnel</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Current Personnel</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Old Personnel</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="relative">
+              <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
+                href="#" aria-expanded="false" role="button" tabindex="0"><span>Data Input</span><img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
+              </a>
+
+              <!-- submenu: positioned absolutely inside the li -->
+              <div class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
+              style="position:absolute; left:100%; top:0; margin-left:3px; white-space:nowrap;">
+                <ul class="space-y-2 m-0 p-0 list-none">
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Payments/Deductions</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Variation to Payments/Deductions</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Cumulative Payroll Transfer</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Input Documentation</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Arrears Calculations</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="relative">
+              <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
+                href="#" aria-expanded="false" role="button" tabindex="0"><span>File Update</span><img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
+              </a>
+
+              <!-- submenu: positioned absolutely inside the li -->
+              <div class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
+                  style="position:absolute; left:100%; top:0; margin-left:3px; white-space:nowrap;">
+                <ul class="space-y-2 m-0 p-0 list-none">
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Save Payroll Files</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Input Variable Report</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Changes in Personnel Data</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Master File Update</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Recall Payment Files</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="relative">
+              <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
+                href="#" aria-expanded="false" role="button" tabindex="0"><span>Payroll Calculations</span><img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" /></a>
+
+              <!-- submenu: positioned absolutely inside the li -->
+              <div class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
+                  style="position:absolute; left:100%; top:0; margin-left:3px; white-space:nowrap;">
+                <ul class="space-y-2 m-0 p-0 list-none">
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Back Up</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Restore</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Payroll Calculations</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="relative">
+              <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
+                href="#" aria-expanded="false" role="button" tabindex="0"><span>Reference Tables</span><img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
+              </a>
+
+              <!-- submenu: positioned absolutely inside the li -->
+              <div class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
+                  style="position:absolute; left:100%; top:0; margin-left:3px; white-space:nowrap;">
+                <ul class="space-y-2 m-0 p-0 list-none">
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Overtime Information</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Factory/Branch</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Cash Payment</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Tax Table Information</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Salary Scale Information</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Pay Element Description</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Bank Details</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Department</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">State Codes</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Local Government</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="relative">
+             <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
+                href="#" aria-expanded="false" role="button" tabindex="0"><span>Utilities</span><img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
+              </a>
+
+              <!-- submenu: positioned absolutely inside the li -->
+              <div class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
+              style="position:absolute; left:100%; top:0; margin-left:3px; white-space:nowrap;">
+                <ul class="space-y-2 m-0 p-0 list-none">
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Irregular One-Off Payments</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Payroll Class Setup</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Inter Payroll Class Transfer</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="relative">
+              <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
+                href="#" aria-expanded="false" role="button" tabindex="0"><span>Reports</span><img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
+              </a>
+
+              <!-- submenu: positioned absolutely inside the li -->
+              <div class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
+              style="position:absolute; left:100%; top:0; margin-left:3px; white-space:nowrap;">
+                <ul class="space-y-2 m-0 p-0 list-none">
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Pay Slips</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Payments by Bank(Branch)</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Analysis of Earnings/Deductions</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Loan Analysis</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50 whitespace-normal break-words w-56">Analisis of Payments/Deductions by Bank</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Tax Payments By State</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Overtime Analysis by Dept</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Payroll Register</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Listing of Payroll Files</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Payment Staff List</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">National Housing Funds</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">NSITF</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Salary Summary</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Analysis of Normal Hours by Dept.</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Salary Reconcilation</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="relative">
+              <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
+                href="#" aria-expanded="false" role="button" tabindex="0"><span>Audit Trail</span><img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
+              </a>
+
+              <!-- submenu: positioned absolutely inside the li -->
+              <div class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
+              style="position:absolute; left:100%; top:0; margin-left:3px; white-space:nowrap;">
+                <ul class="space-y-2 m-0 p-0 list-none">
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Salary Variance Analysis</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50 whitespace-normal break-words w-56">Changes in Personal Details Record</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Variation Input Listings</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Overpayment</a></li>
+                  <li><a href="#" class="block px-3 py-1 rounded hover:bg-amber-50">Duplicate Account Number</a></li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="p-4">
+          <button class="w-full logout bg-amber-100/25 text-red-600 font-bold rounded py-2">Logout</button>
+        </div>
+      </aside>
+
+      <!-- Main content -->
+      <main class="overlap relative p-6 lg:px-10">
+
+        <!-- Page title -->
+        <div class="mt-6">
+          <p class="text-2xl lg:text-3xl font-bold text-navy text-center">Good Morning, Welcome to Payroll 2</p>
+        </div>
+
+        <!-- Stats container -->
+        <section class="mt-8 flex justify-center">
+          <div class="frame-2 relative w-full sm:w-[640px] sm:h-[209px] h-auto bg-white/15 rounded-xl border border-amber-100 shadow-lg p-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 h-full divide-y sm:divide-y-0 sm:divide-x divide-white/30 rounded-lg overflow-hidden">
+              <div class="p-6 flex flex-col items-center gap-4">
+                <div class="flex items-center">
+                  <h3 class="text-navy font-bold">Payroll Pending Approval</h3>
+                  <div class="w-7 h-7 bg-[url('photos/ellipse12992-wbla-200h.png')] bg-cover flex items-center justify-center">
+                    <img src="photos/rectangle742992-63fo.svg" alt="pending" class="w-6 h-5 object-contain" />
+                  </div>
+                </div>
+                <div class="rounded-md bg-amber-50 px-4 py-2 text-2xl font-bold text-warning">1,500</div>
+              </div>
+
+              <div class="p-6 flex flex-col items-center gap-4">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-navy font-bold">Payroll Approved</h3>
+                  <div  class="w-7 h-7 bg-[url('photos/ellipse12992-bkjg-200h.png')] bg-cover flex items-center justify-center">
+                    <img src="photos/rectangle742992-xzg9.svg" alt="approved" class="w-6 h-6 object-contain" />
+                  </div>
+                </div>
+                <div class="rounded-md bg-amber-50 px-4 py-2 text-2xl font-bold text-success">2,700</div>
+              </div>
+
+              <div class="p-6 flex flex-col items-center gap-4">
+                <div class="flex items-center gap-3">
+                  <h3 class="text-navy font-bold">Current Payroll Period</h3>
+                  <i class='bx bx-calendar-alt' style="font-size: 24px"></i>
+                </div>
+                <div class="rounded-md bg-amber-50 px-4 py-2 text-2xl font-bold">August</div>
+              </div>
+            </div>
+
+            <!-- decorative vertical SVG separators preserved and positioned for large screens -->
+            <img class="hidden lg:block absolute top-[-15px] left-[34%] w-[31px] h-[239px] object-cover" src="photos/line23022-bue8.svg" alt="" />
+            <img class="hidden lg:block absolute top-[-15px] left-[66%] w-[31px] h-[239px] object-cover" src="photos/line23022-bue8.svg" alt="" />
+          </div>
+        </section>
+
+        <!-- Quick Access + Notifications -->
+        <section class="mt-8 flex flex-col lg:flex-row xs:flex-row justify-center gap-6 max-w-4xl mx-auto">
+          <!-- Quick Access -->
+          <div class="frame-3 w-full sm:w-[416px] sm:h-[319px] h-auto bg-white/20 rounded-xl p-6 shadow-lg">
+            <h4 class="text-xl font-bold text-navy text-center mb-6">Quick Access</h4>
+            <div class="grid grid-cols-2 gap-6">
+              <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg">Back Up</button>
+              <button class="quick-access-btn bg-[#FBBF24]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg">Save Payroll Files</button>
+
+              <button class="quick-access-btn bg-[#FBBF24]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg">Add New Personnel</button>
+              <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg">Month End Processing</button>
+
+              <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg">Pay Slips</button>
+              <button class="quick-access-btn bg-[#FBBF24]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg">Loan Analysis</button>
+            </div>
+          </div>
+
+          <!-- Notifications -->
+          <aside class="notifications flex-col justify-center w-full sm:w-[192px] sm:h-[319px] h-auto bg-white/20 rounded-xl p-2 pt-6 shadow-lg">
+            <h4 class="text-xl font-bold text-navy mb-6 text-center">Notifications</h4>
+            <ul class="space-y-4">
+              <li class="flex items-start gap-3">
+                <div class="w-8 h-5 bg-[url('photos/polygon32992-ae0j.svg')] bg-cover flex mt-2 justify-center text-white">!</div>
+                <div class="text-sm">Submit variation for Approval</div>
+              </li>
+
+              <li class="flex items-start gap-3">
+                <div class="w-8 h-5 bg-[url('photos/polygon32992-ae0j.svg')] bg-cover flex mt-2 justify-center text-white">!</div>
+                <div class="text-sm">Failed Payroll Transactions</div>
+              </li>
+
+              <li class="flex items-start gap-3">
+                <div class="w-8 h-5 rounded-full bg-success flex mt-2 items-center justify-center">
+                  <img src="photos/rectangle753022-rk2.svg" alt="" class="object-contain" />
+                </div>
+                <div class="text-sm">Successfully Created a New Personnel</div>
+              </li>
+
+              <li class="flex items-start gap-3">
+                <div class="w-6 h-5 bg-[url('photos/polygon32992-ae0j.svg')] bg-cover flex justify-center text-white">!</div>
+                <div class="text-sm">Back Up failed!</div>
+              </li>
+            </ul>
+          </aside>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+<script src="script/dashboard.js"></script>
+</html>

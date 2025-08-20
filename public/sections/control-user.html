@@ -1,0 +1,201 @@
+<div class="p-6">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h3 class="text-lg font-semibold text-gray-900">Current Users</h3>
+    </div>
+    <button onclick="window.navigation.navigateToSection('create-user', 'create user')" 
+            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+      Add New User
+    </button>
+  </div>
+
+  <!-- Search and Filter -->
+  <div class="mb-6 flex flex-col md:flex-row gap-4">
+    <div class="flex-1">
+      <input type="text" id="personnel-search" placeholder="Search by name, ID, or department..." 
+             class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div class="flex gap-2">
+      <select id="department-filter" class="px-3 py-2 border border-gray-300 rounded-md">
+        <option value="">All Departments</option>
+        <option value="HR">Human Resources</option>
+        <option value="IT">Information Technology</option>
+        <option value="Finance">Finance</option>
+        <option value="Operations">Operations</option>
+      </select>
+      <select id="status-filter" class="px-3 py-2 border border-gray-300 rounded-md">
+        <option value="">All Status</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+        <option value="suspended">Suspended</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Personnel Table -->
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse border border-gray-300">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Employee ID</th>
+          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Full Name</th>
+          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Department</th>
+          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Position</th>
+          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Status</th>
+          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Hire Date</th>
+          <th class="border border-gray-300 px-4 py-3 text-center font-medium">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="personnel-table-body">
+        <!-- Table content will be populated by JavaScript -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="mt-6 flex justify-between items-center">
+    <div class="text-sm text-gray-600">
+      Showing <span id="showing-start">1</span>-<span id="showing-end">10</span> of <span id="total-records">0</span> records
+    </div>
+    <div class="flex gap-2">
+      <button id="prev-page" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Previous</button>
+      <span id="page-numbers" class="flex gap-1">
+        <!-- Page numbers will be inserted here -->
+      </span>
+      <button id="next-page" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Next</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Personnel management functionality
+class PersonnelManager {
+  constructor() {
+    this.currentPage = 1;
+    this.recordsPerPage = 10;
+    this.personnel = []; // This would come from your backend
+    this.filteredPersonnel = [];
+    this.init();
+  }
+
+  init() {
+    this.loadPersonnelData();
+    this.setupEventListeners();
+  }
+
+  loadPersonnelData() {
+    // Mock data - replace with actual API call
+    this.personnel = [
+      { id: 'EMP003', name: 'MD Manager', department: 'Finance', position: 'Accountant', status: 'active', hireDate: '2023-03-10' },
+        { id: 'EMP002', name: 'Chief Admin', department: 'IT', position: 'Software Developer', status: 'active', hireDate: '2021-11-20' },
+      { id: 'EMP001', name: 'Wizzy Hicad', department: 'HR', position: 'HR Manager', status: 'active', hireDate: '2022-01-15' },
+    ];
+    this.filteredPersonnel = [...this.personnel];
+    this.renderTable();
+  }
+
+  setupEventListeners() {
+    document.getElementById('personnel-search').addEventListener('input', (e) => {
+      this.filterPersonnel();
+    });
+
+    document.getElementById('department-filter').addEventListener('change', (e) => {
+      this.filterPersonnel();
+    });
+
+    document.getElementById('status-filter').addEventListener('change', (e) => {
+      this.filterPersonnel();
+    });
+  }
+
+  filterPersonnel() {
+    const search = document.getElementById('personnel-search').value.toLowerCase();
+    const department = document.getElementById('department-filter').value;
+    const status = document.getElementById('status-filter').value;
+
+    this.filteredPersonnel = this.personnel.filter(person => {
+      const matchesSearch = person.name.toLowerCase().includes(search) || 
+                           person.id.toLowerCase().includes(search) ||
+                           person.department.toLowerCase().includes(search);
+      const matchesDepartment = !department || person.department === department;
+      const matchesStatus = !status || person.status === status;
+
+      return matchesSearch && matchesDepartment && matchesStatus;
+    });
+
+    this.currentPage = 1;
+    this.renderTable();
+  }
+
+  renderTable() {
+    const tbody = document.getElementById('personnel-table-body');
+    const startIndex = (this.currentPage - 1) * this.recordsPerPage;
+    const endIndex = startIndex + this.recordsPerPage;
+    const pageData = this.filteredPersonnel.slice(startIndex, endIndex);
+
+    tbody.innerHTML = pageData.map(person => `
+      <tr class="hover:bg-gray-50">
+        <td class="border border-gray-300 px-4 py-2">${person.id}</td>
+        <td class="border border-gray-300 px-4 py-2 font-medium">${person.name}</td>
+        <td class="border border-gray-300 px-4 py-2">${person.department}</td>
+        <td class="border border-gray-300 px-4 py-2">${person.position}</td>
+        <td class="border border-gray-300 px-4 py-2">
+          <span class="px-2 py-1 rounded-full text-xs ${this.getStatusClass(person.status)}">
+            ${person.status.charAt(0).toUpperCase() + person.status.slice(1)}
+          </span>
+        </td>
+        <td class="border border-gray-300 px-4 py-2">${person.hireDate}</td>
+        <td class="border border-gray-300 px-4 py-2 text-center">
+          <button onclick="personnelManager.viewEmployee('${person.id}')" 
+                  class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 mr-1">View</button>
+          <button onclick="personnelManager.editEmployee('${person.id}')" 
+                  class="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 mr-1">Edit</button>
+          <button onclick="personnelManager.deleteEmployee('${person.id}')" 
+                  class="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+
+    this.updatePaginationInfo();
+  }
+
+  getStatusClass(status) {
+    switch(status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'inactive': return 'bg-gray-100 text-gray-800';
+      case 'suspended': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  updatePaginationInfo() {
+    const total = this.filteredPersonnel.length;
+    const start = (this.currentPage - 1) * this.recordsPerPage + 1;
+    const end = Math.min(start + this.recordsPerPage - 1, total);
+
+    document.getElementById('showing-start').textContent = total > 0 ? start : 0;
+    document.getElementById('showing-end').textContent = end;
+    document.getElementById('total-records').textContent = total;
+  }
+
+  viewEmployee(id) {
+    console.log('View employee:', id);
+    // Implement view functionality
+  }
+
+  editEmployee(id) {
+    console.log('Edit employee:', id);
+    // Implement edit functionality
+  }
+
+  deleteEmployee(id) {
+    if (confirm('Are you sure you want to delete this employee?')) {
+      this.personnel = this.personnel.filter(p => p.id !== id);
+      this.filterPersonnel();
+    }
+  }
+}
+
+// Initialize when section loads
+const personnelManager = new PersonnelManager();
+</script>

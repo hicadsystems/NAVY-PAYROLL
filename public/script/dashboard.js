@@ -336,14 +336,35 @@ class NavigationSystem {
     });
   }
 
-  hideMobileMenu() {
-    if (window.innerWidth <= 1023) {
-      const sidebar = document.querySelector('#sidebar');
-      if (sidebar) {
-        sidebar.style.display = 'none';
+async hideMobileMenu(link) {
+  if (window.innerWidth <= 1023) {
+    const sidebar = document.querySelector('#sidebar');
+
+    if (link) {
+      const sectionId = link.getAttribute('data-section');
+      const sectionName = link.textContent.trim();
+
+      if (sectionId) {
+        // Close all submenus first
+        if (typeof closeAll === 'function') {
+          closeAll();
+        }
+
+        // Show loading state
+        this.showLoadingState(sectionName);
+
+        // Navigate to section
+        await this.navigateToSection(sectionId, sectionName);
       }
     }
+
+    // Finally hide sidebar
+    if (sidebar) {
+      sidebar.style.display = 'none';
+    }
   }
+}
+
 
   showLoadingState(sectionName) {
     const mainContent = document.querySelector('main');

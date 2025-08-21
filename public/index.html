@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Landing Page</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-amber-100 flex">
+
+  <!-- Left side with logo only -->
+  <div class="w-1/2 hidden md:flex items-center justify-center">
+    <img src="photos/logo.png" alt="Logo" class="max-w-[70%] max-h-[70%] object-contain">
+  </div>
+
+  <!-- Right content area -->
+  <div class="flex-1 flex items-center justify-center p-8">
+    <div class="max-w-md text-center space-y-6">
+      <h1 class="text-4xl font-bold text-gray-800">Welcome</h1>
+      <p class="text-gray-600 text-lg">
+        Access your dashboard or login to continue.
+      </p>
+
+      <!-- Navigation Buttons -->
+      <div class="flex flex-col gap-4 mt-6">
+        <a href="personnel-login.html" 
+           class="px-6 py-3 rounded-2xl bg-amber-500 text-white font-semibold shadow hover:bg-amber-600 transition">
+          Personnel Login
+        </a>
+        <a href="dashboard.html" 
+           class="px-6 py-3 rounded-2xl bg-white text-gray-800 font-semibold shadow hover:bg-gray-200 transition">
+          Go to Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

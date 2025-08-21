@@ -1,20 +1,20 @@
 
 tailwind.config = {
-    theme: {
+  theme: {
     extend: {
-        maxWidth: { 'layout': '1440px' },
-        colors: {
-        'navy': '#1e40af',
-        'warning': '#f6b409',
-        'success': '#047014'
-        },
-        screens: {
-        'xs': '640px',   // triggers at 640px
-        'custom': '766px' // triggers at 766px
-        },
-        boxShadow: {
-        'custom': '0 2px 5px 0 rgba(0,0,0,0.08)',
-        },
+      maxWidth: { 'layout': '1440px' },
+      colors: {
+      'navy': '#1e40af',
+      'warning': '#f6b409',
+      'success': '#047014'
+      },
+      screens: {
+      'xs': '640px',   // triggers at 640px
+      'custom': '766px' // triggers at 766px
+      },
+      boxShadow: {
+      'custom': '0 2px 5px 0 rgba(0,0,0,0.08)',
+      },
     }
   }
 };
@@ -294,7 +294,6 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
 
 
 // Navigation handler for submenu items
-// navigation.js - Main navigation system
 class NavigationSystem {
   constructor() {
     this.currentSection = null;
@@ -336,35 +335,34 @@ class NavigationSystem {
     });
   }
 
-async hideMobileMenu(link) {
-  if (window.innerWidth <= 1023) {
-    const sidebar = document.querySelector('#sidebar');
+  async hideMobileMenu(link) {
+    if (window.innerWidth <= 1023) {
+      const sidebar = document.querySelector('#sidebar');
 
-    if (link) {
-      const sectionId = link.getAttribute('data-section');
-      const sectionName = link.textContent.trim();
+      if (link) {
+        const sectionId = link.getAttribute('data-section');
+        const sectionName = link.textContent.trim();
 
-      if (sectionId) {
-        // Close all submenus first
-        if (typeof closeAll === 'function') {
-          closeAll();
+        if (sectionId) {
+          // Close all submenus first
+          if (typeof closeAll === 'function') {
+            closeAll();
+          }
+
+          // Show loading state
+          this.showLoadingState(sectionName);
+
+          // Navigate to section
+          await this.navigateToSection(sectionId, sectionName);
         }
+      }
 
-        // Show loading state
-        this.showLoadingState(sectionName);
-
-        // Navigate to section
-        await this.navigateToSection(sectionId, sectionName);
+      // Finally hide sidebar
+      if (sidebar) {
+        sidebar.style.display = 'none';
       }
     }
-
-    // Finally hide sidebar
-    if (sidebar) {
-      sidebar.style.display = 'none';
-    }
   }
-}
-
 
   showLoadingState(sectionName) {
     const mainContent = document.querySelector('main');
@@ -411,9 +409,7 @@ async hideMobileMenu(link) {
 
     // Try to load from multiple possible locations
     const possiblePaths = [
-      `sections/${sectionId}.html`,
-      `components/${sectionId}.html`,
-      `pages/${sectionId}.html`
+      `sections/${sectionId}.html`
     ];
 
     for (const path of possiblePaths) {
@@ -450,8 +446,6 @@ async hideMobileMenu(link) {
             <p class="text-sm text-gray-600">Expected file locations:</p>
             <ul class="text-xs text-gray-500 mt-2 space-y-1">
               <li>sections/${sectionId}.html</li>
-              <li>components/${sectionId}.html</li>
-              <li>pages/${sectionId}.html</li>
             </ul>
           </div>
         </div>
@@ -463,7 +457,7 @@ async hideMobileMenu(link) {
     const mainContent = document.querySelector('main');
     if (mainContent) {
       mainContent.innerHTML = `
-        <div class="mt-6">
+        <div data-section="${this.currentSection}" class="mt-6">
           <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
           <div class="bg-white/10 rounded-xl shadow-lg border border-gray-100">
             ${content}
@@ -513,7 +507,7 @@ async hideMobileMenu(link) {
               <h3 class="text-lg font-medium text-gray-900 mb-2">Failed to Load Content</h3>
               <p class="text-gray-600 mb-4">${error.message}</p>
               <button onclick="window.navigation.navigateToSection('${this.currentSection}', '${sectionName}')" 
-                      class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
                 Retry
               </button>
             </div>
@@ -586,9 +580,6 @@ async hideMobileMenu(link) {
 document.addEventListener('DOMContentLoaded', function() {
   // Make navigation system globally accessible
   window.navigation = new NavigationSystem();
-  
-  // Optional: Preload critical sections
-  // window.navigation.preloadSections(['create-user', 'current-personnel']);
 });
 
 // Export for module systems

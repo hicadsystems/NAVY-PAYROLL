@@ -1,0 +1,33 @@
+{
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.1",
+    "mssql": "^11.0.1",
+    "serve-index": "^1.9.1"
+  },
+  "name": "navy-payroll",
+  "version": "1.0.0",
+  "main": "db-config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hicadsystems/NAVY-PAYROLL.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hicadsystems/NAVY-PAYROLL/issues"
+  },
+  "homepage": "https://github.com/hicadsystems/NAVY-PAYROLL#readme",
+  "description": ""
+}

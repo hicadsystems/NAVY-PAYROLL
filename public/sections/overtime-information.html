@@ -1,0 +1,90 @@
+
+  <div class="p-6">
+    <h1 class="text-2xl font-bold mb-6 text-gray-800">Overtime Rates</h1>
+
+     <form id="overtimeForm" class="grid grid-cols-2 gap-4">
+        <input name="type" placeholder="Type" class="border p-2 rounded" value="BT03">
+        <input name="stdfix" placeholder="StdFix" class="border p-2 rounded" value="F">
+        <input name="ord" placeholder="Ord" type="number" step="0.1" class="border p-2 rounded">
+        <input name="sat" placeholder="Sat" type="number" step="0.1" class="border p-2 rounded">
+        <input name="sun" placeholder="Sun" type="number" step="0.1" class="border p-2 rounded">
+        <input name="pub" placeholder="Pub" type="number" step="0.1" class="border p-2 rounded">
+
+        <!-- Tax Overtime dropdown -->
+        <label class="col-span-2 text-sm text-gray-600 lg:w-1/3">Tax Overtime</label>
+        <select name="taxovertime" class="border p-2 rounded col-span-2">
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+
+        <!-- hidden fields -->
+        <input type="hidden" name="basicpay">
+        <input type="hidden" name="createdby" value="HICAD">
+
+        <div class="col-span-2 flex justify-end mt-4">
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            Save
+          </button>
+        </div>
+      </form>
+
+    <div id="result" class="mt-4 text-sm text-gray-700"></div>
+
+    <!-- Modal -->
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+      <div class="bg-white p-6 rounded-xl shadow-xl text-center">
+        <p class="text-lg font-semibold text-green-600">✅ Saved Successfully!</p>
+      </div>
+    </div>
+
+ <script>
+    // Show modal for 10s
+    function showModal() {
+      const modal = document.getElementById('successModal');
+      modal.classList.remove("hidden");
+      setTimeout(() => {
+        modal.classList.add("hidden");
+      }, 1000);
+    }
+
+    // Load saved values on page load
+    async function loadForm() {
+      const res = await fetch('/admin/overtime');
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const row = data[0]; // only one row expected
+        const form = document.getElementById('overtimeForm');
+        for (let [k, v] of Object.entries(row)) {
+          if (form.elements[k]) form.elements[k].value = v ?? '';
+        }
+        // set taxovertime dropdown based on basicpay
+        form.elements['taxovertime'].value = row.basicpay == 1 ? "Yes" : "No";
+      }
+    }
+
+    document.getElementById('overtimeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const data = Object.fromEntries(new FormData(form).entries());
+
+      // map taxovertime → basicpay
+      data.basicpay = data.taxovertime === "Yes" ? 1 : 0;
+
+      const res = await fetch('/admin/overtime', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        showModal();
+      } else {
+        alert("Error: " + result.error);
+      }
+    });
+
+    loadForm();
+  </script>
+</body>
+</html>

@@ -59,12 +59,6 @@ body.no-scroll {
   #sidebar.desktop-hidden {
     transform: translateX(-1000%);
   }
-
-   .sidebar-closed main {
-    max-width: 1200px !important;
-
-    margin-right: 15rem !important;
-  }
 }
 
 @media (max-width: 1999px) and (min-width: 1024px) {
@@ -74,12 +68,6 @@ body.no-scroll {
   
   #sidebar.desktop-hidden {
     transform: translateX(-1000%);
-  }
-
-   .sidebar-closed main {
-    max-width: 1024px !important;
-
-    margin-right: 4rem !important;
   }
 }
 

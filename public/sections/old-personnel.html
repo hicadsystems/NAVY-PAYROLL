@@ -1,19 +1,28 @@
 <div class="p-6">
   <div class="flex justify-between items-center mb-6">
     <div>
-      <h3 class="text-lg font-semibold text-gray-900">Current Users</h3>
+      <h3 class="text-lg font-semibold text-gray-900">Old Personnel</h3>
     </div>
-    <button onclick="window.navigation.navigateToSection('create-user', 'Create User')" 
-      class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-      Add New User
-    </button>
+
+    <div>
+        <button onclick="window.navigation.navigateToSection('add-personnel', 'Add New Personnel')" 
+        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        Add New Personnel
+        </button>
+
+        <button onclick="window.navigation.navigateToSection('current-personnel', 'Current Personnel')" 
+        class="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700">
+        View Current Personnel
+        </button>
+    </div>
+
   </div>
 
   <!-- Search and Filter -->
   <div class="mb-6 flex flex-col md:flex-row gap-4">
     <div class="flex-1">
-      <input type="text" id="personnel-search" placeholder="Search by name, ID, or department..." 
-             class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+      <input type="text" id="personnel-search" placeholder="Search by name, RegNo. or department..." 
+        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
     </div>
     <div class="flex gap-2">
       <select id="department-filter" class="px-3 py-2 border border-gray-300 rounded-md">
@@ -37,10 +46,10 @@
     <table class="w-full border-collapse border border-gray-300">
       <thead class="bg-gray-50">
         <tr>
-          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Employee ID</th>
+          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Reg No.</th>
           <th class="border border-gray-300 px-4 py-3 text-left font-medium">Full Name</th>
           <th class="border border-gray-300 px-4 py-3 text-left font-medium">Department</th>
-          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Position</th>
+          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Rank</th>
           <th class="border border-gray-300 px-4 py-3 text-left font-medium">Status</th>
           <th class="border border-gray-300 px-4 py-3 text-center font-medium">Actions</th>
         </tr>
@@ -85,9 +94,9 @@ class PersonnelManager {
   loadPersonnelData() {
     // Mock data - replace with actual API call
     this.personnel = [
-      { id: 'EMP003', name: 'MD Manager', department: 'Finance', position: 'Accountant', status: 'active' },
-      { id: 'EMP002', name: 'Chief Admin', department: 'IT', position: 'Software Developer', status: 'active' },
-      { id: 'EMP001', name: 'Wizzy Hicad', department: 'HR', position: 'HR Manager', status: 'active' },
+      { id: 'NN003', name: 'MD Manager', department: 'Finance', position: 'Accountant', status: 'inactive' },
+      { id: 'NN002', name: 'Chief Admin', department: 'IT', position: 'Software Developer', status: 'inactive' },
+      { id: 'NN001', name: 'Wizzy Hicad', department: 'HR', position: 'HR Manager', status: 'inactive' },
     ];
     this.filteredPersonnel = [...this.personnel];
     this.renderTable();
@@ -160,8 +169,8 @@ class PersonnelManager {
   getStatusClass(status) {
     switch(status) {
       case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      case 'suspended': return 'bg-red-100 text-red-800';
+      case 'inactive': return 'bg-red-100 text-red-800';
+      case 'suspended': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   }

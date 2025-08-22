@@ -1,0 +1,162 @@
+<!-- Payments / Deductions Form -->
+<div class="p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold text-blue-800"></h2>
+    <div class="space-x-2">
+      <button id="createPayDedBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New</button>
+      <button id="generatePayDedReportBtn" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">Generate Report</button>
+      <button onclick="window.navigation.navigateToSection('variation-payments', 'Variation to Payments/Deductions')"  class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">View Variations</button>
+    </div>
+  </div>
+
+  <!-- Create New Form (hidden by default) -->
+  <div id="payDedFormWrapper" class="my-8 hidden">
+    <h3 class="text-xl font-semibold text-grey-700 mb-4">Add New Payment/Deduction</h3>
+    <form id="payDedForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+      <input id="emplId" type="text" placeholder="Employee ID" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"/>
+
+      <select id="type" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
+        <option value="">Select Type</option>
+        <option>BP001</option>
+        <option>BP002</option>
+      </select>
+
+      <select id="mak1" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
+        <option value="">Select Marker 1</option>
+        <option>Yes</option>
+        <option>No</option>
+      </select>
+
+      <input id="amtp" type="number" placeholder="Payment Amount (amtp)" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"/>
+
+      <select id="mak2" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
+        <option value="">Select Marker 2</option>
+        <option>Yes</option>
+        <option>No</option>
+      </select>
+
+      <input id="amt" type="number" placeholder="Deduction Amount (amt)" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"/>
+
+      <input id="amtad" type="number" placeholder="Amount Added (amtad)" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"/>
+
+      <input id="amttd" type="number" placeholder="Amount To Deduct (amttd)" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"/>
+
+      <select id="payind" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
+        <option value="">Pay Indicator</option>
+        <option value="Y">Payment</option>
+        <option value="N">Deduction</option>
+      </select>
+
+      <input id="nomth" type="number" placeholder="Number of Months (nomth)" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"/>
+
+      <div class="col-span-full flex justify-end mt-2 space-x-4">
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Save</button>
+        <button type="button" id="cancelPayDedBtn" class="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto">
+    <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+      <thead class="bg-blue-100 text-blue-900">
+        <tr>
+          <th class="py-2 px-4 border">Employee ID</th>
+          <th class="py-2 px-4 border">Type</th>
+          <th class="py-2 px-4 border">Amount Paid</th>
+          <th class="py-2 px-4 border">Pay Indicator</th>
+          <th class="py-2 px-4 border">Months</th>
+          <th class="py-2 px-4 border">Action</th>
+        </tr>
+      </thead>
+      <tbody id="payDedTableBody" class="text-center text-sm">
+        <!-- Dynamic rows will go here -->
+        <tr class="hover:bg-yellow-50">
+          <td class="py-2 px-4 border">NN001</td>
+          <td class="py-2 px-4 border">BP001</td>
+          <td class="py-2 px-4 border">₦50,000</td>
+          <td class="py-2 px-4 border">Payment</td>
+          <td class="py-2 px-4 border">3</td>
+          <td class="py-2 px-4 border">
+            <button class="text-blue-600 hover:underline">Edit</button> |
+            <button class="text-red-600 hover:underline">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function () {
+  const formWrapper = document.getElementById("payDedFormWrapper");
+  const form = document.getElementById("payDedForm");
+  const tableBody = document.getElementById("payDedTableBody");
+
+  const createBtn = document.getElementById("createPayDedBtn");
+  const cancelBtn = document.getElementById("cancelPayDedBtn");
+  const reportBtn = document.getElementById("generatePayDedReportBtn");
+
+  function toggleForm() {
+    formWrapper.classList.toggle("hidden");
+  }
+
+  function clearForm() {
+    form.reset();
+  }
+
+  function savePayDed(e) {
+    e.preventDefault();
+
+    const data = {
+      emplId: document.getElementById("emplId").value.trim(),
+      type: document.getElementById("type").value,
+      mak1: document.getElementById("mak1").value.trim(),
+      amtp: document.getElementById("amtp").value,
+      mak2: document.getElementById("mak2").value.trim(),
+      amt: document.getElementById("amt").value,
+      amtad: document.getElementById("amtad").value,
+      amttd: document.getElementById("amttd").value,
+      payind: document.getElementById("payind").value,
+      nomth: document.getElementById("nomth").value,
+    };
+
+    if (!data.emplId || !data.type || !data.amtp) {
+      alert("Please fill at least Employee ID, Type, and Payment Amount.");
+      return;
+    }
+
+    const row = document.createElement("tr");
+    row.className = "hover:bg-yellow-50";
+    row.innerHTML = `
+      <td class="py-2 px-4 border">${data.emplId}</td>
+      <td class="py-2 px-4 border">${data.type}</td>
+      <td class="py-2 px-4 border">₦${Number(data.amtp || data.amt).toLocaleString()}</td>
+      <td class="py-2 px-4 border">${data.payind || "-"}</td>
+      <td class="py-2 px-4 border">${data.nomth || "-"}</td>
+      <td class="py-2 px-4 border">
+        <button class="text-blue-600 hover:underline">Edit</button> |
+        <button class="text-red-600 hover:underline">Delete</button>
+      </td>
+    `;
+
+    tableBody.appendChild(row);
+    clearForm();
+    toggleForm();
+  }
+
+  function generateReport() {
+    alert("Payments/Deductions Report generated (placeholder). Implement export here.");
+  }
+
+  createBtn.addEventListener("click", toggleForm);
+  cancelBtn.addEventListener("click", () => {
+    clearForm();
+    toggleForm();
+  });
+  form.addEventListener("submit", savePayDed);
+  reportBtn.addEventListener("click", generateReport);
+})();
+</script>

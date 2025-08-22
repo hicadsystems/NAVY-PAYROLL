@@ -1,0 +1,60 @@
+<!-- Save Payroll Files Section -->
+<div class="p-6 ">
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center space-x-3">
+      <!-- Icon -->
+    </div>
+  </div>
+
+  <!-- Description -->
+  <p class="text-gray-600 mb-6 font-semibold lg:text-lg">Securely save payroll files for record keeping and backups.</p>
+
+  <!-- Action Buttons -->
+  <div class="flex justify-center space-x-4">
+    <button id="savePayrollBtn" class="px-8 py-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">
+      Save Now
+    </button>
+  </div>
+
+  <!-- Status / Progress (hidden initially) -->
+  <div id="saveStatus" class="mt-6 hidden text-center">
+    <div class="flex justify-center mb-3">
+      <div class="w-6 h-6 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+    <p class="text-gray-700">Saving payroll files, please wait...</p>
+  </div>
+
+  <!-- Confirmation (hidden initially) -->
+  <div id="saveConfirm" class="mt-6 hidden text-center">
+    <div class="flex justify-center mb-3">
+      <div class="bg-green-500 text-white p-3 rounded-full shadow">✔</div>
+    </div>
+    <p class="text-green-700 font-semibold mb-4">Payroll files saved successfully! Proceed to print changes in Personnel Data</p>
+    
+    <!-- Download Backup Button -->
+    <button onclick="window.navigation.navigateToSection('changes-personnel-data', 'Changes in Personnel Data')" class="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">
+    Go
+    </button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const btn = document.getElementById("savePayrollBtn");
+  const status = document.getElementById("saveStatus");
+  const confirm = document.getElementById("saveConfirm");
+  const downloadBtn = document.getElementById("downloadBackupBtn");
+
+  btn.addEventListener("click", () => {
+    // Hide confirm, show status
+    confirm.classList.add("hidden");
+    status.classList.remove("hidden");
+
+    // Simulate save process
+    setTimeout(() => {
+      status.classList.add("hidden");
+      confirm.classList.remove("hidden");
+    }, 2000);
+  });
+})();
+</script>

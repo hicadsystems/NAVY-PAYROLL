@@ -1,0 +1,139 @@
+<!-- Variation to Payments/Deductions -->
+<div class=" p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold text-blue-800"></h2>
+    <div class="space-x-2">
+      <button id="createVariationBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Create New</button>
+      <button id="generateReportBtn" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">Generate Report</button>
+      <button onclick="window.navigation.navigateToSection('payments-deductions', 'Payments/Deductions')"  class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">View Payments/Deductions</button>
+    </div>
+  </div>
+
+   <!-- Create New Form (hidden by default) -->
+  <div id="variationForm" class="my-8 hidden">
+    <h3 class="text-xl font-semibold text-grey-700 mb-4">Create New Variation</h3>
+    <form id="variationFormElement" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <input id="variationName" type="text" placeholder="Name" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2" />
+
+      <select id="variationType" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
+        <option value="">Select Type</option>
+        <option>Bonus</option>
+        <option>Deduction</option>
+      </select>
+
+      <select id="variationDescription" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
+        <option value="">Select Description</option>
+        <option>Performance Bonus</option>
+        <option>Overtime</option>
+        <option>Loan</option>
+      </select>
+
+      <select id="variationAction" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
+        <option value="">Select Action</option>
+        <option>Apply</option>
+        <option>Reverse</option>
+      </select>
+
+      <input id="variationAmount" type="alphanumeric" placeholder="Amount" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2" />
+
+      <div class="col-span-full flex justify-end mt-2 space-x-4">
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Save</button>
+        <button type="button" id="cancelVariationBtn" class="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto">
+    <table class="min-w-full  border border-gray-200 rounded-lg">
+      <thead class="bg-blue-100 text-blue-900">
+        <tr>
+          <th class="py-2 px-4 border">Person</th>
+          <th class="py-2 px-4 border">Type</th>
+          <th class="py-2 px-4 border">Amount</th>
+          <th class="py-2 px-4 border">Action</th>
+        </tr>
+      </thead>
+      <tbody id="variationTableBody" class="text-center text-sm">
+        <tr class="hover:bg-yellow-50">
+          <td class="py-2 px-4 border">Wisdom Godwin</td>
+          <td class="py-2 px-4 border">Bonus</td>
+          <td class="py-2 px-4 border">₦50,000</td>
+          <td class="py-2 px-4 border">
+            <button class="text-blue-600 hover:underline">Edit</button> |
+            <button class="text-red-600 hover:underline">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function () {
+  const formWrapper = document.getElementById("variationForm");
+  const form = document.getElementById("variationFormElement");
+  const tableBody = document.getElementById("variationTableBody");
+
+  // Buttons
+  const createBtn = document.getElementById("createVariationBtn");
+  const cancelBtn = document.getElementById("cancelVariationBtn");
+  const reportBtn = document.getElementById("generateReportBtn");
+
+  // Inputs
+  const nameInput = document.getElementById("variationName");
+  const typeInput = document.getElementById("variationType");
+  const descInput = document.getElementById("variationDescription");
+  const actionInput = document.getElementById("variationAction");
+  const amountInput = document.getElementById("variationAmount");
+
+  function toggleForm() {
+    formWrapper.classList.toggle("hidden");
+  }
+
+  function clearForm() {
+    form.reset();
+  }
+
+  function saveVariation(e) {
+    e.preventDefault();
+
+    const name = nameInput.value.trim();
+    const type = typeInput.value;
+    const desc = descInput.value;
+    const action = actionInput.value;
+    const amount = amountInput.value;
+
+    if (!name || !type || !desc || !action || !amount) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    const row = document.createElement("tr");
+    row.className = "hover:bg-yellow-50";
+    row.innerHTML = `
+      <td class="py-2 px-4 border">${name}</td>
+      <td class="py-2 px-4 border">${type}</td>
+      <td class="py-2 px-4 border">₦${Number(amount).toLocaleString()}</td>
+      <td class="py-2 px-4 border">${action}</td>
+    `;
+
+    tableBody.appendChild(row);
+    clearForm();
+    toggleForm();
+  }
+
+  function generateReport() {
+    alert("Report generated (placeholder). Implement PDF/download here.");
+  }
+
+  // Bind events
+  createBtn.addEventListener("click", toggleForm);
+  cancelBtn.addEventListener("click", () => {
+    clearForm();
+    toggleForm();
+  });
+  form.addEventListener("submit", saveVariation);
+  reportBtn.addEventListener("click", generateReport);
+})();
+</script>

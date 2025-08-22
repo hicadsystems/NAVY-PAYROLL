@@ -1,0 +1,124 @@
+<div class="p-6">
+    <!-- Title -->
+    <h3 id="formTitle" class="text-2xl font-bold text-blue-800 mb-4"></h3>
+
+    <!-- Step Buttons -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="mb-6 flex items-center space-x-2">
+        <button id="btnStep1" class="relative px-4 py-2 rounded-md bg-blue-600 text-white transition-all overflow-hidden group">
+            <span class="relative z-10">Step 1: Basic Details</span>
+            <span class="absolute inset-0 bg-yellow-400 scale-x-0 group-hover:scale-x-100 transition-transform origin-left z-0"></span>
+        </button>
+        <button id="btnStep2" class="relative px-4 py-2 rounded-md bg-yellow-400 text-gray-900 transition-all overflow-hidden group">
+            <span class="relative z-10">Step 2: Official Info</span>
+            <span class="absolute inset-0 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left z-0"></span>
+        </button>
+        </div>
+
+        <button onclick="window.navigation.navigateToSection('current-personnel', 'Current Personnel')" 
+            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+            Current Personnel
+        </button>
+    </div>
+
+    <!-- Form -->
+    <form id="personnelForm" class="space-y-6">
+      <!-- Step 1 Fields -->
+      <div id="step1" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+      <!-- Step 2 Fields -->
+      <div id="step2" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <input type="date" placeholder="Date Employed" class="border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        <input type="text" placeholder="Last Position" class="border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        <input type="text" placeholder="Tax" class="border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        <input type="text" placeholder="Military/Civilian" class="border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        <input type="text" placeholder="Grade Type" class="border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        <input type="text" placeholder="Grade Level/Step" class="border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        <select class="border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select Bank</option>
+        </select>
+        <input type="text" placeholder="Account Number" class="border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+      </div>
+
+      <!-- Actions -->
+      <div class="col-span-full flex justify-end space-x-4 pt-4">
+        <button type="button" id="cancelBtn" class="px-6 py-2 bg-gray-400 hover:bg-gray-500 rounded-lg text-white">Cancel</button>
+        <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white">Submit</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+  (function(){
+    const formTitle = "";
+    const fieldsStep1 = [
+      "Pensioner Number","Rank","Surname","First Name","Middle Name","Date of Birth",
+      "Gender","Marital Status","Religion","Tribe","State","Local Government","Home Address",
+      "Place of Birth","Email Address","Phone","Division","Last Location","Directorate",
+      "Geo Political Zone","Passport Photograph"
+    ];
+
+    const step1Container = document.getElementById("step1");
+    const step2Container = document.getElementById("step2");
+    const btnStep1 = document.getElementById("btnStep1");
+    const btnStep2 = document.getElementById("btnStep2");
+    const formTitleEl = document.getElementById("formTitle");
+    const cancelBtn = document.getElementById("cancelBtn");
+
+    // Render Step 1 inputs dynamically
+    function renderStep1() {
+      step1Container.innerHTML = fieldsStep1.map(field => {
+        if (["Rank","State","Local Government","Last Location","Geo Political Zone"].includes(field)) {
+          return `<select class="border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"><option>${field}</option></select>`;
+        }
+        if (field === "Passport Photograph") {
+          return `<input type="file" class="border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`;
+        }
+        if (field === "Date of Birth") {
+          return `<input type="date" placeholder="${field}" class="border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`;
+        }
+        return `<input type="text" placeholder="${field}" class="border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`;
+      }).join("");
+    }
+
+    // Toggle steps
+    function toggleStep(step){
+      if(step === 1){
+        step1Container.classList.remove("hidden");
+        step2Container.classList.add("hidden");
+        btnStep1.classList.add("bg-blue-600","text-white");
+        btnStep1.classList.remove("bg-yellow-400","text-gray-900");
+        btnStep2.classList.add("bg-yellow-400","text-gray-900");
+        btnStep2.classList.remove("bg-blue-600","text-white");
+      } else {
+        step1Container.classList.add("hidden");
+        step2Container.classList.remove("hidden");
+        btnStep2.classList.add("bg-blue-600","text-white");
+        btnStep2.classList.remove("bg-yellow-400","text-gray-900");
+        btnStep1.classList.add("bg-yellow-400","text-gray-900");
+        btnStep1.classList.remove("bg-blue-600","text-white");
+      }
+    }
+
+    // Cancel
+    function cancelForm(){
+      document.getElementById("personnelForm").reset();
+      toggleStep(1);
+      if (typeof window.showSection === "function") {
+        showSection("Personnel Profile");
+      } else {
+        alert("Form cancelled.");
+      }
+    }
+
+    // Init
+    formTitleEl.textContent = formTitle;
+    renderStep1();
+    toggleStep(1);
+
+    // Events
+    btnStep1.addEventListener("click", () => toggleStep(1));
+    btnStep2.addEventListener("click", () => toggleStep(2));
+    cancelBtn.addEventListener("click", cancelForm);
+  })();
+  </script>

@@ -1,0 +1,119 @@
+<div class="p-6 flex justify-center">
+  <div class=" p-8 w-full max-w-2xl">
+    <div class="mb-12 w-full flex justify-between border-b-2">
+        <h2 class=" text-blue-600 font-semibold lg:text-lg"> First ensure you have saved payroll files</h2>
+        <button onclick="window.navigation.navigateToSection('save-payroll-files', 'Save Payroll Files')" class="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">
+        Save Payroll Files
+        </button>
+    </div>
+
+    <div class="flex rounded-full bg-gray-200 p-1 mb-6 ">
+      <button id="allToggle" class="flex-1 px-4 py-2 text-sm lg:text-lg font-medium rounded-full text-gray-900 shadow transition-colors duration-200">
+        All
+      </button>
+      <button id="personnelToggle" class="flex-1 px-4 py-2 text-sm lg:text-lg font-medium rounded-full text-gray-500 hover:text-gray-900 transition-colors duration-200">
+        Personnel
+      </button>
+    </div>
+
+    <form id="changesForm" class="space-y-6">
+      <div id="personnelSelectWrapper" class="hidden">
+        <label for="personnel" class="block text-sm font-medium text-gray-700 mb-1 lg:text-lg">Select Personnel</label>
+        <select id="personnel" class="w-full bg-transparent border-gray-300 rounded-lg shadow-sm px-4 py-2 text-gray-900 focus:ring-blue-500 focus:border-blue-500">
+          <option value="">-- Choose Personnel --</option>
+          <option value="EMP001">NN001</option>
+          <option value="EMP002">NN002</option>
+          <option value="EMP003">NN003</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="startPeriod" class="block text-sm font-medium text-gray-700 mb-1 lg:text-lg">Start Period</label>
+        <input id="startPeriod" type="date" class="w-full bg-transparent border-gray-300 rounded-lg shadow-sm px-4 py-2 text-gray-900 focus:ring-blue-500 focus:border-blue-500"/>
+      </div>
+
+      <div>
+        <label for="endPeriod" class="block text-sm font-medium text-gray-700 mb-1 lg:text-lg">End Period</label>
+        <input id="endPeriod" type="date" class="w-full bg-transparent border-gray-300 rounded-lg shadow-sm px-4 py-2 text-gray-900 focus:ring-blue-500 focus:border-blue-500"/>
+      </div>
+
+      <div class="flex justify-end space-x-4 pt-4">
+        <button type="button" id="cancelBtn" class="px-6 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors duration-200">
+          Cancel
+        </button>
+        <button type="submit" id="printChangesBtn" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200">
+          Print
+        </button>
+      </div>
+    </form>
+
+    <div id="saveStatus" class="mt-6 hidden text-center">
+    <div class="flex justify-center mb-3">
+        <div class="w-6 h-6 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <p class="text-gray-700">Printing Data, please wait...</p>
+    </div>
+
+    <!-- Confirmation (hidden initially) -->
+    <div id="saveConfirm" class="mt-6 hidden text-center">
+     <div class="flex justify-center mb-3">
+        <div class="bg-green-500 text-white p-3 rounded-full shadow">✔</div>
+     </div>
+     <p class="text-green-700 font-semibold mb-4">Data Printed successfully! Proceed to print Input Variable Report</p>
+        
+        <!-- Download Backup Button -->
+     <button onclick="window.navigation.navigateToSection('input-variable-report', 'Input Variable Report')" class="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">
+        Input Variable Report
+     </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const allToggle = document.getElementById("allToggle");
+  const personnelToggle = document.getElementById("personnelToggle");
+  const personnelSelectWrapper = document.getElementById("personnelSelectWrapper");
+  const btn = document.getElementById("printChangesBtn");
+  const status = document.getElementById("saveStatus");
+  const confirm = document.getElementById("saveConfirm");
+
+  function switchMode(mode) {
+    if (mode === "all") {
+      personnelSelectWrapper.classList.add("hidden");
+      allToggle.classList.add("bg-yellow-50", "text-gray-900", "shadow");
+      allToggle.classList.remove("text-gray-500", "hover:text-gray-900");
+      personnelToggle.classList.remove("bg-yellow-50", "text-gray-900", "shadow");
+      personnelToggle.classList.add("text-gray-500", "hover:text-gray-900");
+    } else {
+      personnelSelectWrapper.classList.remove("hidden");
+      personnelToggle.classList.add("bg-yellow-50", "text-gray-900", "shadow");
+      personnelToggle.classList.remove("text-gray-500", "hover:text-gray-900");
+      allToggle.classList.remove("bg-yellow-50", "text-gray-900", "shadow");
+      allToggle.classList.add("text-gray-500", "hover:text-gray-900");
+    }
+  }
+
+  btn.addEventListener("click", () => {
+    // Hide confirm, show status
+    confirm.classList.add("hidden");
+    status.classList.remove("hidden");
+
+    // Simulate save process
+    setTimeout(() => {
+      status.classList.add("hidden");
+      confirm.classList.remove("hidden");
+    }, 2000);
+  });
+
+  allToggle.addEventListener("click", () => switchMode("all"));
+  personnelToggle.addEventListener("click", () => switchMode("personnel"));
+
+  document.getElementById("cancelBtn").addEventListener("click", () => {
+    document.getElementById("changesForm").reset();
+  });
+
+  // Default mode: All
+  switchMode("all");
+})();
+</script>

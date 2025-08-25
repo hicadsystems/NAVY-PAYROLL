@@ -1,8 +1,34 @@
  <!-- Change Payroll Class -->
-  <div class="p-6">
-    <h3 class="text-lg font-semibold text-gray-800 mb-3">Change Payroll Class</h3>
-    <div class="flex space-x-3 wrap">
-      <input type="text" placeholder="Old Class" class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-yellow-500" />
-      <input type="text" placeholder="New Class" class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
-    </div>
+<div class="p-6">
+  <div class="flex justify-end mb-4">
+    <button onclick="window.navigation.navigateToSection('payroll-class-setup', 'Setup Payroll Class')" 
+      class="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">
+      Add Payroll Class
+    </button>
   </div>
+
+  <p class="text-gray-600 font-semibold mb-6 lg:text-lg">Select personnel and assign them to a new payroll class.</p>
+
+  <div class="flex space-x-3 wrap">
+    <form id="changesForm" class="space-y-4">
+      <select name="personnel" id="personnel" 
+        class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+        <option value="">Select Personnel</option>
+        <option value="person1">Personnel 1</option>
+        <option value="person2">Personnel 2</option>
+      </select>
+
+      <select name="newClass" id="newClass" 
+        class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+        <option value="">Select New Class</option>
+        <option value="class1">Class 1</option>
+        <option value="class2">Class 2</option>
+      </select>
+
+      <button type="submit" 
+        class="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">
+        Change Payroll Class
+      </button>
+    </form>
+  </div>
+</div>

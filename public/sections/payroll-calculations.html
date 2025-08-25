@@ -1,0 +1,109 @@
+<!-- Payroll Calculation Section -->
+<div class="p-6">
+  <div class="p-6 w-full max-w-md mx-auto">
+    <!-- Current Month & Year -->
+    <div class="mb-4">
+        <!-- Processing Month -->
+        <div class="mb-4">
+        <label for="processingMonth" class="block text-sm font-medium text-gray-700">
+            Processing Month
+        </label>
+        <input id="processingMonth" type="text" readonly
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 text-gray-700 font-semibold" />
+        </div>
+
+        <!-- Processing Year -->
+        <div class="mb-4">
+        <label for="processingYear" class="block text-sm font-medium text-gray-700">
+            Processing Year
+        </label>
+        <input id="processingYear" type="text" readonly
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 text-gray-700 font-semibold" />
+        </div>
+    </div>
+
+    <!-- Calculate Button -->
+    <button id="calculateBtn"
+      class="w-full py-2 px-6 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">
+      Calculate Payroll
+    </button>
+  </div>
+</div>
+
+<!-- Calculation Modal -->
+<div id="calcModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg p-6 w-96 text-center">
+    <h3 class="text-lg font-semibold mb-4 text-gray-800">Calculating Payroll...</h3>
+
+    <!-- Loader Bar -->
+    <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
+      <div id="progressBar" class="bg-blue-600 h-3 rounded-full transition-all duration-300" style="width: 0%;"></div>
+    </div>
+
+    <p id="progressText" class="text-gray-600 text-sm">Please wait...</p>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="calcSuccessModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg p-6 w-96 text-center">
+    <div class="text-green-600 mb-3">
+      <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+    <h3 class="text-lg font-semibold mb-2 text-gray-800">Payroll Calculation Successful</h3>
+    <p class="text-gray-600">The payroll for the current month has been calculated.</p>
+    <button id="closeCalcSuccessBtn" class="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+      OK
+    </button>
+  </div>
+</div>
+
+<script>
+  // Autofill current month and year
+    const processingMonthInput = document.getElementById("processingMonth");
+    const processingYearInput = document.getElementById("processingYear");
+
+    const now = new Date();
+    const month = now.toLocaleString("default", { month: "long" });
+    const year = now.getFullYear();
+
+    // Fill into two separate readonly inputs
+    processingMonthInput.value = month;
+    processingYearInput.value = year;
+
+  const calcModal = document.getElementById("calcModal");
+  const successModal = document.getElementById("calcSuccessModal");
+  const progressBar = document.getElementById("progressBar");
+  const progressText = document.getElementById("progressText");
+
+  // Handle calculate button
+  document.getElementById("calculateBtn").addEventListener("click", () => {
+    calcModal.classList.remove("hidden");
+
+    let progress = 0;
+    progressBar.style.width = "0%";
+    progressText.textContent = "Starting calculation...";
+
+    const interval = setInterval(() => {
+      progress += 10;
+      progressBar.style.width = progress + "%";
+      progressText.textContent = `Calculating... ${progress}%`;
+
+      if (progress >= 100) {
+        clearInterval(interval);
+        calcModal.classList.add("hidden");
+        successModal.classList.remove("hidden");
+      }
+    }, 300); // speed (300ms per step = 3s total)
+  });
+
+
+    document.getElementById("closeCalcSuccessBtn").addEventListener("click", () => {
+        successModal.classList.add("hidden");
+    });
+
+    document.getElementById("processingMonth").value = monthNames[now.getMonth()];
+    document.getElementById("processingYear").value = now.getFullYear();
+</script>

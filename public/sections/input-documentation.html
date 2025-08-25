@@ -1,0 +1,427 @@
+<!-- Input Documentation Section -->
+<div class="p-6">
+  <div class="p-6">
+    
+    
+    <!-- Add New Button -->
+    <div class="mb-4 flex items-center justify-between">
+      <h3 class="text-xl font-semibold text-gray-800 mb-4">Input Documentation Form</h3>
+      <button type="button" id="addNewBtn"
+        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow">
+        + Add New
+      </button>
+    </div>
+
+    <!-- Add New Form -->
+    <div id="addNewForm" class="hidden my-6">
+      <h4 class="text-lg font-semibold text-yellow-600 mb-4">Add New Record</h4>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+            <label for="newName" class="block text-sm font-medium text-gray-700">Select Name</label>
+            <select id="newName" name="newName" 
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+            <option value="">-- Select --</option>
+            <option value="empl001">Mr Ayo</option>
+            <option value="empl002">Ms Jane</option>
+            <option value="empl003">Mr Michael</option>
+            <!-- Replace with DB-driven options -->
+            </select>
+        </div>
+        <div>
+          <label for="newYear" class="block text-sm font-medium text-gray-700">Year</label>
+          <input id="newYear" type="text" placeholder="Enter year"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div>
+          <label for="newMonth" class="block text-sm font-medium text-gray-700">Month</label>
+          <select id="newMonth"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+            <option value="">-- Select Month --</option>
+            <option value="January">January</option>
+            <option value="February">February</option>
+            <option value="March">March</option>
+            <option value="April">April</option>
+            <option value="May">May</option>
+            <option value="June">June</option>
+            <option value="July">July</option>
+            <option value="August">August</option>
+            <option value="September">September</option>
+            <option value="October">October</option>
+            <option value="November">November</option>
+            <option value="December">December</option>
+          </select>
+        </div>
+        <div>
+          <label for="newRef" class="block text-sm font-medium text-gray-700">Reference No</label>
+          <input id="newRef" type="text" placeholder="Enter reference"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div class="md:col-span-2">
+          <label for="newComments" class="block text-sm font-medium text-gray-700">Comments</label>
+          <input id="newComments" type="text" placeholder="Enter comments"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
+        </div>
+      </div>
+
+      <!-- Add New Action Buttons -->
+      <div class="flex justify-end space-x-4 pt-4">
+        <button type="button" id="saveNewBtn"
+          class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow">
+          Save
+        </button>
+        <button type="button" id="cancelNewBtn"
+          class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg shadow">
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <form id="inputDocForm" class="space-y-4">
+      <!-- Name Dropdown - Always Visible -->
+      <div>
+        <label for="docName" class="block text-sm font-medium text-gray-700">Select Name</label>
+        <select id="docName" name="docName" 
+          class="w-full lg:w-1/2 md:w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+          <option value="">-- Select --</option>
+          <option value="empl001">Mr Ayo</option>
+          <option value="empl002">Ms Jane</option>
+          <option value="empl003">Mr Michael</option>
+          <!-- Replace with DB-driven options -->
+        </select>
+      </div>
+
+      <!-- Form Fields -->
+      <div id="formFields" class="hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="docYear" class="block text-sm font-medium text-gray-700">Year</label>
+            <input id="docYear" type="text" placeholder="Year"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" readonly />
+          </div>
+          <div>
+            <label for="docMonth" class="block text-sm font-medium text-gray-700">Month</label>
+            <select id="docMonth"  placeholder="Month"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" disabled>
+              <option value="">-- Select Month --</option>
+              <option value="January">January</option>
+              <option value="February">February</option>
+              <option value="March">March</option>
+              <option value="April">April</option>
+              <option value="May">May</option>
+              <option value="June">June</option>
+              <option value="July">July</option>
+              <option value="August">August</option>
+              <option value="September">September</option>
+              <option value="October">October</option>
+              <option value="November">November</option>
+              <option value="December">December</option>
+            </select>
+          </div>
+          <div>
+            <label for="docRef" class="block text-sm font-medium text-gray-700">Reference No</label>
+            <input id="docRef" type="text" placeholder="Reference No"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" readonly />
+          </div>
+          <div>
+            <label for="docComments" class="block text-sm font-medium text-gray-700">Comments</label>
+            <input id="docComments" type="text" placeholder="Comments"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" readonly />
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end space-x-4 pt-4">
+          <!-- View Mode Buttons -->
+          <div id="viewButtons" class="flex space-x-4">
+            <button type="button" id="printBtn"
+              class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow">
+              Print
+            </button>
+            <button type="button" id="printAllBtn"
+              class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow">
+              Print All
+            </button>
+            <button type="button" id="editBtn"
+              class="px-6 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg shadow">
+              Edit
+            </button>
+          </div>
+
+          <!-- Edit Mode Buttons -->
+          <div id="editButtons" class="hidden flex space-x-4">
+            <button type="button" id="saveBtn"
+              class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow">
+              Save
+            </button>
+            <button type="button" id="cancelBtn"
+              class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg shadow">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 hidden z-50">
+  <div class="bg-white p-6 rounded-xl shadow-xl text-center">
+    <div id="loadingSpinner" class="flex items-center justify-center mb-4">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mr-2"></div>
+      <span class="text-gray-700 font-medium">Saving...</span>
+    </div>
+    <div id="successContent" class="hidden">
+      <svg class="h-12 w-12 text-green-600 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="2"
+        viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+      <p class="text-lg font-semibold text-gray-800">Saved Successfully!</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // State management
+  let isEditing = false;
+  let originalData = {};
+
+  // Simulated DB records
+  const docData = {
+    "empl001": { year: "2023", month: "April", ref: "REF-001", comments: "Increament in salary grade" },
+    "empl002": { year: "2025", month: "August", ref: "REF-002", comments: "Deduction Adjusted" },
+    "empl003": { year: "2020", month: "July", ref: "REF-003", comments: "Pay His July 2020 arrears" }
+  };
+
+  // DOM elements
+  const docNameSelect = document.getElementById("docName");
+  const formFields = document.getElementById("formFields");
+  const addNewForm = document.getElementById("addNewForm");
+  const addNewBtn = document.getElementById("addNewBtn");
+  const viewButtons = document.getElementById("viewButtons");
+  const editButtons = document.getElementById("editButtons");
+  const successModal = document.getElementById("successModal");
+  const loadingSpinner = document.getElementById("loadingSpinner");
+  const successContent = document.getElementById("successContent");
+
+  // Field elements
+  const docYear = document.getElementById("docYear");
+  const docMonth = document.getElementById("docMonth");
+  const docRef = document.getElementById("docRef");
+  const docComments = document.getElementById("docComments");
+
+  // Populate fields on name selection
+  docNameSelect.addEventListener("change", function () {
+    const val = this.value;
+    if (val && docData[val]) {
+      // Show form fields
+      formFields.classList.remove("hidden");
+      addNewForm.classList.add("hidden");
+      
+      // Populate data
+      docYear.value = docData[val].year;
+      docMonth.value = docData[val].month;
+      docRef.value = docData[val].ref;
+      docComments.value = docData[val].comments;
+      
+      // Reset to view mode
+      setViewMode();
+    } else {
+      formFields.classList.add("hidden");
+      clearFields();
+    }
+  });
+
+  // Add New functionality
+  addNewBtn.addEventListener("click", function () {
+    formFields.classList.add("hidden");
+    addNewForm.classList.remove("hidden");
+    docNameSelect.value = "";
+    clearNewFields();
+  });
+
+  // Edit functionality
+  document.getElementById("editBtn").addEventListener("click", function () {
+    setEditMode();
+  });
+
+  // Save functionality
+  document.getElementById("saveBtn").addEventListener("click", function () {
+    saveChanges();
+  });
+
+  // Cancel functionality
+  document.getElementById("cancelBtn").addEventListener("click", function () {
+    cancelEdit();
+  });
+
+  // Save New functionality
+  document.getElementById("saveNewBtn").addEventListener("click", function () {
+    saveNewRecord();
+  });
+
+  // Cancel New functionality
+  document.getElementById("cancelNewBtn").addEventListener("click", function () {
+    cancelNew();
+  });
+
+  // Print functions
+  document.getElementById("printBtn").addEventListener("click", function () {
+    const selectedName = docNameSelect.options[docNameSelect.selectedIndex].text;
+    alert(`Printing documentation for ${selectedName}...`);
+  });
+
+  document.getElementById("printAllBtn").addEventListener("click", function () {
+    const selectedName = docNameSelect.options[docNameSelect.selectedIndex].text;
+    alert(`Printing all comments for ${selectedName}...`);
+  });
+
+  // Helper functions
+  function setViewMode() {
+    isEditing = false;
+    viewButtons.classList.remove("hidden");
+    editButtons.classList.add("hidden");
+    
+    // Make fields readonly
+    docYear.readOnly = true;
+    docMonth.disabled = true;
+    docRef.readOnly = true;
+    docComments.readOnly = true;
+    
+    // Remove edit styling
+    [docYear, docMonth, docRef, docComments].forEach(field => {
+      field.classList.remove("bg-yellow-50", "border-yellow-300");
+    });
+  }
+
+  function setEditMode() {
+    isEditing = true;
+    
+    // Store original data
+    originalData = {
+      year: docYear.value,
+      month: docMonth.value,
+      ref: docRef.value,
+      comments: docComments.value
+    };
+    
+    viewButtons.classList.add("hidden");
+    editButtons.classList.remove("hidden");
+    
+    // Make fields editable
+    docYear.readOnly = false;
+    docMonth.disabled = false;
+    docRef.readOnly = false;
+    docComments.readOnly = false;
+    
+    // Add edit styling
+    [docYear, docMonth, docRef, docComments].forEach(field => {
+      field.classList.add("bg-yellow-50", "border-yellow-300");
+    });
+  }
+
+  function saveChanges() {
+    showSuccessModal();
+    
+    // Update the data in our simulated DB
+    const selectedValue = docNameSelect.value;
+    if (selectedValue && docData[selectedValue]) {
+      docData[selectedValue] = {
+        year: docYear.value,
+        month: docMonth.value,
+        ref: docRef.value,
+        comments: docComments.value
+      };
+    }
+    
+    setTimeout(() => {
+      setViewMode();
+      hideSuccessModal();
+    }, 2000);
+  }
+
+  function cancelEdit() {
+    // Restore original data
+    docYear.value = originalData.year;
+    docMonth.value = originalData.month;
+    docRef.value = originalData.ref;
+    docComments.value = originalData.comments;
+    
+    setViewMode();
+  }
+
+  function saveNewRecord() {
+    const newName = document.getElementById("newName").value;
+    const newYear = document.getElementById("newYear").value;
+    const newMonth = document.getElementById("newMonth").value;
+    const newRef = document.getElementById("newRef").value;
+    const newComments = document.getElementById("newComments").value;
+    
+    if (!newName || !newYear || !newMonth || !newRef) {
+      alert("Please fill in all required fields");
+      return;
+    }
+    
+    showSuccessModal();
+    
+    // Generate new employee ID
+    const newId = "empl" + String(Object.keys(docData).length + 1).padStart(3, '0');
+    
+    // Add to data
+    docData[newId] = {
+      year: newYear,
+      month: newMonth,
+      ref: newRef,
+      comments: newComments
+    };
+    
+    // Add to dropdown
+    const newOption = document.createElement("option");
+    newOption.value = newId;
+    newOption.textContent = newName;
+    docNameSelect.appendChild(newOption);
+    
+    setTimeout(() => {
+      cancelNew();
+      hideSuccessModal();
+    }, 2000);
+  }
+
+  function cancelNew() {
+    addNewForm.classList.add("hidden");
+    formFields.classList.add("hidden");
+    clearNewFields();
+  }
+
+  function clearFields() {
+    docYear.value = "";
+    docMonth.value = "";
+    docRef.value = "";
+    docComments.value = "";
+  }
+
+  function clearNewFields() {
+    document.getElementById("newName").value = "";
+    document.getElementById("newYear").value = "";
+    document.getElementById("newMonth").value = "";
+    document.getElementById("newRef").value = "";
+    document.getElementById("newComments").value = "";
+  }
+
+  function showSuccessModal() {
+    successModal.classList.remove("hidden");
+    loadingSpinner.classList.remove("hidden");
+    successContent.classList.add("hidden");
+    
+    setTimeout(() => {
+      loadingSpinner.classList.add("hidden");
+      successContent.classList.remove("hidden");
+    }, 1500);
+  }
+
+  function hideSuccessModal() {
+    successModal.classList.add("hidden");
+    loadingSpinner.classList.remove("hidden");
+    successContent.classList.add("hidden");
+  }
+</script>

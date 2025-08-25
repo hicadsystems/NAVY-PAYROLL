@@ -1,5 +1,190 @@
 <!-- Payroll Class Setup -->
-  <div class="p-6">
-    <h3 class="text-lg font-semibold text-gray-800 mb-3">Payroll Class Setup</h3>
-    <input type="text" placeholder="Enter Payroll Class" class=" border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
+<div class="p-6 ">
+  <!-- Form -->
+  <div class="flex gap-2 mb-6 ">
+    <input id="payrollCode" type="text" placeholder="Enter Payroll Code"
+      class="flex-1 border bg-transparent border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
+    <input id="payrollDesc" type="text" placeholder="Enter Payroll Description"
+      class="flex-1 border bg-transparent border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
+    <button id="addPayrollBtn"
+      class="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">
+      Add Payroll Class
+    </button>
+
+    <button onclick="window.navigation.navigateToSection('change-payroll-class', 'Change Payroll Class')" class="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">
+      Change Payroll Class
+    </button>
   </div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto">
+    <table class="min-w-full border border-gray-300 rounded-lg text-sm">
+      <thead class="bg-blue-100 text-blue-900">
+        <tr>
+          <th class="py-2 px-4 border">Payroll Code</th>
+          <th class="py-2 px-4 border">Description</th>
+          <th class="py-2 px-4 border">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="payrollTableBody" class="text-center">
+        <!-- Dynamic rows here -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+  <div class="bg-yellow-100 rounded-lg shadow-lg p-6 w-96">
+    <h3 class="text-lg font-semibold mb-4 text-gray-800">Confirm Delete</h3>
+    <p class="text-gray-600 mb-6">Are you sure you want to delete this payroll class?</p>
+    <div class="flex justify-end space-x-3">
+      <button id="cancelDeleteBtn" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+      <button id="confirmDeleteBtn" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+  <div class="bg-white rounded-lg shadow-lg p-6 w-80 text-center">
+    <div id="spinner" class="mx-auto mb-4 w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    <div id="checkmark" class="hidden mx-auto mb-4 text-green-600 text-4xl">✔</div>
+    <p id="successMessage" class="text-gray-800 font-medium">Processing...</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  const addBtn = document.getElementById("addPayrollBtn");
+  const codeInput = document.getElementById("payrollCode");
+  const descInput = document.getElementById("payrollDesc");
+  const tableBody = document.getElementById("payrollTableBody");
+
+  const deleteModal = document.getElementById("deleteModal");
+  const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+  const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+
+  const successModal = document.getElementById("successModal");
+  const spinner = document.getElementById("spinner");
+  const checkmark = document.getElementById("checkmark");
+  const successMessage = document.getElementById("successMessage");
+
+  let rowToDelete = null;
+
+  // Show success modal (spinner → tick)
+  function showSuccess(message) {
+    spinner.classList.remove("hidden");
+    checkmark.classList.add("hidden");
+    successMessage.textContent = "Processing...";
+    successModal.classList.remove("hidden");
+
+    setTimeout(() => {
+      spinner.classList.add("hidden");
+      checkmark.classList.remove("hidden");
+      successMessage.textContent = message;
+    }, 1000);
+
+    setTimeout(() => {
+      successModal.classList.add("hidden");
+    }, 2500);
+  }
+
+  function createRow(code, desc) {
+    const tr = document.createElement("tr");
+    tr.className = "hover:bg-gray-50";
+
+    tr.innerHTML = `
+      <td class="border py-2 px-4">${code}</td>
+      <td class="border py-2 px-4">${desc}</td>
+      <td class="border py-2 px-4 space-x-2">
+        <button class="text-blue-600 hover:underline editBtn">Edit</button>
+        <button class="text-red-600 hover:underline deleteBtn">Delete</button>
+      </td>
+    `;
+
+    // Edit inline
+    tr.querySelector(".editBtn").addEventListener("click", (e) => {
+      const editBtn = e.target;
+      const codeCell = tr.children[0];
+      const descCell = tr.children[1];
+
+      if (editBtn.textContent === "Edit") {
+        const currentCode = codeCell.textContent;
+        const currentDesc = descCell.textContent;
+
+        codeCell.innerHTML = `<input type="text" value="${currentCode}" class="border px-2 py-1 rounded w-full"/>`;
+        descCell.innerHTML = `<input type="text" value="${currentDesc}" class="border px-2 py-1 rounded w-full"/>`;
+
+        const codeInputEl = codeCell.querySelector("input");
+        const descInputEl = descCell.querySelector("input");
+
+        // Save on Enter
+        [codeInputEl, descInputEl].forEach(input =>
+          input.addEventListener("keydown", (ev) => {
+            if (ev.key === "Enter") {
+              editBtn.click();
+            }
+          })
+        );
+
+        editBtn.textContent = "Save";
+      } else {
+        const newCode = codeCell.querySelector("input").value.trim();
+        const newDesc = descCell.querySelector("input").value.trim();
+
+        if (!newCode || !newDesc) {
+          alert("Both fields are required");
+          return;
+        }
+
+        codeCell.textContent = newCode;
+        descCell.textContent = newDesc;
+        editBtn.textContent = "Edit";
+
+        showSuccess("Saved Successfully");
+      }
+    });
+
+    // Delete
+    tr.querySelector(".deleteBtn").addEventListener("click", () => {
+      rowToDelete = tr;
+      deleteModal.classList.remove("hidden");
+    });
+
+    return tr;
+  }
+
+  addBtn.addEventListener("click", () => {
+    const code = codeInput.value.trim();
+    const desc = descInput.value.trim();
+
+    if (!code || !desc) {
+      alert("Please enter both Payroll Code and Description");
+      return;
+    }
+
+    tableBody.appendChild(createRow(code, desc));
+    showSuccess("Added Successfully");
+
+    codeInput.value = "";
+    descInput.value = "";
+  });
+
+  // Cancel delete
+  cancelDeleteBtn.addEventListener("click", () => {
+    rowToDelete = null;
+    deleteModal.classList.add("hidden");
+  });
+
+  // Confirm delete
+  confirmDeleteBtn.addEventListener("click", () => {
+    if (rowToDelete) {
+      rowToDelete.remove();
+      rowToDelete = null;
+      deleteModal.classList.add("hidden"); // ✅ closes modal immediately
+      showSuccess("Deleted Successfully");
+    }
+  });
+})();
+</script>

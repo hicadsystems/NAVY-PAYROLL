@@ -11,7 +11,7 @@
         </button>
 
         <button onclick="window.navigation.navigateToSection('old-personnel', 'Old Personnel')" 
-        class="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700">
+        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
         View Old Personnel
         </button>
     </div>
@@ -73,6 +73,95 @@
       <button id="next-page" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Next</button>
     </div>
   </div>
+
+    <!-- View Employee Modal -->
+  <div id="viewEmployeeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-96">
+      <h3 class="text-lg font-semibold mb-4 text-gray-800">Employee Details</h3>
+      <div id="viewEmployeeContent" class="space-y-2 text-gray-700"></div>
+      <div class="flex justify-end mt-6">
+        <button onclick="window.personnelManager.closeViewEmployee()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Close</button>
+      </div>
+    </div>
+  </div>
+
+<!-- Edit Employee Modal -->
+<div id="editEmployeeModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96">
+    <div class="p-4 border-b">
+      <h2 class="text-lg font-semibold">Edit Employee</h2>
+    </div>
+    <form id="editEmployeeForm" class="p-4 space-y-3">
+      <input type="hidden" id="editEmployeeId">
+
+      <div>
+        <label class="block text-sm font-medium">Name</label>
+        <input type="text" id="editEmployeeName" class="w-full border rounded px-2 py-1">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Department</label>
+        <select id="editEmployeeDept" class="w-full border rounded px-2 py-1">
+          <option value="Finance">Finance</option>
+          <option value="HR">HR</option>
+          <option value="IT">IT</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Position</label>
+        <input type="text" id="editEmployeePos" class="w-full border rounded px-2 py-1">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Status</label>
+        <select id="editEmployeeStatus" class="w-full border rounded px-2 py-1">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="suspended">Suspended</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Role</label>
+        <select id="editEmployeeRole" class="w-full border rounded px-2 py-1">
+          <option value="Payroll Officer">Payroll Officer</option>
+          <option value="Administration">Administration</option>
+          <option value="HR Manager">HR Manager</option>
+          <option value="Software Developer">View Only</option>
+        </select>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-3 border-t">
+        <button type="button" onclick="window.personnelManager.closeEditEmployee()" 
+                class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+        <button type="submit" 
+                class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+  <!-- Delete Employee Modal -->
+  <div id="deleteEmployeeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-96">
+      <h3 class="text-lg font-semibold mb-4 text-gray-800">Confirm Delete</h3>
+      <p class="text-gray-600 mb-6">Are you sure you want to delete this employee?</p>
+      <div class="flex justify-end space-x-3">
+        <button onclick="window.personnelManager.closeDeleteEmployee()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+        <button id="confirmDeleteEmployeeBtn" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Popup -->
+  <div id="successPopup" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 hidden z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg flex items-center space-x-3">
+      <div id="successSpinner" class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+      <span id="successMessage" class="text-gray-700">Processing...</span>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -103,17 +192,27 @@ class PersonnelManager {
   }
 
   setupEventListeners() {
-    document.getElementById('personnel-search').addEventListener('input', (e) => {
-      this.filterPersonnel();
-    });
+    const searchInput = document.getElementById('personnel-search');
+    const departmentFilter = document.getElementById('department-filter');
+    const statusFilter = document.getElementById('status-filter');
 
-    document.getElementById('department-filter').addEventListener('change', (e) => {
-      this.filterPersonnel();
-    });
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        this.filterPersonnel();
+      });
+    }
 
-    document.getElementById('status-filter').addEventListener('change', (e) => {
-      this.filterPersonnel();
-    });
+    if (departmentFilter) {
+      departmentFilter.addEventListener('change', (e) => {
+        this.filterPersonnel();
+      });
+    }
+
+    if (statusFilter) {
+      statusFilter.addEventListener('change', (e) => {
+        this.filterPersonnel();
+      });
+    }
   }
 
   filterPersonnel() {
@@ -180,29 +279,138 @@ class PersonnelManager {
     const start = (this.currentPage - 1) * this.recordsPerPage + 1;
     const end = Math.min(start + this.recordsPerPage - 1, total);
 
-    document.getElementById('showing-start').textContent = total > 0 ? start : 0;
-    document.getElementById('showing-end').textContent = end;
-    document.getElementById('total-records').textContent = total;
+    const showingStart = document.getElementById('showing-start');
+    const showingEnd = document.getElementById('showing-end');
+    const totalRecords = document.getElementById('total-records');
+
+    if (showingStart) showingStart.textContent = total > 0 ? start : 0;
+    if (showingEnd) showingEnd.textContent = end;
+    if (totalRecords) totalRecords.textContent = total;
   }
+
+  showSuccess(message) {
+    const popup = document.getElementById("successPopup");
+    const spinner = document.getElementById("successSpinner");
+    const text = document.getElementById("successMessage");
+
+    text.innerText = "Processing...";
+    spinner.classList.remove("hidden");
+    popup.classList.remove("hidden");
+
+    // simulate delay
+    setTimeout(() => {
+      spinner.classList.add("hidden");
+      text.innerHTML = `<span class="text-green-600 font-semibold">✔ ${message}</span>`;
+    }, 1000);
+
+    // hide after 2s
+    setTimeout(() => {
+      popup.classList.add("hidden");
+    }, 2500);
+  }
+
 
   viewEmployee(id) {
-    console.log('View employee:', id);
-    // Implement view functionality
+    const employee = this.personnel.find(p => p.id === id);
+    if (employee) {
+      document.getElementById("viewEmployeeContent").innerHTML = `
+        <p><strong>Name:</strong> ${employee.name}</p>
+        <p><strong>Department:</strong> ${employee.department}</p>
+        <p><strong>Position:</strong> ${employee.position}</p>
+        <p><strong>Status:</strong> ${employee.status}</p>
+        <p><strong>Role:</strong> ${employee.role}</p>
+        <p><strong>Email:</strong> ${employee.email}</p>
+        <p><strong>Phone:</strong> ${employee.phone}</p>
+      `;
+      document.getElementById("viewEmployeeModal").classList.remove("hidden");
+    }
   }
 
+  closeViewEmployee() {
+    document.getElementById("viewEmployeeModal").classList.add("hidden");
+  }
+
+
   editEmployee(id) {
-    console.log('Edit employee:', id);
-    // Implement edit functionality
+    const employee = this.personnel.find(p => p.id === id);
+    if (employee) {
+      document.getElementById("editEmployeeId").value = employee.id;
+      document.getElementById("editEmployeeName").value = employee.name;
+      document.getElementById("editEmployeeDept").value = employee.department;
+      document.getElementById("editEmployeePos").value = employee.position;
+      document.getElementById("editEmployeeStatus").value = employee.status;
+      document.getElementById("editEmployeeRole").value = employee.role;
+      document.getElementById("editEmployeeModal").classList.remove("hidden");
+    }
+  }
+
+  closeEditEmployee() {
+    document.getElementById("editEmployeeModal").classList.add("hidden");
   }
 
   deleteEmployee(id) {
-    if (confirm('Are you sure you want to delete this employee?')) {
-      this.personnel = this.personnel.filter(p => p.id !== id);
-      this.filterPersonnel();
-    }
+    this.deleteId = id; // store temporarily
+    document.getElementById("deleteEmployeeModal").classList.remove("hidden");
+  }
+
+  closeDeleteEmployee() {
+    this.deleteId = null;
+    document.getElementById("deleteEmployeeModal").classList.add("hidden");
+  };
+
+  // Method to reinitialize after DOM changes
+  reinitialize() {
+    this.setupEventListeners();
+    this.renderTable();
   }
 }
 
+// Save Edit
+document.getElementById("editEmployeeForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const id = document.getElementById("editEmployeeId").value;
+  const employee = window.personnelManager.personnel.find(p => p.id == id);
+  if (employee) {
+    employee.name = document.getElementById("editEmployeeName").value;
+    employee.department = document.getElementById("editEmployeeDept").value;
+    employee.position = document.getElementById("editEmployeePos").value;
+    employee.status = document.getElementById("editEmployeeStatus").value;
+    employee.role = document.getElementById("editEmployeeRole").value;
+    window.personnelManager.renderTable();
+    window.personnelManager.closeEditEmployee();
+    window.personnelManager.showSuccess("Employee updated successfully!");
+  }
+});
+
+// Confirm Delete
+document.getElementById("confirmDeleteEmployeeBtn").addEventListener("click", () => {
+  if (window.personnelManager.deleteId) {
+    window.personnelManager.personnel = window.personnelManager.personnel.filter(
+      p => p.id !== window.personnelManager.deleteId
+    );
+    window.personnelManager.filterPersonnel();
+    window.personnelManager.deleteId = null;
+    window.personnelManager.closeDeleteEmployee();
+    window.personnelManager.showSuccess("Employee deleted successfully!");
+  }
+});
+
 // Initialize when section loads
 const personnelManager = new PersonnelManager();
+
+// Initialize globally
+window.personnelManager = new PersonnelManager();
+
+// Make sure to attach to window object for global access
+if (!window.personnelManager) {
+  window.personnelManager = new PersonnelManager();
+} else {
+  // If it already exists, reinitialize it
+  window.personnelManager.reinitialize();
+}
+
+// Also expose as global variable for backward compatibility
+if (typeof personnelManager === 'undefined') {
+  const personnelManager = window.personnelManager;
+}
 </script>

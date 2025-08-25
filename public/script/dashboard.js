@@ -369,6 +369,19 @@ class NavigationSystem {
     if (mainContent) {
       mainContent.innerHTML = `
         <div class="mt-6">
+          <!-- Return to Dashboard Button -->
+          <div class="mb-4">
+            <button 
+              onclick="this.returnToDashboard()" 
+              class="bg-yellow-500 hover:bg-red-500 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+              </svg>
+              Return to Dashboard
+            </button>
+          </div>
+          
           <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
           <div class="bg-transparent rounded-xl p-6 shadow-sm border border-gray-100">
             <div class="flex items-center justify-center py-12">
@@ -457,10 +470,23 @@ class NavigationSystem {
     const mainContent = document.querySelector('main');
     if (mainContent) {
       mainContent.innerHTML = `
-        <div data-section="${this.currentSection}" class="mt-6">
+        <div class="mt-6">
           <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
           <div class="bg-white/10 rounded-xl shadow-lg border border-gray-100">
             ${content}
+          </div>
+
+          <!-- Return to Dashboard Button -->
+          <div class="my-12">
+            <button 
+              onclick="window.navigation.returnToDashboard()" 
+              class="bg-yellow-500 hover:bg-red-500 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+              </svg>
+              Return
+            </button>
           </div>
         </div>
       `;
@@ -512,9 +538,49 @@ class NavigationSystem {
               </button>
             </div>
           </div>
+
+          <!-- Return to Dashboard Button -->
+          <div class="mb-4">
+            <button 
+              onclick="window.navigation.returnToDashboard()" 
+              class="bg-yellow-500 hover:bg-red-500 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+              </svg>
+              Return to Dashboard
+            </button>
+          </div>
         </div>
       `;
     }
+  }
+
+  // New method to handle return to dashboard
+  returnToDashboard() {
+    // Clear current section
+    this.currentSection = null;
+    
+    // Update URL to remove hash
+    window.history.pushState({}, '', window.location.pathname);
+    
+    // Clear main content or redirect to dashboard
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+      // Option 1: Clear content and show dashboard
+      mainContent.innerHTML = `
+        <div class="mt-6">
+          <div class="text-center py-12">
+            <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">Dashboard</h2>
+            <p class="text-gray-600">Welcome back! Select a section from the sidebar to get started.</p>
+          </div>
+        </div>
+      `;
+     window.location.href = 'dashboard.html';
+    }
+    
+    // Update page title
+    document.title = 'HICAD — Dashboard';
   }
 
   updateHistory(sectionId, sectionName) {
@@ -533,6 +599,9 @@ class NavigationSystem {
           event.state.sectionId.replace('#', ''), 
           event.state.section
         );
+      } else {
+        // Handle back to dashboard
+        this.returnToDashboard();
       }
     });
   }

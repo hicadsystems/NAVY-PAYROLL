@@ -39,7 +39,6 @@
         <tr>
           <th class="border border-gray-300 px-4 py-3 text-left font-medium">User ID</th>
           <th class="border border-gray-300 px-4 py-3 text-left font-medium">Full Name</th>
-          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Department</th>
           <th class="border border-gray-300 px-4 py-3 text-left font-medium">Role</th>
           <th class="border border-gray-300 px-4 py-3 text-left font-medium">Status</th>
           <th class="border border-gray-300 px-4 py-3 text-center font-medium">Actions</th>
@@ -241,7 +240,6 @@ class PersonnelManager {
       <tr class="hover:bg-gray-50">
         <td class="border border-gray-300 px-4 py-2">${person.id}</td>
         <td class="border border-gray-300 px-4 py-2 font-medium">${person.name}</td>
-        <td class="border border-gray-300 px-4 py-2">${person.department}</td>
         <td class="border border-gray-300 px-4 py-2">${person.role}</td>
         <td class="border border-gray-300 px-4 py-2">
           <span class="px-2 py-1 rounded-full text-xs ${this.getStatusClass(person.status)}">
@@ -375,7 +373,7 @@ document.getElementById("editEmployeeForm").addEventListener("submit", (e) => {
     employee.role = document.getElementById("editEmployeeRole").value;
     window.personnelManager.renderTable();
     window.personnelManager.closeEditEmployee();
-    window.personnelManager.showSuccess("Employee updated successfully!");
+    window.personnelManager.showSuccess("User updated successfully!");
   }
 });
 
@@ -388,7 +386,7 @@ document.getElementById("confirmDeleteEmployeeBtn").addEventListener("click", ()
     window.personnelManager.filterPersonnel();
     window.personnelManager.deleteId = null;
     window.personnelManager.closeDeleteEmployee();
-    window.personnelManager.showSuccess("Employee deleted successfully!");
+    window.personnelManager.showSuccess("User deleted successfully!");
   }
 });
 

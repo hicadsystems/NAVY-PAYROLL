@@ -292,6 +292,76 @@ function repositionOpen(){
 window.addEventListener('resize', ()=>{ clearTimeout(t); t = setTimeout(repositionOpen, 120); });
 window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
 
+(function() {
+  let selectedPayrollClass = sessionStorage.getItem('currentPayrollClass') || '1';
+  
+  function getTimeOfDay() {
+      const hour = new Date().getHours();
+      if (hour >= 5 && hour < 12) {
+          return 'Morning';
+      } else if (hour >= 12 && hour < 16) {
+          return 'Afternoon';
+      } else if (hour >= 16 && hour < 21) {
+          return 'Evening';
+      } else {
+          return 'Night';
+      }
+  }
+
+  function updateGreeting() {
+      const greetingElement = document.getElementById('dynamicGreeting');
+      if (!greetingElement) return; // Only run on dashboard
+      
+      const timeOfDay = getTimeOfDay();
+      const greeting = `Good ${timeOfDay}, Welcome to Payroll ${selectedPayrollClass}`;
+      greetingElement.textContent = greeting;
+  }
+
+  function updateCurrentTime() {
+      const timeElement = document.getElementById('currentTime');
+      if (!timeElement) return; // Only run on dashboard
+      
+      const now = new Date();
+      const timeString = now.toLocaleString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+      });
+      timeElement.textContent = timeString;
+  }
+
+  // Global function for payroll section to call
+  window.changePayrollClass = function(newClass) {
+      selectedPayrollClass = newClass;
+      sessionStorage.setItem('currentPayrollClass', newClass);
+      updateGreeting();
+  };
+
+  // Initialize only if on dashboard
+  if (document.getElementById('dynamicGreeting')) {
+      updateGreeting();
+      updateCurrentTime();
+      
+      // Update time every second
+      setInterval(updateCurrentTime, 1000);
+      
+      // Update greeting every minute for time changes
+      setInterval(updateGreeting, 60000);
+      
+      // Check for payroll class changes from other sections
+      setInterval(function() {
+          const storedClass = sessionStorage.getItem('currentPayrollClass');
+          if (storedClass && storedClass !== selectedPayrollClass) {
+              selectedPayrollClass = storedClass;
+              updateGreeting();
+          }
+      }, 1000);
+  }
+})();
 
 // Navigation handler for submenu items
 class NavigationSystem {
@@ -655,3 +725,17 @@ document.addEventListener('DOMContentLoaded', function() {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = NavigationSystem;
 }
+
+function logout() {
+  // Clear user session data
+  sessionStorage.clear();
+  localStorage.clear();
+
+  // Redirect to login page
+  window.location.href = 'personnel-login.html';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Make logout function globally accessible
+  window.logout = logout;
+});

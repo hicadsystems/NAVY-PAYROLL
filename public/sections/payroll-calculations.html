@@ -98,7 +98,11 @@
       }
     }, 300); // speed (300ms per step = 3s total)
   });
-
+  
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
 
     document.getElementById("closeCalcSuccessBtn").addEventListener("click", () => {
         successModal.classList.add("hidden");

@@ -94,6 +94,7 @@
               style="position:absolute; left:100%; top:0; margin-left:3px; white-space:nowrap;">
                 <ul class="space-y-2 m-0 p-0 list-none">
                   <li><a href="#" data-section="payments-deductions" class="block px-3 py-1 rounded hover:bg-amber-50">Payments/Deductions</a></li>
+                  <li><a href="#" data-section="payments-deductions-upload" class="block px-3 py-1 rounded hover:bg-amber-50 whitespace-normal break-words w-56">Payments/Deductions(Batch Upload)</a></li>
                   <li><a href="#" data-section="variation-payments" class="block px-3 py-1 rounded hover:bg-amber-50">Variation to Payments/Deductions</a></li>
                   <li><a href="#" data-section="cumulative-payroll" class="block px-3 py-1 rounded hover:bg-amber-50">Cumulative Payroll Transfer</a></li>
                   <li><a href="#" data-section="input-documentation" class="block px-3 py-1 rounded hover:bg-amber-50">Input Documentation</a></li>
@@ -146,7 +147,7 @@
                   style="position:absolute; left:100%; top:0; margin-left:3px; white-space:nowrap;">
                 <ul class="space-y-2 m-0 p-0 list-none">
                   <li><a href="#" data-section="overtime-information" class="block px-3 py-1 rounded hover:bg-amber-50">Overtime Information</a></li>
-                  <li><a href="#" data-section="factory-branch" class="block px-3 py-1 rounded hover:bg-amber-50">Factory/Branch</a></li>
+                  <li><a href="#" data-section="command" class="block px-3 py-1 rounded hover:bg-amber-50">Command</a></li>
                   <li><a href="#" data-section="cash-payment" class="block px-3 py-1 rounded hover:bg-amber-50">Cash Payment</a></li>
                   <li><a href="#" data-section="tax-table-information" class="block px-3 py-1 rounded hover:bg-amber-50">Tax Table Information</a></li>
                   <li><a href="#" data-section="salary-scale-information" class="block px-3 py-1 rounded hover:bg-amber-50">Salary Scale Information</a></li>
@@ -224,7 +225,7 @@
         </nav>
 
         <div class="p-4">
-          <button class="w-full logout bg-amber-100/25 text-red-600 font-bold rounded py-2">Logout</button>
+          <button onclick="logout()" class="w-full logout bg-amber-100/25 text-red-600 font-bold rounded py-2">Logout</button>
         </div>
       </aside>
 
@@ -233,7 +234,14 @@
 
         <!-- Page title -->
         <div class="mt-6">
-          <p class="text-2xl lg:text-3xl font-bold text-navy text-center">Good Morning, Welcome to Payroll 2</p>
+          <p id="dynamicGreeting" class="text-2xl lg:text-3xl font-bold text-navy text-center text-blue-900">
+              Good Morning, Welcome to Payroll 1
+          </p>
+        </div>
+
+        <div class="text-center my-2">
+          <p id="currentTime" class="text-yellow-600 text-base font-semibold lg:text-lg tracking-wide">
+          </p>
         </div>
 
         <!-- Stats container -->

@@ -1,8 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personnel Management Form</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
 <!-- TABS -->
 <div class="p-6">
-  <div class="flex justify-between bg-white/50 rounded-xl border border-amber-50 shadow-sm p-2">
+  <div class="flex justify-between">
     <div class="flex justify-start">
-      <button type="button" id="tab-batch" class="px-4 py-2 rounded-md bg-yellow-400 text-grey hover:bg-blue-600">
+      <button type="button" id="batchUploadBtn" class="px-4 py-2 rounded-md bg-yellow-400 text-grey hover:bg-blue-600">
         Batch Upload
       </button>
     </div>
@@ -12,45 +22,6 @@
       <button id="tab-spouse" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Spouse</button>
       <button id="tab-children" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Children</button>
     </div>
-  </div>
-</div>
-
-<!-- BATCH UPLOAD SECTION -->
-<div id="section-batch" class="p-6 flex justify-center">
-  <div class="w-full max-w-lg rounded-2xl p-6">
-    <h3 class="text-2xl font-bold text-blue-800 mb-4">Batch Upload</h3>
-    
-    <form id="batchUploadForm" class="space-y-6">
-      <!-- File Upload -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
-        <input type="file" id="batchFile" 
-               class="mt-1 block w-full border border-blue-500 bg-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-        <p class="text-xs text-gray-500 mt-2">
-          Only .xlsx or .csv files allowed. 
-          <a href="sample.csv" download 
-             class="text-blue-600 hover:underline ml-2">Download Sample</a>
-        </p>
-      </div>
-
-      <!-- Buttons -->
-      <div class="flex justify-end space-x-4">
-        <button type="button" id="cancelBatchBtn"
-          class="px-6 py-2 bg-gray-400 hover:bg-gray-500 rounded-lg text-white">Cancel</button>
-        <button type="button" id="uploadBatchBtn"
-          class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white">Upload</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- SUCCESS POPUP -->
-<div id="uploadSuccessPopup" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-  <div class="bg-white rounded-2xl shadow-lg p-6 w-96 text-center">
-    <h4 class="text-xl font-semibold text-green-600 mb-2">Upload Successful!</h4>
-    <p class="text-gray-600 mb-4">Your batch file has been uploaded successfully.</p>
-    <button id="closePopupBtn" 
-      class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">Close</button>
   </div>
 </div>
 
@@ -70,7 +41,7 @@
       </button>
     </div>
 
-    <button onclick="window.navigation?.navigateToSection ? window.navigation.navigateToSection('current-personnel','Current Personnel') : alert('Hook your navigation here.')"
+    <button onclick="alert('Navigate to Current Personnel')"
       class="px-4 text-sm lg:text-lg py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
       Current Personnel
     </button>
@@ -204,7 +175,7 @@
         </tr>
       </thead>
       <tbody id="nokList" class="text-center">
-        <tr id="nokEmpty"><td colspan="4" class="py-4 text-gray-500">No NOKs yet.</td></tr>
+        <tr id="nokEmpty"><td colspan="5" class="py-4 text-gray-500">No NOKs yet.</td></tr>
       </tbody>
     </table>
   </div>
@@ -277,7 +248,7 @@
         </tr>
       </thead>
       <tbody id="spouseList" class="text-center">
-        <tr id="spouseEmpty"><td colspan="3" class="py-4 text-gray-500">No spouse records yet.</td></tr>
+        <tr id="spouseEmpty"><td colspan="4" class="py-4 text-gray-500">No spouse records yet.</td></tr>
       </tbody>
     </table>
   </div>
@@ -365,7 +336,7 @@
         </tr>
       </thead>
       <tbody id="childList" class="text-center">
-        <tr id="childEmpty"><td colspan="4" class="py-4 text-gray-500">No children yet.</td></tr>
+        <tr id="childEmpty"><td colspan="5" class="py-4 text-gray-500">No children yet.</td></tr>
       </tbody>
     </table>
   </div>
@@ -380,92 +351,139 @@
 </div>
 
 <script>
-const uploadBtn = document.getElementById("uploadBatchBtn");
-  const popup = document.getElementById("uploadSuccessPopup");
-  const closePopupBtn = document.getElementById("closePopupBtn");
-  const cancelBtn = document.getElementById("cancelBatchBtn");
+/* ===== Global state and helpers ===== */
+const editState = { type: null, id: null, row: null };
 
-  uploadBtn.addEventListener("click", () => {
-    const fileInput = document.getElementById("batchFile");
-    if (!fileInput.files.length) {
-      alert("Please select a file to upload!");
-      return;
-    }
-
-    // Simulate upload delay
-    uploadBtn.innerText = "Uploading...";
-    uploadBtn.disabled = true;
-    setTimeout(() => {
-      uploadBtn.innerText = "Upload";
-      uploadBtn.disabled = false;
-      popup.classList.remove("hidden");
-    }, 2000);
-  });
-
-  closePopupBtn.addEventListener("click", () => {
-    popup.classList.add("hidden");
-    document.getElementById("batchUploadForm").reset();
-  });
-
-  cancelBtn.addEventListener("click", () => {
-    document.getElementById("batchUploadForm").reset();
-  });
-
-/* ===== Popup Helper ===== */
-function showPopup(message){
+function showPopup(message) {
   const popup = document.getElementById('actionPopup');
   const icon = document.getElementById('popupIcon');
   const text = document.getElementById('popupText');
 
   // Reset to spinner
   icon.className = "mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin";
+  icon.innerHTML = "";
   text.textContent = message;
 
   popup.classList.remove('hidden');
 
-  setTimeout(()=>{
+  setTimeout(() => {
     icon.className = "mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-green-500 text-white";
     icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                       </svg>`;
     text.textContent = "Success!";
-    setTimeout(()=>{
+    setTimeout(() => {
       popup.classList.add('hidden');
-      icon.innerHTML = ""; // clear so spinner can be restored next call
-    },1000);
-  },1500);
+      icon.innerHTML = "";
+    }, 1000);
+  }, 1500);
 }
 
-/* ======= Tabs ======= */
-(function(){
-  const tabs = ['personnel','nok','spouse','children','batch'];
-  function showTab(name){
-    tabs.forEach(t=>{
-      document.getElementById('tab-'+t).classList.remove('bg-blue-600','text-white');
-      document.getElementById('tab-'+t).classList.add('bg-yellow-400','text-gray-900');
-      document.getElementById('section-'+t).classList.add('hidden');
-    });
-    document.getElementById('tab-'+name).classList.add('bg-blue-600','text-white');
-    document.getElementById('tab-'+name).classList.remove('bg-yellow-400','text-gray-900');
-    document.getElementById('section-'+name).classList.remove('hidden');
+function toggleBlock(el, btn) {
+  const isHidden = el.classList.contains('hidden');
+  el.classList.toggle('hidden');
+  btn.textContent = isHidden ? '− Hide' : '+ Add';
+}
+
+function val(id) { 
+  return (document.getElementById(id)?.value || '').trim(); 
+}
+
+function escapeHtml(s) { 
+  return s.replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+  }[m])); 
+}
+
+function actionBtns(type, id) {
+  return `
+    <button onclick="viewRow('${type}', '${id}')" class="px-2 text-blue-600 hover:underline">View</button>
+    <button onclick="editRow('${type}', '${id}')" class="px-2 text-green-600 hover:underline">Edit</button>
+    <button onclick="deleteRow(this)" class="px-2 text-red-600 hover:underline">Delete</button>
+  `;
+}
+
+/* ===== Global action functions ===== */
+window.viewRow = function(type, id) {
+  showPopup(`Viewing ${type} #${id}`);
+}
+
+window.deleteRow = function(btn) {
+  btn.closest('tr').remove();
+  showPopup("Deleted successfully");
+}
+
+window.editRow = function(type, id) {
+  console.log("editRow called with:", type, id);
+  const row = document.querySelector(`tr[data-type="${type}"][data-id="${id}"]`);
+  if (!row) {
+    console.error("Row not found for:", type, id);
+    return;
   }
-  document.getElementById('tab-personnel').onclick=()=>showTab('personnel');
-  document.getElementById('tab-nok').onclick=()=>showTab('nok');
-  document.getElementById('tab-spouse').onclick=()=>showTab('spouse');
-  document.getElementById('tab-children').onclick=()=>showTab('children');
-  document.getElementById('tab-batch').onclick=()=>showTab('batch');
+  
+  editState.type = type;
+  editState.id = id;
+  editState.row = row;
+  
+  const cells = row.querySelectorAll('td');
+
+  if (type === "NOK") {
+    const nameParts = cells[0].textContent.trim().split(' ');
+    document.getElementById('nokFirst').value = nameParts[0] || '';
+    document.getElementById('nokLast').value = nameParts.slice(1).join(' ') || '';
+    document.getElementById('nokRelationship').value = cells[1].textContent.trim();
+    document.getElementById('nokMobile').value = cells[2].textContent.trim();
+    document.getElementById('nokEmail').value = cells[3].textContent.trim();
+    document.getElementById('nokFormWrap').classList.remove('hidden');
+  }
+  
+  if (type === "Spouse") {
+    document.getElementById('spouseName').value = cells[0].textContent.trim();
+    document.getElementById('spousePhone').value = cells[1].textContent.trim();
+    document.getElementById('spouseEmail').value = cells[2].textContent.trim();
+    document.getElementById('spouseFormWrap').classList.remove('hidden');
+  }
+  
+  if (type === "Child") {
+    document.getElementById('childName').value = cells[0].textContent.trim();
+    document.getElementById('childSex').value = cells[1].textContent.trim();
+    document.getElementById('childDob').value = cells[2].textContent.trim();
+    document.getElementById('childPhone').value = cells[3].textContent.trim();
+    document.getElementById('childFormWrap').classList.remove('hidden');
+  }
+}
+
+/* ======= Tab Management ======= */
+(function() {
+  const tabs = ['personnel', 'nok', 'spouse', 'children'];
+  
+  function showTab(name) {
+    tabs.forEach(t => {
+      document.getElementById('tab-' + t).classList.remove('bg-blue-600', 'text-white');
+      document.getElementById('tab-' + t).classList.add('bg-yellow-400', 'text-gray-900');
+      document.getElementById('section-' + t).classList.add('hidden');
+    });
+    document.getElementById('tab-' + name).classList.add('bg-blue-600', 'text-white');
+    document.getElementById('tab-' + name).classList.remove('bg-yellow-400', 'text-gray-900');
+    document.getElementById('section-' + name).classList.remove('hidden');
+  }
+  
+  document.getElementById('tab-personnel').onclick = () => showTab('personnel');
+  document.getElementById('tab-nok').onclick = () => showTab('nok');
+  document.getElementById('tab-spouse').onclick = () => showTab('spouse');
+  document.getElementById('tab-children').onclick = () => showTab('children');
+  
   showTab('personnel'); // default
-  window.showTab = showTab;
 })();
 
-/* ======= Personnel Step 1 (dynamic) & Step toggle ======= */
-(function(){
+/* ======= Personnel Step Management ======= */
+(function() {
   const formTitle = "Add New Personnel";
   const fieldsStep1 = [
-    "Personnel Number","Rank","Surname","First Name","Middle Name","Date of Birth",
-    "Gender","Marital Status","Religion","Tribe","State","Local Government","Home Address",
-    "Place of Birth","Email Address","Phone","Division","Last Location","Directorate",
-    "Geo Political Zone","Passport Photograph"
+    "Personnel Number", "Rank", "Surname", "First Name", "Middle Name", "Date of Birth",
+    "Gender", "Marital Status", "Religion", "Tribe", "State", "Local Government", "Home Address",
+    "Place of Birth", "Email Address", "Phone", "Division", "Last Location", "Directorate",
+    "Geo Political Zone", "Passport Photograph"
   ];
 
   const step1Container = document.getElementById("step1");
@@ -475,13 +493,13 @@ function showPopup(message){
   const formTitleEl = document.getElementById("formTitle");
   const cancelBtn = document.getElementById("cancelBtn");
 
-  function controlWrap(label, control){
+  function controlWrap(label, control) {
     return `<div><label class="block text-sm font-medium text-gray-700">${label}</label>${control}</div>`;
   }
 
   function renderStep1() {
     step1Container.innerHTML = fieldsStep1.map(field => {
-      if (["Rank","State","Local Government","Last Location","Geo Political Zone"].includes(field)) {
+      if (["Rank", "State", "Local Government", "Last Location", "Geo Political Zone"].includes(field)) {
         return controlWrap(field,
           `<select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
              <option>Select ${field}</option>
@@ -500,28 +518,27 @@ function showPopup(message){
     }).join("");
   }
 
-  function toggleStep(step){
-    if(step === 1){
+  function toggleStep(step) {
+    if (step === 1) {
       step1Container.classList.remove("hidden");
       step2Container.classList.add("hidden");
-      btnStep1.classList.add("bg-blue-600","text-white");
-      btnStep1.classList.remove("bg-yellow-400","text-gray-900");
-      btnStep2.classList.add("bg-yellow-400","text-gray-900");
-      btnStep2.classList.remove("bg-blue-600","text-white");
+      btnStep1.classList.add("bg-blue-600", "text-white");
+      btnStep1.classList.remove("bg-yellow-400", "text-gray-900");
+      btnStep2.classList.add("bg-yellow-400", "text-gray-900");
+      btnStep2.classList.remove("bg-blue-600", "text-white");
     } else {
       step1Container.classList.add("hidden");
       step2Container.classList.remove("hidden");
-      btnStep2.classList.add("bg-blue-600","text-white");
-      btnStep2.classList.remove("bg-yellow-400","text-gray-900");
-      btnStep1.classList.add("bg-yellow-400","text-gray-900");
-      btnStep1.classList.remove("bg-blue-600","text-white");
+      btnStep2.classList.add("bg-blue-600", "text-white");
+      btnStep2.classList.remove("bg-yellow-400", "text-gray-900");
+      btnStep1.classList.add("bg-yellow-400", "text-gray-900");
+      btnStep1.classList.remove("bg-blue-600", "text-white");
     }
   }
 
-  function cancelForm(){
+  function cancelForm() {
     document.getElementById("personnelForm").reset();
     toggleStep(1);
-    // Hook your navigation if needed
   }
 
   formTitleEl.textContent = formTitle;
@@ -533,264 +550,158 @@ function showPopup(message){
   cancelBtn.addEventListener("click", cancelForm);
 })();
 
-/* ======= NOK, Spouse, Children logic with Actions ======= */
-(function(){
-  function actionBtns(type, id){
-    return `
-      <button onclick="alert('Viewing ${type} #${id}')" class="px-2 text-blue-600 hover:underline">View</button>
-      <button onclick="alert('Editing ${type} #${id}')" class="px-2 text-green-600 hover:underline">Edit</button>
-      <button onclick="this.closest('tr').remove()" class="px-2 text-red-600 hover:underline">Delete</button>
-    `;
-  }
-
-  // ===== NOK =====
-  const nokFormWrap = document.getElementById('nokFormWrap');
-  const nokToggleBtn = document.getElementById('nokToggleBtn');
-  document.getElementById('nokCancel').onclick = () => toggleBlock(nokFormWrap, nokToggleBtn);
-  document.getElementById('nokSave').onclick = saveNok;
-  nokToggleBtn.onclick = () => toggleBlock(nokFormWrap, nokToggleBtn);
-  let nokId=0;
-  function saveNok(){
-    const first = val('nokFirst'), last = val('nokLast'), rel = val('nokRelationship'),
-          mobile = val('nokMobile'), email = val('nokEmail');
-    if(!first || !last || !rel || !mobile || !email){ alert('Please fill required fields.'); return; }
-    const list = document.getElementById('nokList');
-    const empty = document.getElementById('nokEmpty'); if(empty) empty.remove();
-    nokId++;
-    list.insertAdjacentHTML('beforeend',
-      `<tr class="hover:bg-yellow-50">
-        <td class="border px-3 py-2">${escapeHtml(first)} ${escapeHtml(last)}</td>
-        <td class="border px-3 py-2">${escapeHtml(rel)}</td>
-        <td class="border px-3 py-2">${escapeHtml(mobile)}</td>
-        <td class="border px-3 py-2">${escapeHtml(email)}</td>
-        <td class="border px-3 py-2">${actionBtns('NOK', nokId)}</td>
-      </tr>`);
-    document.getElementById('nokForm').reset();
-    toggleBlock(nokFormWrap, nokToggleBtn);
-  }
-
-  // ===== Spouse =====
-  const spouseFormWrap = document.getElementById('spouseFormWrap');
-  const spouseToggleBtn = document.getElementById('spouseToggleBtn');
-  document.getElementById('spouseCancel').onclick = () => toggleBlock(spouseFormWrap, spouseToggleBtn);
-  document.getElementById('spouseSave').onclick = saveSpouse;
-  spouseToggleBtn.onclick = () => toggleBlock(spouseFormWrap, spouseToggleBtn);
-  let spouseId=0;
-  function saveSpouse(){
-    const name = val('spouseName'), phone = val('spousePhone'), email = val('spouseEmail');
-    if(!name){ alert('Full Name is required.'); return; }
-    const list = document.getElementById('spouseList');
-    const empty = document.getElementById('spouseEmpty'); if(empty) empty.remove();
-    spouseId++;
-    list.insertAdjacentHTML('beforeend',
-      `<tr class="hover:bg-yellow-50">
-        <td class="border px-3 py-2">${escapeHtml(name)}</td>
-        <td class="border px-3 py-2">${escapeHtml(phone)}</td>
-        <td class="border px-3 py-2">${escapeHtml(email)}</td>
-        <td class="border px-3 py-2">${actionBtns('Spouse', spouseId)}</td>
-      </tr>`);
-    document.getElementById('spouseForm').reset();
-    toggleBlock(spouseFormWrap, spouseToggleBtn);
-  }
-
-  // ===== Children =====
-  const childFormWrap = document.getElementById('childFormWrap');
-  const childToggleBtn = document.getElementById('childToggleBtn');
-  document.getElementById('childCancel').onclick = () => toggleBlock(childFormWrap, childToggleBtn);
-  document.getElementById('childSave').onclick = saveChild;
-  childToggleBtn.onclick = () => toggleBlock(childFormWrap, childToggleBtn);
-  let childId=0;
-  function saveChild(){
-    const name = val('childName'), sex = val('childSex'), dob = val('childDob'), phone = val('childPhone');
-    if(!name){ alert('Full Name is required.'); return; }
-    const list = document.getElementById('childList');
-    const empty = document.getElementById('childEmpty'); if(empty) empty.remove();
-    childId++;
-    list.insertAdjacentHTML('beforeend',
-      `<tr class="hover:bg-yellow-50">
-        <td class="border px-3 py-2">${escapeHtml(name)}</td>
-        <td class="border px-3 py-2">${escapeHtml(sex)}</td>
-        <td class="border px-3 py-2">${escapeHtml(dob)}</td>
-        <td class="border px-3 py-2">${escapeHtml(phone)}</td>
-        <td class="border px-3 py-2">${actionBtns('Child', childId)}</td>
-      </tr>`);
-    document.getElementById('childForm').reset();
-    toggleBlock(childFormWrap, childToggleBtn);
-  }
-
-/* ===== Global state for editing ===== */
-const editState = { type:null, id:null, row:null };
-
-/* ===== Generic actions ===== */
-window.viewRow = function(type,id){ showPopup(`Viewing ${type} #${id}`); }
-window.deleteRow = function(btn){ btn.closest('tr').remove(); showPopup("Deleted successfully"); }
-
-/*window.editRow = function(type,id){
-  console.log("editRow called with:", type, id);
-  showPopup(`Editing ${type} #${id}`);
-  const row = document.querySelector(`tr[data-type="${type}"][data-id="${id}"]`);
-  if(!row) return;
-  editState.type = type;
-  editState.id = id;
-  editState.row = row;
-  const cells = row.querySelectorAll('td');
-
-  if(type==="NOK"){
-    document.getElementById('nokFirst').value = cells[0].textContent.split(" ")[0];
-    document.getElementById('nokLast').value  = cells[0].textContent.split(" ")[1]||"";
-    document.getElementById('nokRelationship').value = cells[1].textContent;
-    document.getElementById('nokMobile').value = cells[2].textContent;
-    document.getElementById('nokEmail').value  = cells[3].textContent;
-    document.getElementById('nokFormWrap').classList.remove('hidden');
-  }
-  if(type==="Spouse"){
-    document.getElementById('spouseName').value  = cells[0].textContent;
-    document.getElementById('spousePhone').value = cells[1].textContent;
-    document.getElementById('spouseEmail').value = cells[2].textContent;
-    document.getElementById('spouseFormWrap').classList.remove('hidden');
-  }
-  if(type==="Child"){
-    document.getElementById('childName').value  = cells[0].textContent;
-    document.getElementById('childSex').value   = cells[1].textContent;
-    document.getElementById('childDob').value   = cells[2].textContent;
-    document.getElementById('childPhone').value = cells[3].textContent;
-    document.getElementById('childFormWrap').classList.remove('hidden');
-  }
-}*/
-
-/* ===== NOK ===== */
-(function(){
+/* ======= NOK Management ======= */
+(function() {
   const formWrap = document.getElementById('nokFormWrap');
   const toggleBtn = document.getElementById('nokToggleBtn');
-  document.getElementById('nokCancel').onclick = () => toggleBlock(formWrap, toggleBtn);
-  document.getElementById('nokSave').onclick = save;
-  toggleBtn.onclick = () => toggleBlock(formWrap, toggleBtn);
-  let id=0;
+  let nokId = 0;
 
-  function save(){
-    const first=val('nokFirst'), last=val('nokLast'), rel=val('nokRelationship'),
-          mobile=val('nokMobile'), email=val('nokEmail');
-    if(!first||!last||!rel||!mobile||!email){ alert('Fill required fields'); return; }
-    const list=document.getElementById('nokList');
-    const empty=document.getElementById('nokEmpty'); if(empty) empty.remove();
+  function save() {
+    const first = val('nokFirst'), last = val('nokLast'), rel = val('nokRelationship'),
+          mobile = val('nokMobile'), email = val('nokEmail');
+    
+    if (!first || !last || !rel || !mobile || !email) { 
+      alert('Please fill all required fields.'); 
+      return; 
+    }
+    
+    const list = document.getElementById('nokList');
+    const empty = document.getElementById('nokEmpty'); 
+    if (empty) empty.remove();
 
-    if(editState.type==="NOK" && editState.row){
+    if (editState.type === "NOK" && editState.row) {
+      // Update existing row
       const cells = editState.row.querySelectorAll('td');
       cells[0].textContent = `${first} ${last}`;
       cells[1].textContent = rel;
       cells[2].textContent = mobile;
       cells[3].textContent = email;
-      editState.type=null; editState.row=null;
+      editState.type = null; 
+      editState.row = null;
       showPopup("Updated NOK");
     } else {
-      id++;
-      list.insertAdjacentHTML('beforeend',`
-        <tr data-type="NOK" data-id="${id}" class="hover:bg-yellow-50">
+      // Add new row
+      nokId++;
+      list.insertAdjacentHTML('beforeend', `
+        <tr data-type="NOK" data-id="${nokId}" class="hover:bg-yellow-50">
           <td class="border px-3 py-2">${escapeHtml(first)} ${escapeHtml(last)}</td>
           <td class="border px-3 py-2">${escapeHtml(rel)}</td>
           <td class="border px-3 py-2">${escapeHtml(mobile)}</td>
           <td class="border px-3 py-2">${escapeHtml(email)}</td>
-          <td class="border px-3 py-2">${actionBtns('NOK', id)}</td>
+          <td class="border px-3 py-2">${actionBtns('NOK', nokId)}</td>
         </tr>`);
       showPopup("Saved NOK");
     }
+    
     document.getElementById('nokForm').reset();
     toggleBlock(formWrap, toggleBtn);
   }
+
+  document.getElementById('nokCancel').onclick = () => toggleBlock(formWrap, toggleBtn);
+  document.getElementById('nokSave').onclick = save;
+  toggleBtn.onclick = () => toggleBlock(formWrap, toggleBtn);
 })();
 
-/* ===== Spouse ===== */
-(function(){
+/* ======= Spouse Management ======= */
+(function() {
   const formWrap = document.getElementById('spouseFormWrap');
   const toggleBtn = document.getElementById('spouseToggleBtn');
-  document.getElementById('spouseCancel').onclick = () => toggleBlock(formWrap, toggleBtn);
-  document.getElementById('spouseSave').onclick = save;
-  toggleBtn.onclick = () => toggleBlock(formWrap, toggleBtn);
-  let id=0;
+  let spouseId = 0;
 
-  function save(){
-    const name=val('spouseName'), phone=val('spousePhone'), email=val('spouseEmail');
-    if(!name){ alert('Name required'); return; }
-    const list=document.getElementById('spouseList');
-    const empty=document.getElementById('spouseEmpty'); if(empty) empty.remove();
+  function save() {
+    const name = val('spouseName'), phone = val('spousePhone'), email = val('spouseEmail');
+    
+    if (!name) { 
+      alert('Full Name is required.'); 
+      return; 
+    }
+    
+    const list = document.getElementById('spouseList');
+    const empty = document.getElementById('spouseEmpty'); 
+    if (empty) empty.remove();
 
-    if(editState.type==="Spouse" && editState.row){
+    if (editState.type === "Spouse" && editState.row) {
+      // Update existing row
       const cells = editState.row.querySelectorAll('td');
       cells[0].textContent = name;
       cells[1].textContent = phone;
       cells[2].textContent = email;
-      editState.type=null; editState.row=null;
+      editState.type = null; 
+      editState.row = null;
       showPopup("Updated Spouse");
     } else {
-      id++;
-      list.insertAdjacentHTML('beforeend',`
-        <tr data-type="Spouse" data-id="${id}" class="hover:bg-yellow-50">
+      // Add new row
+      spouseId++;
+      list.insertAdjacentHTML('beforeend', `
+        <tr data-type="Spouse" data-id="${spouseId}" class="hover:bg-yellow-50">
           <td class="border px-3 py-2">${escapeHtml(name)}</td>
           <td class="border px-3 py-2">${escapeHtml(phone)}</td>
           <td class="border px-3 py-2">${escapeHtml(email)}</td>
-          <td class="border px-3 py-2">${actionBtns('Spouse', id)}</td>
+          <td class="border px-3 py-2">${actionBtns('Spouse', spouseId)}</td>
         </tr>`);
       showPopup("Saved Spouse");
     }
+    
     document.getElementById('spouseForm').reset();
     toggleBlock(formWrap, toggleBtn);
   }
+
+  document.getElementById('spouseCancel').onclick = () => toggleBlock(formWrap, toggleBtn);
+  document.getElementById('spouseSave').onclick = save;
+  toggleBtn.onclick = () => toggleBlock(formWrap, toggleBtn);
 })();
 
-/* ===== Children ===== */
-(function(){
+/* ======= Children Management ======= */
+(function() {
   const formWrap = document.getElementById('childFormWrap');
   const toggleBtn = document.getElementById('childToggleBtn');
-  document.getElementById('childCancel').onclick = () => toggleBlock(formWrap, toggleBtn);
-  document.getElementById('childSave').onclick = save;
-  toggleBtn.onclick = () => toggleBlock(formWrap, toggleBtn);
-  let id=0;
+  let childId = 0;
 
-  function save(){
-    const name=val('childName'), sex=val('childSex'), dob=val('childDob'), phone=val('childPhone');
-    if(!name){ alert('Name required'); return; }
-    const list=document.getElementById('childList');
-    const empty=document.getElementById('childEmpty'); if(empty) empty.remove();
+  function save() {
+    const name = val('childName'), sex = val('childSex'), dob = val('childDob'), phone = val('childPhone');
+    
+    if (!name) { 
+      alert('Full Name is required.'); 
+      return; 
+    }
+    
+    const list = document.getElementById('childList');
+    const empty = document.getElementById('childEmpty'); 
+    if (empty) empty.remove();
 
-    if(editState.type==="Child" && editState.row){
+    if (editState.type === "Child" && editState.row) {
+      // Update existing row
       const cells = editState.row.querySelectorAll('td');
       cells[0].textContent = name;
       cells[1].textContent = sex;
       cells[2].textContent = dob;
       cells[3].textContent = phone;
-      editState.type=null; editState.row=null;
+      editState.type = null; 
+      editState.row = null;
       showPopup("Updated Child");
     } else {
-      id++;
-      list.insertAdjacentHTML('beforeend',`
-        <tr data-type="Child" data-id="${id}" class="hover:bg-yellow-50">
+      // Add new row
+      childId++;
+      list.insertAdjacentHTML('beforeend', `
+        <tr data-type="Child" data-id="${childId}" class="hover:bg-yellow-50">
           <td class="border px-3 py-2">${escapeHtml(name)}</td>
           <td class="border px-3 py-2">${escapeHtml(sex)}</td>
           <td class="border px-3 py-2">${escapeHtml(dob)}</td>
           <td class="border px-3 py-2">${escapeHtml(phone)}</td>
-          <td class="border px-3 py-2">${actionBtns('Child', id)}</td>
+          <td class="border px-3 py-2">${actionBtns('Child', childId)}</td>
         </tr>`);
       showPopup("Saved Child");
     }
+    
     document.getElementById('childForm').reset();
     toggleBlock(formWrap, toggleBtn);
   }
-})();
 
-  /* ===== Helpers ===== */
-  function toggleBlock(el, btn){
-    const isHidden = el.classList.contains('hidden');
-    el.classList.toggle('hidden');
-    btn.textContent = isHidden ? '− Hide' : '+ Add';
-  }
-  function val(id){ return (document.getElementById(id)?.value || '').trim(); }
-  function escapeHtml(s){ return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
-  function actionBtns(type,id){
-    return `
-      <button onclick="viewRow('${type}', ${id})" class="px-2 text-blue-600 hover:underline">View</button>
-      <button onclick="editRow('${type}', ${id})" class="px-2 text-green-600 hover:underline">Edit</button>
-      <button onclick="deleteRow(this)" class="px-2 text-red-600 hover:underline">Delete</button>
-    `;
-  }
+  document.getElementById('childCancel').onclick = () => toggleBlock(formWrap, toggleBtn);
+  document.getElementById('childSave').onclick = save;
+  toggleBtn.onclick = () => toggleBlock(formWrap, toggleBtn);
 })();
 </script>
+
+</body>
+</html>

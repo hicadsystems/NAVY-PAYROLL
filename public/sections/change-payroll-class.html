@@ -66,77 +66,71 @@
   </div>
 </div>
 
- <script>
-  // Global function to communicate with dashboard greeting
-  window.updateDashboardGreeting = function(newClass) {
-    if (typeof window.changePayrollClass === 'function') {
-        window.changePayrollClass(newClass);
-    }
-    // Store in sessionStorage so dashboard can read it
-    sessionStorage.setItem('currentPayrollClass', newClass);
-  };
-
+<script>
+// Payroll Class Management JavaScript
+(function() {
   function updateSelectionDisplay() {
-      const personnelSelect = document.getElementById('personnel');
-      const classSelect = document.getElementById('newClass');
-      const display = document.getElementById('selectionDisplay');
-      const selectionText = document.getElementById('selectionText');
-      
-      if (!personnelSelect || !classSelect || !display || !selectionText) return;
-      
-      if (personnelSelect.value || classSelect.value) {
-        const personnelText = personnelSelect.value ? 
-        personnelSelect.options[personnelSelect.selectedIndex].text : '';
-        const classText = classSelect.value ? 
-        classSelect.options[classSelect.selectedIndex].text : '';
-        
-        let text = '';
-        if (personnelSelect.value) text += `Personnel: ${personnelText}`;
-        if (classSelect.value) {
-          if (text) text += ' | ';
-          text += `New Class: ${classText}`;
-        }
-        
-        selectionText.textContent = text;
+    const classSelect = document.getElementById('newClass');
+    const display = document.getElementById('selectionDisplay');
+    const selectionText = document.getElementById('selectionText');
+    
+    if (!classSelect || !display || !selectionText) return;
+    
+    if (classSelect.value) {
+        const classText = classSelect.options[classSelect.selectedIndex].text;
+        selectionText.textContent = `Selected: ${classText}`;
         display.classList.remove('hidden');
-      } else {
+    } else {
         display.classList.add('hidden');
-      }
+    }
   }
 
-  // Initialize only if elements exist (avoid errors on other pages)
+  // Make addPayrollClass global
+  window.addPayrollClass = addPayrollClass;
+
+  // Initialize payroll section functionality
   document.addEventListener('DOMContentLoaded', function() {
-    const personnelSelect = document.getElementById('personnel');
     const classSelect = document.getElementById('newClass');
-    const form = document.getElementById('changesForm');
+    const changeButton = document.getElementById('changeButton');
     
-    if (!personnelSelect || !classSelect || !form) return; // Exit if elements don't exist
+    // Only run if elements exist (payroll section)
+    if (!classSelect || !changeButton) return;
     
-    // Event listeners
-    personnelSelect.addEventListener('change', updateSelectionDisplay);
+    // Update selection display when class changes
     classSelect.addEventListener('change', updateSelectionDisplay);
     
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      const personnel = personnelSelect.value;
+    // Handle button click
+    changeButton.addEventListener('click', function() {
       const newClass = classSelect.value;
-
-      if (!personnel || !newClass) {
-          alert('Please select both personnel and payroll class');
+      
+      if (!newClass) {
+          alert('Please select a payroll class');
           return;
       }
       
-      // Update the dashboard greeting
-      window.updateDashboardGreeting(newClass);
+      // Store the selected payroll class globally
+      if (typeof Storage !== "undefined") {
+          localStorage.setItem('currentPayrollClass', newClass);
+      }
       
-      const personnelText = personnelSelect.options[personnelSelect.selectedIndex].text;
+      // Try to update dashboard greeting if available
+      if (window.updateDashboardGreeting) {
+          window.updateDashboardGreeting(newClass);
+      }
+      
+      // Trigger custom event for dashboard to listen to
+      const event = new CustomEvent('payrollClassChanged', {
+          detail: { newClass: newClass }
+      });
+      document.dispatchEvent(event);
+      
       const classText = classSelect.options[classSelect.selectedIndex].text;
-      
-      alert(`Successfully changed ${personnelText} to ${classText}`);
+      alert(`Successfully changed to ${classText}! Dashboard greeting will update when you return to dashboard.`);
       
       // Reset form
-      form.reset();
+      document.getElementById('changesForm').reset();
       updateSelectionDisplay();
     });
   });
+})();
 </script>

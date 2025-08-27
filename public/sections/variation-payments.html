@@ -11,33 +11,28 @@
 
    <!-- Create New Form (hidden by default) -->
   <div id="variationForm" class="my-8 hidden">
-    <h3 class="text-xl font-semibold text-grey-700 mb-4">Create New Variation</h3>
+    <h3 id="formTitle" class="text-xl font-semibold text-grey-700 mb-4">Create New Variation</h3>
     <form id="variationFormElement" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <input id="variationName" type="text" placeholder="Name" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2" />
+      <input id="variationName" type="text" placeholder="ID" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2" />
 
       <select id="variationType" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
         <option value="">Select Type</option>
         <option>Bonus</option>
-        <option>Deduction</option>
+        <option>Overtime</option>
+        <option>Loan</option>
+        <option>Pension</option>
       </select>
 
       <select id="variationDescription" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
-        <option value="">Select Description</option>
-        <option>Performance Bonus</option>
-        <option>Overtime</option>
-        <option>Loan</option>
-      </select>
-
-      <select id="variationAction" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
         <option value="">Select Action</option>
-        <option>Apply</option>
-        <option>Reverse</option>
+        <option>Addition</option>
+        <option>Deduction</option>
       </select>
 
       <input id="variationAmount" type="alphanumeric" placeholder="Amount" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2" />
 
       <div class="col-span-full flex justify-end mt-2 space-x-4">
-        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Save</button>
+        <button type="submit" id="saveBtn" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Save</button>
         <button type="button" id="cancelVariationBtn" class="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400">Cancel</button>
       </div>
     </form>
@@ -50,22 +45,53 @@
         <tr>
           <th class="py-2 px-4 border">Person</th>
           <th class="py-2 px-4 border">Type</th>
+          <th class="py-2 px-4 border">Action Type</th>          
           <th class="py-2 px-4 border">Amount</th>
           <th class="py-2 px-4 border">Action</th>
         </tr>
       </thead>
       <tbody id="variationTableBody" class="text-center text-sm">
         <tr class="hover:bg-yellow-50">
-          <td class="py-2 px-4 border">Wisdom Godwin</td>
+          <td class="py-2 px-4 border">NN001</td>
           <td class="py-2 px-4 border">Bonus</td>
+          <td class="py-2 px-4 border">Addition</td>
           <td class="py-2 px-4 border">₦50,000</td>
           <td class="py-2 px-4 border">
-            <button class="text-blue-600 hover:underline">Edit</button> |
-            <button class="text-red-600 hover:underline">Delete</button>
+            <button onclick="editRow(this)" class="text-blue-600 hover:underline">Edit</button> |
+            <button onclick="deleteRow(this)" class="text-red-600 hover:underline">Delete</button>
           </td>
         </tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">Confirm Delete</h3>
+      <p class="text-gray-600 mb-6">Are you sure you want to delete this record? This action cannot be undone.</p>
+      <div class="flex justify-end space-x-4">
+          <button id="cancelDelete" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+          <button id="confirmDelete" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Delete</button>
+      </div>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg p-8 max-w-sm w-full mx-4 text-center">
+      <div id="loadingSpinner" class="flex justify-center mb-4">
+          <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+      </div>
+      <div id="successTick" class="hidden flex justify-center mb-4">
+          <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+          </div>
+      </div>
+      <p id="successMessage" class="text-gray-700 font-medium">Processing...</p>
   </div>
 </div>
 
@@ -74,11 +100,21 @@
   const formWrapper = document.getElementById("variationForm");
   const form = document.getElementById("variationFormElement");
   const tableBody = document.getElementById("variationTableBody");
+  const saveBtn = document.getElementById("saveBtn");
+
+    // Modals
+  const confirmModal = document.getElementById("confirmModal");
+  const successModal = document.getElementById("successModal");
+  const loadingSpinner = document.getElementById("loadingSpinner");
+  const successTick = document.getElementById("successTick");
+  const successMessage = document.getElementById("successMessage");
 
   // Buttons
   const createBtn = document.getElementById("createVariationBtn");
   const cancelBtn = document.getElementById("cancelVariationBtn");
   const reportBtn = document.getElementById("generateReportBtn");
+  const cancelDelete = document.getElementById("cancelDelete");
+  const confirmDelete = document.getElementById("confirmDelete");
 
   // Inputs
   const nameInput = document.getElementById("variationName");
@@ -87,12 +123,39 @@
   const actionInput = document.getElementById("variationAction");
   const amountInput = document.getElementById("variationAmount");
 
+  let isEditing = false;
+  let currentEditRow = null;
+  let rowToDelete = null;
+
   function toggleForm() {
     formWrapper.classList.toggle("hidden");
   }
 
   function clearForm() {
     form.reset();
+    isEditing = false;
+    currentEditRow = null;
+    formTitle.textContent = "Create Variation";
+    saveBtn.textContent = "Save";
+  }
+
+  function showSuccessModal(message) {
+    successMessage.textContent = "Processing...";
+    loadingSpinner.classList.remove("hidden");
+    successTick.classList.add("hidden");
+    successModal.classList.remove("hidden");
+
+    // Show spinner for 1 second
+    setTimeout(() => {
+        loadingSpinner.classList.add("hidden");
+        successTick.classList.remove("hidden");
+        successMessage.textContent = message;
+        
+        // Hide modal after 2 seconds
+        setTimeout(() => {
+            successModal.classList.add("hidden");
+        }, 2000);
+    }, 1000);
   }
 
   function saveVariation(e) {
@@ -101,24 +164,41 @@
     const name = nameInput.value.trim();
     const type = typeInput.value;
     const desc = descInput.value;
-    const action = actionInput.value;
     const amount = amountInput.value;
 
-    if (!name || !type || !desc || !action || !amount) {
+    if (!name || !type || !desc || !amount) {
       alert("Please fill all fields");
       return;
     }
 
-    const row = document.createElement("tr");
-    row.className = "hover:bg-yellow-50";
-    row.innerHTML = `
+    if (isEditing && currentEditRow) {
+      // Update existing row
+      const cells = currentEditRow.querySelectorAll('td');
+      cells[0].textContent = name;
+      cells[1].textContent = `${type}`;
+      cells[2].textContent = `${desc}`;
+      cells[3].textContent = `₦${Number(amount).toLocaleString()}`;
+
+      showSuccessModal("Record updated successfully!");
+    } else {
+      // Create new row
+      const row = document.createElement("tr");
+      row.className = "hover:bg-yellow-50";
+      row.innerHTML = `
       <td class="py-2 px-4 border">${name}</td>
       <td class="py-2 px-4 border">${type}</td>
+      <td class="py-2 px-4 border">${desc}</td>
       <td class="py-2 px-4 border">₦${Number(amount).toLocaleString()}</td>
-      <td class="py-2 px-4 border">${action}</td>
+      <td class="py-2 px-4 border">
+        <button onclick="editRow(this)" class="text-blue-600 hover:underline">Edit</button> |
+        <button onclick="deleteRow(this)" class="text-red-600 hover:underline">Delete</button>
+      </td>
     `;
 
     tableBody.appendChild(row);
+    showSuccessModal("Record created successfully!");
+    }
+    
     clearForm();
     toggleForm();
   }
@@ -127,13 +207,75 @@
     alert("Report generated (placeholder). Implement PDF/download here.");
   }
 
+  // Global functions for edit and delete
+  window.editRow = function(button) {
+    const row = button.closest('tr');
+    const cells = row.querySelectorAll('td');
+
+    // Map exactly to your table structure:
+    nameInput.value  = cells[0].textContent.trim();   // Name
+    typeInput.value  = cells[1].textContent.trim();   // Type
+    descInput.value  = cells[2].textContent.trim();   // Description
+    amountInput.value = cells[3].textContent
+      .replace('₦', '')
+      .replace(/,/g, '')
+      .trim(); // Amount only (ignores action column)
+
+    // Set edit mode
+    isEditing = true;
+    currentEditRow = row;
+    formTitle.textContent = "Edit Variation";
+    saveBtn.textContent = "Update";
+
+    // Show form
+    formWrapper.classList.remove("hidden");
+  };
+
+  window.deleteRow = function(button) {
+    rowToDelete = button.closest('tr');
+    confirmModal.classList.remove("hidden");
+  };
+
   // Bind events
-  createBtn.addEventListener("click", toggleForm);
+  createBtn.addEventListener("click", () => {
+    clearForm();
+    toggleForm();
+  });
+
   cancelBtn.addEventListener("click", () => {
     clearForm();
     toggleForm();
   });
+
   form.addEventListener("submit", saveVariation);
   reportBtn.addEventListener("click", generateReport);
+
+  cancelDelete.addEventListener("click", () => {
+    confirmModal.classList.add("hidden");
+    rowToDelete = null;
+  });
+
+  confirmDelete.addEventListener("click", () => {
+    if (rowToDelete) {
+      rowToDelete.remove();
+      showSuccessModal("Record deleted successfully!");
+    }
+    confirmModal.classList.add("hidden");
+    rowToDelete = null;
+  });
+
+  // Close modals when clicking outside
+  confirmModal.addEventListener("click", (e) => {
+    if (e.target === confirmModal) {
+      confirmModal.classList.add("hidden");
+      rowToDelete = null;
+    }
+  });
+
+  successModal.addEventListener("click", (e) => {
+    if (e.target === successModal) {
+      successModal.classList.add("hidden");
+    }
+  });
 })();
 </script>

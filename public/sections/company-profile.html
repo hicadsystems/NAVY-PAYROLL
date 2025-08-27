@@ -1,25 +1,273 @@
-<div style="font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; padding: 2rem;">
-  <h3 style="font-size: 1.5rem; font-weight: 600; color: #1f2937; margin-bottom: 1.5rem;">Company Corporation Ltd.</h3>
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
-    <div style="background-color: #f9fafb; border-radius: 0.5rem; padding: 1.25rem; border: 1px solid #e5e7eb; transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-      <dt style="font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 0.5rem;">Date Established</dt>
-      <dd style="font-size: 1rem; font-weight: 600; color: #111827;">January 1, 2000</dd>
+<div class="max-w-6xl mx-auto p-6">
+  <!-- Profile Header -->
+  <div class="flex items-center justify-between space-x-4 mb-6">
+    <img src="photos/logo.png" alt="Logo" class="w-15 h-20 rounded-full border shadow">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Nigerian Navy (Naval Headquarters)</h1>
+      <p class="text-gray-500">System File Information</p>
     </div>
-    <div style="background-color: #f9fafb; border-radius: 0.5rem; padding: 1.25rem; border: 1px solid #e5e7eb; transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-      <dt style="font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 0.5rem;">Registration No.</dt>
-      <dd style="font-size: 1rem; font-weight: 600; color: #111827;">RC1234567</dd>
+    <button id="toggleEdit" class="ml-auto px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">
+      Edit
+    </button>
+  </div>
+
+  <!-- Info Grid -->
+  <form id="systemForm" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+    <!-- Code -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">Code</dt>
+      <dd id="codeDisplay" class="text-lg font-semibold text-gray-800">NAVY</dd>
+      <input id="codeInput" name="code" type="text" value="NAVY"
+             class="hidden w-full border rounded px-2 py-1 mt-2" />
     </div>
-    <div style="background-color: #f9fafb; border-radius: 0.5rem; padding: 1.25rem; border: 1px solid #e5e7eb; transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-      <dt style="font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 0.5rem;">Email</dt>
-      <dd style="font-size: 1rem; font-weight: 600; color: #111827;">company123@gmail.com</dd>
+
+    <!-- Town -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">Town</dt>
+      <dd id="townDisplay" class="text-lg font-semibold text-gray-800">Apapa</dd>
+      <input id="townInput" name="town" type="text" value="Apapa"
+             class="hidden w-full border rounded px-2 py-1 mt-2" />
     </div>
-    <div style="background-color: #f9fafb; border-radius: 0.5rem; padding: 1.25rem; border: 1px solid #e5e7eb; transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-      <dt style="font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 0.5rem;">Phone</dt>
-      <dd style="font-size: 1rem; font-weight: 600; color: #111827;">+234 800 123 4567</dd>
+
+    <!-- State -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">State</dt>
+      <dd id="stateDisplay" class="text-lg font-semibold text-gray-800">Lagos</dd>
+      <input id="stateInput" name="state" type="text" value="Lagos"
+             class="hidden w-full border rounded px-2 py-1 mt-2" />
     </div>
-    <div style="background-color: #f9fafb; border-radius: 0.5rem; padding: 1.25rem; border: 1px solid #e5e7eb; transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-      <dt style="font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 0.5rem;">Address</dt>
-      <dd style="font-size: 1rem; font-weight: 600; color: #111827;">123 Lagos Street, Lagos, Nigeria</dd>
+
+    <!-- Local-Government -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">Local Government</dt>
+      <dd id="localGovDisplay" class="text-lg font-semibold text-gray-800">Lagos-Island</dd>
+      <input id="localGovInput" name="local_government" type="text" value="Apapa"
+             class="hidden w-full border rounded px-2 py-1 mt-2" />
     </div>
+
+    <!-- Country -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">Country</dt>
+      <dd id="countryDisplay" class="text-lg font-semibold text-gray-800">Nigeria</dd>
+      <input id="countryInput" name="country" type="text" value="Nigeria"
+             class="hidden w-full border rounded px-2 py-1 mt-2" />
+    </div>
+
+    <!-- PO BOX -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">PO BOX</dt>
+      <dd id="poBoxDisplay" class="text-lg font-semibold text-gray-800">AA</dd>
+      <input id="poBoxInput" name="po_box" type="text" value="AA"
+             class="hidden w-full border rounded px-2 py-1 mt-2" />
+    </div>
+
+    <!-- Phone -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">Phone</dt>
+      <dd id="phoneDisplay" class="text-lg font-semibold text-gray-800">+234 812 345 6789</dd>
+      <input id="phoneInput" name="phone" type="text" value="+234 812 345 6789"
+             class="hidden w-full border rounded px-2 py-1 mt-2" />
+    </div>
+
+    <!-- Email -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">Email</dt>
+      <dd id="emailDisplay" class="text-lg font-semibold text-gray-800">paymaster@nncpo.org</dd>
+      <input id="emailInput" name="email" type="email" value="hq@navy.mil.ng"
+             class="hidden w-full border rounded px-2 py-1 mt-2" />
+    </div>
+
+    <!-- Server Address -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">Server Address</dt>
+      <dd id="serverAddressDisplay" class="text-lg font-semibold text-gray-800">mail.ncpo.org</dd>
+      <input id="serverAddressInput" name="server_address" type="text" value="mail.ncpo.org"
+        class="hidden w-full border rounded px-2 py-1 mt-2" />
+    </div>
+
+    <!-- Email Password -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">Email Password</dt>
+      <dd id="emailPasswordDisplay" class="text-lg font-semibold text-gray-800">********</dd>
+      <input id="emailPasswordInput" name="email_password" type="password" value="password"
+             class="hidden w-full border rounded px-2 py-1 mt-2" />
+    </div>
+
+    <!-- Address -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition md:col-span-2 lg:col-span-2">
+      <dt class="text-sm font-medium text-gray-500">Address</dt>
+      <dd id="addressDisplay" class="text-lg font-semibold text-gray-800">
+        Central Pay Office, 23 Point Road, Apapa
+      </dd>
+      <textarea id="addressInput" name="address" rows="3"
+                class="hidden w-full border rounded px-2 py-1 mt-2 resize-none">Central Pay Office, 23 Point Road, Apapa</textarea>
+    </div>
+
+    <div class="grid md:grid-cols-3 lg:grid-cols-5 gap-4 md:col-span-2 lg:col-span-3">
+      <!-- Salary Scale -->
+      <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+        <dt class="text-sm font-medium text-gray-500">Shall Use Standard Salary Scale?</dt>
+        <dd id="salaryScaleDisplay" class="text-lg font-semibold text-gray-800">YES</dd>
+        <select id="salaryScaleInput" name="salary_scale" class="hidden w-full border rounded px-2 py-1 mt-2">
+          <option value="YES" selected>YES</option>
+          <option value="NO">NO</option>
+        </select>
+      </div>
+
+      <!-- Independent Monthly Tax -->
+      <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+        <dt class="text-sm font-medium text-gray-500">Independent Monthly Tax</dt>
+        <dd id="independentMonthlyTaxDisplay" class="text-lg font-semibold text-gray-800">YES</dd>
+        <select id="independentMonthlyTaxInput" name="independent_monthly_tax" class="hidden w-full border rounded px-2 py-1 mt-2">
+          <option value="YES" selected>YES</option>
+          <option value="NO">NO</option>
+        </select>
+      </div>
+
+      <!-- Link To Human Resources -->
+      <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+        <dt class="text-sm font-medium text-gray-500">Linked To Human Resources</dt>
+        <dd id="linkToHRDisplay" class="text-lg font-semibold text-gray-800">YES</dd>
+        <select id="linkToHRInput" name="link_to_hr" class="hidden w-full border rounded px-2 py-1 mt-2">
+          <option value="YES" selected>YES</option>
+          <option value="NO">NO</option>
+        </select>
+      </div>
+
+      <!-- Processing Month -->
+      <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+        <dt class="text-sm font-medium text-gray-500">Processing Month</dt>
+        <dd id="processingMonthDisplay" class="text-lg font-semibold text-gray-800">January</dd>
+        <input id="processingMonthInput" name="processing_month" type="text" value="January"
+              class="hidden w-full border rounded px-2 py-1 mt-2" />
+      </div>
+
+      <!-- Processing Year -->
+      <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+        <dt class="text-sm font-medium text-gray-500">Processing Year</dt>
+        <dd id="processingYearDisplay" class="text-lg font-semibold text-gray-800">2023</dd>
+        <input id="processingYearInput" name="processing_year" type="text" value="2023"
+              class="hidden w-full border rounded px-2 py-1 mt-2" />
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-1 lg:grid-cols-1 gap-4 md:col-span-2 lg:col-span-1">
+
+      <!-- Retirement Age -->
+      <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+        <dt class="text-sm font-medium text-gray-500">Retirement Age</dt>
+        <dd id="retirementAgeDisplay" class="text-lg font-semibold text-gray-800">60</dd>
+        <input id="retirementAgeInput" name="retirement_age" type="text" value="60"
+              class="hidden w-full border rounded px-2 py-1 mt-2" />
+      </div>
+
+      <!-- Installation Date -->
+      <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+        <dt class="text-sm font-medium text-gray-500">Installation Date</dt>
+        <dd id="installationDateDisplay" class="text-lg font-semibold text-gray-800">01/01/2020</dd>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition md:col-span-2 lg:col-span-2">
+      <dt class="text-sm font-medium text-gray-500">Notes</dt>
+      <dd id="notesDisplay" class="text-lg font-semibold text-gray-800">
+        <ul>
+          <li>Confidential use only. System managed by IT department.</li>
+          <li>Do not distribute without permission.</li>
+        </ul>
+      </dd>
+      <textarea id="notesInput" name="notes" rows="3"
+        class="hidden w-full border rounded px-2 py-1 mt-2 resize-none">        
+          Confidential use only. System managed by IT department.
+          Do not distribute without permission.
+        </textarea>
+    </div>
+  </form>
+
+  <!-- Action Buttons -->
+  <div id="formActions" class="hidden mt-6 flex justify-end space-x-2">
+    <button type="button" id="cancelBtn"
+            class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">
+      Cancel
+    </button>
+    <button type="submit" form="systemForm"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+      Save
+    </button>
   </div>
 </div>
+
+<!-- Success Modal -->
+<div id="successModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+  <div class="bg-white rounded-lg shadow-lg p-6 flex flex-col items-center">
+    <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    <p class="mt-4 text-gray-700">Saving changes...</p>
+  </div>
+</div>
+
+<script>
+  const toggleEditBtn = document.getElementById("toggleEdit");
+  const form = document.getElementById("systemForm");
+  const formActions = document.getElementById("formActions");
+  const successModal = document.getElementById("successModal");
+  const cancelBtn = document.getElementById("cancelBtn");
+
+  let isEditing = false;
+
+  toggleEditBtn.onclick = () => {
+    isEditing = !isEditing;
+    toggleEditBtn.textContent = isEditing ? "Editing..." : "Edit";
+    formActions.classList.toggle("hidden", !isEditing);
+
+    form.querySelectorAll("dd").forEach(el => el.classList.toggle("hidden", isEditing));
+    form.querySelectorAll("input, textarea, select").forEach(el => el.classList.toggle("hidden", !isEditing));
+  };
+
+  cancelBtn.onclick = () => {
+    isEditing = false;
+    toggleEditBtn.textContent = "Edit";
+    formActions.classList.add("hidden");
+    form.querySelectorAll("dd").forEach(el => el.classList.remove("hidden"));
+    form.querySelectorAll("input, textarea, select").forEach(el => el.classList.add("hidden"));
+  };
+
+  // Auto-grow textarea
+  form.querySelectorAll("textarea").forEach(area => {
+    area.addEventListener("input", () => {
+      area.style.height = "auto";
+      area.style.height = area.scrollHeight + "px";
+    });
+  });
+
+  form.onsubmit = (e) => {
+    e.preventDefault();
+
+    successModal.classList.remove("hidden");
+
+    setTimeout(() => {
+      successModal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-lg p-6 flex flex-col items-center">
+          <svg class="w-16 h-16 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <p class="mt-4 text-green-600 font-semibold">Changes Saved!</p>
+        </div>`;
+
+      form.querySelectorAll("input, textarea, select").forEach(input => {
+        const display = document.getElementById(input.id.replace("Input","Display"));
+        if (display) display.textContent = input.value;
+      });
+
+      setTimeout(() => {
+        successModal.classList.add("hidden");
+        toggleEditBtn.textContent = "Edit";
+        isEditing = false;
+        formActions.classList.add("hidden");
+        form.querySelectorAll("dd").forEach(el => el.classList.remove("hidden"));
+        form.querySelectorAll("input, textarea, select").forEach(el => el.classList.add("hidden"));
+      }, 1500);
+    }, 1200);
+  };
+</script>

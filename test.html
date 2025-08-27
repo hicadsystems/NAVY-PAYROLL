@@ -8,700 +8,187 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
 
-<!-- TABS -->
-<div class="p-6">
-  <div class="flex justify-between">
-    <div class="flex justify-start">
-      <button type="button" id="batchUploadBtn" class="px-4 py-2 rounded-md bg-yellow-400 text-grey hover:bg-blue-600">
-        Batch Upload
-      </button>
+<div class="max-w-6xl mx-auto p-6">
+  <!-- Profile Header -->
+  <div class="flex items-center space-x-4 mb-6">
+    <img src="https://via.placeholder.com/80" alt="Logo" class="w-20 h-20 rounded-full border shadow">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Nigerian Navy (Naval Headquarters)</h1>
+      <p class="text-gray-500">System File Information</p>
     </div>
-    <div class="flex justify-end gap-2">
-      <button id="tab-personnel" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-600">Personnel</button>
-      <button id="tab-nok" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">NOK</button>
-      <button id="tab-spouse" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Spouse</button>
-      <button id="tab-children" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Children</button>
-    </div>
-  </div>
-</div>
-
-<!-- PERSONNEL SECTION -->
-<div id="section-personnel" class="p-6">
-  <!-- Title -->
-  <h3 id="formTitle" class="text-2xl font-bold text-blue-800 mb-4"></h3>
-
-  <!-- Step Buttons + Current Personnel -->
-  <div class="flex items-center gap-2 justify-between mb-6">
-    <div class=" flex items-center space-x-2">
-      <button id="btnStep1" class="relative px-4 text-sm lg:text-lg py-2 rounded-md bg-blue-600 hover:bg-blue-600 text-white transition-all overflow-hidden group">
-        <span class="relative z-10">Step 1: Basic Details</span>
-      </button>
-      <button id="btnStep2" class="relative px-4 text-sm lg:text-lg py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600 transition-all overflow-hidden group">
-        <span class="relative z-10">Step 2: Official Info</span>
-      </button>
-    </div>
-
-    <button onclick="alert('Navigate to Current Personnel')"
-      class="px-4 text-sm lg:text-lg py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-      Current Personnel
+    <button id="toggleEdit" class="ml-auto px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">
+      Edit
     </button>
   </div>
 
-  <!-- Form -->
-  <form id="personnelForm" class="space-y-6">
-    <!-- Step 1 (dynamic, with labels) -->
-    <div id="step1" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  <!-- Info Grid -->
+  <form id="systemForm" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
 
-    <!-- Step 2 (static, with labels) -->
-    <div id="step2" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date Employed</label>
-        <input type="date" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Last Position</label>
-        <input type="text" placeholder="Last Position" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Tax</label>
-        <input type="text" placeholder="Tax" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Military/Civilian</label>
-        <input type="text" placeholder="Military/Civilian" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Grade Type</label>
-        <input type="text" placeholder="Grade Type" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Grade Level/Step</label>
-        <input type="text" placeholder="Grade Level/Step" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Bank</label>
-        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Bank</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Account Number</label>
-        <input type="text" placeholder="Account Number" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
+    <!-- Code -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">Code</dt>
+      <dd id="codeDisplay" class="text-lg font-semibold text-gray-800">NAVY</dd>
+      <input id="codeInput" name="code" type="text" value="NAVY"
+             class="hidden w-full border rounded px-2 py-1 mt-2" />
     </div>
 
-    <!-- Actions -->
-    <div class="col-span-full flex justify-end space-x-4 pt-4">
-      <button type="button" id="cancelBtn" class="px-6 py-2 bg-gray-400 hover:bg-gray-500 rounded-lg text-white">Cancel</button>
-      <button type="button" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white">Submit</button>
+    <!-- Town -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">Town</dt>
+      <dd id="townDisplay" class="text-lg font-semibold text-gray-800">Apapa</dd>
+      <input id="townInput" name="town" type="text" value="Apapa"
+             class="hidden w-full border rounded px-2 py-1 mt-2" />
+    </div>
+
+    <!-- State -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">State</dt>
+      <dd id="stateDisplay" class="text-lg font-semibold text-gray-800">Lagos</dd>
+      <input id="stateInput" name="state" type="text" value="Lagos"
+             class="hidden w-full border rounded px-2 py-1 mt-2" />
+    </div>
+
+    <!-- Country -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">Country</dt>
+      <dd id="countryDisplay" class="text-lg font-semibold text-gray-800">Nigeria</dd>
+      <input id="countryInput" name="country" type="text" value="Nigeria"
+             class="hidden w-full border rounded px-2 py-1 mt-2" />
+    </div>
+
+    <!-- Phone -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">Phone</dt>
+      <dd id="phoneDisplay" class="text-lg font-semibold text-gray-800">+234 812 345 6789</dd>
+      <input id="phoneInput" name="phone" type="text" value="+234 812 345 6789"
+             class="hidden w-full border rounded px-2 py-1 mt-2" />
+    </div>
+
+    <!-- Email -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition">
+      <dt class="text-sm font-medium text-gray-500">Email</dt>
+      <dd id="emailDisplay" class="text-lg font-semibold text-gray-800">hq@navy.mil.ng</dd>
+      <input id="emailInput" name="email" type="email" value="hq@navy.mil.ng"
+             class="hidden w-full border rounded px-2 py-1 mt-2" />
+    </div>
+
+    <!-- Address -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition md:col-span-2 lg:col-span-3">
+      <dt class="text-sm font-medium text-gray-500">Address</dt>
+      <dd id="addressDisplay" class="text-lg font-semibold text-gray-800">
+        Central Pay Office, 23 Point Road, Apapa
+      </dd>
+      <textarea id="addressInput" name="address" rows="3"
+                class="hidden w-full border rounded px-2 py-1 mt-2 resize-none">Central Pay Office, 23 Point Road, Apapa</textarea>
+    </div>
+
+    <!-- Description -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition md:col-span-2 lg:col-span-3">
+      <dt class="text-sm font-medium text-gray-500">Description</dt>
+      <dd id="descDisplay" class="text-lg font-semibold text-gray-800">
+        Nigerian Navy Headquarters system information for payroll, HR and logistics
+      </dd>
+      <textarea id="descInput" name="description" rows="4"
+                class="hidden w-full border rounded px-2 py-1 mt-2 resize-none">Nigerian Navy Headquarters system information for payroll, HR and logistics</textarea>
+    </div>
+
+    <!-- Notes -->
+    <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition md:col-span-2 lg:col-span-3">
+      <dt class="text-sm font-medium text-gray-500">Notes</dt>
+      <dd id="notesDisplay" class="text-lg font-semibold text-gray-800">
+        Confidential use only. System managed by IT department.
+      </dd>
+      <textarea id="notesInput" name="notes" rows="3"
+                class="hidden w-full border rounded px-2 py-1 mt-2 resize-none">Confidential use only. System managed by IT department.</textarea>
     </div>
   </form>
-</div>
 
-<!-- NOK SECTION -->
-<div id="section-nok" class="hidden p-6">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-2xl font-bold text-blue-800">Next of Kin</h3>
-    <button id="nokToggleBtn" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">+ Add</button>
-  </div>
-
-  <!-- Form -->
-  <div id="nokFormWrap" class="hidden">
-    <form id="nokForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">First Name <span class="text-red-500">*</span></label>
-        <input id="nokFirst" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Last Name <span class="text-red-500">*</span></label>
-        <input id="nokLast" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date of Birth</label>
-        <input id="nokDob" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div class="md:col-span-2 lg:col-span-3">
-        <label class="block text-sm font-medium text-gray-700">Full Address <span class="text-red-500">*</span></label>
-        <input id="nokAddress" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Relationship <span class="text-red-500">*</span></label>
-        <select id="nokRelationship" required class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option value="">Select</option>
-          <option>Spouse</option><option>Father</option><option>Mother</option>
-          <option>Son</option><option>Daughter</option><option>Brother</option>
-          <option>Sister</option><option>Uncle</option><option>Aunt</option><option>Friend</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Mobile Number <span class="text-red-500">*</span></label>
-        <input id="nokMobile" required type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Home Number</label>
-        <input id="nokHome" type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Email Address <span class="text-red-500">*</span></label>
-        <input id="nokEmail" required type="email" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Place Of Work</label>
-        <input id="nokWork" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Next Of Kin Type</label>
-        <select id="nokType" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Main</option><option>Alternate</option>
-        </select>
-      </div>
-    </form>
-    <div class="flex justify-end gap-3 mb-6">
-      <button id="nokCancel" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
-      <button id="nokSave" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
-    </div>
-  </div>
-
-  <!-- List -->
-  <div class="overflow-x-auto">
-    <table class="min-w-full border border-gray-200 rounded-lg text-sm">
-      <thead class="bg-blue-100 text-blue-900">
-        <tr>
-          <th class="py-2 px-3 border">Name</th>
-          <th class="py-2 px-3 border">Relationship</th>
-          <th class="py-2 px-3 border">Mobile</th>
-          <th class="py-2 px-3 border">Email</th>
-          <th class="py-2 px-3 border">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="nokList" class="text-center">
-        <tr id="nokEmpty"><td colspan="5" class="py-4 text-gray-500">No NOKs yet.</td></tr>
-      </tbody>
-    </table>
+  <!-- Action Buttons -->
+  <div id="formActions" class="hidden mt-6 flex justify-end space-x-2">
+    <button type="button" id="cancelBtn"
+            class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">
+      Cancel
+    </button>
+    <button type="submit" form="systemForm"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+      Save
+    </button>
   </div>
 </div>
 
-<!-- SPOUSE SECTION -->
-<div id="section-spouse" class="hidden p-6">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-2xl font-bold text-blue-800">Spouse</h3>
-    <button id="spouseToggleBtn" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">+ Add</button>
-  </div>
-
-  <div id="spouseFormWrap" class="hidden">
-    <form id="spouseForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Full Name <span class="text-red-500">*</span></label>
-        <input id="spouseName" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date Of Birth</label>
-        <input id="spouseDob" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date of Married</label>
-        <input id="spouseDom" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Street</label>
-        <input id="spouseStreet" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Town</label>
-        <input id="spouseTown" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">State</label>
-        <input id="spouseState" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Local Government</label>
-        <input id="spouseLga" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Phone</label>
-        <input id="spousePhone" type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Email</label>
-        <input id="spouseEmail" type="email" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">P.O Box</label>
-        <input id="spousePoBox" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-    </form>
-    <div class="flex justify-end gap-3 mb-6">
-      <button id="spouseCancel" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
-      <button id="spouseSave" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
-    </div>
-  </div>
-
-  <div class="overflow-x-auto">
-    <table class="min-w-full border border-gray-200 rounded-lg text-sm">
-      <thead class="bg-blue-100 text-blue-900">
-        <tr>
-          <th class="py-2 px-3 border">Full Name</th>
-          <th class="py-2 px-3 border">Phone</th>
-          <th class="py-2 px-3 border">Email</th>
-          <th class="py-2 px-3 border">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="spouseList" class="text-center">
-        <tr id="spouseEmpty"><td colspan="4" class="py-4 text-gray-500">No spouse records yet.</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- CHILDREN SECTION -->
-<div id="section-children" class="hidden p-6">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-2xl font-bold text-blue-800">Children</h3>
-    <button id="childToggleBtn" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">+ Add</button>
-  </div>
-
-  <div id="childFormWrap" class="hidden">
-    <form id="childForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Full Name <span class="text-red-500">*</span></label>
-        <input id="childName" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Street</label>
-        <input id="childStreet" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Town</label>
-        <input id="childTown" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">State</label>
-        <input id="childState" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Local Government</label>
-        <input id="childLga" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Phone</label>
-        <input id="childPhone" type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Email</label>
-        <input id="childEmail" type="email" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">P.O Box</label>
-        <input id="childPoBox" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Sex</label>
-        <select id="childSex" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none">
-          <option value="">Select</option><option>Male</option><option>Female</option><option>Other</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date of Birth</label>
-        <input id="childDob" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">School</label>
-        <input id="childSchool" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Office Address</label>
-        <input id="childOffice" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div class="md:col-span-2 lg:col-span-3">
-        <label class="block text-sm font-medium text-gray-700">Occupation</label>
-        <input id="childOccupation" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-    </form>
-    <div class="flex justify-end gap-3 mb-6">
-      <button id="childCancel" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
-      <button id="childSave" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
-    </div>
-  </div>
-
-  <div class="overflow-x-auto">
-    <table class="min-w-full border border-gray-200 rounded-lg text-sm">
-      <thead class="bg-blue-100 text-blue-900">
-        <tr>
-          <th class="py-2 px-3 border">Full Name</th>
-          <th class="py-2 px-3 border">Sex</th>
-          <th class="py-2 px-3 border">DOB</th>
-          <th class="py-2 px-3 border">Phone</th>
-          <th class="py-2 px-3 border">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="childList" class="text-center">
-        <tr id="childEmpty"><td colspan="5" class="py-4 text-gray-500">No children yet.</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Action Popup -->
-<div id="actionPopup" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
-  <div class="bg-white p-6 rounded-2xl shadow-xl text-center w-64">
-    <div id="popupIcon" class="mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
-    <p id="popupText" class="mt-4 text-lg font-semibold text-gray-700">Processing...</p>
+<!-- Success Modal -->
+<div id="successModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+  <div class="bg-white rounded-lg shadow-lg p-6 flex flex-col items-center">
+    <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    <p class="mt-4 text-gray-700">Saving changes...</p>
   </div>
 </div>
 
 <script>
-/* ===== Global state and helpers ===== */
-const editState = { type: null, id: null, row: null };
-
-function showPopup(message) {
-  const popup = document.getElementById('actionPopup');
-  const icon = document.getElementById('popupIcon');
-  const text = document.getElementById('popupText');
-
-  // Reset to spinner
-  icon.className = "mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin";
-  icon.innerHTML = "";
-  text.textContent = message;
-
-  popup.classList.remove('hidden');
-
-  setTimeout(() => {
-    icon.className = "mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-green-500 text-white";
-    icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                      </svg>`;
-    text.textContent = "Success!";
-    setTimeout(() => {
-      popup.classList.add('hidden');
-      icon.innerHTML = "";
-    }, 1000);
-  }, 1500);
-}
-
-function toggleBlock(el, btn) {
-  const isHidden = el.classList.contains('hidden');
-  el.classList.toggle('hidden');
-  btn.textContent = isHidden ? '− Hide' : '+ Add';
-}
-
-function val(id) { 
-  return (document.getElementById(id)?.value || '').trim(); 
-}
-
-function escapeHtml(s) { 
-  return s.replace(/[&<>"']/g, m => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
-  }[m])); 
-}
-
-function actionBtns(type, id) {
-  return `
-    <button onclick="viewRow('${type}', '${id}')" class="px-2 text-blue-600 hover:underline">View</button>
-    <button onclick="editRow('${type}', '${id}')" class="px-2 text-green-600 hover:underline">Edit</button>
-    <button onclick="deleteRow(this)" class="px-2 text-red-600 hover:underline">Delete</button>
-  `;
-}
-
-/* ===== Global action functions ===== */
-window.viewRow = function(type, id) {
-  showPopup(`Viewing ${type} #${id}`);
-}
-
-window.deleteRow = function(btn) {
-  btn.closest('tr').remove();
-  showPopup("Deleted successfully");
-}
-
-window.editRow = function(type, id) {
-  console.log("editRow called with:", type, id);
-  const row = document.querySelector(`tr[data-type="${type}"][data-id="${id}"]`);
-  if (!row) {
-    console.error("Row not found for:", type, id);
-    return;
-  }
-  
-  editState.type = type;
-  editState.id = id;
-  editState.row = row;
-  
-  const cells = row.querySelectorAll('td');
-
-  if (type === "NOK") {
-    const nameParts = cells[0].textContent.trim().split(' ');
-    document.getElementById('nokFirst').value = nameParts[0] || '';
-    document.getElementById('nokLast').value = nameParts.slice(1).join(' ') || '';
-    document.getElementById('nokRelationship').value = cells[1].textContent.trim();
-    document.getElementById('nokMobile').value = cells[2].textContent.trim();
-    document.getElementById('nokEmail').value = cells[3].textContent.trim();
-    document.getElementById('nokFormWrap').classList.remove('hidden');
-  }
-  
-  if (type === "Spouse") {
-    document.getElementById('spouseName').value = cells[0].textContent.trim();
-    document.getElementById('spousePhone').value = cells[1].textContent.trim();
-    document.getElementById('spouseEmail').value = cells[2].textContent.trim();
-    document.getElementById('spouseFormWrap').classList.remove('hidden');
-  }
-  
-  if (type === "Child") {
-    document.getElementById('childName').value = cells[0].textContent.trim();
-    document.getElementById('childSex').value = cells[1].textContent.trim();
-    document.getElementById('childDob').value = cells[2].textContent.trim();
-    document.getElementById('childPhone').value = cells[3].textContent.trim();
-    document.getElementById('childFormWrap').classList.remove('hidden');
-  }
-}
-
-/* ======= Tab Management ======= */
-(function() {
-  const tabs = ['personnel', 'nok', 'spouse', 'children'];
-  
-  function showTab(name) {
-    tabs.forEach(t => {
-      document.getElementById('tab-' + t).classList.remove('bg-blue-600', 'text-white');
-      document.getElementById('tab-' + t).classList.add('bg-yellow-400', 'text-gray-900');
-      document.getElementById('section-' + t).classList.add('hidden');
-    });
-    document.getElementById('tab-' + name).classList.add('bg-blue-600', 'text-white');
-    document.getElementById('tab-' + name).classList.remove('bg-yellow-400', 'text-gray-900');
-    document.getElementById('section-' + name).classList.remove('hidden');
-  }
-  
-  document.getElementById('tab-personnel').onclick = () => showTab('personnel');
-  document.getElementById('tab-nok').onclick = () => showTab('nok');
-  document.getElementById('tab-spouse').onclick = () => showTab('spouse');
-  document.getElementById('tab-children').onclick = () => showTab('children');
-  
-  showTab('personnel'); // default
-})();
-
-/* ======= Personnel Step Management ======= */
-(function() {
-  const formTitle = "Add New Personnel";
-  const fieldsStep1 = [
-    "Personnel Number", "Rank", "Surname", "First Name", "Middle Name", "Date of Birth",
-    "Gender", "Marital Status", "Religion", "Tribe", "State", "Local Government", "Home Address",
-    "Place of Birth", "Email Address", "Phone", "Division", "Last Location", "Directorate",
-    "Geo Political Zone", "Passport Photograph"
-  ];
-
-  const step1Container = document.getElementById("step1");
-  const step2Container = document.getElementById("step2");
-  const btnStep1 = document.getElementById("btnStep1");
-  const btnStep2 = document.getElementById("btnStep2");
-  const formTitleEl = document.getElementById("formTitle");
+  const toggleEditBtn = document.getElementById("toggleEdit");
+  const form = document.getElementById("systemForm");
+  const formActions = document.getElementById("formActions");
+  const successModal = document.getElementById("successModal");
   const cancelBtn = document.getElementById("cancelBtn");
 
-  function controlWrap(label, control) {
-    return `<div><label class="block text-sm font-medium text-gray-700">${label}</label>${control}</div>`;
-  }
+  let isEditing = false;
 
-  function renderStep1() {
-    step1Container.innerHTML = fieldsStep1.map(field => {
-      if (["Rank", "State", "Local Government", "Last Location", "Geo Political Zone"].includes(field)) {
-        return controlWrap(field,
-          `<select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-             <option>Select ${field}</option>
-           </select>`);
-      }
-      if (field === "Passport Photograph") {
-        return controlWrap(field,
-          `<input type="file" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`);
-      }
-      if (field === "Date of Birth") {
-        return controlWrap(field,
-          `<input type="date" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`);
-      }
-      return controlWrap(field,
-        `<input type="text" placeholder="${field}" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`);
-    }).join("");
-  }
+  toggleEditBtn.onclick = () => {
+    isEditing = !isEditing;
+    toggleEditBtn.textContent = isEditing ? "Editing..." : "Edit";
+    formActions.classList.toggle("hidden", !isEditing);
 
-  function toggleStep(step) {
-    if (step === 1) {
-      step1Container.classList.remove("hidden");
-      step2Container.classList.add("hidden");
-      btnStep1.classList.add("bg-blue-600", "text-white");
-      btnStep1.classList.remove("bg-yellow-400", "text-gray-900");
-      btnStep2.classList.add("bg-yellow-400", "text-gray-900");
-      btnStep2.classList.remove("bg-blue-600", "text-white");
-    } else {
-      step1Container.classList.add("hidden");
-      step2Container.classList.remove("hidden");
-      btnStep2.classList.add("bg-blue-600", "text-white");
-      btnStep2.classList.remove("bg-yellow-400", "text-gray-900");
-      btnStep1.classList.add("bg-yellow-400", "text-gray-900");
-      btnStep1.classList.remove("bg-blue-600", "text-white");
-    }
-  }
+    form.querySelectorAll("dd").forEach(el => el.classList.toggle("hidden", isEditing));
+    form.querySelectorAll("input, textarea").forEach(el => el.classList.toggle("hidden", !isEditing));
+  };
 
-  function cancelForm() {
-    document.getElementById("personnelForm").reset();
-    toggleStep(1);
-  }
+  cancelBtn.onclick = () => {
+    isEditing = false;
+    toggleEditBtn.textContent = "Edit";
+    formActions.classList.add("hidden");
+    form.querySelectorAll("dd").forEach(el => el.classList.remove("hidden"));
+    form.querySelectorAll("input, textarea").forEach(el => el.classList.add("hidden"));
+  };
 
-  formTitleEl.textContent = formTitle;
-  renderStep1();
-  toggleStep(1);
+  // Auto-grow textarea
+  form.querySelectorAll("textarea").forEach(area => {
+    area.addEventListener("input", () => {
+      area.style.height = "auto";
+      area.style.height = area.scrollHeight + "px";
+    });
+  });
 
-  btnStep1.addEventListener("click", () => toggleStep(1));
-  btnStep2.addEventListener("click", () => toggleStep(2));
-  cancelBtn.addEventListener("click", cancelForm);
-})();
+  form.onsubmit = (e) => {
+    e.preventDefault();
 
-/* ======= NOK Management ======= */
-(function() {
-  const formWrap = document.getElementById('nokFormWrap');
-  const toggleBtn = document.getElementById('nokToggleBtn');
-  let nokId = 0;
+    successModal.classList.remove("hidden");
 
-  function save() {
-    const first = val('nokFirst'), last = val('nokLast'), rel = val('nokRelationship'),
-          mobile = val('nokMobile'), email = val('nokEmail');
-    
-    if (!first || !last || !rel || !mobile || !email) { 
-      alert('Please fill all required fields.'); 
-      return; 
-    }
-    
-    const list = document.getElementById('nokList');
-    const empty = document.getElementById('nokEmpty'); 
-    if (empty) empty.remove();
+    setTimeout(() => {
+      successModal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-lg p-6 flex flex-col items-center">
+          <svg class="w-16 h-16 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <p class="mt-4 text-green-600 font-semibold">Changes Saved!</p>
+        </div>`;
+      
+      form.querySelectorAll("input, textarea").forEach(input => {
+        const display = document.getElementById(input.id.replace("Input","Display"));
+        if (display) display.textContent = input.value;
+      });
 
-    if (editState.type === "NOK" && editState.row) {
-      // Update existing row
-      const cells = editState.row.querySelectorAll('td');
-      cells[0].textContent = `${first} ${last}`;
-      cells[1].textContent = rel;
-      cells[2].textContent = mobile;
-      cells[3].textContent = email;
-      editState.type = null; 
-      editState.row = null;
-      showPopup("Updated NOK");
-    } else {
-      // Add new row
-      nokId++;
-      list.insertAdjacentHTML('beforeend', `
-        <tr data-type="NOK" data-id="${nokId}" class="hover:bg-yellow-50">
-          <td class="border px-3 py-2">${escapeHtml(first)} ${escapeHtml(last)}</td>
-          <td class="border px-3 py-2">${escapeHtml(rel)}</td>
-          <td class="border px-3 py-2">${escapeHtml(mobile)}</td>
-          <td class="border px-3 py-2">${escapeHtml(email)}</td>
-          <td class="border px-3 py-2">${actionBtns('NOK', nokId)}</td>
-        </tr>`);
-      showPopup("Saved NOK");
-    }
-    
-    document.getElementById('nokForm').reset();
-    toggleBlock(formWrap, toggleBtn);
-  }
-
-  document.getElementById('nokCancel').onclick = () => toggleBlock(formWrap, toggleBtn);
-  document.getElementById('nokSave').onclick = save;
-  toggleBtn.onclick = () => toggleBlock(formWrap, toggleBtn);
-})();
-
-/* ======= Spouse Management ======= */
-(function() {
-  const formWrap = document.getElementById('spouseFormWrap');
-  const toggleBtn = document.getElementById('spouseToggleBtn');
-  let spouseId = 0;
-
-  function save() {
-    const name = val('spouseName'), phone = val('spousePhone'), email = val('spouseEmail');
-    
-    if (!name) { 
-      alert('Full Name is required.'); 
-      return; 
-    }
-    
-    const list = document.getElementById('spouseList');
-    const empty = document.getElementById('spouseEmpty'); 
-    if (empty) empty.remove();
-
-    if (editState.type === "Spouse" && editState.row) {
-      // Update existing row
-      const cells = editState.row.querySelectorAll('td');
-      cells[0].textContent = name;
-      cells[1].textContent = phone;
-      cells[2].textContent = email;
-      editState.type = null; 
-      editState.row = null;
-      showPopup("Updated Spouse");
-    } else {
-      // Add new row
-      spouseId++;
-      list.insertAdjacentHTML('beforeend', `
-        <tr data-type="Spouse" data-id="${spouseId}" class="hover:bg-yellow-50">
-          <td class="border px-3 py-2">${escapeHtml(name)}</td>
-          <td class="border px-3 py-2">${escapeHtml(phone)}</td>
-          <td class="border px-3 py-2">${escapeHtml(email)}</td>
-          <td class="border px-3 py-2">${actionBtns('Spouse', spouseId)}</td>
-        </tr>`);
-      showPopup("Saved Spouse");
-    }
-    
-    document.getElementById('spouseForm').reset();
-    toggleBlock(formWrap, toggleBtn);
-  }
-
-  document.getElementById('spouseCancel').onclick = () => toggleBlock(formWrap, toggleBtn);
-  document.getElementById('spouseSave').onclick = save;
-  toggleBtn.onclick = () => toggleBlock(formWrap, toggleBtn);
-})();
-
-/* ======= Children Management ======= */
-(function() {
-  const formWrap = document.getElementById('childFormWrap');
-  const toggleBtn = document.getElementById('childToggleBtn');
-  let childId = 0;
-
-  function save() {
-    const name = val('childName'), sex = val('childSex'), dob = val('childDob'), phone = val('childPhone');
-    
-    if (!name) { 
-      alert('Full Name is required.'); 
-      return; 
-    }
-    
-    const list = document.getElementById('childList');
-    const empty = document.getElementById('childEmpty'); 
-    if (empty) empty.remove();
-
-    if (editState.type === "Child" && editState.row) {
-      // Update existing row
-      const cells = editState.row.querySelectorAll('td');
-      cells[0].textContent = name;
-      cells[1].textContent = sex;
-      cells[2].textContent = dob;
-      cells[3].textContent = phone;
-      editState.type = null; 
-      editState.row = null;
-      showPopup("Updated Child");
-    } else {
-      // Add new row
-      childId++;
-      list.insertAdjacentHTML('beforeend', `
-        <tr data-type="Child" data-id="${childId}" class="hover:bg-yellow-50">
-          <td class="border px-3 py-2">${escapeHtml(name)}</td>
-          <td class="border px-3 py-2">${escapeHtml(sex)}</td>
-          <td class="border px-3 py-2">${escapeHtml(dob)}</td>
-          <td class="border px-3 py-2">${escapeHtml(phone)}</td>
-          <td class="border px-3 py-2">${actionBtns('Child', childId)}</td>
-        </tr>`);
-      showPopup("Saved Child");
-    }
-    
-    document.getElementById('childForm').reset();
-    toggleBlock(formWrap, toggleBtn);
-  }
-
-  document.getElementById('childCancel').onclick = () => toggleBlock(formWrap, toggleBtn);
-  document.getElementById('childSave').onclick = save;
-  toggleBtn.onclick = () => toggleBlock(formWrap, toggleBtn);
-})();
+      setTimeout(() => {
+        successModal.classList.add("hidden");
+        toggleEditBtn.textContent = "Edit";
+        isEditing = false;
+        formActions.classList.add("hidden");
+        form.querySelectorAll("dd").forEach(el => el.classList.remove("hidden"));
+        form.querySelectorAll("input, textarea").forEach(el => el.classList.add("hidden"));
+      }, 1500);
+    }, 1200);
+  };
 </script>
+
 
 </body>
 </html>

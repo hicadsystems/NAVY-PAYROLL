@@ -1,0 +1,271 @@
+<!-- BATCH UPLOAD SECTION -->
+<div id="section-batch" class="p-6 flex flex-col items-center">
+  <div class="w-full max-w-md rounded-2xl">
+    <!-- Notes -->
+    <div class="mb-6">
+      <h4 class="font-semibold text-blue-700 mb-2">Please Note:</h4>
+      <ul class="list-disc list-inside text-gray-700 text-sm space-y-1">
+        <li>Ensure your file is properly formatted before uploading.</li>
+        <li>If you encounter any issues, please contact support.</li>
+        <li>Duplicate Service Number will not be uploaded.</li>
+      </ul>
+    </div>
+
+    <!-- Upload Form -->
+    <form id="batchUploadForm" class="space-y-6">
+      <div>
+        <label for="batchFile" class="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
+        <input type="file" id="batchFile"
+          class="mt-1 block w-full border border-blue-300 bg-white rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400" />
+        <p class="text-xs text-gray-500 mt-2">
+          Only <span class="font-semibold">.xlsx</span> or <span class="font-semibold">.csv</span> files are allowed.
+          <a href="sample.csv" download class="text-blue-600 font-medium hover:underline ml-2">Download Sample</a>
+        </p>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button type="button" id="cancelBatchBtn"
+          class="px-5 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg text-gray-800 font-medium shadow-sm">Cancel</button>
+        <button type="button" id="uploadBatchBtn"
+          class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium shadow-md">Upload</button>
+      </div>
+    </form>
+   </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full text-center">
+        <div id="successIcon" class="mb-3 flex items-center justify-center">
+          <!-- Spinner / Tick goes here -->
+           <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2"
+            viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round"
+            d="M5 13l4 4L19 7" /></svg>
+        </div>
+        <h2 id="successTitle" class="text-xl font-bold text-green-600 mb-2">Success</h2>
+        <p id="successMessage" class="text-gray-600 mb-4">Action completed successfully.</p>
+        <button id="closeModalBtn"
+          class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">OK</button>
+      </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full text-center">
+        <h2 id="confirmTitle" class="text-xl font-bold text-yellow-600 mb-4">Confirm Action</h2>
+        <p id="confirmMessage" class="text-gray-700 mb-6">Are you sure?</p>
+        <div class="flex justify-center gap-3">
+          <button id="confirmCancel"
+            class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-gray-800 font-medium">Cancel</button>
+          <button id="confirmYes"
+            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium">Yes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- View Modal -->
+    <div id="viewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-xl shadow-lg p-6 max-w-lg w-full">
+        <h2 class="text-xl font-bold text-blue-600 mb-4">Personnel Payments/Deduction Details</h2>
+        <div id="viewContent" class="text-gray-700 text-sm space-y-2"></div>
+        <div class="flex justify-end mt-4">
+          <button id="closeViewBtn"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Section -->
+    <div id="batchTableSection" class="w-full mt-12 lg:mt-12 hidden border-t border-grey-100">
+        <div class="flex justify-between items-center mb-4">
+        <h4 class="text-lg font-semibold text-gray-800">Uploaded Records</h4>
+        <div class="flex gap-2">
+            <button data-action="clearAll"
+            class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm">Clear All</button>
+            <button data-action="approveAll"
+            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm">Approve All</button>
+        </div>
+        </div>
+
+        <div class="overflow-x-auto border rounded-lg shadow-sm">
+        <table class="min-w-full border-collapse">
+            <thead class="bg-blue-100 text-gray-700 text-sm">
+            <tr>
+                <th class="border px-4 py-2 text-left">Personnel ID</th>
+                <th class="border px-4 py-2 text-left">Type</th>
+                <th class="border px-4 py-2 text-left">Amount Paid</th>
+                <th class="border px-4 py-2 text-left">Pay Indicator</th>
+                <th class="border px-4 py-2 text-left">Months</th>
+                <th class="border px-4 py-2 text-center">Action</th>
+            </tr>
+            </thead>
+            <tbody id="tableBody" class="text-sm text-gray-700">
+            <tr>
+                <td class="border px-4 py-2">NN004</td>
+                <td class="border px-4 py-2">BP001</td>
+                <td class="border px-4 py-2">₦50,000</td>
+                <td class="border px-4 py-2">T</td>
+                <td class="border px-4 py-2">3</td>
+                <td class="border px-4 py-2 text-center space-x-2">
+                <button class="text-blue-600 hover:underline" data-action="view">View</button>
+                <button class="text-green-600 hover:underline" data-action="approve">Approve</button>
+                <button class="text-red-600 hover:underline" data-action="delete">Delete</button>
+                </td>
+            </tr>
+            <tr>
+                <td class="border px-4 py-2">NN005</td>
+                <td class="border px-4 py-2">BP002</td>
+                <td class="border px-4 py-2">₦120,000</td>
+                <td class="border px-4 py-2">L</td>
+                <td class="border px-4 py-2">1</td>
+                <td class="border px-4 py-2 text-center space-x-2">
+                <button class="text-blue-600 hover:underline" data-action="view">View</button>
+                <button class="text-green-600 hover:underline" data-action="approve">Approve</button>
+                <button class="text-red-600 hover:underline" data-action="delete">Delete</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+
+<script>
+  const uploadBtn = document.getElementById("uploadBatchBtn");
+  const modal = document.getElementById("successModal");
+  const closeModalBtn = document.getElementById("closeModalBtn");
+  const tableSection = document.getElementById("batchTableSection");
+  const confirmModal = document.getElementById("confirmModal");
+  const confirmMessage = document.getElementById("confirmMessage");
+  const confirmYes = document.getElementById("confirmYes");
+  const confirmCancel = document.getElementById("confirmCancel");
+  const successTitle = document.getElementById("successTitle");
+  const successMessage = document.getElementById("successMessage");
+  const successIcon = document.getElementById("successIcon");
+  const viewModal = document.getElementById("viewModal");
+  const viewContent = document.getElementById("viewContent");
+  const closeViewBtn = document.getElementById("closeViewBtn");
+  let pendingAction = null;
+  let targetRow = null;
+
+  // Show initial upload success
+  uploadBtn.addEventListener("click", () => {
+    showSuccess("Upload Successful", "Your batch file has been uploaded successfully.");
+    tableSection.classList.remove("hidden");
+  });
+
+  closeModalBtn.addEventListener("click", () => {
+    modal.classList.add("hidden");
+  });
+
+  confirmCancel.addEventListener("click", () => {
+    confirmModal.classList.add("hidden");
+  });
+
+  confirmYes.addEventListener("click", () => {
+    confirmModal.classList.add("hidden");
+    if (pendingAction === "clearAll") {
+      document.getElementById("tableBody").innerHTML = "";
+      showSuccess("Cleared", "All records have been cleared.");
+    }
+    if (pendingAction === "approveAll") {
+      const rows = document.querySelectorAll("#tableBody tr");
+      rows.forEach(row => markApproved(row));
+      showSuccess("Approved", "All records have been approved.", true);
+    }
+    if (pendingAction === "approve") {
+      markApproved(targetRow);
+      showSuccess("Approved", "Record has been approved.", true);
+    }
+    if (pendingAction === "delete") {
+      targetRow.remove();
+      showSuccess("Deleted", "Record has been deleted.");
+    }
+  });
+
+  // Success modal function
+  function showSuccess(title, message, spinner = false) {
+    successTitle.textContent = title;
+    successMessage.textContent = message;
+    successIcon.innerHTML = "";
+
+    if (spinner) {
+      successIcon.innerHTML =
+        `<div class="h-8 w-8 border-4 border-blue-300 border-t-blue-600 rounded-full animate-spin"></div>`;
+      setTimeout(() => {
+        successIcon.innerHTML = `<svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2"
+            viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round"
+            d="M5 13l4 4L19 7" /></svg>`;
+      }, 1200);
+    }
+
+    modal.classList.remove("hidden");
+  }
+
+  // Mark row as approved
+  function markApproved(row) {
+    const actionCell = row.querySelector("td:last-child");
+    actionCell.innerHTML = `
+      <span class="text-green-600 font-semibold">Approved</span>
+      <button class="text-blue-600 hover:underline ml-2" data-action="view">View</button>
+      <button class="text-red-600 hover:underline ml-2" data-action="delete">Delete</button>
+    `;
+    row.classList.add("bg-green-50"); // subtle highlight
+  }
+
+  // Table actions
+  document.getElementById("batchTableSection").addEventListener("click", (e) => {
+    const action = e.target.dataset.action;
+    if (!action) return;
+
+    if (action === "view") {
+      const row = e.target.closest("tr").children;
+      viewContent.innerHTML = `
+        <p><strong>Personnel ID:</strong> ${row[0].textContent}</p>
+        <p><strong>Type:</strong> ${row[1].textContent}</p>
+        <p><strong>Amount Paid:</strong> ${row[2].textContent}</p>
+        <p><strong>Pay Indicator:</strong> ${row[3].textContent}</p>
+        <p><strong>Months:</strong> ${row[4].textContent}</p>
+        <p><strong>Status:</strong> ${row[5].textContent.includes("Approved") ? "Approved" : "Pending"}</p>
+        <p><strong>Mak1:</strong> NO</p>
+        <p><strong>Mak2:</strong> YES</p>
+        <p><strong>Deduction Amount:</strong>₦0,000</p>
+        <p><strong>Amount Added:</strong>₦0,000</p>
+        <p><strong>Amount To Deduct:</strong>₦0,000</p>
+        <p><strong>Date Uploaded:</strong> ${new Date().toLocaleDateString()}</p>
+      `;
+      viewModal.classList.remove("hidden");
+    }
+
+    if (action === "approve") {
+      pendingAction = "approve";
+      targetRow = e.target.closest("tr");
+      showConfirm("Approve Record", "Are you sure you want to approve this record?");
+    }
+
+    if (action === "delete") {
+      pendingAction = "delete";
+      targetRow = e.target.closest("tr");
+      showConfirm("Delete Record", "Are you sure you want to delete this record?");
+    }
+
+    if (action === "clearAll" || action === "approveAll") {
+      pendingAction = action;
+      showConfirm(
+        action === "clearAll" ? "Clear All Records" : "Approve All Records",
+        action === "clearAll"
+          ? "Are you sure you want to clear all records?"
+          : "Are you sure you want to approve all records?"
+      );
+    }
+  });
+
+  closeViewBtn.addEventListener("click", () => {
+    viewModal.classList.add("hidden");
+  });
+
+  // Confirm modal helper
+  function showConfirm(title, message) {
+    document.getElementById("confirmTitle").textContent = title;
+    confirmMessage.textContent = message;
+    confirmModal.classList.remove("hidden");
+  }
+</script>

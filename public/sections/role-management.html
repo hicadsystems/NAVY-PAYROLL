@@ -1,0 +1,154 @@
+<!-- ROLE MANAGEMENT SECTION -->
+<div class="p-6">
+  <div class="flex items-center justify-between p-4 border-b">
+    <h2 class="text-lg font-semibold text-blue-800">Current Roles</h2>
+    <button id="toggleRoleFormBtn" 
+      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">+ Add New Record</button>
+  </div>
+
+  <!-- Add New Record Form -->
+  <div id="roleFormWrap" class="hidden p-4 border-b">
+    <form id="roleForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Role Name*</label>
+        <input type="text" id="roleName" required 
+          class="w-full border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-yellow-500">
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700">Role Description*</label>
+        <textarea id="roleDesc" required rows="3"
+          class="w-full border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-yellow-500"></textarea>
+      </div>
+      <div class="md:col-span-2 flex justify-end space-x-4 pt-2">
+        <button type="button" id="cancelRoleBtn" 
+          class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
+        <button type="submit" 
+          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Role List Table -->
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm text-left border-collapse">
+      <thead class="bg-blue-50 border-b">
+        <tr>
+          <th class="px-4 py-2 text-gray-700">ROLES</th>
+          <th class="px-4 py-2 text-gray-700">ROLE ACTION</th>
+          <th class="px-4 py-2 text-gray-700">ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody id="roleList">
+        <tr class="border-b">
+          <td class="px-4 py-2 font-medium">Data Entry</td>
+          <td class="px-4 py-2">Access to Data Input only, can view/print own entries</td>
+            <td class="px-4 py-2 space-x-2">
+            <button class="viewBtn text-blue-600 hover:underline">View</button>
+            <button class="editBtn text-green-600 hover:underline">Edit</button>
+            <button class="deleteBtn text-red-600 hover:underline">Delete</button>
+          </td>
+        </tr>
+        <tr class="border-b">
+          <td class="px-4 py-2 font-medium">Operator</td>
+          <td class="px-4 py-2">Data Entry, View, Print all data, Approve same</td>
+            <td class="px-4 py-2 space-x-2">
+            <button class="viewBtn text-blue-600 hover:underline">View</button>
+            <button class="editBtn text-green-600 hover:underline">Edit</button>
+            <button class="deleteBtn text-red-600 hover:underline">Delete</button>
+          </td>
+        </tr>
+        <tr class="border-b">
+          <td class="px-4 py-2 font-medium">Processor</td>
+          <td class="px-4 py-2">Operator tasks + process payroll + reports (cannot manage users/payment types)</td>
+            <td class="px-4 py-2 space-x-2">
+            <button class="viewBtn text-blue-600 hover:underline">View</button>
+            <button class="editBtn text-green-600 hover:underline">Edit</button>
+            <button class="deleteBtn text-red-600 hover:underline">Delete</button>
+          </td>
+        </tr>
+        <tr class="border-b">
+          <td class="px-4 py-2 font-medium">Manager</td>
+          <td class="px-4 py-2">Processor tasks + manage users & payment types</td>
+            <td class="px-4 py-2 space-x-2">
+            <button class="viewBtn text-blue-600 hover:underline">View</button>
+            <button class="editBtn text-green-600 hover:underline">Edit</button>
+            <button class="deleteBtn text-red-600 hover:underline">Delete</button>
+          </td>
+        </tr>
+        <tr>
+          <td class="px-4 py-2 font-medium">HICAD</td>
+          <td class="px-4 py-2">Full access to everything</td>
+            <td class="px-4 py-2 space-x-2">
+            <button class="viewBtn text-blue-600 hover:underline">View</button>
+            <button class="editBtn text-green-600 hover:underline">Edit</button>
+            <button class="deleteBtn text-red-600 hover:underline">Delete</button>
+            </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const toggleRoleFormBtn = document.getElementById("toggleRoleFormBtn");
+  const roleFormWrap = document.getElementById("roleFormWrap");
+  const cancelRoleBtn = document.getElementById("cancelRoleBtn");
+  const roleForm = document.getElementById("roleForm");
+  const roleList = document.getElementById("roleList");
+
+  // Toggle form
+  toggleRoleFormBtn.addEventListener("click", () => {
+    roleFormWrap.classList.toggle("hidden");
+  });
+  cancelRoleBtn.addEventListener("click", () => {
+    roleForm.reset();
+    roleFormWrap.classList.add("hidden");
+  });
+
+  // Add new role
+  roleForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = document.getElementById("roleName").value;
+    const desc = document.getElementById("roleDesc").value;
+
+    const row = document.createElement("tr");
+    row.className = "border-b";
+    row.innerHTML = `
+      <td class="px-4 py-2 font-medium">${name}</td>
+      <td class="px-4 py-2">${desc}</td>
+    <td class="px-4 py-2 space-x-2">
+        <button class="viewBtn text-blue-600 hover:underline">View</button>
+        <button class="editBtn text-green-600 hover:underline">Edit</button>
+        <button class="deleteBtn text-red-600 hover:underline">Delete</button>
+    </td>
+    `;
+    roleList.appendChild(row);
+
+    roleForm.reset();
+    roleFormWrap.classList.add("hidden");
+  });
+
+  // Simulated actions
+// Delegation: handle clicks for all role action buttons
+roleList.addEventListener("click", (e) => {
+  if (e.target.classList.contains("viewBtn")) {
+    const row = e.target.closest("tr");
+    const role = row.children[0].textContent;
+    const desc = row.children[1].textContent;
+    alert(`Viewing Role:\n${role}\n\nDescription:\n${desc}`);
+  }
+
+  if (e.target.classList.contains("editBtn")) {
+    const row = e.target.closest("tr");
+    document.getElementById("roleName").value = row.children[0].textContent;
+    document.getElementById("roleDesc").value = row.children[1].textContent;
+    roleFormWrap.classList.remove("hidden");
+    row.remove(); // simulate edit
+  }
+
+  if (e.target.classList.contains("deleteBtn")) {
+    e.target.closest("tr").remove();
+    alert("Role deleted!");
+  }
+});
+</script>

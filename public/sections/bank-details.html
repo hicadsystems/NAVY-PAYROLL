@@ -1,0 +1,437 @@
+<div class="p-6">
+  <!-- Bank Section Header -->
+  <div class=" flex justify-between mb-6">
+    <div class="flex justify-start">
+      <h3 class="text-xl font-semibold text-gray-800">Bank Management</h3>
+    </div>
+      <div class="flex justify-end gap-2">
+        <button id="addNewBankBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New Bank</button>
+        <button id="generateReportsBtn" class="bg-yellow-500 text-gray-900 px-4 py-2 rounded hover:bg-yellow-600"> Generate Reports </button>
+      </div>
+   </div>
+
+    <!-- Hidden Bank Form -->
+    <form id="bankForm" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Bank Code *</label>
+        <input type="text" id="bankCode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter bank code">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Bank Name *</label>
+        <input type="text" id="bankName" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter bank name">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Branch Name *</label>
+        <input type="text" id="branchName" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter branch name">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Branch Code *</label>
+        <input type="text" id="branchCode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter branch code">
+      </div>
+
+      <div class="lg:col-span-2">
+        <label class="block text-sm font-medium text-gray-700">Address</label>
+        <input type="text" id="address" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter address">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Company Account No *</label>
+        <input type="text" id="companyAccountNo" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter account number">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Contact Mgr/Accountant</label>
+        <input type="text" id="contactMgrAccountant" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter contact name">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Telephone</label>
+        <input type="tel" id="telephone" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter telephone">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Email</label>
+        <input type="email" id="email" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter email">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Contact</label>
+        <input type="text" id="contact" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter contact">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">CBN Code</label>
+        <input type="text" id="cbnCode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter CBN code">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">CBN Branch</label>
+        <input type="text" id="cbnBranch" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter CBN branch">
+      </div>
+
+      <div class="lg:col-span-2">
+        <label class="block text-sm font-medium text-gray-700">Remarks</label>
+        <textarea id="remarks" rows="1" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter remarks"></textarea>
+      </div>
+
+      <div class="col-span-1 md:col-span-2 lg:col-span-3 flex justify-end gap-2">
+        <button type="button" id="saveBankBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Save</button>
+        <button type="button" id="cancelBankBtn" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
+      </div>
+    </form>
+  
+
+  <!-- Bank Table -->
+    <div class="overflow-x-auto">
+      <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+        <thead class="bg-blue-100 text-blue-900">
+          <tr>
+            <th class="border px-2 py-3 text-left">Bank Code</th>
+            <th class="border px-6 py-3 text-left">Bank Name</th>
+            <th class="border px-6 py-3 text-left">Branch</th>
+            <th class="border px-6 py-3 text-left">Account No</th>
+            <th class="border px-6 py-3 text-left">Contact</th>
+            <th class="border px-6 py-3 text-left">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bankTableBody" >
+          <!-- Data will be populated here -->
+        </tbody>
+      </table>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+    <div class="flex items-center mb-4">
+      <div class="flex-shrink-0">
+        <svg class="h-8 w-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <div class="ml-3">
+        <h3 class="text-lg font-semibold text-green-600">Success!</h3>
+      </div>
+    </div>
+    <p id="successMessage" class="mb-4 text-gray-700">Bank record saved successfully!</p>
+    <div class="flex justify-end">
+      <button id="closeSuccessModal" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Error Modal -->
+<div id="errorModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+    <div class="flex items-center mb-4">
+      <div class="flex-shrink-0">
+        <svg class="h-8 w-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+        </svg>
+      </div>
+      <div class="ml-3">
+        <h3 class="text-lg font-semibold text-red-600">Error</h3>
+      </div>
+    </div>
+    <p id="errorMessage" class="mb-4 text-gray-700">Please fill in all required fields.</p>
+    <div class="flex justify-end">
+      <button id="closeErrorModal" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+    <div class="flex items-center mb-4">
+      <div class="flex-shrink-0">
+        <svg class="h-8 w-8 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <div class="ml-3">
+        <h3 class="text-lg font-semibold text-yellow-600">Confirm Action</h3>
+      </div>
+    </div>
+    <p id="confirmMessage" class="mb-4 text-gray-700">Are you sure you want to delete this bank record?</p>
+    <div class="flex justify-end gap-2">
+      <button id="cancelConfirm" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
+      <button id="confirmAction" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Details Modal -->
+<div id="viewModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-screen overflow-y-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-semibold text-blue-600">Bank Details</h3>
+      <button id="closeViewModal" class="text-gray-400 hover:text-gray-600">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+    <div id="viewContent" class="space-y-3 text-sm"></div>
+  </div>
+</div>
+
+<script>
+  let bankData = [
+    {
+      bankCode: "001",
+      bankName: "Central Bank of Nigeria",
+      branchName: "Lagos Main Branch",
+      branchCode: "LMB001",
+      address: "33 Tafawa Balewa Square, Lagos Island, Lagos",
+      companyAccountNo: "1234567890",
+      contactMgrAccountant: "MD Manager",
+      remarks: "Primary banking partner",
+      telephone: "01-2345678",
+      email: "contact@cbn.gov.ng",
+      contact: "Customer Service",
+      cbnCode: "CBN001",
+      cbnBranch: "Lagos",
+      timestamp: new Date().toLocaleString()
+    },
+    {
+      bankCode: "002", 
+      bankName: "First Bank of Nigeria",
+      branchName: "Victoria Island Branch",
+      branchCode: "VIB002",
+      address: "Samuel Asabia House, 35 Marina, Lagos",
+      companyAccountNo: "9876543210",
+      contactMgrAccountant: "Chief Hicad",
+      remarks: "Secondary account for operations",
+      telephone: "01-8765432",
+      email: "info@firstbanknigeria.com",
+      contact: "Account Manager",
+      cbnCode: "CBN002",
+      cbnBranch: "Victoria Island",
+      timestamp: new Date().toLocaleString()
+    }
+  ];
+
+  let editingBankIndex = null;
+  let pendingDeleteIndex = null;
+
+  const bankForm = document.getElementById("bankForm");
+  const addNewBankBtn = document.getElementById("addNewBankBtn");
+  const saveBankBtn = document.getElementById("saveBankBtn");
+  const cancelBankBtn = document.getElementById("cancelBankBtn");
+  const bankTableBody = document.getElementById("bankTableBody");
+
+  // Show form when Add New is clicked
+  addNewBankBtn.addEventListener("click", () => {
+    bankForm.classList.remove("hidden");
+    editingBankIndex = null;
+    resetBankForm();
+  });
+
+  // Save bank record
+  saveBankBtn.addEventListener("click", () => {
+    const requiredFields = ['bankCode', 'bankName', 'branchName', 'branchCode', 'companyAccountNo'];
+    let missingFields = [];
+
+    // Validate required fields
+    for (let field of requiredFields) {
+      const value = document.getElementById(field).value.trim();
+      if (!value) {
+        missingFields.push(field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()));
+      }
+    }
+
+    if (missingFields.length > 0) {
+      showErrorModal(`Please fill in the following required fields: ${missingFields.join(', ')}`);
+      return;
+    }
+
+    const bankRecord = {
+      bankCode: document.getElementById("bankCode").value.trim(),
+      bankName: document.getElementById("bankName").value.trim(),
+      branchName: document.getElementById("branchName").value.trim(),
+      branchCode: document.getElementById("branchCode").value.trim(),
+      address: document.getElementById("address").value.trim(),
+      companyAccountNo: document.getElementById("companyAccountNo").value.trim(),
+      contactMgrAccountant: document.getElementById("contactMgrAccountant").value.trim(),
+      remarks: document.getElementById("remarks").value.trim(),
+      telephone: document.getElementById("telephone").value.trim(),
+      email: document.getElementById("email").value.trim(),
+      contact: document.getElementById("contact").value.trim(),
+      cbnCode: document.getElementById("cbnCode").value.trim(),
+      cbnBranch: document.getElementById("cbnBranch").value.trim(),
+      timestamp: new Date().toLocaleString()
+    };
+
+    if (editingBankIndex !== null) {
+      bankData[editingBankIndex] = bankRecord;
+      showSuccessModal("Bank record updated successfully!");
+      editingBankIndex = null;
+    } else {
+      bankData.push(bankRecord);
+      showSuccessModal("Bank record saved successfully!");
+    }
+
+    renderBankTable();
+    bankForm.classList.add("hidden");
+    resetBankForm();
+  });
+
+  // Cancel form
+  cancelBankBtn.addEventListener("click", () => {
+    bankForm.classList.add("hidden");
+    resetBankForm();
+    editingBankIndex = null;
+  });
+
+  function resetBankForm() {
+    const formInputs = bankForm.querySelectorAll('input, textarea');
+    formInputs.forEach(input => input.value = '');
+  }
+
+  function renderBankTable() {
+    bankTableBody.innerHTML = bankData.map((item, index) => `
+      <tr class="hover:bg-gray-50">
+        <td class="border px-2 py-3 whitespace-nowrap text-sm text-gray-900">${item.bankCode}</td>
+        <td class="border px-2 py-3 whitespace-nowrap text-sm text-gray-900">${item.bankName}</td>
+        <td class="border px-2 py-3 whitespace-nowrap text-sm text-gray-900">${item.branchName}</td>
+        <td class="border px-2 py-3 whitespace-nowrap text-sm text-gray-900">${item.companyAccountNo}</td>
+        <td class="border px-2 py-3 whitespace-nowrap text-sm text-gray-900">${item.contactMgrAccountant || 'N/A'}</td>
+        <td class="border px-2 py-3 whitespace-nowrap text-sm font-medium">
+          <button onclick="viewBankRecord(${index})" class="text-blue-600 hover:text-blue-900 px-2 py-1 rounded hover:bg-blue-50 mr-2">View</button>
+          <button onclick="editBankRecord(${index})" class="text-green-600 hover:text-green-900 px-2 py-1 rounded hover:bg-green-50 mr-2">Edit</button>
+          <button onclick="deleteBankRecord(${index})" class="text-red-600 hover:text-red-900 px-2 py-1 rounded hover:bg-red-50">Delete</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  // Global functions for table actions
+  window.viewBankRecord = function(index) {
+    const item = bankData[index];
+    let html = "";
+    
+    const fieldLabels = {
+      bankCode: "Bank Code",
+      bankName: "Bank Name", 
+      branchName: "Branch Name",
+      branchCode: "Branch Code",
+      address: "Address",
+      companyAccountNo: "Company Account No",
+      contactMgrAccountant: "Contact Mgr/Accountant",
+      remarks: "Remarks",
+      telephone: "Telephone",
+      email: "Email",
+      contact: "Contact",
+      cbnCode: "CBN Code",
+      cbnBranch: "CBN Branch",
+      timestamp: "Created/Updated"
+    };
+
+    for (let key in item) {
+      if (key !== 'timestamp') {
+        html += `
+          <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
+            <dt class="font-medium text-gray-600">${fieldLabels[key] || key}:</dt>
+            <dd class="col-span-2 text-gray-900">${item[key] || 'N/A'}</dd>
+          </div>
+        `;
+      }
+    }
+    html += `
+      <div class="grid grid-cols-3 gap-2 py-2">
+        <dt class="font-medium text-gray-600">${fieldLabels.timestamp}:</dt>
+        <dd class="col-span-2 text-gray-500 text-sm">${item.timestamp}</dd>
+      </div>
+    `;
+
+    document.getElementById("viewContent").innerHTML = html;
+    showModal("viewModal");
+  };
+
+  window.editBankRecord = function(index) {
+    const item = bankData[index];
+    
+    // Fill form with existing data
+    document.getElementById("bankCode").value = item.bankCode;
+    document.getElementById("bankName").value = item.bankName;
+    document.getElementById("branchName").value = item.branchName;
+    document.getElementById("branchCode").value = item.branchCode;
+    document.getElementById("address").value = item.address;
+    document.getElementById("companyAccountNo").value = item.companyAccountNo;
+    document.getElementById("contactMgrAccountant").value = item.contactMgrAccountant;
+    document.getElementById("remarks").value = item.remarks;
+    document.getElementById("telephone").value = item.telephone;
+    document.getElementById("email").value = item.email;
+    document.getElementById("contact").value = item.contact;
+    document.getElementById("cbnCode").value = item.cbnCode;
+    document.getElementById("cbnBranch").value = item.cbnBranch;
+    
+    editingBankIndex = index;
+    bankForm.classList.remove("hidden");
+  };
+
+  window.deleteBankRecord = function(index) {
+    pendingDeleteIndex = index;
+    showConfirmModal("Are you sure you want to delete this bank record? This action cannot be undone.");
+  };
+
+  // Modal functions
+  function showModal(modalId) {
+    document.getElementById(modalId).classList.remove("hidden");
+  }
+
+  function closeModal(modalId) {
+    document.getElementById(modalId).classList.add("hidden");
+  }
+
+  function showSuccessModal(message) {
+    document.getElementById("successMessage").textContent = message;
+    showModal("successModal");
+  }
+
+  function showErrorModal(message) {
+    document.getElementById("errorMessage").textContent = message;
+    showModal("errorModal");
+  }
+
+  function showConfirmModal(message) {
+    document.getElementById("confirmMessage").textContent = message;
+    showModal("confirmModal");
+  }
+
+  // Modal event listeners
+  document.getElementById("closeSuccessModal").addEventListener("click", () => closeModal("successModal"));
+  document.getElementById("closeErrorModal").addEventListener("click", () => closeModal("errorModal"));
+  document.getElementById("closeViewModal").addEventListener("click", () => closeModal("viewModal"));
+
+  document.getElementById("cancelConfirm").addEventListener("click", () => {
+    closeModal("confirmModal");
+    pendingDeleteIndex = null;
+  });
+
+  document.getElementById("confirmAction").addEventListener("click", () => {
+    if (pendingDeleteIndex !== null) {
+      bankData.splice(pendingDeleteIndex, 1);
+      renderBankTable();
+      showSuccessModal("Bank record deleted successfully!");
+      pendingDeleteIndex = null;
+    }
+    closeModal("confirmModal");
+  });
+
+  // Close modals when clicking outside
+  const modals = ['successModal', 'errorModal', 'confirmModal', 'viewModal'];
+  modals.forEach(modalId => {
+    document.getElementById(modalId).addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) closeModal(modalId);
+    });
+  });
+
+  // Initialize table with existing data
+  renderBankTable();
+</script>

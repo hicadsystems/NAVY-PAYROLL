@@ -1,0 +1,308 @@
+<div class="p-6">
+  <!-- Add Button -->
+  <div class="mb-4 flex justify-end gap-2">
+    <button id="showFormBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New</button>
+    <button id="generateReportsBtn" class="bg-yellow-500 text-gray-900 px-4 py-2 rounded hover:bg-yellow-600"> Generate Reports </button>
+  </div>
+
+  <!-- Hidden Form -->
+  <form id="payElementsForm" class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6 hidden p-4 rounded  border">
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Pay Elements</label>
+      <input type="text" id="payElements" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Description</label>
+      <input type="text" id="description" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Status</label>
+      <select id="status" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+        <option>Select Status</option>
+        <option>Active</option>
+        <option>Inactive</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Function Type</label>
+      <select id="functionType" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+        <option>Select Function Type</option>
+        <option>DIVISION</option>
+        <option>ONCE IN 18MTHS PAY</option>
+        <option>LOAN</option>
+        <option>STANDARD AMOUNT</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Percentage</label>
+      <input type="number" id="percentage" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Maximum Amount</label>
+      <input type="number" id="maxAmount" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Dependence</label>
+      <select id="dependence" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+        <option>Select Dependence</option>
+        <option>None</option>
+        <option>Basic Salary</option>
+        <option>Overtime</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Payment Frequency</label>
+      <select id="paymentFrequency" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+        <option>Select Payment Frequency</option>
+        <option>Monthly</option>
+        <option>Quarterly</option>
+        <option>Yearly</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Starting Month</label>
+      <input type="text" id="startingMonth" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Tax Allowance Rebate</label>
+      <input type="text" id="taxAllowance" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Require For All</label>
+      <select id="requireForAll" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+        <option>Select</option>
+        <option>Yes</option>
+        <option>No</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Year End Clearance</label>
+      <select id="yearEndClearance" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+        <option>Select</option>
+        <option>Yes</option>
+        <option>No</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Account Ledger</label>
+      <select id="accountLedger" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+        <option>Select Accounting Ledger</option>
+        <option>OFFICE FITTINGS</option>
+        <option>OFFICE EQUIPMENTS</option>
+        <option>MOTOR VEHICLE</option>
+      </select>
+    </div>
+
+    <div class="col-span-2 flex justify-end gap-2 lg:col-span-3">
+      <button type="button" id="saveBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Save</button>
+      <button type="button" id="cancelBtn" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
+    </div>
+  </form>
+
+  <!-- Table -->
+   <div class="overflow-x-auto">
+    <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+        <thead class="bg-blue-100 text-blue-900">
+        <tr>
+            <th class="border px-2 py-3 text-left">Payment Type</th>
+            <th class="border px-2 py-3 text-left">Description</th>
+            <th class="border px-2 py-3 text-left">Function Type</th>
+            <th class="border px-2 py-3 text-left">Dependence</th>
+            <th class="border px-2 py-3 text-left">Status</th>
+            <th class="border px-2 py-3 text-center">Actions</th>
+        </tr>
+        </thead>
+        <tbody id="payElementsTable" class="text-center"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+    <h3 class="text-lg font-semibold mb-2 text-green-600">Success!</h3>
+    <p class="mb-4 text-gray-700">Your changes have been saved successfully!</p>
+    <button id="closeSuccessModal" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">OK</button>
+  </div>
+</div>
+
+<!-- View Modal -->
+<div id="viewModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div class="bg-white p-6 rounded-lg shadow-xl w-96 max-w-full mx-4">
+    <h3 class="text-lg font-semibold mb-4 text-blue-600">Pay Element Details</h3>
+    <div id="viewContent" class="space-y-2 text-sm max-h-96 overflow-y-auto"></div>
+    <div class="mt-4 text-right">
+      <button id="closeViewModal" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let editingIndex = null;
+
+  let data = [
+    {element:"BP301", description:"Pension Addition", status:"Active", functionType:"STANDARD AMOUNT", percentage:10, maxAmount:5000, dependence:"NONE", paymentFrequency:"Monthly", startingMonth:"2025-01", taxAllowance:"Yes", requireForAll:"Yes", yearEndClearance:"Yes", accountLedger:"Ledger 1001" },
+    { element:"BP302", description:"Pension Deduction", status:"Active", functionType:"LOAN", percentage:5, maxAmount:2000, dependence:"NONE", paymentFrequency:"Monthly", startingMonth:"2025-02", taxAllowance:"No", requireForAll:"Yes", yearEndClearance:"No", accountLedger:"Ledger 2002" }
+  ];
+
+  const form = document.getElementById("payElementsForm");
+  const showFormBtn = document.getElementById("showFormBtn");
+  const saveBtn = document.getElementById("saveBtn");
+  const cancelBtn = document.getElementById("cancelBtn");
+  const tableBody = document.getElementById("payElementsTable");
+
+  // Make functions global by attaching to window
+  window.viewRow = function(index) {
+    const item = data[index];
+    let html = "";
+    for (let key in item) {
+      const displayKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+      html += `<p><strong>${displayKey}:</strong> ${item[key]}</p>`;
+    }
+    document.getElementById("viewContent").innerHTML = html;
+    openModal("viewModal");
+  };
+
+  window.editRow = function(index) {
+    const item = data[index];
+    document.getElementById("payElements").value = item.element;
+    document.getElementById("description").value = item.description;
+    document.getElementById("status").value = item.status;
+    document.getElementById("functionType").value = item.functionType;
+    document.getElementById("percentage").value = item.percentage;
+    document.getElementById("maxAmount").value = item.maxAmount;
+    document.getElementById("dependence").value = item.dependence;
+    document.getElementById("paymentFrequency").value = item.paymentFrequency;
+    document.getElementById("startingMonth").value = item.startingMonth;
+    document.getElementById("taxAllowance").value = item.taxAllowance;
+    document.getElementById("requireForAll").value = item.requireForAll;
+    document.getElementById("yearEndClearance").value = item.yearEndClearance;
+    document.getElementById("accountLedger").value = item.accountLedger;
+
+    editingIndex = index;
+    form.classList.remove("hidden");
+  };
+
+  window.deleteRow = function(index) {
+    if (confirm("Are you sure you want to delete this pay element?")) {
+      data.splice(index, 1);
+      renderTable();
+    }
+  };
+
+  function renderTable() {
+    tableBody.innerHTML = data.map((item, index) => `
+      <tr class="hover:bg-gray-50">
+        <td class="border px-2 py-2 text-left">${item.element}</td>
+        <td class="border px-2 py-2 text-left">${item.description}</td>
+        <td class="border px-2 py-2 text-left">${item.functionType}</td>
+        <td class="border px-2 py-2 text-left">${item.dependence}</td>
+        <td class="border px-2 py-2 text-left">
+          <span class="px-2 py-1 rounded text-xs ${item.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+            ${item.status}
+          </span>
+        </td>
+        <td class="border px-2 py-2 text-center">
+          <button onclick="viewRow(${index})" class="text-blue-600 hover:text-blue-800 mr-2 px-2 py-1 rounded hover:bg-blue-50">View</button>
+          <button onclick="editRow(${index})" class="text-green-600 hover:text-green-800 mr-2 px-2 py-1 rounded hover:bg-green-50">Edit</button>
+          <button onclick="deleteRow(${index})" class="text-red-600 hover:text-red-800 px-2 py-1 rounded hover:bg-red-50">Delete</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  renderTable();
+
+  showFormBtn.addEventListener("click", () => {
+    form.classList.remove("hidden");
+    editingIndex = null;
+    form.reset();
+  });
+
+  cancelBtn.addEventListener("click", () => {
+    form.classList.add("hidden");
+    editingIndex = null;
+    form.reset();
+  });
+
+  saveBtn.addEventListener("click", () => {
+    // Basic validation
+    const payElements = document.getElementById("payElements").value.trim();
+    const description = document.getElementById("description").value.trim();
+    const status = document.getElementById("status").value;
+    
+    if (!payElements || !description || status === "Select Status") {
+      alert("Please fill in all required fields (Pay Elements, Description, and Status)");
+      return;
+    }
+
+    const item = {
+      element: payElements,
+      description: description,
+      status: status,
+      functionType: document.getElementById("functionType").value,
+      percentage: document.getElementById("percentage").value || 0,
+      maxAmount: document.getElementById("maxAmount").value || 0,
+      dependence: document.getElementById("dependence").value,
+      paymentFrequency: document.getElementById("paymentFrequency").value,
+      startingMonth: document.getElementById("startingMonth").value,
+      taxAllowance: document.getElementById("taxAllowance").value,
+      requireForAll: document.getElementById("requireForAll").value,
+      yearEndClearance: document.getElementById("yearEndClearance").value,
+      accountLedger: document.getElementById("accountLedger").value
+    };
+
+    if (editingIndex !== null) {
+      data[editingIndex] = item;
+      editingIndex = null;
+    } else {
+      data.push(item);
+    }
+
+    renderTable();
+    form.classList.add("hidden");
+    form.reset();
+    openModal("successModal");
+  });
+
+  function openModal(id) {
+    document.getElementById(id).classList.remove("hidden");
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.add("hidden");
+  }
+
+  document.getElementById('closeSuccessModal').addEventListener('click', () => {
+    closeModal('successModal');
+  });
+
+  document.getElementById('closeViewModal').addEventListener('click', () => {
+    closeModal('viewModal');
+  });
+
+  // Close modals when clicking outside
+  document.getElementById('successModal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeModal('successModal');
+  });
+
+  document.getElementById('viewModal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeModal('viewModal');
+  });
+
+</script>
+
+</body>
+</html>

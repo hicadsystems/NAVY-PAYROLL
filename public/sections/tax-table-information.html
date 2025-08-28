@@ -1,0 +1,288 @@
+<div class="p-6">
+    <div class="flex justify-between">
+        <div class="flex justify-start">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Tax Table Configuration</h2>
+        </div>
+        <!-- Add Button -->
+        <div class="mb-4 flex justify-end gap-2">
+            <button id="showFormBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New</button>
+            <button id="generateReportsBtn" class="bg-yellow-500 text-gray-900 px-4 py-2 rounded hover:bg-yellow-600"> Generate Reports </button>
+        </div>
+    </div>
+
+    
+    <!-- Main Freepay Form hidden -->
+    <form id="freepayMainForm" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 hidden">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Interval</label>
+        <input type="text" id="interval" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent" placeholder="e.g., 1">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Value</label>
+        <input type="number" id="value" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent" placeholder="Enter value">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Percentage</label>
+        <input type="number" id="percentage_freepay" step="0.01" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent" placeholder="Enter percentage">
+      </div>
+
+      <div class="col-span-1 md:col-span-3 flex justify-between">
+        <button type="button" id="minimumFreepayBtn" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Minimum Freepay</button>
+        <div class="flex gap-2">
+          <button type="button" id="saveFreepayBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Save</button>
+          <button type="button" id="cancelFreepayBtn" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Hidden Nested Form (appears when Minimum Freepay is clicked) -->
+    <div id="nestedFreepayForm" class="hidden mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+      <h4 class="text-md font-medium mb-3 text-gray-700">Minimum Freepay Details</h4>
+      
+      <form class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Cumulative</label>
+          <input type="number" id="cumulative" step="0.01" class="w-full border border-green-500 rounded-md px-3 py-2 bg-white" placeholder="Enter cumulative value">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Lower Bound</label>
+          <input type="number" id="lowerbound" step="0.01" class="w-full border border-green-500 rounded-md px-3 py-2 bg-white" placeholder="Enter lower bound">
+        </div>
+
+        <div class="col-span-1 md:col-span-2 flex justify-end">
+          <button type="button" id="enterBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Enter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Data Display Table -->
+  <div class="overflow-x-auto">
+      <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+        <thead class="bg-blue-100 text-blue-900">
+          <tr>
+            <th class="border px-2 py-3 text-left">Interval</th>
+            <th class="border px-2 py-3 text-left">Value</th>
+            <th class="border px-2 py-3 text-left">Percentage</th>
+            <th class="border px-2 py-3 text-left">Cumulative</th>
+            <th class="border px-2 py-3 text-left">Lower Bound</th>
+            <th class="border px-2 py-3 text-left">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="freepayTableBody" class="bg-white divide-y divide-gray-200">
+          <!-- Data will be populated here -->
+        </tbody>
+      </table>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="freepaySuccessModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+    <h3 class="text-lg font-semibold mb-2 text-green-600">Success!</h3>
+    <p class="mb-4 text-gray-700">Configuration saved successfully!</p>
+    <button id="closeFreepayModal" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">OK</button>
+  </div>
+</div>
+
+<script>
+  let freepayData = [];
+  let currentFreepayConfig = {};
+  let editingFreepayIndex = null;
+
+  const freepayMainForm = document.getElementById("freepayMainForm");
+  const nestedForm = document.getElementById("nestedFreepayForm");
+  const minimumFreepayBtn = document.getElementById("minimumFreepayBtn");
+  const saveFreepayBtn = document.getElementById("saveFreepayBtn");
+  const cancelFreepayBtn = document.getElementById("cancelFreepayBtn");
+  const enterBtn = document.getElementById("enterBtn");
+  const freepayTableBody = document.getElementById("freepayTableBody");
+  const showFormBtn = document.getElementById("showFormBtn");
+
+  // Show nested form when Minimum Freepay is clicked
+  minimumFreepayBtn.addEventListener("click", () => {
+    // Validate main form first
+    const interval = document.getElementById("interval").value.trim();
+    const value = document.getElementById("value").value.trim();
+    const percentage = document.getElementById("percentage_freepay").value.trim();
+
+    if (!interval || !value || !percentage) {
+      alert("Please fill in all fields (Interval, Value, and Percentage) before proceeding.");
+      return;
+    }
+
+    // Store current config
+    currentFreepayConfig = {
+      interval: interval,
+      value: parseFloat(value),
+      percentage: parseFloat(percentage)
+    };
+
+    // Show nested form
+    nestedForm.classList.remove("hidden");
+    
+    // Clear nested form fields
+    document.getElementById("cumulative").value = "";
+    document.getElementById("lowerbound").value = "";
+  });
+
+    showFormBtn.addEventListener("click", () => {
+    freepayMainForm.classList.remove("hidden");
+    editingFreepayIndex = null;
+    freepayMainForm.reset();
+  });
+
+  cancelFreepayBtn.addEventListener("click", () => {
+    freepayMainForm.classList.add("hidden");
+    editingFreepayIndex = null;
+    freepayMainForm.reset();
+  });
+
+  // Save main form data
+  saveFreepayBtn.addEventListener("click", () => {
+    const interval = document.getElementById("interval").value.trim();
+    const value = document.getElementById("value").value.trim();
+    const percentage = document.getElementById("percentage_freepay").value.trim();
+
+    if (!interval || !value || !percentage) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
+    const config = {
+      interval: interval,
+      value: parseFloat(value),
+      percentage: parseFloat(percentage),
+      cumulative: currentFreepayConfig.cumulative || null,
+      lowerbound: currentFreepayConfig.lowerbound || null,
+      timestamp: new Date().toLocaleString()
+    };
+
+    if (editingFreepayIndex !== null) {
+      // Update existing record
+      freepayData[editingFreepayIndex] = config;
+      editingFreepayIndex = null;
+    } else {
+      // Add new record
+      freepayData.push(config);
+    }
+
+    renderFreepayTable();
+    resetMainForm();
+    showSuccessModal();
+  });
+
+  // Cancel main form
+  cancelFreepayBtn.addEventListener("click", () => {
+    resetMainForm();
+    // Clear nested form values on cancel
+    document.getElementById("cumulative").value = "";
+    document.getElementById("lowerbound").value = "";
+  });
+
+  // Enter button (store nested form data and hide nested form)
+  enterBtn.addEventListener("click", () => {
+    const cumulative = document.getElementById("cumulative").value.trim();
+    const lowerbound = document.getElementById("lowerbound").value.trim();
+
+    if (!cumulative || !lowerbound) {
+      alert("Please fill in both Cumulative and Lower Bound fields.");
+      return;
+    }
+
+    // Store nested form data in current config
+    currentFreepayConfig.cumulative = parseFloat(cumulative);
+    currentFreepayConfig.lowerbound = parseFloat(lowerbound);
+
+    // Hide nested form but keep values
+    hideNestedForm();
+    
+    // Show success message for Enter action
+    alert("Values entered successfully! Click Save to record the configuration.");
+  });
+
+  function resetMainForm() {
+    document.getElementById("interval").value = "";
+    document.getElementById("value").value = "";
+    document.getElementById("percentage_freepay").value = "";
+    currentFreepayConfig = {};
+    editingFreepayIndex = null;
+    hideNestedForm();
+  }
+
+  function hideNestedForm() {
+    nestedForm.classList.add("hidden");
+    // Don't clear nested form values here - they should persist
+  }
+
+  function renderFreepayTable() {
+    freepayTableBody.innerHTML = freepayData.map((item, index) => `
+      <tr class="hover:bg-gray-50">
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.interval}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.value}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.percentage}%</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.cumulative || 'N/A'}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.lowerbound || 'N/A'}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+          <button onclick="editFreepayRow(${index})" class="text-green-600 hover:text-green-900 px-2 py-1 rounded hover:bg-green-50 mr-2">Edit</button>
+          <button onclick="deleteFreepayRow(${index})" class="text-red-600 hover:text-red-900 px-2 py-1 rounded hover:bg-red-50">Delete</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  // Make functions global
+  window.editFreepayRow = function(index) {
+    const item = freepayData[index];
+    
+    // Fill main form
+    document.getElementById("interval").value = item.interval;
+    document.getElementById("value").value = item.value;
+    document.getElementById("percentage_freepay").value = item.percentage;
+    
+    // Store current config for editing
+    currentFreepayConfig = {
+      interval: item.interval,
+      value: item.value,
+      percentage: item.percentage,
+      cumulative: item.cumulative,
+      lowerbound: item.lowerbound
+    };
+    
+    // Fill nested form if values exist
+    if (item.cumulative !== null && item.lowerbound !== null) {
+      document.getElementById("cumulative").value = item.cumulative;
+      document.getElementById("lowerbound").value = item.lowerbound;
+    }
+    
+    editingFreepayIndex = index;
+  };
+
+  window.deleteFreepayRow = function(index) {
+    if (confirm("Are you sure you want to delete this configuration?")) {
+      freepayData.splice(index, 1);
+      renderFreepayTable();
+    }
+  };
+
+  function showSuccessModal() {
+    document.getElementById("freepaySuccessModal").classList.remove("hidden");
+  }
+
+  function closeSuccessModal() {
+    document.getElementById("freepaySuccessModal").classList.add("hidden");
+  }
+
+  // Modal event listeners
+  document.getElementById("closeFreepayModal").addEventListener("click", closeSuccessModal);
+
+  document.getElementById("freepaySuccessModal").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeSuccessModal();
+  });
+
+  // Initialize empty table
+  renderFreepayTable();
+</script>

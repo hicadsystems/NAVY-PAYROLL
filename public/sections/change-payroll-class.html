@@ -1,136 +1,179 @@
-<!-- Change Payroll Class -->
-<div class="p-6 max-w-4xl mx-auto">
-  <div class="flex justify-end mb-4">
-    <button onclick="window.navigation.navigateToSection('payroll-class-setup', 'Setup Payroll Class')" class="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">Add Payroll Class</button>
-  </div>
-
-  <p class="text-gray-600 font-semibold mb-6 lg:text-lg">
-    Select personnel and assign them to a new payroll class.
+<!-- Change Active Payroll Class -->
+<div class="p-6 max-w-3xl mx-auto">
+  <p class="text-gray-600 font-semibold mb-6">
+    Only one payroll class can be active at a time. Focus on a class to make it active.
   </p>
 
-  <div class="space-y-4">
-    <form id="changesForm" class="space-y-4">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <select name="personnel" id="personnel"
-        class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
-          <option value="">Select Personnel</option>
-          <option value="person1">Personnel 1</option>
-          <option value="person2">Personnel 2</option>
-          <option value="person3">Personnel 3</option>
-          <option value="person4">Personnel 4</option>
-        </select>
-
-        <select name="newClass" id="newClass" class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
-          <option value="">Select New Class</option>
-          <option value="1">Payroll Class 1</option>
-          <option value="2">Payroll Class 2</option>
-          <option value="3">Payroll Class 3</option>
-          <option value="4">Payroll Class 4</option>
-        </select>
-
-        <button type="button" id="changeButton"
-        class="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">
-          Change Payroll Class
-        </button>
-      </div>
-    </form>
+  <!-- Classes Table -->
+  <div class="overflow-hidden border border-gray-200 rounded-lg">
+    <table class="w-full text-left border-collapse">
+      <tbody id="classTable">
+        <tr data-class="OFFICER" class="hover:bg-blue-50">
+          <td class="px-4 py-3 font-semibold text-blue-600">OFFICER</td>
+          <td class="px-4 py-3 text-right">
+            <button class="focusBtn px-4 py-1 bg-gray-200 rounded hover:bg-gray-300">Focus</button>
+          </td>
+        </tr>
+        <tr data-class="W/OFFICER" class="hover:bg-blue-50">
+          <td class="px-4 py-3 font-semibold text-blue-600">W/OFFICER</td>
+          <td class="px-4 py-3 text-right">
+            <button class="focusBtn px-4 py-1 bg-gray-200 rounded hover:bg-gray-300">Focus</button>
+          </td>
+        </tr>
+        <tr data-class="RATINGS" class="hover:bg-blue-50">
+          <td class="px-4 py-3 font-semibold text-blue-600">RATINGS</td>
+          <td class="px-4 py-3 text-right">
+            <button class="focusBtn px-4 py-1 bg-gray-200 rounded hover:bg-gray-300">Focus</button>
+          </td>
+        </tr>
+        <tr data-class="RATINGS B" class="hover:bg-blue-50">
+          <td class="px-4 py-3 font-semibold text-blue-600">RATINGS B</td>
+          <td class="px-4 py-3 text-right">
+            <button class="focusBtn px-4 py-1 bg-gray-200 rounded hover:bg-gray-300">Focus</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
-    <!-- Current Selection Display -->
-  <div id="selectionDisplay" class="mt-6 p-4 bg-gray-100 rounded-lg hidden">
-    <h3 class="font-semibold text-gray-700 mb-2">Current Selection:</h3>
-    <p id="selectionText" class="text-gray-600"></p>
+  <!-- Actions -->
+  <div class="flex justify-end gap-4 mt-6">
+    <button id="cancelFocusBtn" class="px-6 py-2 bg-gray-400 hover:bg-gray-500 rounded-lg text-white">Cancel</button>
+    <button id="confirmFocusBtn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white">Continue</button>
   </div>
 </div>
 
-<!-- Sample Payroll Classes Management -->
-<div class=" p-6 max-w-4xl mx-auto my-6">
-  <h2 class="text-xl font-bold text-gray-800 mb-4">Existing Payroll Classes</h2>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-    <div class="border border-gray-200 rounded-lg p-4 text-center">
-      <h3 class="font-semibold text-blue-600">Payroll Class 1</h3>
-      <p class="text-sm text-gray-600 mt-1">5 Personnel</p>
-    </div>
-    <div class="border border-gray-200 rounded-lg p-4 text-center">
-      <h3 class="font-semibold text-blue-600">Payroll Class 2</h3>
-      <p class="text-sm text-gray-600 mt-1">3 Personnel</p>
-    </div>
-    <div class="border border-gray-200 rounded-lg p-4 text-center">
-      <h3 class="font-semibold text-blue-600">Payroll Class 3</h3>
-      <p class="text-sm text-gray-600 mt-1">8 Personnel</p>
-    </div>
-    <div class="border border-gray-200 rounded-lg p-4 text-center">
-      <h3 class="font-semibold text-blue-600">Payroll Class 4</h3>
-      <p class="text-sm text-gray-600 mt-1">2 Personnel</p>
-    </div>
+<!-- Success Modal -->
+<div id="focusSuccessModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
+  <div class="bg-white p-6 rounded-2xl shadow-xl text-center w-72">
+    <div id="focusModalIcon" class="mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+    <p id="focusModalText" class="mt-4 text-lg font-semibold text-gray-700">Processing...</p>
   </div>
 </div>
 
 <script>
-// Payroll Class Management JavaScript
-(function() {
-  function updateSelectionDisplay() {
-    const classSelect = document.getElementById('newClass');
-    const display = document.getElementById('selectionDisplay');
-    const selectionText = document.getElementById('selectionText');
-    
-    if (!classSelect || !display || !selectionText) return;
-    
-    if (classSelect.value) {
-        const classText = classSelect.options[classSelect.selectedIndex].text;
-        selectionText.textContent = `Selected: ${classText}`;
-        display.classList.remove('hidden');
-    } else {
-        display.classList.add('hidden');
-    }
+(function(){
+  const confirmBtn = document.getElementById('confirmFocusBtn');
+  const cancelBtn  = document.getElementById('cancelFocusBtn');
+  const table = document.getElementById('classTable');
+  const successModal = document.getElementById('focusSuccessModal');
+  const modalIcon = document.getElementById('focusModalIcon');
+  const modalText = document.getElementById('focusModalText');
+
+  let selectedRow = null;
+
+  // Reset all rows to default
+  function resetRows() {
+    table.querySelectorAll('tr').forEach(r=>{
+      r.classList.remove('bg-yellow-100','border-yellow-400','bg-green-100','border-green-500');
+      const indicator = r.querySelector('.activeIndicator');
+      if(indicator) indicator.remove();
+      const btn = r.querySelector('.focusBtn');
+      btn.disabled = false;
+      btn.className = "focusBtn px-4 py-1 bg-gray-200 rounded hover:bg-gray-300";
+      btn.textContent = "Focus";
+    });
   }
 
-  // Make addPayrollClass global
-  window.addPayrollClass = addPayrollClass;
+  // Mark a row as temporarily focused (yellow, no tick)
+  function markRowFocused(row) {
+    row.classList.add('bg-yellow-100','border-yellow-400');
+    const btn = row.querySelector('.focusBtn');
+    btn.disabled = true;
+    btn.className = "focusBtn px-4 py-1 bg-yellow-500 text-white rounded cursor-not-allowed";
+    btn.textContent = "Focusing...";
+  }
 
-  // Initialize payroll section functionality
-  document.addEventListener('DOMContentLoaded', function() {
-    const classSelect = document.getElementById('newClass');
-    const changeButton = document.getElementById('changeButton');
-    
-    // Only run if elements exist (payroll section)
-    if (!classSelect || !changeButton) return;
-    
-    // Update selection display when class changes
-    classSelect.addEventListener('change', updateSelectionDisplay);
-    
-    // Handle button click
-    changeButton.addEventListener('click', function() {
-      const newClass = classSelect.value;
-      
-      if (!newClass) {
-          alert('Please select a payroll class');
-          return;
-      }
-      
-      // Store the selected payroll class globally
-      if (typeof Storage !== "undefined") {
-          localStorage.setItem('currentPayrollClass', newClass);
-      }
-      
-      // Try to update dashboard greeting if available
-      if (window.updateDashboardGreeting) {
-          window.updateDashboardGreeting(newClass);
-      }
-      
-      // Trigger custom event for dashboard to listen to
-      const event = new CustomEvent('payrollClassChanged', {
-          detail: { newClass: newClass }
-      });
-      document.dispatchEvent(event);
-      
-      const classText = classSelect.options[classSelect.selectedIndex].text;
-      alert(`Successfully changed to ${classText}! Dashboard greeting will update when you return to dashboard.`);
-      
-      // Reset form
-      document.getElementById('changesForm').reset();
-      updateSelectionDisplay();
+  // Mark a row as permanently active (green, with ✓)
+  function markRowActive(row) {
+    row.classList.remove('bg-yellow-100','border-yellow-400');
+    row.classList.add('bg-green-100','border-green-500');
+    const td = row.querySelector('td:first-child');
+    td.innerHTML = td.textContent.split(" ")[0] + 
+      ` <span class="activeIndicator text-green-600 font-bold ml-2">✓ Active</span>`;
+    const btn = row.querySelector('.focusBtn');
+    btn.disabled = true;
+    btn.className = "focusBtn px-4 py-1 bg-green-600 text-white rounded cursor-not-allowed";
+    btn.textContent = "Focused";
+  }
+
+  // Handle "Focus" button clicks
+  table.querySelectorAll('.focusBtn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      resetRows();
+      selectedRow = btn.closest('tr');
+      markRowFocused(selectedRow);
     });
+  });
+
+  // Continue → confirm selection and activate
+  confirmBtn.addEventListener('click', () => {
+    if(!selectedRow){
+      alert("Please focus on a payroll class first.");
+      return;
+    }
+
+    const focusedClass = selectedRow.dataset.class;
+
+    // Save globally
+    if(typeof Storage !== "undefined"){
+      localStorage.setItem("activePayrollClass", focusedClass);
+    }
+
+    // Update dashboard greeting if available
+    if(window.updateDashboardGreeting){
+      window.updateDashboardGreeting(focusedClass);
+    }
+
+    // Fire event
+    const event = new CustomEvent("payrollClassFocused", {
+      detail: { focusedClass }
+    });
+    document.dispatchEvent(event);
+
+    // Success modal
+    successModal.classList.remove('hidden');
+    modalIcon.className = "mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin";
+    modalIcon.innerHTML = "";
+    modalText.textContent = `Focusing on ${focusedClass}...`;
+
+    setTimeout(()=>{
+      modalIcon.className = "mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-green-500 text-white";
+      modalIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                             </svg>`;
+      modalText.textContent = `${focusedClass} is now Active!`;
+
+      // Apply green with tick
+      resetRows();
+      markRowActive(selectedRow);
+
+      setTimeout(()=>{ successModal.classList.add('hidden'); },1200);
+    },1500);
+  });
+
+  // Cancel resets selection but keeps active if stored
+  cancelBtn.addEventListener('click', () => {
+    selectedRow = null;
+    resetRows();
+    const stored = localStorage.getItem("activePayrollClass");
+    if(stored){
+      const row = table.querySelector(`tr[data-class="${stored}"]`);
+      if(row) markRowActive(row);
+    }
+  });
+
+  // Restore active from storage on load
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const stored = localStorage.getItem("activePayrollClass");
+    if(stored){
+      const row = table.querySelector(`tr[data-class="${stored}"]`);
+      if(row){
+        selectedRow = row;
+        markRowActive(row);
+      }
+    }
   });
 })();
 </script>
+

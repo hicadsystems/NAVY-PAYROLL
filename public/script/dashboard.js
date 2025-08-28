@@ -293,8 +293,8 @@ window.addEventListener('resize', ()=>{ clearTimeout(t); t = setTimeout(repositi
 window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
 
 (function() {
-  let selectedPayrollClass = sessionStorage.getItem('currentPayrollClass') || '1';
-  
+  let selectedPayrollClass = sessionStorage.getItem('currentPayrollClass') || 'OFFICERS';
+
   function getTimeOfDay() {
       const hour = new Date().getHours();
       if (hour >= 5 && hour < 12) {
@@ -313,7 +313,7 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
       if (!greetingElement) return; // Only run on dashboard
       
       const timeOfDay = getTimeOfDay();
-      const greeting = `Good ${timeOfDay}, Welcome to Payroll ${selectedPayrollClass}`;
+      const greeting = `Good ${timeOfDay}, Welcome to ${selectedPayrollClass} Payroll`;
       greetingElement.textContent = greeting;
   }
 
@@ -655,8 +655,12 @@ class NavigationSystem {
 
   updateHistory(sectionId, sectionName) {
     document.title = `HICAD — ${sectionName}`;
+    // Store both sectionId and original sectionName in history state
     window.history.pushState(
-      { section: sectionName, sectionId }, 
+      { 
+        section: sectionName, 
+        sectionId: sectionId 
+      }, 
       '', 
       `#${sectionId}`
     );
@@ -665,9 +669,10 @@ class NavigationSystem {
   setupHistoryHandler() {
     window.addEventListener('popstate', (event) => {
       if (event.state && event.state.section && event.state.sectionId) {
+        // Use the original section name stored in history state
         this.navigateToSection(
-          event.state.sectionId.replace('#', ''), 
-          event.state.section
+          event.state.sectionId, 
+          event.state.section  // Use original section name, not converted from ID
         );
       } else {
         // Handle back to dashboard
@@ -681,7 +686,22 @@ class NavigationSystem {
     const hash = window.location.hash;
     if (hash && hash.length > 1) {
       const sectionId = hash.substring(1);
-      const sectionName = this.getSectionNameFromId(sectionId);
+      
+      // Try to get section name from existing history state first
+      let sectionName = null;
+      if (window.history.state && window.history.state.section) {
+        sectionName = window.history.state.section;
+      } else {
+        // Fallback: try to find the section name from DOM
+        const linkElement = document.querySelector(`a[data-section="${sectionId}"]`);
+        if (linkElement) {
+          sectionName = linkElement.textContent.trim();
+        } else {
+          // Last resort: convert from ID
+          sectionName = this.getSectionNameFromId(sectionId);
+        }
+      }
+      
       this.navigateToSection(sectionId, sectionName);
     }
   }

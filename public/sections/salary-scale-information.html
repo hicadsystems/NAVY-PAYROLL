@@ -1,126 +1,371 @@
-   <!-- Salary Group Form -->
-    <div class="p-6">
-      <h2 class="text-xl font-bold mb-4">Salary Groups</h2>
-      <form id="groupForm" class="grid grid-cols-2 gap-4">
-        <label>Group Code</label>
-        <input type="text" name="groupcode" class="border p-2 rounded" required>
+<div class="p-6 max-w-6xl mx-auto">
 
-        <label>Description</label>
-        <input type="text" name="grpdesc" class="border p-2 rounded">
+  <!-- Toggle Navigation -->
+  <div class="flex gap-4 mb-6">
+    <button id="btnGroups" class="px-4 py-2 rounded-md  text-gray-900 hover:bg-blue-600">Salary Groups</button>
+    <button id="btnElements" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Element Types</button>
+    <button id="btnScales" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Salary Scale</button>
+  </div>
 
-        <label>Effective Date</label>
-        <input type="date" name="effdate" class="border p-2 rounded">
+  <!-- Salary Groups -->
+  <div id="groupSection">
+    <h2 class="text-xl font-bold mb-4">Salary Groups</h2>
+    <form id="groupForm" class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+      <label>Group Code</label>
+      <input type="text" name="groupcode" class="border p-2 rounded" required>
+      <label>Description</label>
+      <input type="text" name="grpdesc" class="border p-2 rounded">
+      <label>Effective Date</label>
+      <input type="date" name="effdate" class="border p-2 rounded">
+      <label>Last Date</label>
+      <input type="date" name="lastdate" class="border p-2 rounded">
+      <div class="col-span-2 flex justify-end">
+        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save Group</button>
+      </div>
+    </form>
 
-        <label>Last Date</label>
-        <input type="date" name="lastdate" class="border p-2 rounded">
-
-        <div class="col-span-2 flex justify-end">
-          <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save Group</button>
-        </div>
-      </form>
-    </div>
-
-    <!-- Element Type Form -->
-    <div class=" p-6">
-      <h2 class="text-xl font-bold mb-4">Element Types</h2>
-      <form id="elementForm" class="grid grid-cols-2 gap-4">
-        <label>Payment Type</label>
-        <input type="text" name="PaymentType" class="border p-2 rounded">
-
-        <label>Description</label>
-        <input type="text" name="elmDesc" class="border p-2 rounded">
-
-        <label>Ledger</label>
-        <input type="text" name="Ledger" class="border p-2 rounded">
-
-        <label>Ledger ID</label>
-        <input type="text" name="Ledgerid" class="border p-2 rounded">
-
-        <label>Status</label>
-        <select name="Status" class="border p-2 rounded">
-          <option value="Active">Active</option>
-          <option value="Inactive">Inactive</option>
-        </select>
-
-        <div class="col-span-2 flex justify-end">
-          <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save Element</button>
-        </div>
-      </form>
-    </div>
-
-    <!-- Salary Scale Form -->
-    <div class=" p-6">
-      <h2 class="text-xl font-bold mb-4">Salary Scale</h2>
-      <form id="scaleForm" class="grid grid-cols-2 gap-4">
-
-        <label>Salary Group</label>
-        <select name="groupcode" id="scaleGroup" class="border p-2 rounded"></select>
-
-        <label>Element Type</label>
-        <select name="elementType" id="scaleElement" class="border p-2 rounded"></select>
-
-        <label>Grade Level</label>
-        <select name="grade" id="scaleGrade" class="border p-2 rounded"></select>
-
-        <!--<div class="col-span-2">
-          <h3 class="text-lg font-semibold mt-4 mb-2">Steps (Grade 20 is terminal)</h3>
-          <div class="grid grid-cols-5 gap-2">
-            ${Array.from({ length: 20 }, (_, i) => `
-              <div>
-                <label class="text-xs">Step ${i + 1}</label>
-                <input type="number" step="0.01" name="step${i + 1}" class="border p-2 rounded w-full">
-              </div>
-            `).join("")}
-          </div>
-        </div>-->
-
-        <div class="col-span-2 flex justify-end mt-6 gap-2">
-          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Apply</button>
-        </div>
-      </form>
+    <div class="mt-6 overflow-x-auto">
+      <table class="w-full border border-gray-200 rounded-lg">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-4 py-2">Code</th>
+            <th>Description</th>
+            <th>Effective</th>
+            <th>Last Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="groupTable" class="divide-y"></tbody>
+      </table>
     </div>
   </div>
 
-  <script>
-    // Populate dropdowns with backend data
-    async function loadDropdowns() {
-      const [groups, elements, grades] = await Promise.all([
-        fetch("/admin/salary-groups").then(r => r.json()),
-        fetch("/admin/element-types").then(r => r.json()),
-        fetch("/admin/grade-levels").then(r => r.json()),
-      ]);
-      const groupSel = document.getElementById("scaleGroup");
-      groups.forEach(g => groupSel.innerHTML += `<option value="${g.groupcode}">${g.grpdesc}</option>`);
-      const elemSel = document.getElementById("scaleElement");
-      elements.forEach(e => elemSel.innerHTML += `<option value="${e.PaymentType}">${e.elmDesc}</option>`);
-      const gradeSel = document.getElementById("scaleGrade");
-      grades.forEach(gr => gradeSel.innerHTML += `<option value="${gr.No}">${gr.gradedesc}</option>`);
+  <!-- Element Types -->
+  <div id="elementSection" class="hidden">
+    <h2 class="text-xl font-bold mb-4">Element Types</h2>
+    <form id="elementForm" class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+      <label>Payment Type</label>
+      <input type="text" name="PaymentType" class="border p-2 rounded">
+      <label>Description</label>
+      <input type="text" name="elmDesc" class="border p-2 rounded">
+      <label>Ledger</label>
+      <input type="text" name="Ledger" class="border p-2 rounded">
+      <label>Ledger ID</label>
+      <input type="text" name="Ledgerid" class="border p-2 rounded">
+      <label>Status</label>
+      <select name="Status" class="border p-2 rounded">
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+      </select>
+      <div class="col-span-2 flex justify-end">
+        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save Element</button>
+      </div>
+    </form>
+
+    <div class="mt-6 overflow-x-auto">
+      <table class="w-full border border-gray-200 rounded-lg">
+        <thead class="bg-gray-100">
+          <tr>
+            <th>Payment</th>
+            <th>Description</th>
+            <th>Ledger</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="elementTable" class="divide-y"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Salary Scale -->
+  <div id="scaleSection" class="hidden">
+    <h2 class="text-xl font-bold mb-4">Salary Scale</h2>
+    <form id="scaleForm" class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+      <label>Salary Group</label>
+      <select name="groupcode" id="scaleGroup" class="border p-2 rounded"></select>
+      <label>Element Type</label>
+      <select name="elementType" id="scaleElement" class="border p-2 rounded"></select>
+      <label>Grade Level</label>
+      <select name="grade" id="scaleGrade" class="border p-2 rounded"></select>
+      <div class="col-span-2 flex justify-end mt-6 gap-2">
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Apply</button>
+      </div>
+    </form>
+
+    <div class="mt-6 overflow-x-auto">
+      <table class="w-full border border-gray-200 rounded-lg">
+        <thead class="bg-gray-100">
+          <tr>
+            <th>Group</th>
+            <th>Element</th>
+            <th>Grade</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="scaleTable" class="divide-y"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
+  <div class="bg-white p-6 rounded-2xl shadow-xl text-center w-72">
+    <div id="modalIcon" class="mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+    <p id="modalText" class="mt-4 text-lg font-semibold text-gray-700">Processing...</p>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
+  <div class="bg-white p-6 rounded-2xl shadow-xl text-center w-72">
+    <div id="modalIcon" class="mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+    <p id="modalText" class="mt-4 text-lg font-semibold text-gray-700">Processing...</p>
+  </div>
+</div>
+
+<script>
+ // toggle section
+function showSection(sectionId, btnId) {
+  const sections = ["groupSection","elementSection","scaleSection"];
+  const buttons  = ["btnGroups","btnElements","btnScales"];
+
+  // Hide all sections
+  sections.forEach(id=>{
+    document.getElementById(id).classList.add("hidden");
+  });
+
+  // Reset button styles
+  buttons.forEach(id=>{
+    const btn = document.getElementById(id);
+    btn.classList.remove("bg-blue-600","text-white","shadow");
+    btn.classList.add('bg-yellow-400', 'text-gray-900');
+  });
+
+  // Show chosen section
+  document.getElementById(sectionId).classList.remove("hidden");
+
+  // Highlight active button
+  const activeBtn = document.getElementById(btnId);
+  activeBtn.classList.remove('bg-yellow-400', 'text-gray-900');
+  activeBtn.classList.add('bg-blue-600', 'text-white');
+}
+
+// Attach events safely (no inline attributes)
+  document.getElementById("btnGroups").addEventListener("click", () => {
+    showSection("groupSection","btnGroups");
+  });
+  document.getElementById("btnElements").addEventListener("click", () => {
+    showSection("elementSection","btnElements");
+  });
+  document.getElementById("btnScales").addEventListener("click", () => {
+    showSection("scaleSection","btnScales");
+  });
+
+  // Show Groups by default
+  showSection("groupSection","btnGroups");
+
+
+//success modal
+function showSuccessModal(msg) {
+  const modal = document.getElementById('successModal');
+  const icon = document.getElementById('modalIcon');
+  const text = document.getElementById('modalText');
+  modal.classList.remove('hidden');
+  icon.className = "mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin";
+  icon.innerHTML = "";
+  text.textContent = msg || "Processing...";
+  setTimeout(()=>{
+    icon.className = "mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-green-500 text-white";
+    icon.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' class='h-6 w-6' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+      <path stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M5 13l4 4L19 7' />
+    </svg>`;
+    text.textContent = "Success!";
+    setTimeout(()=>{ modal.classList.add('hidden'); },1200);
+  },1500);
+}
+
+// Action buttons template
+function actionBtns(type, id) {
+  return `
+    <button onclick="viewItem('${type}', '${id}')" class="text-blue-600 hover:underline">View</button> |
+    <button onclick="editItem('${type}', '${id}')" class="text-green-600 hover:underline">Edit</button> |
+    <button onclick="deleteItem('${type}', '${id}')" class="text-red-600 hover:underline">Delete</button>
+  `;
+}
+
+// --- CRUD Handlers ---
+
+async function viewItem(type, id) {
+  const url = getApiUrl(type, id);
+  const res = await fetch(url);
+  const data = await res.json();
+  alert(JSON.stringify(data, null, 2)); // simple view popup
+}
+
+async function editItem(type, id) {
+  const url = getApiUrl(type, id);
+  const res = await fetch(url);
+  const data = await res.json();
+
+  if(type === "Group") {
+    const form = document.getElementById("groupForm");
+    form.groupcode.value = data.groupcode;
+    form.grpdesc.value = data.grpdesc;
+    form.effdate.value = data.effdate;
+    form.lastdate.value = data.lastdate;
+    form.dataset.editId = id;
+  }
+  if(type === "Element") {
+    const form = document.getElementById("elementForm");
+    form.PaymentType.value = data.PaymentType;
+    form.elmDesc.value = data.elmDesc;
+    form.Ledger.value = data.Ledger;
+    form.Ledgerid.value = data.Ledgerid;
+    form.Status.value = data.Status;
+    form.dataset.editId = id;
+  }
+  if(type === "Scale") {
+    const form = document.getElementById("scaleForm");
+    form.groupcode.value = data.groupcode;
+    form.elementType.value = data.elementType;
+    form.grade.value = data.grade;
+    form.dataset.editId = id;
+  }
+}
+
+async function deleteItem(type, id) {
+  const url = getApiUrl(type, id);
+  if(confirm("Are you sure you want to delete this record?")) {
+    const res = await fetch(url, { method:"DELETE" });
+    if((await res.json()).success){
+      document.querySelector(`[data-${type.toLowerCase()}-id="${id}"]`).remove();
+      showSuccessModal(`${type} deleted`);
     }
-    loadDropdowns();
+  }
+}
 
-    // Submit handlers
-    document.getElementById("groupForm").addEventListener("submit", async e => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(e.target).entries());
-      const res = await fetch("/admin/salary-groups", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(data) });
-      if ((await res.json()).success) alert("Group saved!");
-    });
+// --- Helper for API URLs ---
+function getApiUrl(type, id){
+  switch(type){
+    case "Group": return `/admin/salary-groups/${id}`;
+    case "Element": return `/admin/element-types/${id}`;
+    case "Scale": return `/admin/salary-scales/${id}`;
+  }
+}
 
-    document.getElementById("elementForm").addEventListener("submit", async e => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(e.target).entries());
-      const res = await fetch("/admin/element-types", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(data) });
-      if ((await res.json()).success) alert("Element saved!");
-    });
+// --- Populate Dropdowns ---
+async function loadDropdowns() {
+  const [groups, elements, grades] = await Promise.all([
+    fetch("/admin/salary-groups").then(r => r.json()),
+    fetch("/admin/element-types").then(r => r.json()),
+    fetch("/admin/grade-levels").then(r => r.json()),
+  ]);
+  const groupSel = document.getElementById("scaleGroup");
+  groupSel.innerHTML = "";
+  groups.forEach(g => groupSel.innerHTML += `<option value="${g.groupcode}">${g.grpdesc}</option>`);
+  const elemSel = document.getElementById("scaleElement");
+  elemSel.innerHTML = "";
+  elements.forEach(e => elemSel.innerHTML += `<option value="${e.PaymentType}">${e.elmDesc}</option>`);
+  const gradeSel = document.getElementById("scaleGrade");
+  gradeSel.innerHTML = "";
+  grades.forEach(gr => gradeSel.innerHTML += `<option value="${gr.No}">${gr.gradedesc}</option>`);
+}
+loadDropdowns();
 
-    document.getElementById("scaleForm").addEventListener("submit", async e => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(e.target).entries());
-      // Grade 20 rule
-      if (data.grade == "20") {
-        for (let i = 2; i <= 20; i++) data[`step${i}`] = 0; 
-      }
-      const res = await fetch("/admin/salary-scale", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(data) });
-      if ((await res.json()).success) alert("Scale saved!");
-    });
-  </script>
+// --- Form Submits ---
+
+document.getElementById("groupForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const method = form.dataset.editId ? "PUT" : "POST";
+  const url = form.dataset.editId ? `/admin/salary-groups/${form.dataset.editId}` : "/admin/salary-groups";
+  const res = await fetch(url, { method, headers:{ "Content-Type":"application/json" }, body: JSON.stringify(data) });
+  if((await res.json()).success){
+    showSuccessModal("Group saved!");
+    form.reset(); delete form.dataset.editId;
+    loadGroups(); // refresh table
+  }
+});
+
+document.getElementById("elementForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const method = form.dataset.editId ? "PUT" : "POST";
+  const url = form.dataset.editId ? `/admin/element-types/${form.dataset.editId}` : "/admin/element-types";
+  const res = await fetch(url, { method, headers:{ "Content-Type":"application/json" }, body: JSON.stringify(data) });
+  if((await res.json()).success){
+    showSuccessModal("Element saved!");
+    form.reset(); delete form.dataset.editId;
+    loadElements();
+  }
+});
+
+document.getElementById("scaleForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const method = form.dataset.editId ? "PUT" : "POST";
+  const url = form.dataset.editId ? `/admin/salary-scales/${form.dataset.editId}` : "/admin/salary-scales";
+  const res = await fetch(url, { method, headers:{ "Content-Type":"application/json" }, body: JSON.stringify(data) });
+  if((await res.json()).success){
+    showSuccessModal("Scale saved!");
+    form.reset(); delete form.dataset.editId;
+    loadScales();
+  }
+});
+
+// --- Load Tables ---
+async function loadGroups(){
+  const res = await fetch("/admin/salary-groups");
+  const groups = await res.json();
+  const table = document.getElementById("groupTable");
+  table.innerHTML = "";
+  groups.forEach(g=>{
+    table.innerHTML += `
+      <tr data-group-id="${g.id}">
+        <td class="px-4 py-2">${g.groupcode}</td>
+        <td>${g.grpdesc}</td><td>${g.effdate}</td>
+        <td>${g.lastdate}</td>
+        <td>${actionBtns('Group', g.id)}</td>
+      </tr>`;
+  });
+}
+async function loadElements(){
+  const res = await fetch("/admin/element-types");
+  const elems = await res.json();
+  const table = document.getElementById("elementTable");
+  table.innerHTML = "";
+  elems.forEach(e=>{
+    table.innerHTML += `
+      <tr data-element-id="${e.id}">
+        <td class="px-4 py-2">${e.PaymentType}</td>
+        <td>${e.elmDesc}</td><td>${e.Ledger}</td>
+        <td>${e.Status}</td>
+        <td>${actionBtns('Element', e.id)}</td>
+      </tr>`;
+  });
+}
+async function loadScales(){
+  const res = await fetch("/admin/salary-scales");
+  const scales = await res.json();
+  const table = document.getElementById("scaleTable");
+  table.innerHTML = "";
+  scales.forEach(s=>{
+    table.innerHTML += `
+      <tr data-scale-id="${s.id}">
+        <td class="px-4 py-2">${s.groupcode}</td>
+        <td>${s.elementType}</td><td>${s.grade}</td>
+        <td>${actionBtns('Scale', s.id)}</td>
+      </tr>`;
+  });
+}
+
+// Initial load
+loadGroups();
+loadElements();
+loadScales();
+</script>

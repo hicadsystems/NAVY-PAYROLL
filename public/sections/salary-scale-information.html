@@ -1,371 +1,531 @@
-<div class="p-6 max-w-6xl mx-auto">
+<div class="p-6">
 
   <!-- Toggle Navigation -->
-  <div class="flex gap-4 mb-6">
-    <button id="btnGroups" class="px-4 py-2 rounded-md  text-gray-900 hover:bg-blue-600">Salary Groups</button>
-    <button id="btnElements" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Element Types</button>
+  <div class="w-fit flex gap-4 p-2 mb-6 bg-white/50 rounded-xl border border-amber-50 shadow-sm">
+    <button id="btnGroups" class="px-4 py-2 rounded-md text-gray-900 hover:bg-blue-600">Salary Groups</button>
     <button id="btnScales" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Salary Scale</button>
   </div>
 
   <!-- Salary Groups -->
   <div id="groupSection">
-    <h2 class="text-xl font-bold mb-4">Salary Groups</h2>
-    <form id="groupForm" class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+    <div class="flex justify-between mb-4">
+      <h2 class="text-xl lg:text-2xl text-blue-600 font-bold">Salary Groups</h2>
+      <button id="addNewGroupBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New Group</button>
+    </div>
+
+    <form id="groupForm" class="hidden grid grid-cols-2 gap-4">
       <label>Group Code</label>
-      <input type="text" name="groupcode" class="border p-2 rounded" required>
+      <input type="text" id="groupCode" class="border p-2 rounded">
       <label>Description</label>
-      <input type="text" name="grpdesc" class="border p-2 rounded">
+      <input type="text" id="groupDesc" class="border p-2 rounded">
       <label>Effective Date</label>
-      <input type="date" name="effdate" class="border p-2 rounded">
+      <input type="date" id="groupEff" class="border p-2 rounded">
       <label>Last Date</label>
-      <input type="date" name="lastdate" class="border p-2 rounded">
-      <div class="col-span-2 flex justify-end">
-        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save Group</button>
+      <input type="date" id="groupLast" class="border p-2 rounded">
+      <div class="col-span-2 flex justify-end gap-2">
+        <button type="button" id="saveGroupBtn" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Save</button>
+        <button type="button" id="cancelGroupBtn" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
       </div>
     </form>
 
     <div class="mt-6 overflow-x-auto">
-      <table class="w-full border border-gray-200 rounded-lg">
-        <thead class="bg-gray-100">
+      <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+        <thead class="bg-blue-100 text-blue-900">
           <tr>
-            <th class="px-4 py-2">Code</th>
-            <th>Description</th>
-            <th>Effective</th>
-            <th>Last Date</th>
-            <th>Actions</th>
+            <th class="border px-2 py-3 text-left">Code</th>
+            <th class="border px-2 py-3 text-left">Description</th>
+            <th class="border px-2 py-3 text-left">Effective Date</th>
+            <th class="border px-2 py-3 text-left">Last Date</th>
+            <th class="border px-2 py-3 text-left">Actions</th>
           </tr>
         </thead>
-        <tbody id="groupTable" class="divide-y"></tbody>
+        <tbody id="groupTable">
+
+        </tbody>
       </table>
     </div>
   </div>
 
-  <!-- Element Types -->
-  <div id="elementSection" class="hidden">
-    <h2 class="text-xl font-bold mb-4">Element Types</h2>
-    <form id="elementForm" class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
-      <label>Payment Type</label>
-      <input type="text" name="PaymentType" class="border p-2 rounded">
-      <label>Description</label>
-      <input type="text" name="elmDesc" class="border p-2 rounded">
-      <label>Ledger</label>
-      <input type="text" name="Ledger" class="border p-2 rounded">
-      <label>Ledger ID</label>
-      <input type="text" name="Ledgerid" class="border p-2 rounded">
-      <label>Status</label>
-      <select name="Status" class="border p-2 rounded">
-        <option value="Active">Active</option>
-        <option value="Inactive">Inactive</option>
-      </select>
-      <div class="col-span-2 flex justify-end">
-        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save Element</button>
-      </div>
-    </form>
-
-    <div class="mt-6 overflow-x-auto">
-      <table class="w-full border border-gray-200 rounded-lg">
-        <thead class="bg-gray-100">
-          <tr>
-            <th>Payment</th>
-            <th>Description</th>
-            <th>Ledger</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="elementTable" class="divide-y"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Salary Scale -->
+  <!-- Salary Scales -->
   <div id="scaleSection" class="hidden">
-    <h2 class="text-xl font-bold mb-4">Salary Scale</h2>
-    <form id="scaleForm" class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+    <div class="flex justify-between mb-4">
+      <div>
+        <h2 class="text-xl lg:text-2xl text-blue-600 font-bold">Salary Scale</h2>
+      </div>
+      <div>
+        <button id="addNewScaleBtn" type="button"
+          class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          + Add New Scale
+        </button>
+        <button id="tabBatchBtn" type="button"
+          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          Batch Upload
+        </button>
+        <button id="generateReportsBtn" type="button"
+          class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+          Generate Reports
+        </button>
+      </div>
+    </div>
+
+    <!-- Add New Scale Form -->
+    <form id="scaleForm"
+          class="hidden grid grid-cols-2 gap-4 p-4">
       <label>Salary Group</label>
-      <select name="groupcode" id="scaleGroup" class="border p-2 rounded"></select>
+      <select id="scaleGroup" class="border p-2 rounded">
+        <option value="">Select Group</option>
+      </select>
       <label>Element Type</label>
-      <select name="elementType" id="scaleElement" class="border p-2 rounded"></select>
+      <select id="scaleElement" class="border p-2 rounded">
+        <option value="">Select Element</option>
+      </select>
       <label>Grade Level</label>
-      <select name="grade" id="scaleGrade" class="border p-2 rounded"></select>
+      <select id="scaleGrade" class="border p-2 rounded">
+        <option value="">Select Grade</option>
+      </select>
+
+      <div id="stepFields"
+          class="col-span-2 grid grid-cols-4 gap-2 mt-4 hidden"></div>
+
       <div class="col-span-2 flex justify-end mt-6 gap-2">
-        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Apply</button>
+        <button type="submit"
+          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+          Save
+        </button>
+        <button type="button" id="cancelScaleBtn"
+          class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
+          Cancel
+        </button>
       </div>
     </form>
 
+    <!-- Batch Upload Form -->
+    <div class="flex justify-end">
+    <form id="batchUploadForm"
+          class="hidden w-full max-w-lg rounded-2xl pt-6 p-2">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
+        <input type="file" id="batchFile"
+          class="mt-1 block w-full border border-blue-500 bg-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>
+        <p class="text-xs text-gray-500 mt-2">
+          Only .xlsx or .csv files allowed.
+          <a href="sample.csv" download
+            class="text-blue-600 hover:underline ml-2">Download Sample</a>
+        </p>
+      </div>
+
+      <div class="flex justify-end space-x-4 mt-4">
+        <button type="button" id="uploadBatchBtn"
+          class="px-6 py-2 bg-green-600 hover:bg-green-700 rounded text-white">
+          Upload
+        </button>
+
+        <button type="button" id="cancelBatchBtn"
+          class="px-6 py-2 bg-gray-400 hover:bg-gray-500 rounded text-white">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+
+    <!-- Table -->
     <div class="mt-6 overflow-x-auto">
-      <table class="w-full border border-gray-200 rounded-lg">
-        <thead class="bg-gray-100">
+      <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+        <thead class="bg-blue-100 text-blue-900">
           <tr>
-            <th>Group</th>
-            <th>Element</th>
-            <th>Grade</th>
-            <th>Actions</th>
+            <th class="border px-2 py-3 text-left">Salary Code</th>
+            <th class="border px-2 py-3 text-left">Paycode</th>
+            <th class="border px-2 py-3 text-left">Grade</th>
+            <th class="border px-2 py-3 text-left">Actions</th>
           </tr>
         </thead>
-        <tbody id="scaleTable" class="divide-y"></tbody>
+        <tbody id="scaleTable"></tbody>
       </table>
     </div>
   </div>
 </div>
 
-<!-- Success Modal -->
-<div id="successModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
-  <div class="bg-white p-6 rounded-2xl shadow-xl text-center w-72">
-    <div id="modalIcon" class="mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
-    <p id="modalText" class="mt-4 text-lg font-semibold text-gray-700">Processing...</p>
-  </div>
-</div>
+<!-- View Modal -->
+<div id="scaleViewModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div class="bg-gradient-to-br from-blue-50 to-yellow-50 p-6 rounded-2xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto border border-blue-100">
 
-<!-- Success Modal -->
-<div id="successModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
-  <div class="bg-white p-6 rounded-2xl shadow-xl text-center w-72">
-    <div id="modalIcon" class="mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
-    <p id="modalText" class="mt-4 text-lg font-semibold text-gray-700">Processing...</p>
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-3">
+      <h3 class="text-xl font-bold text-blue-700 flex items-center gap-2">
+        Scale Details
+      </h3>
+      <button id="closeScaleView" class="text-gray-400 hover:text-gray-600 transition transform hover:scale-110">
+        ✖
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div id="scaleViewContent" class="space-y-6"></div>
   </div>
 </div>
 
 <script>
- // toggle section
-function showSection(sectionId, btnId) {
-  const sections = ["groupSection","elementSection","scaleSection"];
-  const buttons  = ["btnGroups","btnElements","btnScales"];
+  // Simulated Data
+  let groups = [
+    {id:1, groupcode:"NAVY01", grpdesc:"NAVY PAY", effdate:"2025-01-01", lastdate:"2025-12-31"},
+    {id:2, groupcode:"DEFP02", grpdesc:"DEFENCE PAY", effdate:"2025-01-01", lastdate:"2025-12-31"}
+  ];
+  let elements = [
+    {id:1, code:"BP301", desc:"Pension Addition"},
+    {id:2, code:"BP302", desc:"Pension Deduction"}
+  ];
+  let grades = [
+    {id:1, code:"01", desc:"Level 1"},
+    {id:2, code:"02", desc:"Level 2"}
+  ];
+  let scales = [
+    {group:"NAVY01", element:"BP301", grade:"01", steps:["1000","1100","1200","","","","","","","","","","","","","","","","","15"]},
+    {group:"DEFP02", element:"BP302", grade:"02", steps:["2000","2100","2200","","","","","","","","","","","","","","","","","10"]}
+  ];
+  let editingScaleIndex = null;
+  let editingGroupIndex = null;
 
-  // Hide all sections
-  sections.forEach(id=>{
-    document.getElementById(id).classList.add("hidden");
-  });
+  // Generate step fields dynamically
+  function generateStepFields() {
+    const stepFieldsContainer = document.getElementById("stepFields");
+    let stepHTML = '';
+    for(let i = 1; i <= 20; i++) {
+      stepHTML += `
+        <div>
+          <label class="block text-sm font-medium">Step ${i}</label>
+          <input type="text" id="step${i}" class="border p-2 rounded w-full">
+        </div>`;
+    }
+    stepFieldsContainer.innerHTML = stepHTML;
+  }
 
-  // Reset button styles
-  buttons.forEach(id=>{
-    const btn = document.getElementById(id);
-    btn.classList.remove("bg-blue-600","text-white","shadow");
-    btn.classList.add('bg-yellow-400', 'text-gray-900');
-  });
+  // Define all functions at the top level
+  window.viewScale = function(index) {
+    const s = scales[index];
+    let html = `
+      <div class="p-6 border rounded-2xl shadow-lg bg-gradient-to-br from-blue-50 to-white">
+        <div class="mb-4">
+          <p class="text-lg font-semibold text-gray-800">
+            <span class="text-blue-600">Salary Code:</span> ${s.group}
+          </p>
+          <p class="text-lg font-semibold text-gray-800">
+            <span class="text-blue-600">Paycode:</span> ${s.element}
+          </p>
+          <p class="text-lg font-semibold text-gray-800">
+            <span class="text-blue-600">Grade:</span> ${s.grade}
+          </p>
+        </div>
 
-  // Show chosen section
-  document.getElementById(sectionId).classList.remove("hidden");
+        <div class="grid grid-cols-5 gap-3 mt-6">
+    `;
 
-  // Highlight active button
-  const activeBtn = document.getElementById(btnId);
-  activeBtn.classList.remove('bg-yellow-400', 'text-gray-900');
-  activeBtn.classList.add('bg-blue-600', 'text-white');
-}
+    for (let i = 0; i < 20; i++) {
+      html += `
+        <div class="p-3 rounded-xl border border-gray-200 shadow-sm bg-white hover:shadow-md transition">
+          <p class="text-sm font-medium text-gray-600">Step ${i+1}</p>
+          <p class="text-base font-semibold text-gray-900">${s.steps[i] || "-"}</p>
+        </div>`;
+    }
 
-// Attach events safely (no inline attributes)
-  document.getElementById("btnGroups").addEventListener("click", () => {
-    showSection("groupSection","btnGroups");
-  });
-  document.getElementById("btnElements").addEventListener("click", () => {
-    showSection("elementSection","btnElements");
-  });
-  document.getElementById("btnScales").addEventListener("click", () => {
+    html += `
+        </div>
+      </div>
+    `;
+
+    document.getElementById("scaleViewContent").innerHTML = html;
+    document.getElementById("scaleViewModal").classList.remove("hidden");
+  };
+
+  window.editScale = function(index) {
+    const s = scales[index];
+    document.getElementById("scaleGroup").value = s.group;
+    document.getElementById("scaleElement").value = s.element;
+    document.getElementById("scaleGrade").value = s.grade;
+    
+    // Populate step values
+    for(let i = 0; i < 20; i++) {
+      document.getElementById("step" + (i+1)).value = s.steps[i] || "";
+    }
+    
+    editingScaleIndex = index;
+    document.getElementById("stepFields").classList.remove("hidden");
+    document.getElementById("scaleForm").classList.remove("hidden");
     showSection("scaleSection","btnScales");
+  };
+
+  window.deleteScale = function(index) {
+    if(confirm("Delete this scale?")) {
+      scales.splice(index, 1);
+      renderScaleTable();
+    }
+  };
+
+  window.editGroup = function(index) {
+    const g = groups[index];
+    document.getElementById("groupCode").value = g.groupcode;
+    document.getElementById("groupDesc").value = g.grpdesc;
+    document.getElementById("groupEff").value = g.effdate;
+    document.getElementById("groupLast").value = g.lastdate;
+    
+    editingGroupIndex = index;
+    document.getElementById("groupForm").classList.remove("hidden");
+  };
+
+  // Initialize step fields on page load
+  generateStepFields();
+
+  // GROUP form show/hide
+  document.getElementById("addNewGroupBtn").addEventListener("click", () => {
+    document.getElementById("groupForm").classList.remove("hidden");
+  });
+  
+    document.getElementById("cancelGroupBtn").addEventListener("click", () => {
+    document.getElementById("groupForm").classList.add("hidden");
+    document.getElementById("groupForm").reset();
+    editingGroupIndex = null;
   });
 
-  // Show Groups by default
+  const scaleForm = document.getElementById("scaleForm");
+  const batchForm = document.getElementById("batchUploadForm");
+
+  // Add New Scale toggle
+  document.getElementById("addNewScaleBtn").addEventListener("click", () => {
+    // hide batch form
+    batchForm.classList.add("hidden");
+    // toggle scale form
+    scaleForm.classList.toggle("hidden");
+  });
+
+  // Batch Upload toggle
+  document.getElementById("tabBatchBtn").addEventListener("click", () => {
+    // hide scale form
+    scaleForm.classList.add("hidden");
+    // toggle batch form
+    batchForm.classList.toggle("hidden");
+  });
+
+// Cancel buttons
+document.getElementById("cancelScaleBtn").addEventListener("click", () => {
+  scaleForm.classList.add("hidden");
+  document.getElementById("stepFields").classList.add("hidden");
+});
+
+document.getElementById("cancelBatchBtn").addEventListener("click", () => {
+  batchForm.classList.add("hidden");
+});
+  
+  document.getElementById("cancelScaleBtn").addEventListener("click", () => {
+    document.getElementById("scaleForm").classList.add("hidden");
+    document.getElementById("stepFields").classList.add("hidden");
+    document.getElementById("scaleForm").reset();
+    editingScaleIndex = null;
+  });
+
+  // Toggle Section
+  function showSection(sectionId, btnId) {
+    ["groupSection","scaleSection"].forEach(id => {
+      document.getElementById(id).classList.add("hidden");
+    });
+    ["btnGroups","btnScales"].forEach(id => {
+      document.getElementById(id).classList.remove("bg-blue-600","text-white");
+      document.getElementById(id).classList.add("bg-yellow-400","text-gray-900");
+    });
+    document.getElementById(sectionId).classList.remove("hidden");
+    const btn = document.getElementById(btnId);
+    btn.classList.remove("bg-yellow-400","text-gray-900");
+    btn.classList.add("bg-blue-600","text-white");
+  }
+
+  document.getElementById("btnGroups").addEventListener("click", () => showSection("groupSection","btnGroups"));
+  document.getElementById("btnScales").addEventListener("click", () => showSection("scaleSection","btnScales"));
+  
+  // Initialize with groups section visible
   showSection("groupSection","btnGroups");
 
-
-//success modal
-function showSuccessModal(msg) {
-  const modal = document.getElementById('successModal');
-  const icon = document.getElementById('modalIcon');
-  const text = document.getElementById('modalText');
-  modal.classList.remove('hidden');
-  icon.className = "mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin";
-  icon.innerHTML = "";
-  text.textContent = msg || "Processing...";
-  setTimeout(()=>{
-    icon.className = "mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-green-500 text-white";
-    icon.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' class='h-6 w-6' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
-      <path stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M5 13l4 4L19 7' />
-    </svg>`;
-    text.textContent = "Success!";
-    setTimeout(()=>{ modal.classList.add('hidden'); },1200);
-  },1500);
-}
-
-// Action buttons template
-function actionBtns(type, id) {
-  return `
-    <button onclick="viewItem('${type}', '${id}')" class="text-blue-600 hover:underline">View</button> |
-    <button onclick="editItem('${type}', '${id}')" class="text-green-600 hover:underline">Edit</button> |
-    <button onclick="deleteItem('${type}', '${id}')" class="text-red-600 hover:underline">Delete</button>
-  `;
-}
-
-// --- CRUD Handlers ---
-
-async function viewItem(type, id) {
-  const url = getApiUrl(type, id);
-  const res = await fetch(url);
-  const data = await res.json();
-  alert(JSON.stringify(data, null, 2)); // simple view popup
-}
-
-async function editItem(type, id) {
-  const url = getApiUrl(type, id);
-  const res = await fetch(url);
-  const data = await res.json();
-
-  if(type === "Group") {
-    const form = document.getElementById("groupForm");
-    form.groupcode.value = data.groupcode;
-    form.grpdesc.value = data.grpdesc;
-    form.effdate.value = data.effdate;
-    form.lastdate.value = data.lastdate;
-    form.dataset.editId = id;
+  // Populate dropdowns
+  function loadDropdowns() {
+    const gSel = document.getElementById("scaleGroup");
+    const eSel = document.getElementById("scaleElement");
+    const grSel = document.getElementById("scaleGrade");
+    
+    gSel.innerHTML = '<option value="">Select Group</option>' + 
+      groups.map(g => `<option value="${g.groupcode}">${g.grpdesc}</option>`).join("");
+    eSel.innerHTML = '<option value="">Select Element</option>' + 
+      elements.map(e => `<option value="${e.code}">${e.desc}</option>`).join("");
+    grSel.innerHTML = '<option value="">Select Grade</option>' + 
+      grades.map(gr => `<option value="${gr.code}">${gr.desc}</option>`).join("");
   }
-  if(type === "Element") {
-    const form = document.getElementById("elementForm");
-    form.PaymentType.value = data.PaymentType;
-    form.elmDesc.value = data.elmDesc;
-    form.Ledger.value = data.Ledger;
-    form.Ledgerid.value = data.Ledgerid;
-    form.Status.value = data.Status;
-    form.dataset.editId = id;
-  }
-  if(type === "Scale") {
-    const form = document.getElementById("scaleForm");
-    form.groupcode.value = data.groupcode;
-    form.elementType.value = data.elementType;
-    form.grade.value = data.grade;
-    form.dataset.editId = id;
-  }
-}
 
-async function deleteItem(type, id) {
-  const url = getApiUrl(type, id);
-  if(confirm("Are you sure you want to delete this record?")) {
-    const res = await fetch(url, { method:"DELETE" });
-    if((await res.json()).success){
-      document.querySelector(`[data-${type.toLowerCase()}-id="${id}"]`).remove();
-      showSuccessModal(`${type} deleted`);
+  // Show step fields when all 3 dropdowns selected
+  function checkDropdownSelections() {
+    const g = document.getElementById("scaleGroup").value;
+    const e = document.getElementById("scaleElement").value;
+    const gr = document.getElementById("scaleGrade").value;
+    
+    if(g && e && gr) {
+      document.getElementById("stepFields").classList.remove("hidden");
+    } else {
+      document.getElementById("stepFields").classList.add("hidden");
     }
   }
-}
 
-// --- Helper for API URLs ---
-function getApiUrl(type, id){
-  switch(type){
-    case "Group": return `/admin/salary-groups/${id}`;
-    case "Element": return `/admin/element-types/${id}`;
-    case "Scale": return `/admin/salary-scales/${id}`;
-  }
-}
-
-// --- Populate Dropdowns ---
-async function loadDropdowns() {
-  const [groups, elements, grades] = await Promise.all([
-    fetch("/admin/salary-groups").then(r => r.json()),
-    fetch("/admin/element-types").then(r => r.json()),
-    fetch("/admin/grade-levels").then(r => r.json()),
-  ]);
-  const groupSel = document.getElementById("scaleGroup");
-  groupSel.innerHTML = "";
-  groups.forEach(g => groupSel.innerHTML += `<option value="${g.groupcode}">${g.grpdesc}</option>`);
-  const elemSel = document.getElementById("scaleElement");
-  elemSel.innerHTML = "";
-  elements.forEach(e => elemSel.innerHTML += `<option value="${e.PaymentType}">${e.elmDesc}</option>`);
-  const gradeSel = document.getElementById("scaleGrade");
-  gradeSel.innerHTML = "";
-  grades.forEach(gr => gradeSel.innerHTML += `<option value="${gr.No}">${gr.gradedesc}</option>`);
-}
-loadDropdowns();
-
-// --- Form Submits ---
-
-document.getElementById("groupForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  const form = e.target;
-  const data = Object.fromEntries(new FormData(form).entries());
-  const method = form.dataset.editId ? "PUT" : "POST";
-  const url = form.dataset.editId ? `/admin/salary-groups/${form.dataset.editId}` : "/admin/salary-groups";
-  const res = await fetch(url, { method, headers:{ "Content-Type":"application/json" }, body: JSON.stringify(data) });
-  if((await res.json()).success){
-    showSuccessModal("Group saved!");
-    form.reset(); delete form.dataset.editId;
-    loadGroups(); // refresh table
-  }
-});
-
-document.getElementById("elementForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  const form = e.target;
-  const data = Object.fromEntries(new FormData(form).entries());
-  const method = form.dataset.editId ? "PUT" : "POST";
-  const url = form.dataset.editId ? `/admin/element-types/${form.dataset.editId}` : "/admin/element-types";
-  const res = await fetch(url, { method, headers:{ "Content-Type":"application/json" }, body: JSON.stringify(data) });
-  if((await res.json()).success){
-    showSuccessModal("Element saved!");
-    form.reset(); delete form.dataset.editId;
-    loadElements();
-  }
-});
-
-document.getElementById("scaleForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  const form = e.target;
-  const data = Object.fromEntries(new FormData(form).entries());
-  const method = form.dataset.editId ? "PUT" : "POST";
-  const url = form.dataset.editId ? `/admin/salary-scales/${form.dataset.editId}` : "/admin/salary-scales";
-  const res = await fetch(url, { method, headers:{ "Content-Type":"application/json" }, body: JSON.stringify(data) });
-  if((await res.json()).success){
-    showSuccessModal("Scale saved!");
-    form.reset(); delete form.dataset.editId;
-    loadScales();
-  }
-});
-
-// --- Load Tables ---
-async function loadGroups(){
-  const res = await fetch("/admin/salary-groups");
-  const groups = await res.json();
-  const table = document.getElementById("groupTable");
-  table.innerHTML = "";
-  groups.forEach(g=>{
-    table.innerHTML += `
-      <tr data-group-id="${g.id}">
-        <td class="px-4 py-2">${g.groupcode}</td>
-        <td>${g.grpdesc}</td><td>${g.effdate}</td>
-        <td>${g.lastdate}</td>
-        <td>${actionBtns('Group', g.id)}</td>
-      </tr>`;
+  ["scaleGroup","scaleElement","scaleGrade"].forEach(id => {
+    document.getElementById(id).addEventListener("change", checkDropdownSelections);
   });
-}
-async function loadElements(){
-  const res = await fetch("/admin/element-types");
-  const elems = await res.json();
-  const table = document.getElementById("elementTable");
-  table.innerHTML = "";
-  elems.forEach(e=>{
-    table.innerHTML += `
-      <tr data-element-id="${e.id}">
-        <td class="px-4 py-2">${e.PaymentType}</td>
-        <td>${e.elmDesc}</td><td>${e.Ledger}</td>
-        <td>${e.Status}</td>
-        <td>${actionBtns('Element', e.id)}</td>
-      </tr>`;
-  });
-}
-async function loadScales(){
-  const res = await fetch("/admin/salary-scales");
-  const scales = await res.json();
-  const table = document.getElementById("scaleTable");
-  table.innerHTML = "";
-  scales.forEach(s=>{
-    table.innerHTML += `
-      <tr data-scale-id="${s.id}">
-        <td class="px-4 py-2">${s.groupcode}</td>
-        <td>${s.elementType}</td><td>${s.grade}</td>
-        <td>${actionBtns('Scale', s.id)}</td>
-      </tr>`;
-  });
-}
 
-// Initial load
-loadGroups();
-loadElements();
-loadScales();
+  // Save Group
+  document.getElementById("saveGroupBtn").addEventListener("click", () => {
+    const newGroup = {
+      id: groups.length + 1,
+      groupcode: document.getElementById("groupCode").value,
+      grpdesc: document.getElementById("groupDesc").value,
+      effdate: document.getElementById("groupEff").value,
+      lastdate: document.getElementById("groupLast").value
+    };
+    
+    if(newGroup.groupcode && newGroup.grpdesc) {
+      if(editingGroupIndex !== null) {
+        // Update existing group
+        groups[editingGroupIndex] = newGroup;
+        editingGroupIndex = null;
+      } else {
+        // Add new group
+        groups.push(newGroup);
+      }
+      renderGroupTable();
+      loadDropdowns(); // Refresh dropdowns
+      document.getElementById("groupForm").reset();
+      document.getElementById("groupForm").classList.add("hidden");
+    } else {
+      alert("Please fill in all required fields");
+    }
+  });
+
+  // Save Scale
+  document.getElementById("scaleForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const record = {
+      group: document.getElementById("scaleGroup").value,
+      element: document.getElementById("scaleElement").value,
+      grade: document.getElementById("scaleGrade").value,
+      steps: []
+    };
+    
+    // Collect step values
+    for(let i = 1; i <= 20; i++) {
+      record.steps.push(document.getElementById("step" + i).value || "");
+    }
+    
+    if(editingScaleIndex !== null) {
+      scales[editingScaleIndex] = record;
+      editingScaleIndex = null;
+    } else {
+      scales.push(record);
+    }
+    
+    renderScaleTable();
+    document.getElementById("scaleForm").reset();
+    document.getElementById("stepFields").classList.add("hidden");
+    document.getElementById("scaleForm").classList.add("hidden");
+  });
+
+  function renderScaleTable() {
+    const table = document.getElementById("scaleTable");
+    table.innerHTML = scales.map((s, i) => `
+      <tr>
+        <td class="border px-2 py-3 text-left">${s.group}</td>
+        <td class="border px-2 py-3 text-left">${s.element}</td>
+        <td class="border px-2 py-3 text-left">${s.grade}</td>
+        <td class="border px-2 py-3 text-left">
+          <button class="text-blue-600 hover:underline mr-2" onclick="viewScale(${i})">View</button>
+          <button class="text-green-600 hover:underline mr-2" onclick="editScale(${i})">Edit</button>
+          <button class="text-red-600 hover:underline" onclick="deleteScale(${i})">Delete</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  function viewScale(index) {
+    const s = scales[index];
+    let html = `
+      <div class="p-4 border rounded-lg shadow bg-gray-50">
+        <p><strong>Salary Code:</strong> ${s.group}</p>
+        <p><strong>Paycode:</strong> ${s.element}</p>
+        <p><strong>Grade:</strong> ${s.grade}</p>
+        <div class="grid grid-cols-4 gap-2 mt-4">`;
+    
+    for(let i = 0; i < 20; i++) {
+      html += `
+        <div class="p-2 border rounded bg-white">
+          <strong>Step ${i+1}:</strong> ${s.steps[i] || "-"}
+        </div>`;
+    }
+    
+    html += `
+        </div>
+      </div>`;
+    
+    document.getElementById("scaleViewContent").innerHTML = html;
+    document.getElementById("scaleViewModal").classList.remove("hidden");
+  }
+  
+  document.getElementById("closeScaleView").addEventListener("click", () => {
+    document.getElementById("scaleViewModal").classList.add("hidden");
+  });
+
+  function editScale(index) {
+    const s = scales[index];
+    document.getElementById("scaleGroup").value = s.group;
+    document.getElementById("scaleElement").value = s.element;
+    document.getElementById("scaleGrade").value = s.grade;
+    
+    // Populate step values
+    for(let i = 0; i < 20; i++) {
+      document.getElementById("step" + (i+1)).value = s.steps[i] || "";
+    }
+    
+    editingScaleIndex = index;
+    document.getElementById("stepFields").classList.remove("hidden");
+    document.getElementById("scaleForm").classList.remove("hidden");
+    showSection("scaleSection","btnScales");
+  }
+
+  function deleteScale(index) {
+    if(confirm("Delete this scale?")) {
+      scales.splice(index, 1);
+      renderScaleTable();
+    }
+  }
+
+  // Render initial group table
+  function renderGroupTable() {
+    const t = document.getElementById("groupTable");
+    t.innerHTML = groups.map((g, i) => `
+      <tr>
+        <td class="border px-2 py-3 text-left">${g.groupcode}</td>
+        <td class="border px-2 py-3 text-left">${g.grpdesc}</td>
+        <td class="border px-2 py-3 text-left">${g.effdate}</td>
+        <td class="border px-2 py-3 text-left">${g.lastdate}</td>
+        <td class="border px-2 py-3 text-left">
+          <button class="text-green-600 hover:underline mr-2" onclick="editGroup(${i})">Edit</button>
+          <button class="text-red-600 hover:underline" onclick="deleteGroup(${i})">Delete</button>
+        </td>
+      </tr>`).join("");
+  }
+
+  function deleteGroup(index) {
+    if(confirm("Delete this group?")) {
+      groups.splice(index, 1);
+      renderGroupTable();
+      loadDropdowns(); // Refresh dropdowns
+    }
+  }
+
+  // Initialize
+  renderGroupTable();
+  renderScaleTable();
+  loadDropdowns();
 </script>
+
+</body>
+</html>

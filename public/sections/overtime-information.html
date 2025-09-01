@@ -3,23 +3,47 @@
     <h1 class="text-2xl font-bold mb-6 text-gray-800">Overtime Rates</h1>
 
      <form id="overtimeForm" class="grid grid-cols-2 gap-4">
-        <input name="type" placeholder="Type" class="border p-2 rounded" value="BT03">
-        <input name="stdfix" placeholder="StdFix" class="border p-2 rounded" value="F">
-        <input name="ord" placeholder="Ord" type="number" step="0.1" class="border p-2 rounded">
-        <input name="sat" placeholder="Sat" type="number" step="0.1" class="border p-2 rounded">
-        <input name="sun" placeholder="Sun" type="number" step="0.1" class="border p-2 rounded">
-        <input name="pub" placeholder="Pub" type="number" step="0.1" class="border p-2 rounded">
+        
+        <div >
+          <label class="text-sm text-gray-600">StdFix</label>
+          <input class="border p-2 rounded w-full" name="stdfix" placeholder="StdFix" value="F">
+        </div>
+
+        <div >
+          <label class="text-sm text-gray-600">Ord</label>
+          <input class="border p-2 rounded w-full" name="ord" placeholder="Ord" type="number" step="0.1">
+        </div>
+
+        <div >
+          <label class="text-sm text-gray-600">Sat</label>
+          <input class="border p-2 rounded w-full" name="sat" placeholder="Sat" type="number" step="0.1">
+        </div>
+
+        <div >
+          <label class="text-sm text-gray-600">Sun</label>
+          <input class="border p-2 rounded w-full" name="sun" placeholder="Sun" type="number" step="0.1">
+        </div>
+
+        <div >
+          <label class="text-sm text-gray-600">Pub</label>
+          <input class="border p-2 rounded w-full" name="pub" placeholder="Pub" type="number" step="0.1">
+        </div>
 
         <!-- Tax Overtime dropdown -->
-        <label class="col-span-2 text-sm text-gray-600 lg:w-1/3">Tax Overtime</label>
-        <select name="taxovertime" class="border p-2 rounded col-span-2">
-          <option value="Yes">Yes</option>
-          <option value="No">No</option>
-        </select>
+        <div>
+          <label class="text-sm text-gray-600">Tax Overtime</label>
+          <select name="taxovertime" class="border p-2 rounded w-full">
+            <option value=""></option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+        
 
         <!-- hidden fields -->
         <input type="hidden" name="basicpay">
         <input type="hidden" name="createdby" value="HICAD">
+        <input type="hidden" name="type" value="BT03">
 
         <div class="col-span-2 flex justify-end mt-4">
           <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">

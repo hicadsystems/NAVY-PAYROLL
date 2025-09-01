@@ -3,7 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const serveIndex = require('serve-index');
-const poolPromise = require('./db'); // ensure ./db exports poolPromise or pool
+const pool = require('./db'); // ensure ./db exports poolPromise or pool
 const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -82,6 +82,54 @@ app.use((err, req, res, next) => {
   console.error(err.stack || err);
   res.status(500).json({ error: 'Internal Server Error' });
 });
+
+// ✅ Register a new user
+app.post('/api/users', async (req, res) => {
+  const { employeeId, fullName, email, role, status, phone, password, confirmPassword, expiryDate } = req.body;
+
+  // Basic validation
+  if (!fullName || !email || !role || !password) {
+    return res.status(400).json({ error: 'Required fields: Full Name, Email, Role, Password' });
+  }
+
+  if (password !== confirmPassword) {
+    return res.status(400).json({ error: 'Passwords do not match' });
+  }
+
+  try {
+    const [result] = await pool.query(
+      `INSERT INTO users (employee_id, full_name, email, user_role, status, phone_number, password, expiry_date)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        employeeId || null,
+        fullName,
+        email,
+        role,
+        status || 'Active',
+        phone || null,
+        password,
+        expiryDate || null
+      ]
+    );
+
+    res.status(201).json({ message: '✅ User registered successfully', user_id: result.insertId });
+  } catch (err) {
+    console.error('❌ Error registering user:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ✅ Show all users
+app.get('/api/users', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM users');
+    res.json(rows);
+  } catch (err) {
+    console.error('❌ Error fetching users:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 // graceful shutdown
 function shutdown(err) {

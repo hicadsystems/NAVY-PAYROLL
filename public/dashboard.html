@@ -60,8 +60,9 @@
                   <li><a href="#" data-section="control-user" class="block px-3 py-1 rounded hover:bg-amber-50">Control User</a></li>
                   <li><a href="#" data-section="payroll-class-setup" class="block px-3 py-1 rounded hover:bg-amber-50">Payroll Class Setup</a></li>
                   <li><a href="#" data-section="switch-payroll-class" class="block px-3 py-1 rounded hover:bg-amber-50">Switch Active Payroll Class</a></li>
-                  <li><a href="#" data-section="change-payroll-class" class="block px-3 py-1 rounded hover:bg-amber-50">Change Payroll Class</a></li>
+                  <li><a href="#" data-section="change-payroll-class" class="block px-3 py-1 rounded hover:bg-amber-50">Change Personnel Payroll Class</a></li>
                   <li><a href="#" data-section="change-registration-number" class="block px-3 py-1 rounded hover:bg-amber-50">Change Registration Number</a></li>
+                  <li><a href="#" data-section="irregular-one-off-payments" class="block px-3 py-1 rounded hover:bg-amber-50">Irregular One-Off Payments</a></li>
                   <li><a href="#" data-section="company-profile" class="block px-3 py-1 rounded hover:bg-amber-50">Company Profile</a></li>
                   <li><a href="#" data-section="monthly-yearly-processing" class="block px-3 py-1 rounded hover:bg-amber-50">Month End Processing</a></li>
                   <li><a href="#" data-section="yearly-processing" class="block px-3 py-1 rounded hover:bg-amber-50">Year End Processing</a></li>
@@ -171,8 +172,9 @@
               <div class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
               style="position:absolute; left:100%; top:0; margin-left:3px; white-space:nowrap;">
                 <ul class="space-y-2 m-0 p-0 list-none">
-                  <li><a href="#" data-section="irregular-one-off-payments" class="block px-3 py-1 rounded hover:bg-amber-50">Irregular One-Off Payments</a></li>
-                  <li><a href="#" data-section="inter-payroll-class-transfer" class="block px-3 py-1 rounded hover:bg-amber-50">Inter Payroll Class Transfer</a></li>
+                  <li><a href="#" data-section="emolument-form-processing" class="block px-3 py-1 rounded hover:bg-amber-50">Emolument Form Processing</a></li>
+                  <li><a href="#" data-section="database-backup" class="block px-3 py-1 rounded hover:bg-amber-50">Database Backup</a></li>
+                  <li><a href="#" data-section="database-restore" class="block px-3 py-1 rounded hover:bg-amber-50">Database Restore</a></li>
                 </ul>
               </div>
             </li>
@@ -249,25 +251,25 @@
         <section class="mt-8 flex justify-center">
           <div class="frame-2 relative w-full sm:w-[640px] sm:h-[209px] h-auto bg-white/15 rounded-xl border border-amber-100 shadow-lg p-3">
             <div class="grid grid-cols-1 sm:grid-cols-3 h-full divide-y sm:divide-y-0 sm:divide-x divide-white/30 rounded-lg overflow-hidden">
-              <div class="p-6 flex flex-col items-center gap-4">
-                <div class="flex items-center">
-                  <h3 class="text-navy font-bold">Payroll Pending Approval</h3>
-                  <div class="w-6 h-6 bg-[url('photos/ellipse12992-wbla-200h.png')] bg-cover flex items-center justify-center">
-                    <img src="photos/rectangle742992-63fo.svg" alt="pending" class="w-5 h-5 object-contain" />
+                <div class="p-6 flex flex-col items-center gap-4">
+                  <div class="flex items-center">
+                    <h3 class="text-navy font-bold">Payroll Pending Approval</h3>
+                    <div class="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center ml-2">
+                      <span class="text-white text-xs font-bold">!</span>
+                    </div>
                   </div>
+                  <div class="rounded-md bg-amber-50 px-4 py-2 text-2xl font-bold text-warning">1,500</div>
                 </div>
-                <div class="rounded-md bg-amber-50 px-4 py-2 text-2xl font-bold text-warning">1,500</div>
-              </div>
 
-              <div class="p-6 flex flex-col items-center gap-4">
-                <div class="flex items-center">
-                  <h3 class="text-navy font-bold">Nominal Number Processed</h3>
-                  <div  class="w-6 h-6 bg-[url('photos/ellipse12992-bkjg-200h.png')] bg-cover flex items-center justify-start">
-                    <img src="photos/rectangle742992-xzg9.svg" alt="approved" class="w-5 h-5 object-fit" />
+                <div class="p-6 flex flex-col items-center gap-4">
+                  <div class="flex items-center">
+                    <h3 class="text-navy font-bold">Nominal Number Processed</h3>
+                    <div class="w-6 h-6 bg-green-400 rounded-full flex items-center justify-center ml-2">
+                      <span class="text-white text-xs font-bold">✓</span>
+                    </div>
                   </div>
+                  <div class="rounded-md bg-amber-50 px-4 py-2 text-2xl font-bold text-success">2,700</div>
                 </div>
-                <div class="rounded-md bg-amber-50 px-4 py-2 text-2xl font-bold text-success">2,700</div>
-              </div>
 
               <div class="p-6 flex flex-col items-center gap-4">
                 <div class="flex items-center gap-3">
@@ -296,7 +298,7 @@
               <button class="quick-access-btn bg-[#FBBF24]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('add-personnel', 'Add New Personnel')">Add New Personnel</button>
               <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('monthly-yearly-processing', 'Monthly/Yearly Processing')">Month End Processing</button>
 
-              <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('pay-slips', 'Pay Slips')">Pay Slips</button>
+              <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('export-pay-records', 'Export Pay Records')">Export Pay Records</button>
               <button class="quick-access-btn bg-[#FBBF24]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('loan-analysis', 'Loan Analysis')">Loan Analysis</button>
             </div>
           </div>

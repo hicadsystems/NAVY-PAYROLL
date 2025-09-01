@@ -55,18 +55,21 @@
 </div>
 
 <!-- PERSONNEL SECTION -->
-<div id="section-personnel" class="p-6">
+<div id="section-personnel" class="px-6 mb-4">
   <!-- Title -->
-  <h3 id="formTitle" class="text-2xl font-bold text-blue-800 mb-4"></h3>
+  <h3 id="formTitle" class="hidden text-2xl font-bold text-blue-800 mb-4"></h3>
 
   <!-- Step Buttons + Current Personnel -->
-  <div class="flex items-center gap-2 justify-between mb-6">
-    <div class=" flex items-center space-x-2">
+  <div class="flex flex-wrap items-center gap-2 justify-between mb-4">
+    <div class=" flex flex-wrap gap-2 items-center">
       <button id="btnStep1" class="relative px-4 text-sm lg:text-lg py-2 rounded-md bg-blue-600 hover:bg-blue-600 text-white transition-all overflow-hidden group">
         <span class="relative z-10">Step 1: Basic Details</span>
       </button>
       <button id="btnStep2" class="relative px-4 text-sm lg:text-lg py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600 transition-all overflow-hidden group">
         <span class="relative z-10">Step 2: Official Info</span>
+      </button>
+      <button id="btnStep3" class="relative px-4 text-sm lg:text-lg py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600 transition-all overflow-hidden group">
+        <span class="relative z-10">Step 3: Additional Info</span>
       </button>
     </div>
 
@@ -84,38 +87,158 @@
     <!-- Step 2 (static, with labels) -->
     <div id="step2" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700">Date Employed</label>
+        <label class="block text-sm font-medium text-gray-700">Date Joined</label>
         <input type="date" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700">Last Position</label>
-        <input type="text" placeholder="Last Position" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        <label class="block text-sm font-medium text-gray-700">Date Commissioned</label>
+        <input type="date" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700">Tax</label>
-        <input type="text" placeholder="Tax" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        <label class="block text-sm font-medium text-gray-700">Entry Mode</label>
+        <input type="text" placeholder="Entry Mode" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700">Military/Civilian</label>
-        <input type="text" placeholder="Military/Civilian" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        <label class="block text-sm font-medium text-gray-700">Date Left</label>
+        <input type="date" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700">Grade Type</label>
-        <input type="text" placeholder="Grade Type" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Grade Level/Step</label>
-        <input type="text" placeholder="Grade Level/Step" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Bank</label>
+        <label class="block text-sm font-medium text-gray-700">Exit Mode</label>
         <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Bank</option>
+          <option>Select Exit Mode</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Taxed ?</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">TaxID No(TIN)</label>
+        <input type="text" placeholder="TaxID N0" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Tax State</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select Tax State</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">RSA(Pension) Code</label>
+        <input type="text" placeholder="RSA(Pension) Code" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Pension Fund Administrator</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select Administrator</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Payroll Process Category</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select Payroll Process</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Salary Group</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select Salary Group</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Salary Grade</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select Salary Grade</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Bank Branch</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select Bank Branch</option>
         </select>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Account Number</label>
         <input type="text" placeholder="Account Number" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+      </div>
+    </div>
+
+    <!-- Step 3 (static, with labels) -->
+    <div id="step3" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Senority Date</label>
+        <input type="date" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Ship/Establishment</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>select</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Branch</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select Branch</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Command</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select Command</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Specialization</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select Specialization</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Present Appointment</label>
+        <input type="text" placeholder="Present Appointment" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Award/Decoration</label>
+        <input type="text" placeholder="Award/Decoration" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Emolument Form Received?</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">NHF Code</label>
+        <input type="text" placeholder="NHF Code" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Bank Code</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select Bank Code</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">IPPIS NO</label>
+        <input type="text" placeholder="IPPIS NO" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Country</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select Country</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Accommodation Type</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select Accommodation Type</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Rent Subsidy</label>
+        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select</option>
+        </select>
       </div>
     </div>
 
@@ -593,16 +716,15 @@ showTab('personnel');
 // Personnel form functionality
 const formTitle = "Add New Personnel";
 const fieldsStep1 = [
-  "Personnel Number", "Rank", "Surname", "First Name", "Middle Name", "Date of Birth",
-  "Gender", "Marital Status", "Religion", "Tribe", "State", "Local Government", "Home Address",
-  "Place of Birth", "Email Address", "Phone", "Division", "Last Location", "Directorate",
-  "Geo Political Zone", "Passport Photograph"
+  "Service Number", "Rank", "Surname", "Other Names", "Date of Birth", "Town", "Residential Address", "Email Address", "GSM Number", "Sex", "Marital Status", "Religion", "State Of Origin", "Local Government", "Passport Photograph"
 ];
 
 const step1Container = document.getElementById("step1");
 const step2Container = document.getElementById("step2");
+const step3Container = document.getElementById("step3");
 const btnStep1 = document.getElementById("btnStep1");
 const btnStep2 = document.getElementById("btnStep2");
+const btnStep3 = document.getElementById("btnStep3");
 const formTitleEl = document.getElementById("formTitle");
 const personnelCancelBtn = document.getElementById("cancelBtn");
 
@@ -612,7 +734,7 @@ function controlWrap(label, control) {
 
 function renderStep1() {
   step1Container.innerHTML = fieldsStep1.map(field => {
-    if (["Rank", "State", "Local Government", "Last Location", "Geo Political Zone"].includes(field)) {
+    if (["Rank", "Religion", "Tribe", "State Of Origin", "Local Government", "Last Location", "Sex", "Marital Status", "Last Location", "Directorate", "Geo Political Zone"].includes(field)) {
       return controlWrap(field,
         `<select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
            <option>Select ${field}</option>
@@ -635,15 +757,31 @@ function toggleStep(step) {
   if (step === 1) {
     step1Container.classList.remove("hidden");
     step2Container.classList.add("hidden");
+    step3Container.classList.add("hidden");
     btnStep1.classList.add("bg-blue-600", "text-white");
     btnStep1.classList.remove("bg-yellow-400", "text-gray-900");
     btnStep2.classList.add("bg-yellow-400", "text-gray-900");
     btnStep2.classList.remove("bg-blue-600", "text-white");
-  } else {
+    btnStep3.classList.add("bg-yellow-400", "text-gray-900");
+    btnStep3.classList.remove("bg-blue-600", "text-white");
+  } else if (step === 2) {
     step1Container.classList.add("hidden");
     step2Container.classList.remove("hidden");
+    step3Container.classList.add("hidden");
     btnStep2.classList.add("bg-blue-600", "text-white");
     btnStep2.classList.remove("bg-yellow-400", "text-gray-900");
+    btnStep1.classList.add("bg-yellow-400", "text-gray-900");
+    btnStep1.classList.remove("bg-blue-600", "text-white");
+    btnStep3.classList.add("bg-yellow-400", "text-gray-900");
+    btnStep3.classList.remove("bg-blue-600", "text-white");
+  } else {
+    step1Container.classList.add("hidden");
+    step2Container.classList.add("hidden");
+    step3Container.classList.remove("hidden");
+    btnStep3.classList.add("bg-blue-600", "text-white");
+    btnStep3.classList.remove("bg-yellow-400", "text-gray-900");
+    btnStep2.classList.add("bg-yellow-400", "text-gray-900");
+    btnStep2.classList.remove("bg-blue-600", "text-white");
     btnStep1.classList.add("bg-yellow-400", "text-gray-900");
     btnStep1.classList.remove("bg-blue-600", "text-white");
   }
@@ -661,6 +799,7 @@ toggleStep(1);
 
 btnStep1.addEventListener("click", () => toggleStep(1));
 btnStep2.addEventListener("click", () => toggleStep(2));
+btnStep3.addEventListener("click", () => toggleStep(3));
 personnelCancelBtn.addEventListener("click", cancelPersonnelForm);
 
 // NOK functionality

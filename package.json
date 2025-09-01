@@ -9,6 +9,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
     "mssql": "^11.0.1",
+    "mysql2": "^3.14.4",
     "serve-index": "^1.9.1"
   },
   "name": "navy-payroll",

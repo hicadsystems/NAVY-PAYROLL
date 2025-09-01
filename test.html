@@ -1,826 +1,1498 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personnel Management Form</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" />
+  <title>HICAD Payroll</title>
+
+  <!-- Tailwind CDN + config -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" />
+  <style>
+    .text-navy { color: #1e3a8a; }
+    .text-warning { color: #f59e0b; }
+    .text-success { color: #10b981; }
+    .max-w-layout { max-width: 1440px; }
+    .shadow-custom { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .overlap-wrapper { 
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .overlap {
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    /* Mobile sidebar styles */
+    @media (max-width: 1023px) {
+      #sidebar {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 280px;
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.3s ease-in-out;
+      }
+      
+      #sidebar.open {
+        left: 0;
+      }
+      
+      #sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease-in-out;
+      }
+      
+      #sidebar-overlay.show {
+        opacity: 1;
+        visibility: visible;
+      }
+    }
+
+    /* Folder styles */
+    .folder-header {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+    
+    .folder-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-in-out;
+    }
+    
+    .folder-content.expanded {
+      max-height: 1000px;
+    }
+    
+    .submenu {
+      transition: all 0.15s ease-in-out;
+    }
+    
+    .submenu.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Content section styles */
+    .content-section {
+      display: none;
+    }
+    
+    .content-section.active {
+      display: block;
+    }
+  </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
 
-<!-- TABS -->
-<div class="p-6">
-  <div class="flex flex-wrap justify-between bg-white/50 rounded-xl border border-amber-50 shadow-sm p-2 gap-2">
-    <div class="flex flex-wrap justify-start gap-2">
-      <button type="button" id="tab-batch" class="px-4 py-2 rounded-md bg-yellow-400 text-grey hover:bg-blue-600">
-        Batch Upload
-      </button>
+<body class="bg-gradient-to-br from-amber-50 to-blue-100 min-h-screen antialiased">
+  <!-- Mobile sidebar overlay -->
+  <div id="sidebar-overlay" class="lg:hidden"></div>
+
+  <!-- container padded to 1440px on large screens -->
+  <div class="max-w-layout mx-auto min-h-screen">
+
+    <!-- top row: left hamburger + brand, right logo -->
+    <header class="flex items-center justify-between py-4 px-2 lg:px-0">
+      <div class="flex items-center gap-4">
+        <button id="menu-toggle" class="p-2 rounded focus:outline-none lg:hidden" aria-label="Toggle menu">
+          <div class="menu flex flex-col gap-1.5" aria-hidden="true">
+            <div class="w-6 h-0.5 bg-navy"></div>
+            <div class="w-3 h-0.5 bg-navy"></div>
+            <div class="w-6 h-0.5 bg-navy"></div>
+          </div>
+        </button>
+        <div class="text-2xl lg:text-3xl font-black text-navy select-none">HICAD</div>
+      </div>
+
+      <div class="w-[57px] h-[68px] bg-blue-200 rounded flex items-center justify-center">
+        <span class="text-navy font-bold">LOGO</span>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[250px_1fr] gap-6">
+
+      <!-- Sidebar -->
+      <aside id="sidebar" class="overlap-wrapper shadow-lg lg:sticky lg:top-6 lg:h-[calc(100vh-48px)] overflow-y-auto">
+        <div class="p-5"></div>
+
+        <nav class="px-4 pb-6">
+          <ul class="flex flex-col gap-2">
+            <li>
+              <a class="nav-item flex items-center text-navy font-medium py-3 rounded px-3 hover:bg-amber-100/25" href="#" onclick="showSection('dashboard')">
+                <i class='bx bx-home mr-3'></i>Dashboard
+              </a>
+            </li>
+
+            <!-- Administration Folder -->
+            <li class="folder">
+              <button class="folder-toggle w-full flex items-center justify-between text-navy font-medium py-3 rounded px-3 hover:bg-amber-100/25 folder-header" data-folder="administration">
+                <div class="flex items-center">
+                  <i class='bx bx-folder mr-3'></i>
+                  <span>Administration</span>
+                </div>
+                <i class='bx bx-chevron-right transition-transform duration-200'></i>
+              </button>
+              
+              <div class="folder-content ml-6 mt-2">
+                <ul class="space-y-1">
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="create-user">Create User</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="control-user">Control User</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="close-open-payroll">Close/Open Payroll Period</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="payroll-class-setup">Payroll Class Setup</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="change-payroll-class">Change Payroll Class</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="change-registration-number">Change Registration Number</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="company-profile">Company Profile</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="monthly-yearly-processing">Month End Processing</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="yearly-processing">Year End Processing</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="role-management">Role Management</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <!-- Personnel Profile Folder -->
+            <li class="folder">
+              <button class="folder-toggle w-full flex items-center justify-between text-navy font-medium py-3 rounded px-3 hover:bg-amber-100/25 folder-header" data-folder="personnel">
+                <div class="flex items-center">
+                  <i class='bx bx-folder mr-3'></i>
+                  <span>Personnel Profile</span>
+                </div>
+                <i class='bx bx-chevron-right transition-transform duration-200'></i>
+              </button>
+              
+              <div class="folder-content ml-6 mt-2">
+                <ul class="space-y-1">
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="add-personnel">Add New Personnel</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="current-personnel">Current Personnel</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="old-personnel">Old Personnel</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <!-- Data Input Folder -->
+            <li class="folder">
+              <button class="folder-toggle w-full flex items-center justify-between text-navy font-medium py-3 rounded px-3 hover:bg-amber-100/25 folder-header" data-folder="data-input">
+                <div class="flex items-center">
+                  <i class='bx bx-folder mr-3'></i>
+                  <span>Data Input</span>
+                </div>
+                <i class='bx bx-chevron-right transition-transform duration-200'></i>
+              </button>
+              
+              <div class="folder-content ml-6 mt-2">
+                <ul class="space-y-1">
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="payments-deductions">Payments/Deductions</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="payments-deductions-upload">Payments/Deductions (Batch Upload)</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="variation-payments">Variation to Payments/Deductions</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="cumulative-payroll">Cumulative Payroll Transfer</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="input-documentation">Input Documentation</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="arrears-calculations">Arrears Calculations</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <!-- File Update Folder -->
+            <li class="folder">
+              <button class="folder-toggle w-full flex items-center justify-between text-navy font-medium py-3 rounded px-3 hover:bg-amber-100/25 folder-header" data-folder="file-update">
+                <div class="flex items-center">
+                  <i class='bx bx-folder mr-3'></i>
+                  <span>File Update</span>
+                </div>
+                <i class='bx bx-chevron-right transition-transform duration-200'></i>
+              </button>
+              
+              <div class="folder-content ml-6 mt-2">
+                <ul class="space-y-1">
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="save-payroll-files">Save Payroll Files</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="changes-personnel-data">Changes in Personnel Data</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="input-variable-report">Input Variable Report</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="master-file-update">Master File Update</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="recall-payment-files">Recall Payment Files</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <!-- Payroll Calculations Folder -->
+            <li class="folder">
+              <button class="folder-toggle w-full flex items-center justify-between text-navy font-medium py-3 rounded px-3 hover:bg-amber-100/25 folder-header" data-folder="payroll-calc">
+                <div class="flex items-center">
+                  <i class='bx bx-folder mr-3'></i>
+                  <span>Payroll Calculations</span>
+                </div>
+                <i class='bx bx-chevron-right transition-transform duration-200'></i>
+              </button>
+              
+              <div class="folder-content ml-6 mt-2">
+                <ul class="space-y-1">
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="back-up">Back Up</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="restore">Restore</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="payroll-calculations">Payroll Calculations</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="calculation-reports">Calculation Reports</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <!-- Reference Tables Folder -->
+            <li class="folder">
+              <button class="folder-toggle w-full flex items-center justify-between text-navy font-medium py-3 rounded px-3 hover:bg-amber-100/25 folder-header" data-folder="reference">
+                <div class="flex items-center">
+                  <i class='bx bx-folder mr-3'></i>
+                  <span>Reference Tables</span>
+                </div>
+                <i class='bx bx-chevron-right transition-transform duration-200'></i>
+              </button>
+              
+              <div class="folder-content ml-6 mt-2">
+                <ul class="space-y-1">
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="overtime-information">Overtime Information</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="command">Command</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="cash-payment">Cash Payment</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="tax-table-information">Tax Table Information</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="salary-scale-information">Salary Scale Information</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="pay-element-description">Pay Element Description</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="bank-details">Bank Details</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="department">Department</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="state-codes">State Codes</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="local-government">Local Government</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <!-- Utilities Folder -->
+            <li class="folder">
+              <button class="folder-toggle w-full flex items-center justify-between text-navy font-medium py-3 rounded px-3 hover:bg-amber-100/25 folder-header" data-folder="utilities">
+                <div class="flex items-center">
+                  <i class='bx bx-folder mr-3'></i>
+                  <span>Utilities</span>
+                </div>
+                <i class='bx bx-chevron-right transition-transform duration-200'></i>
+              </button>
+              
+              <div class="folder-content ml-6 mt-2">
+                <ul class="space-y-1">
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="irregular-one-off-payments">Irregular One-Off Payments</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="inter-payroll-class-transfer">Inter Payroll Class Transfer</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <!-- Reports Folder -->
+            <li class="folder">
+              <button class="folder-toggle w-full flex items-center justify-between text-navy font-medium py-3 rounded px-3 hover:bg-amber-100/25 folder-header" data-folder="reports">
+                <div class="flex items-center">
+                  <i class='bx bx-folder mr-3'></i>
+                  <span>Reports</span>
+                </div>
+                <i class='bx bx-chevron-right transition-transform duration-200'></i>
+              </button>
+              
+              <div class="folder-content ml-6 mt-2">
+                <ul class="space-y-1">
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="pay-slips">Pay Slips</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="payments-by-bank">Payments by Bank(Branch)</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="analysis-of-earnings">Analysis of Earnings/Deductions</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="loan-analysis">Loan Analysis</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="analysis-of-payments">Analysis of Payments/Deductions by Bank</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="tax-payments-by-state">Tax Payments By State</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="overtime-analysis-by-dept">Overtime Analysis by Dept</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="payroll-register">Payroll Register</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="listing-of-payroll-files">Listing of Payroll Files</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="payment-staff-list">Payment Staff List</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="national-housing-funds">National Housing Funds</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="nsitf">NSITF</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="salary-summary">Salary Summary</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="analysis-of-normal-hours">Analysis of Normal Hours by Dept.</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="salary-reconciliation">Salary Reconciliation</a></li>
+                </ul>
+              </div>
+            </li>
+
+            <!-- Audit Trail Folder -->
+            <li class="folder">
+              <button class="folder-toggle w-full flex items-center justify-between text-navy font-medium py-3 rounded px-3 hover:bg-amber-100/25 folder-header" data-folder="audit">
+                <div class="flex items-center">
+                  <i class='bx bx-folder mr-3'></i>
+                  <span>Audit Trail</span>
+                </div>
+                <i class='bx bx-chevron-right transition-transform duration-200'></i>
+              </button>
+              
+              <div class="folder-content ml-6 mt-2">
+                <ul class="space-y-1">
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="salary-variance-analysis">Salary Variance Analysis</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="changes-in-personal-details">Changes in Personal Details Record</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="variation-input-listings">Variation Input Listings</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="overpayment">Overpayment</a></li>
+                  <li><a href="#" class="submenu-item block py-2 px-3 rounded text-sm hover:bg-amber-50" data-section="duplicate-account-number">Duplicate Account Number</a></li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="p-4">
+          <button onclick="logout()" class="w-full logout bg-amber-100/25 text-red-600 font-bold rounded py-2">Logout</button>
+        </div>
+      </aside>
+
+      <!-- Main content -->
+      <main class="overlap relative p-6 lg:px-10">
+
+        <!-- Dashboard Content -->
+        <div id="dashboard-content" class="content-section active">
+          <!-- Page title -->
+          <div class="mt-6">
+            <p id="dynamicGreeting" class="text-2xl lg:text-3xl font-bold text-navy text-center text-blue-900">
+                Good Morning, Welcome to OFFICERS Payroll
+            </p>
+          </div>
+
+          <div class="text-center my-2">
+            <p id="currentTime" class="text-yellow-600 text-base font-semibold lg:text-lg tracking-wide">
+            </p>
+          </div>
+
+          <!-- Stats container -->
+          <section class="mt-8 flex justify-center">
+            <div class="frame-2 relative w-full sm:w-[640px] sm:h-[209px] h-auto bg-white/15 rounded-xl border border-amber-100 shadow-lg p-3">
+              <div class="grid grid-cols-1 sm:grid-cols-3 h-full divide-y sm:divide-y-0 sm:divide-x divide-white/30 rounded-lg overflow-hidden">
+                <div class="p-6 flex flex-col items-center gap-4">
+                  <div class="flex items-center">
+                    <h3 class="text-navy font-bold">Payroll Pending Approval</h3>
+                    <div class="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center ml-2">
+                      <span class="text-white text-xs font-bold">!</span>
+                    </div>
+                  </div>
+                  <div class="rounded-md bg-amber-50 px-4 py-2 text-2xl font-bold text-warning">1,500</div>
+                </div>
+
+                <div class="p-6 flex flex-col items-center gap-4">
+                  <div class="flex items-center">
+                    <h3 class="text-navy font-bold">Nominal Number Processed</h3>
+                    <div class="w-6 h-6 bg-green-400 rounded-full flex items-center justify-center ml-2">
+                      <span class="text-white text-xs font-bold">✓</span>
+                    </div>
+                  </div>
+                  <div class="rounded-md bg-amber-50 px-4 py-2 text-2xl font-bold text-success">2,700</div>
+                </div>
+
+                <div class="p-6 flex flex-col items-center gap-4">
+                  <div class="flex items-center gap-3">
+                    <h3 class="text-navy font-bold">Current Payroll Period</h3>
+                    <i class='bx bx-calendar-alt text-2xl text-navy'></i>
+                  </div>
+                  <div class="rounded-md bg-amber-50 px-4 py-2 text-2xl font-bold">August</div>
+                </div>
+              </div>
+
+              <!-- decorative vertical lines for large screens -->
+              <div class="hidden lg:block absolute top-4 left-[33.33%] w-px h-[calc(100%-32px)] bg-white/30"></div>
+              <div class="hidden lg:block absolute top-4 left-[66.66%] w-px h-[calc(100%-32px)] bg-white/30"></div>
+            </div>
+          </section>
+
+          <!-- Quick Access + Notifications -->
+          <section class="mt-8 flex flex-col lg:flex-row justify-center gap-6 max-w-4xl mx-auto">
+            <!-- Quick Access -->
+            <div class="frame-3 w-full sm:w-[416px] sm:h-[319px] h-auto bg-white/20 rounded-xl p-6 shadow-lg">
+              <h4 class="text-xl font-bold text-navy text-center mb-6">Quick Access</h4>
+              <div class="grid grid-cols-2 gap-6">
+                <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="showSection('back-up')">Back Up</button>
+                <button class="quick-access-btn bg-[#FBBF24]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="showSection('save-payroll-files')">Save Payroll Files</button>
+
+                <button class="quick-access-btn bg-[#FBBF24]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="showSection('add-personnel')">Add New Personnel</button>
+                <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="showSection('monthly-yearly-processing')">Month End Processing</button>
+
+                <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="showSection('pay-slips')">Pay Slips</button>
+                <button class="quick-access-btn bg-[#FBBF24]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="showSection('loan-analysis')">Loan Analysis</button>
+              </div>
+            </div>
+
+            <!-- Notifications -->
+            <aside class="notifications flex-col justify-center w-full sm:w-[192px] sm:h-[319px] h-auto bg-white/20 rounded-xl p-2 pt-6 shadow-lg">
+              <h4 class="text-xl font-bold text-navy mb-6 text-center">Notifications</h4>
+              <ul class="space-y-4">
+                <li class="flex items-start gap-3">
+                  <div class="w-8 h-5 bg-yellow-500 rounded flex items-center justify-center text-white text-xs font-bold">!</div>
+                  <div class="text-sm">Submit variation for Approval</div>
+                </li>
+
+                <li class="flex items-start gap-3">
+                  <div class="w-8 h-5 bg-red-500 rounded flex items-center justify-center text-white text-xs font-bold">!</div>
+                  <div class="text-sm">Failed Payroll Transactions</div>
+                </li>
+
+                <li class="flex items-start gap-3">
+                  <div class="w-8 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                    <span class="text-white text-xs font-bold">✓</span>
+                  </div>
+                  <div class="text-sm">Successfully Created a New Personnel</div>
+                </li>
+
+                <li class="flex items-start gap-3">
+                  <div class="w-6 h-5 bg-red-500 rounded flex items-center justify-center text-white text-xs font-bold">!</div>
+                  <div class="text-sm">Back Up failed!</div>
+                </li>
+              </ul>
+            </aside>
+          </section>
+        </div>
+
+        <!-- Dynamic Content Sections -->
+        <div id="section-content" class="content-section">
+          <div class="mt-6">
+            <button onclick="showSection('dashboard')" class="mb-4 text-blue-600 hover:text-blue-800 flex items-center">
+              <i class='bx bx-arrow-back mr-2'></i>Back to Dashboard
+            </button>
+            <h2 id="section-title" class="text-2xl lg:text-3xl font-bold text-navy text-center mb-8"></h2>
+            <div id="section-body" class="bg-white/20 rounded-xl p-6 shadow-lg">
+              <!-- Dynamic content will be loaded here -->
+            </div>
+          </div>
+        </div>
+
+      </main>
     </div>
-    <div class="flex flex-wrap justify-end gap-2">
-      <button id="tab-personnel" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-600">Personnel</button>
-      <button id="tab-nok" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">NOK</button>
-      <button id="tab-spouse" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Spouse</button>
-      <button id="tab-children" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Children</button>
-    </div>
-  </div>
-</div>
-
-<!-- BATCH UPLOAD SECTION -->
-<div id="section-batch" class="p-6 flex justify-center">
-  <div class="w-full max-w-lg rounded-2xl p-6">
-    <h3 class="text-2xl font-bold text-blue-800 mb-4">Batch Upload</h3>
-    
-    <form id="batchUploadForm" class="space-y-6">
-      <!-- File Upload -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
-        <input type="file" id="batchFile" 
-               class="mt-1 block w-full border border-blue-500 bg-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-        <p class="text-xs text-gray-500 mt-2">
-          Only .xlsx or .csv files allowed. 
-          <a href="sample.csv" download 
-             class="text-blue-600 hover:underline ml-2">Download Sample</a>
-        </p>
-      </div>
-
-      <!-- Buttons -->
-      <div class="flex justify-end space-x-4">
-        <button type="button" id="cancelBatchBtn"
-          class="px-6 py-2 bg-gray-400 hover:bg-gray-500 rounded-lg text-white">Cancel</button>
-        <button type="button" id="uploadBatchBtn"
-          class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white">Upload</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- SUCCESS POPUP -->
-<div id="uploadSuccessPopup" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-  <div class="bg-white rounded-2xl shadow-lg p-6 w-96 text-center">
-    <h4 class="text-xl font-semibold text-green-600 mb-2">Upload Successful!</h4>
-    <p class="text-gray-600 mb-4">Your batch file has been uploaded successfully.</p>
-    <button id="closePopupBtn" 
-      class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">Close</button>
-  </div>
-</div>
-
-<!-- PERSONNEL SECTION -->
-<div id="section-personnel" class="p-6">
-  <!-- Title -->
-  <h3 id="formTitle" class="text-2xl font-bold text-blue-800 mb-4"></h3>
-
-  <!-- Step Buttons + Current Personnel -->
-  <div class="flex items-center gap-2 justify-between mb-6">
-    <div class=" flex items-center space-x-2">
-      <button id="btnStep1" class="relative px-4 text-sm lg:text-lg py-2 rounded-md bg-blue-600 hover:bg-blue-600 text-white transition-all overflow-hidden group">
-        <span class="relative z-10">Step 1: Basic Details</span>
-      </button>
-      <button id="btnStep2" class="relative px-4 text-sm lg:text-lg py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600 transition-all overflow-hidden group">
-        <span class="relative z-10">Step 2: Official Info</span>
-      </button>
-    </div>
-
-    <button onclick="window.navigation?.navigateToSection ? window.navigation.navigateToSection('current-personnel','Current Personnel') : alert('Hook your navigation here.')"
-      class="px-4 text-sm lg:text-lg py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-      Current Personnel
-    </button>
   </div>
 
-  <!-- Form -->
-  <form id="personnelForm" class="space-y-6">
-    <!-- Step 1 (dynamic, with labels) -->
-    <div id="step1" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  <script>
+    // Enhanced Dashboard Management System
+    class DashboardManager {
+      constructor() {
+        this.state = {
+          currentSection: 'dashboard',
+          openFolders: [],
+          sidebarOpen: false,
+          selectedPayrollClass: 'OFFICERS'
+        };
+        this.cache = new Map();
+        this.init();
+      }
 
-    <!-- Step 2 (static, with labels) -->
-    <div id="step2" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date Employed</label>
-        <input type="date" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Last Position</label>
-        <input type="text" placeholder="Last Position" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Tax</label>
-        <input type="text" placeholder="Tax" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Military/Civilian</label>
-        <input type="text" placeholder="Military/Civilian" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Grade Type</label>
-        <input type="text" placeholder="Grade Type" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Grade Level/Step</label>
-        <input type="text" placeholder="Grade Level/Step" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Bank</label>
-        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Bank</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Account Number</label>
-        <input type="text" placeholder="Account Number" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-    </div>
+      init() {
+        this.loadState();
+        this.setupEventListeners();
+        this.initializeTimeAndGreeting();
+        this.handleInitialNavigation();
+      }
 
-    <!-- Actions -->
-    <div class="col-span-full flex justify-end space-x-4 pt-4">
-      <button type="button" id="cancelBtn" class="px-6 py-2 bg-gray-400 hover:bg-gray-500 rounded-lg text-white">Cancel</button>
-      <button type="button" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white">Submit</button>
-    </div>
-  </form>
-</div>
+      // State Management
+      saveState() {
+        try {
+          window.dashboardStateBackup = JSON.stringify(this.state);
+        } catch (e) {
+          console.warn('State save failed:', e);
+        }
+      }
 
-<!-- NOK SECTION -->
-<div id="section-nok" class="hidden p-6">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-2xl font-bold text-blue-800">Next of Kin</h3>
-    <button id="nokToggleBtn" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">+ Add</button>
-  </div>
+      loadState() {
+        try {
+          if (window.dashboardStateBackup) {
+            const savedState = JSON.parse(window.dashboardStateBackup);
+            this.state = { ...this.state, ...savedState };
+          }
+          this.restoreFolderStates();
+        } catch (e) {
+          console.warn('State load failed:', e);
+        }
+      }
 
-  <!-- Form -->
-  <div id="nokFormWrap" class="hidden">
-    <form id="nokForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">First Name <span class="text-red-500">*</span></label>
-        <input id="nokFirst" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Last Name <span class="text-red-500">*</span></label>
-        <input id="nokLast" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date of Birth</label>
-        <input id="nokDob" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Full Address <span class="text-red-500">*</span></label>
-        <input id="nokAddress" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Relationship <span class="text-red-500">*</span></label>
-        <select id="nokRelationship" required class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option value="">Select</option>
-          <option>Spouse</option><option>Father</option><option>Mother</option>
-          <option>Son</option><option>Daughter</option><option>Brother</option>
-          <option>Sister</option><option>Uncle</option><option>Aunt</option><option>Friend</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Mobile Number <span class="text-red-500">*</span></label>
-        <input id="nokMobile" required type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Home Number</label>
-        <input id="nokHome" type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Email Address <span class="text-red-500">*</span></label>
-        <input id="nokEmail" required type="email" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Place Of Work</label>
-        <input id="nokWork" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Next Of Kin Type</label>
-        <select id="nokType" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Main</option><option>Alternate</option>
-        </select>
-      </div>
-    </form>
-    <div class="flex justify-end gap-3 mb-6">
-      <button id="nokCancel" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
-      <button id="nokSave" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
-    </div>
-  </div>
+      restoreFolderStates() {
+        this.state.openFolders.forEach(folderId => {
+          this.toggleFolder(folderId, false);
+        });
+      }
 
-  <!-- List -->
-  <div class="overflow-x-auto">
-    <table class="min-w-full border border-gray-200 rounded-lg text-sm">
-      <thead class="bg-blue-100 text-blue-900">
-        <tr>
-          <th class="py-2 px-3 border">Name</th>
-          <th class="py-2 px-3 border">Relationship</th>
-          <th class="py-2 px-3 border">Mobile</th>
-          <th class="py-2 px-3 border">Email</th>
-          <th class="py-2 px-3 border">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="nokList" class="text-center">
-        <tr id="nokEmpty"><td colspan="5" class="py-4 text-gray-500">No NOKs yet.</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+      // Event Listeners Setup
+      setupEventListeners() {
+        this.setupMobileMenu();
+        this.setupFolderToggles();
+        this.setupSubmenuNavigation();
+        this.setupBrowserNavigation();
+        this.setupWindowEvents();
+      }
 
-<!-- SPOUSE SECTION -->
-<div id="section-spouse" class="hidden p-6">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-2xl font-bold text-blue-800">Spouse</h3>
-    <button id="spouseToggleBtn" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">+ Add</button>
-  </div>
+      setupMobileMenu() {
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
 
-  <div id="spouseFormWrap" class="hidden">
-    <form id="spouseForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Full Name <span class="text-red-500">*</span></label>
-        <input id="spouseName" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date Of Birth</label>
-        <input id="spouseDob" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date of Married</label>
-        <input id="spouseDom" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Street</label>
-        <input id="spouseStreet" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Town</label>
-        <input id="spouseTown" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">State</label>
-        <input id="spouseState" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Local Government</label>
-        <input id="spouseLga" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Phone</label>
-        <input id="spousePhone" type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Email</label>
-        <input id="spouseEmail" type="email" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">P.O Box</label>
-        <input id="spousePoBox" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-    </form>
-    <div class="flex justify-end gap-3 mb-6">
-      <button id="spouseCancel" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
-      <button id="spouseSave" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
-    </div>
-  </div>
+        menuToggle?.addEventListener('click', () => {
+          this.toggleMobileSidebar();
+        });
 
-  <div class="overflow-x-auto">
-    <table class="min-w-full border border-gray-200 rounded-lg text-sm">
-      <thead class="bg-blue-100 text-blue-900">
-        <tr>
-          <th class="py-2 px-3 border">Full Name</th>
-          <th class="py-2 px-3 border">Phone</th>
-          <th class="py-2 px-3 border">Email</th>
-          <th class="py-2 px-3 border">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="spouseList" class="text-center">
-        <tr id="spouseEmpty"><td colspan="4" class="py-4 text-gray-500">No spouse records yet.</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+        overlay?.addEventListener('click', () => {
+          this.closeMobileSidebar();
+        });
+      }
 
-<!-- CHILDREN SECTION -->
-<div id="section-children" class="hidden p-6">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-2xl font-bold text-blue-800">Children</h3>
-    <button id="childToggleBtn" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">+ Add</button>
-  </div>
+      setupFolderToggles() {
+        document.querySelectorAll('.folder-toggle').forEach(button => {
+          button.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const folderId = button.dataset.folder;
+            this.toggleFolder(folderId);
+          });
+        });
+      }
 
-  <div id="childFormWrap" class="hidden">
-    <form id="childForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Full Name <span class="text-red-500">*</span></label>
-        <input id="childName" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Street</label>
-        <input id="childStreet" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Town</label>
-        <input id="childTown" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">State</label>
-        <input id="childState" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Local Government</label>
-        <input id="childLga" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Phone</label>
-        <input id="childPhone" type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Email</label>
-        <input id="childEmail" type="email" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">P.O Box</label>
-        <input id="childPoBox" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Sex</label>
-        <select id="childSex" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none">
-          <option value="">Select</option><option>Male</option><option>Female</option><option>Other</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date of Birth</label>
-        <input id="childDob" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">School</label>
-        <input id="childSchool" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Office Address</label>
-        <input id="childOffice" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div >
-        <label class="block text-sm font-medium text-gray-700">Occupation</label>
-        <input id="childOccupation" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-    </form>
-    <div class="flex justify-end gap-3 mb-6">
-      <button id="childCancel" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
-      <button id="childSave" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
-    </div>
-  </div>
+      setupSubmenuNavigation() {
+        document.querySelectorAll('.submenu-item').forEach(item => {
+          item.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const sectionId = item.dataset.section;
+            const sectionTitle = item.textContent.trim();
+            
+            // Close mobile sidebar immediately
+            this.closeMobileSidebar();
+            
+            // Navigate to section
+            this.showSection(sectionId, sectionTitle);
+          });
+        });
+      }
 
-  <div class="overflow-x-auto">
-    <table class="min-w-full border border-gray-200 rounded-lg text-sm">
-      <thead class="bg-blue-100 text-blue-900">
-        <tr>
-          <th class="py-2 px-3 border">Full Name</th>
-          <th class="py-2 px-3 border">Sex</th>
-          <th class="py-2 px-3 border">DOB</th>
-          <th class="py-2 px-3 border">Phone</th>
-          <th class="py-2 px-3 border">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="childList" class="text-center">
-        <tr id="childEmpty"><td colspan="5" class="py-4 text-gray-500">No children yet.</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+      setupBrowserNavigation() {
+        window.addEventListener('popstate', (e) => {
+          if (e.state?.section) {
+            this.showSection(e.state.section, e.state.title, false);
+          } else {
+            this.showDashboard();
+          }
+        });
+      }
 
-<!-- Action Popup -->
-<div id="actionPopup" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
-  <div class="bg-white p-6 rounded-2xl shadow-xl text-center w-64">
-    <div id="popupIcon" class="mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
-    <p id="popupText" class="mt-4 text-lg font-semibold text-gray-700">Processing...</p>
-  </div>
-</div>
+      setupWindowEvents() {
+        window.addEventListener('beforeunload', () => {
+          this.saveState();
+        });
 
-<script>
-// Global variables and helper functions
-let nokCounter = 0;
-let spouseCounter = 0;
-let childCounter = 0;
-const editState = { type: null, id: null, row: null };
+        // Handle window resize
+        window.addEventListener('resize', () => {
+          if (window.innerWidth >= 1024) {
+            this.closeMobileSidebar();
+          }
+        });
+      }
 
-// Helper functions
-function val(id) { 
-  return (document.getElementById(id)?.value || '').trim(); 
-}
+      // Mobile Sidebar Management
+      toggleMobileSidebar() {
+        this.state.sidebarOpen = !this.state.sidebarOpen;
+        if (this.state.sidebarOpen) {
+          this.openMobileSidebar();
+        } else {
+          this.closeMobileSidebar();
+        }
+      }
 
-function escapeHtml(s) { 
-  return String(s).replace(/[&<>"']/g, m => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  }[m])); 
-}
+      openMobileSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        
+        sidebar?.classList.add('open');
+        overlay?.classList.add('show');
+        this.state.sidebarOpen = true;
+        this.saveState();
+      }
 
-function toggleBlock(el, btn) {
-  const isHidden = el.classList.contains('hidden');
-  el.classList.toggle('hidden');
-  btn.textContent = isHidden ? '− Hide' : '+ Add';
-}
+      closeMobileSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('show');
+        this.state.sidebarOpen = false;
+        this.saveState();
+      }
 
-function showPopup(message) {
-  const popup = document.getElementById('actionPopup');
-  const icon = document.getElementById('popupIcon');
-  const text = document.getElementById('popupText');
+      // Folder Management
+      toggleFolder(folderId, save = true) {
+        const button = document.querySelector(`[data-folder="${folderId}"]`);
+        const content = button?.parentElement.querySelector('.folder-content');
+        const icon = button?.querySelector('i.bx-chevron-right');
+        
+        if (!button || !content || !icon) return;
 
-  // Reset to spinner
-  icon.className = "mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin";
-  text.textContent = message;
-  popup.classList.remove('hidden');
+        const isOpen = this.state.openFolders.includes(folderId);
+        
+        if (isOpen) {
+          content.classList.remove('expanded');
+          icon.style.transform = 'rotate(0deg)';
+          this.state.openFolders = this.state.openFolders.filter(id => id !== folderId);
+        } else {
+          content.classList.add('expanded');
+          icon.style.transform = 'rotate(90deg)';
+          this.state.openFolders.push(folderId);
+        }
+        
+        if (save) {
+          this.saveState();
+        }
+      }
 
-  setTimeout(() => {
-    icon.className = "mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-green-500 text-white";
-    icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                      </svg>`;
-    text.textContent = "Success!";
-    setTimeout(() => {
-      popup.classList.add('hidden');
-      icon.innerHTML = "";
-    }, 1000);
-  }, 1500);
-}
+      // Section Navigation
+      showSection(sectionId, sectionTitle = null, updateHistory = true) {
+        this.state.currentSection = sectionId;
+        
+        if (sectionId === 'dashboard') {
+          this.showDashboard();
+          return;
+        }
 
-function actionBtns(type, id) {
-  return `
-    <button onclick="viewRow('${type}', ${id})" class="px-2 text-blue-600 hover:underline">View</button>
-    <button onclick="editRow('${type}', ${id})" class="px-2 text-green-600 hover:underline">Edit</button>
-    <button onclick="deleteRow(this)" class="px-2 text-red-600 hover:underline">Delete</button>
-  `;
-}
+        // Hide dashboard content
+        const dashboardContent = document.getElementById('dashboard-content');
+        const sectionContent = document.getElementById('section-content');
+        
+        if (dashboardContent) dashboardContent.classList.remove('active');
+        if (sectionContent) sectionContent.classList.add('active');
 
-// Global functions for row actions
-window.viewRow = function(type, id) {
-  showPopup(`Viewing ${type} #${id}`);
-};
+        // Update content
+        this.updateSectionContent(sectionId, sectionTitle);
+        
+        // Update browser history
+        if (updateHistory) {
+          const url = new URL(window.location);
+          url.searchParams.set('section', sectionId);
+          window.history.pushState({ 
+            section: sectionId, 
+            title: sectionTitle 
+          }, '', url);
+          document.title = `HICAD - ${sectionTitle}`;
+        }
+        
+        this.saveState();
+      }
 
-window.deleteRow = function(btn) {
-  if (confirm('Are you sure you want to delete this record?')) {
-    btn.closest('tr').remove();
-    showPopup("Deleted successfully");
-  }
-};
+      showDashboard() {
+        const dashboardContent = document.getElementById('dashboard-content');
+        const sectionContent = document.getElementById('section-content');
+        
+        if (dashboardContent) dashboardContent.classList.add('active');
+        if (sectionContent) sectionContent.classList.remove('active');
+        
+        // Clear URL parameters
+        const url = new URL(window.location);
+        url.searchParams.delete('section');
+        window.history.pushState({}, '', url.pathname);
+        document.title = 'HICAD Payroll';
+        
+        this.state.currentSection = 'dashboard';
+        this.saveState();
+      }
 
-window.editRow = function(type, id) {
-  const row = document.querySelector(`tr[data-type="${type}"][data-id="${id}"]`);
-  if (!row) {
-    console.error("Row not found:", type, id);
-    return;
-  }
-  
-  editState.type = type;
-  editState.id = id;
-  editState.row = row;
-  const cells = row.querySelectorAll('td');
+      updateSectionContent(sectionId, sectionTitle) {
+        const titleElement = document.getElementById('section-title');
+        const bodyElement = document.getElementById('section-body');
+        
+        if (titleElement && sectionTitle) {
+          titleElement.textContent = sectionTitle;
+        }
+        
+        if (bodyElement) {
+          const content = this.getSectionContent(sectionId, sectionTitle);
+          bodyElement.innerHTML = content;
+        }
+      }
 
-  if (type === "NOK") {
-    const [first = "", last = ""] = cells[0].textContent.split(" ");
-    document.getElementById('nokFirst').value = first;
-    document.getElementById('nokLast').value = last;
-    document.getElementById('nokRelationship').value = cells[1].textContent;
-    document.getElementById('nokMobile').value = cells[2].textContent;
-    document.getElementById('nokEmail').value = cells[3].textContent;
-    
-    // Show form
-    const wrap = document.getElementById('nokFormWrap');
-    const btn = document.getElementById('nokToggleBtn');
-    wrap.classList.remove('hidden');
-    btn.textContent = '− Hide';
-  }
+      getSectionContent(sectionId, sectionTitle) {
+        // Check cache first
+        if (this.cache.has(sectionId)) {
+          return this.cache.get(sectionId);
+        }
 
-  if (type === "Spouse") {
-    document.getElementById('spouseName').value = cells[0].textContent;
-    document.getElementById('spousePhone').value = cells[1].textContent;
-    document.getElementById('spouseEmail').value = cells[2].textContent;
-    
-    // Show form
-    const wrap = document.getElementById('spouseFormWrap');
-    const btn = document.getElementById('spouseToggleBtn');
-    wrap.classList.remove('hidden');
-    btn.textContent = '− Hide';
-  }
+        const contentMap = {
+          'create-user': this.getCreateUserContent(),
+          'control-user': this.getControlUserContent(),
+          'add-personnel': this.getAddPersonnelContent(),
+          'current-personnel': this.getCurrentPersonnelContent(),
+          'payments-deductions': this.getPaymentsDeductionsContent(),
+          'back-up': this.getBackupContent(),
+          'pay-slips': this.getPaySlipsContent(),
+          'loan-analysis': this.getLoanAnalysisContent(),
+          'save-payroll-files': this.getSavePayrollFilesContent(),
+          'monthly-yearly-processing': this.getMonthEndProcessingContent()
+        };
 
-  if (type === "Child") {
-    document.getElementById('childName').value = cells[0].textContent;
-    document.getElementById('childSex').value = cells[1].textContent;
-    document.getElementById('childDob').value = cells[2].textContent;
-    document.getElementById('childPhone').value = cells[3].textContent;
-    
-    // Show form
-    const wrap = document.getElementById('childFormWrap');
-    const btn = document.getElementById('childToggleBtn');
-    wrap.classList.remove('hidden');
-    btn.textContent = '− Hide';
-  }
-};
+        const content = contentMap[sectionId] || this.getDefaultContent(sectionId, sectionTitle);
+        
+        // Cache the content
+        this.cache.set(sectionId, content);
+        
+        return content;
+      }
 
-// Batch Upload functionality
-const uploadBtn = document.getElementById("uploadBatchBtn");
-const popup = document.getElementById("uploadSuccessPopup");
-const closePopupBtn = document.getElementById("closePopupBtn");
-const cancelBtn = document.getElementById("cancelBatchBtn");
+      // Content Generation Methods
+      getCreateUserContent() {
+        return `
+          <div class="p-6">
+            <div class="max-w-2xl mx-auto">
+              <h3 class="text-xl font-semibold mb-6">Create New User Account</h3>
+              <form class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium mb-2">Username</label>
+                    <input type="text" class="w-full p-3 border rounded-lg" placeholder="Enter username">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium mb-2">Email</label>
+                    <input type="email" class="w-full p-3 border rounded-lg" placeholder="Enter email">
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium mb-2">Role</label>
+                    <select class="w-full p-3 border rounded-lg">
+                      <option>Admin</option>
+                      <option>HR Manager</option>
+                      <option>Payroll Officer</option>
+                      <option>Viewer</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium mb-2">Department</label>
+                    <select class="w-full p-3 border rounded-lg">
+                      <option>Human Resources</option>
+                      <option>Finance</option>
+                      <option>Operations</option>
+                      <option>IT</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">Create User</button>
+              </form>
+            </div>
+          </div>
+        `;
+      }
 
-uploadBtn.addEventListener("click", () => {
-  const fileInput = document.getElementById("batchFile");
-  if (!fileInput.files.length) {
-    alert("Please select a file to upload!");
-    return;
-  }
+      getAddPersonnelContent() {
+        return `
+          <div class="p-6">
+            <div class="max-w-4xl mx-auto">
+              <h3 class="text-xl font-semibold mb-6">Add New Personnel</h3>
+              <form class="space-y-6">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                  <h4 class="font-semibold mb-4">Personal Information</h4>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium mb-2">First Name</label>
+                      <input type="text" class="w-full p-3 border rounded-lg" placeholder="Enter first name">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Last Name</label>
+                      <input type="text" class="w-full p-3 border rounded-lg" placeholder="Enter last name">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Employee ID</label>
+                      <input type="text" class="w-full p-3 border rounded-lg" placeholder="Auto-generated">
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                  <h4 class="font-semibold mb-4">Employment Details</h4>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Position</label>
+                      <input type="text" class="w-full p-3 border rounded-lg" placeholder="Enter position">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Department</label>
+                      <select class="w-full p-3 border rounded-lg">
+                        <option>Select Department</option>
+                        <option>Human Resources</option>
+                        <option>Finance</option>
+                        <option>Operations</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Salary Grade</label>
+                      <select class="w-full p-3 border rounded-lg">
+                        <option>Select Grade</option>
+                        <option>Grade 7</option>
+                        <option>Grade 8</option>
+                        <option>Grade 9</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Start Date</label>
+                      <input type="date" class="w-full p-3 border rounded-lg">
+                    </div>
+                  </div>
+                </div>
+                
+                <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700">Add Personnel</button>
+              </form>
+            </div>
+          </div>
+        `;
+      }
 
-  uploadBtn.innerText = "Uploading...";
-  uploadBtn.disabled = true;
-  setTimeout(() => {
-    uploadBtn.innerText = "Upload";
-    uploadBtn.disabled = false;
-    popup.classList.remove("hidden");
-  }, 2000);
-});
+      getCurrentPersonnelContent() {
+        return `
+          <div class="p-6">
+            <div class="max-w-6xl mx-auto">
+              <h3 class="text-xl font-semibold mb-6">Current Personnel</h3>
+              <div class="space-y-4">
+                <div class="flex flex-col md:flex-row gap-4 mb-6">
+                  <input type="text" placeholder="Search personnel..." class="flex-1 p-3 border rounded-lg">
+                  <select class="p-3 border rounded-lg">
+                    <option>All Departments</option>
+                    <option>Human Resources</option>
+                    <option>Finance</option>
+                    <option>Operations</option>
+                  </select>
+                  <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">Search</button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                  <table class="w-full bg-white rounded-lg shadow">
+                    <thead class="bg-gray-50">
+                      <tr>
+                        <th class="px-4 py-3 text-left">Employee ID</th>
+                        <th class="px-4 py-3 text-left">Name</th>
+                        <th class="px-4 py-3 text-left">Department</th>
+                        <th class="px-4 py-3 text-left">Position</th>
+                        <th class="px-4 py-3 text-left">Status</th>
+                        <th class="px-4 py-3 text-left">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                      <tr>
+                        <td class="px-4 py-3">EMP001</td>
+                        <td class="px-4 py-3">John Doe</td>
+                        <td class="px-4 py-3">Human Resources</td>
+                        <td class="px-4 py-3">HR Manager</td>
+                        <td class="px-4 py-3"><span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Active</span></td>
+                        <td class="px-4 py-3">
+                          <button class="text-blue-600 hover:text-blue-800 mr-2">Edit</button>
+                          <button class="text-red-600 hover:text-red-800">Suspend</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
 
-closePopupBtn.addEventListener("click", () => {
-  popup.classList.add("hidden");
-  document.getElementById("batchUploadForm").reset();
-});
+      getPaymentsDeductionsContent() {
+        return `
+          <div class="p-6">
+            <div class="max-w-4xl mx-auto">
+              <h3 class="text-xl font-semibold mb-6">Payments & Deductions Entry</h3>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                  <h4 class="font-semibold mb-4">Payment Entry</h4>
+                  <div class="space-y-3">
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Employee ID</label>
+                      <input type="text" class="w-full p-3 border rounded-lg" placeholder="Enter employee ID">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Payment Type</label>
+                      <select class="w-full p-3 border rounded-lg">
+                        <option>Overtime</option>
+                        <option>Bonus</option>
+                        <option>Allowance</option>
+                        <option>Commission</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Amount</label>
+                      <input type="number" class="w-full p-3 border rounded-lg" placeholder="0.00">
+                    </div>
+                    <button class="w-full bg-green-600 text-white py-2 rounded-lg">Add Payment</button>
+                  </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                  <h4 class="font-semibold mb-4">Deduction Entry</h4>
+                  <div class="space-y-3">
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Employee ID</label>
+                      <input type="text" class="w-full p-3 border rounded-lg" placeholder="Enter employee ID">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Deduction Type</label>
+                      <select class="w-full p-3 border rounded-lg">
+                        <option>Tax</option>
+                        <option>Loan Repayment</option>
+                        <option>Insurance</option>
+                        <option>Pension</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Amount</label>
+                      <input type="number" class="w-full p-3 border rounded-lg" placeholder="0.00">
+                    </div>
+                    <button class="w-full bg-red-600 text-white py-2 rounded-lg">Add Deduction</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
 
-cancelBtn.addEventListener("click", () => {
-  document.getElementById("batchUploadForm").reset();
-});
+      getBackupContent() {
+        return `
+          <div class="p-6">
+            <div class="max-w-2xl mx-auto">
+              <h3 class="text-xl font-semibold mb-6">System Backup</h3>
+              <div class="space-y-6">
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h4 class="font-semibold text-blue-800 mb-2">Backup Status</h4>
+                  <p class="text-blue-700">Last successful backup: August 30, 2025 at 11:45 PM</p>
+                  <p class="text-blue-600 text-sm mt-1">Next scheduled backup: September 1, 2025 at 11:45 PM</p>
+                </div>
+                
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium mb-2">Backup Type</label>
+                    <select class="w-full p-3 border rounded-lg">
+                      <option>Full System Backup</option>
+                      <option>Payroll Data Only</option>
+                      <option>Personnel Records Only</option>
+                      <option>Configuration Settings</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium mb-2">Backup Location</label>
+                    <select class="w-full p-3 border rounded-lg">
+                      <option>Local Server</option>
+                      <option>Cloud Storage</option>
+                      <option>External Drive</option>
+                      <option>Network Drive</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium mb-2">Backup Name</label>
+                    <input type="text" class="w-full p-3 border rounded-lg" placeholder="Auto-generated" value="backup_${new Date().toISOString().split('T')[0]}">
+                  </div>
+                </div>
+                
+                <div class="flex gap-4">
+                  <button class="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">
+                    <i class='bx bx-save mr-2'></i>Start Backup
+                  </button>
+                  <button class="flex-1 bg-gray-600 text-white py-3 rounded-lg hover:bg-gray-700">
+                    <i class='bx bx-history mr-2'></i>View History
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
 
-// Tab functionality
-const tabs = ['personnel', 'nok', 'spouse', 'children', 'batch'];
+      getPaySlipsContent() {
+        return `
+          <div class="p-6">
+            <div class="max-w-4xl mx-auto">
+              <h3 class="text-xl font-semibold mb-6">Generate Pay Slips</h3>
+              <div class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold mb-4">Filter Options</h4>
+                    <div class="space-y-3">
+                      <div>
+                        <label class="block text-sm font-medium mb-2">Payroll Period</label>
+                        <select class="w-full p-3 border rounded-lg">
+                          <option>August 2025</option>
+                          <option>July 2025</option>
+                          <option>June 2025</option>
+                          <option>May 2025</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium mb-2">Department</label>
+                        <select class="w-full p-3 border rounded-lg">
+                          <option>All Departments</option>
+                          <option>Human Resources</option>
+                          <option>Finance</option>
+                          <option>Operations</option>
+                          <option>IT</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium mb-2">Employee Range</label>
+                        <div class="flex gap-2">
+                          <input type="text" class="flex-1 p-3 border rounded-lg" placeholder="From ID">
+                          <input type="text" class="flex-1 p-3 border rounded-lg" placeholder="To ID">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold mb-4">Export Options</h4>
+                    <div class="space-y-3">
+                      <label class="flex items-center">
+                        <input type="checkbox" class="mr-2" checked>
+                        <span class="text-sm">Include Basic Salary</span>
+                      </label>
+                      <label class="flex items-center">
+                        <input type="checkbox" class="mr-2" checked>
+                        <span class="text-sm">Include Allowances</span>
+                      </label>
+                      <label class="flex items-center">
+                        <input type="checkbox" class="mr-2" checked>
+                        <span class="text-sm">Include Deductions</span>
+                      </label>
+                      <label class="flex items-center">
+                        <input type="checkbox" class="mr-2">
+                        <span class="text-sm">Include Tax Information</span>
+                      </label>
+                      <label class="flex items-center">
+                        <input type="checkbox" class="mr-2">
+                        <span class="text-sm">Include Previous Month Comparison</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="flex gap-4">
+                  <button class="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700">
+                    <i class='bx bx-download mr-2'></i>Generate Pay Slips
+                  </button>
+                  <button class="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">
+                    <i class='bx bx-printer mr-2'></i>Print All
+                  </button>
+                  <button class="flex-1 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700">
+                    <i class='bx bx-envelope mr-2'></i>Email Slips
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
 
-function showTab(name) {
-  tabs.forEach(t => {
-    const tabBtn = document.getElementById('tab-' + t);
-    const section = document.getElementById('section-' + t);
-    
-    tabBtn.classList.remove('bg-blue-600', 'text-white');
-    tabBtn.classList.add('bg-yellow-400', 'text-gray-900');
-    section.classList.add('hidden');
-  });
-  
-  const activeTab = document.getElementById('tab-' + name);
-  const activeSection = document.getElementById('section-' + name);
-  
-  activeTab.classList.add('bg-blue-600', 'text-white');
-  activeTab.classList.remove('bg-yellow-400', 'text-gray-900');
-  activeSection.classList.remove('hidden');
-}
+      getLoanAnalysisContent() {
+        return `
+          <div class="p-6">
+            <div class="max-w-6xl mx-auto">
+              <h3 class="text-xl font-semibold mb-6">Loan Analysis Report</h3>
+              <div class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div>
+                    <label class="block text-sm font-medium mb-2">Analysis Period</label>
+                    <select class="w-full p-3 border rounded-lg">
+                      <option>Current Month</option>
+                      <option>Last 3 Months</option>
+                      <option>Last 6 Months</option>
+                      <option>Year to Date</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium mb-2">Loan Type</label>
+                    <select class="w-full p-3 border rounded-lg">
+                      <option>All Loan Types</option>
+                      <option>Salary Advance</option>
+                      <option>Car Loan</option>
+                      <option>Housing Loan</option>
+                      <option>Emergency Loan</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium mb-2">Department</label>
+                    <select class="w-full p-3 border rounded-lg">
+                      <option>All Departments</option>
+                      <option>Human Resources</option>
+                      <option>Finance</option>
+                      <option>Operations</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <div class="bg-blue-50 p-4 rounded-lg text-center">
+                    <h4 class="font-semibold text-blue-800">Total Active Loans</h4>
+                    <p class="text-2xl font-bold text-blue-900">247</p>
+                  </div>
+                  <div class="bg-green-50 p-4 rounded-lg text-center">
+                    <h4 class="font-semibold text-green-800">Total Amount</h4>
+                    <p class="text-2xl font-bold text-green-900">₦12.5M</p>
+                  </div>
+                  <div class="bg-yellow-50 p-4 rounded-lg text-center">
+                    <h4 class="font-semibold text-yellow-800">Monthly Deductions</h4>
+                    <p class="text-2xl font-bold text-yellow-900">₦2.1M</p>
+                  </div>
+                  <div class="bg-red-50 p-4 rounded-lg text-center">
+                    <h4 class="font-semibold text-red-800">Overdue Payments</h4>
+                    <p class="text-2xl font-bold text-red-900">15</p>
+                  </div>
+                </div>
+                
+                <button class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">
+                  <i class='bx bx-bar-chart mr-2'></i>Generate Detailed Report
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
 
-// Set up tab click handlers
-document.getElementById('tab-personnel').onclick = () => showTab('personnel');
-document.getElementById('tab-nok').onclick = () => showTab('nok');
-document.getElementById('tab-spouse').onclick = () => showTab('spouse');
-document.getElementById('tab-children').onclick = () => showTab('children');
-document.getElementById('tab-batch').onclick = () => showTab('batch');
+      getSavePayrollFilesContent() {
+        return `
+          <div class="p-6">
+            <div class="max-w-3xl mx-auto">
+              <h3 class="text-xl font-semibold mb-6">Save Payroll Files</h3>
+              <div class="space-y-6">
+                <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                  <h4 class="font-semibold text-yellow-800 mb-2">Important Notice</h4>
+                  <p class="text-yellow-700">Please ensure all payroll calculations are complete before saving files. This action will finalize the current payroll period.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div class="space-y-4">
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Payroll Period</label>
+                      <select class="w-full p-3 border rounded-lg">
+                        <option>August 2025</option>
+                        <option>July 2025</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label class="block text-sm font-medium mb-2">File Format</label>
+                      <select class="w-full p-3 border rounded-lg">
+                        <option>Standard Format (.dat)</option>
+                        <option>Excel Format (.xlsx)</option>
+                        <option>CSV Format (.csv)</option>
+                        <option>PDF Report (.pdf)</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div class="space-y-4">
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Save Location</label>
+                      <select class="w-full p-3 border rounded-lg">
+                        <option>Server Default Location</option>
+                        <option>Custom Path</option>
+                        <option>Network Drive</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Backup Copy</label>
+                      <select class="w-full p-3 border rounded-lg">
+                        <option>Create Backup Copy</option>
+                        <option>No Backup Required</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="flex gap-4">
+                  <button class="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">
+                    <i class='bx bx-save mr-2'></i>Save Payroll Files
+                  </button>
+                  <button class="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700">
+                    <i class='bx bx-check-double mr-2'></i>Save & Finalize
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
 
-// Default to personnel tab
-showTab('personnel');
+      getMonthEndProcessingContent() {
+        return `
+          <div class="p-6">
+            <div class="max-w-4xl mx-auto">
+              <h3 class="text-xl font-semibold mb-6">Month End Processing</h3>
+              <div class="space-y-6">
+                <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                  <h4 class="font-semibold text-red-800 mb-2">Critical Process</h4>
+                  <p class="text-red-700">Month end processing will close the current payroll period and cannot be undone. Please ensure all data entry is complete.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold mb-4">Processing Checklist</h4>
+                    <div class="space-y-2">
+                      <label class="flex items-center">
+                        <input type="checkbox" class="mr-2" checked disabled>
+                        <span class="text-sm text-gray-600">All personnel data updated</span>
+                      </label>
+                      <label class="flex items-center">
+                        <input type="checkbox" class="mr-2" checked disabled>
+                        <span class="text-sm text-gray-600">Payments/deductions entered</span>
+                      </label>
+                      <label class="flex items-center">
+                        <input type="checkbox" class="mr-2" disabled>
+                        <span class="text-sm text-gray-600">Calculations verified</span>
+                      </label>
+                      <label class="flex items-center">
+                        <input type="checkbox" class="mr-2" disabled>
+                        <span class="text-sm text-gray-600">Reports generated</span>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold mb-4">Processing Options</h4>
+                    <div class="space-y-3">
+                      <label class="flex items-center">
+                        <input type="checkbox" class="mr-2" checked>
+                        <span class="text-sm">Generate summary reports</span>
+                      </label>
+                      <label class="flex items-center">
+                        <input type="checkbox" class="mr-2" checked>
+                        <span class="text-sm">Create audit trail</span>
+                      </label>
+                      <label class="flex items-center">
+                        <input type="checkbox" class="mr-2">
+                        <span class="text-sm">Email notifications</span>
+                      </label>
+                      <label class="flex items-center">
+                        <input type="checkbox" class="mr-2" checked>
+                        <span class="text-sm">Archive old data</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <button class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700">
+                  <i class='bx bx-cog mr-2'></i>Start Month End Processing
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
 
-// Personnel form functionality
-const formTitle = "Add New Personnel";
-const fieldsStep1 = [
-  "Personnel Number", "Rank", "Surname", "First Name", "Middle Name", "Date of Birth",
-  "Gender", "Marital Status", "Religion", "Tribe", "State", "Local Government", "Home Address",
-  "Place of Birth", "Email Address", "Phone", "Division", "Last Location", "Directorate",
-  "Geo Political Zone", "Passport Photograph"
-];
+      getDefaultContent(sectionId, sectionTitle) {
+        return `
+          <div class="p-6">
+            <div class="text-center py-12">
+              <div class="max-w-md mx-auto">
+                <div class="mb-4">
+                  <i class='bx bx-file-blank text-6xl text-gray-400'></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-600 mb-2">${sectionTitle || 'Section'}</h3>
+                <p class="text-gray-500 mb-4">Content for this section is being developed.</p>
+                <p class="text-sm text-gray-400">Section ID: ${sectionId}</p>
+                <div class="mt-6">
+                  <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700" onclick="window.dashboardManager.showDashboard()">
+                    Return to Dashboard
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
 
-const step1Container = document.getElementById("step1");
-const step2Container = document.getElementById("step2");
-const btnStep1 = document.getElementById("btnStep1");
-const btnStep2 = document.getElementById("btnStep2");
-const formTitleEl = document.getElementById("formTitle");
-const personnelCancelBtn = document.getElementById("cancelBtn");
+      // Mobile Sidebar Management
+      toggleMobileSidebar() {
+        this.state.sidebarOpen = !this.state.sidebarOpen;
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        
+        if (this.state.sidebarOpen) {
+          sidebar?.classList.add('open');
+          overlay?.classList.add('show');
+          document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        } else {
+          sidebar?.classList.remove('open');
+          overlay?.classList.remove('show');
+          document.body.style.overflow = ''; // Restore scrolling
+        }
+        
+        this.saveState();
+      }
 
-function controlWrap(label, control) {
-  return `<div><label class="block text-sm font-medium text-gray-700">${label}</label>${control}</div>`;
-}
+      closeMobileSidebar() {
+        this.state.sidebarOpen = false;
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('show');
+        document.body.style.overflow = ''; // Restore scrolling
+        this.saveState();
+      }
 
-function renderStep1() {
-  step1Container.innerHTML = fieldsStep1.map(field => {
-    if (["Rank", "State", "Local Government", "Last Location", "Geo Political Zone"].includes(field)) {
-      return controlWrap(field,
-        `<select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-           <option>Select ${field}</option>
-         </select>`);
+      // Time and Greeting Management
+      initializeTimeAndGreeting() {
+        this.updateTime();
+        this.updateGreeting();
+        setInterval(() => this.updateTime(), 1000);
+        setInterval(() => this.updateGreeting(), 60000);
+      }
+
+      updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+        
+        const timeElement = document.getElementById('currentTime');
+        if (timeElement) {
+          timeElement.textContent = timeString;
+        }
+      }
+
+      updateGreeting() {
+        const now = new Date();
+        const hour = now.getHours();
+        let timeOfDay;
+        
+        if (hour < 12) {
+          timeOfDay = "Good Morning";
+        } else if (hour < 18) {
+          timeOfDay = "Good Afternoon";
+        } else {
+          timeOfDay = "Good Evening";
+        }
+        
+        const greeting = `${timeOfDay}, Welcome to ${this.state.selectedPayrollClass} Payroll`;
+        const greetingElement = document.getElementById('dynamicGreeting');
+        if (greetingElement) {
+          greetingElement.textContent = greeting;
+        }
+      }
+
+      // Handle initial navigation from URL
+      handleInitialNavigation() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sectionParam = urlParams.get('section');
+        
+        if (sectionParam && sectionParam !== 'dashboard') {
+          // Try to find the section name from the menu
+          const menuItem = document.querySelector(`[data-section="${sectionParam}"]`);
+          const sectionTitle = menuItem?.textContent.trim() || this.formatSectionTitle(sectionParam);
+          this.showSection(sectionParam, sectionTitle, false);
+        }
+      }
+
+      formatSectionTitle(sectionId) {
+        return sectionId
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+      }
+
+      // Public Methods
+      changePayrollClass(newClass) {
+        this.state.selectedPayrollClass = newClass;
+        this.updateGreeting();
+        this.saveState();
+      }
+
+      logout() {
+        if (confirm('Are you sure you want to logout?')) {
+          // Clear state
+          this.state = {
+            currentSection: 'dashboard',
+            openFolders: [],
+            sidebarOpen: false,
+            selectedPayrollClass: 'OFFICERS'
+          };
+          window.dashboardStateBackup = null;
+          
+          // Redirect to login page
+          window.location.href = 'personnel-login.html';
+        }
+      }
     }
-    if (field === "Passport Photograph") {
-      return controlWrap(field,
-        `<input type="file" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`);
-    }
-    if (field === "Date of Birth") {
-      return controlWrap(field,
-        `<input type="date" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`);
-    }
-    return controlWrap(field,
-      `<input type="text" placeholder="${field}" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`);
-  }).join("");
-}
 
-function toggleStep(step) {
-  if (step === 1) {
-    step1Container.classList.remove("hidden");
-    step2Container.classList.add("hidden");
-    btnStep1.classList.add("bg-blue-600", "text-white");
-    btnStep1.classList.remove("bg-yellow-400", "text-gray-900");
-    btnStep2.classList.add("bg-yellow-400", "text-gray-900");
-    btnStep2.classList.remove("bg-blue-600", "text-white");
-  } else {
-    step1Container.classList.add("hidden");
-    step2Container.classList.remove("hidden");
-    btnStep2.classList.add("bg-blue-600", "text-white");
-    btnStep2.classList.remove("bg-yellow-400", "text-gray-900");
-    btnStep1.classList.add("bg-yellow-400", "text-gray-900");
-    btnStep1.classList.remove("bg-blue-600", "text-white");
-  }
-}
+      // Global method for quick access buttons
+      function navigateToSection(sectionId, sectionTitle) {
+        window.dashboardManager.showSection(sectionId, sectionTitle);
+      }
 
-function cancelPersonnelForm() {
-  document.getElementById("personnelForm").reset();
-  toggleStep(1);
-}
+    // Initialize dashboard when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      // Create global dashboard manager instance
+      window.dashboardManager = new DashboardManager();
+      
+      // Setup global functions for backward compatibility
+      window.showSection = (sectionId, sectionTitle) => {
+        window.dashboardManager.showSection(sectionId, sectionTitle);
+      };
+      
+      window.logout = () => {
+        window.dashboardManager.logout();
+      };
+      
+      window.changePayrollClass = (newClass) => {
+        window.dashboardManager.changePayrollClass(newClass);
+      };
+      
+      // Global navigation object for quick access buttons
+      window.navigation = {
+        navigateToSection: (sectionId, sectionTitle) => {
+          window.dashboardManager.navigateToSection(sectionId, sectionTitle);
+        }
+      };
+      
+      // Setup Tailwind config
+      tailwind.config = {
+        theme: {
+          extend: {
+            maxWidth: { 'layout': '1440px' },
+            colors: {
+              'navy': '#1e40af',
+              'warning': '#f6b409',
+              'success': '#047014'
+            },
+            screens: {
+              'xs': '640px',
+              'custom': '766px'
+            },
+            boxShadow: {
+              'custom': '0 2px 5px 0 rgba(0,0,0,0.08)',
+            },
+          }
+        }
+      };
+    });
 
-// Initialize personnel form
-formTitleEl.textContent = formTitle;
-renderStep1();
-toggleStep(1);
+    // Handle page visibility changes to maintain state
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden && window.dashboardManager) {
+        window.dashboardManager.saveState();
+      }
+    });
 
-btnStep1.addEventListener("click", () => toggleStep(1));
-btnStep2.addEventListener("click", () => toggleStep(2));
-personnelCancelBtn.addEventListener("click", cancelPersonnelForm);
-
-// NOK functionality
-const nokFormWrap = document.getElementById('nokFormWrap');
-const nokToggleBtn = document.getElementById('nokToggleBtn');
-const nokSaveBtn = document.getElementById('nokSave');
-const nokCancelBtn = document.getElementById('nokCancel');
-
-nokToggleBtn.onclick = () => toggleBlock(nokFormWrap, nokToggleBtn);
-
-nokCancelBtn.onclick = () => {
-  document.getElementById('nokForm').reset();
-  editState.type = null;
-  editState.row = null;
-  toggleBlock(nokFormWrap, nokToggleBtn);
-};
-
-nokSaveBtn.onclick = () => {
-  const first = val('nokFirst');
-  const last = val('nokLast');
-  const rel = val('nokRelationship');
-  const mobile = val('nokMobile');
-  const email = val('nokEmail');
-
-  if (!first || !last || !rel || !mobile || !email) {
-    alert('Please fill all required fields');
-    return;
-  }
-
-  const list = document.getElementById('nokList');
-  const empty = document.getElementById('nokEmpty');
-  if (empty) empty.remove();
-
-  if (editState.type === "NOK" && editState.row) {
-    // Update existing row
-    const cells = editState.row.querySelectorAll('td');
-    cells[0].textContent = `${first} ${last}`;
-    cells[1].textContent = rel;
-    cells[2].textContent = mobile;
-    cells[3].textContent = email;
-    editState.type = null;
-    editState.row = null;
-    showPopup("Updated NOK");
-  } else {
-    // Add new row
-    nokCounter++;
-    list.insertAdjacentHTML('beforeend', `
-      <tr data-type="NOK" data-id="${nokCounter}" class="hover:bg-yellow-50">
-        <td class="border px-3 py-2">${escapeHtml(first)} ${escapeHtml(last)}</td>
-        <td class="border px-3 py-2">${escapeHtml(rel)}</td>
-        <td class="border px-3 py-2">${escapeHtml(mobile)}</td>
-        <td class="border px-3 py-2">${escapeHtml(email)}</td>
-        <td class="border px-3 py-2">${actionBtns('NOK', nokCounter)}</td>
-      </tr>`);
-    showPopup("Saved NOK");
-  }
-
-  document.getElementById('nokForm').reset();
-  toggleBlock(nokFormWrap, nokToggleBtn);
-};
-
-// Spouse functionality
-const spouseFormWrap = document.getElementById('spouseFormWrap');
-const spouseToggleBtn = document.getElementById('spouseToggleBtn');
-const spouseSaveBtn = document.getElementById('spouseSave');
-const spouseCancelBtn = document.getElementById('spouseCancel');
-
-spouseToggleBtn.onclick = () => toggleBlock(spouseFormWrap, spouseToggleBtn);
-
-spouseCancelBtn.onclick = () => {
-  document.getElementById('spouseForm').reset();
-  editState.type = null;
-  editState.row = null;
-  toggleBlock(spouseFormWrap, spouseToggleBtn);
-};
-
-spouseSaveBtn.onclick = () => {
-  const name = val('spouseName');
-  const phone = val('spousePhone');
-  const email = val('spouseEmail');
-
-  if (!name) {
-    alert('Full Name is required');
-    return;
-  }
-
-  const list = document.getElementById('spouseList');
-  const empty = document.getElementById('spouseEmpty');
-  if (empty) empty.remove();
-
-  if (editState.type === "Spouse" && editState.row) {
-    // Update existing row
-    const cells = editState.row.querySelectorAll('td');
-    cells[0].textContent = name;
-    cells[1].textContent = phone;
-    cells[2].textContent = email;
-    editState.type = null;
-    editState.row = null;
-    showPopup("Updated Spouse");
-  } else {
-    // Add new row
-    spouseCounter++;
-    list.insertAdjacentHTML('beforeend', `
-      <tr data-type="Spouse" data-id="${spouseCounter}" class="hover:bg-yellow-50">
-        <td class="border px-3 py-2">${escapeHtml(name)}</td>
-        <td class="border px-3 py-2">${escapeHtml(phone)}</td>
-        <td class="border px-3 py-2">${escapeHtml(email)}</td>
-        <td class="border px-3 py-2">${actionBtns('Spouse', spouseCounter)}</td>
-      </tr>`);
-    showPopup("Saved Spouse");
-  }
-
-  document.getElementById('spouseForm').reset();
-  toggleBlock(spouseFormWrap, spouseToggleBtn);
-};
-
-// Children functionality
-const childFormWrap = document.getElementById('childFormWrap');
-const childToggleBtn = document.getElementById('childToggleBtn');
-const childSaveBtn = document.getElementById('childSave');
-const childCancelBtn = document.getElementById('childCancel');
-
-childToggleBtn.onclick = () => toggleBlock(childFormWrap, childToggleBtn);
-
-childCancelBtn.onclick = () => {
-  document.getElementById('childForm').reset();
-  editState.type = null;
-  editState.row = null;
-  toggleBlock(childFormWrap, childToggleBtn);
-};
-
-childSaveBtn.onclick = () => {
-  const name = val('childName');
-  const sex = val('childSex');
-  const dob = val('childDob');
-  const phone = val('childPhone');
-
-  if (!name) {
-    alert('Full Name is required');
-    return;
-  }
-
-  const list = document.getElementById('childList');
-  const empty = document.getElementById('childEmpty');
-  if (empty) empty.remove();
-
-  if (editState.type === "Child" && editState.row) {
-    // Update existing row
-    const cells = editState.row.querySelectorAll('td');
-    cells[0].textContent = name;
-    cells[1].textContent = sex;
-    cells[2].textContent = dob;
-    cells[3].textContent = phone;
-    editState.type = null;
-    editState.row = null;
-    showPopup("Updated Child");
-  } else {
-    // Add new row
-    childCounter++;
-    list.insertAdjacentHTML('beforeend', `
-      <tr data-type="Child" data-id="${childCounter}" class="hover:bg-yellow-50">
-        <td class="border px-3 py-2">${escapeHtml(name)}</td>
-        <td class="border px-3 py-2">${escapeHtml(sex)}</td>
-        <td class="border px-3 py-2">${escapeHtml(dob)}</td>
-        <td class="border px-3 py-2">${escapeHtml(phone)}</td>
-        <td class="border px-3 py-2">${actionBtns('Child', childCounter)}</td>
-      </tr>`);
-    showPopup("Saved Child");
-  }
-
-  document.getElementById('childForm').reset();
-  toggleBlock(childFormWrap, childToggleBtn);
-};
-</script>
-
-
+    // Handle page unload
+    window.addEventListener('beforeunload', function() {
+      if (window.dashboardManager) {
+        window.dashboardManager.saveState();
+      }
+    });
+  </script>
 </body>
 </html>

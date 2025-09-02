@@ -716,7 +716,7 @@ showTab('personnel');
 // Personnel form functionality
 const formTitle = "Add New Personnel";
 const fieldsStep1 = [
-  "Service Number", "Rank", "Surname", "Other Names", "Date of Birth", "Town", "Residential Address", "Email Address", "GSM Number", "Sex", "Marital Status", "Religion", "State Of Origin", "Local Government", "Passport Photograph"
+  "Service Number", "Rank", "Surname", "Other Names", "Date of Birth", "State Of Origin", "Local Government", "Town", "Residential Address", "Email Address", "GSM Number", "Sex", "Marital Status", "Religion", "Passport Photograph"
 ];
 
 const step1Container = document.getElementById("step1");
@@ -734,7 +734,7 @@ function controlWrap(label, control) {
 
 function renderStep1() {
   step1Container.innerHTML = fieldsStep1.map(field => {
-    if (["Rank", "Religion", "Tribe", "State Of Origin", "Local Government", "Last Location", "Sex", "Marital Status", "Last Location", "Directorate", "Geo Political Zone"].includes(field)) {
+    if (["Rank", "Religion", "State Of Origin", "Local Government",  "Sex", "Marital Status"].includes(field)) {
       return controlWrap(field,
         `<select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
            <option>Select ${field}</option>

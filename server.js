@@ -10,6 +10,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const app = express();
 const adminRoutes = require('./routes/admin');
+const usersRoutes = require('./routes/users');
 const PORT = process.env.PORT || 5500;
 
 // security headers & logging
@@ -33,7 +34,7 @@ const corsOptions = {
   origin: [
     'http://localhost:5500',
     'http://127.0.0.1:5500',
-    process.env.FRONTEND_ORIGIN // optional
+    'https://hicad.ng',// production
   ].filter(Boolean),
   methods: ['GET','POST','PUT','DELETE'],
   credentials: true
@@ -46,6 +47,7 @@ if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
 // built-in body parsers (remove body-parser dependency)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/admin', adminRoutes);
 
 // session config (use env values in production)
 app.use(session({
@@ -61,7 +63,10 @@ app.use(session({
 
 // mount routes
 app.use('/admin', adminRoutes);
+app.use('/api/users', usersRoutes);
 
+
+//middleware
 // static files and directory listing
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/public', serveIndex(path.join(__dirname, 'public'), { icons: true }));
@@ -70,6 +75,8 @@ app.use('/public', serveIndex(path.join(__dirname, 'public'), { icons: true }));
 app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
+
+
 
 // small helper to expose credentials header for some clients
 app.use((req, res, next) => {
@@ -83,41 +90,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error' });
 });
 
-// ✅ Register a new user
-app.post('/api/users', async (req, res) => {
-  const { employeeId, fullName, email, role, status, phone, password, confirmPassword, expiryDate } = req.body;
-
-  // Basic validation
-  if (!fullName || !email || !role || !password) {
-    return res.status(400).json({ error: 'Required fields: Full Name, Email, Role, Password' });
-  }
-
-  if (password !== confirmPassword) {
-    return res.status(400).json({ error: 'Passwords do not match' });
-  }
-
-  try {
-    const [result] = await pool.query(
-      `INSERT INTO users (employee_id, full_name, email, user_role, status, phone_number, password, expiry_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        employeeId || null,
-        fullName,
-        email,
-        role,
-        status || 'Active',
-        phone || null,
-        password,
-        expiryDate || null
-      ]
-    );
-
-    res.status(201).json({ message: '✅ User registered successfully', user_id: result.insertId });
-  } catch (err) {
-    console.error('❌ Error registering user:', err.message);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
 
 // ✅ Show all users
 app.get('/api/users', async (req, res) => {
@@ -129,6 +101,12 @@ app.get('/api/users', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+
+
+
+
+
 
 
 // graceful shutdown

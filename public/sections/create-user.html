@@ -118,12 +118,21 @@
 </div>
 
 <script>
+const isLocal = window.location.hostname === 'localhost';
+const BASE_URL = isLocal ? 'http://localhost:5500' : 'https://hicad.ng';
+
 document.getElementById('create-user-form').addEventListener('submit', async function(e) {
   e.preventDefault();
-  
+
   const formData = new FormData(this);
   const userData = Object.fromEntries(formData.entries());
-  
+
+  // ✅ Rename employeeId → user_id for backend
+  if (userData.employeeId) {
+    userData.user_id = userData.employeeId;
+    delete userData.employeeId;
+  }
+
   // ✅ Collect selected permissions
   const permissions = Array.from(document.querySelectorAll('input[name="permissions"]:checked'))
     .map(cb => cb.value);
@@ -132,12 +141,9 @@ document.getElementById('create-user-form').addEventListener('submit', async fun
   console.log('Creating user:', userData);
 
   try {
-    // ✅ Send to backend
-    const response = await fetch('/api/users', {
+    const response = await fetch(`${BASE_URL}/api/users`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData)
     });
 
@@ -145,9 +151,14 @@ document.getElementById('create-user-form').addEventListener('submit', async fun
       const result = await response.json();
       alert('✅ User created successfully!\nID: ' + result.user_id);
       this.reset();
+
+      // 🔄 Refresh personnel table after create
+      if (window.personnelManager) {
+        await window.personnelManager.loadPersonnelData();
+      }
     } else {
       const error = await response.json();
-      alert('❌ Error: ' + error.error);
+      alert('❌ Error: ' + (error.error || 'Unknown error'));
     }
   } catch (err) {
     console.error('Fetch error:', err);
@@ -155,3 +166,4 @@ document.getElementById('create-user-form').addEventListener('submit', async fun
   }
 });
 </script>
+

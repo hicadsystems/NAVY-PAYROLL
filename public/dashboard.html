@@ -62,7 +62,52 @@
                   <li><a href="#" data-section="switch-payroll-class" class="block px-3 py-1 rounded hover:bg-amber-50">Switch Active Payroll Class</a></li>
                   <li><a href="#" data-section="change-payroll-class" class="block px-3 py-1 rounded hover:bg-amber-50">Change Personnel Payroll Class</a></li>
                   <li><a href="#" data-section="change-registration-number" class="block px-3 py-1 rounded hover:bg-amber-50">Change Registration Number</a></li>
-                  <li><a href="#" data-section="irregular-one-off-payments" class="block px-3 py-1 rounded hover:bg-amber-50">Irregular One-Off Payments</a></li>
+                  <li class="has-subsubmenu relative">
+                    <div class="flex items-center justify-between px-3 py-1 hover:bg-amber-50 rounded cursor-pointer">
+                      <span class="text-navy">Irregular One-Off Payments</span>
+                      <button type="button" 
+                              class="toggle-subsubmenu px-2 text-sm text-gray-500 hover:text-gray-800" 
+                              aria-label="Toggle submenu">▸</button>
+                    </div>
+                    
+                    <ul class="subsubmenu hidden mt-1 ml-2 border-l border-amber-100/50 space-y-1">
+                      <li>
+                        <a href="#" 
+                          data-section="report-requirement-setup" 
+                          class="block px-3 py-1 rounded hover:bg-blue-50 text-sm">
+                          Report Requirement Setup
+                        </a>
+                      </li>
+                      <li>
+                        <a href="#" 
+                          data-section="one-off-fixed-amount" 
+                          class="block px-3 py-1 rounded hover:bg-blue-50 text-sm">
+                          One-Off Fixed Amount By Rank
+                        </a>
+                      </li>
+                      <li>
+                        <a href="#" 
+                          data-section="individual-payment-input" 
+                          class="block px-3 py-1 rounded hover:bg-blue-50 text-sm">
+                          Individual Payment Input
+                        </a>
+                      </li>
+                      <li>
+                        <a href="#" 
+                          data-section="irregular-one-off-calculations" 
+                          class="block px-3 py-1 rounded hover:bg-blue-50 text-sm">
+                          One-Off Calculations
+                        </a>
+                      </li>
+                      <li>
+                        <a href="#" 
+                          data-section="irregular-one-off-reports" 
+                          class="block px-3 py-1 rounded hover:bg-blue-50 text-sm">
+                          One-Off Reports
+                        </a>
+                      </li>
+                    </ul>
+                  </li>
                   <li><a href="#" data-section="company-profile" class="block px-3 py-1 rounded hover:bg-amber-50">Company Profile</a></li>
                   <li><a href="#" data-section="monthly-yearly-processing" class="block px-3 py-1 rounded hover:bg-amber-50">Month End Processing</a></li>
                   <li><a href="#" data-section="yearly-processing" class="block px-3 py-1 rounded hover:bg-amber-50">Year End Processing</a></li>

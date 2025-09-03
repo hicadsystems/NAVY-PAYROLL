@@ -1,0 +1,233 @@
+<div class="p-6 max-w-4xl mx-auto">
+  <h2 class="text-gray-600 font-semibold mb-6 lg:text-lg">
+    Select personnel and assign them to a new payroll class.
+  </h2>
+
+  <div class="space-y-4">
+    <form id="changesForm" class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Personnel select -->
+        <select name="personnel" id="personnel"
+            class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+            <option value="">Select Personnel</option>
+            <option value="NN001">NN001</option>
+            <option value="NN002">NN002</option>
+            <option value="NN003">NN003</option>
+            <option value="NN004">NN004</option>
+        </select>
+
+        <!-- New Class select -->
+        <select name="newClass" id="newClass"
+            class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+            <option value="">Select Payroll Class</option>
+            <option value="OFFICERS">OFFICERS</option>
+            <option value="W/OFFICERS">W/OFFICERS</option>
+            <option value="RATINGS">RATINGS</option>
+            <option value="RATINGS B">RATINGS B</option>
+        </select>
+
+        <!-- Empty spacer for alignment -->
+        <div></div>
+
+        <!-- Buttons row -->
+        <div class="col-span-1 md:col-span-3 flex gap-3 justify-end">
+            <button type="button" id="changeButton"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">
+            Change Payroll Class
+            </button>
+            <button type="button" id="clearButton"
+            class="px-6 py-2 bg-gray-300 rounded rounded-lg shadow hover:bg-gray-400 transition">
+            Clear
+            </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Current Selection Display -->
+  <div id="selectionDisplay" class="mt-6 p-4 bg-gray-100 rounded-lg hidden">
+    <h3 class="font-semibold text-gray-700 mb-2">Current Selection:</h3>
+    <p id="selectionText" class="text-gray-600"></p>
+  </div>
+
+  <!-- Payroll Classes Management -->
+    <div class="p-6 max-w-4xl mx-auto my-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Existing Payroll Classes</h2>
+        <div id="classCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6">
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Confirm Action</h2>
+    <p id="confirmMessage" class="text-gray-600 mb-6"></p>
+    <div class="flex justify-end gap-3">
+      <button id="cancelConfirm" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
+      <button id="okConfirm" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
+    <div class="flex justify-center mb-4">
+      <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+    <h2 class="text-lg font-semibold text-gray-800 mb-2">Processing...</h2>
+    <p class="text-gray-600">Please wait</p>
+  </div>
+</div>
+
+<!-- Final Success (tick) -->
+<div id="finalSuccess" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
+    <div class="flex justify-center mb-4">
+      <div class="w-16 h-16 flex items-center justify-center rounded-full bg-green-100">
+        <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+    </div>
+    <h2 class="text-lg font-semibold text-green-700 mb-2">Success!</h2>
+    <p class="text-gray-600">Payroll class updated successfully.</p>
+    <div class="mt-4">
+      <button id="closeFinalSuccess" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Simulated personnel current class mapping
+  const personnelData = {
+    "NN001": "OFFICERS",
+    "NN002": "W/OFFICERS",
+    "NN003": "RATINGS",
+    "NN004": "RATINGS B"
+  };
+
+  // Simulated personnel names
+  const personnelNames = {
+    "NN001": "Mr. Hicad",
+    "NN002": "Mrs. Ronke",
+    "NN003": "Mr. Benjamin",
+    "NN004": "Ms. Judith"
+  };
+
+  let selectedPersonnel = null;
+  let currentClass = null;
+  let newClass = null;
+
+    // Initial payroll class counts
+    let payrollClasses = {
+    "OFFICERS": 50,
+    "W/OFFICERS": 300,
+    "RATINGS": 800,
+    "RATINGS B": 2000
+    };
+
+  const personnelSelect = document.getElementById("personnel");
+  const newClassSelect = document.getElementById("newClass");
+  const selectionDisplay = document.getElementById("selectionDisplay");
+  const selectionText = document.getElementById("selectionText");
+
+    // Render payroll class cards
+    function renderClassCards() {
+    const container = document.getElementById("classCards");
+    container.innerHTML = Object.entries(payrollClasses).map(([cls, count]) => `
+        <div class="border border-gray-200 rounded-lg p-4 text-center shadow-sm hover:shadow-md transition">
+        <h3 class="font-semibold text-blue-600">${cls}</h3>
+        <p class="text-sm text-gray-600 mt-1">${count} Personnel</p>
+        </div>
+    `).join("");
+    }
+
+    // Call once on page load
+    renderClassCards();
+
+  // Handle personnel change
+  personnelSelect.addEventListener("change", () => {
+    selectedPersonnel = personnelSelect.value;
+    if (selectedPersonnel) {
+      currentClass = personnelData[selectedPersonnel];
+      const name = personnelNames[selectedPersonnel] || "";
+      selectionDisplay.classList.remove("hidden");
+      selectionText.textContent = `Selected personnel ${selectedPersonnel} (${name}) is on ${currentClass}`;
+    } else {
+      selectionDisplay.classList.add("hidden");
+    }
+  });
+
+  // Handle new class change
+  newClassSelect.addEventListener("change", () => {
+    newClass = newClassSelect.value;
+    if (selectedPersonnel && newClass) {
+      const name = personnelNames[selectedPersonnel] || "";
+      selectionText.textContent =
+        `You want to change ${selectedPersonnel} (${name}) from ${currentClass} to ${newClass}`;
+    }
+  });
+
+  // Handle button click
+  document.getElementById("changeButton").addEventListener("click", () => {
+    if (!selectedPersonnel || !newClass) {
+      alert("Please select both personnel and new payroll class.");
+      return;
+    }
+    const name = personnelNames[selectedPersonnel] || "";
+    document.getElementById("confirmMessage").textContent =
+      `Are you sure you want to change ${selectedPersonnel} (${name}) from ${currentClass} to ${newClass}?`;
+    document.getElementById("confirmModal").classList.remove("hidden");
+  });
+
+  // Confirm modal actions
+  document.getElementById("cancelConfirm").addEventListener("click", () => {
+    document.getElementById("confirmModal").classList.add("hidden");
+  });
+
+    // When confirming change
+    document.getElementById("okConfirm").addEventListener("click", () => {
+    document.getElementById("confirmModal").classList.add("hidden");
+    document.getElementById("successModal").classList.remove("hidden");
+
+    setTimeout(() => {
+        document.getElementById("successModal").classList.add("hidden");
+        document.getElementById("finalSuccess").classList.remove("hidden");
+
+        // ✅ Update personnel class mapping
+        const oldClass = currentClass;
+        personnelData[selectedPersonnel] = newClass;
+        currentClass = newClass;
+
+        // ✅ Update counts
+        if (oldClass) payrollClasses[oldClass] = Math.max(0, payrollClasses[oldClass] - 1);
+        if (newClass) payrollClasses[newClass] = (payrollClasses[newClass] || 0) + 1;
+
+        // ✅ Rerender cards
+        renderClassCards();
+
+        // ✅ Update display
+        const name = personnelNames[selectedPersonnel] || "";
+        selectionText.textContent = `Selected personnel ${selectedPersonnel} (${name}) is on ${currentClass}`;
+    }, 2000);
+    });
+
+  // Close final success
+  document.getElementById("closeFinalSuccess").addEventListener("click", () => {
+    document.getElementById("finalSuccess").classList.add("hidden");
+  });
+
+  document.getElementById("clearButton").addEventListener("click", () => {
+    // reset dropdowns
+    personnelSelect.value = "";
+    newClassSelect.value = "";
+
+    // reset display + vars
+    selectionDisplay.classList.add("hidden");
+    selectionText.textContent = "";
+    selectedPersonnel = null;
+    currentClass = null;
+    newClass = null;
+  });
+</script>

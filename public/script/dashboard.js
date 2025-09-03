@@ -295,7 +295,7 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
 (function() {
   let selectedPayrollClass = sessionStorage.getItem('currentPayrollClass') || 'OFFICERS';
 
-  // 🕒 Figure out the current time of day
+  // Figure out the current time of day
   function getTimeOfDay() {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) {
@@ -309,7 +309,7 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
     }
   }
 
-  // 👤 Get logged-in user from localStorage
+  //Get logged-in user from localStorage
   function getLoggedInUser() {
     try {
       return JSON.parse(localStorage.getItem('user')) || null;
@@ -318,7 +318,7 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
     }
   }
 
-  // 🙋 Update greeting message
+  // Update greeting message
   function updateGreeting() {
     const greetingElement = document.getElementById('dynamicGreeting');
     if (!greetingElement) return; // Only run if element exists
@@ -333,7 +333,7 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
     greetingElement.textContent = greeting;
   }
 
-  // ⏰ Update current time display
+  //Update current time display
   function updateCurrentTime() {
     const timeElement = document.getElementById('currentTime');
     if (!timeElement) return;
@@ -351,14 +351,14 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
     timeElement.textContent = timeString;
   }
 
-  // 🌐 Expose payroll class change function globally
+  // Expose payroll class change function globally
   window.changePayrollClass = function(newClass) {
     selectedPayrollClass = newClass;
     sessionStorage.setItem('currentPayrollClass', newClass);
     updateGreeting();
   };
 
-  // 🚀 Init only on dashboard pages
+  // Init only on dashboard pages
   if (document.getElementById('dynamicGreeting')) {
     updateGreeting();
     updateCurrentTime();
@@ -376,6 +376,97 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
     }, 1000);
   }
 })();
+
+// SIMPLE SUBSUBMENU FUNCTIONALITY - Direct approach
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM loaded, setting up subsubmenus...');
+  
+  // Wait a bit to ensure all other scripts have loaded
+  setTimeout(function() {
+    setupSubsubmenus();
+  }, 100);
+});
+
+function setupSubsubmenus() {
+  console.log('Setting up subsubmenus...');
+  
+  // Find all toggle buttons
+  const toggleButtons = document.querySelectorAll('.toggle-subsubmenu');
+  console.log('Found toggle buttons:', toggleButtons.length);
+  
+  toggleButtons.forEach((button, index) => {
+    console.log(`Setting up button ${index + 1}`);
+    
+    // Remove any existing listeners
+    const newButton = button.cloneNode(true);
+    button.parentNode.replaceChild(newButton, button);
+    
+    // Add click listener to the new button
+    newButton.addEventListener('click', function(e) {
+      console.log('Subsubmenu button clicked!');
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const li = this.closest('.has-subsubmenu');
+      const subsubmenu = li.querySelector('.subsubmenu');
+      
+      if (subsubmenu) {
+        const isHidden = subsubmenu.classList.contains('hidden');
+        console.log('Current state - hidden:', isHidden);
+        
+        if (isHidden) {
+          subsubmenu.classList.remove('hidden');
+          this.textContent = '▾';
+          console.log('Opened subsubmenu');
+        } else {
+          subsubmenu.classList.add('hidden');
+          this.textContent = '▸';
+          console.log('Closed subsubmenu');
+        }
+      } else {
+        console.log('No subsubmenu found');
+      }
+    });
+  });
+  
+  // Also handle clicking on the div container (not just the button)
+  const containers = document.querySelectorAll('.has-subsubmenu > div');
+  console.log('Found containers:', containers.length);
+  
+  containers.forEach((container, index) => {
+    console.log(`Setting up container ${index + 1}`);
+    
+    container.addEventListener('click', function(e) {
+      // Only handle if we didn't click the button directly
+      if (!e.target.classList.contains('toggle-subsubmenu')) {
+        console.log('Container clicked!');
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const li = this.closest('.has-subsubmenu');
+        const subsubmenu = li.querySelector('.subsubmenu');
+        const button = li.querySelector('.toggle-subsubmenu');
+        
+        if (subsubmenu && button) {
+          const isHidden = subsubmenu.classList.contains('hidden');
+          console.log('Current state - hidden:', isHidden);
+          
+          if (isHidden) {
+            subsubmenu.classList.remove('hidden');
+            button.textContent = '▾';
+            console.log('Opened subsubmenu via container');
+          } else {
+            subsubmenu.classList.add('hidden');
+            button.textContent = '▸';
+            console.log('Closed subsubmenu via container');
+          }
+        }
+      }
+    });
+  });
+  
+  console.log('Subsubmenu setup complete');
+}
 
 // Navigation handler for submenu items
 class NavigationSystem {

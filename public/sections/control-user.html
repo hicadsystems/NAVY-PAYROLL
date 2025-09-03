@@ -1,99 +1,116 @@
 <div class="p-6">
-  <div class="flex justify-between items-center mb-6">
-    <div>
-      <h3 class="text-lg font-semibold text-gray-900">Current Users</h3>
-    </div>
-    <button onclick="window.navigation.navigateToSection('create-user', 'Create User')" 
-      class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-      Add New User
-    </button>
-  </div>
-
-  <!-- Search and Filter -->
-  <div class="mb-6 flex flex-col md:flex-row gap-4">
-    <div class="flex-1">
-      <input type="text" id="personnel-search" placeholder="Search by name, ID, or department..." 
-             class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
-    </div>
-    <div class="flex gap-2">
-      <select id="department-filter" class="px-3 py-2 border border-gray-300 rounded-md">
-        <option value="">All Departments</option>
-        <option value="HR">Human Resources</option>
-        <option value="IT">Information Technology</option>
-        <option value="Finance">Finance</option>
-        <option value="Operations">Operations</option>
-      </select>
-      <select id="status-filter" class="px-3 py-2 border border-gray-300 rounded-md">
-        <option value="">All Status</option>
-        <option value="active">Active</option>
-        <option value="inactive">Inactive</option>
-        <option value="suspended">Suspended</option>
-      </select>
+  <div class="flex items-center justify-between mb-6">
+    <h3 id="page-title" class="text-lg font-semibold text-gray-900">Current Users</h3>
+    <div class="flex items-center gap-3">
+      <input id="personnel-search" placeholder="Search..." class="px-3 py-2 border rounded w-56" />
+      <button onclick="window.navigation?.navigateToSection?.('create-user','Create User')"
+              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        Add New User
+      </button>
     </div>
   </div>
 
-  <!-- Personnel Table -->
-  <div class="overflow-x-auto">
-    <table class="w-full border-collapse border border-gray-300">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="border border-gray-300 px-4 py-3 text-left font-medium">User ID</th>
-          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Full Name</th>
-          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Role</th>
-          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Status</th>
-          <th class="border border-gray-300 px-4 py-3 text-center font-medium">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="personnel-table-body">
-        <!-- Table content will be populated by JavaScript -->
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Pagination -->
-  <div class="mt-6 flex justify-between items-center">
-    <div class="text-sm text-gray-600">
-      Showing <span id="showing-start">1</span>-<span id="showing-end">10</span> of <span id="total-records">0</span> records
-    </div>
-    <div class="flex gap-2">
-      <button id="prev-page" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Previous</button>
-      <span id="page-numbers" class="flex gap-1">
-        <!-- Page numbers will be inserted here -->
-      </span>
-      <button id="next-page" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Next</button>
-    </div>
-  </div>
-
-  <!-- View Employee Modal -->
-  <div id="viewEmployeeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-lg shadow-lg p-6 w-96">
-      <h3 class="text-lg font-semibold mb-4 text-gray-800">User Details</h3>
-      <div id="viewEmployeeContent" class="space-y-2 text-gray-700"></div>
-      <div class="flex justify-end mt-6">
-        <button onclick="window.personnelManager.closeViewEmployee()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Close</button>
+  <div id="view-root">
+    <!-- TABLE VIEW -->
+    <div id="table-view">
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse border border-gray-300">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="border border-gray-300 px-4 py-3 text-left font-medium">User ID</th>
+              <th class="border border-gray-300 px-4 py-3 text-left font-medium">Full Name</th>
+              <th class="border border-gray-300 px-4 py-3 text-left font-medium">Role</th>
+              <th class="border border-gray-300 px-4 py-3 text-left font-medium">Status</th>
+              <th class="border border-gray-300 px-4 py-3 text-center font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="personnel-table-body"></tbody>
+        </table>
       </div>
     </div>
+
+    <!-- EDIT FORM (replaces table when active) -->
+    <div id="edit-view" class="hidden p-6">
+
+      <form id="edit-user-form" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">User ID</label>
+            <input type="text" name="user_id" readonly  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+            <input type="text" name="full_name" required  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+            <input type="email" name="email" required  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">User Role *</label>
+            <select name="user_role" required  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option value="">Select Role...</option>
+              <option value="hicad">HICAD</option>
+              <option value="data entry">Data Entry</option>
+              <option value="operator">Operator</option>
+              <option value="processor">Processor</option>
+              <option value="manager">Manager</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <select name="status"  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option value="">Select Status...</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+            <input type="tel" name="phone_number"  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
+            <input type="date" name="expiry_date"  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4">
+          <button type="button" id="cancel-edit-btn" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
+          <button type="submit" id="submit-edit-btn" class="px-4 py-2 bg-green-600 text-white rounded">Save Changes</button>
+        </div>
+      </form>
+    </div>
   </div>
 
-<!-- Edit user -->
+  <div id="viewEmployeeModal" class="fixed inset-0 hidden flex items-center justify-center z-50">
+    <div id="viewEmployeeBackdrop" class="absolute inset-0 bg-black bg-opacity-50"></div>
 
+    <!-- dialog: limit height and enable scrolling for tall content -->
+    <div class="relative bg-white rounded-lg shadow-lg w-11/12 max-w-lg p-6 z-10 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-start">
+        <h3 class="text-lg font-semibold text-gray-900">User Details</h3>
+        <button id="close-view-modal" class="text-gray-500 hover:text-gray-800">✕</button>
+      </div>
 
+      <div id="viewEmployeeContent" class="mt-4 space-y-2 text-gray-700"></div>
 
-  <!-- Delete Employee Modal -->
-  <div id="deleteEmployeeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-lg shadow-lg p-6 w-96">
-      <h3 class="text-lg font-semibold mb-4 text-gray-800">Confirm Delete</h3>
-      <p class="text-gray-600 mb-6">Are you sure you want to delete this employee?</p>
-      <div class="flex justify-end space-x-3">
-        <button onclick="window.personnelManager.closeDeleteEmployee()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
-        <button id="confirmDeleteEmployeeBtn" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+      <div class="flex justify-end mt-6">
+        <button id="view-modal-close-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Close</button>
       </div>
     </div>
   </div>
 
   <!-- Success Popup -->
   <div id="successPopup" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 hidden z-50">
-    <div class="bg-white p-6 rounded-lg shadow-lg flex items-center space-x-3">
+    <div class="bg-white p-6 rounded shadow flex items-center space-x-3">
       <div id="successSpinner" class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
       <span id="successMessage" class="text-gray-700">Processing...</span>
     </div>
@@ -103,98 +120,108 @@
 <script>
 class PersonnelManager {
   constructor() {
-    this.currentPage = 1;
-    this.recordsPerPage = 10;
     this.personnel = [];
-    this.filteredPersonnel = [];
-    this.isEditMode = false;
+    this.filtered = [];
     this.editingUserId = null;
-    this.init();
+    this.cache();
+    this.bindUI();
+    this.load();
   }
 
-  init() {
-    this.loadPersonnelData();
-    this.setupEventListeners();
+  cache() {
+    this.tableBody = document.getElementById('personnel-table-body');
+    this.tableView = document.getElementById('table-view');
+    this.editView = document.getElementById('edit-view');
+    this.editForm = document.getElementById('edit-user-form');
+    this.search = document.getElementById('personnel-search');
+    this.backBtn = document.getElementById('back-to-list');
+    this.cancelBtn = document.getElementById('cancel-edit-btn');
+    this.submitBtn = document.getElementById('submit-edit-btn');
+    this.successPopup = document.getElementById('successPopup');
+    this.successSpinner = document.getElementById('successSpinner');
+    this.successMessage = document.getElementById('successMessage');
+
+    // view modal elements
+    this.viewModal = document.getElementById('viewEmployeeModal');
+    this.viewBackdrop = document.getElementById('viewEmployeeBackdrop');
+    this.viewContent = document.getElementById('viewEmployeeContent');
+    this.viewCloseBtn = document.getElementById('close-view-modal');
+    this.viewCloseBtn2 = document.getElementById('view-modal-close-btn');
   }
 
-  async loadPersonnelData() {
+  bindUI() {
+    this.search?.addEventListener('input', () => this.onSearch());
+    this.backBtn?.addEventListener('click', () => this.showList());
+    this.cancelBtn?.addEventListener('click', () => this.showList());
+
+    // edit form submit - ensure single handler
+    if (this.editForm) {
+      if (this.editForm._handler) this.editForm.removeEventListener('submit', this.editForm._handler);
+      this.editForm._handler = this.onEditSubmit.bind(this);
+      this.editForm.addEventListener('submit', this.editForm._handler);
+    }
+
+    // view modal handlers
+    this.viewBackdrop?.addEventListener('click', () => this.hideViewModal());
+    this.viewCloseBtn?.addEventListener('click', () => this.hideViewModal());
+    this.viewCloseBtn2?.addEventListener('click', () => this.hideViewModal());
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') this.hideViewModal(); });
+  }
+
+  async load() {
     try {
       const res = await fetch('/api/users');
-      this.personnel = await res.json();
-      this.filteredPersonnel = [...this.personnel];
-      this.renderTable();
+      const data = await res.json();
+      this.personnel = Array.isArray(data) ? data : [];
     } catch (err) {
-      console.error('❌ Failed to load personnel:', err);
+      console.error('Failed to load users', err);
+      this.personnel = [];
     }
+    this.filtered = [...this.personnel];
+    this.renderTable();
   }
 
-  setupEventListeners() {
-    const searchInput = document.getElementById('personnel-search');
-    const departmentFilter = document.getElementById('department-filter');
-    const statusFilter = document.getElementById('status-filter');
-
-    if (searchInput) searchInput.addEventListener('input', () => this.filterPersonnel());
-    if (departmentFilter) departmentFilter.addEventListener('change', () => this.filterPersonnel());
-    if (statusFilter) statusFilter.addEventListener('change', () => this.filterPersonnel());
-  }
-
-  filterPersonnel() {
-    const searchInput = document.getElementById('personnel-search');
-    const departmentFilter = document.getElementById('department-filter');
-    const statusFilter = document.getElementById('status-filter');
-
-    const search = searchInput ? searchInput.value.toLowerCase() : '';
-    const department = departmentFilter ? departmentFilter.value : '';
-    const status = statusFilter ? statusFilter.value : '';
-
-    this.filteredPersonnel = this.personnel.filter(person => {
-      const matchesSearch = person.full_name.toLowerCase().includes(search) ||
-                            person.user_id.toLowerCase().includes(search) ||
-                            (person.department ? person.department.toLowerCase().includes(search) : false);
-      const matchesDepartment = !department || (person.department === department);
-      const matchesStatus = !status || (person.status === status);
-
-      return matchesSearch && matchesDepartment && matchesStatus;
-    });
-
-    this.currentPage = 1;
+  onSearch() {
+    const q = (this.search?.value || '').toLowerCase();
+    this.filtered = this.personnel.filter(u =>
+      (u.full_name || '').toLowerCase().includes(q) ||
+      (u.user_id || '').toLowerCase().includes(q)
+    );
     this.renderTable();
   }
 
   renderTable() {
-    const tbody = document.getElementById('personnel-table-body');
-    if (!tbody) return;
+    if (!this.tableBody) return;
 
-    const startIndex = (this.currentPage - 1) * this.recordsPerPage;
-    const endIndex = startIndex + this.recordsPerPage;
-    const pageData = this.filteredPersonnel.slice(startIndex, endIndex);
+    if (!this.filtered || this.filtered.length === 0) {
+      this.tableBody.innerHTML = `
+        <tr>
+          <td class="px-4 py-6 text-center text-gray-500" colspan="5">No records found</td>
+        </tr>`;
+      return;
+    }
 
-    tbody.innerHTML = pageData.map(person => `
-      <tr class="hover:bg-gray-50">
-        <td class="border border-gray-300 px-4 py-2">${person.user_id}</td>
-        <td class="border border-gray-300 px-4 py-2 font-medium">${person.full_name}</td>
-        <td class="border border-gray-300 px-4 py-2">${person.user_role}</td>
-        <td class="border border-gray-300 px-4 py-2">
-          <span class="px-2 py-1 rounded-full text-xs ${this.getStatusClass(person.status)}">
-            ${person.status.charAt(0).toUpperCase() + person.status.slice(1)}
+    this.tableBody.innerHTML = this.filtered.map(u => `
+      <tr>
+        <td class="border border-gray-300 px-4 py-3 text-left">${u.user_id || ''}</td>
+        <td class="border border-gray-300 px-4 py-3 text-left font-medium text-navy">${u.full_name || ''}</td>
+        <td class="border border-gray-300 px-4 py-3 text-left">${u.user_role || ''}</td>
+        <td class="border border-gray-300 px-4 py-3 text-left">
+          <span class="inline-block px-2 py-1 text-xs rounded-full ${this.statusClass(u.status)}">
+            ${u.status ? (u.status.charAt(0).toUpperCase() + u.status.slice(1)) : ''}
           </span>
         </td>
-        <td class="border border-gray-300 px-4 py-2 text-center">
-          <button onclick="window.personnelManager.viewEmployee('${person.user_id}')" 
-                  class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 mr-1">View</button>
-          <button onclick="window.personnelManager.editEmployee('${person.user_id}')" 
-                  class="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 mr-1">Edit</button>
-          <button onclick="window.personnelManager.deleteEmployee('${person.user_id}')" 
-                  class="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700">Delete</button>
+        <td class="border border-gray-300 px-4 py-3 text-left text-center">
+          <button onclick="window.personnelManager.viewUser('${u.user_id}')" class="px-2 py-1 bg-blue-600 text-white text-xs rounded mr-1">View</button>
+          <button onclick="window.personnelManager.startEdit('${u.user_id}')" class="px-2 py-1 bg-green-600 text-white text-xs rounded mr-1">Edit</button>
+          <button onclick="window.personnelManager.deleteUser('${u.user_id}')" class="px-2 py-1 bg-red-600 text-white text-xs rounded">Delete</button>
         </td>
       </tr>
     `).join('');
-
-    this.updatePaginationInfo();
   }
 
-  getStatusClass(status) {
-    switch(status) {
+  statusClass(status) {
+    switch (status) {
       case 'active': return 'bg-green-100 text-green-800';
       case 'inactive': return 'bg-red-100 text-red-800';
       case 'suspended': return 'bg-yellow-100 text-yellow-800';
@@ -202,401 +229,178 @@ class PersonnelManager {
     }
   }
 
-  // ✅ View user
-  viewEmployee(user_id) {
-    const employee = this.personnel.find(p => p.user_id === user_id);
-    if (employee) {
-      document.getElementById("viewEmployeeContent").innerHTML = `
-        <p><strong>User ID:</strong> ${employee.user_id}</p>
-        <p><strong>Name:</strong> ${employee.full_name}</p>
-        <p><strong>Role:</strong> ${employee.user_role}</p>
-        <p><strong>Status:</strong> ${employee.status}</p>
-        <p><strong>Email:</strong> ${employee.email}</p>
-        <p><strong>Phone:</strong> ${employee.phone_number || ''}</p>
-        <p><strong>Expiry Date:</strong> ${this.formatDateForInput(employee.expiry_date) || ''}</p>
-      `;
-      document.getElementById("viewEmployeeModal").classList.remove("hidden");
-    }
-  }
-
-  closeViewEmployee() { document.getElementById("viewEmployeeModal").classList.add("hidden"); }
-
-  formatDateForInput(dateValue) {
-    if (!dateValue) return "";
-
-    const d = new Date(dateValue);
-    if (isNaN(d)) return "";
-
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-  }
-
-
-  // ✅ Edit user - redirect to create form
-  editEmployee(user_id) {
-    const employee = this.personnel.find(p => p.user_id === user_id);
-    if (employee) {
-
-      // Force global reference
-      window.personnelManager.isEditMode = true;
-      window.personnelManager.editingUserId = user_id;
-
-      // Navigate to create personnel page/section
-      this.navigateToCreateForm();
-
-      // Wait for navigation to complete before updating UI elements and prefilling
-      setTimeout(() => {
-      // Pre-fill the create form with employee data
-      this.prefillCreateForm(employee);
-
-      // Hide/disable password fields and exit date
-      this.configureFormForEdit();
-      }, 50); // The same delay as the navigation logic
-    }
-  }
-
-  navigateToCreateForm() {
-    // Navigate to create user section using the existing navigation
-    if (window.navigation) {
-      window.navigation.navigateToSection('create-user', 'Edit User');
-    }
-    
-    // Wait for navigation to complete before updating UI elements
-    setTimeout(() => {
-      // Update form title to indicate edit mode
-      const formTitle = document.querySelector('h3.text-lg.font-semibold');
-      if (formTitle) formTitle.textContent = 'Edit User';
-      
-      // Update submit button text
-      const submitBtn = document.querySelector('button[type="submit"]');
-      if (submitBtn) submitBtn.textContent = 'Update User';
-    }, 50);
-  }
-
-  prefillCreateForm(employee) {
-    // Pre-fill form fields with employee data using form structure position
-    console.log('Prefilling form with:', employee); // Debug log
-    
-    const form = document.getElementById('create-user-form');
-    if (!form) {
-      console.warn('Create user form not found');
+  viewUser(id) {
+    const u = this.personnel.find(x => x.user_id === id);
+    if (!u) {
+      // try fetch single user
+      fetch(`/api/users/${encodeURIComponent(id)}`).then(r => {
+        if (!r.ok) throw r;
+        return r.json();
+      }).then(data => { this.showUserModal(data); }).catch(()=> alert('User not found'));
       return;
     }
-
-    // Get form inputs by their order in the form
-    const inputs = form.querySelectorAll('input, select');
-    
-    // Based on your HTML structure:
-    // 0: User ID (employeeId)
-    // 1: Full Name
-    // 2: Email 
-    // 3: Role (select)
-    // 4: Status (select)
-    // 5: Phone
-    // 6: Password
-    // 7: Confirm Password
-    // 8: Expiry Date
-    
-    if (inputs[0]) { // User ID
-      inputs[0].value = employee.user_id;
-      inputs[0].readOnly = true;
-      inputs[0].style.backgroundColor = '#f3f4f6';
-      console.log('Set User ID to:', employee.user_id);
-    }
-    
-    if (inputs[1]) { // Full Name
-      inputs[1].value = employee.full_name;
-      console.log('Set Full Name to:', employee.full_name);
-    }
-    
-    if (inputs[2]) { // Email
-      inputs[2].value = employee.email;
-      console.log('Set Email to:', employee.email);
-    }
-    
-    if (inputs[3]) { // Role (select)
-      inputs[3].value = employee.user_role;
-      console.log('Set Role to:', employee.user_role);
-    }
-    
-    if (inputs[4]) { // Status (select)
-      inputs[4].value = employee.status;
-      console.log('Set Status to:', employee.status);
-    }
-    
-    if (inputs[5]) { // Phone
-      inputs[5].value = employee.phone_number || '';
-      console.log('Set Phone to:', employee.phone_number);
-    }
-
-    if (inputs[6]) { // Password
-      inputs[6].value = employee.password || '';
-      console.log('Set Password to:', employee.password);
-    }
-
-    if (inputs[7]) { // Confirm Password
-      inputs[7].value = employee.password || '';
-      console.log('Set Confirm Password to:', employee.password);
-    }
-
-    if (inputs[8]) { // Expiry Date
-      inputs[8].value = this.formatDateForInput(employee.expiry_date) || '';
-      inputs[0].readOnly = true;
-      console.log('Set Expiry Date to:', this.formatDateForInput(employee.expiry_date));
-    }
+    this.showUserModal(u);
   }
 
-  configureFormForEdit() {
-    const form = document.getElementById('create-user-form');
-    if (!form) return;
-
-    const inputs = form.querySelectorAll('input, select');
-    
-    // Hide password fields (inputs[6] and inputs[7])
-    if (inputs[6]) { // Password field
-      const passwordContainer = inputs[6].closest('div');
-      if (passwordContainer) passwordContainer.style.display = 'none';
-    }
-    
-    if (inputs[7]) { // Confirm Password field
-      const confirmPasswordContainer = inputs[7].closest('div');
-      if (confirmPasswordContainer) confirmPasswordContainer.style.display = 'none';
-    }
-
-    // Add cancel button if it doesn't exist
-    this.addCancelButton();
+  showUserModal(user) {
+    if (!this.viewModal || !this.viewContent) return;
+    const rows = [
+      ['User ID', user.user_id || ''],
+      ['Full name', user.full_name || ''],
+      ['Email', user.email || ''],
+      ['Role', user.user_role || ''],
+      ['Status', user.status || ''],
+      ['Phone', user.phone_number || ''],
+      ['Expiry Date', user.expiry_date ? new Date(user.expiry_date).toLocaleDateString() : '']
+    ];
+    this.viewContent.innerHTML = rows.map(r => `<div><strong class="block text-sm text-gray-700">${r[0]}:</strong><div class="text-gray-800">${r[1]}</div></div>`).join('');
+    this.viewModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
   }
 
-  addCancelButton() {
-    const submitBtn = document.querySelector('button[type="submit"]');
-    if (submitBtn && !document.getElementById('cancel-edit-btn')) {
-      const cancelBtn = document.createElement('button');
-      cancelBtn.id = 'cancel-edit-btn';
-      cancelBtn.type = 'button';
-      cancelBtn.textContent = 'Cancel';
-      cancelBtn.className = 'px-6 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500';
-      cancelBtn.onclick = () => this.cancelEdit();
-      
-      submitBtn.parentNode.insertBefore(cancelBtn, submitBtn);
-    }
+  hideViewModal() {
+    if (!this.viewModal) return;
+    this.viewModal.classList.add('hidden');
+    document.body.style.overflow = '';
   }
 
-  cancelEdit() {
-    this.isEditMode = false;
+  async startEdit(id) {
+    let user = this.personnel.find(x => x.user_id === id);
+    if (!user) {
+      try {
+        const res = await fetch(`/api/users/${encodeURIComponent(id)}`);
+        if (res.ok) user = await res.json();
+      } catch (e) { /* ignore */ }
+    }
+    if (!user) return alert('User not found');
+    this.editingUserId = id;
+    this.fillForm(user);
+    this.showEdit();
+  }
+
+  fillForm(user) {
+    if (!this.editForm) return;
+    const f = this.editForm;
+    f.elements['user_id'].value = user.user_id || '';
+    f.elements['full_name'].value = user.full_name || '';
+    f.elements['email'].value = user.email || '';
+    f.elements['user_role'].value = user.user_role || '';
+    f.elements['status'].value = user.status || '';
+    f.elements['phone_number'].value = user.phone_number || '';
+    f.elements['expiry_date'].value = user.expiry_date ? new Date(user.expiry_date).toISOString().slice(0,10) : '';
+    this.submitBtn?.removeAttribute('disabled');
+  }
+
+  showEdit() {
+    this.tableView.classList.add('hidden');
+    this.editView.classList.remove('hidden');
+    document.getElementById('page-title').textContent = 'Edit User';
+    window.scrollTo({ top: this.editView.offsetTop || 0, behavior: 'smooth' });
+  }
+
+  showList() {
     this.editingUserId = null;
-    this.editingEmployeeData = null;
-    
-    // Reset form
-    const form = document.getElementById('create-user-form');
-    if (form) form.reset();
-    
-    // Show password fields and expiry date again
-    this.showHiddenFields();
-    
-    // Remove readonly from user ID
-    const inputs = form.querySelectorAll('input, select');
-    if (inputs[0]) {
-      inputs[0].readOnly = false;
-      inputs[0].style.backgroundColor = '';
-    }
-    
-    // Remove cancel button
-    const cancelBtn = document.getElementById('cancel-edit-btn');
-    if (cancelBtn) cancelBtn.remove();
-    
-    // Reset form title and button text
-    const formTitle = document.querySelector('h3.text-lg.font-semibold');
-    if (formTitle) formTitle.textContent = 'Create New User';
-    
-    const submitBtn = document.querySelector('button[type="submit"]');
-    if (submitBtn) submitBtn.textContent = 'Create User';
-    
-    // Navigate back to personnel list
-    this.navigateToPersonnelList();
+    this.editView.classList.add('hidden');
+    this.tableView.classList.remove('hidden');
+    document.getElementById('page-title').textContent = 'Current Users';
+    this.editForm?.reset();
+    this.renderTable();
   }
 
-  showHiddenFields() {
-    const form = document.getElementById('create-user-form');
-    if (!form) return;
-
-    const inputs = form.querySelectorAll('input, select');
-    
-    // Show password fields (inputs[6] and inputs[7])
-    if (inputs[6]) { // Password field
-      const passwordContainer = inputs[6].closest('div');
-      if (passwordContainer) passwordContainer.style.display = '';
+  async onEditSubmit(e) {
+    e.preventDefault();
+    if (!this.editingUserId) {
+      alert('Not in edit mode. Use Create User page to add users.');
+      return;
     }
-    
-    if (inputs[7]) { // Confirm Password field
-      const confirmPasswordContainer = inputs[7].closest('div');
-      if (confirmPasswordContainer) confirmPasswordContainer.style.display = '';
-    }
+    const btn = this.submitBtn;
+    btn.disabled = true;
 
-    // Show expiry date field (inputs[8])
-    if (inputs[8]) { // Expiry Date field
-      const expiryContainer = inputs[8].closest('div');
-      if (expiryContainer) expiryContainer.style.display = '';
-    }
-  }
+    const f = this.editForm;
 
-  navigateToPersonnelList() {
-    // Use existing navigation to go back to control user (personnel list)
-    if (window.navigation) {
-      window.navigation.navigateToSection('control-user', 'Control User');
-    }
-  }
+    // build raw values from form
+    const raw = {
+      full_name: f.elements['full_name'].value.trim(),
+      email: f.elements['email'].value.trim(),
+      user_role: f.elements['user_role'].value,
+      status: f.elements['status'].value,
+      phone_number: f.elements['phone_number'].value.trim(),
+      expiry_date: f.elements['expiry_date'].value || null,
+      // include password only if user filled it (do NOT send empty string or null)
+      ...(f.elements['password'] && f.elements['password'].value.trim() ? { password: f.elements['password'].value.trim() } : {})
+    };
 
-  // ✅ Delete user
-  async deleteEmployee(user_id) {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+    // remove keys with empty string or explicit null for fields we don't want to overwrite
+    const payload = {};
+    Object.entries(raw).forEach(([k, v]) => {
+      if (v !== '' && v !== null && typeof v !== 'undefined') payload[k] = v;
+    });
 
     try {
-      const res = await fetch(`/api/users/${user_id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/users/${encodeURIComponent(this.editingUserId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const ct = res.headers.get?.('content-type') || '';
+      const data = ct.includes('application/json') ? await res.json() : null;
+
       if (res.ok) {
-        this.personnel = this.personnel.filter(p => p.user_id !== user_id);
-        this.filterPersonnel();
-        this.showSuccess("User deleted successfully!");
+        const updated = (data && data.user) ? data.user : Object.assign({ user_id: this.editingUserId }, payload);
+        const idx = this.personnel.findIndex(p => p.user_id === updated.user_id);
+        if (idx > -1) this.personnel[idx] = updated;
+        else this.personnel.unshift(updated);
+        this.filtered = [...this.personnel];
+        this.showSuccess('User updated successfully!');
+        this.showList();
       } else {
-        alert("❌ Failed to delete user");
+        const msg = (data && (data.error || data.message)) || 'Update failed';
+        alert('❌ ' + msg);
       }
     } catch (err) {
-      console.error("❌ Delete error:", err);
+      console.error('Edit error', err);
+      alert('❌ Server error');
+    } finally {
+      btn.disabled = false;
     }
   }
 
-  // ✅ Save edits (modified to handle both create and edit)
-
-
-  resetCreateForm() {
-    const form = document.getElementById('create-user-form');
-    if (form) form.reset();
-    
-    // Make sure all fields are visible and enabled again
-    this.showHiddenFields();
-    
-    const inputs = form.querySelectorAll('input, select');
-    if (inputs[0]) {
-      inputs[0].readOnly = false;
-      inputs[0].style.backgroundColor = '';
+  async deleteUser(id) {
+    if (!confirm('Are you sure?')) return;
+    try {
+      const res = await fetch(`/api/users/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (res.ok) {
+        this.personnel = this.personnel.filter(p => p.user_id !== id);
+        this.filtered = [...this.personnel];
+        this.renderTable();
+        this.showSuccess('User deleted');
+      } else {
+        const txt = await res.json().catch(()=>({error:'Delete failed'}));
+        alert('❌ ' + (txt.error || txt.message));
+      }
+    } catch (err) {
+      console.error('Delete user', err);
+      alert('❌ Server error');
     }
   }
 
   showSuccess(message) {
-    const popup = document.getElementById("successPopup");
-    const spinner = document.getElementById("successSpinner");
-    const text = document.getElementById("successMessage");
-
-    if (popup && spinner && text) {
-      text.innerText = "Processing...";
-      spinner.classList.remove("hidden");
-      popup.classList.remove("hidden");
-
-      setTimeout(() => {
-        spinner.classList.add("hidden");
-        text.innerHTML = `<span class="text-green-600 font-semibold">✔ ${message}</span>`;
-      }, 1000);
-
-      setTimeout(() => { popup.classList.add("hidden"); }, 2500);
-    }
-  }
-
-  updatePaginationInfo() {
-    const total = this.filteredPersonnel.length;
-    const start = (this.currentPage - 1) * this.recordsPerPage + 1;
-    const end = Math.min(start + this.recordsPerPage - 1, total);
-
-    const showingStart = document.getElementById('showing-start');
-    const showingEnd = document.getElementById('showing-end');
-    const totalRecords = document.getElementById('total-records');
-
-    if (showingStart) showingStart.textContent = total > 0 ? start : 0;
-    if (showingEnd) showingEnd.textContent = end;
-    if (totalRecords) totalRecords.textContent = total;
+    if (!this.successPopup) return;
+    this.successMessage.textContent = message || 'Success';
+    this.successSpinner?.classList.remove('hidden');
+    this.successPopup.classList.remove('hidden');
+    setTimeout(()=> {
+      this.successSpinner?.classList.add('hidden');
+      this.successMessage.innerHTML = `<span class="text-green-600 font-semibold">✔ ${message}</span>`;
+    }, 4000);
+    setTimeout(()=> {
+      this.successPopup.classList.add('hidden');
+      this.successSpinner?.classList.remove('hidden');
+      this.successMessage.textContent = 'Processing...';
+    }, 6000);
   }
 }
 
-// ✅ Unified form handler for both Create and Edit
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById("create-user-form");
-  if (!form) return;
-
-  // Remove old handler if exists
-  if (form._personnelHandler) {
-    form.removeEventListener("submit", form._personnelHandler);
-  }
-
-form._personnelHandler = async (e) => {
-  e.preventDefault();
-
-  console.log(">>> SUBMIT:", {
-    isEditMode: window.personnelManager?.isEditMode,
-    editingUserId: window.personnelManager?.editingUserId
-  });
-
-  const inputs = form.querySelectorAll('input, select');
-
-  const userData = {
-    full_name: inputs[1]?.value || '',
-    email: inputs[2]?.value || '',
-    user_role: inputs[3]?.value || '',
-    status: inputs[4]?.value || '',
-    phone_number: inputs[5]?.value || ''
-  };
-
-  try {
-    let res;
-
-      if (window.personnelManager?.isEditMode) {
-        console.log(">>> PUT called with ID:", window.personnelManager.editingUserId);
-        res = await fetch(`/api/users/${window.personnelManager.editingUserId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData)
-        });
-      } else {
-        console.log(">>> POST called");
-        const user_id = inputs[0]?.value || '';
-        res = await fetch('/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...userData, user_id })
-        });
-      }
-
-      if (res.ok) {
-        const data = await res.json();
-
-        if (window.personnelManager?.isEditMode) {
-          // Update local state
-          const existingUser = window.personnelManager.personnel.find(
-            u => u.user_id === window.personnelManager.editingUserId
-          );
-          if (existingUser) {
-            Object.assign(existingUser, { ...userData });
-          }
-          window.personnelManager.filterPersonnel();
-          window.personnelManager.showSuccess("User updated successfully!");
-          window.personnelManager.cancelEdit();
-        } else {
-          window.personnelManager.showSuccess("User created successfully!");
-          form.reset();
-        }
-      } else {
-        const err = await res.json();
-        alert(`❌ ${err.error || 'Request failed'}`);
-      }
-    } catch (error) {
-      console.error("❌ Error:", error);
-      alert('❌ Server error');
-    }
-  };
-
-  form.addEventListener("submit", form._personnelHandler);
-});
-
-// Initialize
 window.personnelManager = new PersonnelManager();
 </script>

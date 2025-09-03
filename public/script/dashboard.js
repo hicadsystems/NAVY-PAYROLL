@@ -295,71 +295,85 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
 (function() {
   let selectedPayrollClass = sessionStorage.getItem('currentPayrollClass') || 'OFFICERS';
 
+  // 🕒 Figure out the current time of day
   function getTimeOfDay() {
-      const hour = new Date().getHours();
-      if (hour >= 5 && hour < 12) {
-          return 'Morning';
-      } else if (hour >= 12 && hour < 16) {
-          return 'Afternoon';
-      } else if (hour >= 16 && hour < 21) {
-          return 'Evening';
-      } else {
-          return 'Night';
-      }
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+      return 'Morning';
+    } else if (hour >= 12 && hour < 16) {
+      return 'Afternoon';
+    } else if (hour >= 16 && hour < 21) {
+      return 'Evening';
+    } else {
+      return 'Night';
+    }
   }
 
+  // 👤 Get logged-in user from localStorage
+  function getLoggedInUser() {
+    try {
+      return JSON.parse(localStorage.getItem('user')) || null;
+    } catch {
+      return null;
+    }
+  }
+
+  // 🙋 Update greeting message
   function updateGreeting() {
-      const greetingElement = document.getElementById('dynamicGreeting');
-      if (!greetingElement) return; // Only run on dashboard
-      
-      const timeOfDay = getTimeOfDay();
-      const greeting = `Good ${timeOfDay}, Welcome to ${selectedPayrollClass} Payroll`;
-      greetingElement.textContent = greeting;
+    const greetingElement = document.getElementById('dynamicGreeting');
+    if (!greetingElement) return; // Only run if element exists
+
+    const user = getLoggedInUser();
+    const timeOfDay = getTimeOfDay();
+
+    // Default to "User" if no login info
+    const userName = user?.full_name || user?.user_id || 'User';
+
+    const greeting = `Good ${timeOfDay} ${userName}, welcome to ${selectedPayrollClass} payroll`;
+    greetingElement.textContent = greeting;
   }
 
+  // ⏰ Update current time display
   function updateCurrentTime() {
-      const timeElement = document.getElementById('currentTime');
-      if (!timeElement) return; // Only run on dashboard
-      
-      const now = new Date();
-      const timeString = now.toLocaleString('en-US', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-      });
-      timeElement.textContent = timeString;
+    const timeElement = document.getElementById('currentTime');
+    if (!timeElement) return;
+
+    const now = new Date();
+    const timeString = now.toLocaleString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    timeElement.textContent = timeString;
   }
 
-  // Global function for payroll section to call
+  // 🌐 Expose payroll class change function globally
   window.changePayrollClass = function(newClass) {
-      selectedPayrollClass = newClass;
-      sessionStorage.setItem('currentPayrollClass', newClass);
-      updateGreeting();
+    selectedPayrollClass = newClass;
+    sessionStorage.setItem('currentPayrollClass', newClass);
+    updateGreeting();
   };
 
-  // Initialize only if on dashboard
+  // 🚀 Init only on dashboard pages
   if (document.getElementById('dynamicGreeting')) {
-      updateGreeting();
-      updateCurrentTime();
-      
-      // Update time every second
-      setInterval(updateCurrentTime, 1000);
-      
-      // Update greeting every minute for time changes
-      setInterval(updateGreeting, 60000);
-      
-      // Check for payroll class changes from other sections
-      setInterval(function() {
-          const storedClass = sessionStorage.getItem('currentPayrollClass');
-          if (storedClass && storedClass !== selectedPayrollClass) {
-              selectedPayrollClass = storedClass;
-              updateGreeting();
-          }
-      }, 1000);
+    updateGreeting();
+    updateCurrentTime();
+
+    setInterval(updateCurrentTime, 1000);  // Update time every second
+    setInterval(updateGreeting, 60000);    // Refresh greeting every minute
+
+    // Watch for payroll class changes
+    setInterval(function() {
+      const storedClass = sessionStorage.getItem('currentPayrollClass');
+      if (storedClass && storedClass !== selectedPayrollClass) {
+        selectedPayrollClass = storedClass;
+        updateGreeting();
+      }
+    }, 1000);
   }
 })();
 

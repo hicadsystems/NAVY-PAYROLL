@@ -92,11 +92,9 @@
 
   <div id="viewEmployeeModal" class="fixed inset-0 hidden flex items-center justify-center z-50">
     <div id="viewEmployeeBackdrop" class="absolute inset-0 bg-black bg-opacity-50"></div>
-
-    <!-- dialog: limit height and enable scrolling for tall content -->
     <div class="relative bg-white rounded-lg shadow-lg w-11/12 max-w-lg p-6 z-10 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-start">
-        <h3 class="text-lg font-semibold text-gray-900">User Details</h3>
+        <h3 class="text-lg font-semibold text-blue-600">User Details</h3>
         <button id="close-view-modal" class="text-gray-500 hover:text-gray-800">✕</button>
       </div>
 
@@ -253,7 +251,10 @@ class PersonnelManager {
       ['Phone', user.phone_number || ''],
       ['Expiry Date', user.expiry_date ? new Date(user.expiry_date).toLocaleDateString() : '']
     ];
-    this.viewContent.innerHTML = rows.map(r => `<div><strong class="block text-sm text-gray-700">${r[0]}:</strong><div class="text-gray-800">${r[1]}</div></div>`).join('');
+    this.viewContent.innerHTML = rows.map(r => `<div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
+        <dt class="font-medium text-gray-600"><strong class="block text-sm text-gray-700">${r[0]}:</strong></dt>
+        <dd class="col-span-2 text-gray-800">${r[1]}</dd>
+      </div>`).join('');
     this.viewModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
   }
@@ -352,7 +353,7 @@ class PersonnelManager {
         if (idx > -1) this.personnel[idx] = updated;
         else this.personnel.unshift(updated);
         this.filtered = [...this.personnel];
-        this.showSuccess('User updated successfully!');
+        this.showSuccess('User Updated Successfully!');
         this.showList();
       } else {
         const msg = (data && (data.error || data.message)) || 'Update failed';
@@ -393,12 +394,12 @@ class PersonnelManager {
     setTimeout(()=> {
       this.successSpinner?.classList.add('hidden');
       this.successMessage.innerHTML = `<span class="text-green-600 font-semibold">✔ ${message}</span>`;
-    }, 4000);
+    }, 1000);
     setTimeout(()=> {
       this.successPopup.classList.add('hidden');
       this.successSpinner?.classList.remove('hidden');
       this.successMessage.textContent = 'Processing...';
-    }, 6000);
+    }, 3000);
   }
 }
 

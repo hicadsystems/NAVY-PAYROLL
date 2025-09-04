@@ -152,9 +152,9 @@
     <!-- Header -->
     <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-3">
       <h3 class="text-xl font-bold text-blue-700 flex items-center gap-2">
-        Scale Details
+        Salary Scale Details
       </h3>
-      <button id="closeScaleView" class="text-gray-400 hover:text-gray-600 transition transform hover:scale-110">
+      <button id="closeScaleView" class="text-red-500 hover:text-red-600 transition transform hover:scale-110">
         ✖
       </button>
     </div>
@@ -204,15 +204,15 @@
     const s = scales[index];
     let html = `
       <div class="p-6 border rounded-2xl shadow-lg bg-gradient-to-br from-blue-50 to-white">
-        <div class="mb-4">
-          <p class="text-lg font-semibold text-gray-800">
-            <span class="text-blue-600">Salary Code:</span> ${s.group}
+        <div class="flex flex-wrap justify-between mb-4">
+          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-lg font-semibold text-gray-800">
+            <span class="text-blue-800 font-bold">Salary Code:</span> ${s.group}
           </p>
-          <p class="text-lg font-semibold text-gray-800">
-            <span class="text-blue-600">Paycode:</span> ${s.element}
+          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-lg font-semibold text-gray-800">
+            <span class="text-blue-800 font-bold">Paycode:</span> ${s.element}
           </p>
-          <p class="text-lg font-semibold text-gray-800">
-            <span class="text-blue-600">Grade:</span> ${s.grade}
+          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-lg font-semibold text-gray-800">
+            <span class="text-blue-800 font-bold">Grade:</span> ${s.grade}
           </p>
         </div>
 
@@ -221,9 +221,9 @@
 
     for (let i = 0; i < 20; i++) {
       html += `
-        <div class="p-3 rounded-xl border border-gray-200 shadow-sm bg-white hover:shadow-md transition">
-          <p class="text-sm font-medium text-gray-600">Step ${i+1}</p>
-          <p class="text-base font-semibold text-gray-900">${s.steps[i] || "-"}</p>
+        <div class="flex justify-between bg-white p-2 rounded border hover:shadow-md transition">
+          <span class="text-base font-medium text-gray-600">Step ${i+1} :</span>
+          <span class="text-base font-semibold text-blue-600">${s.steps[i] || "-"}</span>
         </div>`;
     }
 

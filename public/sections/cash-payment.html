@@ -1,0 +1,169 @@
+<div class="p-6">
+  <!-- Section Header -->
+  <!-- Add New Button -->
+  <div class="flex justify-end mb-4">
+    <button
+      id="addNewBtn"
+      class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+    >
+      + Add New
+    </button>
+  </div>
+
+  
+  <!-- Add/Edit Form (hidden initially) -->
+  <div
+    id="salaryForm"
+    class="hidden items mb-4 border rounded-lg p-4 max-w-lg mr-auto">
+    <h4 class="text-md font-bold text-blue-600 mb-3">Add/Edit Overpayment Percentage</h4>
+    <form class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Basic Salary</label>
+        <input
+          type="text"
+          id="salaryInput"
+          class="w-full border rounded px-3 py-2 text-sm"
+          placeholder="Enter Basic Salary"/>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Percentage</label>
+        <input
+          type="number"
+          id="percentageInput"
+          step="0.1"
+          class="w-full border rounded px-3 py-2 text-sm"
+          placeholder="Enter Overpayment Percentage"/>
+      </div>
+      <div class="flex justify-end space-x-3">
+        <button
+          type="button"
+          id="saveBtn"
+          class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+          Save
+        </button>
+        <button
+          type="button"
+          id="cancelBtn"
+          class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto">
+    <table class="min-w-full border text-sm">
+      <thead class="bg-blue-100">
+        <tr>
+          <th class="border px-3 py-2 text-left">Basic Salary Record</th>
+          <th class="border px-3 py-2 text-left">Overpayment Percentage (%)</th>
+          <th class="border px-3 py-2 text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="salaryTable">
+        <!-- Dummy data -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  // Dummy storage
+  let salaryData = [
+    { id: 1, salary: "BASIC PAY", percentage: 0.5 },
+    { id: 2, salary: "HOUSING ALLOWANCE", percentage: 0.2 },
+  ];
+  let editId = null;
+
+  const salaryTable = document.getElementById("salaryTable");
+  const salaryForm = document.getElementById("salaryForm");
+  const addNewBtn = document.getElementById("addNewBtn");
+  const saveBtn = document.getElementById("saveBtn");
+  const cancelBtn = document.getElementById("cancelBtn");
+  const salaryInput = document.getElementById("salaryInput");
+  const percentageInput = document.getElementById("percentageInput");
+
+  // Render table
+  function renderTable() {
+    salaryTable.innerHTML = "";
+    salaryData.forEach((item) => {
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td class="border px-3 py-2">${item.salary}</td>
+        <td class="border px-3 py-2">${item.percentage}%</td>
+        <td class="border px-3 py-2 text-center">
+          <button class="text-blue-500 mr-2 editBtn" data-id="${item.id}">Edit</button>
+          <button class="text-red-500 deleteBtn" data-id="${item.id}">Delete</button>
+        </td>
+      `;
+      salaryTable.appendChild(row);
+    });
+  }
+
+  // Show form for add
+  addNewBtn.addEventListener("click", () => {
+    editId = null;
+    salaryInput.value = "";
+    percentageInput.value = "";
+    salaryForm.classList.remove("hidden");
+  });
+
+  // Save (add or edit)
+  saveBtn.addEventListener("click", () => {
+    const salary = salaryInput.value.trim();
+    const percentage = parseFloat(percentageInput.value);
+
+    if (!salary || isNaN(percentage)) {
+      alert("Please enter salary and percentage");
+      return;
+    }
+
+    if (editId) {
+      // Update existing
+      const item = salaryData.find((d) => d.id === editId);
+      item.salary = salary;
+      item.percentage = percentage;
+    } else {
+      // Add new
+      salaryData.push({
+        id: Date.now(),
+        salary,
+        percentage,
+      });
+    }
+
+    renderTable();
+    salaryForm.classList.add("hidden");
+    salaryInput.value = "";
+    percentageInput.value = "";
+    editId = null;
+  });
+
+  // Cancel
+  cancelBtn.addEventListener("click", () => {
+    salaryForm.classList.add("hidden");
+    salaryInput.value = "";
+    percentageInput.value = "";
+    editId = null;
+  });
+
+  // Delegate Edit/Delete
+  salaryTable.addEventListener("click", (e) => {
+    if (e.target.classList.contains("editBtn")) {
+      editId = parseInt(e.target.dataset.id);
+      const item = salaryData.find((d) => d.id === editId);
+      salaryInput.value = item.salary;
+      percentageInput.value = item.percentage;
+      salaryForm.classList.remove("hidden");
+    } else if (e.target.classList.contains("deleteBtn")) {
+      const id = parseInt(e.target.dataset.id);
+      salaryData = salaryData.filter((d) => d.id !== id);
+      renderTable();
+    }
+  });
+
+  // Initial render
+  renderTable();
+</script>

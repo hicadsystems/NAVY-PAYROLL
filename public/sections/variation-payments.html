@@ -13,7 +13,35 @@
   <div id="variationForm" class="my-8 hidden">
     <h3 id="formTitle" class="text-xl font-semibold text-grey-700 mb-4">Create New Variation</h3>
     <form id="variationFormElement" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <input id="variationName" type="text" placeholder="ID" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2" />
+      <div class="relative col-span-1">
+        <div class="relative">
+          <input 
+            type="text" 
+            id="searchInput"
+            class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"
+            placeholder="Search Name or Number..."
+            autocomplete="off">
+          <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </span>
+        </div>
+        
+        <div id="dropdownList" class="absolute z-10 w-full mt-1 bg-yellow-50 border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto hidden">
+          <div class="py-1">
+            <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" data-value="NN001">
+              <span class="font-semibold text-blue-600">NN001</span> - Lt. James 
+            </div>
+            <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" data-value="NN002">
+              <span class="font-semibold text-blue-600">NN002</span> - Mr. Johnson
+            </div>
+            <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" data-value="NN003">
+              <span class="font-semibold text-blue-600">NN003</span> - CPO Hicad
+            </div>
+          </div>
+        </div>
+      </div>
 
       <select id="variationType" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
         <option value="">Select Type</option>
@@ -96,6 +124,63 @@
 </div>
 
 <script>
+// searchable dropdown 
+const searchInput = document.getElementById('searchInput');
+const dropdownList = document.getElementById('dropdownList');
+const dropdownItems = document.querySelectorAll('.dropdown-item');
+
+// Add hidden input to store the selected employee ID
+const hiddenInput = document.createElement('input');
+hiddenInput.type = 'hidden';
+hiddenInput.name = 'variationName';
+hiddenInput.id = 'variationName';
+document.getElementById('variationForm').appendChild(hiddenInput);
+
+// Show dropdown when input is clicked or focused
+searchInput.addEventListener('focus', () => {
+  dropdownList.classList.remove('hidden');
+});
+
+// Filter items as user types
+searchInput.addEventListener('input', function() {
+  const searchText = this.value.toLowerCase();
+  
+  dropdownItems.forEach(item => {
+    const text = item.textContent.toLowerCase();
+    const shouldShow = text.includes(searchText);
+    item.style.display = shouldShow ? 'block' : 'none';
+  });
+  
+  dropdownList.classList.remove('hidden');
+});
+
+// Handle item selection
+dropdownItems.forEach(item => {
+  item.addEventListener('click', function() {
+    const value = this.getAttribute('data-value');
+    const text = this.textContent.trim();
+    
+    searchInput.value = text;
+    hiddenInput.value = value;
+    dropdownList.classList.add('hidden');
+  });
+});
+
+// Hide dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) {
+    dropdownList.classList.add('hidden');
+  }
+});
+
+// Basic keyboard support
+searchInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    dropdownList.classList.add('hidden');
+    this.blur();
+  }
+});
+
 (function () {
   const formWrapper = document.getElementById("variationForm");
   const form = document.getElementById("variationFormElement");
@@ -213,9 +298,10 @@
     const cells = row.querySelectorAll('td');
 
     // Map exactly to your table structure:
-    nameInput.value  = cells[0].textContent.trim();   // Name
-    typeInput.value  = cells[1].textContent.trim();   // Type
-    descInput.value  = cells[2].textContent.trim();   // Description
+    hiddenInput.value = cells[0].textContent.trim(); // Name
+    searchInput.value = cells[0].textContent.trim(); // Name
+    typeInput.value  = cells[1].textContent.trim(); // Type
+    descInput.value  = cells[2].textContent.trim(); // Description
     amountInput.value = cells[3].textContent
       .replace('₦', '')
       .replace(/,/g, '')

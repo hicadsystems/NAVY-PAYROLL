@@ -1,0 +1,71 @@
+<div class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-3">
+      <h3 class="text-xl font-bold text-blue-700 flex items-center gap-2">
+        Select an option and Print Irregular One-Off Report
+      </h3>
+    </div>
+  <!-- Radio + Checkboxes Grid -->
+  <div class="grid grid-cols-2 gap-3 mb-4">
+    <label class="flex items-center space-x-2">
+      <input type="radio" name="reportType" value="bank" class="text-blue-600">
+      <span class= "text-gray-700">Bank Report</span>
+    </label>
+    <label class="flex items-center space-x-2">
+      <input type="checkbox" class="text-blue-600">
+      <span class= "text-gray-700">All Classes</span>
+    </label>
+
+    <label class="flex items-center space-x-2">
+      <input type="radio" name="reportType" value="analysis" class="text-blue-600">
+      <span class= "text-gray-700">Payment Analysis</span>
+    </label>
+    <label class="flex items-center space-x-2">
+      <input type="checkbox" class="text-blue-600">
+      <span class= "text-gray-700">UBA Data Upload</span>
+    </label>
+
+    <label class="flex items-center space-x-2">
+      <input type="radio" name="reportType" value="remittance" class="text-blue-600">
+      <span class= "text-gray-700">Remittance Advice</span>
+    </label>
+    <label class="flex items-center space-x-2">
+      <input type="checkbox" class="text-blue-600">
+      <span class= "font-semibold text-gray-800">IPPIS</span>
+    </label>
+
+    <label class="flex items-center space-x-2">
+      <input type="radio" name="reportType" value="summary" class="text-blue-600">
+      <span class= "text-gray-700">Summary</span>
+    </label>
+    <label class="flex items-center space-x-2">
+      <input type="checkbox" class="text-blue-600">
+      <span class= "text-gray-700">Copy To History</span>
+    </label>
+  </div>
+
+  <!-- Dropdown Row -->
+  <div class="flex items-center justify-between gap-2 mb-4">
+    <label class= "text-gray-700">Label</label>
+    <select class="flex-1 border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500">
+      <option value="">Select Label...</option>
+      <option>Label1</option>
+      <option>Label2</option>
+      <option>Label3</option>
+    </select>
+    <label class="flex items-center ml-2 space-x-1">
+      <input type="checkbox" class="text-blue-600">
+      <span class= "text-gray-700">ALL</span>
+    </label>
+  </div>
+
+  <!-- Buttons -->
+  <div class="flex justify-end gap-2 pt-2">
+    <button class="px-4 py-1 bg-gray-200 hover:bg-gray-300 rounded border border-gray-300">
+      Cancel
+    </button>
+    <button class="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded shadow">
+      Print
+    </button>
+  </div>
+</div>

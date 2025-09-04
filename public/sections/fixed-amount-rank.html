@@ -3,7 +3,7 @@
 <!-- Header -->
 <div class="px-6 py-2 flex items-center justify-between">
     <div class="flex items-center gap-2">
-        <h1 class="text-xl font-semibold">One-Off Fixed Amount By Rank Management</h1>
+        <h1 class="text-xl font-semibold">Fixed Amount By Rank Management</h1>
     </div>
         <!-- Add Button -->
     <div class="mb-2 flex justify-end gap-2">
@@ -22,7 +22,7 @@
 
         <!-- Rank Grid -->
         <div class="mb-4">
-            <h3 class="text-sm lg:text-lg font-bold text-blue-700 mb-2">Set One-Off Fixed Amounts by Rank</h3>
+            <h3 class="text-sm lg:text-lg font-bold text-blue-700 mb-2">Set Fixed Amounts by Rank</h3>
             
             <!-- First Row -->
             <div class="grid grid-cols-6 gap-4 mb-4">
@@ -238,7 +238,7 @@ const item = data[index];
 let html = `
     <div class="mb-4">
         <h4 class="text-lg font-semibold text-gray-800 mb-2">Description: ${item.description}</h4>
-        <p class="text-sm text-gray-600 mb-4">Created: ${item.createdDate}</p>
+        <!--<p class="text-sm text-gray-600 mb-4">Created: ${item.createdDate}</p>-->
     </div>
     <div class="border-2 border-gray-300 rounded-lg p-4 bg-gray-50">
         <h5 class="font-semibold text-gray-700 mb-3">Fixed Amounts by Rank:</h5>
@@ -251,7 +251,7 @@ for (let rank in item.ranks) {
     html += `
         <div class="flex justify-between bg-white p-2 rounded border">
             <span class="font-medium">${displayRank.replace(/([A-Z])/g, ' $1').trim()}:</span>
-            <span class="text-green-600 font-semibold">${amount}</span>
+            <span class="text-blue-600 font-semibold">${amount}</span>
         </div>
     `;
 }

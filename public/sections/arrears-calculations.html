@@ -1,0 +1,150 @@
+<div class="p-6">
+  <!-- Form Header -->
+  <div class="mb-6 flex flex-wrap justify-between items-center">
+    <div>
+      <label class="block text-sm font-medium mb-1">Names & Number</label>
+        <select
+        id="personnelSelect"
+        class="w-full border border-blue-500 focus:border-yellow-500 bg-yellow-50 rounded-md px-3 py-2 min-h-[2rem]">
+         <option value="">Select Name or Number</option>
+        </select>
+    </div>
+    <div class="flex items-center space-x-2">
+      <span class="font-bold text-blue-600 text-lg">TOTAL ARREARS:</span>
+      <div class="bg-pink-50 px-4 py-2 border-2 border-blue-500 rounded-md w-40 text-right text-blue-700 font-bold">
+        0.00
+      </div>
+    </div>
+  </div>
+
+  <!-- Regular Section -->
+  <div class="mb-6">
+    <h3 class="text-lg mb-4 text-blue-600 font-bold border-b pb-2">REGULAR</h3>
+    <div class="grid grid-cols-6 gap-x-4 gap-y-2" id="regularSection">
+      <!-- Headers -->
+      <div class="col-span-1 font-medium text-sm">Payroll Item</div>
+      <div class="col-span-1 font-medium text-sm">Start Date</div>
+      <div class="col-span-1 font-medium text-sm">Last Date</div>
+      <div class="col-span-1 font-medium text-sm">OLD Salary Scale</div>
+      <div class="col-span-1 font-medium text-sm text-center">OLD GRADE LEVEL</div>
+      <div class="col-span-1 font-medium text-sm text-center">NEW GRADE LEVEL</div>
+    </div>
+  </div>
+
+  <!-- Others Section -->
+  <div class="mb-6">
+    <h3 class="text-lg mb-4 text-blue-600 font-bold border-b pb-2">OTHERS</h3>
+    <div class="grid grid-cols-5 gap-x-4 gap-y-2" id="othersSection">
+      <!-- Headers -->
+      <div class="col-span-1 font-medium text-sm">Payroll Item</div>
+      <div class="col-span-1 font-medium text-sm">Start Date</div>
+      <div class="col-span-1 font-medium text-sm">End Date</div>
+      <div class="col-span-1 font-medium text-sm">OLD Amount</div>
+      <div class="col-span-1 font-medium text-sm">NEW Amount</div>
+    </div>
+  </div>
+
+  <!-- Total Arrear and Buttons -->
+  <div class="flex justify-end items-center mt-6 pt-4 border-t">
+    <div class="space-x-2">
+      <button type="button" class="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-300">
+        Cancel
+      </button>
+      <button type="button" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+        Calculate
+      </button>
+      <button type="button" class="bg-yellow-500 text-white px-6 py-2 rounded hover:bg-yellow-700">
+        Print
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Utility: create element with classes + attributes
+  function createEl(tag, classes, attrs = {}) {
+    const el = document.createElement(tag);
+    if (classes) el.className = classes;
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+    return el;
+  }
+
+  // Add rows to REGULAR section
+  const regularSection = document.getElementById("regularSection");
+  const regularRows = 5;
+  for (let i = 0; i < regularRows; i++) {
+    // Payroll Item
+    const sel1 = createEl("select", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm min-h-[2rem]");
+    sel1.innerHTML = `<option value="">Select Item</option>`;
+    regularSection.appendChild(sel1);
+
+    // Start Date
+    const sd = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm min-h-[2rem]", {
+      type: "text",
+      placeholder: "DD/MM/YYYY",
+    });
+    regularSection.appendChild(sd);
+
+    // Last Date
+    const ld = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm min-h-[2rem]", {
+      type: "text",
+      placeholder: "DD/MM/YYYY",
+    });
+    regularSection.appendChild(ld);
+
+    // OLD Scale
+    const sel2 = createEl("select", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm min-h-[2rem]");
+    sel2.innerHTML = `<option value="">Select Scale</option>`;
+    regularSection.appendChild(sel2);
+
+    // OLD GL
+    const oldGl = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm text-right min-h-[2rem]", {
+      type: "text",
+      placeholder: "GGL",
+    });
+    regularSection.appendChild(oldGl);
+
+    // NEW GL
+    const newGl = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm text-right min-h-[2rem]", {
+      type: "text",
+      placeholder: "GGL",
+    });
+    regularSection.appendChild(newGl);
+  }
+
+  // Add rows to OTHERS section
+  const othersSection = document.getElementById("othersSection");
+  const otherRows = 3;
+  for (let i = 0; i < otherRows; i++) {
+    // Payroll Item
+    const sel = createEl("select", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-green-50 rounded-md px-2 py-1 text-sm min-h-[2rem]");
+    sel.innerHTML = `<option value="">Select Item</option>`;
+    othersSection.appendChild(sel);
+
+    // Start Date
+    const sd = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-green-50 rounded-md px-2 py-1 text-sm min-h-[2rem]", {
+      type: "text",
+      placeholder: "DD/MM/YYYY",
+    });
+    othersSection.appendChild(sd);
+
+    // End Date
+    const ed = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-green-50 rounded-md px-2 py-1 text-sm min-h-[2rem]", {
+      type: "text",
+      placeholder: "DD/MM/YYYY",
+    });
+    othersSection.appendChild(ed);
+
+    // OLD Amount
+    const oldAmt = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-green-50 rounded-md px-2 py-1 text-sm text-right min-h-[2rem]", {
+      type: "number",
+    });
+    othersSection.appendChild(oldAmt);
+
+    // NEW Amount
+    const newAmt = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-green-50 rounded-md px-2 py-1 text-sm text-right min-h-[2rem]", {
+      type: "number",
+    });
+    othersSection.appendChild(newAmt);
+  }
+</script>

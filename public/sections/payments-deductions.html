@@ -16,41 +16,106 @@
   <div id="payDedFormWrapper" class="my-8 hidden">
     <h3 id="formTitle" class="text-xl font-semibold text-grey-700 mb-4">Add New Payment/Deduction</h3>
     <form id="payDedForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Employee Search Dropdown -->
+      <div class="relative col-span-1">
+        <div class="relative">
+          <input 
+            type="text" 
+            id="searchInput"
+            class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"
+            placeholder="Search Name or Number..."
+            autocomplete="off">
+          <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </span>
+        </div>
 
-      <input id="emplId" type="text" placeholder="Employee ID" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"/>
+        <div id="dropdownList" class="absolute z-10 w-full mt-1 bg-yellow-50 border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto hidden">
+          <div class="py-1">
+            <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" data-value="NN001">
+              <span class="font-semibold text-blue-600">NN001</span> - Lt. James 
+            </div>
+            <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" data-value="NN002">
+              <span class="font-semibold text-blue-600">NN002</span> - Mr. Johnson
+            </div>
+            <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" data-value="NN003">
+              <span class="font-semibold text-blue-600">NN003</span> - CPO Hicad
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <select id="type" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
-        <option value="">Select Type</option>
-        <option>BP001</option>
-        <option>BP002</option>
-      </select>
+      <!-- Type Selection -->
+      <div class="col-span-1">
+        <select id="type" class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
+          <option value="">Select Type</option>
+          <option>BP001</option>
+          <option>BP002</option>
+        </select>
+      </div>
 
-      <select id="mak1" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
-        <option value="">Select Marker 1</option>
-        <option>Yes</option>
-        <option>No</option>
-      </select>
+      <!-- Marker 1 Selection -->
+      <div class="col-span-1">
+        <select id="mak1" class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
+          <option value="">Select Marker 1</option>
+          <option>Yes</option>
+          <option>No</option>
+        </select>
+      </div>
 
-      <input id="amtp" type="number" placeholder="Payment Amount (amtp)" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"/>
+      <!-- Payment Amount -->
+      <div class="col-span-1">
+        <input 
+          id="amtp" 
+          type="number" 
+          placeholder="Payment Amount (amtp)" 
+          class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"
+        />
+      </div>
 
-      <select id="mak2" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
-        <option value="">Select Marker 2</option>
-        <option>Yes</option>
-        <option>No</option>
-      </select>
+      <!-- Marker 2 Selection -->
+      <div class="col-span-1">
+        <select id="mak2" class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
+          <option value="">Select Marker 2</option>
+          <option>Yes</option>
+          <option>No</option>
+        </select>
+      </div>
 
-      <input id="amt" type="number" placeholder="Amount To Date (amt)" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"/>
+      <!-- Amount To Date -->
+      <div class="col-span-1">
+        <input 
+          id="amt" 
+          type="number" 
+          placeholder="Amount To Date (amt)" 
+          class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"
+        />
+      </div>
 
-      <select id="payind" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
-        <option value="">Pay Indicator</option>
-        <option value="P">Permanent</option>
-        <option value="L">Loan</option>
-        <option value="T">Temporary</option>
-      </select>
+      <!-- Pay Indicator -->
+      <div class="col-span-1">
+        <select id="payind" class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
+          <option value="">Pay Indicator</option>
+          <option value="P">Permanent</option>
+          <option value="L">Loan</option>
+          <option value="T">Temporary</option>
+        </select>
+      </div>
 
-      <input id="nomth" type="number" placeholder="Number of Months (nomth)" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"/>
+      <!-- Number of Months -->
+      <div class="col-span-1">
+        <input 
+          id="nomth" 
+          type="number" 
+          placeholder="Number of Months (nomth)" 
+          class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"
+        />
+      </div>
 
-      <div class="col-span-full flex justify-end mt-2 space-x-4">
+      <!-- Form Buttons -->
+      <div class="col-span-full flex justify-end mt-4 space-x-4">
         <button type="submit" id="saveBtn" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Save</button>
         <button type="button" id="cancelPayDedBtn" class="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400">Cancel</button>
       </div>
@@ -59,7 +124,7 @@
 
   <!-- Table -->
   <div class="overflow-x-auto">
-    <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+    <table class="min-w-full border border-gray-200 rounded-lg">
       <thead class="bg-blue-100 text-blue-900">
         <tr>
           <th class="py-2 px-4 border">Personnel ID</th>
@@ -121,6 +186,63 @@
 </div>
 
 <script>
+// searchable dropdown
+const searchInput = document.getElementById('searchInput');
+const dropdownList = document.getElementById('dropdownList');
+const dropdownItems = document.querySelectorAll('.dropdown-item');
+
+// Add hidden input to store the selected employee ID
+const hiddenInput = document.createElement('input');
+hiddenInput.type = 'hidden';
+hiddenInput.name = 'emplId';
+hiddenInput.id = 'emplId';
+document.getElementById('payDedForm').appendChild(hiddenInput);
+
+// Show dropdown when input is clicked or focused
+searchInput.addEventListener('focus', () => {
+  dropdownList.classList.remove('hidden');
+});
+
+// Filter items as user types
+searchInput.addEventListener('input', function() {
+  const searchText = this.value.toLowerCase();
+  
+  dropdownItems.forEach(item => {
+    const text = item.textContent.toLowerCase();
+    const shouldShow = text.includes(searchText);
+    item.style.display = shouldShow ? 'block' : 'none';
+  });
+  
+  dropdownList.classList.remove('hidden');
+});
+
+// Handle item selection
+dropdownItems.forEach(item => {
+  item.addEventListener('click', function() {
+    const value = this.getAttribute('data-value');
+    const text = this.textContent.trim();
+    
+    searchInput.value = text;
+    hiddenInput.value = value;
+    dropdownList.classList.add('hidden');
+  });
+});
+
+// Hide dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) {
+    dropdownList.classList.add('hidden');
+  }
+});
+
+// Basic keyboard support
+searchInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    dropdownList.classList.add('hidden');
+    this.blur();
+  }
+});
+
 (function () {
   const formWrapper = document.getElementById("payDedFormWrapper");
   const form = document.getElementById("payDedForm");
@@ -238,7 +360,8 @@
     const cells = row.querySelectorAll('td');
 
     // Map exactly to your table structure:
-    document.getElementById("emplId").value = cells[0].textContent.trim();
+    hiddenInput.value = cells[0].textContent.trim();
+    searchInput.value = cells[0].textContent.trim(); 
     document.getElementById("type").value = cells[1].textContent.trim();
     document.getElementById("amtp").value = cells[2].textContent.replace(/₦|,/g, '');
     document.getElementById("amt").value = cells[3].textContent.replace(/₦|,/g, '');

@@ -139,13 +139,13 @@ function showSuccess(message) {
   popup.classList.remove('hidden');
   setTimeout(() => {
     spinner?.classList.add('hidden');
-    text.innerHTML = `<span class="text-green-600 font-semibold">✔ ${message}</span>`;
-  }, 4000);
+    text.innerHTML = `<span class="text-green-600 font-semibold">✔ User Created Successfully!</span>`;
+  }, 2000);
   setTimeout(() => {
     popup.classList.add('hidden');
     spinner?.classList.remove('hidden');
     text.textContent = 'Processing...';
-  }, 6000);
+  }, 4000);
 }
 
 document.getElementById('create-user-form').addEventListener('submit', async function(e) {
@@ -154,13 +154,13 @@ document.getElementById('create-user-form').addEventListener('submit', async fun
   const formData = new FormData(this);
   const userData = Object.fromEntries(formData.entries());
 
-  // ✅ Rename employeeId → user_id for backend
+  // 
   if (userData.employeeId) {
     userData.user_id = userData.employeeId;
     delete userData.employeeId;
   }
 
-  // ✅ Collect selected permissions
+  // Collect selected permissions
   const permissions = Array.from(document.querySelectorAll('input[name="permissions"]:checked'))
     .map(cb => cb.value);
   userData.permissions = permissions;
@@ -176,7 +176,7 @@ document.getElementById('create-user-form').addEventListener('submit', async fun
 
     if (response.ok) {
       const result = await response.json();
-      showSuccess('✅ User created successfully!\nID: ' + result.user_id);
+      showSuccess('Creating User...\nID: ' + result.user_id);
       this.reset();
 
       // 🔄 Refresh personnel table after create

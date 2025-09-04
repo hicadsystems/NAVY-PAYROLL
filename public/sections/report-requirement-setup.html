@@ -1,0 +1,128 @@
+<div class="p-6">
+  <h3 class="text-lg font-bold text-blue-600 mb-4 border-b pb-2">
+    Irregular One-Off Payment
+  </h3>
+
+  <form id="paymentForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+    <!-- Description (Select) -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Description</label>
+      <select
+        id="descriptionSelect"
+        class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2 text-sm">
+        <option value="">Select Description</option>
+        <option value="BP303">Overtime Bonus</option>
+        <option value="BP304">Allowance</option>
+        <option value="BP305">Loan</option>
+      </select>
+    </div>
+
+    <!-- Code (Auto-filled) -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Code</label>
+      <input
+        type="text"
+        id="codeInput"
+        class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2 text-sm bg-gray-100"
+        readonly/>
+    </div>
+
+    <!-- Function Type -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Function Type</label>
+      <select class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2 text-sm">
+        <option value="">Select Function Type</option>
+        <option value="fixed">Fixed</option>
+        <option value="temporary">Temporary</option>
+      </select>
+    </div>
+
+    <!-- % or Standard Amount -->
+    <div>
+      <label class="block text-sm font-medium mb-1">% or Standard Amount</label>
+      <input
+        type="number"
+        class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2 text-sm"
+        placeholder="Enter amount or %"/>
+    </div>
+
+    <!-- Dependence -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Dependence</label>
+      <select class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2 text-sm">
+        <option value="">Select Dependence</option>
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+
+    <!-- Maximum Value -->
+    <div>
+      <label class="block text-sm bg-transparent font-medium mb-1">Maximum Value</label>
+      <input
+        type="number"
+        class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2 text-sm"
+        placeholder="Enter maximum value"
+      />
+    </div>
+
+    <!-- Required For All -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Required For All</label>
+      <select class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2 text-sm">
+        <option value="">Select Option</option>
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+
+    <!-- Buttons -->
+    <div class="md:col-span-2 flex justify-end space-x-3 mt-4">
+      <button
+        type="button"
+        id="cancelBtn"
+        class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
+        Save
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  const descriptionSelect = document.getElementById("descriptionSelect");
+  const codeInput = document.getElementById("codeInput");
+  const form = document.getElementById("paymentForm");
+  const cancelBtn = document.getElementById("cancelBtn");
+
+  // Map descriptions to codes
+  const descriptionCodes = {
+    BP303: "BP303",
+    BP304: "BP304",
+    BP305: "BP305",
+  };
+
+  // Auto-fill code when selecting description
+  descriptionSelect.addEventListener("change", () => {
+    const selected = descriptionSelect.value;
+    codeInput.value = descriptionCodes[selected] || "";
+  });
+
+  // Cancel → clear form
+  cancelBtn.addEventListener("click", () => {
+    form.reset();
+    codeInput.value = ""; // clear readonly field
+  });
+
+  // Continue → simulate save
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    alert("Form submitted with dummy save action.");
+  });
+</script>

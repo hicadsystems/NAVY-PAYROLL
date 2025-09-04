@@ -105,6 +105,15 @@
       </select>
     </div>
 
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Required By IPPIS?</label>
+      <select id="requiredByIPPIS" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+        <option>Select</option>
+        <option>Yes</option>
+        <option>No</option>
+      </select>
+    </div>
+
     <div class="col-span-2 flex justify-end gap-2 lg:col-span-3">
       <button type="button" id="saveBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Save</button>
       <button type="button" id="cancelBtn" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
@@ -140,12 +149,16 @@
 
 <!-- View Modal -->
 <div id="viewModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-  <div class="bg-white p-6 rounded-lg shadow-xl w-96 max-w-full mx-4">
-    <h3 class="text-lg font-semibold mb-4 text-blue-600">Pay Element Details</h3>
-    <div id="viewContent" class="space-y-2 text-sm max-h-96 overflow-y-auto"></div>
-    <div class="mt-4 text-right">
-      <button id="closeViewModal" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Close</button>
+  <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-screen overflow-y-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-semibold text-blue-600">Pay Element Details</h3>
+      <button id="closeViewModal" class="text-gray-400 hover:text-gray-600">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
     </div>
+    <div id="viewContent" class="space-y-3 text-sm"></div>
   </div>
 </div>
 
@@ -153,8 +166,8 @@
   let editingIndex = null;
 
   let data = [
-    {element:"BP301", description:"Pension Addition", status:"Active", functionType:"STANDARD AMOUNT", percentage:10, maxAmount:5000, dependence:"NONE", paymentFrequency:"Monthly", startingMonth:"2025-01", taxAllowance:"Yes", requireForAll:"Yes", yearEndClearance:"Yes", accountLedger:"Ledger 1001" },
-    { element:"BP302", description:"Pension Deduction", status:"Active", functionType:"LOAN", percentage:5, maxAmount:2000, dependence:"NONE", paymentFrequency:"Monthly", startingMonth:"2025-02", taxAllowance:"No", requireForAll:"Yes", yearEndClearance:"No", accountLedger:"Ledger 2002" }
+    {element:"BP301", description:"Pension Addition", status:"Active", functionType:"STANDARD AMOUNT", percentage:10, maxAmount:5000, dependence:"None", paymentFrequency:"Monthly", startingMonth:"2025-01", taxAllowance:"Yes", requireForAll:"Yes", yearEndClearance:"Yes", accountLedger:"MOTOR VEHICLE", requiredByIPPIS:"Yes" },
+    { element:"BP302", description:"Pension Deduction", status:"Active", functionType:"LOAN", percentage:5, maxAmount:2000, dependence:"None", paymentFrequency:"Monthly", startingMonth:"2025-02", taxAllowance:"No", requireForAll:"Yes", yearEndClearance:"No", accountLedger:"OFFICE EQUIPMENTS", requiredByIPPIS:"No" }
   ];
 
   const form = document.getElementById("payElementsForm");
@@ -169,7 +182,10 @@
     let html = "";
     for (let key in item) {
       const displayKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
-      html += `<p><strong>${displayKey}:</strong> ${item[key]}</p>`;
+      html += `<div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
+        <dt class="font-medium text-gray-600"><strong>${displayKey}:</strong></dt>
+        <dd class="col-span-2 text-gray-900">${item[key]}</dd>
+      </div>`;
     }
     document.getElementById("viewContent").innerHTML = html;
     openModal("viewModal");
@@ -190,6 +206,7 @@
     document.getElementById("requireForAll").value = item.requireForAll;
     document.getElementById("yearEndClearance").value = item.yearEndClearance;
     document.getElementById("accountLedger").value = item.accountLedger;
+    document.getElementById("requiredByIPPIS").value = item.requiredByIPPIS;
 
     editingIndex = index;
     form.classList.remove("hidden");
@@ -261,7 +278,8 @@
       taxAllowance: document.getElementById("taxAllowance").value,
       requireForAll: document.getElementById("requireForAll").value,
       yearEndClearance: document.getElementById("yearEndClearance").value,
-      accountLedger: document.getElementById("accountLedger").value
+      accountLedger: document.getElementById("accountLedger").value,
+      requiredByIPPIS: document.getElementById("requiredByIPPIS").value
     };
 
     if (editingIndex !== null) {

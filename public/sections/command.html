@@ -18,10 +18,6 @@
       <label class="block text-sm font-medium text-gray-700">Description</label>
       <textarea id="sectionDesc" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter description"></textarea>
     </div>
-    <div>
-      <label class="block text-sm font-medium text-gray-700">Unit Code *</label>
-      <input type="text" id="unitCode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter unit code">
-    </div>
     <div class="col-span-1 md:col-span-2 flex justify-end gap-2">
       <button type="button" id="saveSectionBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Save</button>
       <button type="button" id="cancelSectionBtn" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
@@ -33,9 +29,8 @@
     <table class="min-w-full border border-gray-200 rounded-lg text-sm">
       <thead class="bg-blue-100 text-blue-900">
         <tr>
+          <th class="border px-2 py-3 text-left">Code</th>
           <th class="border px-2 py-3 text-left">Name</th>
-          <th class="border px-2 py-3 text-left">Description</th>
-          <th class="border px-2 py-3 text-left">Unit Code</th>
           <th class="border px-2 py-3 text-left">Actions</th>
         </tr>
       </thead>
@@ -80,8 +75,8 @@
 
 <script>
   let sectionData = [
-    { name: "DHQ", description: "DEFENCE HEADQUARTERS", unitCode: "0000" },
-    { name: "NHQ", description: "NAVAL HEADQUARTERS", unitCode: "0000" }
+    { name: "DHQ", description: "DEFENCE HEADQUARTERS"},
+    { name: "AB", description: "ACCOUNTS AND BUDGET"}
   ];
   let editingSectionIndex = null;
   let pendingSectionDelete = null;
@@ -105,11 +100,10 @@
     const sectionRecord = {
       name: document.getElementById("sectionName").value.trim(),
       description: document.getElementById("sectionDesc").value.trim(),
-      unitCode: document.getElementById("unitCode").value.trim()
     };
 
-    if (!sectionRecord.name || !sectionRecord.unitCode) {
-      showSectionError("Please fill in required fields: Name, Unit Code");
+    if (!sectionRecord.name || !sectionRecord.description) {
+      showSectionError("Please fill in required fields: Name, Code");
       return;
     }
 
@@ -142,7 +136,6 @@
       <tr class="hover:bg-gray-50">
         <td class="border px-2 py-3">${item.name}</td>
         <td class="border px-2 py-3">${item.description || "N/A"}</td>
-        <td class="border px-2 py-3">${item.unitCode}</td>
         <td class="border px-2 py-3">
           <button id="editSection-${index}" class="text-green-600 hover:text-green-900 mr-2">Edit</button>
           <button id="deleteSection-${index}" class="text-red-600 hover:text-red-900">Delete</button>
@@ -161,7 +154,6 @@
     const item = sectionData[index];
     document.getElementById("sectionName").value = item.name;
     document.getElementById("sectionDesc").value = item.description;
-    document.getElementById("unitCode").value = item.unitCode;
     editingSectionIndex = index;
     sectionForm.classList.remove("hidden");
   }

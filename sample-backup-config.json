@@ -1,0 +1,13 @@
+{
+  "name": "Sample Website Backup",
+  "database_name": "website_main",
+  "backup_type": "full",
+  "compression": true,
+  "storage_type": "local",
+  "schedule_type": "daily",
+  "schedule_time": "02:00:00",
+  "retention_days": 7,
+  "storage_config": {
+    "path": "./backups"
+  }
+}

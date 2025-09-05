@@ -1,0 +1,222 @@
+<!-- Tax Payments By State -->
+<section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
+  <h2 class="text-xl text-center border-b font-bold text-blue-600 mb-4">Print Tax Payments By State Reports</h2>
+
+  <form id="taxStateForm" class="space-y-4">
+    <!-- State Selection -->
+    <div>
+      <label class="block font-medium mb-2">Select State</label>
+      <div class="flex space-x-4">
+        <label class="flex text-sm items-center space-x-2">
+          <input type="radio" id="allStates" name="stateChoice" value="all" checked>
+          <span>All States</span>
+        </label>
+        <label class="flex text-sm items-center space-x-2">
+          <input type="radio" id="specificState" name="stateChoice" value="specific">
+          <span>Specific State</span>
+        </label>
+      </div>
+      <select id="stateDropdown"
+        class="mt-2 w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300" disabled>
+        <option value="">Select State</option>
+        <option>Lagos</option>
+        <option>Abuja (FCT)</option>
+        <option>Kano</option>
+        <option>Rivers</option>
+        <option>Kaduna</option>
+        <option>Oyo</option>
+        <!-- etc -->
+      </select>
+    </div>
+
+    <!-- Payment Type -->
+    <div>
+      <label for="taxType" class="block text-sm font-medium mb-1">Tax Type</label>
+      <select id="taxType"
+        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <option value="">All Types</option>
+        <option>Income Tax</option>
+        <option>PAYE</option>
+        <option>VAT</option>
+        <option>Corporate Tax</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <!-- Processing Month -->
+    <div>
+      <label for="taxMonth" class="block text-sm font-medium mb-1">Processing Month</label>
+      <select id="taxMonth"
+        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <option value="">Select Month</option>
+        <option>January</option>
+        <option>February</option>
+        <option>March</option>
+        <option>April</option>
+        <option>May</option>
+        <option>June</option>
+        <option>July</option>
+        <option>August</option>
+        <option>September</option>
+        <option>October</option>
+        <option>November</option>
+        <option>December</option>
+      </select>
+    </div>
+
+    <div class="flex justify-between items-center gap-2 mb-4">
+        <!-- Summary Report -->
+        <div class="flex items-center space-x-2">
+        <input type="checkbox" id="taxSummary" class="h-4 w-4">
+        <label for="taxSummary" class="text-sm">Summary Report</label>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex space-x-2 pt-2">
+        <button type="reset" id="taxClearBtn"
+            class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+            Clear
+        </button>
+        <button type="button" id="taxPrintBtn"
+            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            Print
+        </button>
+        </div>
+    </div>
+  </form>
+</section>
+
+<!-- Confirm -->
+<div id="taxConfirmModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6">
+    <h3 class="text-lg font-semibold mb-4">Confirm Print</h3>
+    <p class="mb-6 text-gray-700">Proceed to generate and print the report?</p>
+    <div class="flex justify-end gap-2">
+      <button id="taxCancelBtn" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
+      <button id="taxContinueBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- Processing -->
+<div id="taxProcessingModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
+    <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+    <p class="text-gray-700">Generating report...</p>
+  </div>
+</div>
+
+<!-- Success -->
+<div id="taxSuccessModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
+    <h3 class="text-lg font-semibold text-green-600 mb-4">Success</h3>
+    <p class="mb-6 text-gray-700">Report is ready.</p>
+    <div class="flex justify-center gap-2">
+      <button id="taxPrintNowBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Preview & Print</button>
+      <button id="taxSuccessOkBtn" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Error -->
+<div id="taxErrorModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
+    <h3 class="text-lg font-semibold text-red-600 mb-4">Error</h3>
+    <p id="taxErrorText" class="mb-6 text-gray-700">Please complete required fields.</p>
+    <button id="taxErrorOkBtn" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">OK</button>
+  </div>
+</div>
+
+<script>
+  // Elements
+  const allStates = document.getElementById('allStates');
+  const specificState = document.getElementById('specificState');
+  const stateDropdown = document.getElementById('stateDropdown');
+  const taxMonth = document.getElementById('taxMonth');
+
+  const taxPrintBtn = document.getElementById('taxPrintBtn');
+  const taxClearBtn = document.getElementById('taxClearBtn');
+
+  const taxConfirmModal = document.getElementById('taxConfirmModal');
+  const taxCancelBtn = document.getElementById('taxCancelBtn');
+  const taxContinueBtn = document.getElementById('taxContinueBtn');
+
+  const taxProcessingModal = document.getElementById('taxProcessingModal');
+  const taxSuccessModal = document.getElementById('taxSuccessModal');
+  const taxSuccessOkBtn = document.getElementById('taxSuccessOkBtn');
+
+  const taxErrorModal = document.getElementById('taxErrorModal');
+  const taxErrorOkBtn = document.getElementById('taxErrorOkBtn');
+  const taxErrorText = document.getElementById('taxErrorText');
+
+  // Toggle state select disabled/enabled
+  function toggleStateSelect() {
+    stateDropdown.disabled = allStates.checked;
+    if (allStates.checked) stateDropdown.value = '';
+  }
+
+  allStates.addEventListener('change', toggleStateSelect);
+  specificState.addEventListener('change', toggleStateSelect);
+
+  // Open confirm
+  taxPrintBtn.addEventListener('click', () => {
+    taxConfirmModal.classList.remove('hidden');
+  });
+
+  // Cancel confirm
+  taxCancelBtn.addEventListener('click', () => {
+    taxConfirmModal.classList.add('hidden');
+  });
+
+  // Continue -> validate -> process
+  taxContinueBtn.addEventListener('click', () => {
+    taxConfirmModal.classList.add('hidden');
+
+    // Validate: if Specific State chosen, a state must be selected; and month must be chosen
+    if ((specificState.checked && !stateDropdown.value) || !taxMonth.value) {
+      taxErrorText.textContent = !taxMonth.value
+        ? 'Please select a processing month.'
+        : 'Please choose a state when "Specific State" is selected.';
+      taxErrorModal.classList.remove('hidden');
+      return;
+    }
+
+    // Show processing then success
+    taxProcessingModal.classList.remove('hidden');
+    setTimeout(() => {
+      taxProcessingModal.classList.add('hidden');
+      taxSuccessModal.classList.remove('hidden');
+    }, 1200);
+  });
+
+  // Error OK
+  taxErrorOkBtn.addEventListener('click', () => {
+    taxErrorModal.classList.add('hidden');
+  });
+
+  // Success Close
+  taxSuccessOkBtn.addEventListener('click', () => {
+    taxSuccessModal.classList.add('hidden');
+    // Optionally reset form here
+    document.getElementById('taxStateForm').reset();
+  });
+
+  // Actual print preview
+  taxPrintNowBtn.addEventListener('click', () => {
+    // Hook to your printable view or generated report; for now, call browser print dialog.
+    window.print();
+  });
+
+  // Reset/clear
+  taxClearBtn.addEventListener('click', () => {
+    // Let the native reset run, then normalize radios & disabled state
+    setTimeout(() => {
+      allStates.checked = true;    // ensure default
+      toggleStateSelect();         // disable the dropdown
+      taxMonth.value = '';         // reset month
+    }, 0);
+  });
+
+  // Initialize on load
+  toggleStateSelect();
+</script>

@@ -1,0 +1,171 @@
+<!-- Salary Summary -->
+<section class="p-6">
+  <h2 class="text-xl border-b font-bold text-blue-600 mb-4">Salary Summary Report</h2>
+
+  <!-- Filters -->
+  <form id="summaryForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <!-- Processing Month -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Processing Month</label>
+      <select id="summaryMonth" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <option value="">Select Month</option>
+        <option>January</option><option>February</option><option>March</option>
+        <option>April</option><option>May</option><option>June</option>
+        <option>July</option><option>August</option><option>September</option>
+        <option>October</option><option>November</option><option>December</option>
+      </select>
+    </div>
+    <!-- Department Filter -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Department</label>
+      <select id="summaryDept" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <option value="">All Departments</option>
+        <option>Finance</option>
+        <option>IT</option>
+        <option>Operations</option>
+        <option>HR</option>
+        <option>Sales</option>
+      </select>
+    </div>
+  </form>
+
+  <!-- Buttons -->
+  <div class="flex flex-wrap justify-end gap-2 pt-2 mb-6">
+    <button id="summaryClear" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Clear</button>
+    <button id="summaryGenerate" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Generate</button>
+    <button id="summaryPrint" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Print</button>
+    <button id="summaryExport" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Export</button>
+  </div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto hidden" id="summaryTableWrap">
+    <table class="w-full text-sm border">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-3 py-2 border text-blue-600">Department</th>
+          <th class="px-3 py-2 border text-blue-600 text-right">Gross Total</th>
+          <th class="px-3 py-2 border text-blue-600 text-right">Deductions</th>
+          <th class="px-3 py-2 border text-blue-600 text-right">Net Total</th>
+        </tr>
+      </thead>
+      <tbody id="summaryTableBody"></tbody>
+      <tfoot class="bg-gray-200 font-semibold">
+        <tr>
+          <td class="px-3 py-2 border text-blue-600 text-right">Grand Totals</td>
+          <td id="summaryGross" class="px-3 py-2 border text-blue-600 text-right">0</td>
+          <td id="summaryDed" class="px-3 py-2 border text-blue-600 text-right">0</td>
+          <td id="summaryNet" class="px-3 py-2 border text-blue-600 text-right">0</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
+
+<!-- Success Modal -->
+<div id="summarySuccessModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
+    <h3 class="text-lg font-semibold text-green-600 mb-4">Success</h3>
+    <p id="summarySuccessMessage" class="mb-6 text-gray-700">Action completed.</p>
+    <div class="flex justify-center">
+      <button id="summarySuccessOkBtn" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const summaryTableWrap = document.getElementById("summaryTableWrap");
+  const summaryTableBody = document.getElementById("summaryTableBody");
+  const summarySuccessModal = document.getElementById("summarySuccessModal");
+  const summarySuccessMessage = document.getElementById("summarySuccessMessage");
+  const summarySuccessOkBtn = document.getElementById("summarySuccessOkBtn");
+
+  const summaryGross = document.getElementById("summaryGross");
+  const summaryDed = document.getElementById("summaryDed");
+  const summaryNet = document.getElementById("summaryNet");
+
+  // Dummy summary data
+  const summaryData = [
+    { dept: "Finance", gross: 500000, deductions: 120000 },
+    { dept: "IT", gross: 400000, deductions: 100000 },
+    { dept: "Operations", gross: 600000, deductions: 150000 },
+    { dept: "HR", gross: 300000, deductions: 80000 },
+  ];
+
+  function showSummarySuccess(msg) {
+    summarySuccessMessage.textContent = msg;
+    summarySuccessModal.classList.remove("hidden");
+  }
+
+  // Generate
+  document.getElementById("summaryGenerate").onclick = () => {
+    summaryTableBody.innerHTML = "";
+    let gTotal = 0, dTotal = 0, nTotal = 0;
+
+    summaryData.forEach(item => {
+      const net = item.gross - item.deductions;
+      gTotal += item.gross;
+      dTotal += item.deductions;
+      nTotal += net;
+
+      const row = `<tr>
+        <td class="px-3 py-2 border">${item.dept}</td>
+        <td class="px-3 py-2 border text-right">₦${item.gross.toLocaleString()}</td>
+        <td class="px-3 py-2 border text-right">₦${item.deductions.toLocaleString()}</td>
+        <td class="px-3 py-2 border text-right">₦${net.toLocaleString()}</td>
+      </tr>`;
+      summaryTableBody.insertAdjacentHTML("beforeend", row);
+    });
+
+    summaryGross.textContent = "₦" + gTotal.toLocaleString();
+    summaryDed.textContent = "₦" + dTotal.toLocaleString();
+    summaryNet.textContent = "₦" + nTotal.toLocaleString();
+
+    summaryTableWrap.classList.remove("hidden");
+    showSummarySuccess("Salary Summary Generated Successfully");
+  };
+
+  // Clear
+  document.getElementById("summaryClear").onclick = () => {
+    document.getElementById("summaryForm").reset();
+    summaryTableBody.innerHTML = "";
+    summaryGross.textContent = "0";
+    summaryDed.textContent = "0";
+    summaryNet.textContent = "0";
+    summaryTableWrap.classList.add("hidden");
+    showSummarySuccess("Filters cleared");
+  };
+
+  // Print
+  document.getElementById("summaryPrint").onclick = () => {
+    window.print();
+    showSummarySuccess("Print dialog opened");
+  };
+
+  // Export CSV
+  document.getElementById("summaryExport").onclick = () => {
+    let csv = "Department,Gross,Deductions,Net\n";
+    let gTotal = 0, dTotal = 0, nTotal = 0;
+
+    summaryData.forEach(e => {
+      const net = e.gross - e.deductions;
+      gTotal += e.gross;
+      dTotal += e.deductions;
+      nTotal += net;
+      csv += `${e.dept},${e.gross},${e.deductions},${net}\n`;
+    });
+
+    csv += `Totals,${gTotal},${dTotal},${nTotal}\n`;
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Salary_Summary.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    showSummarySuccess("Report Exported");
+  };
+
+  // Close success modal
+  summarySuccessOkBtn.onclick = () => summarySuccessModal.classList.add("hidden");
+</script>

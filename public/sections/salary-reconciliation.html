@@ -1,0 +1,175 @@
+<!-- Salary Reconciliation -->
+<section class="p-6">
+  <h2 class="text-xl border-b font-bold text-blue-600 mb-4">Salary Reconciliation Report</h2>
+
+  <!-- Filters -->
+  <form id="salaryForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <!-- Month -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Processing Month</label>
+      <select id="salaryMonth" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <option value="">Select Month</option>
+        <option>January</option><option>February</option><option>March</option>
+        <option>April</option><option>May</option><option>June</option>
+        <option>July</option><option>August</option><option>September</option>
+        <option>October</option><option>November</option><option>December</option>
+      </select>
+    </div>
+
+    <!-- Department -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Department</label>
+      <select id="salaryDept" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <option value="">All Departments</option>
+        <option>Finance</option>
+        <option>Human Resources</option>
+        <option>IT</option>
+        <option>Operations</option>
+        <option>Sales</option>
+      </select>
+    </div>
+  </form>
+
+  <!-- Buttons -->
+  <div class="flex flex-wrap justify-end gap-2 pt-2 mb-6">
+    <button id="salaryClear" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Clear</button>
+    <button id="salaryGenerate" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Generate</button>
+    <button id="salaryPrint" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Print</button>
+    <button id="salaryExport" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Export</button>
+  </div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto hidden" id="salaryTableWrap">
+    <table class="w-full text-sm border">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-3 py-2 border text-blue-600">Staff ID</th>
+          <th class="px-3 py-2 border text-blue-600">Name</th>
+          <th class="px-3 py-2 border text-blue-600">Department</th>
+          <th class="px-3 py-2 border text-blue-600 text-right">Gross Salary</th>
+          <th class="px-3 py-2 border text-blue-600 text-right">Deductions</th>
+          <th class="px-3 py-2 border text-blue-600 text-right">Net Salary</th>
+        </tr>
+      </thead>
+      <tbody id="salaryTableBody"></tbody>
+      <tfoot class="bg-gray-200 font-semibold">
+        <tr>
+          <td colspan="3" class="px-3 py-2 border text-blue-600 text-right">Totals</td>
+          <td id="totalGross" class="px-3 py-2 border text-blue-600 text-right">0</td>
+          <td id="totalDeductions" class="px-3 py-2 border text-blue-600 text-right">0</td>
+          <td id="totalNet" class="px-3 py-2 border text-blue-600 text-right">0</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
+
+<!-- Success Modal -->
+<div id="salarySuccessModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
+    <h3 class="text-lg font-semibold text-green-600 mb-4">Success</h3>
+    <p id="salarySuccessMessage" class="mb-6 text-gray-700">Action completed.</p>
+    <div class="flex justify-center">
+      <button id="salarySuccessOkBtn" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const salaryTableWrap = document.getElementById("salaryTableWrap");
+  const salaryTableBody = document.getElementById("salaryTableBody");
+  const salarySuccessModal = document.getElementById("salarySuccessModal");
+  const salarySuccessMessage = document.getElementById("salarySuccessMessage");
+  const salarySuccessOkBtn = document.getElementById("salarySuccessOkBtn");
+
+  const totalGross = document.getElementById("totalGross");
+  const totalDeductions = document.getElementById("totalDeductions");
+  const totalNet = document.getElementById("totalNet");
+
+  // Dummy data
+  const salaryData = [
+    { id: "NN001", name: "Mr. Hicad", dept: "Finance", gross: 200000, deductions: 50000 },
+    { id: "NN002", name: "Mrs. Ronke", dept: "IT", gross: 180000, deductions: 40000 },
+    { id: "NN003", name: "Mrs. M", dept: "Operations", gross: 220000, deductions: 60000 },
+  ];
+
+  function showSalarySuccess(msg) {
+    salarySuccessMessage.textContent = msg;
+    salarySuccessModal.classList.remove("hidden");
+  }
+
+  // Generate
+  document.getElementById("salaryGenerate").onclick = () => {
+    salaryTableBody.innerHTML = "";
+    let grossTotal = 0, dedTotal = 0, netTotal = 0;
+
+    salaryData.forEach(emp => {
+      const net = emp.gross - emp.deductions;
+      grossTotal += emp.gross;
+      dedTotal += emp.deductions;
+      netTotal += net;
+
+      const row = `<tr>
+        <td class="px-3 py-2 border">${emp.id}</td>
+        <td class="px-3 py-2 border">${emp.name}</td>
+        <td class="px-3 py-2 border">${emp.dept}</td>
+        <td class="px-3 py-2 border text-right">₦${emp.gross.toLocaleString()}</td>
+        <td class="px-3 py-2 border text-right">₦${emp.deductions.toLocaleString()}</td>
+        <td class="px-3 py-2 border text-right">₦${net.toLocaleString()}</td>
+      </tr>`;
+      salaryTableBody.insertAdjacentHTML("beforeend", row);
+    });
+
+    totalGross.textContent = "₦" + grossTotal.toLocaleString();
+    totalDeductions.textContent = "₦" + dedTotal.toLocaleString();
+    totalNet.textContent = "₦" + netTotal.toLocaleString();
+
+    salaryTableWrap.classList.remove("hidden");
+    showSalarySuccess("Salary Reconciliation Report Generated Successfully");
+  };
+
+  // Clear
+  document.getElementById("salaryClear").onclick = () => {
+    document.getElementById("salaryForm").reset();
+    salaryTableBody.innerHTML = "";
+    totalGross.textContent = "0";
+    totalDeductions.textContent = "0";
+    totalNet.textContent = "0";
+    salaryTableWrap.classList.add("hidden");
+    showSalarySuccess("Filters cleared");
+  };
+
+  // Print
+  document.getElementById("salaryPrint").onclick = () => {
+    window.print();
+    showSalarySuccess("Print dialog opened");
+  };
+
+  // Export
+  document.getElementById("salaryExport").onclick = () => {
+    let csv = "Staff ID,Name,Department,Gross Salary,Deductions,Net Salary\n";
+    let grossTotal = 0, dedTotal = 0, netTotal = 0;
+
+    salaryData.forEach(e => {
+      const net = e.gross - e.deductions;
+      grossTotal += e.gross;
+      dedTotal += e.deductions;
+      netTotal += net;
+      csv += `${e.id},${e.name},${e.dept},${e.gross},${e.deductions},${net}\n`;
+    });
+
+    csv += `,,Totals,${grossTotal},${dedTotal},${netTotal}\n`;
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Salary_Reconciliation.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    showSalarySuccess("Report Exported");
+  };
+
+  // Close success modal
+  salarySuccessOkBtn.onclick = () => salarySuccessModal.classList.add("hidden");
+</script>

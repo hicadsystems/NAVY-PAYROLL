@@ -1,0 +1,178 @@
+<!-- Print Options Section -->
+<section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
+  <h2 class="text-xl text-center border-b font-bold text-blue-600 mb-4">Print Payments by Bank(Branch) Reports</h2>
+
+  <form id="printForm" class="space-y-4">
+    <!-- Radio selection -->
+    <div>
+      <label class="block font-medium mb-2">Select Bank</label>
+      <div class="flex space-x-4">
+        <label class="flex items-center text-sm space-x-2">
+          <input type="radio" id="allBanks" name="bankChoice" value="all" checked>
+          <span>All Banks</span>
+        </label>
+        <label class="flex items-center text-sm space-x-2">
+          <input type="radio" id="specificBank" name="bankChoice" value="specific">
+          <span>Specific Bank</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Bank Input -->
+    <div>
+      <select id="bankName" name="bankName"
+        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300" hidden>
+        <option value=""></option>
+        <option>Bank A</option>
+        <option>Bank B</option>
+        <option>Bank C</option>
+      </select>
+    </div>
+
+    <!-- Processing Month -->
+    <div>
+      <label for="processingMonth" class="block text-sm font-medium mb-1">Processing Month</label>
+      <select id="processingMonth" name="processingMonth"
+        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <option value=""></option>
+        <option>January</option>
+        <option>February</option>
+        <option>March</option>
+        <option>April</option>
+        <option>May</option>
+        <option>June</option>
+        <option>July</option>
+        <option>August</option>
+        <option>September</option>
+        <option>October</option>
+        <option>November</option>
+        <option>December</option>
+      </select>
+    </div>
+
+  <div class="flex justify-between items-center gap-2 mb-4">
+    <!-- Summary Report -->
+    <div class="flex items-center space-x-2">
+      <input type="checkbox" id="summaryReport" name="summaryReport" class="h-4 w-4">
+      <label for="summaryReport" class="text-sm">Summary Report</label>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex space-x-2 pt-2">
+      <button type="reset" id="clearPrintBtn"
+        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+        Clear
+      </button>
+      <button type="button" id="printBtn"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        Print
+      </button>
+    </div>
+  </div>
+  </form>
+</section>
+
+<!-- Confirmation Modal -->
+<div id="printConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6">
+    <h3 class="text-lg font-semibold mb-4">Confirm Print</h3>
+    <p class="mb-6 text-gray-700">Do you want to continue with printing options?</p>
+
+    <div class="flex justify-end space-x-2">
+      <button id="printCancelBtn"
+        class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
+        Cancel
+      </button>
+      <button id="printContinueBtn"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        Continue
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="printSuccessModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
+    <h3 class="text-lg font-semibold text-green-600 mb-4">Success</h3>
+    <p class="mb-6 text-gray-700">Report generated successfully!</p>
+    <button id="printSuccessOkBtn"
+      class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+      OK
+    </button>
+  </div>
+</div>
+
+<!-- Error Modal -->
+<div id="printErrorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
+    <h3 class="text-lg font-semibold text-red-600 mb-4">Error</h3>
+    <p class="mb-6 text-gray-700">Please enter a bank name when Specific Bank is selected.</p>
+    <button id="printErrorOkBtn"
+      class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+      OK
+    </button>
+  </div>
+</div>
+
+<script>
+  const allBanks = document.getElementById("allBanks");
+  const specificBank = document.getElementById("specificBank");
+  const bankName = document.getElementById("bankName");
+  const printBtn = document.getElementById("printBtn");
+  const clearPrintBtn = document.getElementById("clearPrintBtn");
+
+  const printConfirmModal = document.getElementById("printConfirmModal");
+  const printCancelBtn = document.getElementById("printCancelBtn");
+  const printContinueBtn = document.getElementById("printContinueBtn");
+
+  const printSuccessModal = document.getElementById("printSuccessModal");
+  const printSuccessOkBtn = document.getElementById("printSuccessOkBtn");
+
+  const printErrorModal = document.getElementById("printErrorModal");
+  const printErrorOkBtn = document.getElementById("printErrorOkBtn");
+
+  function toggleBankInput() {
+    bankName.hidden = allBanks.checked;
+  }
+
+  allBanks.addEventListener("change", toggleBankInput);
+  specificBank.addEventListener("change", toggleBankInput);
+
+  printBtn.addEventListener("click", () => {
+    printConfirmModal.classList.remove("hidden");
+  });
+
+  printCancelBtn.addEventListener("click", () => {
+    printConfirmModal.classList.add("hidden");
+  });
+
+  printContinueBtn.addEventListener("click", () => {
+    printConfirmModal.classList.add("hidden");
+
+    if (specificBank.checked && !bankName.value.trim()) {
+      printErrorModal.classList.remove("hidden");
+    } else {
+      printSuccessModal.classList.remove("hidden");
+      // Real implementation: trigger print or API call here
+    }
+  });
+
+  printSuccessOkBtn.addEventListener("click", () => {
+    printSuccessModal.classList.add("hidden");
+    // Reset form or perform other actions
+    document.getElementById("printForm").reset();
+    toggleBankInput();
+  });
+
+  printErrorOkBtn.addEventListener("click", () => {
+    printErrorModal.classList.add("hidden");
+  });
+
+  clearPrintBtn.addEventListener("click", () => {
+    allBanks.checked = true;
+    toggleBankInput();
+  });
+
+  toggleBankInput();
+</script>

@@ -1,0 +1,197 @@
+<!-- Payroll Register -->
+<section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
+  <h2 class="text-xl text-center border-b font-bold text-blue-600 mb-4">Generate And Print Payroll Register Report</h2>
+
+  <form id="payrollForm" class="space-y-4">
+    <!-- Department Selection -->
+    <div>
+      <label class="block font-medium mb-2">Select Department</label>
+      <div class="flex gap-6">
+        <label class="flex text-sm items-center gap-2">
+          <input type="radio" id="allPayrollDepts" name="payrollDeptChoice" value="all" checked>
+          <span>All Departments</span>
+        </label>
+        <label class="flex text-sm items-center gap-2">
+          <input type="radio" id="specificPayrollDept" name="payrollDeptChoice" value="specific">
+          <span>Specific Department</span>
+        </label>
+      </div>
+      <select id="payrollDeptDropdown"
+        class="mt-2 w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300" disabled>
+        <option value="">Select Department</option>
+        <option>Finance</option>
+        <option>Human Resources</option>
+        <option>IT</option>
+        <option>Operations</option>
+        <option>Sales</option>
+        <option>Customer Service</option>
+      </select>
+    </div>
+
+    <!-- Processing Month -->
+    <div>
+      <label for="payrollMonth" class="block text-sm font-medium mb-2">Processing Month</label>
+      <select id="payrollMonth"
+        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <option value="">Select Month</option>
+        <option>January</option><option>February</option><option>March</option>
+        <option>April</option><option>May</option><option>June</option>
+        <option>July</option><option>August</option><option>September</option>
+        <option>October</option><option>November</option><option>December</option>
+      </select>
+    </div>
+
+    <!-- Options side by side -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="flex items-center gap-2 mt-2">
+        <input type="checkbox" id="payrollSummary" class="h-4 w-4">
+        <label for="payrollSummary" class="text-sm">Summary Report</label>
+      </div>
+      <div class="flex items-center gap-2 mt-2">
+        <input type="checkbox" id="payrollComponents" class="h-4 w-4">
+        <label for="payrollComponents" class="text-sm">Include Pay Element</label>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex flex-wrap justify-end gap-2 pt-2">
+      <button type="reset" id="payrollClearBtn"
+        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+        Clear
+      </button>
+      <button type="button" id="payrollPrintBtn"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        Print
+      </button>
+    </div>
+  </form>
+</section>
+
+<!-- Confirmation Modal -->
+<div id="payrollConfirmModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6">
+    <h3 class="text-lg font-semibold mb-4">Confirm Print</h3>
+    <p class="mb-6 text-gray-700">Proceed to generate payroll register?</p>
+    <div class="flex justify-end gap-2">
+      <button id="payrollCancelBtn" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
+      <button id="payrollContinueBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- Processing Modal -->
+<div id="payrollProcessingModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
+    <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+    <p class="text-gray-700">Generating payroll register...</p>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="payrollSuccessModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
+    <h3 class="text-lg font-semibold text-green-600 mb-4">Success</h3>
+    <p class="mb-6 text-gray-700">Payroll register is ready.</p>
+    <div class="flex justify-center gap-2">
+      <button id="payrollPrintNowBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Preview & Print</button>
+      <button id="payrollSuccessOkBtn" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Error Modal -->
+<div id="payrollErrorModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
+    <h3 class="text-lg font-semibold text-red-600 mb-4">Error</h3>
+    <p id="payrollErrorText" class="mb-6 text-gray-700">Please complete required fields.</p>
+    <button id="payrollErrorOkBtn" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">OK</button>
+  </div>
+</div>
+
+<script>
+  // Elements
+  const allPayrollDepts = document.getElementById('allPayrollDepts');
+  const specificPayrollDept = document.getElementById('specificPayrollDept');
+  const payrollDeptDropdown = document.getElementById('payrollDeptDropdown');
+  const payrollMonth = document.getElementById('payrollMonth');
+
+  const payrollPrintBtn = document.getElementById('payrollPrintBtn');
+  const payrollClearBtn = document.getElementById('payrollClearBtn');
+
+  const payrollConfirmModal = document.getElementById('payrollConfirmModal');
+  const payrollCancelBtn = document.getElementById('payrollCancelBtn');
+  const payrollContinueBtn = document.getElementById('payrollContinueBtn');
+
+  const payrollProcessingModal = document.getElementById('payrollProcessingModal');
+  const payrollSuccessModal = document.getElementById('payrollSuccessModal');
+  const payrollSuccessOkBtn = document.getElementById('payrollSuccessOkBtn');
+  const payrollPrintNowBtn = document.getElementById('payrollPrintNowBtn');
+
+  const payrollErrorModal = document.getElementById('payrollErrorModal');
+  const payrollErrorOkBtn = document.getElementById('payrollErrorOkBtn');
+  const payrollErrorText = document.getElementById('payrollErrorText');
+
+  // Toggle dept select
+  function togglePayrollDept() {
+    payrollDeptDropdown.disabled = allPayrollDepts.checked;
+    if (allPayrollDepts.checked) payrollDeptDropdown.value = '';
+  }
+  allPayrollDepts.addEventListener('change', togglePayrollDept);
+  specificPayrollDept.addEventListener('change', togglePayrollDept);
+
+  // Open confirm
+  payrollPrintBtn.addEventListener('click', () => {
+    payrollConfirmModal.classList.remove('hidden');
+  });
+
+  // Cancel confirm
+  payrollCancelBtn.addEventListener('click', () => {
+    payrollConfirmModal.classList.add('hidden');
+  });
+
+  // Continue -> validate -> process
+  payrollContinueBtn.addEventListener('click', () => {
+    payrollConfirmModal.classList.add('hidden');
+
+    if ((specificPayrollDept.checked && !payrollDeptDropdown.value) || !payrollMonth.value) {
+      payrollErrorText.textContent = !payrollMonth.value
+        ? 'Please select a processing month.'
+        : 'Please choose a department when "Specific Department" is selected.';
+      payrollErrorModal.classList.remove('hidden');
+      return;
+    }
+
+    payrollProcessingModal.classList.remove('hidden');
+    setTimeout(() => {
+      payrollProcessingModal.classList.add('hidden');
+      payrollSuccessModal.classList.remove('hidden');
+    }, 1200);
+  });
+
+  // Error OK
+  payrollErrorOkBtn.addEventListener('click', () => {
+    payrollErrorModal.classList.add('hidden');
+  });
+
+  // Success Close
+  payrollSuccessOkBtn.addEventListener('click', () => {
+    payrollSuccessModal.classList.add('hidden');
+  });
+
+  // Preview & Print
+  payrollPrintNowBtn.addEventListener('click', () => {
+    window.print();
+  });
+
+  // Reset form
+  payrollClearBtn.addEventListener('click', () => {
+    setTimeout(() => {
+      allPayrollDepts.checked = true;
+      togglePayrollDept();
+      payrollMonth.value = '';
+    }, 0);
+  });
+
+  // Initialize
+  togglePayrollDept();
+</script>

@@ -1,0 +1,152 @@
+<!-- NSITF Report -->
+<section class="p-6">
+  <h2 class="text-xl border-b font-bold text-blue-600 mb-4">NSITF Contributions Report</h2>
+
+  <!-- Filters -->
+  <form id="nsitfForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <!-- Processing Month -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Processing Month</label>
+      <select id="nsitfMonth" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <option value="">Select Month</option>
+        <option>January</option><option>February</option><option>March</option>
+        <option>April</option><option>May</option><option>June</option>
+        <option>July</option><option>August</option><option>September</option>
+        <option>October</option><option>November</option><option>December</option>
+      </select>
+    </div>
+
+    <!-- Department -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Department</label>
+      <select id="nsitfDept" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <option value="">All Departments</option>
+        <option>Finance</option>
+        <option>IT</option>
+        <option>HR</option>
+        <option>Operations</option>
+      </select>
+    </div>
+  </form>
+
+  <!-- Buttons -->
+  <div class="flex flex-wrap justify-end gap-2 pt-2">
+    <button id="nsitfClear" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Clear</button>
+    <button id="nsitfGenerate" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Generate</button>
+    <button id="nsitfPrint" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Print</button>
+    <button id="nsitfExport" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Export</button>
+  </div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto hidden mt-6" id="nsitfTableWrap">
+    <table class="w-full text-sm border">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-3 py-2 border text-blue-600">Service NO</th>
+          <th class="px-3 py-2 border text-blue-600">Name</th>
+          <th class="px-3 py-2 border text-blue-600">Department</th>
+          <th class="px-3 py-2 border text-blue-600 text-right">NSITF Contribution</th>
+        </tr>
+      </thead>
+      <tbody id="nsitfTableBody"></tbody>
+      <tfoot class="bg-gray-200 font-semibold">
+        <tr>
+          <td colspan="3" class="px-3 py-2 border text-blue-600 text-right">Total Contribution</td>
+          <td id="nsitfTotal" class="px-3 py-2 border text-blue-600 text-right">0</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
+
+<!-- Success Modal -->
+<div id="nsitfSuccessModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
+    <h3 class="text-lg font-semibold text-green-600 mb-4">Success</h3>
+    <p id="nsitfSuccessMessage" class="mb-6 text-gray-700">Action completed.</p>
+    <div class="flex justify-center">
+      <button id="nsitfSuccessOkBtn" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const nsitfTableWrap = document.getElementById("nsitfTableWrap");
+  const nsitfTableBody = document.getElementById("nsitfTableBody");
+  const nsitfSuccessModal = document.getElementById("nsitfSuccessModal");
+  const nsitfSuccessMessage = document.getElementById("nsitfSuccessMessage");
+  const nsitfSuccessOkBtn = document.getElementById("nsitfSuccessOkBtn");
+  const nsitfTotal = document.getElementById("nsitfTotal");
+
+  // Dummy NSITF data
+  const nsitfData = [
+    { id: "NN001", name: "Mr.Danjuma", dept: "Finance", contrib: 5000 },
+    { id: "NN002", name: "Mrs. Rotimi", dept: "IT", contrib: 4500 },
+    { id: "NN003", name: "Mr. Kenneth", dept: "HR", contrib: 4800 },
+    { id: "NN004", name: "Mr. Hicad", dept: "Operations", contrib: 5100 },
+  ];
+
+  function showNsitfSuccess(msg) {
+    nsitfSuccessMessage.textContent = msg;
+    nsitfSuccessModal.classList.remove("hidden");
+  }
+
+  // Generate
+  document.getElementById("nsitfGenerate").onclick = () => {
+    nsitfTableBody.innerHTML = "";
+    let total = 0;
+
+    nsitfData.forEach(emp => {
+      total += emp.contrib;
+      const row = `<tr>
+        <td class="px-3 py-2 border">${emp.id}</td>
+        <td class="px-3 py-2 border">${emp.name}</td>
+        <td class="px-3 py-2 border">${emp.dept}</td>
+        <td class="px-3 py-2 border text-right">₦${emp.contrib.toLocaleString()}</td>
+      </tr>`;
+      nsitfTableBody.insertAdjacentHTML("beforeend", row);
+    });
+
+    nsitfTotal.textContent = "₦" + total.toLocaleString();
+    nsitfTableWrap.classList.remove("hidden");
+    showNsitfSuccess("NSITF Report Generated Successfully");
+  };
+
+  // Clear
+  document.getElementById("nsitfClear").onclick = () => {
+    document.getElementById("nsitfForm").reset();
+    nsitfTableBody.innerHTML = "";
+    nsitfTotal.textContent = "0";
+    nsitfTableWrap.classList.add("hidden");
+    showNsitfSuccess("Filters cleared");
+  };
+
+  // Print
+  document.getElementById("nsitfPrint").onclick = () => {
+    window.print();
+    showNsitfSuccess("Print dialog opened");
+  };
+
+  // Export
+  document.getElementById("nsitfExport").onclick = () => {
+    let csv = "Staff ID,Name,Department,NSITF Contribution\n";
+    let total = 0;
+    nsitfData.forEach(e => {
+      total += e.contrib;
+      csv += `${e.id},${e.name},${e.dept},${e.contrib}\n`;
+    });
+    csv += `,,,${total}\n`;
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "NSITF_Report.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    showNsitfSuccess("Report Exported");
+  };
+
+  // Close success modal
+  nsitfSuccessOkBtn.onclick = () => nsitfSuccessModal.classList.add("hidden");
+</script>

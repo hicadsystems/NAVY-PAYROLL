@@ -1,0 +1,150 @@
+<!-- Payment Staff List -->
+<section class="p-6">
+  <h2 class="text-xl border-b font-bold text-blue-600 mb-12">Select Options And Generate List</h2>
+
+  <!-- Filters -->
+  <form id="staffListForm" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <!-- Month -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Processing Month</label>
+      <select id="staffMonth" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <option value="">Select Month</option>
+        <option>January</option><option>February</option><option>March</option>
+        <option>April</option><option>May</option><option>June</option>
+        <option>July</option><option>August</option><option>September</option>
+        <option>October</option><option>November</option><option>December</option>
+      </select>
+    </div>
+
+    <!-- Payroll Class -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Payroll Class</label>
+      <select id="staffDept" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <option value="">All Payroll Classes</option>
+        <option>OFFICERS</option>
+        <option>RATINGS</option>
+      </select>
+    </div>
+
+    <!-- Bank -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Bank</label>
+      <select id="staffBank" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <option value="">All Banks</option>
+        <option>First Bank</option>
+        <option>GTBank</option>
+        <option>UBA</option>
+        <option>Zenith Bank</option>
+      </select>
+    </div>
+  </form>
+
+  <!-- Buttons -->
+  <div class="flex flex-wrap justify-end gap-2 mb-4">
+    <button id="clearStaffList" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Clear</button>
+    <button id="generateStaffList" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Generate</button>
+    <button id="printStaffList" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Print</button>
+    <button id="exportStaffList" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Export</button>
+  </div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto hidden" id="staffListWrap">
+    <table class="w-full text-sm border">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-3 py-2 border text-blue-600">Service No</th>
+          <th class="px-3 py-2 border text-blue-600">Name</th>
+          <th class="px-3 py-2 border text-blue-600">Payroll Class</th>
+          <th class="px-3 py-2 border text-blue-600">Bank</th>
+          <th class="px-3 py-2 border text-blue-600">Account Number</th>
+          <th class="px-3 py-2 border text-blue-600 text-right">Net Pay</th>
+        </tr>
+      </thead>
+      <tbody id="staffTableBody">
+        <!-- Filled dynamically -->
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Success Modal -->
+<div id="successModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
+    <h3 class="text-lg font-semibold text-green-600 mb-4">Success</h3>
+    <p id="successMessage" class="mb-6 text-gray-700">Action completed.</p>
+    <div class="flex justify-center">
+      <button id="successOkBtn" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const staffListWrap = document.getElementById("staffListWrap");
+  const staffTableBody = document.getElementById("staffTableBody");
+  const successModal = document.getElementById("successModal");
+  const successMessage = document.getElementById("successMessage");
+  const successOkBtn = document.getElementById("successOkBtn");
+
+  // Dummy data
+  const staffData = [
+    { id: "NN001", name: "Mr. Haruna", dept: "OFFICERS", bank: "GTBank", acc: "0123456789", pay: "₦250,000" },
+    { id: "NN002", name: "Mr. Danjuma", dept: "RATINGS", bank: "UBA", acc: "9876543210", pay: "₦180,000" },
+    { id: "NN003", name: "Mr. David", dept: "W/OFFICERS", bank: "Zenith Bank", acc: "1111222233", pay: "₦200,000" },
+  ];
+
+  function showSuccess(msg) {
+    successMessage.textContent = msg;
+    successModal.classList.remove("hidden");
+  }
+
+  // Generate list
+  document.getElementById("generateStaffList").onclick = () => {
+    staffTableBody.innerHTML = "";
+    staffData.forEach(staff => {
+      const row = `<tr>
+        <td class="px-3 py-2 border">${staff.id}</td>
+        <td class="px-3 py-2 border">${staff.name}</td>
+        <td class="px-3 py-2 border">${staff.dept}</td>
+        <td class="px-3 py-2 border">${staff.bank}</td>
+        <td class="px-3 py-2 border">${staff.acc}</td>
+        <td class="px-3 py-2 border text-right">${staff.pay}</td>
+      </tr>`;
+      staffTableBody.insertAdjacentHTML("beforeend", row);
+    });
+    staffListWrap.classList.remove("hidden");
+    showSuccess("Staff List Generated Successfully");
+  };
+
+  // Clear
+  document.getElementById("clearStaffList").onclick = () => {
+    document.getElementById("staffListForm").reset();
+    staffTableBody.innerHTML = "";
+    staffListWrap.classList.add("hidden");
+    showSuccess("Filters cleared");
+  };
+
+  // Print
+  document.getElementById("printStaffList").onclick = () => {
+    window.print();
+    showSuccess("Print dialog opened");
+  };
+
+  // Export (simulate CSV)
+  document.getElementById("exportStaffList").onclick = () => {
+    let csv = "Staff ID,Name,Department,Bank,Account,Net Pay\n";
+    staffData.forEach(s => {
+      csv += `${s.id},${s.name},${s.dept},${s.bank},${s.acc},${s.pay}\n`;
+    });
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Payment_Staff_List.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    showSuccess("Staff List Exported");
+  };
+
+  // Close success modal
+  successOkBtn.onclick = () => successModal.classList.add("hidden");
+</script>

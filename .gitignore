@@ -32,3 +32,7 @@ procedures_export/py_updatepayroll_02.sql
 procedures_export/py_updatepayroll_03.sql
 procedures_export/sp_getPayslip.sql
 procedures_export/sp_getPendingsSms.sql
+logs/access.log
+logs/application.log
+logs/backup.log
+logs/error.log

@@ -1,0 +1,228 @@
+<!-- Analysis of Payments/Deductions by Bank -->
+<section class="p-12">
+  <h2 class="text-xl border-b text-center text-blue-600 font-bold mb-8">Print Analysis of Payments/Deductions by Bank Report</h2>
+
+  <form id="analysisForm" class="space-y-4">
+    <!-- Bank + Type in responsive grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Select Bank -->
+      <div>
+        <label class="block text-lg text-blue-600 font-bold mb-2">Select Bank</label>
+        <div class="flex space-x-4">
+          <label class="flex text-sm items-center space-x-2">
+            <input type="radio" id="analysisAllBanks" name="bankChoice" value="all" checked>
+            <span>All Banks</span>
+          </label>
+          <label class="flex text-sm items-center space-x-2">
+            <input type="radio" id="analysisSpecificBank" name="bankChoice" value="specific">
+            <span>Specific Bank</span>
+          </label>
+        </div>
+        <select id="analysisBankName"
+          class="mt-2 w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300"
+          placeholder="Enter Bank Name" disabled>
+          <option value="">Select Bank</option>
+          <option>Bank A</option>
+          <option>Bank B</option>
+          <option>Bank C</option>
+        </select>
+      </div>
+
+      <!-- Select Type -->
+      <div>
+        <label class="block text-lg text-blue-600 font-semibold mb-2">Select Type</label>
+        <div class="flex space-x-4">
+          <label class="flex text-sm items-center space-x-2">
+            <input type="radio" id="analysisAllTypes" name="typeChoice" value="all" checked>
+            <span>All Types</span>
+          </label>
+          <label class="flex text-sm items-center space-x-2">
+            <input type="radio" id="analysisSpecificType" name="typeChoice" value="specific">
+            <span>Specific Type</span>
+          </label>
+        </div>
+        <select id="analysisPaymentType"
+          class="mt-2 w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300" disabled>
+          <option value="">Select Payment Type</option>
+          <option>Salary</option>
+          <option>Loan Deduction</option>
+          <option>Pension</option>
+          <option>Tax</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Processing Month -->
+    <div>
+      <label for="analysisMonth" class="block text-sm font-medium mb-1">Processing Month</label>
+      <select id="analysisMonth"
+        class="w-full md:w-1/2 border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <option value="">Select Month</option>
+        <option>January</option>
+        <option>February</option>
+        <option>March</option>
+        <option>April</option>
+        <option>May</option>
+        <option>June</option>
+        <option>July</option>
+        <option>August</option>
+        <option>September</option>
+        <option>October</option>
+        <option>November</option>
+        <option>December</option>
+      </select>
+    </div>
+
+  <div class="flex justify-between items-center gap-2 mb-4">
+    <!-- Summary Report -->
+    <div class="flex items-center space-x-2">
+      <input type="checkbox" id="summaryReport" name="summaryReport" class="h-4 w-4">
+      <label for="summaryReport" class="text-sm">Summary Report</label>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex space-x-2 pt-2">
+      <button type="reset" id="clearPrintBtn"
+        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+        Clear
+      </button>
+      <button type="button" id="printBtn"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        Print
+      </button>
+    </div>
+  </div>
+  </form>
+</section>
+
+
+<!-- Confirmation Modal -->
+<div id="analysisConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6">
+    <h3 class="text-lg font-semibold mb-4">Confirm Print</h3>
+    <p class="mb-6 text-gray-700">Do you want to continue with report printing?</p>
+    <div class="flex justify-end space-x-2">
+      <button id="analysisCancelBtn"
+        class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
+        Cancel
+      </button>
+      <button id="analysisContinueBtn"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        Continue
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Processing Modal -->
+<div id="analysisProcessingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
+    <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+    <p class="text-gray-700">Generating report...</p>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="analysisSuccessModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
+    <h3 class="text-lg font-semibold text-green-600 mb-4">Success</h3>
+    <p class="mb-6 text-gray-700">Report generated successfully!</p>
+    <button id="analysisSuccessOkBtn"
+      class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+      OK
+    </button>
+  </div>
+</div>
+
+<!-- Error Modal -->
+<div id="analysisErrorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
+    <h3 class="text-lg font-semibold text-red-600 mb-4">Error</h3>
+    <p class="mb-6 text-gray-700">Please complete all required fields.</p>
+    <button id="analysisErrorOkBtn"
+      class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+      OK
+    </button>
+  </div>
+</div>
+
+<script>
+  const analysisAllBanks = document.getElementById("analysisAllBanks");
+  const analysisSpecificBank = document.getElementById("analysisSpecificBank");
+  const analysisBankName = document.getElementById("analysisBankName");
+
+  const analysisAllTypes = document.getElementById("analysisAllTypes");
+  const analysisSpecificType = document.getElementById("analysisSpecificType");
+  const analysisPaymentType = document.getElementById("analysisPaymentType");
+
+  const analysisPrintBtn = document.getElementById("analysisPrintBtn");
+  const analysisClearBtn = document.getElementById("analysisClearBtn");
+
+  const analysisConfirmModal = document.getElementById("analysisConfirmModal");
+  const analysisCancelBtn = document.getElementById("analysisCancelBtn");
+  const analysisContinueBtn = document.getElementById("analysisContinueBtn");
+
+  const analysisProcessingModal = document.getElementById("analysisProcessingModal");
+  const analysisSuccessModal = document.getElementById("analysisSuccessModal");
+  const analysisSuccessOkBtn = document.getElementById("analysisSuccessOkBtn");
+
+  const analysisErrorModal = document.getElementById("analysisErrorModal");
+  const analysisErrorOkBtn = document.getElementById("analysisErrorOkBtn");
+
+  function toggleBankInput() {
+    analysisBankName.disabled = analysisAllBanks.checked;
+  }
+
+  function toggleTypeInput() {
+    analysisPaymentType.disabled = analysisAllTypes.checked;
+  }
+
+  analysisAllBanks.addEventListener("change", toggleBankInput);
+  analysisSpecificBank.addEventListener("change", toggleBankInput);
+
+  analysisAllTypes.addEventListener("change", toggleTypeInput);
+  analysisSpecificType.addEventListener("change", toggleTypeInput);
+
+  analysisPrintBtn.addEventListener("click", () => {
+    analysisConfirmModal.classList.remove("hidden");
+  });
+
+  analysisCancelBtn.addEventListener("click", () => {
+    analysisConfirmModal.classList.add("hidden");
+  });
+
+  analysisContinueBtn.addEventListener("click", () => {
+    analysisConfirmModal.classList.add("hidden");
+
+    if ((analysisSpecificBank.checked && !analysisBankName.value.trim()) ||
+        (analysisSpecificType.checked && !analysisPaymentType.value)) {
+      analysisErrorModal.classList.remove("hidden");
+    } else {
+      analysisProcessingModal.classList.remove("hidden");
+      setTimeout(() => {
+        analysisProcessingModal.classList.add("hidden");
+        analysisSuccessModal.classList.remove("hidden");
+        // real use-case: window.print() or API call
+      }, 2000);
+    }
+  });
+
+  analysisSuccessOkBtn.addEventListener("click", () => {
+    analysisSuccessModal.classList.add("hidden");
+  });
+
+  analysisErrorOkBtn.addEventListener("click", () => {
+    analysisErrorModal.classList.add("hidden");
+  });
+
+  analysisClearBtn.addEventListener("click", () => {
+    analysisAllBanks.checked = true;
+    analysisAllTypes.checked = true;
+    toggleBankInput();
+    toggleTypeInput();
+  });
+
+  toggleBankInput();
+  toggleTypeInput();
+</script>

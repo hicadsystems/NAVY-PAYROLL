@@ -1,5 +1,5 @@
-// ...existing code...
-require('dotenv').config();
+const dotenv = require('dotenv');
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.local';
 const express = require('express');
 const session = require('express-session');
 const serveIndex = require('serve-index');
@@ -8,11 +8,20 @@ const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+//const multer = require("multer");
 const app = express();
 const adminRoutes = require('./routes/admin');
 const usersRoutes = require('./routes/users');
+const backupRoutes = require('./routes/backup-db');
+const restoreRoutes = require("./routes/restore-db");
+
 //const {SetupManager, DatabaseUtils} = require('./routes/db-backup');
 const PORT = process.env.PORT || 5500;
+// Load env variables
+dotenv.config({ path: path.resolve(__dirname, envFile) });
+console.log('Running in', process.env.NODE_ENV);
+console.log('Database:', process.env.DB_NAME);
+
 
 // security headers & logging
 app.use(
@@ -65,6 +74,8 @@ app.use(session({
 // mount routes
 app.use('/admin', adminRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/backup-db', backupRoutes);
+app.use("/api/restore-db", restoreRoutes);
 
 
 //middleware

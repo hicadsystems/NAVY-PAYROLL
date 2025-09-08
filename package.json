@@ -9,7 +9,9 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
     "mssql": "^11.0.1",
+    "multer": "^2.0.2",
     "mysql2": "^3.14.4",
+    "node-cron": "^4.2.1",
     "serve-index": "^1.9.1"
   },
   "name": "navy-payroll",

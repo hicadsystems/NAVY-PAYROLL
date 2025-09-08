@@ -26,13 +26,12 @@
             <div class="p-6 space-y-4">
                 <!-- Database Selection -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-900 mb-2">Target Database</label>
-                    <select id="restoreDatabaseSelect" class="w-full bg-transparent border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <option value="">Select Database...</option>
-                        <option value="website_main">website_main</option>
-                        <option value="ecommerce_db">ecommerce_db</option>
-                        <option value="blog_content">blog_content</option>
-                    </select>
+                <label class="block text-sm font-medium text-gray-900 mb-2">Database</label>
+                <select id="restoreDatabaseSelect"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-700 cursor-not-allowed"
+                        disabled>
+                    <option id="dbNameOption">Loading...</option>
+                </select>
                 </div>
 
                 <!-- File Upload -->
@@ -79,7 +78,7 @@
     </div>
 
     <!-- Progress Modal -->
-    <div id="restoreProgressModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div id="restoreProgressModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-slate-800 rounded-lg p-6 mx-4 w-full max-w-md border border-slate-700">
             <h3 class="text-lg font-semibold text-white mb-4">Restore in Progress</h3>
             <div class="space-y-4">
@@ -127,9 +126,330 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-gray-900 font-bold text-sm">Last Restore</p>
-                    <p id="lastRestore" class="text-2xl font-semibold text-blue-600">Never</p>
+                    <p id="lastRestore" class="text-xl font-semibold text-blue-600">Never</p>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+class databaseRestore {
+    constructor() {
+        this.historyContainer = document.getElementById("restoreHistory");
+        this.successCount = document.getElementById("restoreSuccessCount");
+        this.failedCount = document.getElementById("restoreFailedCount");
+        this.lastRestore = document.getElementById("lastRestore");
+
+        this.progressModal = document.getElementById("restoreProgressModal");
+        this.progressBar = document.getElementById("restoreProgressBar");
+        this.progressText = document.getElementById("restoreProgressText");
+
+        // bind UI actions
+        document.getElementById("refreshConnection")
+            .addEventListener("click", () => this.checkConnection());
+
+        document.getElementById("startRestore")
+            .addEventListener("click", () => this.startRestore());
+
+        document.getElementById("cancelRestore")
+            .addEventListener("click", () => this.resetForm());
+
+        document.getElementById("cancelRestoreProgress")
+            .addEventListener("click", () => this.hideProgress());
+
+        // initialize
+        this.checkConnection();
+        this.loadHistory();
+        this.loadStats();
+        this.fetchDatabaseName();
+    }
+
+    async fetchDatabaseName() {
+        try {
+            const res = await fetch("/api/restore-db/database");
+            const data = await res.json();
+
+            const select = document.getElementById("restoreDatabaseSelect");
+            select.innerHTML = ""; // clear old options
+
+            const option = document.createElement("option");
+            option.value = data.database;
+            option.textContent = data.database;
+            option.selected = true;
+
+            select.appendChild(option);
+
+            this.dbName = data.database; // store for restore use
+        } catch (err) {
+            console.error("Failed to load DB name:", err);
+        }
+    }
+
+    async checkConnection() {
+        const indicator = document.getElementById("statusIndicator");
+        const text = document.getElementById("statusText");
+
+        try {
+            const res = await fetch("/api/restore-db/status");
+            const data = await res.json();
+
+            if (data.status === "connected") {
+                indicator.className = "w-3 h-3 rounded-full bg-green-500 mr-3";
+                text.textContent = `Connected (${data.engine})`;
+                text.className = "text-green-600 font-bold";
+            } else {
+                indicator.className = "w-3 h-3 rounded-full bg-red-500 mr-3";
+                text.textContent = "Disconnected";
+                text.className = "text-red-600 font-bold";
+            }
+        } catch (err) {
+            indicator.className = "w-3 h-3 rounded-full bg-red-500 mr-3";
+            text.textContent = "Connection error";
+            text.className = "text-red-600 font-bold";
+        }
+    }
+
+    async startRestore() {
+        const database = document.getElementById("restoreDatabaseSelect").value;
+        const fileInput = document.getElementById("backupFileInput");
+        const mode = document.getElementById("restoreMode").value;
+
+        if (!database || !fileInput.files.length) {
+            alert("Please select database and file.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("database", database);
+        formData.append("mode", mode);
+        formData.append("file", fileInput.files[0]);
+
+        this.showProgress();
+
+        try {
+            const res = await fetch("/api/restore-db/restore", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await res.json();
+
+            if (!result.success) {
+                this.showProgress(0, "❌ Restore failed: " + (result.error || "Unknown error"));
+                this.incrementFailedRestores();
+                setTimeout(() => this.hideProgress(), 3000);
+                return;
+            }
+
+            // ✅ only update if success
+            this.showProgress(100, "✅ Restore completed successfully!");
+            this.incrementSuccessfulRestores();
+            this.updateLastRestore(new Date().toISOString());
+            
+            // Refresh history and stats
+            setTimeout(() => {
+                this.hideProgress();
+                this.loadHistory();
+                this.loadStats();
+                this.resetForm();
+            }, 2000);
+
+        } catch (err) {
+            console.error("Restore error:", err);
+            this.showProgress(0, "❌ Restore failed: " + err.message);
+            this.incrementFailedRestores();
+            setTimeout(() => this.hideProgress(), 3000);
+        }
+    }
+
+    async loadHistory() {
+        try {
+            const res = await fetch("/api/restore-db/history");
+            const data = await res.json();
+
+            if (data.history && data.history.length > 0) {
+                const sorted = data.history.sort(
+                    (a, b) => new Date(b.date) - new Date(a.date)
+                );
+
+                this.historyContainer.innerHTML = sorted.map(entry => `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                        <div>
+                            <p class="font-medium text-gray-900">${entry.filename}</p>
+                            <p class="text-sm text-gray-500">
+                                ${entry.database} • ${new Date(entry.date).toLocaleString()} • 
+                                <span class="${entry.status === "Success" ? "text-green-600" : "text-red-600"}">
+                                    ${entry.status}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="delete-btn text-red-600 hover:text-red-800" 
+                                    data-filename="${entry.filename}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join("");
+                
+                // Bind delete buttons after creating the HTML
+                this.bindDeleteButtons();
+            } else {
+                this.historyContainer.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-inbox text-3xl mb-2"></i>
+                        <p>No restore history found</p>
+                    </div>
+                `;
+            }
+        } catch (err) {
+            console.error("Failed to load restore history:", err);
+        }
+    }
+
+    bindDeleteButtons() {
+        // Remove existing event listeners to prevent duplicates
+        const deleteButtons = this.historyContainer.querySelectorAll('.delete-btn');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.deleteRestoreEntry(btn.dataset.filename);
+            });
+        });
+    }
+
+    async deleteRestoreEntry(filename) {
+        if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
+
+        try {
+            const response = await fetch(`/api/restore-db/restore/${encodeURIComponent(filename)}`, {
+                method: 'DELETE'
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification('File deleted successfully', 'success');
+                this.loadHistory();
+                this.loadStats();
+            } else {
+                throw new Error(result.error || 'Delete failed');
+            }
+        } catch (error) {
+            this.showNotification('Delete failed: ' + error.message, 'error');
+        }
+    }
+
+    async loadStats() {
+        try {
+            const res = await fetch("/api/restore-db/stats");
+            const stats = await res.json();
+
+            this.successCount.textContent = stats.successful || 0;
+            this.failedCount.textContent = stats.failed || 0;
+            this.lastRestore.textContent = stats.lastRestore
+                ? new Date(stats.lastRestore).toLocaleString()
+                : "Never";
+        } catch (err) {
+            console.error("Failed to load restore stats:", err);
+        }
+    }
+
+    showProgress(progress = 0, message = "Initializing restore...") {
+        this.progressModal.classList.remove("hidden");
+        this.progressBar.style.width = progress + "%";
+        this.progressText.textContent = message;
+
+        // Only start animation if not explicitly setting progress
+        if (progress === 0 && message === "Initializing restore...") {
+            let currentProgress = 0;
+            this.progressInterval = setInterval(() => {
+                if (currentProgress < 90) {
+                    currentProgress += 10;
+                    this.progressBar.style.width = currentProgress + "%";
+                    this.progressText.textContent = `Restoring... ${currentProgress}%`;
+                } else {
+                    clearInterval(this.progressInterval);
+                }
+            }, 500);
+        }
+    }
+
+    hideProgress() {
+        this.progressModal.classList.add("hidden");
+        if (this.progressInterval) {
+            clearInterval(this.progressInterval);
+        }
+    }
+
+    resetForm() {
+        const databaseSelect = document.getElementById("restoreDatabaseSelect");
+        const fileInput = document.getElementById("backupFileInput");
+        const modeSelect = document.getElementById("restoreMode");
+        
+        if (fileInput) fileInput.value = "";
+        if (modeSelect) modeSelect.value = "overwrite";
+        // Don't reset database select as it should maintain the current database
+    }
+
+    incrementSuccessfulRestores() {
+        const el = document.getElementById("restoreSuccessCount");
+        if (el) {
+            el.textContent = parseInt(el.textContent || 0) + 1;
+        }
+    }
+
+    incrementFailedRestores() {
+        const el = document.getElementById("restoreFailedCount");
+        if (el) {
+            el.textContent = parseInt(el.textContent || 0) + 1;
+        }
+    }
+
+    updateLastRestore(timestamp) {
+        const el = document.getElementById("lastRestore");
+        if (el) {
+            el.textContent = new Date(timestamp).toLocaleString();
+        }
+    }
+
+    showNotification(message, type = 'info') {
+        const colors = {
+            success: 'bg-green-500',
+            error: 'bg-red-500',
+            info: 'bg-blue-500'
+        };
+        
+        const notification = document.createElement('div');
+        notification.className = `
+        fixed 
+        top-1/2 
+        left-1/2 
+        transform -translate-x-1/2 -translate-y-1/2
+        ${colors[type]} 
+        text-white 
+        px-6 py-3 
+        rounded-lg 
+        shadow-lg 
+        z-50 
+        transition-all duration-300
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+}
+
+// Initialize when DOM is loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        window.restoreManager = new databaseRestore();
+    });
+} else {
+    window.restoreManager = new databaseRestore();
+}
+</script>

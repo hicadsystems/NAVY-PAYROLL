@@ -1,5 +1,7 @@
 node_modules/
 .env
+.env.local
+.env.production
 procedures_export/py_calc_restore.sql
 .vscode/settings.json
 procedures_export/py_calculate_02.sql
@@ -36,3 +38,10 @@ logs/access.log
 logs/application.log
 logs/backup.log
 logs/error.log
+backups
+backups/HicadData_full_2025-09-08T09-25-16-100Z.sql.gz
+backups/HicadData_full_2025-09-08T09-55-15-740Z.sql.gz
+HicadData_full_2025-09-08T09-25-16-100Z.sql
+restores
+.vscode
+

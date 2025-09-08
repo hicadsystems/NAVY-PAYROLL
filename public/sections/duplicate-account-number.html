@@ -1,0 +1,205 @@
+<section class="p-6 mx-12">
+
+  <!-- Top Filters: Scope & Bank -->
+  <div class="grid md:grid-cols-2 gap-4 mb-4">
+    <!-- Scope -->
+    <div>
+        <label class="text-blue-600 font-semibold text-xl">Personnel Scope</label>
+        <div class="flex gap-4 mt-2">
+        <label class="flex items-center">
+            <input type="radio" name="dupScope" value="all" class="text-blue-600">
+            <span class="ml-2">All Personnel</span>
+        </label>
+        <label class="flex items-center">
+            <input type="radio" name="dupScope" value="payee" class="text-blue-600">
+            <span class="ml-2">Specific Personnel</span>
+        </label>
+        </div>
+        <select id="dupPayeeSelect" class="w-full mt-2 border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 hidden">
+        <option value="">-- Select Payee --</option>
+        <option value="payee1">Payee 1</option>
+        <option value="payee2">Payee 2</option>
+        <option value="payee3">Payee 3</option>
+        </select>
+    </div>
+
+    <!-- Bank Selection -->
+    <div>
+        <label class="text-blue-600 font-semibold text-xl">Bank Scope</label>
+        <div class="flex gap-4 mt-2">
+        <label class="flex items-center">
+            <input type="radio" name="bankScope" value="all" class="text-blue-600">
+            <span class="ml-2">All Banks</span>
+        </label>
+        <label class="flex items-center">
+            <input type="radio" name="bankScope" value="specific" class="text-blue-600">
+            <span class="ml-2">Specific Bank</span>
+        </label>
+        </div>
+        <select id="dupBankSelect" class="w-full mt-2 border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 hidden">
+        <option value="">-- Select Bank --</option>
+        <option value="bank1">Bank 1</option>
+        <option value="bank2">Bank 2</option>
+        <option value="bank3">Bank 3</option>
+        </select>
+    </div>
+  </div>
+
+  <!-- Month Selection -->
+  <div class="mb-4 lg:w-1/4 md:w-1/2">
+    <label class="block text-sm font-medium text-gray-900">Select Month</label>
+    <select id="dupMonth" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      <option value="">-- Month --</option>
+      <option>January</option><option>February</option><option>March</option>
+      <option>April</option><option>May</option><option>June</option>
+      <option>July</option><option>August</option><option>September</option>
+      <option>October</option><option>November</option><option>December</option>
+    </select>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="flex justify-end gap-3">
+    <button id="cancelDup" class="bg-gray-300 hover:bg-gray-400 py-2 px-4 rounded-lg transition-colors">
+      <i class="fas fa-times mr-2"></i>Cancel
+    </button>
+    <button id="generateDup" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors">
+      <i class="fas fa-file-alt mr-2"></i>Generate
+    </button>
+  </div>
+
+  <!-- Table of Duplicates -->
+  <div id="dupTableWrapper" class="hidden overflow-x-auto">
+    <table class="w-full border border-slate-300 rounded-lg">
+      <thead class="bg-blue-100">
+        <tr>
+          <th class="px-4 py-2 border">Account Number</th>
+          <th class="px-4 py-2 border">Employee Name</th>
+          <th class="px-4 py-2 border">Bank</th>
+          <th class="px-4 py-2 border">Payroll Month</th>
+          <th class="px-4 py-2 border">Occurrences</th>
+          <th class="px-4 py-2 border">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="dupTableBody" class="text-gray-700">
+        <!-- Rows populated dynamically -->
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Modal -->
+<div id="dupModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+    <h3 id="dupModalTitle" class="text-lg font-semibold mb-4"></h3>
+    <p id="dupModalMessage" class="text-gray-700 mb-6"></p>
+    <div class="flex justify-end">
+      <button id="dupModalCloseBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const dupScopeRadios = document.querySelectorAll('input[name="dupScope"]');
+  const dupPayeeSelect = document.getElementById("dupPayeeSelect");
+
+  const bankRadios = document.querySelectorAll('input[name="bankScope"]');
+  const dupBankSelect = document.getElementById("dupBankSelect");
+
+  const generateDup = document.getElementById("generateDup");
+  const cancelDup = document.getElementById("cancelDup");
+
+  const dupModal = document.getElementById("dupModal");
+  const dupModalTitle = document.getElementById("dupModalTitle");
+  const dupModalMessage = document.getElementById("dupModalMessage");
+  const dupModalCloseBtn = document.getElementById("dupModalCloseBtn");
+
+  const dupTableWrapper = document.getElementById("dupTableWrapper");
+  const dupTableBody = document.getElementById("dupTableBody");
+
+  // Show modal
+  function showDupModal(title, message) {
+    dupModalTitle.textContent = title;
+    dupModalMessage.textContent = message;
+    dupModal.classList.remove("hidden");
+  }
+  dupModalCloseBtn.onclick = () => dupModal.classList.add("hidden");
+
+  // Show/hide payee select
+  dupScopeRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      dupPayeeSelect.classList.toggle("hidden", radio.value !== "payee");
+      if(radio.value !== "payee") dupPayeeSelect.value = "";
+    });
+  });
+
+  // Show/hide bank select
+    bankRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      dupBankSelect.classList.toggle("hidden", radio.value !== "specific");
+      if(radio.value !== "specific") dupBankSelect.value = "";
+    });
+  });
+
+  // Generate duplicates
+  generateDup.onclick = () => {
+    const month = document.getElementById("dupMonth").value;
+    const bank = document.getElementById("dupBank").value || "All Banks";
+    const scope = document.querySelector('input[name="dupScope"]:checked')?.value;
+    const payee = dupPayeeSelect.value;
+
+    if(!month) return showDupModal("Error", "Please select a month!");
+    if(!scope) return showDupModal("Error", "Please select a scope!");
+    if(scope === "payee" && !payee) return showDupModal("Error", "Please select a payee!");
+
+    // Simulate duplicates
+    const duplicates = [
+      {account:"123456789", name:"John Doe", bank:"Bank 1", month:month, occ:2},
+      {account:"987654321", name:"Jane Smith", bank:"Bank 2", month:month, occ:3},
+      {account:"555555555", name:"Alice Johnson", bank:"Bank 1", month:month, occ:2},
+    ];
+
+    // Populate table
+    dupTableBody.innerHTML = "";
+    duplicates.forEach((d, idx) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="px-4 py-2 border">${d.account}</td>
+        <td class="px-4 py-2 border">${d.name}</td>
+        <td class="px-4 py-2 border">${d.bank}</td>
+        <td class="px-4 py-2 border">${d.month}</td>
+        <td class="px-4 py-2 border text-center">${d.occ}</td>
+        <td class="px-4 py-2 border text-center flex gap-2 justify-center">
+          <button class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-sm" onclick="alert('View details for ${d.name}')">View</button>
+          <button class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-sm" onclick="removeRow(${idx})">Delete</button>
+          <button class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-sm" onclick="markResolved(${idx})">Resolve</button>
+        </td>
+      `;
+      dupTableBody.appendChild(tr);
+    });
+
+    dupTableWrapper.classList.remove("hidden");
+    showDupModal("Success", `Duplicate account number report generated for ${month}, Scope: ${scope}`);
+  };
+
+  // Cancel
+  cancelDup.onclick = () => {
+    document.getElementById("dupMonth").value = "";
+    document.getElementById("dupBank").value = "";
+    dupScopeRadios.forEach(r => r.checked = false);
+    dupPayeeSelect.value = "";
+    dupPayeeSelect.classList.add("hidden");
+    dupTableBody.innerHTML = "";
+    dupTableWrapper.classList.add("hidden");
+  };
+
+  // Table Actions
+  function removeRow(index) {
+    dupTableBody.rows[index].remove();
+    showDupModal("Deleted", "Duplicate entry removed from the report.");
+  }
+  function markResolved(index) {
+    const row = dupTableBody.rows[index];
+    row.style.backgroundColor = "#d1fae5"; // green background
+    showDupModal("Resolved", "Duplicate entry marked as resolved.");
+  }
+</script>

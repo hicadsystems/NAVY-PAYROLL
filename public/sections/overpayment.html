@@ -1,0 +1,117 @@
+<section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
+
+  <!-- Bank Selection Radio -->
+  <div class="mb-4">
+    <span class="text-blue-600 font-semibold text-xl">Select Bank Scope:</span>
+    <div class="flex gap-6 mt-2">
+      <label class="flex items-center">
+        <input type="radio" name="bankScope" value="all" class="text-blue-600">
+        <span class="ml-2">All Banks</span>
+      </label>
+      <label class="flex items-center">
+        <input type="radio" name="bankScope" value="specific" class="text-blue-600">
+        <span class="ml-2">Specific Bank</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Conditional Bank Select -->
+  <div id="bankSelectWrapper" class="hidden mb-4">
+    <label class="block font-medium text-gray-900">Select Bank</label>
+    <select id="bankSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      <option value="">-- Choose Bank --</option>
+      <option value="bank1">Bank 1</option>
+      <option value="bank2">Bank 2</option>
+      <option value="bank3">Bank 3</option>
+    </select>
+  </div>
+
+  
+  <!-- Month Selection -->
+  <div class="mb-4 ">
+    <label class="block font-medium text-gray-900">Select Month</label>
+    <select id="overpayMonth" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      <option value="">-- Month --</option>
+      <option>January</option><option>February</option><option>March</option>
+      <option>April</option><option>May</option><option>June</option>
+      <option>July</option><option>August</option><option>September</option>
+      <option>October</option><option>November</option><option>December</option>
+    </select>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="flex justify-end gap-3 pt-4">
+
+    <button id="cancelOverpay" class="bg-gray-300 hover:bg-gray-400 py-2 px-4 rounded-lg transition-colors">
+      <i class="fas fa-times mr-2"></i>Cancel
+    </button>
+    <button id="generateOverpay" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors">
+      <i class="fas fa-file-alt mr-2"></i>Generate
+    </button>
+  </div>
+</section>
+
+<!-- Modal -->
+<div id="overpayModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+    <h3 id="overpayModalTitle" class="text-lg font-semibold mb-4"></h3>
+    <p id="overpayModalMessage" class="text-gray-700 mb-6"></p>
+    <div class="flex justify-end">
+      <button id="overpayModalCloseBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const bankRadios = document.querySelectorAll('input[name="bankScope"]');
+  const bankSelectWrapper = document.getElementById("bankSelectWrapper");
+
+  const generateBtn = document.getElementById("generateOverpay");
+  const cancelBtn = document.getElementById("cancelOverpay");
+
+  const modal = document.getElementById("overpayModal");
+  const modalTitle = document.getElementById("overpayModalTitle");
+  const modalMessage = document.getElementById("overpayModalMessage");
+  const modalCloseBtn = document.getElementById("overpayModalCloseBtn");
+
+  // Show modal
+  function showModal(title, message) {
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+    modal.classList.remove("hidden");
+  }
+
+  modalCloseBtn.onclick = () => modal.classList.add("hidden");
+
+  // Show/hide bank select
+  bankRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      bankSelectWrapper.classList.add("hidden");
+      if (radio.value === "specific") bankSelectWrapper.classList.remove("hidden");
+    });
+  });
+
+  // Generate button
+  generateBtn.onclick = () => {
+    const month = document.getElementById("overpayMonth").value;
+    const selectedScope = document.querySelector('input[name="bankScope"]:checked')?.value;
+    const bank = document.getElementById("bankSelect").value;
+
+    if (!month) return showModal("Error", "Please select a month!");
+    if (!selectedScope) return showModal("Error", "Please select bank scope!");
+    if (selectedScope === "specific" && !bank) return showModal("Error", "Please select a bank!");
+
+    let message = `Generating overpayment report for ${month}, Scope: ${selectedScope}`;
+    if (selectedScope === "specific") message += `, Bank: ${bank}`;
+
+    showModal("Success", message);
+  };
+
+  // Cancel button
+  cancelBtn.onclick = () => {
+    document.getElementById("overpayMonth").value = "";
+    document.querySelectorAll('input[name="bankScope"]').forEach(r => r.checked = false);
+    document.getElementById("bankSelect").value = "";
+    bankSelectWrapper.classList.add("hidden");
+  };
+</script>

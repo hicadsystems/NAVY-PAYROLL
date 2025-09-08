@@ -1,0 +1,188 @@
+<section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
+
+  <!-- Radio Selection -->
+  <div class="mb-4">
+    <span class="text-blue-600 font-semibold text-xl">Select Scope:</span>
+    <div class="flex gap-6 mt-2">
+      <label class="flex items-center">
+        <input type="radio" name="variationScope" value="all" class="text-blue-600">
+        <span class="ml-2">All</span>
+      </label>
+      <label class="flex items-center">
+        <input type="radio" name="variationScope" value="payelements" class="text-blue-600">
+        <span class="ml-2">Pay Elements</span>
+      </label>
+      <label class="flex items-center">
+        <input type="radio" name="variationScope" value="payee" class="text-blue-600">
+        <span class="ml-2">Payee</span>
+      </label>
+      <label class="flex items-center">
+        <input type="radio" name="variationScope" value="username" class="text-blue-600">
+        <span class="ml-2">Username</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Dynamic Form Fields -->
+  <div id="variationForm" class="space-y-4">
+    <!-- Start Year & Month -->
+    <div class="grid md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-900">Start Year</label>
+        <input type="number" id="startYear" placeholder="YYYY" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-900">Start Month</label>
+        <select id="startMonth" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          <option value="">-- Month --</option>
+          <option>January</option><option>February</option><option>March</option>
+          <option>April</option><option>May</option><option>June</option>
+          <option>July</option><option>August</option><option>September</option>
+          <option>October</option><option>November</option><option>December</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- End Year & Month (Below Start) -->
+    <div class="grid md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-900">End Year</label>
+        <input type="number" id="endYear" placeholder="YYYY" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-900">End Month</label>
+        <select id="endMonth" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+          <option value="">-- Month --</option>
+          <option>January</option><option>February</option><option>March</option>
+          <option>April</option><option>May</option><option>June</option>
+          <option>July</option><option>August</option><option>September</option>
+          <option>October</option><option>November</option><option>December</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Conditional Inputs -->
+    <div id="payelementsWrapper" class="hidden">
+      <label class="block text-sm font-medium text-gray-900">Select Pay Element</label>
+      <select id="payelementSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        <option value="">-- Choose Pay Element --</option>
+        <option value="basic">Basic Salary</option>
+        <option value="allowance">Allowance</option>
+        <option value="bonus">Bonus</option>
+      </select>
+    </div>
+
+    <div id="payeeWrapper" class="hidden">
+      <label class="block text-sm font-medium text-gray-900">Select Payee</label>
+      <select id="payeeSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        <option value="">-- Choose Payee --</option>
+        <option value="payee1">Payee 1</option>
+        <option value="payee2">Payee 2</option>
+        <option value="payee3">Payee 3</option>
+      </select>
+    </div>
+
+    <div id="usernameWrapper" class="hidden">
+      <label class="block text-sm font-medium text-gray-900">Select Username</label>
+      <select id="usernameSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        <option value="">-- Choose Username --</option>
+        <option value="user1">User 1</option>
+        <option value="user2">User 2</option>
+        <option value="user3">User 3</option>
+      </select>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex justify-end gap-3 pt-4">
+      <button id="cancelVariation" class=" bg-gray-300 hover:bg-gray-400 py-2 px-4 rounded-lg transition-colors">
+        <i class="fas fa-times mr-2"></i>Cancel
+      </button>
+
+      <button id="generateVariation" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors">
+        <i class="fas fa-file-alt mr-2"></i>Generate
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Reusable Modal -->
+<div id="variationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+    <h3 id="variationModalTitle" class="text-lg font-semibold mb-4"></h3>
+    <p id="variationModalMessage" class="text-gray-700 mb-6"></p>
+    <div class="flex justify-end">
+      <button id="variationModalCloseBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const variationRadios = document.querySelectorAll('input[name="variationScope"]');
+  const payelementsWrapper = document.getElementById("payelementsWrapper");
+  const payeeWrapper = document.getElementById("payeeWrapper");
+  const usernameWrapper = document.getElementById("usernameWrapper");
+
+  const generateVariationBtn = document.getElementById("generateVariation");
+  const cancelVariationBtn = document.getElementById("cancelVariation");
+
+  const variationModal = document.getElementById("variationModal");
+  const variationModalTitle = document.getElementById("variationModalTitle");
+  const variationModalMessage = document.getElementById("variationModalMessage");
+  const variationModalCloseBtn = document.getElementById("variationModalCloseBtn");
+
+  // Show modal
+  function showVariationModal(title, message) {
+    variationModalTitle.textContent = title;
+    variationModalMessage.textContent = message;
+    variationModal.classList.remove("hidden");
+  }
+
+  variationModalCloseBtn.onclick = () => variationModal.classList.add("hidden");
+
+  // Radio change event
+  variationRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      payelementsWrapper.classList.add("hidden");
+      payeeWrapper.classList.add("hidden");
+      usernameWrapper.classList.add("hidden");
+
+      if (radio.value === "payelements") payelementsWrapper.classList.remove("hidden");
+      if (radio.value === "payee") payeeWrapper.classList.remove("hidden");
+      if (radio.value === "username") usernameWrapper.classList.remove("hidden");
+    });
+  });
+
+  // Generate button
+  generateVariationBtn.onclick = () => {
+    const selectedScope = document.querySelector('input[name="variationScope"]:checked')?.value;
+    const startYear = document.getElementById("startYear").value;
+    const endYear = document.getElementById("endYear").value;
+    const startMonth = document.getElementById("startMonth").value;
+    const endMonth = document.getElementById("endMonth").value;
+
+    if (!selectedScope) return showVariationModal("Error", "Please select a scope!");
+    if (!startYear || !endYear || !startMonth || !endMonth) return showVariationModal("Error", "Please fill all year/month fields!");
+
+    let message = `Generating variation report for scope: ${selectedScope}, Period: ${startMonth} ${startYear} to ${endMonth} ${endYear}`;
+    if (selectedScope === "payelements") message += `, Pay Element: ${document.getElementById("payelementSelect").value || "N/A"}`;
+    if (selectedScope === "payee") message += `, Payee: ${document.getElementById("payeeSelect").value || "N/A"}`;
+    if (selectedScope === "username") message += `, Username: ${document.getElementById("usernameSelect").value || "N/A"}`;
+
+    showVariationModal("Success", message);
+  };
+
+  // Cancel button
+  cancelVariationBtn.onclick = () => {
+    payelementsWrapper.classList.add("hidden");
+    payeeWrapper.classList.add("hidden");
+    usernameWrapper.classList.add("hidden");
+
+    document.getElementById("startYear").value = "";
+    document.getElementById("endYear").value = "";
+    document.getElementById("startMonth").value = "";
+    document.getElementById("endMonth").value = "";
+    document.getElementById("payelementSelect").value = "";
+    document.getElementById("payeeSelect").value = "";
+    document.getElementById("usernameSelect").value = "";
+  };
+</script>

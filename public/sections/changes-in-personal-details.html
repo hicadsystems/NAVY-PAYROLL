@@ -1,0 +1,146 @@
+<section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
+
+  <!-- Radio Selection -->
+  <div class="mb-4">
+    <span class="text-blue-600 font-semibold text-xl">Select Scope:</span>
+    <div class="flex gap-6 mt-2">
+      <label class="flex items-center">
+        <input type="radio" name="auditScope" value="all" class="text-blue-600">
+        <span class="ml-2">All</span>
+      </label>
+      <label class="flex items-center">
+        <input type="radio" name="auditScope" value="operator" class="text-blue-600">
+        <span class="ml-2">Operator</span>
+      </label>
+      <label class="flex items-center">
+        <input type="radio" name="auditScope" value="personnel" class="text-blue-600">
+        <span class="ml-2">Personnel</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Dynamic Form Fields -->
+  <div id="auditForm" class="space-y-4">
+    <!-- Year Range (Always visible) -->
+    <div class="grid md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-900">From</label>
+        <input type="date" id="fromYear" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-900">To</label>
+        <input type="date" id="toYear" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+    </div>
+
+    <!-- Operator Select (Hidden by default) -->
+    <div id="operatorSelectWrapper" class="hidden">
+      <label class="block text-sm font-medium text-gray-900">Select Operator</label>
+      <select id="operatorSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        <option value="">-- Choose Operator --</option>
+        <option value="operator1">Operator 1</option>
+        <option value="operator2">Operator 2</option>
+        <option value="operator3">Operator 3</option>
+      </select>
+    </div>
+
+    <!-- Personnel Select (Hidden by default) -->
+    <div id="personnelSelectWrapper" class="hidden">
+      <label class="block text-sm font-medium text-gray-900">Select Personnel</label>
+      <select id="personnelSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        <option value="">-- Choose Personnel --</option>
+        <option value="person1">Person 1</option>
+        <option value="person2">Person 2</option>
+        <option value="person3">Person 3</option>
+      </select>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex justify-end gap-3 pt-4">
+      <button id="cancelAudit" class=" bg-gray-300 hover:bg-gray-400 py-2 px-4 rounded-lg transition-colors">
+        <i class="fas fa-times mr-2"></i>Cancel
+      </button>
+
+      <button id="generateAudit" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors"><i class="fas fa-file-alt mr-2"></i>Generate
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Reusable Modal -->
+<div id="auditModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+    <h3 id="auditModalTitle" class="text-lg font-semibold mb-4"></h3>
+    <p id="auditModalMessage" class="text-gray-700 mb-6"></p>
+    <div class="flex justify-end">
+      <button id="auditModalCloseBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const auditRadios = document.querySelectorAll('input[name="auditScope"]');
+  const operatorSelectWrapper = document.getElementById("operatorSelectWrapper");
+  const personnelSelectWrapper = document.getElementById("personnelSelectWrapper");
+  const generateAuditBtn = document.getElementById("generateAudit");
+  const cancelAuditBtn = document.getElementById("cancelAudit");
+
+  const auditModal = document.getElementById("auditModal");
+  const auditModalTitle = document.getElementById("auditModalTitle");
+  const auditModalMessage = document.getElementById("auditModalMessage");
+  const auditModalCloseBtn = document.getElementById("auditModalCloseBtn");
+
+  // Show modal
+  function showAuditModal(title, message) {
+    auditModalTitle.textContent = title;
+    auditModalMessage.textContent = message;
+    auditModal.classList.remove("hidden");
+  }
+
+  auditModalCloseBtn.onclick = () => auditModal.classList.add("hidden");
+
+  // Radio change event
+  auditRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      operatorSelectWrapper.classList.add("hidden");
+      personnelSelectWrapper.classList.add("hidden");
+
+      if (radio.value === "operator") operatorSelectWrapper.classList.remove("hidden");
+      if (radio.value === "personnel") personnelSelectWrapper.classList.remove("hidden");
+    });
+  });
+
+  // Generate button
+  generateAuditBtn.onclick = () => {
+    const selectedScope = document.querySelector('input[name="auditScope"]:checked')?.value;
+    const fromYear = document.getElementById("fromYear").value;
+    const toYear = document.getElementById("toYear").value;
+
+    if (!selectedScope) return showAuditModal("Error", "Please select a scope!");
+    if (!fromYear || !toYear) return showAuditModal("Error", "Please enter from and to year!");
+
+    let message = `Generating audit for scope: ${selectedScope}, Date: ${fromYear} to ${toYear}`;
+    if (selectedScope === "operator") {
+      const operator = document.getElementById("operatorSelect").value;
+      if (!operator) return showAuditModal("Error", "Please select an operator!");
+      message += `, Operator: ${operator}`;
+    }
+    if (selectedScope === "personnel") {
+      const personnel = document.getElementById("personnelSelect").value;
+      if (!personnel) return showAuditModal("Error", "Please select personnel!");
+      message += `, Personnel: ${personnel}`;
+    }
+
+    showAuditModal("Success", message);
+  };
+
+  // Cancel button
+  cancelAuditBtn.onclick = () => {
+    operatorSelectWrapper.classList.add("hidden");
+    personnelSelectWrapper.classList.add("hidden");
+    document.getElementById("fromYear").value = "";
+    document.getElementById("toYear").value = "";
+    document.getElementById("operatorSelect").value = "";
+    document.getElementById("personnelSelect").value = "";
+  };
+</script>

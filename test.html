@@ -3,505 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Database Backup Manager</title>
+    <title>User Profile</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen">
+<body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
         <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-white mb-2">
-                <i class="fas fa-database mr-3 text-blue-400"></i>
-                Database Backup Manager
-            </h1>
-            <p class="text-slate-300">Automated backup system with cPanel integration</p>
-        </div>
-
-        <!-- Connection Status -->
         <div class="mb-6">
-            <div id="connectionStatus" class="bg-slate-800 rounded-lg p-4 border border-slate-700">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <div id="statusIndicator" class="w-3 h-3 rounded-full bg-yellow-500 mr-3"></div>
-                        <span id="statusText" class="text-white">Connecting to server...</span>
-                    </div>
-                    <button id="refreshConnection" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white transition-colors">
-                        <i class="fas fa-sync-alt mr-2"></i>Refresh
-                    </button>
-                </div>
-            </div>
+            <h1 class="text-3xl font-bold text-blue-600 mb-2">Profile & Settings</h1>
+            <div class="h-1 w-20 bg-blue-600"></div>
         </div>
 
-        <div class="grid lg:grid-cols-2 gap-6">
-            <!-- Backup Configuration -->
-            <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700">
-                <div class="p-6 border-b border-slate-700">
-                    <h2 class="text-xl font-semibold text-white flex items-center">
-                        <i class="fas fa-cog mr-2 text-green-400"></i>
-                        Backup Configuration
-                    </h2>
-                </div>
-                <div class="p-6 space-y-4">
-                    <!-- Database Selection -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-2">Database</label>
-                        <select id="databaseSelect" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="">Select Database...</option>
-                            <option value="website_main">website_main</option>
-                            <option value="ecommerce_db">ecommerce_db</option>
-                            <option value="blog_content">blog_content</option>
-                        </select>
-                    </div>
-
-                    <!-- Backup Type -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-2">Backup Type</label>
-                        <select id="backupType" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="full">Full Backup</option>
-                            <option value="structure">Structure Only</option>
-                            <option value="data">Data Only</option>
-                        </select>
-                    </div>
-
-                    <!-- Compression -->
-                    <div class="flex items-center">
-                        <input type="checkbox" id="compression" class="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500">
-                        <label for="compression" class="ml-2 text-sm text-slate-300">Enable compression (GZIP)</label>
-                    </div>
-
-                    <!-- Schedule -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-2">Schedule</label>
-                        <select id="scheduleSelect" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="manual">Manual</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                        </select>
-                    </div>
-
-                    <!-- Storage Location -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-2">Storage Location</label>
-                        <div class="space-y-2">
-                            <label class="flex items-center">
-                                <input type="radio" name="storage" value="local" class="text-blue-600 bg-slate-700 border-slate-600 focus:ring-blue-500" checked>
-                                <span class="ml-2 text-sm text-slate-300">Local Server</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" name="storage" value="ftp" class="text-blue-600 bg-slate-700 border-slate-600 focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-slate-300">FTP Server</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" name="storage" value="cloud" class="text-blue-600 bg-slate-700 border-slate-600 focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-slate-300">Cloud Storage</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="flex space-x-3 pt-4">
-                        <button id="startBackup" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-                            <i class="fas fa-play mr-2"></i>Start Backup
-                        </button>
-                        <button id="scheduleBackup" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-                            <i class="fas fa-clock mr-2"></i>Schedule
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Backup History -->
-            <div class="bg-slate-800 rounded-lg shadow-xl border border-slate-700">
-                <div class="p-6 border-b border-slate-700">
-                    <h2 class="text-xl font-semibold text-white flex items-center">
-                        <i class="fas fa-history mr-2 text-purple-400"></i>
-                        Backup History
-                    </h2>
-                </div>
-                <div class="p-6">
-                    <div id="backupHistory" class="space-y-3 max-h-96 overflow-y-auto">
-                        <!-- Backup entries will be populated here -->
-                    </div>
-                </div>
-            </div>
+        <!-- Return Button -->
+        <div class="mb-6">
+            <button class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Return
+            </button>
         </div>
 
-        <!-- Progress Modal -->
-        <div id="progressModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-            <div class="bg-slate-800 rounded-lg p-6 mx-4 w-full max-w-md border border-slate-700">
-                <h3 class="text-lg font-semibold text-white mb-4">Backup in Progress</h3>
-                <div class="space-y-4">
-                    <div class="bg-slate-700 rounded-full h-2">
-                        <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-                    </div>
-                    <div id="progressText" class="text-slate-300 text-sm">Initializing backup...</div>
-                    <div class="flex justify-end">
-                        <button id="cancelBackup" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-white transition-colors">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Statistics Cards -->
-        <div class="grid md:grid-cols-3 gap-6 mt-6">
-            <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
-                <div class="flex items-center">
-                    <div class="p-3 bg-green-600 rounded-full">
-                        <i class="fas fa-check text-white"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-slate-400 text-sm">Successful Backups</p>
-                        <p id="successCount" class="text-2xl font-semibold text-white">0</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
-                <div class="flex items-center">
-                    <div class="p-3 bg-blue-600 rounded-full">
-                        <i class="fas fa-hdd text-white"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-slate-400 text-sm">Total Storage Used</p>
-                        <p id="storageUsed" class="text-2xl font-semibold text-white">0 MB</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
-                <div class="flex items-center">
-                    <div class="p-3 bg-purple-600 rounded-full">
-                        <i class="fas fa-calendar text-white"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-slate-400 text-sm">Last Backup</p>
-                        <p id="lastBackup" class="text-2xl font-semibold text-white">Never</p>
-                    </div>
-                </div>
+        <!-- Profile Card -->
+        <div id="profile-card" class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex justify-center items-center h-32">
+                <div class="text-gray-500">Loading profile...</div>
             </div>
         </div>
     </div>
 
     <script>
-        class BackupManager {
-            constructor() {
-                this.isConnected = false;
-                this.backupHistory = [];
-                this.stats = {
-                    successful: 0,
-                    storageUsed: 0,
-                    lastBackup: null
-                };
-                this.init();
-            }
+        // Mock user data
+        const mockUser = {
+            user_id: 1001,
+            full_name: "John Doe",
+            email: "john.doe@example.com",
+            user_role: "Admin",
+            status: "Active",
+            phone_number: "+1234567890",
+            expiry_date: "2024-12-31",
+            password: "password123"
+        };
 
-            init() {
-                this.bindEvents();
-                this.checkConnection();
-                this.loadBackupHistory();
-                this.updateStats();
-            }
+        let isEditing = false;
+        let currentUser = null;
 
-            bindEvents() {
-                document.getElementById('refreshConnection').addEventListener('click', () => this.checkConnection());
-                document.getElementById('startBackup').addEventListener('click', () => this.startBackup());
-                document.getElementById('scheduleBackup').addEventListener('click', () => this.scheduleBackup());
-                document.getElementById('cancelBackup').addEventListener('click', () => this.cancelBackup());
-            }
+        function maskPassword(password) {
+            if (!password || password.length <= 4) return "••••••••";
+            return "••••••••";
+        }
 
-            async checkConnection() {
-                const statusIndicator = document.getElementById('statusIndicator');
-                const statusText = document.getElementById('statusText');
-                
-                statusIndicator.className = 'w-3 h-3 rounded-full bg-yellow-500 mr-3 animate-pulse';
-                statusText.textContent = 'Checking connection...';
+        function renderProfile() {
+            const profileCard = document.getElementById('profile-card');
+            
+            profileCard.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Header -->
+                    <div class="flex justify-between items-center pb-4 border-b border-gray-200">
+                        <h2 class="text-2xl font-bold text-gray-800">User Profile</h2>
+                        ${!isEditing ? 
+                            '<button id="edit-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">Edit Profile</button>' : 
+                            ''
+                        }
+                    </div>
 
-                try {
-                    // Simulate API call to check cPanel connection
-                    const response = await this.apiCall('/api/check-connection');
-                    
-                    if (response.success) {
-                        statusIndicator.className = 'w-3 h-3 rounded-full bg-green-500 mr-3';
-                        statusText.textContent = `Connected to ${response.server}`;
-                        this.isConnected = true;
-                        this.loadDatabases();
-                    } else {
-                        throw new Error(response.message);
-                    }
-                } catch (error) {
-                    statusIndicator.className = 'w-3 h-3 rounded-full bg-red-500 mr-3';
-                    statusText.textContent = 'Connection failed';
-                    this.isConnected = false;
-                }
-            }
-
-            async loadDatabases() {
-                try {
-                    const response = await this.apiCall('/api/databases');
-                    const select = document.getElementById('databaseSelect');
-                    
-                    // Clear existing options except the first one
-                    select.innerHTML = '<option value="">Select Database...</option>';
-                    
-                    response.databases.forEach(db => {
-                        const option = document.createElement('option');
-                        option.value = db.name;
-                        option.textContent = `${db.name} (${db.size})`;
-                        select.appendChild(option);
-                    });
-                } catch (error) {
-                    console.error('Failed to load databases:', error);
-                }
-            }
-
-            async startBackup() {
-                if (!this.isConnected) {
-                    this.showNotification('Please check your connection first', 'error');
-                    return;
-                }
-
-                const database = document.getElementById('databaseSelect').value;
-                if (!database) {
-                    this.showNotification('Please select a database', 'error');
-                    return;
-                }
-
-                const config = {
-                    database: database,
-                    type: document.getElementById('backupType').value,
-                    compression: document.getElementById('compression').checked,
-                    storage: document.querySelector('input[name="storage"]:checked').value
-                };
-
-                this.showProgressModal();
-                
-                try {
-                    await this.performBackup(config);
-                    this.showNotification('Backup completed successfully!', 'success');
-                } catch (error) {
-                    this.showNotification('Backup failed: ' + error.message, 'error');
-                } finally {
-                    this.hideProgressModal();
-                }
-            }
-
-            async performBackup(config) {
-                const progressBar = document.getElementById('progressBar');
-                const progressText = document.getElementById('progressText');
-                
-                const steps = [
-                    { text: 'Connecting to database...', duration: 1000 },
-                    { text: 'Analyzing database structure...', duration: 1500 },
-                    { text: 'Exporting data...', duration: 3000 },
-                    { text: 'Compressing backup...', duration: 1000 },
-                    { text: 'Uploading to storage...', duration: 2000 },
-                    { text: 'Finalizing backup...', duration: 500 }
-                ];
-
-                let progress = 0;
-                const stepSize = 100 / steps.length;
-
-                for (let i = 0; i < steps.length; i++) {
-                    progressText.textContent = steps[i].text;
-                    progress = (i + 1) * stepSize;
-                    progressBar.style.width = progress + '%';
-                    
-                    await new Promise(resolve => setTimeout(resolve, steps[i].duration));
-                }
-
-                // Add to history
-                const backup = {
-                    id: Date.now(),
-                    database: config.database,
-                    type: config.type,
-                    date: new Date(),
-                    size: Math.floor(Math.random() * 100) + 10 + ' MB',
-                    status: 'success',
-                    storage: config.storage
-                };
-
-                this.backupHistory.unshift(backup);
-                this.updateBackupHistory();
-                this.updateStats();
-            }
-
-            scheduleBackup() {
-                const schedule = document.getElementById('scheduleSelect').value;
-                if (schedule === 'manual') {
-                    this.showNotification('Please select a schedule frequency', 'error');
-                    return;
-                }
-
-                this.showNotification(`Backup scheduled to run ${schedule}`, 'success');
-            }
-
-            cancelBackup() {
-                this.hideProgressModal();
-                this.showNotification('Backup cancelled', 'info');
-            }
-
-            showProgressModal() {
-                const modal = document.getElementById('progressModal');
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-                
-                // Reset progress
-                document.getElementById('progressBar').style.width = '0%';
-                document.getElementById('progressText').textContent = 'Initializing backup...';
-            }
-
-            hideProgressModal() {
-                const modal = document.getElementById('progressModal');
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }
-
-            loadBackupHistory() {
-                // Simulate some existing backups
-                this.backupHistory = [
-                    {
-                        id: 1,
-                        database: 'website_main',
-                        type: 'full',
-                        date: new Date(Date.now() - 86400000), // 1 day ago
-                        size: '45 MB',
-                        status: 'success',
-                        storage: 'local'
-                    },
-                    {
-                        id: 2,
-                        database: 'ecommerce_db',
-                        type: 'full',
-                        date: new Date(Date.now() - 2 * 86400000), // 2 days ago
-                        size: '78 MB',
-                        status: 'success',
-                        storage: 'cloud'
-                    }
-                ];
-                this.updateBackupHistory();
-            }
-
-            updateBackupHistory() {
-                const container = document.getElementById('backupHistory');
-                container.innerHTML = '';
-
-                if (this.backupHistory.length === 0) {
-                    container.innerHTML = '<p class="text-slate-500 text-center">No backups yet</p>';
-                    return;
-                }
-
-                this.backupHistory.forEach(backup => {
-                    const entry = document.createElement('div');
-                    entry.className = 'bg-slate-700 rounded-lg p-4 border border-slate-600';
-                    
-                    const statusColor = backup.status === 'success' ? 'text-green-400' : 'text-red-400';
-                    const storageIcon = this.getStorageIcon(backup.storage);
-                    
-                    entry.innerHTML = `
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="text-white font-medium">${backup.database}</h4>
-                                <p class="text-slate-300 text-sm">${backup.type} backup • ${backup.size}</p>
-                                <p class="text-slate-400 text-xs">${backup.date.toLocaleDateString()} ${backup.date.toLocaleTimeString()}</p>
+                    <!-- Form -->
+                    <form id="user-form" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- User ID -->
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-gray-600">User ID</label>
+                                <div class="bg-gray-50 px-3 py-2 rounded-md border text-gray-800 font-semibold">
+                                    ${currentUser.user_id}
+                                </div>
                             </div>
-                            <div class="flex items-center space-x-2">
-                                <i class="${storageIcon} text-slate-400"></i>
-                                <span class="${statusColor}">
-                                    <i class="fas fa-${backup.status === 'success' ? 'check' : 'times'} mr-1"></i>
-                                    ${backup.status}
-                                </span>
+
+                            <!-- Full Name -->
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-gray-600">Full Name</label>
+                                <input 
+                                    type="text" 
+                                    name="full_name"
+                                    value="${currentUser.full_name}"
+                                    ${isEditing ? '' : 'disabled'}
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md ${isEditing ? 'bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500' : 'bg-gray-50'}"
+                                />
+                            </div>
+
+                            <!-- Email -->
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-gray-600">Email</label>
+                                <input 
+                                    type="email" 
+                                    name="email"
+                                    value="${currentUser.email}"
+                                    ${isEditing ? '' : 'disabled'}
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md ${isEditing ? 'bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500' : 'bg-gray-50'}"
+                                />
+                            </div>
+
+                            <!-- User Role -->
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-gray-600">User Role</label>
+                                <div class="bg-gray-50 px-3 py-2 rounded-md border text-gray-800 font-semibold">
+                                    ${currentUser.user_role}
+                                </div>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-gray-600">Status</label>
+                                <div class="bg-gray-50 px-3 py-2 rounded-md border">
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                        currentUser.status === 'Active' 
+                                            ? 'bg-green-100 text-green-800' 
+                                            : 'bg-red-100 text-red-800'
+                                    }">
+                                        ${currentUser.status}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Phone -->
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-gray-600">Phone Number</label>
+                                <input 
+                                    type="tel" 
+                                    name="phone_number"
+                                    value="${currentUser.phone_number || ''}"
+                                    ${isEditing ? '' : 'disabled'}
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md ${isEditing ? 'bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500' : 'bg-gray-50'}"
+                                />
+                            </div>
+
+                            <!-- Expiry Date -->
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-gray-600">Expiry Date</label>
+                                <div class="bg-gray-50 px-3 py-2 rounded-md border text-gray-800 font-semibold">
+                                    ${currentUser.expiry_date || 'Not set'}
+                                </div>
+                            </div>
+
+                            <!-- Password -->
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-gray-600">Password</label>
+                                <input 
+                                    type="password" 
+                                    name="password"
+                                    value="${isEditing ? '' : maskPassword(currentUser.password)}"
+                                    placeholder="${isEditing ? 'Enter new password (optional)' : ''}"
+                                    ${isEditing ? '' : 'disabled'}
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md ${isEditing ? 'bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500' : 'bg-gray-50'}"
+                                />
                             </div>
                         </div>
-                        <div class="mt-2 flex space-x-2">
-                            <button class="text-blue-400 hover:text-blue-300 text-xs">
-                                <i class="fas fa-download mr-1"></i>Download
-                            </button>
-                            <button class="text-red-400 hover:text-red-300 text-xs">
-                                <i class="fas fa-trash mr-1"></i>Delete
-                            </button>
-                        </div>
-                    `;
-                    
-                    container.appendChild(entry);
+
+                        <!-- Action Buttons -->
+                        ${isEditing ? `
+                            <div class="flex justify-end gap-3 pt-6 border-t border-gray-200">
+                                <button 
+                                    type="button" 
+                                    id="cancel-btn"
+                                    class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="button" 
+                                    id="save-btn"
+                                    class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                                >
+                                    Save Changes
+                                </button>
+                            </div>
+                        ` : ''}
+                    </form>
+                </div>
+            `;
+
+            // Add event listeners after rendering
+            addEventListeners();
+        }
+
+        function addEventListeners() {
+            const editBtn = document.getElementById('edit-btn');
+            const saveBtn = document.getElementById('save-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+
+            if (editBtn) {
+                editBtn.addEventListener('click', () => {
+                    isEditing = true;
+                    renderProfile();
                 });
             }
 
-            updateStats() {
-                const successfulBackups = this.backupHistory.filter(b => b.status === 'success').length;
-                const totalStorage = this.backupHistory.reduce((total, backup) => {
-                    const size = parseInt(backup.size);
-                    return total + (isNaN(size) ? 0 : size);
-                }, 0);
-                const lastBackup = this.backupHistory.length > 0 ? this.backupHistory[0].date : null;
-
-                document.getElementById('successCount').textContent = successfulBackups;
-                document.getElementById('storageUsed').textContent = totalStorage + ' MB';
-                document.getElementById('lastBackup').textContent = lastBackup ? 
-                    lastBackup.toLocaleDateString() : 'Never';
+            if (saveBtn) {
+                saveBtn.addEventListener('click', saveProfile);
             }
 
-            getStorageIcon(storage) {
-                const icons = {
-                    local: 'fas fa-hdd',
-                    ftp: 'fas fa-server',
-                    cloud: 'fas fa-cloud'
-                };
-                return icons[storage] || 'fas fa-question';
-            }
-
-            showNotification(message, type = 'info') {
-                // Create notification element
-                const notification = document.createElement('div');
-                const colors = {
-                    success: 'bg-green-600',
-                    error: 'bg-red-600',
-                    info: 'bg-blue-600'
-                };
-                
-                notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full`;
-                notification.textContent = message;
-                
-                document.body.appendChild(notification);
-                
-                // Animate in
-                setTimeout(() => {
-                    notification.classList.remove('translate-x-full');
-                }, 100);
-                
-                // Remove after 3 seconds
-                setTimeout(() => {
-                    notification.classList.add('translate-x-full');
-                    setTimeout(() => {
-                        document.body.removeChild(notification);
-                    }, 300);
-                }, 3000);
-            }
-
-            async apiCall(endpoint, data = null) {
-                // Simulate API calls - replace with actual fetch calls
-                return new Promise((resolve) => {
-                    setTimeout(() => {
-                        if (endpoint === '/api/check-connection') {
-                            resolve({ success: true, server: 'DESKTOP-NILC6H.SQL2022' });
-                        } else if (endpoint === '/api/databases') {
-                            resolve({
-                                databases: [
-                                    { name: 'website_main', size: '45 MB' },
-                                    { name: 'ecommerce_db', size: '78 MB' },
-                                    { name: 'blog_content', size: '23 MB' }
-                                ]
-                            });
-                        }
-                    }, 1000);
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => {
+                    isEditing = false;
+                    renderProfile();
                 });
             }
         }
 
-        // Initialize the backup manager when the page loads
+        function saveProfile() {
+            const form = document.getElementById('user-form');
+            const formData = new FormData(form);
+
+            // Simulate saving
+            const updatedData = {
+                full_name: formData.get('full_name'),
+                email: formData.get('email'),
+                phone_number: formData.get('phone_number'),
+                password: formData.get('password') || currentUser.password
+            };
+
+            // Update current user
+            Object.assign(currentUser, updatedData);
+            
+            // Show success message
+            showNotification('Profile updated successfully!', 'success');
+            
+            // Exit edit mode
+            isEditing = false;
+            renderProfile();
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        function loadUser() {
+            // Simulate loading
+            setTimeout(() => {
+                currentUser = { ...mockUserData };
+                renderProfileCard();
+            }, 500);
+        }
+
+        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            new BackupManager();
+            loadUser();
         });
     </script>
 </body>

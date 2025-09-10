@@ -36,9 +36,12 @@ document.getElementById('login-form').addEventListener('submit', async function(
         window.location.href = "/dashboard.html"; // redirect
     }, 2500);
 
-    // Save token
+    // Save token & user info
     localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem("user_id", data.user.user_id);
+    localStorage.setItem("full_name", data.user.full_name);
+    localStorage.setItem("role", data.user.role);
+
     }
     else {
       alert("❌ " + data.error);
@@ -47,4 +50,18 @@ document.getElementById('login-form').addEventListener('submit', async function(
     console.error("❌ Login error:", err);
     alert("❌ Server not responding");
   }
+});
+
+const passwordInput = document.getElementById("loginPassword");
+const togglePassword = document.getElementById("togglePassword");
+const eyeOpen = document.getElementById("eyeOpen");
+const eyeClosed = document.getElementById("eyeClosed");
+
+togglePassword.addEventListener("click", () => {
+  const isPassword = passwordInput.type === "password";
+  passwordInput.type = isPassword ? "text" : "password";
+  
+  // Toggle SVG display
+  eyeOpen.style.display = isPassword ? "none" : "inline";
+  eyeClosed.style.display = isPassword ? "inline" : "none";
 });

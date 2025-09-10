@@ -2,6 +2,7 @@
 tailwind.config = {
   theme: {
     extend: {
+      //darkMode: 'class',
       maxWidth: { 'layout': '1440px' },
       colors: {
       'navy': '#1e40af',
@@ -311,11 +312,11 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
 
   //Get logged-in user from localStorage
   function getLoggedInUser() {
-    try {
-      return JSON.parse(localStorage.getItem('user')) || null;
-    } catch {
-      return null;
-    }
+    return {
+      user_id: localStorage.getItem("user_id"),
+      full_name: localStorage.getItem("full_name"),
+      role: localStorage.getItem("role"),
+    };
   }
 
   // Update greeting message
@@ -534,7 +535,14 @@ class NavigationSystem {
 
       // Finally hide sidebar
       if (sidebar) {
-        sidebar.style.display = 'none';
+        closeSidebar();
+        removeOverlay();
+        removeSidebarOverlay();
+      }
+
+      if (sidebarOverlay) {
+        removeOverlay();
+        removeSidebarOverlay();
       }
     }
   }

@@ -1,263 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Profile</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Small H Loader</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Left bar (grows from bottom up) */
+    @keyframes grow-up {
+      0%, 100% { height: 0; bottom: 0; top: auto; }
+      50% { height: 100%; bottom: 0; top: auto; }
+    }
+
+    /* Right bar (grows from top down) */
+    @keyframes grow-down {
+      0%, 100% { height: 0; top: 0; bottom: auto; }
+      50% { height: 100%; top: 0; bottom: auto; }
+    }
+
+    /* Middle bar expands horizontally */
+    @keyframes expand {
+      0%, 100% { width: 0; }
+      50% { width: 30px; }
+    }
+
+    .animate-grow-up {
+      animation: grow-up .9s ease-in-out infinite;
+    }
+    .animate-grow-down {
+      animation: grow-down .9s ease-in-out infinite;
+    }
+    .animate-expand {
+      animation: expand .9s ease-in-out infinite;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <!-- Header -->
-        <div class="mb-6">
-            <h1 class="text-3xl font-bold text-blue-600 mb-2">Profile & Settings</h1>
-            <div class="h-1 w-20 bg-blue-600"></div>
-        </div>
+<body class="flex items-center justify-center h-screen bg-gray-100">
+  <div class="relative w-10 h-10">
+    <!-- Left bar (bottom-up) -->
+    <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
 
-        <!-- Return Button -->
-        <div class="mb-6">
-            <button class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Return
-            </button>
-        </div>
+    <!-- Right bar (top-down) -->
+    <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down [animation-delay:0.3s]"></div>
 
-        <!-- Profile Card -->
-        <div id="profile-card" class="bg-white rounded-xl shadow-lg p-6">
-            <div class="flex justify-center items-center h-32">
-                <div class="text-gray-500">Loading profile...</div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Mock user data
-        const mockUser = {
-            user_id: 1001,
-            full_name: "John Doe",
-            email: "john.doe@example.com",
-            user_role: "Admin",
-            status: "Active",
-            phone_number: "+1234567890",
-            expiry_date: "2024-12-31",
-            password: "password123"
-        };
-
-        let isEditing = false;
-        let currentUser = null;
-
-        function maskPassword(password) {
-            if (!password || password.length <= 4) return "••••••••";
-            return "••••••••";
-        }
-
-        function renderProfile() {
-            const profileCard = document.getElementById('profile-card');
-            
-            profileCard.innerHTML = `
-                <div class="space-y-6">
-                    <!-- Header -->
-                    <div class="flex justify-between items-center pb-4 border-b border-gray-200">
-                        <h2 class="text-2xl font-bold text-gray-800">User Profile</h2>
-                        ${!isEditing ? 
-                            '<button id="edit-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">Edit Profile</button>' : 
-                            ''
-                        }
-                    </div>
-
-                    <!-- Form -->
-                    <form id="user-form" class="space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- User ID -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-medium text-gray-600">User ID</label>
-                                <div class="bg-gray-50 px-3 py-2 rounded-md border text-gray-800 font-semibold">
-                                    ${currentUser.user_id}
-                                </div>
-                            </div>
-
-                            <!-- Full Name -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-medium text-gray-600">Full Name</label>
-                                <input 
-                                    type="text" 
-                                    name="full_name"
-                                    value="${currentUser.full_name}"
-                                    ${isEditing ? '' : 'disabled'}
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md ${isEditing ? 'bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500' : 'bg-gray-50'}"
-                                />
-                            </div>
-
-                            <!-- Email -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-medium text-gray-600">Email</label>
-                                <input 
-                                    type="email" 
-                                    name="email"
-                                    value="${currentUser.email}"
-                                    ${isEditing ? '' : 'disabled'}
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md ${isEditing ? 'bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500' : 'bg-gray-50'}"
-                                />
-                            </div>
-
-                            <!-- User Role -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-medium text-gray-600">User Role</label>
-                                <div class="bg-gray-50 px-3 py-2 rounded-md border text-gray-800 font-semibold">
-                                    ${currentUser.user_role}
-                                </div>
-                            </div>
-
-                            <!-- Status -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-medium text-gray-600">Status</label>
-                                <div class="bg-gray-50 px-3 py-2 rounded-md border">
-                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                        currentUser.status === 'Active' 
-                                            ? 'bg-green-100 text-green-800' 
-                                            : 'bg-red-100 text-red-800'
-                                    }">
-                                        ${currentUser.status}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- Phone -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-medium text-gray-600">Phone Number</label>
-                                <input 
-                                    type="tel" 
-                                    name="phone_number"
-                                    value="${currentUser.phone_number || ''}"
-                                    ${isEditing ? '' : 'disabled'}
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md ${isEditing ? 'bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500' : 'bg-gray-50'}"
-                                />
-                            </div>
-
-                            <!-- Expiry Date -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-medium text-gray-600">Expiry Date</label>
-                                <div class="bg-gray-50 px-3 py-2 rounded-md border text-gray-800 font-semibold">
-                                    ${currentUser.expiry_date || 'Not set'}
-                                </div>
-                            </div>
-
-                            <!-- Password -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-medium text-gray-600">Password</label>
-                                <input 
-                                    type="password" 
-                                    name="password"
-                                    value="${isEditing ? '' : maskPassword(currentUser.password)}"
-                                    placeholder="${isEditing ? 'Enter new password (optional)' : ''}"
-                                    ${isEditing ? '' : 'disabled'}
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md ${isEditing ? 'bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500' : 'bg-gray-50'}"
-                                />
-                            </div>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        ${isEditing ? `
-                            <div class="flex justify-end gap-3 pt-6 border-t border-gray-200">
-                                <button 
-                                    type="button" 
-                                    id="cancel-btn"
-                                    class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button 
-                                    type="button" 
-                                    id="save-btn"
-                                    class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                                >
-                                    Save Changes
-                                </button>
-                            </div>
-                        ` : ''}
-                    </form>
-                </div>
-            `;
-
-            // Add event listeners after rendering
-            addEventListeners();
-        }
-
-        function addEventListeners() {
-            const editBtn = document.getElementById('edit-btn');
-            const saveBtn = document.getElementById('save-btn');
-            const cancelBtn = document.getElementById('cancel-btn');
-
-            if (editBtn) {
-                editBtn.addEventListener('click', () => {
-                    isEditing = true;
-                    renderProfile();
-                });
-            }
-
-            if (saveBtn) {
-                saveBtn.addEventListener('click', saveProfile);
-            }
-
-            if (cancelBtn) {
-                cancelBtn.addEventListener('click', () => {
-                    isEditing = false;
-                    renderProfile();
-                });
-            }
-        }
-
-        function saveProfile() {
-            const form = document.getElementById('user-form');
-            const formData = new FormData(form);
-
-            // Simulate saving
-            const updatedData = {
-                full_name: formData.get('full_name'),
-                email: formData.get('email'),
-                phone_number: formData.get('phone_number'),
-                password: formData.get('password') || currentUser.password
-            };
-
-            // Update current user
-            Object.assign(currentUser, updatedData);
-            
-            // Show success message
-            showNotification('Profile updated successfully!', 'success');
-            
-            // Exit edit mode
-            isEditing = false;
-            renderProfile();
-        }
-
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
-                type === 'success' ? 'bg-green-500' : 'bg-red-500'
-            }`;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
-
-        function loadUser() {
-            // Simulate loading
-            setTimeout(() => {
-                currentUser = { ...mockUserData };
-                renderProfileCard();
-            }, 500);
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            loadUser();
-        });
-    </script>
+    <!-- Middle bar -->
+    <div class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand [animation-delay:0.6s] -translate-y-1/2"></div>
+  </div>
 </body>
 </html>

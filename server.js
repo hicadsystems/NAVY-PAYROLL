@@ -14,6 +14,10 @@ const adminRoutes = require('./routes/admin');
 const usersRoutes = require('./routes/users');
 const backupRoutes = require('./routes/backup-db');
 const restoreRoutes = require("./routes/restore-db");
+const statesRoutes  = require("./routes/refrence-tables/states");
+const payelementsRoutes  = require("./routes/refrence-tables/states");
+
+
 
 //const {SetupManager, DatabaseUtils} = require('./routes/db-backup');
 const PORT = process.env.PORT || 5500;
@@ -76,6 +80,8 @@ app.use('/admin', adminRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/backup-db', backupRoutes);
 app.use("/api/restore-db", restoreRoutes);
+app.use("/", statesRoutes);
+app.use("/", payelementsRoutes);
 
 
 //middleware

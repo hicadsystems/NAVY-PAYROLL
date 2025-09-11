@@ -1,9 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getOvertimeRates, saveOvertimeRate, getSalaryGroups, saveSalaryGroup, updateSalaryGroup, deleteSalaryGroup,
-  getElementTypes,
-  getGradeLevels,
-  getSalaryScales, saveSalaryScale, updateSalaryScale, deleteSalaryScale } = require('./refrence-tables');
+//const { getOvertimeRates, saveOvertimeRate, getSalaryGroups, saveSalaryGroup, updateSalaryGroup, deleteSalaryGroup,getElementTypes,getGradeLevels,getSalaryScales, saveSalaryScale, updateSalaryScale, deleteSalaryScale } = require('./refrence-tables');
 const jwt = require('jsonwebtoken');
 const SECRET = process.env.JWT_SECRET;
 

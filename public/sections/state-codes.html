@@ -3,7 +3,7 @@
   <div class="flex flex-wrap justify-between mb-6">
     <h3 class="text-xl font-semibold text-gray-800">States Management</h3>
     <div class="flex gap-2">
-      <input type="text" id="searchState" placeholder="Search name or geozone" class="border rounded px-3 py-2">
+      <input type="text" id="searchState" placeholder="Search name or capital" class="border rounded px-3 py-2">
       <button id="addNewStateBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New State</button>
     </div>
   </div>
@@ -19,8 +19,8 @@
       <input type="text" id="stateCode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white">
     </div>
     <div>
-      <label class="block text-sm font-medium text-gray-700">Geozone *</label>
-      <input type="text" id="geozone" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white">
+      <label class="block text-sm font-medium text-gray-700">stateCapital *</label>
+      <input type="text" id="stateCapital" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white">
     </div>
     <div class="col-span-1 md:col-span-3 flex justify-end gap-2">
       <button type="button" id="saveStateBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Save</button>
@@ -35,7 +35,7 @@
         <tr>
           <th class="border px-2 py-3 text-left">State Name</th>
           <th class="border px-6 py-3 text-left">State Code</th>
-          <th class="border px-6 py-3 text-left">Geozone</th>
+          <th class="border px-6 py-3 text-left">stateCapital</th>
           <th class="border px-6 py-3 text-left">Actions</th>
         </tr>
       </thead>
@@ -121,174 +121,196 @@
 </div>
 
 <script>
-  let stateData = [
-    { stateName: "Lagos", stateCode: "LA", geozone: "South West" },
-    { stateName: "Kano", stateCode: "KN", geozone: "North West" },
-    { stateName: "Enugu", stateCode: "EN", geozone: "South East" }
-  ];
-  let editingStateIndex = null;
-  let pendingDeleteStateIndex = null;
+let stateData = [];
+let editingStateId = null;
+let pendingDeleteStateId = null;
 
-  const stateForm = document.getElementById("stateForm");
-  const addNewStateBtn = document.getElementById("addNewStateBtn");
-  const saveStateBtn = document.getElementById("saveStateBtn");
-  const cancelStateBtn = document.getElementById("cancelStateBtn");
-  const stateTableBody = document.getElementById("stateTableBody");
-  const searchState = document.getElementById("searchState");
+const stateForm = document.getElementById("stateForm");
+const addNewStateBtn = document.getElementById("addNewStateBtn");
+const saveStateBtn = document.getElementById("saveStateBtn");
+const cancelStateBtn = document.getElementById("cancelStateBtn");
+const stateTableBody = document.getElementById("stateTableBody");
+const searchState = document.getElementById("searchState");
 
-  // Render Table
-  function renderStateTable(data = stateData) {
-    stateTableBody.innerHTML = data.map((item, index) => `
-      <tr class="hover:bg-gray-50">
-        <td class="border px-2 py-3">${item.stateName}</td>
-        <td class="border px-2 py-3">${item.stateCode}</td>
-        <td class="border px-2 py-3">${item.geozone}</td>
-        <td class="border px-2 py-3">
-          <button onclick="viewState(${index})" class="text-blue-600 mr-2">View</button>
-          <button onclick="editState(${index})" class="text-green-600 mr-2">Edit</button>
-          <button onclick="deleteState(${index})" class="text-red-600">Delete</button>
-        </td>
-      </tr>
-    `).join("");
+// --- API Helpers ---
+async function fetchStates() {
+  try {
+    const res = await fetch("/states");
+    stateData = await res.json();
+    renderStateTable();
+  } catch (err) {
+    showErrorModal("Failed to load states.");
+    console.error(err);
   }
-  renderStateTable();
+}
 
-  // Add New
-  addNewStateBtn.addEventListener("click", () => {
-    stateForm.classList.remove("hidden");
-    editingStateIndex = null;
-    stateForm.reset();
+async function createState(item) {
+  const res = await fetch("/states", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(item),
   });
+  return res.json();
+}
 
-  // Save
-  saveStateBtn.addEventListener("click", () => {
-    const item = {
-      stateName: document.getElementById("stateName").value.trim(),
-      stateCode: document.getElementById("stateCode").value.trim(),
-      geozone: document.getElementById("geozone").value.trim()
-    };
+async function updateState(Statecode, item) {
+  const res = await fetch(`/states/${Statecode}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(item),
+  });
+  return res.json();
+}
 
-    if (!item.stateName || !item.stateCode || !item.geozone) {
-      showErrorModal("Please fill in all required fields.");
-      return;
-    }
+async function deleteStateApi(Statecode) {
+  await fetch(`/states/${Statecode}`, { method: "DELETE" });
+}
 
-    if (editingStateIndex !== null) {
-      stateData[editingStateIndex] = item;
+// --- Render Table ---
+function renderStateTable(data = stateData) {
+  stateTableBody.innerHTML = data.map((item, index) => `
+    <tr class="hover:bg-gray-50">
+      <td class="border px-2 py-3">${item.Statename}</td>
+      <td class="border px-2 py-3">${item.Statecode}</td>
+      <td class="border px-2 py-3">${item.Statecapital}</td>
+      <td class="border px-2 py-3">
+        <button onclick="editState('${item.Statecode}')" class="text-green-600 mr-2">Edit</button>
+        <button onclick="deleteState('${item.Statecode}')" class="text-red-600">Delete</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+// --- Add New ---
+addNewStateBtn.addEventListener("click", () => {
+  stateForm.classList.remove("hidden");
+  editingStateId = null;
+  stateForm.reset();
+});
+
+// --- Save ---
+saveStateBtn.addEventListener("click", async () => {
+  const item = {
+    stateName: document.getElementById("stateName").value.trim(),
+    stateCode: document.getElementById("stateCode").value.trim(),
+    stateCapital: document.getElementById("stateCapital").value.trim()
+  };
+
+  if (!item.stateName || !item.stateCode || !item.stateCapital) {
+    showErrorModal("Please fill in all required fields.");
+    return;
+  }
+
+  try {
+    if (editingStateId) {
+      await updateState(editingStateId, item);
       showSuccessModal("State record updated successfully!");
     } else {
-      stateData.push(item);
+      await createState(item);
       showSuccessModal("State record saved successfully!");
     }
 
-    renderStateTable();
+    await fetchStates();
     stateForm.classList.add("hidden");
     stateForm.reset();
-    editingStateIndex = null;
-  });
-
-  // Cancel
-  cancelStateBtn.addEventListener("click", () => {
-    stateForm.classList.add("hidden");
-    stateForm.reset();
-  });
-
-  // Actions
-  window.viewState = function(index) {
-    const item = stateData[index];
-    let html = `
-      <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
-        <dt class="font-medium text-gray-600">State Name:</dt>
-        <dd class="col-span-2 text-gray-900">${item.stateName}</dd>
-      </div>
-      <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
-        <dt class="font-medium text-gray-600">State Code:</dt>
-        <dd class="col-span-2 text-gray-900">${item.stateCode}</dd>
-      </div>
-      <div class="grid grid-cols-3 gap-2 py-2">
-        <dt class="font-medium text-gray-600">Geozone:</dt>
-        <dd class="col-span-2 text-gray-900">${item.geozone}</dd>
-      </div>
-    `;
-    document.getElementById("viewContent").innerHTML = html;
-    showModal("viewModal");
-  };
-
-  window.editState = function(index) {
-    const item = stateData[index];
-    document.getElementById("stateName").value = item.stateName;
-    document.getElementById("stateCode").value = item.stateCode;
-    document.getElementById("geozone").value = item.geozone;
-    editingStateIndex = index;
-    stateForm.classList.remove("hidden");
-  };
-
-  window.deleteState = function(index) {
-    pendingDeleteStateIndex = index;
-    showConfirmModal("Are you sure you want to delete this state? This action cannot be undone.");
-  };
-
-    // Modal functions
-  function showModal(modalId) {
-    document.getElementById(modalId).classList.remove("hidden");
+    editingStateId = null;
+  } catch (err) {
+    showErrorModal("Error saving state.");
+    console.error(err);
   }
+});
 
-  function closeModal(modalId) {
-    document.getElementById(modalId).classList.add("hidden");
-  }
+// --- Cancel ---
+cancelStateBtn.addEventListener("click", () => {
+  stateForm.classList.add("hidden");
+  stateForm.reset();
+});
 
-  function showSuccessModal(message) {
-    document.getElementById("successMessage").textContent = message;
-    showModal("successModal");
-  }
+// --- Actions ---
+window.editState = function(Statecode) {
+  // Fixed: use Statecode instead of id to find the item
+  const item = stateData.find(s => s.Statecode === Statecode);
+  if (!item) return;
+  
+  document.getElementById("stateName").value = item.Statename;
+  document.getElementById("stateCode").value = item.Statecode;
+  document.getElementById("stateCapital").value = item.Statecapital;
+  editingStateId = Statecode; // Store Statecode as the editing ID
+  stateForm.classList.remove("hidden");
+};
 
-  function showErrorModal(message) {
-    document.getElementById("errorMessage").textContent = message;
-    showModal("errorModal");
-  }
+window.deleteState = function(Statecode) {
+  pendingDeleteStateId = Statecode;
+  showConfirmModal("Are you sure you want to delete this state? This action cannot be undone.");
+};
 
-  function showConfirmModal(message) {
-    document.getElementById("confirmMessage").textContent = message;
-    showModal("confirmModal");
-  }
-
-  // Modal event listeners
-  document.getElementById("closeSuccessModal").addEventListener("click", () => closeModal("successModal"));
-  document.getElementById("closeErrorModal").addEventListener("click", () => closeModal("errorModal"));
-  document.getElementById("closeViewModal").addEventListener("click", () => closeModal("viewModal"));
-
-  document.getElementById("cancelConfirm").addEventListener("click", () => {
-    closeModal("confirmModal");
-    pendingDeleteIndex = null;
-  });
-
-  // Close modals when clicking outside
-  const modals = ['successModal', 'errorModal', 'confirmModal', 'viewModal'];
-  modals.forEach(modalId => {
-    document.getElementById(modalId).addEventListener("click", (e) => {
-      if (e.target === e.currentTarget) closeModal(modalId);
-    });
-  });
-
-
-  // Confirm delete action
-  document.getElementById("confirmAction").addEventListener("click", () => {
-    if (pendingDeleteStateIndex !== null) {
-      stateData.splice(pendingDeleteStateIndex, 1);
-      renderStateTable();
+// --- Confirm delete action ---
+document.getElementById("confirmAction").addEventListener("click", async () => {
+  if (pendingDeleteStateId) {
+    try {
+      await deleteStateApi(pendingDeleteStateId);
+      await fetchStates();
       showSuccessModal("State record deleted successfully!");
-      pendingDeleteStateIndex = null;
+    } catch (err) {
+      showErrorModal("Error deleting state.");
+      console.error(err);
     }
-    closeModal("confirmModal");
-  });
+    pendingDeleteStateId = null;
+  }
+  closeModal("confirmModal");
+});
 
-  // Search
-  searchState.addEventListener("input", (e) => {
-    const term = e.target.value.toLowerCase();
-    const filtered = stateData.filter(s =>
-      s.stateName.toLowerCase().includes(term) || 
-      s.geozone.toLowerCase().includes(term)
-    );
-    renderStateTable(filtered);
+// Modal functions
+function showModal(modalId) {
+  document.getElementById(modalId).classList.remove("hidden");
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).classList.add("hidden");
+}
+
+function showSuccessModal(message) {
+  document.getElementById("successMessage").textContent = message;
+  showModal("successModal");
+}
+
+function showErrorModal(message) {
+  document.getElementById("errorMessage").textContent = message;
+  showModal("errorModal");
+}
+
+function showConfirmModal(message) {
+  document.getElementById("confirmMessage").textContent = message;
+  showModal("confirmModal");
+}
+
+// Modal event listeners
+document.getElementById("closeSuccessModal").addEventListener("click", () => closeModal("successModal"));
+document.getElementById("closeErrorModal").addEventListener("click", () => closeModal("errorModal"));
+document.getElementById("closeViewModal").addEventListener("click", () => closeModal("viewModal"));
+
+document.getElementById("cancelConfirm").addEventListener("click", () => {
+  closeModal("confirmModal");
+});
+
+// Close modals when clicking outside
+const modals = ['successModal', 'errorModal', 'confirmModal', 'viewModal'];
+modals.forEach(modalId => {
+  document.getElementById(modalId).addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeModal(modalId);
   });
+});
+
+// --- Search ---
+searchState.addEventListener("input", (e) => {
+  const term = e.target.value.toLowerCase();
+  const filtered = stateData.filter(s =>
+    s.Statename.toLowerCase().includes(term) || 
+    s.Statecapital.toLowerCase().includes(term)
+  );
+  renderStateTable(filtered);
+});
+
+// --- Init ---
+fetchStates();
 </script>

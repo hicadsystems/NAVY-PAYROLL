@@ -168,7 +168,15 @@ class PersonnelManager {
 
   async load() {
     try {
-      const res = await fetch('/api/users');
+      const token = localStorage.getItem("token");
+
+      const res = await fetch('/api/users',{   
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      }
+    });
       const data = await res.json();
       this.personnel = Array.isArray(data) ? data : [];
     } catch (err) {
@@ -338,9 +346,13 @@ class PersonnelManager {
     });
 
     try {
+      const token = localStorage.getItem("token");
+
       const res = await fetch(`/api/users/${encodeURIComponent(this.editingUserId)}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+           "Authorization": `Bearer ${token}`},
         body: JSON.stringify(payload)
       });
 
@@ -370,7 +382,13 @@ class PersonnelManager {
   async deleteUser(id) {
     if (!confirm('Are you sure?')) return;
     try {
-      const res = await fetch(`/api/users/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(`/api/users/${encodeURIComponent(id)}`, { method: 'DELETE',
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        }});
       if (res.ok) {
         this.personnel = this.personnel.filter(p => p.user_id !== id);
         this.filtered = [...this.personnel];
@@ -405,3 +423,52 @@ class PersonnelManager {
 
 window.personnelManager = new PersonnelManager();
 </script>
+
+/*const form = document.getElementById("registerForm");
+const emailInput = document.getElementById("email");
+const phoneInput = document.getElementById("phone");
+const passwordInput = document.getElementById("password");
+const confirmPasswordInput = document.getElementById("confirmPassword");
+const errorMessages = document.getElementById("errorMessages");
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  let errors = [];
+
+  // Email validation
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(emailInput.value.trim())) {
+    errors.push("Invalid email address");
+  }
+
+  // Phone validation (digits only, 10–15 length)
+  const phonePattern = /^[0-9]{10,15}$/;
+  if (!phonePattern.test(phoneInput.value.trim())) {
+    errors.push("Phone must be 10–15 digits");
+  }
+
+  // Password validation (min 8 chars, one uppercase, one lowercase, one number, one special char)
+  const password = passwordInput.value;
+  const passwordPattern =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+  if (!passwordPattern.test(password)) {
+    errors.push(
+      "Password must be at least 8 characters and include uppercase, lowercase, number, and special character"
+    );
+  }
+
+  // Confirm password validation
+  if (password !== confirmPasswordInput.value) {
+    errors.push("Passwords do not match");
+  }
+
+  // Show errors or submit
+  if (errors.length > 0) {
+    errorMessages.innerHTML = errors.join("<br>");
+  } else {
+    errorMessages.innerHTML = "";
+    alert("Form submitted successfully!");
+    // here you can send data to backend with fetch()
+    form.submit();
+  }
+});

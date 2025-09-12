@@ -2,10 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../../config/db'); // mysql2 pool
-//const {verifyToken} = require('../middleware.js');
+const verifyToken = require('../../middware/authentication');
 
 // POST - Create new element type
-router.post('/elementtypes', async (req, res) => {
+router.post('/elementtypes', verifyToken, async (req, res) => {
   const {
     PaymentType,
     elmDesc,
@@ -23,7 +23,7 @@ router.post('/elementtypes', async (req, res) => {
     ipis
   } = req.body;
 
-  const createdby = req.body.createdby || req.body.user_fullname || "Admin User";
+  const createdby = req.user_fullname || "Admin User";
   const datecreated = new Date();
 
   try {
@@ -62,7 +62,7 @@ router.post('/elementtypes', async (req, res) => {
 });
 
 // GET - Get all element types
-router.get('/elementtypes', async (req, res) => {
+router.get('/elementtypes', verifyToken, async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT PaymentType, elmDesc, Ledger, perc, std, maxi, bpay, yearend, 
@@ -79,7 +79,7 @@ router.get('/elementtypes', async (req, res) => {
 });
 
 // GET - Get individual element type by PaymentType
-router.get('/elementtypes/:PaymentType', async (req, res) => {
+router.get('/elementtypes/:PaymentType', verifyToken, async (req, res) => {
   try {
     const { PaymentType } = req.params;
     const [rows] = await pool.query('SELECT * FROM py_elementType WHERE PaymentType = ?', [PaymentType]);
@@ -96,7 +96,7 @@ router.get('/elementtypes/:PaymentType', async (req, res) => {
 });
 
 // PUT - Update element type
-router.put('/elementtypes/:PaymentType', async (req, res) => {
+router.put('/elementtypes/:PaymentType', verifyToken, async (req, res) => {
   const { PaymentType } = req.params;
   const {
     elmDesc,
@@ -190,7 +190,7 @@ router.put('/elementtypes/:PaymentType', async (req, res) => {
 });
 
 // DELETE - Delete element type
-router.delete('/elementtypes/:PaymentType', async (req, res) => {
+router.delete('/elementtypes/:PaymentType', verifyToken, async (req, res) => {
   const { PaymentType } = req.params;
   
   try {
@@ -212,7 +212,7 @@ router.delete('/elementtypes/:PaymentType', async (req, res) => {
 });
 
 // GET - Get active element types only
-router.get('/elementtypes/active/list', async (req, res) => {
+router.get('/elementtypes/active/list', verifyToken, async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT PaymentType, elmDesc, Status 
@@ -229,7 +229,7 @@ router.get('/elementtypes/active/list', async (req, res) => {
 });
 
 // GET - Get element types by dependency
-router.get('/elementtypes/dependency/:dependence', async (req, res) => {
+router.get('/elementtypes/dependency/:dependence', verifyToken, async (req, res) => {
   try {
     const { dependence } = req.params;
     const [rows] = await pool.query(`

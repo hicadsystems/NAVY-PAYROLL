@@ -5,6 +5,7 @@ const { spawn } = require('child_process');
 const express = require('express');
 const cron = require('node-cron');
 const mysql = require('mysql2/promise');
+const verifyToken = require('../../middware/authentication'); 
 
 const router = express.Router();
 
@@ -144,7 +145,7 @@ function runBackup({ dbName, backupType = 'full', compression = false, storage =
 //Routes
 
 // GET DB name (keeps existing)
-router.get('/database', (req, res) => {
+router.get('/database', verifyToken, (req, res) => {
   res.json({ database: process.env.DB_NAME || dbConfig.database });
 });
 
@@ -152,7 +153,7 @@ router.get('/database', (req, res) => {
   POST /backup/mysql
   Body: { backupType, compression (bool), storage: 'local'|'cloud' }
 */
-router.post('/backup/mysql', async (req, res) => {
+router.post('/backup/mysql', verifyToken, async (req, res) => {
   try {
     const { backupType = 'full', compression = false, storage = 'local' } = req.body || {};
     const dbName = process.env.DB_NAME || dbConfig.database;
@@ -169,7 +170,7 @@ router.post('/backup/mysql', async (req, res) => {
   POST /backup/schedule
   Body: { schedule: 'hourly'|'daily'|'weekly', backupType, compression, storage }
 */
-router.post('/backup/schedule', (req, res) => {
+router.post('/backup/schedule', verifyToken, (req, res) => {
   try {
     const { schedule, backupType = 'full', compression = false, storage = 'local' } = req.body || {};
     const dbName = process.env.DB_NAME || dbConfig.database;
@@ -209,7 +210,7 @@ router.post('/backup/schedule', (req, res) => {
 
 
 // Get list of all backups (local + cloud)
-router.get('/backups', (req, res) => {
+router.get('/backups', verifyToken, (req, res) => {
   const dirs = [
     { type: 'local', dir: ROOT_BACKUP_DIR },
     { type: 'cloud', dir: ROOT_CLOUD_BACKUP_DIR }
@@ -243,7 +244,7 @@ router.get('/backups', (req, res) => {
 
 
 // Get backup statistics
-router.get('/backup/stats', (req, res) => {
+router.get('/backup/stats', verifyToken, (req, res) => {
   const dirs = [ROOT_BACKUP_DIR, ROOT_CLOUD_BACKUP_DIR];
 
   let totalStorage = 0;
@@ -278,7 +279,7 @@ router.get('/backup/stats', (req, res) => {
 /*
   Download and Delete routes (use ROOT dirs)
 */
-router.get('/backup/download/:filename', (req, res) => {
+router.get('/backup/download/:filename', verifyToken, (req, res) => {
   const { filename } = req.params;
   const localPath = path.join(ROOT_BACKUP_DIR, filename);
   const cloudPath = path.join(ROOT_CLOUD_BACKUP_DIR, filename);
@@ -297,7 +298,7 @@ router.get('/backup/download/:filename', (req, res) => {
   });
 });
 
-router.delete('/backup/:filename', (req, res) => {
+router.delete('/backup/:filename', verifyToken, (req, res) => {
   const { filename } = req.params;
   const localPath = path.join(ROOT_BACKUP_DIR, filename);
   const cloudPath = path.join(ROOT_CLOUD_BACKUP_DIR, filename);
@@ -320,7 +321,7 @@ router.delete('/backup/:filename', (req, res) => {
 /*
   Health check - verify DB connection
 */
-router.get('/health', async (req, res) => {
+router.get('/health', verifyToken, async (req, res) => {
   let connection;
   try {
     connection = await mysql.createConnection(dbConfig);

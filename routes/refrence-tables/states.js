@@ -1,15 +1,15 @@
 const express = require('express');
 const pool = require('../../config/db'); // mysql2 pool
+const verifyToken = require('../../middware/authentication');
 const router = express.Router();
-//const {verifyToken} = require('../middleware.js');
 
 // POST - Create new state
-router.post('/states', async (req, res) => {
+router.post('/states', verifyToken, async (req, res) => {
   // Accept both formats (camelCase from frontend, PascalCase from DB)
   const Statecode = req.body.Statecode || req.body.stateCode;
   const Statename = req.body.Statename || req.body.stateName;
   const Statecapital = req.body.Statecapital || req.body.stateCapital;
-  const createdby = req.body.user_fullname || "Admin User"; // fallback if not sent
+  const createdby = req.user_fullname || "Admin User"; // fallback if not sent
   const datecreated = new Date();
 
   try {
@@ -40,7 +40,7 @@ router.post('/states', async (req, res) => {
 });
 
 // GET - Get all states
-router.get("/states", async (req, res) => {
+router.get("/states", verifyToken, async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT * FROM py_tblstates");
     res.json(rows);
@@ -51,7 +51,7 @@ router.get("/states", async (req, res) => {
 });
 
 // GET - Get individual state by Statecode
-router.get('/states/:Statecode', async (req, res) => {
+router.get('/states/:Statecode', verifyToken, async (req, res) => {
   try {
     const { Statecode } = req.params;
     const [rows] = await pool.query('SELECT * FROM py_tblstates WHERE Statecode = ?', [Statecode]);
@@ -68,12 +68,12 @@ router.get('/states/:Statecode', async (req, res) => {
 });
 
 // PUT - Update state
-router.put('/states/:Statecode', async (req, res) => {
+router.put('/states/:Statecode', verifyToken, async (req, res) => {
   const { Statecode } = req.params;
   // Accept both formats from frontend
   const Statename = req.body.Statename || req.body.stateName;
   const Statecapital = req.body.Statecapital || req.body.stateCapital;
-  const createdby = req.body.createdby || req.body.user_fullname || "Admin User";
+  const createdby = req.user_fullname || "Admin User";
 
   try {
     // Check if state exists first
@@ -125,7 +125,7 @@ router.put('/states/:Statecode', async (req, res) => {
 });
 
 // DELETE - Delete state
-router.delete('/states/:Statecode', async (req, res) => {
+router.delete('/states/:Statecode', verifyToken, async (req, res) => {
   const { Statecode } = req.params;
   
   try {

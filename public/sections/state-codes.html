@@ -26,6 +26,7 @@
       <button type="button" id="saveStateBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Save</button>
       <button type="button" id="cancelStateBtn" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
     </div>
+    <div id="errorMessage" style="color: red;"></div>
   </form>
 
   <!-- State Table -->
@@ -131,11 +132,52 @@ const saveStateBtn = document.getElementById("saveStateBtn");
 const cancelStateBtn = document.getElementById("cancelStateBtn");
 const stateTableBody = document.getElementById("stateTableBody");
 const searchState = document.getElementById("searchState");
+const errorMessage = document.getElementById("errorMessage");
+
+//validations
+// Only letters, spaces, and hyphen
+const alphaDashPattern = /^[A-Za-z\s-]*$/;
+
+// Only letters (for codes)
+const codePattern = /^[A-Za-z]*$/;
+
+function liveValidate(input, pattern, fieldName) {
+  input.addEventListener("input", () => {
+    if (!pattern.test(input.value)) {
+      input.value = input.value.replace(/[^A-Za-z\s-]/g, ""); // strip invalid chars
+      errorMessage.textContent = `${fieldName} must only contain letters, spaces, or hyphens.`;
+    } else {
+      errorMessage.textContent = "";
+    }
+  });
+}
+
+liveValidate(stateName, alphaDashPattern, "State name");
+liveValidate(stateCapital, alphaDashPattern, "State capital");
+
+// For stateCode (letters only)
+stateCode.addEventListener("input", () => {
+  if (!codePattern.test(stateCode.value)) {
+    stateCode.value = stateCode.value.replace(/[^A-Za-z]/g, ""); // strip non-letters
+    errorMessage.textContent = "State code must only contain letters.";
+  } else {
+    errorMessage.textContent = "";
+  }
+});
+
 
 // --- API Helpers ---
 async function fetchStates() {
   try {
-    const res = await fetch("/states");
+    const token = localStorage.getItem("token");
+
+    const res = await fetch("/states",{   
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      }
+    });
     stateData = await res.json();
     renderStateTable();
   } catch (err) {
@@ -145,25 +187,69 @@ async function fetchStates() {
 }
 
 async function createState(item) {
-  const res = await fetch("/states", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(item),
-  });
-  return res.json();
+  const token = localStorage.getItem("token");
+
+  try {
+    const res = await fetch("/states", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(item),
+    });
+
+    if (!res.ok) {
+      // Throw error with server response
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || `Request failed with status ${res.status}`);
+    }
+
+    return await res.json();
+
+  } catch (err) {
+    console.error("❌ Error creating state:", err.message);
+    throw err; // rethrow so caller can handle
+  }
 }
 
 async function updateState(Statecode, item) {
-  const res = await fetch(`/states/${Statecode}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(item),
-  });
-  return res.json();
+  const token = localStorage.getItem("token");
+
+  try {
+    const res = await fetch(`/states/${Statecode}`, {
+      method: "PUT",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(item),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || `Request failed with status ${res.status}`);
+    }
+
+    return await res.json();
+
+  } catch (err) {
+    console.error("❌ Error updating state:", err.message);
+    throw err;
+  }
 }
 
+
 async function deleteStateApi(Statecode) {
-  await fetch(`/states/${Statecode}`, { method: "DELETE" });
+  const token = localStorage.getItem("token");
+  
+  await fetch(`/states/${Statecode}`, { 
+    method: "DELETE", 
+    headers: { 
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+     },
+  });
 }
 
 // --- Render Table ---
@@ -200,6 +286,7 @@ saveStateBtn.addEventListener("click", async () => {
     showErrorModal("Please fill in all required fields.");
     return;
   }
+
 
   try {
     if (editingStateId) {

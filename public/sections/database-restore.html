@@ -203,7 +203,15 @@ class databaseRestore {
 
     async fetchDatabaseName() {
         try {
-            const res = await fetch("/api/restore-db/database");
+            const token = localStorage.getItem("token");
+
+            const res = await fetch("/api/restore-db/database",{
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}` 
+                }            
+            });
             const data = await res.json();
 
             const select = document.getElementById("restoreDatabaseSelect");
@@ -227,7 +235,16 @@ class databaseRestore {
         const text = document.getElementById("statusText");
 
         try {
-            const res = await fetch("/api/restore-db/status");
+            const token = localStorage.getItem("token");
+
+            const res = await fetch("/api/restore-db/status",{   
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}` 
+                }
+            });
+
             const data = await res.json();
 
             if (data.status === "connected") {
@@ -264,8 +281,13 @@ class databaseRestore {
         this.showProgress();
 
         try {
+            const token = localStorage.getItem("token");
+
             const res = await fetch("/api/restore-db/restore", {
                 method: "POST",
+                headers: {
+                "Authorization": `Bearer ${token}` 
+                },
                 body: formData
             });
 
@@ -301,7 +323,15 @@ class databaseRestore {
 
     async loadHistory() {
         try {
-            const res = await fetch("/api/restore-db/history");
+            const token = localStorage.getItem("token");
+
+            const res = await fetch("/api/restore-db/history",{   
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}` 
+                }
+            });
             const data = await res.json();
 
             if (data.history && data.history.length > 0) {
@@ -364,8 +394,14 @@ class databaseRestore {
         if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
 
         try {
+            const token = localStorage.getItem("token");
+
             const response = await fetch(`/api/restore-db/restore/${encodeURIComponent(filename)}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}` 
+                }
             });
             
             const result = await response.json();
@@ -384,7 +420,16 @@ class databaseRestore {
 
     async loadStats() {
         try {
-            const res = await fetch("/api/restore-db/stats");
+            const token = localStorage.getItem("token");
+
+            const res = await fetch("/api/restore-db/stats",{   
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}` 
+                }
+            });
+            
             const stats = await res.json();
 
             this.successCount.textContent = stats.successful || 0;

@@ -9,13 +9,14 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 //const multer = require("multer");
+//const verifyToken = require('../middleware/auth'); 
 const app = express();
 const adminRoutes = require('./routes/admin');
 const usersRoutes = require('./routes/administration/users');
 const backupRoutes = require('./routes/utilities/backup-db');
 const restoreRoutes = require("./routes/utilities/restore-db");
 const statesRoutes  = require("./routes/refrence-tables/states");
-const payelementsRoutes  = require("./routes/refrence-tables/states");
+const payelementsRoutes  = require("./routes/refrence-tables/payelements");
 
 
 
@@ -107,24 +108,6 @@ app.use((err, req, res, next) => {
   console.error(err.stack || err);
   res.status(500).json({ error: 'Internal Server Error' });
 });
-
-
-// ✅ Show all users
-app.get('/api/users', async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT * FROM users');
-    res.json(rows);
-  } catch (err) {
-    console.error('❌ Error fetching users:', err.message);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-
-
-
-
-
 
 
 // graceful shutdown

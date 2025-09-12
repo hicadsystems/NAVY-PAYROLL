@@ -1,45 +1,40 @@
+
 <div class="p-6">
-  <!-- Add Button -->
-  <div class="mb-4 flex justify-end gap-2">
+  <div class="flex justify-end mb-4 gap-2">
     <button id="showFormBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New</button>
-    <button id="generateReportsBtn" class="bg-yellow-500 text-gray-900 px-4 py-2 rounded hover:bg-yellow-600"> Generate Reports </button>
+    <button id="generateReportsBtn" class="bg-yellow-500 text-gray-900 px-4 py-2 rounded hover:bg-yellow-600">Generate Reports</button>
   </div>
 
   <!-- Hidden Form -->
-  <form id="payElementsForm" class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6 hidden p-4 rounded  border">
+  <form id="payElementsForm" class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6 hidden p-4 rounded border">
     <div>
-      <label class="block text-sm font-medium text-gray-700">Pay Elements</label>
-      <input type="text" id="payElements" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+      <label class="block text-sm font-medium text-gray-700">Payment Type *</label>
+      <input type="text" id="payElements" maxlength="6" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent" required>
     </div>
 
     <div>
       <label class="block text-sm font-medium text-gray-700">Description</label>
-      <input type="text" id="description" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+      <input type="text" id="description" maxlength="35" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
     </div>
 
     <div>
       <label class="block text-sm font-medium text-gray-700">Status</label>
       <select id="status" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
-        <option>Select Status</option>
-        <option>Active</option>
-        <option>Inactive</option>
+        <option value="">Select Status</option>
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
       </select>
     </div>
 
-    <div>
-      <label class="block text-sm font-medium text-gray-700">Function Type</label>
-      <select id="functionType" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
-        <option>Select Function Type</option>
-        <option>DIVISION</option>
-        <option>ONCE IN 18MTHS PAY</option>
-        <option>LOAN</option>
-        <option>STANDARD AMOUNT</option>
-      </select>
-    </div>
 
     <div>
       <label class="block text-sm font-medium text-gray-700">Percentage</label>
-      <input type="number" id="percentage" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+      <input type="text" id="percentage" maxlength="20" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Standard Amount</label>
+      <input type="number" step="0.01" id="standardAmount" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
     </div>
 
     <div>
@@ -49,68 +44,69 @@
 
     <div>
       <label class="block text-sm font-medium text-gray-700">Dependence</label>
-      <select id="dependence" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
-        <option>Select Dependence</option>
-        <option>None</option>
-        <option>Basic Salary</option>
-        <option>Overtime</option>
+      <select id="dependence" placeholder="Payment code" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+        <option value="">Select Dependance</option>
+        <option value="None">None</option>
+        <option value="basic">Basic</option>
+        <option value="otime">Overtime</option>
       </select>
     </div>
 
     <div>
       <label class="block text-sm font-medium text-gray-700">Payment Frequency</label>
       <select id="paymentFrequency" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
-        <option>Select Payment Frequency</option>
-        <option>Monthly</option>
-        <option>Quarterly</option>
-        <option>Yearly</option>
+        <option value="">Select Payment Frequency</option>
+        <option value="M">Monthly</option>
+        <option value="Q">Quarterly</option>
+        <option value="A">Annually</option>
+        <option value="W">Weekly</option>
       </select>
     </div>
 
     <div>
       <label class="block text-sm font-medium text-gray-700">Starting Month</label>
-      <input type="text" id="startingMonth" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+      <input type="text" id="startingMonth" maxlength="2" placeholder="01-12" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
     </div>
 
     <div>
-      <label class="block text-sm font-medium text-gray-700">Tax Allowance Rebate</label>
-      <input type="text" id="taxAllowance" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+      <label class="block text-sm font-medium text-gray-700">Tax Free Amount</label>
+      <input type="number" step="0.01" id="taxAllowance" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
     </div>
 
     <div>
-      <label class="block text-sm font-medium text-gray-700">Require For All</label>
-      <select id="requireForAll" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
-        <option>Select</option>
-        <option>Yes</option>
-        <option>No</option>
+      <label class="block text-sm font-medium text-gray-700">BPay*</label>
+      <select id="bPay" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent" required>
+        <option value="">Select</option>
+        <option value="YES">Yes</option>
+        <option value="NO">No</option>
       </select>
     </div>
 
+
     <div>
-      <label class="block text-sm font-medium text-gray-700">Year End Clearance</label>
-      <select id="yearEndClearance" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
-        <option>Select</option>
-        <option>Yes</option>
-        <option>No</option>
+      <label class="block text-sm font-medium text-gray-700">Year End Clearance *</label>
+      <select id="yearEndClearance" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent" required>
+        <option value="">Select</option>
+        <option value="YES">Yes</option>
+        <option value="NO">No</option>
       </select>
     </div>
 
     <div>
       <label class="block text-sm font-medium text-gray-700">Account Ledger</label>
-      <select id="accountLedger" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
-        <option>Select Accounting Ledger</option>
-        <option>OFFICE FITTINGS</option>
-        <option>OFFICE EQUIPMENTS</option>
-        <option>MOTOR VEHICLE</option>
+      <select id="accountLedger" maxlength="15" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+        <option value="">Select Accounting Ledger</option>
+        <option value="M">OFFICE FITTINGS</option>
+        <option value="Q">MOTOR VEHICLE</option>
       </select>
     </div>
 
     <div>
       <label class="block text-sm font-medium text-gray-700">Required By IPPIS?</label>
       <select id="requiredByIPPIS" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
-        <option>Select</option>
-        <option>Yes</option>
-        <option>No</option>
+        <option value="">Select</option>
+        <option value="YES">Yes</option>
+        <option value="NO">No</option>
       </select>
     </div>
 
@@ -121,19 +117,21 @@
   </form>
 
   <!-- Table -->
-   <div class="overflow-x-auto">
+  <div class="overflow-x-auto rounded-lg ">
     <table class="min-w-full border border-gray-200 rounded-lg text-sm">
-        <thead class="bg-blue-100 text-blue-900">
+      <thead class="bg-blue-100 text-blue-900">
         <tr>
-            <th class="border px-2 py-3 text-left">Payment Type</th>
-            <th class="border px-2 py-3 text-left">Description</th>
-            <th class="border px-2 py-3 text-left">Function Type</th>
-            <th class="border px-2 py-3 text-left">Dependence</th>
-            <th class="border px-2 py-3 text-left">Status</th>
-            <th class="border px-2 py-3 text-center">Actions</th>
+          <th class="border px-2 py-3 text-left">Payment Type</th>
+          <th class="border px-2 py-3 text-left">Description</th>
+          <th class="border px-2 py-3 text-left">Percentage</th>
+          <th class="border px-2 py-3 text-left">Dependence</th>
+          <th class="border px-2 py-3 text-left">Status</th>
+          <th class="border px-2 py-3 text-center">Actions</th>
         </tr>
-        </thead>
-        <tbody id="payElementsTable" class="text-center"></tbody>
+      </thead>
+      <tbody id="payElementsTable" class="text-center">
+        <!-- Dynamic content will be inserted here -->
+      </tbody>
     </table>
   </div>
 </div>
@@ -142,8 +140,17 @@
 <div id="successModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
   <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
     <h3 class="text-lg font-semibold mb-2 text-green-600">Success!</h3>
-    <p class="mb-4 text-gray-700">Your changes have been saved successfully!</p>
+    <p id="successMessage" class="mb-4 text-gray-700">Your changes have been saved successfully!</p>
     <button id="closeSuccessModal" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">OK</button>
+  </div>
+</div>
+
+<!-- Error Modal -->
+<div id="errorModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+    <h3 class="text-lg font-semibold mb-2 text-red-600">Error!</h3>
+    <p id="errorMessage" class="mb-4 text-gray-700">An error occurred.</p>
+    <button id="closeErrorModal" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">OK</button>
   </div>
 </div>
 
@@ -163,138 +170,179 @@
 </div>
 
 <script>
+  // Global variables
   let editingIndex = null;
+  let data = [];
 
-  let data = [
-    {element:"BP301", description:"Pension Addition", status:"Active", functionType:"STANDARD AMOUNT", percentage:10, maxAmount:5000, dependence:"None", paymentFrequency:"Monthly", startingMonth:"2025-01", taxAllowance:"Yes", requireForAll:"Yes", yearEndClearance:"Yes", accountLedger:"MOTOR VEHICLE", requiredByIPPIS:"Yes" },
-    { element:"BP302", description:"Pension Deduction", status:"Active", functionType:"LOAN", percentage:5, maxAmount:2000, dependence:"None", paymentFrequency:"Monthly", startingMonth:"2025-02", taxAllowance:"No", requireForAll:"Yes", yearEndClearance:"No", accountLedger:"OFFICE EQUIPMENTS", requiredByIPPIS:"No" }
-  ];
-
+  // DOM elements
   const form = document.getElementById("payElementsForm");
   const showFormBtn = document.getElementById("showFormBtn");
   const saveBtn = document.getElementById("saveBtn");
   const cancelBtn = document.getElementById("cancelBtn");
   const tableBody = document.getElementById("payElementsTable");
+  const searchInput = document.getElementById("searchPayElements");
 
-  // Make functions global by attaching to window
-  window.viewRow = function(index) {
-    const item = data[index];
-    let html = "";
-    for (let key in item) {
-      const displayKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
-      html += `<div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
-        <dt class="font-medium text-gray-600"><strong>${displayKey}:</strong></dt>
-        <dd class="col-span-2 text-gray-900">${item[key]}</dd>
-      </div>`;
+  // --- API Functions ---
+  async function fetchPayElements() {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch('/elementtypes',{   
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      }
+    });
+
+      if (!response.ok) throw new Error('Failed to fetch data');
+        data = await response.json();
+        renderTable();
+       } catch (error) {
+      console.error('Error fetching pay elements:', error);
+      showError('Failed to load payment elements');
     }
-    document.getElementById("viewContent").innerHTML = html;
-    openModal("viewModal");
-  };
+  }
 
-  window.editRow = function(index) {
-    const item = data[index];
-    document.getElementById("payElements").value = item.element;
-    document.getElementById("description").value = item.description;
-    document.getElementById("status").value = item.status;
-    document.getElementById("functionType").value = item.functionType;
-    document.getElementById("percentage").value = item.percentage;
-    document.getElementById("maxAmount").value = item.maxAmount;
-    document.getElementById("dependence").value = item.dependence;
-    document.getElementById("paymentFrequency").value = item.paymentFrequency;
-    document.getElementById("startingMonth").value = item.startingMonth;
-    document.getElementById("taxAllowance").value = item.taxAllowance;
-    document.getElementById("requireForAll").value = item.requireForAll;
-    document.getElementById("yearEndClearance").value = item.yearEndClearance;
-    document.getElementById("accountLedger").value = item.accountLedger;
-    document.getElementById("requiredByIPPIS").value = item.requiredByIPPIS;
+  async function createPayElement(elementData) {
+    try {
+      const token = localStorage.getItem("token");
 
-    editingIndex = index;
-    form.classList.remove("hidden");
-  };
-
-  window.deleteRow = function(index) {
-    if (confirm("Are you sure you want to delete this pay element?")) {
-      data.splice(index, 1);
-      renderTable();
+      const response = await fetch('/elementtypes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(elementData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create element');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating pay element:', error);
+      throw error;
     }
-  };
+  }
 
-  function renderTable() {
-    tableBody.innerHTML = data.map((item, index) => `
+  async function updatePayElement(paymentType, elementData) {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(`/elementtypes/${paymentType}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(elementData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update element');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating pay element:', error);
+      throw error;
+    }
+  }
+
+  async function deletePayElement(paymentType) {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(`/elementtypes/${paymentType}`, {
+        method: 'DELETE', 
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete element');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error deleting pay element:', error);
+      throw error;
+    }
+  }
+
+  // --- UI Functions ---
+  function renderTable(dataToRender = data) {
+    tableBody.innerHTML = dataToRender.map((item, index) => `
       <tr class="hover:bg-gray-50">
-        <td class="border px-2 py-2 text-left">${item.element}</td>
-        <td class="border px-2 py-2 text-left">${item.description}</td>
-        <td class="border px-2 py-2 text-left">${item.functionType}</td>
-        <td class="border px-2 py-2 text-left">${item.dependence}</td>
+        <td class="border px-2 py-2 text-left">${item.PaymentType}</td>
+        <td class="border px-2 py-2 text-left">${item.elmDesc || '-'}</td>
+        <td class="border px-2 py-2 text-left">${item.perc || '-'}</td>
+        <td class="border px-2 py-2 text-left">${item.dependence || 'None'}</td>
         <td class="border px-2 py-2 text-left">
-          <span class="px-2 py-1 rounded text-xs ${item.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-            ${item.status}
+          <span class="px-2 py-1 rounded text-xs ${item.Status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+            ${item.Status || 'Active'}
           </span>
         </td>
         <td class="border px-2 py-2 text-center">
-          <button onclick="viewRow(${index})" class="text-blue-600 hover:text-blue-800 mr-2 px-2 py-1 rounded hover:bg-blue-50">View</button>
-          <button onclick="editRow(${index})" class="text-green-600 hover:text-green-800 mr-2 px-2 py-1 rounded hover:bg-green-50">Edit</button>
-          <button onclick="deleteRow(${index})" class="text-red-600 hover:text-red-800 px-2 py-1 rounded hover:bg-red-50">Delete</button>
+          <button onclick="viewRow('${item.PaymentType}')" class="text-blue-600 hover:text-blue-800 mr-2 px-2 py-1 rounded hover:bg-blue-50">View</button>
+          <button onclick="editRow('${item.PaymentType}')" class="text-green-600 hover:text-green-800 mr-2 px-2 py-1 rounded hover:bg-green-50">Edit</button>
+          <button onclick="deleteRow('${item.PaymentType}')" class="text-red-600 hover:text-red-800 px-2 py-1 rounded hover:bg-red-50">Delete</button>
         </td>
       </tr>
     `).join("");
   }
 
-  renderTable();
-
-  showFormBtn.addEventListener("click", () => {
-    form.classList.remove("hidden");
-    editingIndex = null;
+  function clearForm() {
     form.reset();
-  });
-
-  cancelBtn.addEventListener("click", () => {
-    form.classList.add("hidden");
     editingIndex = null;
-    form.reset();
-  });
+    document.getElementById("payElements").disabled = false;
+  }
 
-  saveBtn.addEventListener("click", () => {
-    // Basic validation
-    const payElements = document.getElementById("payElements").value.trim();
-    const description = document.getElementById("description").value.trim();
-    const status = document.getElementById("status").value;
-    
-    if (!payElements || !description || status === "Select Status") {
-      alert("Please fill in all required fields (Pay Elements, Description, and Status)");
-      return;
-    }
+  function populateForm(item) {
+    document.getElementById("payElements").value = item.PaymentType || '';
+    document.getElementById("description").value = item.elmDesc || '';
+    document.getElementById("status").value = item.Status || '';
+    document.getElementById("percentage").value = item.perc || '';
+    document.getElementById("standardAmount").value = item.std || '';
+    document.getElementById("maxAmount").value = item.maxi || '';
+    document.getElementById("dependence").value = item.dependence || '';
+    document.getElementById("paymentFrequency").value = item.payfreq || '';
+    document.getElementById("startingMonth").value = item.pmonth || '';
+    document.getElementById("taxAllowance").value = item.freetax || '';
+    document.getElementById("bPay").value = item.bpay || '';
+    document.getElementById("yearEndClearance").value = item.yearend || '';
+    document.getElementById("accountLedger").value = item.Ledger || '';
+    document.getElementById("requiredByIPPIS").value = item.ipis || '';
+  }
 
-    const item = {
-      element: payElements,
-      description: description,
-      status: status,
-      functionType: document.getElementById("functionType").value,
-      percentage: document.getElementById("percentage").value || 0,
-      maxAmount: document.getElementById("maxAmount").value || 0,
-      dependence: document.getElementById("dependence").value,
-      paymentFrequency: document.getElementById("paymentFrequency").value,
-      startingMonth: document.getElementById("startingMonth").value,
-      taxAllowance: document.getElementById("taxAllowance").value,
-      requireForAll: document.getElementById("requireForAll").value,
-      yearEndClearance: document.getElementById("yearEndClearance").value,
-      accountLedger: document.getElementById("accountLedger").value,
-      requiredByIPPIS: document.getElementById("requiredByIPPIS").value
+  function getFormData() {
+    return {
+      PaymentType: document.getElementById("payElements").value.trim().toUpperCase(),
+      elmDesc: document.getElementById("description").value.trim(),
+      Status: document.getElementById("status").value || 'Active',
+      perc: document.getElementById("percentage").value.trim(),
+      std: parseFloat(document.getElementById("standardAmount").value) || null,
+      maxi: parseFloat(document.getElementById("maxAmount").value) || null,
+      dependence: document.getElementById("dependence").value.trim() || null,
+      payfreq: document.getElementById("paymentFrequency").value || null,
+      pmonth: document.getElementById("startingMonth").value || null,
+      freetax: parseFloat(document.getElementById("taxAllowance").value) || null,
+      bpay: document.getElementById("bPay").value,
+      yearend: document.getElementById("yearEndClearance").value,
+      Ledger: document.getElementById("accountLedger").value.trim(),
+      ipis: document.getElementById("requiredByIPPIS").value || null
     };
+  }
 
-    if (editingIndex !== null) {
-      data[editingIndex] = item;
-      editingIndex = null;
-    } else {
-      data.push(item);
-    }
-
-    renderTable();
-    form.classList.add("hidden");
-    form.reset();
-    openModal("successModal");
-  });
-
+  // --- Modal Functions ---
   function openModal(id) {
     document.getElementById(id).classList.remove("hidden");
   }
@@ -303,23 +351,152 @@
     document.getElementById(id).classList.add("hidden");
   }
 
-  document.getElementById('closeSuccessModal').addEventListener('click', () => {
-    closeModal('successModal');
+  function showSuccess(message) {
+    document.getElementById("successMessage").textContent = message;
+    openModal("successModal");
+  }
+
+  function showError(message) {
+    document.getElementById("errorMessage").textContent = message;
+    openModal("errorModal");
+  }
+
+  // --- Global Action Functions ---
+  window.viewRow = function(paymentType) {
+    const item = data.find(d => d.PaymentType === paymentType);
+    if (!item) return;
+
+    let html = "";
+    const fieldLabels = {
+      PaymentType: "Payment Type",
+      elmDesc: "Description", 
+      Status: "Status",
+      perc: "Percentage",
+      std: "Standard Amount",
+      maxi: "Maximum Amount",
+      dependence: "Dependence",
+      payfreq: "Payment Frequency",
+      pmonth: "Starting Month",
+      freetax: "Tax Free Amount",
+      bpay: "Bpay",
+      yearend: "Year End Clearance",
+      Ledger: "Account Ledger",
+      ipis: "Required By IPPIS",
+      createdby: "Created By",
+      datecreated: "Date Created"
+    };
+
+    for (let key in item) {
+      if (fieldLabels[key]) {
+        let value = item[key];
+        if (key === 'datecreated' && value) {
+          value = new Date(value).toLocaleString();
+        } else if ((key === 'std' || key === 'maxi' || key === 'freetax') && value) {
+          value = parseFloat(value).toLocaleString();
+        }
+        
+        html += `<div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
+          <dt class="font-medium text-gray-600"><strong>${fieldLabels[key]}:</strong></dt>
+          <dd class="col-span-2 text-gray-900">${value || 'N/A'}</dd>
+        </div>`;
+      }
+    }
+    
+    document.getElementById("viewContent").innerHTML = html;
+    openModal("viewModal");
+  };
+
+  window.editRow = function(paymentType) {
+    const item = data.find(d => d.PaymentType === paymentType);
+    if (!item) return;
+
+    editingIndex = paymentType;
+    populateForm(item);
+    document.getElementById("payElements").disabled = true; // Don't allow changing primary key
+    form.classList.remove("hidden");
+  };
+
+  window.deleteRow = function(paymentType) {
+    const item = data.find(d => d.PaymentType === paymentType);
+    if (!item) return;
+
+    if (confirm(`Are you sure you want to delete "${item.elmDesc || paymentType}"? This action cannot be undone.`)) {
+      deletePayElement(paymentType)
+        .then(() => {
+          showSuccess("Payment element deleted successfully!");
+          fetchPayElements(); // Refresh data
+        })
+        .catch(error => {
+          showError(error.message);
+        });
+    }
+  };
+
+  // --- Event Listeners ---
+  showFormBtn.addEventListener("click", () => {
+    clearForm();
+    form.classList.remove("hidden");
   });
 
-  document.getElementById('closeViewModal').addEventListener('click', () => {
-    closeModal('viewModal');
+  cancelBtn.addEventListener("click", () => {
+    form.classList.add("hidden");
+    clearForm();
   });
+
+  saveBtn.addEventListener("click", async () => {
+    const formData = getFormData();
+    
+    // Basic validation
+    if (!formData.PaymentType || !formData.bpay || !formData.yearend) {
+      showError("Please fill in Payment Type, Require For All, and Year End Clearance fields.");
+      return;
+    }
+
+    if (formData.PaymentType.length > 6) {
+      showError("Payment Type cannot exceed 6 characters.");
+      return;
+    }
+
+    try {
+      if (editingIndex) {
+        // Update existing
+        await updatePayElement(editingIndex, formData);
+        showSuccess("Payment element updated successfully!");
+      } else {
+        // Create new
+        await createPayElement(formData);
+        showSuccess("Payment element created successfully!");
+      }
+      
+      form.classList.add("hidden");
+      clearForm();
+      fetchPayElements(); // Refresh data
+      
+    } catch (error) {
+      showError(error.message);
+    }
+  });
+
+  // Modal close events
+  document.getElementById('closeSuccessModal').addEventListener('click', () => closeModal('successModal'));
+  document.getElementById('closeErrorModal').addEventListener('click', () => closeModal('errorModal'));
+  document.getElementById('closeViewModal').addEventListener('click', () => closeModal('viewModal'));
 
   // Close modals when clicking outside
   document.getElementById('successModal').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeModal('successModal');
   });
 
+  document.getElementById('errorModal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeModal('errorModal');
+  });
+
   document.getElementById('viewModal').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeModal('viewModal');
   });
 
+  // Initialize the application
+  fetchPayElements();
 </script>
 
 </body>

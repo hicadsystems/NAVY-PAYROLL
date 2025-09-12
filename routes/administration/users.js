@@ -2,6 +2,7 @@ const express = require('express');
 const pool = require('../../config/db'); // mysql2 pool
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const verifyToken = require('../../middware/authentication');
 
 // User login
 router.post('/login', async (req, res) => {
@@ -35,7 +36,7 @@ router.post('/login', async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { user_id: user.user_id, role: user.user_role },
+      { user_id: user.user_id, full_name: user.full_name, role: user.user_role },
       process.env.JWT_SECRET || "secretkey",
       { expiresIn: "1h" }
     );
@@ -58,9 +59,8 @@ router.post('/login', async (req, res) => {
   }
 });
 
-
-// ✅ Get all users
-router.get('/', async (req, res) => {
+//  Get all users
+router.get('/', verifyToken, async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM users');
     res.json(rows);
@@ -70,8 +70,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ✅ Get single user by ID
-router.get('/:id', async (req, res) => {
+//  Get single user by ID
+router.get('/:id', verifyToken, async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM users WHERE user_id = ?', [req.params.id]);
     if (rows.length === 0) {
@@ -84,8 +84,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// ✅ Create user
-router.post('/', async (req, res) => {
+//  Create user
+router.post('/', verifyToken, async (req, res) => {
   const { user_id, fullName, email, role, status, phone, password, expiryDate } = req.body;
 
   try {
@@ -107,7 +107,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update user
-router.put('/:user_id', async (req, res) => {
+router.put('/:user_id', verifyToken, async (req, res) => {
   const { full_name, email, user_role, status, phone_number, password, expiry_date } = req.body;
 
   try {
@@ -157,8 +157,8 @@ router.put('/:user_id', async (req, res) => {
   }
 });
 
-// ✅ Delete user
-router.delete('/:user_id', async (req, res) => {
+//  Delete user
+router.delete('/:user_id', verifyToken, async (req, res) => {
   try {
     const [result] = await pool.query('DELETE FROM users WHERE user_id = ?', [req.params.user_id]);
 

@@ -6,6 +6,7 @@ const { exec } = require("child_process");
 const dbConfig = require("../../config/db-config");
 const mysql = require('mysql2/promise');
 const router = express.Router();
+const verifyToken = require('../../middware/authentication'); 
 
 const RESTORE_DIR = path.join(process.cwd(), 'restores');
 const HISTORY_FILE = path.join(RESTORE_DIR, 'restore-history.json');
@@ -106,7 +107,7 @@ function runCommand(command, callback) {
 }
 
 // Connection status route
-router.get("/status", async (req, res) => {
+router.get("/status", verifyToken, async (req, res) => {
     let connection;
         try {
             connection = await mysql.createConnection(dbConfig);
@@ -131,7 +132,7 @@ router.get("/status", async (req, res) => {
 });
 
 // Get database name
-router.get('/database', (req, res) => {
+router.get('/database', verifyToken, (req, res) => {
     const dbName = process.env.DB_NAME || dbConfig.database || 'default';
     res.json({ database: dbName });
 });
@@ -140,7 +141,7 @@ router.get('/database', (req, res) => {
  * POST /api/restore-db/restore
  * Upload and restore database
  */
-router.post("/restore", (req, res) => {
+router.post("/restore", verifyToken, (req, res) => {
     upload.single("file")(req, res, (uploadErr) => {
         if (uploadErr) {
             console.error("Upload error:", uploadErr.message);
@@ -239,7 +240,7 @@ router.post("/restore", (req, res) => {
 /**
  * GET /api/restore-db/history
  */
-router.get("/history", (req, res) => {
+router.get("/history", verifyToken, (req, res) => {
     const history = loadHistory();
     res.json({ history });
 });
@@ -247,7 +248,7 @@ router.get("/history", (req, res) => {
 /**
  * GET /api/restore-db/stats
  */
-router.get("/stats", (req, res) => {
+router.get("/stats", verifyToken, (req, res) => {
     const history = loadHistory();
     
     const successful = history.filter(h => h.status === "Success").length;
@@ -263,7 +264,7 @@ router.get("/stats", (req, res) => {
  * DELETE /api/restore-db/restore/:filename
  * Delete a restore entry from history
  */
-router.delete('/restore/:filename', (req, res) => {
+router.delete('/restore/:filename', verifyToken, (req, res) => {
     try {
         const filename = decodeURIComponent(req.params.filename);
         const history = loadHistory();

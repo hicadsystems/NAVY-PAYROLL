@@ -3,11 +3,11 @@ const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
 const { exec } = require("child_process");
-const dbConfig = require("../db-config");
+const dbConfig = require("../../config/db-config");
 const mysql = require('mysql2/promise');
 const router = express.Router();
 
-const RESTORE_DIR = path.join(__dirname, '..', 'restores');
+const RESTORE_DIR = path.join(process.cwd(), 'restores');
 const HISTORY_FILE = path.join(RESTORE_DIR, 'restore-history.json');
 
 // Ensure restore directory exists

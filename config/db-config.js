@@ -7,8 +7,8 @@ const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.en
 
 dotenv.config({ path: path.resolve(__dirname, envFile) });
 module.exports = {
-  user: process.env.DB_USER || 'sa',
-  password: process.env.DB_PASSWORD || 'your_password',
+  user: process.env.DB_USER || 'Hicad',
+  password: process.env.DB_PASSWORD || 'your-pass',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'hicaddata',
   port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,

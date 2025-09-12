@@ -1,7 +1,7 @@
 // Element Type CRUD Routes
 const express = require('express');
 const router = express.Router();
-const pool = require('../../db.js'); // mysql2 pool
+const pool = require('../../config/db'); // mysql2 pool
 //const {verifyToken} = require('../middleware.js');
 
 // POST - Create new element type

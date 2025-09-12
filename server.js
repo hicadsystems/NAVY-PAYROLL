@@ -3,7 +3,7 @@ const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.en
 const express = require('express');
 const session = require('express-session');
 const serveIndex = require('serve-index');
-const pool = require('./db'); // ensure ./db exports poolPromise or pool
+const pool = require('./config/db'); // ensure ./db exports poolPromise or pool
 const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -11,9 +11,9 @@ const morgan = require('morgan');
 //const multer = require("multer");
 const app = express();
 const adminRoutes = require('./routes/admin');
-const usersRoutes = require('./routes/users');
-const backupRoutes = require('./routes/backup-db');
-const restoreRoutes = require("./routes/restore-db");
+const usersRoutes = require('./routes/administration/users');
+const backupRoutes = require('./routes/utilities/backup-db');
+const restoreRoutes = require("./routes/utilities/restore-db");
 const statesRoutes  = require("./routes/refrence-tables/states");
 const payelementsRoutes  = require("./routes/refrence-tables/states");
 

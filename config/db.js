@@ -1,4 +1,4 @@
-const dbConfig = require('./db-config.js');
+const dbConfig = require('./db-config');
 const mysql = require('mysql2');
 
 // Create pool and connect

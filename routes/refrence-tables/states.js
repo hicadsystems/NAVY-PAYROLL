@@ -1,5 +1,5 @@
 const express = require('express');
-const pool = require('../../db.js'); // mysql2 pool
+const pool = require('../../config/db'); // mysql2 pool
 const router = express.Router();
 //const {verifyToken} = require('../middleware.js');
 

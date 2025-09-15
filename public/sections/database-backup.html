@@ -362,6 +362,12 @@
         }
 
         async loadBackupHistory() {
+            // Only fetch if backup history container is visible
+            const historyContainer = document.getElementById('backupHistory');
+            if (!historyContainer || !historyContainer.offsetParent) {
+                return; // Don't fetch if container is hidden
+            }
+
             try {
                 const token = localStorage.getItem("token");
 
@@ -373,8 +379,6 @@
                     }  
                 });
                 const data = await response.json();
-                
-                const historyContainer = document.getElementById('backupHistory');
                 
                 if (data.backups && data.backups.length > 0) {
                     //sort by created date (newest first)
@@ -437,8 +441,7 @@
                 backupHistory.dataset.eventsBound = "true";
             }
         }
-
-
+       
         async downloadBackup(filename) {
             try {
                 const token = localStorage.getItem("token");

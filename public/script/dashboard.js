@@ -1,4 +1,3 @@
-
 tailwind.config = {
   theme: {
     extend: {
@@ -478,6 +477,95 @@ function setupSubsubmenus() {
   
   console.log('Subsubmenu setup complete');
 }
+
+/*const rolePermissions = {
+  "data entry": {
+    base: ["reference-tables, data-entry, utilities"],
+    "-": ["paymenyts-deductions"],
+    "+": []
+  },
+  "operator": {
+    inherit: "data entry",
+    "+": ["personnel-profile"],
+    "-": []
+  },
+  "processor": {
+    inherit: "operator",
+    "+": ["payroll-calculations", "reports"],
+    "-": []
+  },
+  "manager": {
+    inherit: "processor",
+    "+": ["administration"],
+    "-": ["create-user"]
+  },
+  "hicad": {
+    base: ["*"],
+    "+": ["*"],
+    "-": []
+  }
+};
+
+function resolvePermissions(role) {
+  const seen = new Set(); // prevent circular inheritance
+  let current = role;
+  let result = { base: [], "+": [], "-": [] };
+
+  while (current && !seen.has(current)) {
+    seen.add(current);
+    const cfg = rolePermissions[current] || {};
+    if (cfg.base) result.base.push(...cfg.base);
+    if (cfg["+"]) result["+"] = [...cfg["+"], ...result["+"]];
+    if (cfg["-"]) result["-"] = [...cfg["-"], ...result["-"]];
+    current = cfg.inherit; // walk up inheritance
+  }
+
+  // Deduplicate
+  result.base = [...new Set(result.base)];
+  result["+"] = [...new Set(result["+"])];
+  result["-"] = [...new Set(result["-"])];
+  return result;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const role = (localStorage.getItem("role") || "").toLowerCase();
+  const cfg = resolvePermissions(role);
+
+  // Hide all menus first
+  document.querySelectorAll("[data-menu]").forEach(menu => {
+    menu.style.display = "none";
+  });
+
+  // Show base menus
+  document.querySelectorAll("[data-menu]").forEach(menu => {
+    const key = menu.getAttribute("data-menu");
+    if (cfg.base.includes("*") || cfg.base.includes(key)) {
+      menu.style.display = "block";
+    }
+  });
+
+  // Apply exclusions (-)
+  cfg["-"].forEach(ex => {
+    const subEl = document.querySelector(`[data-submenu="${ex}"]`);
+    if (subEl) subEl.style.display = "none";
+
+    const linkEl = document.querySelector(`[data-section="${ex}"]`);
+    if (linkEl) linkEl.parentElement.style.display = "none";
+  });
+
+  // Apply additions (+)
+  if (cfg["+"]?.includes("*")) {
+    document.querySelectorAll("[data-menu], [data-section]").forEach(el => {
+      el.style.display = "block";
+    });
+  } else {
+    cfg["+"]?.forEach(section => {
+      const el = document.querySelector(`[data-section="${section}"]`);
+      if (el) el.parentElement.style.display = "block";
+    });
+  }
+});*/
+
 
 // Navigation handler for submenu items
 class NavigationSystem {

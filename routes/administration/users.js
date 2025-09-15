@@ -1,22 +1,22 @@
 const express = require('express');
-const pool = require('../../config/db'); // mysql2 pool
+const {pool, switchDatabase} = require('../../config/db'); // mysql2 pool()
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const verifyToken = require('../../middware/authentication');
 
 // User login
-router.post('/login', async (req, res) => {
+router.post("/login", async (req, res) => {
   const { user_id, password, payroll_class } = req.body;
 
-  if (!user_id || !password) {
-    return res.status(400).json({ error: "User ID and password are required" });
+  if (!user_id || !password || !payroll_class) {
+    return res.status(400).json({ error: "User ID, password, and payroll class are required" });
   }
 
   try {
-    // Look up user by ID + password
-    const [rows] = await pool.query(
-      "SELECT * FROM users WHERE user_id = ? AND password = ?",
-      [user_id, password]
+    // Look up user by ID
+    const [rows] = await pool().query(
+      "SELECT * FROM users WHERE user_id = ?",
+      [user_id]
     );
 
     if (rows.length === 0) {
@@ -25,18 +25,33 @@ router.post('/login', async (req, res) => {
 
     const user = rows[0];
 
-    if (user.status !== 'active') {
+    // Check account status
+    if (user.status !== "active") {
       return res.status(403).json({ error: "Account is inactive or suspended" });
     }
 
-    // Optionally check payroll class if you want
-    //if (payroll_class && payroll_class !== user.user_role) {
-    //  return res.status(403).json({ error: "Unauthorized payroll class" });
-    //}
+    // Plain password check (no bcrypt)
+    if (user.password !== password) {
+      return res.status(401).json({ error: "Invalid User ID or password" });
+    }
+
+    // Verify payroll class
+    if (user.primary_class !== payroll_class) {
+      return res.status(403).json({ error: "Unauthorized payroll class selection" });
+    }
+
+    // 🔹 Switch DB pool() dynamically
+    await switchDatabase(payroll_class);
 
     // Generate JWT token
     const token = jwt.sign(
-      { user_id: user.user_id, full_name: user.full_name, role: user.user_role },
+      {
+        user_id: user.user_id,
+        full_name: user.full_name,
+        role: user.user_role,
+        primary_class: user.primary_class,
+        current_class: payroll_class
+      },
       process.env.JWT_SECRET || "secretkey",
       { expiresIn: "1h" }
     );
@@ -50,7 +65,8 @@ router.post('/login', async (req, res) => {
         email: user.email,
         role: user.user_role,
         status: user.status,
-        payroll_class: payroll_class || null
+        primary_class: user.primary_class,
+        current_class: payroll_class
       }
     });
   } catch (err) {
@@ -62,7 +78,7 @@ router.post('/login', async (req, res) => {
 //  Get all users
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM users');
+    const [rows] = await pool().query('SELECT * FROM users');
     res.json(rows);
   } catch (err) {
     console.error('❌ Error fetching users:', err);
@@ -73,7 +89,7 @@ router.get('/', verifyToken, async (req, res) => {
 //  Get single user by ID
 router.get('/:id', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM users WHERE user_id = ?', [req.params.id]);
+    const [rows] = await pool().query('SELECT * FROM users WHERE user_id = ?', [req.params.id]);
     if (rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -86,17 +102,17 @@ router.get('/:id', verifyToken, async (req, res) => {
 
 //  Create user
 router.post('/', verifyToken, async (req, res) => {
-  const { user_id, fullName, email, role, status, phone, password, expiryDate } = req.body;
+  const { user_id, fullName, payroll_class, email, role, status, phone, password, expiryDate } = req.body;
 
   try {
-    if (!user_id || !fullName || !email || !role) {
-      return res.status(400).json({ error: 'User ID, full name, email, and role are required' });
+    if (!user_id || !fullName || !email || !role || !payroll_class) {
+      return res.status(400).json({ error: 'User ID, Payroll Class, full name, email, and role are required' });
     }
 
-    const [] = await pool.query(
-      `INSERT INTO users (user_id, full_name, email, user_role, status, phone_number, password, expiry_date) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [user_id, fullName, email, role, status, phone, password, expiryDate]
+    const [] = await pool().query(
+      `INSERT INTO users (user_id, full_name, primary_class, email, user_role, status, phone_number, password, expiry_date) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [user_id, fullName, payroll_class, email, role, status, phone, password, expiryDate]
     );
 
     res.status(201).json({ message: '✅ User created', user_id });
@@ -145,11 +161,11 @@ router.put('/:user_id', verifyToken, async (req, res) => {
     const sql = `UPDATE users SET ${sets.join(', ')} WHERE user_id = ?`;
     params.push(req.params.user_id);
 
-    const [result] = await pool.query(sql, params);
+    const [result] = await pool().query(sql, params);
     if (result.affectedRows === 0) return res.status(404).json({ error: 'User not found' });
 
     // return updated row for frontend to update UI and show success reliably
-    const [rows] = await pool.query('SELECT * FROM users WHERE user_id = ?', [req.params.user_id]);
+    const [rows] = await pool().query('SELECT * FROM users WHERE user_id = ?', [req.params.user_id]);
     res.json({ message: 'User updated', user: rows[0] });
   } catch (err) {
     console.error('❌ Error updating user:', err);
@@ -160,7 +176,7 @@ router.put('/:user_id', verifyToken, async (req, res) => {
 //  Delete user
 router.delete('/:user_id', verifyToken, async (req, res) => {
   try {
-    const [result] = await pool.query('DELETE FROM users WHERE user_id = ?', [req.params.user_id]);
+    const [result] = await pool().query('DELETE FROM users WHERE user_id = ?', [req.params.user_id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'User not found' });

@@ -17,34 +17,26 @@
         <input type="text" name="fullName" required 
                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
       </div>
-      
+
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
-        <input type="email" name="email" required 
-               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Payroll Class *</label>
+        <select id="payroll-class" name="payroll_class" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <option selected>Select Payroll Class</option>
+        </select>
       </div>
 
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">User Role *</label>
-        <select name="role" required 
+        <select name="role" id="role" required 
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-          <option value="">Select Role...</option>
-          <option value="hicad">HICAD</option>
-          <option value="data entry">Data Entry</option>
-          <option value="operator">Operator</option>
-          <option value="processor">Processor</option>
-          <option value="manager">Manager</option>
+          <option selected>Select Role...</option>
         </select>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-        <select name="status" 
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-          <option value="">Select Status...</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+        <input type="email" name="email" required 
+               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
       </div>
 
       <div>
@@ -95,6 +87,17 @@
             <path d="M9.5 9.5a3 3 0 004 4"/>
           </svg>
         </span>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+        <select name="status" 
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <option value="">Select Status...</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="suspended">Suspended</option>
+        </select>
       </div>
 
       <div>
@@ -180,6 +183,90 @@ function showSuccess(message) {
   }, 4000);
 }
 
+//roles dropdown
+async function fetchRoles() {
+  try {
+    const token = localStorage.getItem('token');
+
+    const res = await fetch("/roles", {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` 
+        }                 
+    });
+
+    const roles = await res.json();
+    const select = document.getElementById("role");
+    
+    // Clear existing options first
+    select.innerHTML = "";
+    
+    // Add default option
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "Select a role";
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    select.appendChild(defaultOption);
+
+    // Add role options
+    roles.forEach(r => {
+      const opt = document.createElement("option");
+      opt.value = r.id;
+      opt.textContent = r.name;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("❌ Failed to fetch roles:", err);
+  }
+}
+
+//payrollclass dropdown
+async function loadPayrollClasses() {
+  try {
+    const token = localStorage.getItem('token');
+
+    const res = await fetch("/classes", {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` 
+        }                 
+    });
+    const classes = await res.json();
+    const select = document.getElementById("payroll-class");
+
+    // Clear existing options first
+    select.innerHTML = "";
+    
+    // Add default option
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "Select a class";
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    select.appendChild(defaultOption);
+
+    classes.forEach(cls => {
+      const opt = document.createElement("option");
+      opt.value = cls.id;   // backend DB id (e.g. hicaddata3)
+      opt.textContent = cls.name; // label (e.g. RATINGS A)
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("❌ Failed to load payroll classes:", err);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener("DOMContentLoaded", fetchRoles, loadPayrollClasses);
+} else {
+  fetchRoles();
+  loadPayrollClasses();
+}
+
+
 document.getElementById('create-user-form').addEventListener('submit', async function(e) {
   e.preventDefault();
 
@@ -193,9 +280,9 @@ document.getElementById('create-user-form').addEventListener('submit', async fun
   }
 
   // Collect selected permissions
-  const permissions = Array.from(document.querySelectorAll('input[name="permissions"]:checked'))
+  /*const role = Array.from(document.querySelectorAll('input[name="role"]:checked'))
     .map(cb => cb.value);
-  userData.permissions = permissions;
+  userData.role = role;*/
 
   console.log('Creating user:', userData);
 

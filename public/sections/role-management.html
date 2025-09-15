@@ -38,48 +38,7 @@
           <th class="px-4 py-2 text-gray-700">ACTIONS</th>
         </tr>
       </thead>
-      <tbody id="roleList">
-        <tr class="border-b">
-          <td class="px-4 py-2 font-medium">Data Entry</td>
-          <td class="px-4 py-2">Access to Data Input only, can view/print own entries</td>
-            <td class="px-4 py-2 space-x-2">
-            <button class="editBtn text-green-600 hover:underline">Edit</button>
-            <button class="deleteBtn text-red-600 hover:underline">Delete</button>
-          </td>
-        </tr>
-        <tr class="border-b">
-          <td class="px-4 py-2 font-medium">Operator</td>
-          <td class="px-4 py-2">Data Entry, View, Print all data, Approve same</td>
-            <td class="px-4 py-2 space-x-2">
-            <button class="editBtn text-green-600 hover:underline">Edit</button>
-            <button class="deleteBtn text-red-600 hover:underline">Delete</button>
-          </td>
-        </tr>
-        <tr class="border-b">
-          <td class="px-4 py-2 font-medium">Processor</td>
-          <td class="px-4 py-2">Operator tasks + process payroll + reports (cannot manage users/payment types)</td>
-            <td class="px-4 py-2 space-x-2">
-            <button class="editBtn text-green-600 hover:underline">Edit</button>
-            <button class="deleteBtn text-red-600 hover:underline">Delete</button>
-          </td>
-        </tr>
-        <tr class="border-b">
-          <td class="px-4 py-2 font-medium">Manager</td>
-          <td class="px-4 py-2">Processor tasks + manage users & payment types</td>
-            <td class="px-4 py-2 space-x-2">
-            <button class="editBtn text-green-600 hover:underline">Edit</button>
-            <button class="deleteBtn text-red-600 hover:underline">Delete</button>
-          </td>
-        </tr>
-        <tr>
-          <td class="px-4 py-2 font-medium">HICAD</td>
-          <td class="px-4 py-2">Full access to everything</td>
-            <td class="px-4 py-2 space-x-2">
-            <button class="editBtn text-green-600 hover:underline">Edit</button>
-            <button class="deleteBtn text-red-600 hover:underline">Delete</button>
-            </td>
-        </tr>
-      </tbody>
+    <tbody id="rolesTableBody"></tbody>
     </table>
   </div>
 </div>
@@ -127,140 +86,211 @@
   const roleFormWrap = document.getElementById("roleFormWrap");
   const cancelRoleBtn = document.getElementById("cancelRoleBtn");
   const roleForm = document.getElementById("roleForm");
-  const roleList = document.getElementById("roleList");
+  const rolesTableBody = document.getElementById("rolesTableBody");
   const roleNameInput = document.getElementById("roleName");
   const roleDescInput = document.getElementById("roleDesc");
   const saveRoleBtn = document.getElementById("saveRoleBtn");
 
-      // Modals
-    const confirmModal = document.getElementById("confirmModal");
-    const successModal = document.getElementById("successModal");
-    const loadingSpinner = document.getElementById("loadingSpinner");
-    const successTick = document.getElementById("successTick");
-    const successMessage = document.getElementById("successMessage");
+  // Modals
+  const confirmModal = document.getElementById("confirmModal");
+  const successModal = document.getElementById("successModal");
+  const loadingSpinner = document.getElementById("loadingSpinner");
+  const successTick = document.getElementById("successTick");
+  const successMessage = document.getElementById("successMessage");
+
+  let editingRow = null; // track the row being edited
+  let deleteRoleId = null; // track role ID for deletion
+
+  // Fetch roles from backend
+  async function fetchRoles() {
+    try {
+      const token = localStorage.getItem('token');
+
+      const res = await fetch("/roles", {
+          method: "GET",
+          headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}` 
+          }                 
+      });
+
+      const roles = await res.json();
+
+      // Clear table body
+      rolesTableBody.innerHTML = "";
+
+      // Populate from DB
+      roles.forEach(role => {
+        const row = document.createElement("tr");
+        row.className = "border-b";
+        row.innerHTML = `
+          <td class="px-4 py-2 font-medium">${role.name}</td>
+          <td class="px-4 py-2">${role.description || ""}</td>
+          <td class="px-4 py-2 space-x-2">
+            <button class="editBtn text-green-600 hover:underline" data-id="${role.id}">Edit</button>
+            <button class="deleteBtn text-red-600 hover:underline" data-id="${role.id}">Delete</button>
+          </td>
+        `;
+        rolesTableBody.appendChild(row);
+      });
+    } catch (err) {
+      console.error("❌ Failed to fetch roles:", err);
+    }
+  }
+
+  // Save role (create or update)
+  async function saveRole() {
+    const name = roleNameInput.value.trim();
+    const desc = roleDescInput.value.trim();
+
+    if (!name || !desc) {
+      alert("Please fill in all fields!");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const isEditing = editingRow !== null;
+      const roleId = isEditing ? editingRow.querySelector('.editBtn').dataset.id : null;
+
+      const response = await fetch(isEditing ? `/roles/${roleId}` : "/roles", {
+        method: isEditing ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ name, description: desc })
+      });
+
+      if (response.ok) {
+        showSuccessModal(isEditing ? "Role updated!" : "Role added!");
+        resetForm();
+        roleFormWrap.classList.add("hidden");
+        editingRow = null;
+        fetchRoles(); // Refresh the list
+      } else {
+        const error = await response.json();
+        alert("Error: " + (error.message || "Failed to save role"));
+      }
+    } catch (err) {
+      console.error("❌ Failed to save role:", err);
+      alert("Failed to save role. Please try again.");
+    }
+  }
+
+  // Delete role
+  async function deleteRole() {
+    if (!deleteRoleId) return;
+
+    try {
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`/roles/${deleteRoleId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        showSuccessModal("Role deleted!");
+        fetchRoles(); // Refresh the list
+      } else {
+        const error = await response.json();
+        alert("Error: " + (error.message || "Failed to delete role"));
+      }
+    } catch (err) {
+      console.error("❌ Failed to delete role:", err);
+      alert("Failed to delete role. Please try again.");
+    }
+
+    hideConfirmModal();
+    deleteRoleId = null;
+  }
+
+  // Load roles on page ready
+  if (document.readyState === 'loading') {
+    document.addEventListener("DOMContentLoaded", fetchRoles);
+  } else {
+    // DOM is already loaded
+    fetchRoles();
+  }
 
   // Toggle form
   toggleRoleFormBtn.addEventListener("click", () => {
     roleFormWrap.classList.toggle("hidden");
   });
+
   cancelRoleBtn.addEventListener("click", () => {
-    roleForm.reset();
+    resetForm();
     roleFormWrap.classList.add("hidden");
+    editingRow = null;
   });
 
-  // Add new role
+  // Form submission
   roleForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    const name = document.getElementById("roleName").value;
-    const desc = document.getElementById("roleDesc").value;
-
-    const row = document.createElement("tr");
-    row.className = "border-b";
-    row.innerHTML = `
-      <td class="px-4 py-2 font-medium">${name}</td>
-      <td class="px-4 py-2">${desc}</td>
-      <td class="px-4 py-2 space-x-2">
-          <button class="editBtn text-green-600 hover:underline">Edit</button>
-          <button class="deleteBtn text-red-600 hover:underline">Delete</button>
-      </td>
-    `;
-    roleList.appendChild(row);
-
-    roleForm.reset();
-    roleFormWrap.classList.add("hidden");
+    saveRole();
   });
 
-  // Simulated actions
-let editingRow = null; // track the row being edited
+  // Event delegation for Edit/Delete
+  rolesTableBody.addEventListener("click", (e) => {
+    const row = e.target.closest("tr");
+    if (!row) return;
 
-// Event delegation for Edit/Delete
-roleList.addEventListener("click", (e) => {
-  const row = e.target.closest("tr");
-  if (!row) return;
+    if (e.target.classList.contains("editBtn")) {
+      const cells = row.querySelectorAll("td");
+      roleNameInput.value = cells[0].textContent;
+      roleDescInput.value = cells[1].textContent;
 
-  if (e.target.classList.contains("editBtn")) {
-    const cells = row.querySelectorAll('td');
-    const roleName = cells[0].textContent;
-    const roleDesc = cells[1].textContent;
+      editingRow = row;
+      roleFormWrap.classList.remove("hidden");
+    }
 
-    roleNameInput.value = roleName;
-    roleDescInput.value = roleDesc;
+    if (e.target.classList.contains("deleteBtn")) {
+      deleteRoleId = e.target.dataset.id;
+      showConfirmModal();
+    }
+  });
 
-    editingRow = row; // remember which row we are editing
-    roleFormWrap.classList.remove("hidden");
+  // Modal functions
+  function showConfirmModal() {
+    confirmModal.classList.remove("hidden");
   }
 
-  if (e.target.classList.contains("deleteBtn")) {
-    row.remove();
-    showSuccessModal("Role deleted!");
-  }
-});
-
-// Save button
-saveRoleBtn.addEventListener("click", () => {
-  const name = roleNameInput.value.trim();
-  const desc = roleDescInput.value.trim();
-
-  if (!name || !desc) {
-    showErrorModal("Please fill in all fields!");
-    return;
+  function hideConfirmModal() {
+    confirmModal.classList.add("hidden");
   }
 
-  if (editingRow) {
-    // Update existing row
-    const cells = editingRow.querySelectorAll('td');
-    cells[0].textContent = name;
-    cells[1].textContent = desc;
-    showSuccessModal("Role updated!");
-    editingRow = null;
-  } else {
-    // Create new row
-    const newRow = document.createElement("tr");
-    newRow.innerHTML = `
-      <td class="px-4 py-2 font-medium">${name}</td>
-      <td class="px-4 py-2">${desc}</td>
-      <td class="px-4 py-2 space-x-2">
-          <button class="editBtn text-green-600 hover:underline">Edit</button>
-          <button class="deleteBtn text-red-600 hover:underline">Delete</button>
-      </td>
-    `;
-    roleList.appendChild(newRow);
-    showSuccessModal("Role added!");
+  // Confirm modal buttons
+  document.getElementById("cancelDelete").addEventListener("click", () => {
+    hideConfirmModal();
+    deleteRoleId = null;
+  });
+
+  document.getElementById("confirmDelete").addEventListener("click", deleteRole);
+
+  // Reset form
+  function resetForm() {
+    roleNameInput.value = "";
+    roleDescInput.value = "";
   }
 
-  resetForm();
-  roleFormWrap.classList.add("hidden");
-});
+  function showSuccessModal(message) {
+    successMessage.textContent = "Processing...";
+    loadingSpinner.classList.remove("hidden");
+    successTick.classList.add("hidden");
+    successModal.classList.remove("hidden");
 
-// Cancel button
-cancelRoleBtn.addEventListener("click", () => {
-  resetForm();
-  roleFormWrap.classList.add("hidden");
-  editingRow = null;
-});
-
-// Reset form
-function resetForm() {
-  roleNameInput.value = "";
-  roleDescInput.value = "";
-}
-
-function showSuccessModal(message) {
-  successMessage.textContent = "Processing...";
-  loadingSpinner.classList.remove("hidden");
-  successTick.classList.add("hidden");
-  successModal.classList.remove("hidden");
-
-  // Show spinner for 1.8 seconds
-  setTimeout(() => {
+    setTimeout(() => {
       loadingSpinner.classList.add("hidden");
       successTick.classList.remove("hidden");
       successMessage.textContent = message;
-      
-      // Hide modal after 1.5 seconds
+
       setTimeout(() => {
-          successModal.classList.add("hidden");
+        successModal.classList.add("hidden");
       }, 1500);
-  }, 1800);
-}
+    }, 1800);
+  }
 </script>

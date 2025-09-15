@@ -1,3 +1,24 @@
+async function loadPayrollClasses() {
+  try {
+    const res = await fetch("/classes");
+    const classes = await res.json();
+
+    const select = document.getElementById("payroll-class");
+
+    classes.forEach(cls => {
+      const opt = document.createElement("option");
+      opt.value = cls.id;   // backend DB id (e.g. hicaddata3)
+      opt.textContent = cls.name; // label (e.g. RATINGS A)
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("❌ Failed to load payroll classes:", err);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadPayrollClasses);
+
+
 document.getElementById('login-form').addEventListener('submit', async function(e) {
   e.preventDefault();
 
@@ -41,6 +62,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
     localStorage.setItem("user_id", data.user.user_id);
     localStorage.setItem("full_name", data.user.full_name);
     localStorage.setItem("role", data.user.role);
+    localStorage.setItem("class", data.user.primary_class);
 
     }
     else {

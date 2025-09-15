@@ -1,5 +1,5 @@
 const express = require('express');
-const pool = require('../../config/db'); // mysql2 pool
+const {pool} = require('../../config/db'); // mysql2 pool()
 const verifyToken = require('../../middware/authentication');
 const router = express.Router();
 
@@ -17,7 +17,7 @@ router.post('/states', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    const [result] = await pool.query(
+    const [result] = await pool().query(
       `INSERT INTO py_tblstates 
        (Statecode, Statename, Statecapital, createdby, datecreated) 
        VALUES (?, ?, ?, ?, ?)`,
@@ -42,7 +42,7 @@ router.post('/states', verifyToken, async (req, res) => {
 // GET - Get all states
 router.get("/states", verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM py_tblstates");
+    const [rows] = await pool().query("SELECT * FROM py_tblstates");
     res.json(rows);
   } catch (err) {
     console.error("Error fetching states:", err);
@@ -54,7 +54,7 @@ router.get("/states", verifyToken, async (req, res) => {
 router.get('/states/:Statecode', verifyToken, async (req, res) => {
   try {
     const { Statecode } = req.params;
-    const [rows] = await pool.query('SELECT * FROM py_tblstates WHERE Statecode = ?', [Statecode]);
+    const [rows] = await pool().query('SELECT * FROM py_tblstates WHERE Statecode = ?', [Statecode]);
     
     if (rows.length === 0) {
       return res.status(404).json({ error: 'State not found' });
@@ -77,7 +77,7 @@ router.put('/states/:Statecode', verifyToken, async (req, res) => {
 
   try {
     // Check if state exists first
-    const [existingRows] = await pool.query('SELECT * FROM py_tblstates WHERE Statecode = ?', [Statecode]);
+    const [existingRows] = await pool().query('SELECT * FROM py_tblstates WHERE Statecode = ?', [Statecode]);
     if (existingRows.length === 0) {
       return res.status(404).json({ error: 'State not found' });
     }
@@ -108,10 +108,10 @@ router.put('/states/:Statecode', verifyToken, async (req, res) => {
     params.push(Statecode);
 
     const sql = `UPDATE py_tblstates SET ${sets.join(', ')} WHERE Statecode = ?`;
-    const [result] = await pool.query(sql, params);
+    const [result] = await pool().query(sql, params);
 
     // Get updated record
-    const [updatedRows] = await pool.query('SELECT * FROM py_tblstates WHERE Statecode = ?', [Statecode]);
+    const [updatedRows] = await pool().query('SELECT * FROM py_tblstates WHERE Statecode = ?', [Statecode]);
     
     res.json({
       message: 'State updated successfully',
@@ -129,7 +129,7 @@ router.delete('/states/:Statecode', verifyToken, async (req, res) => {
   const { Statecode } = req.params;
   
   try {
-    const [result] = await pool.query('DELETE FROM py_tblstates WHERE Statecode = ?', [Statecode]);
+    const [result] = await pool().query('DELETE FROM py_tblstates WHERE Statecode = ?', [Statecode]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'State not found' });

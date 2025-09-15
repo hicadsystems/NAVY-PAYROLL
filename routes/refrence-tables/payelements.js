@@ -1,7 +1,7 @@
 // Element Type CRUD Routes
 const express = require('express');
 const router = express.Router();
-const pool = require('../../config/db'); // mysql2 pool
+const {pool} = require('../../config/db'); // mysql2 pool()
 const verifyToken = require('../../middware/authentication');
 
 // POST - Create new element type
@@ -33,12 +33,12 @@ router.post('/elementtypes', verifyToken, async (req, res) => {
     }
 
     // Check if PaymentType already exists
-    const [existing] = await pool.query('SELECT PaymentType FROM py_elementType WHERE PaymentType = ?', [PaymentType]);
+    const [existing] = await pool().query('SELECT PaymentType FROM py_elementType WHERE PaymentType = ?', [PaymentType]);
     if (existing.length > 0) {
       return res.status(409).json({ error: 'Payment type already exists' });
     }
 
-    const [result] = await pool.query(
+    const [result] = await pool().query(
       `INSERT INTO py_elementType 
        (PaymentType, elmDesc, Ledger, perc, std, maxi, bpay, yearend, Status, dependence, payfreq, pmonth, freetax, createdby, datecreated, ipis) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -64,7 +64,7 @@ router.post('/elementtypes', verifyToken, async (req, res) => {
 // GET - Get all element types
 router.get('/elementtypes', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const [rows] = await pool().query(`
       SELECT PaymentType, elmDesc, Ledger, perc, std, maxi, bpay, yearend, 
              Status, dependence, payfreq, pmonth, freetax, createdby, datecreated, ipis
       FROM py_elementType 
@@ -82,7 +82,7 @@ router.get('/elementtypes', verifyToken, async (req, res) => {
 router.get('/elementtypes/:PaymentType', verifyToken, async (req, res) => {
   try {
     const { PaymentType } = req.params;
-    const [rows] = await pool.query('SELECT * FROM py_elementType WHERE PaymentType = ?', [PaymentType]);
+    const [rows] = await pool().query('SELECT * FROM py_elementType WHERE PaymentType = ?', [PaymentType]);
     
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Element type not found' });
@@ -116,7 +116,7 @@ router.put('/elementtypes/:PaymentType', verifyToken, async (req, res) => {
 
   try {
     // Check if element type exists
-    const [existingRows] = await pool.query('SELECT PaymentType FROM py_elementType WHERE PaymentType = ?', [PaymentType]);
+    const [existingRows] = await pool().query('SELECT PaymentType FROM py_elementType WHERE PaymentType = ?', [PaymentType]);
     if (existingRows.length === 0) {
       return res.status(404).json({ error: 'Element type not found' });
     }
@@ -173,10 +173,10 @@ router.put('/elementtypes/:PaymentType', verifyToken, async (req, res) => {
     params.push(PaymentType);
 
     const sql = `UPDATE py_elementType SET ${sets.join(', ')} WHERE PaymentType = ?`;
-    const [result] = await pool.query(sql, params);
+    const [result] = await pool().query(sql, params);
 
     // Get updated record
-    const [updatedRows] = await pool.query('SELECT * FROM py_elementType WHERE PaymentType = ?', [PaymentType]);
+    const [updatedRows] = await pool().query('SELECT * FROM py_elementType WHERE PaymentType = ?', [PaymentType]);
     
     res.json({
       message: 'Element type updated successfully',
@@ -194,7 +194,7 @@ router.delete('/elementtypes/:PaymentType', verifyToken, async (req, res) => {
   const { PaymentType } = req.params;
   
   try {
-    const [result] = await pool.query('DELETE FROM py_elementType WHERE PaymentType = ?', [PaymentType]);
+    const [result] = await pool().query('DELETE FROM py_elementType WHERE PaymentType = ?', [PaymentType]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Element type not found' });
@@ -214,7 +214,7 @@ router.delete('/elementtypes/:PaymentType', verifyToken, async (req, res) => {
 // GET - Get active element types only
 router.get('/elementtypes/active/list', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const [rows] = await pool().query(`
       SELECT PaymentType, elmDesc, Status 
       FROM py_elementType 
       WHERE Status = 'Active' 
@@ -232,7 +232,7 @@ router.get('/elementtypes/active/list', verifyToken, async (req, res) => {
 router.get('/elementtypes/dependency/:dependence', verifyToken, async (req, res) => {
   try {
     const { dependence } = req.params;
-    const [rows] = await pool.query(`
+    const [rows] = await pool().query(`
       SELECT PaymentType, elmDesc, Status 
       FROM py_elementType 
       WHERE dependence = ? 

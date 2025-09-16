@@ -24,10 +24,24 @@ const verifyToken = (req, res, next) => {
       return res.status(401).json({ message: 'Invalid token' });
     }
 
-    // Attach entire payload instead of just id
-    req.user_id = decoded.id;
+    // Attach entire payload
+    req.user_id = decoded.user_id;  // Changed from decoded.id to decoded.user_id
     req.user_fullname = decoded.full_name;
-    req.user_role = decoded.role; 
+    req.user_role = decoded.role;
+    req.primary_class = decoded.primary_class;
+    req.current_class = decoded.current_class;
+
+    // Set database context based on user's current class
+    try {
+      if (decoded.current_class) {
+        const pool = require('../config/db'); // Adjust path as needed
+        pool.useDatabase(decoded.current_class);
+        console.log(`🔄 Database context set to: ${decoded.current_class} for user: ${decoded.user_id}`);
+      }
+    } catch (dbError) {
+      console.error('❌ Database context error:', dbError);
+      return res.status(500).json({ message: 'Database context error' });
+    }
 
     next();
   });

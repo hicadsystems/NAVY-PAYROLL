@@ -1,20 +1,20 @@
 const express = require('express');
-const {pool, switchDatabase} = require('../../config/db'); // mysql2 pool()
+const pool  = require('../../config/db'); // mysql2 pool
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET;
 const verifyToken = require('../../middware/authentication');
 
 // User login
 router.post("/login", async (req, res) => {
   const { user_id, password, payroll_class } = req.body;
-
-  if (!user_id || !password || !payroll_class) {
-    return res.status(400).json({ error: "User ID, password, and payroll class are required" });
-  }
+  // payroll_class comes from frontend as: 'hicaddata', 'hicaddata1'
 
   try {
-    // Look up user by ID
-    const [rows] = await pool().query(
+    // Always authenticate from officers database first
+    pool.useDatabase('hicaddata');
+    
+    const [rows] = await pool.query(
       "SELECT * FROM users WHERE user_id = ?",
       [user_id]
     );
@@ -30,18 +30,21 @@ router.post("/login", async (req, res) => {
       return res.status(403).json({ error: "Account is inactive or suspended" });
     }
 
-    // Plain password check (no bcrypt)
+    // Password validation
     if (user.password !== password) {
       return res.status(401).json({ error: "Invalid User ID or password" });
     }
 
-    // Verify payroll class
+    // IMPORTANT: Verify user can access the selected payroll class
+    // user.primary_class contains the database name they're assigned to (e.g., 'hicaddata', 'hicaddata2')
     if (user.primary_class !== payroll_class) {
-      return res.status(403).json({ error: "Unauthorized payroll class selection" });
+      return res.status(403).json({ 
+        error: "Unauthorized payroll class selection. You can only login to your assigned class." 
+      });
     }
 
-    // 🔹 Switch DB pool() dynamically
-    await switchDatabase(payroll_class);
+    // Switch to user's selected database (which matches their primary_class)
+    pool.useDatabase(payroll_class);
 
     // Generate JWT token
     const token = jwt.sign(
@@ -49,10 +52,10 @@ router.post("/login", async (req, res) => {
         user_id: user.user_id,
         full_name: user.full_name,
         role: user.user_role,
-        primary_class: user.primary_class,
-        current_class: payroll_class
+        primary_class: user.primary_class, // e.g., 'hicaddata', 'hicaddata1'
+        current_class: payroll_class // Same as primary_class on login
       },
-      process.env.JWT_SECRET || "secretkey",
+      JWT_SECRET,
       { expiresIn: "1h" }
     );
 
@@ -65,10 +68,11 @@ router.post("/login", async (req, res) => {
         email: user.email,
         role: user.user_role,
         status: user.status,
-        primary_class: user.primary_class,
-        current_class: payroll_class
+        primary_class: user.primary_class, // Their assigned database
+        current_class: payroll_class // Database they're currently working in
       }
     });
+
   } catch (err) {
     console.error("❌ Login error:", err);
     res.status(500).json({ error: "Server error" });
@@ -78,7 +82,7 @@ router.post("/login", async (req, res) => {
 //  Get all users
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool().query('SELECT * FROM users');
+    const [rows] = await pool.query('SELECT * FROM users');
     res.json(rows);
   } catch (err) {
     console.error('❌ Error fetching users:', err);
@@ -89,7 +93,7 @@ router.get('/', verifyToken, async (req, res) => {
 //  Get single user by ID
 router.get('/:id', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool().query('SELECT * FROM users WHERE user_id = ?', [req.params.id]);
+    const [rows] = await pool.query('SELECT * FROM users WHERE user_id = ?', [req.params.id]);
     if (rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -109,7 +113,7 @@ router.post('/', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'User ID, Payroll Class, full name, email, and role are required' });
     }
 
-    const [] = await pool().query(
+    const [] = await pool.query(
       `INSERT INTO users (user_id, full_name, primary_class, email, user_role, status, phone_number, password, expiry_date) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [user_id, fullName, payroll_class, email, role, status, phone, password, expiryDate]
@@ -124,7 +128,7 @@ router.post('/', verifyToken, async (req, res) => {
 
 // Update user
 router.put('/:user_id', verifyToken, async (req, res) => {
-  const { full_name, email, user_role, status, phone_number, password, expiry_date } = req.body;
+  const {payroll_class, full_name, email, user_role, status, phone_number, password, expiry_date } = req.body;
 
   try {
     const sets = [];
@@ -148,6 +152,9 @@ router.put('/:user_id', verifyToken, async (req, res) => {
     if (typeof expiry_date !== 'undefined') {
       sets.push('expiry_date = ?'); params.push(expiry_date);
     }
+    if (typeof payroll_class !== 'undefined') {
+      sets.push('primary_class = ?'); params.push(payroll_class);
+    }
 
     // Only include password when a non-empty value is provided
     if (typeof password !== 'undefined' && password !== '') {
@@ -161,11 +168,11 @@ router.put('/:user_id', verifyToken, async (req, res) => {
     const sql = `UPDATE users SET ${sets.join(', ')} WHERE user_id = ?`;
     params.push(req.params.user_id);
 
-    const [result] = await pool().query(sql, params);
+    const [result] = await pool.query(sql, params);
     if (result.affectedRows === 0) return res.status(404).json({ error: 'User not found' });
 
     // return updated row for frontend to update UI and show success reliably
-    const [rows] = await pool().query('SELECT * FROM users WHERE user_id = ?', [req.params.user_id]);
+    const [rows] = await pool.query('SELECT * FROM users WHERE user_id = ?', [req.params.user_id]);
     res.json({ message: 'User updated', user: rows[0] });
   } catch (err) {
     console.error('❌ Error updating user:', err);
@@ -176,7 +183,7 @@ router.put('/:user_id', verifyToken, async (req, res) => {
 //  Delete user
 router.delete('/:user_id', verifyToken, async (req, res) => {
   try {
-    const [result] = await pool().query('DELETE FROM users WHERE user_id = ?', [req.params.user_id]);
+    const [result] = await pool.query('DELETE FROM users WHERE user_id = ?', [req.params.user_id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'User not found' });

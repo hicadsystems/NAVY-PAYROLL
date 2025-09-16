@@ -213,6 +213,49 @@ async function createState(item) {
   }
 }
 
+//validation
+async function checkDuplicate(input, field) {
+  const value = input.value.trim();
+  if (!value) {
+    input.setCustomValidity("");
+    input.reportValidity();
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`/states/check/${field}/${encodeURIComponent(value)}`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+
+    const data = await res.json();
+    if (data.exists) {
+      input.setCustomValidity(`⚠️ This ${field} already exists.`);
+    } else {
+      input.setCustomValidity("");
+    }
+    input.reportValidity();
+  } catch (err) {
+    console.error(`Error checking ${field}:`, err);
+  }
+}
+
+// State Name
+document.getElementById("stateName")?.addEventListener("blur", function () {
+  checkDuplicate(this, "stateName");
+});
+
+// State Capital
+document.getElementById("stateCapital")?.addEventListener("blur", function () {
+  checkDuplicate(this, "stateCapital");
+});
+
+// State Code
+document.getElementById("stateCode")?.addEventListener("blur", function () {
+  checkDuplicate(this, "stateCode");
+});
+
+
 async function updateState(Statecode, item) {
   const token = localStorage.getItem("token");
 

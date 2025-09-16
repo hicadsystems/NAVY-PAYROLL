@@ -227,7 +227,7 @@ async function loadPayrollClasses() {
   try {
     const token = localStorage.getItem('token');
 
-    const res = await fetch("/classes", {
+    const res = await fetch("/db_classes", {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -248,10 +248,19 @@ async function loadPayrollClasses() {
     defaultOption.selected = true;
     select.appendChild(defaultOption);
 
+    const labelMap = {
+      hicaddata: "OFFICERS",
+      hicaddata1: "WARRANT OFFICERS",
+      hicaddata2: "RATINGS",
+      hicaddata3: "RATINGS A",
+      hicaddata4: "RATINGS B",
+      hicaddata5: "JUNIOR TRAINEE"
+    };
+
     classes.forEach(cls => {
       const opt = document.createElement("option");
-      opt.value = cls.id;   // backend DB id (e.g. hicaddata3)
-      opt.textContent = cls.name; // label (e.g. RATINGS A)
+      opt.value = cls.db_name;
+      opt.textContent = labelMap[cls.db_name] || cls.db_name;
       select.appendChild(opt);
     });
   } catch (err) {

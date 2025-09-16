@@ -144,9 +144,41 @@ function runBackup({ dbName, backupType = 'full', compression = false, storage =
 
 //Routes
 
-// GET DB name (keeps existing)
+// GET current database name from JWT token
 router.get('/database', verifyToken, (req, res) => {
-  res.json({ database: process.env.DB_NAME || dbConfig.database });
+  try {
+    const currentClass = req.current_class;
+    
+    // Get friendly name for the database
+    const dbToClassMap = {
+      'hicaddata': 'OFFICERS',
+      'hicaddata1': 'W/OFFICERS', 
+      'hicaddata2': 'RATINGS',
+      'hicaddata3': 'RATINGS A',
+      'hicaddata4': 'RATINGS B',
+      'hicaddata5': 'JUNIOR/TRAINEE'
+    };
+
+    const friendlyName = dbToClassMap[currentClass] || 'Unknown Class';
+
+    res.json({ 
+      database: currentClass,
+      class_name: friendlyName,
+      primary_class: req.primary_class,
+      user_info: {
+        user_id: req.user_id,
+        full_name: req.user_fullname,
+        role: req.user_role
+      }
+    });
+  } catch (error) {
+    console.error('Error getting database info:', error);
+    res.json({ 
+      database: 'Error',
+      class_name: 'Error',
+      error: error.message 
+    });
+  }
 });
 
 /*
@@ -156,7 +188,7 @@ router.get('/database', verifyToken, (req, res) => {
 router.post('/backup/mysql', verifyToken, async (req, res) => {
   try {
     const { backupType = 'full', compression = false, storage = 'local' } = req.body || {};
-    const dbName = process.env.DB_NAME || dbConfig.database;
+    const dbName = req.current_class;
 
     const result = await runBackup({ dbName, backupType, compression, storage });
     return res.json({ success: true, filename: result.filename, path: result.path });
@@ -173,7 +205,7 @@ router.post('/backup/mysql', verifyToken, async (req, res) => {
 router.post('/backup/schedule', verifyToken, (req, res) => {
   try {
     const { schedule, backupType = 'full', compression = false, storage = 'local' } = req.body || {};
-    const dbName = process.env.DB_NAME || dbConfig.database;
+    const dbName = req.current_class;
 
     const scheduleMap = {
       hourly: '0 * * * *',

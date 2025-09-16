@@ -146,7 +146,7 @@ async function fetchRoles() {
     // Add role options
     roles.forEach(r => {
       const opt = document.createElement("option");
-      opt.value = r.id;
+      opt.value = r.name;
       opt.textContent = r.name;
       select.appendChild(opt);
     });
@@ -155,11 +155,57 @@ async function fetchRoles() {
   }
 }
 
-// Use the same fix as before for DOM ready
+//payrollclass dropdown
+async function loadPayrollClasses() {
+  try {
+    const token = localStorage.getItem('token');
+
+    const res = await fetch("/db_classes", {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` 
+        }                 
+    });
+    const classes = await res.json();
+    const select = document.getElementById("payroll-class");
+
+    // Clear existing options first
+    select.innerHTML = "";
+    
+    // Add default option
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "Select a class";
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    select.appendChild(defaultOption);
+
+    const labelMap = {
+      hicaddata: "OFFICERS",
+      hicaddata1: "WARRANT OFFICERS",
+      hicaddata2: "RATINGS",
+      hicaddata3: "RATINGS A",
+      hicaddata4: "RATINGS B",
+      hicaddata5: "JUNIOR TRAINEE"
+    };
+
+    classes.forEach(cls => {
+      const opt = document.createElement("option");
+      opt.value = cls.db_name;
+      opt.textContent = labelMap[cls.db_name] || cls.db_name;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("❌ Failed to load payroll classes:", err);
+  }
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener("DOMContentLoaded", fetchRoles);
+  document.addEventListener("DOMContentLoaded", fetchRoles, loadPayrollClasses);
 } else {
   fetchRoles();
+  loadPayrollClasses();
 }
 
 class PersonnelManager {
@@ -296,10 +342,20 @@ class PersonnelManager {
 
   showUserModal(user) {
     if (!this.viewModal || !this.viewContent) return;
+
+    const labelMap = {
+      hicaddata: "OFFICERS",
+      hicaddata1: "WARRANT OFFICERS",
+      hicaddata2: "RATINGS",
+      hicaddata3: "RATINGS A",
+      hicaddata4: "RATINGS B",
+      hicaddata5: "JUNIOR TRAINEE"
+    };
+
     const rows = [
       ['User ID', user.user_id || ''],
       ['Full name', user.full_name || ''],
-      ['Payroll Class', user.primary_class || ''],
+      ['Payroll Class', labelMap[user.primary_class] || user.primary_class || ''],
       ['Role', user.user_role || ''],
       ['Status', user.status || ''],
       ['Email', user.email || ''],

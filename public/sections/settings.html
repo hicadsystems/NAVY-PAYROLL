@@ -1,7 +1,7 @@
 <section class="p-6">
 <div id="profile-card" class="max-w-3xl mx-auto rounded-2xl p-6 border">
-  <div class="flex justify-between items-center mb-6">
-    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+  <div class="flex justify-between items-center">
+    <h2 class="text-2xl font-bold text-gray-800 flex items-center">
         <i class="fas fa-user-circle text-blue-600 mr-2"></i>Profile Details
     </h2>
 
@@ -19,6 +19,10 @@
         </label>
     </div>-->
   </div>
+
+<div id="payrollClass" 
+     class="inline-block p-2 my-6 rounded-lg text-navy text-sm font-black">
+</div>
 
 
   <form id="profile-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -125,19 +129,49 @@
     let originalUser = null;
 
     async function loadUser(userId) {
-        try {
-            const res = await fetch(`/api/users/${userId}`);
-            if (!res.ok) throw new Error("Failed to fetch user");
+      const token = localStorage.getItem("token");
+      const viewContainer = document.getElementById("payrollClass");
 
-            const user = await res.json();
-            console.log("✅ User data:", user);
+      if (!viewContainer || !viewContainer.offsetParent) {
+        return; // Don't fetch if container is hidden
+      }
 
-            originalUser = user; // keep copy
+      try {
+        const res = await fetch(`/api/users/${userId}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        });
 
-            populateForm(user);
-        } catch (err) {
-            console.error("❌ Error loading user:", err);
-        }
+        if (!res.ok) throw new Error("Failed to fetch user");
+
+        const user = await res.json();
+        console.log("✅ User data:", user);
+
+        originalUser = user; // keep copy
+
+        populateForm(user);
+
+        // 🔑 Map DB name → display name
+        const classMap = {
+          hicaddata: "OFFICERS",
+          hicaddata1: "WARRANT OFFICERS",
+          hicaddata2: "RATINGS",
+          hicaddata3: "RATINGS A",
+          hicaddata4: "RATINGS B",
+          hicaddata5: "JUNIOR TRAINEE"
+        };
+
+        // Insert mapped class name into container
+        viewContainer.textContent =
+          classMap[user.primary_class] || user.primary_class || "N/A";
+
+      } catch (err) {
+        console.error("❌ Error loading user:", err);
+        viewContainer.textContent = "Error loading payroll class";
+      }
     }
 
     function populateForm(user) {

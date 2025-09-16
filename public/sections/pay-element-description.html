@@ -229,6 +229,42 @@
     }
   }
 
+  async function checkDuplicate(input, field) {
+    const value = input.value.trim();
+    if (!value) {
+      input.setCustomValidity("");
+      input.reportValidity();
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/elementtypes/check/${field}/${encodeURIComponent(value)}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      const data = await res.json();
+      if (data.exists) {
+        input.setCustomValidity(`⚠️ This ${field} already exists.`);
+      } else {
+        input.setCustomValidity("");
+      }
+      input.reportValidity();
+    } catch (err) {
+      console.error(`Error checking ${field}:`, err);
+    }
+  }
+
+  // attach validation on blur
+  document.getElementById("payElements").addEventListener("blur", function () {
+    checkDuplicate(this, 'PaymentType');
+  });
+
+  document.getElementById("description").addEventListener("blur", function () {
+    checkDuplicate(this, 'elmDesc');
+  });
+
+
   async function updatePayElement(paymentType, elementData) {
     try {
       const token = localStorage.getItem("token");

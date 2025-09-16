@@ -62,54 +62,61 @@
     </div>
   </div>
 
- <script>
-    // Show modal for 10s
-    function showModal() {
-      const modal = document.getElementById('successModal');
-      modal.classList.remove("hidden");
-      setTimeout(() => {
-        modal.classList.add("hidden");
-      }, 1000);
-    }
+<script>
+  function showModal() {
+    const modal = document.getElementById('successModal');
+    modal.classList.remove("hidden");
+    setTimeout(() => modal.classList.add("hidden"), 1000);
+  }
 
-    // Load saved values on page load
-    async function loadForm() {
-      const res = await fetch('/admin/overtime');
-      const data = await res.json();
-      if (data && data.length > 0) {
-        const row = data[0]; // only one row expected
-        const form = document.getElementById('overtimeForm');
-        for (let [k, v] of Object.entries(row)) {
-          if (form.elements[k]) form.elements[k].value = v ?? '';
-        }
-        // set taxovertime dropdown based on basicpay
-        form.elements['taxovertime'].value = row.basicpay == 1 ? "Yes" : "No";
-      }
-    }
+  // Load the single overtime row
+  async function loadForm() {
+    const token = localStorage.getItem("token");
 
-    document.getElementById('overtimeForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const form = e.target;
-      const data = Object.fromEntries(new FormData(form).entries());
-
-      // map taxovertime → basicpay
-      data.basicpay = data.taxovertime === "Yes" ? 1 : 0;
-
-      const res = await fetch('/admin/overtime', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-
-      const result = await res.json();
-      if (result.success) {
-        showModal();
-      } else {
-        alert("Error: " + result.error);
+    const res = await fetch('/overtime', {   
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
       }
     });
+    const row = await res.json();
+    if (row && Object.keys(row).length > 0) {
+      const form = document.getElementById('overtimeForm');
+      for (let [k, v] of Object.entries(row)) {
+        if (form.elements[k]) form.elements[k].value = v ?? '';
+      }
+    }
+  }
 
-    loadForm();
-  </script>
+  // Save form
+  document.getElementById('overtimeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form).entries());
+    const token = localStorage.getItem("token");
+
+    const res = await fetch('/overtime', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` 
+      },
+        
+      body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+    if (res.ok) {
+      showModal();
+    } else {
+      alert("Error: " + (result.error || result.message));
+    }
+  });
+
+  // Prefill form on load
+  loadForm();
+</script>
+
 </body>
 </html>

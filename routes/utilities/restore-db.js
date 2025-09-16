@@ -133,8 +133,39 @@ router.get("/status", verifyToken, async (req, res) => {
 
 // Get database name
 router.get('/database', verifyToken, (req, res) => {
-    const dbName = process.env.DB_NAME || dbConfig.database || 'default';
-    res.json({ database: dbName });
+  try {
+    const currentClass = req.current_class;
+    
+    // Get friendly name for the database
+    const dbToClassMap = {
+      'hicaddata': 'OFFICERS',
+      'hicaddata1': 'W/OFFICERS', 
+      'hicaddata2': 'RATINGS',
+      'hicaddata3': 'RATINGS A',
+      'hicaddata4': 'RATINGS B',
+      'hicaddata5': 'JUNIOR/TRAINEE'
+    };
+
+    const friendlyName = dbToClassMap[currentClass] || 'Unknown Class';
+
+    res.json({ 
+      database: currentClass,
+      class_name: friendlyName,
+      primary_class: req.primary_class,
+      user_info: {
+        user_id: req.user_id,
+        full_name: req.user_fullname,
+        role: req.user_role
+      }
+    });
+  } catch (error) {
+    console.error('Error getting database info:', error);
+    res.json({ 
+      database: 'Error',
+      class_name: 'Error',
+      error: error.message 
+    });
+  }
 });
 
 /**

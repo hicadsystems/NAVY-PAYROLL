@@ -4,7 +4,7 @@ const express = require('express');
 const app = express();
 const session = require('express-session');
 const serveIndex = require('serve-index');
-const {pool} = require('./config/db'); // ensure ./db exports poolPromise or pool
+const pool = require('./config/db'); 
 const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 5500;
 // Load env variables
 dotenv.config({ path: path.resolve(__dirname, envFile) });
 console.log('Running in', process.env.NODE_ENV);
-console.log('Database:', process.env.DB_NAME);
+//console.log('Database:', process.env.DB_NAME);
 
 
 // security headers & logging
@@ -96,24 +96,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error' });
 });
 
-
-// graceful shutdown
-function shutdown(err) {
-  if (err) console.error('Shutdown due to error:', err);
-  console.log('Shutting down server...');
-  // close DB pool if available
-  if (pool && pool.close) {
-    pool.close().catch(()=>{});
-  }
-  process.exit(err ? 1 : 0);
-}
-process.on('uncaughtException', shutdown);
-process.on('unhandledRejection', shutdown);
-
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
-
-
-process.on('SIGTERM', () => shutdown());
-process.on('SIGINT', () => shutdown());

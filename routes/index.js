@@ -9,6 +9,7 @@ const restoreRoutes = require('./utilities/restore-db');
 //refrence tables
 const statesRoutes = require('./refrence-tables/states');
 const payelementsRoutes = require('./refrence-tables/payelements');
+const overtimeRoutes = require('./refrence-tables/overtime');
 
 
 module.exports = (app) => {
@@ -23,5 +24,6 @@ module.exports = (app) => {
     //refrence tables
     app.use("/", statesRoutes);
     app.use("/", payelementsRoutes);
+    app.use("/", overtimeRoutes);
 
 };

@@ -8,30 +8,6 @@
   <div class="overflow-hidden border border-gray-200 rounded-lg">
     <table class="w-full text-left border-collapse">
       <tbody id="classTable">
-        <tr data-class="OFFICER" class="hover:bg-blue-50">
-          <td class="px-4 py-3 font-semibold text-blue-600">OFFICER</td>
-          <td class="px-4 py-3 text-right">
-            <button class="focusBtn px-4 py-1 bg-gray-200 rounded hover:bg-gray-300">Focus</button>
-          </td>
-        </tr>
-        <tr data-class="W/OFFICER" class="hover:bg-blue-50">
-          <td class="px-4 py-3 font-semibold text-blue-600">W/OFFICER</td>
-          <td class="px-4 py-3 text-right">
-            <button class="focusBtn px-4 py-1 bg-gray-200 rounded hover:bg-gray-300">Focus</button>
-          </td>
-        </tr>
-        <tr data-class="RATINGS" class="hover:bg-blue-50">
-          <td class="px-4 py-3 font-semibold text-blue-600">RATINGS</td>
-          <td class="px-4 py-3 text-right">
-            <button class="focusBtn px-4 py-1 bg-gray-200 rounded hover:bg-gray-300">Focus</button>
-          </td>
-        </tr>
-        <tr data-class="RATINGS B" class="hover:bg-blue-50">
-          <td class="px-4 py-3 font-semibold text-blue-600">RATINGS B</td>
-          <td class="px-4 py-3 text-right">
-            <button class="focusBtn px-4 py-1 bg-gray-200 rounded hover:bg-gray-300">Focus</button>
-          </td>
-        </tr>
       </tbody>
     </table>
   </div>
@@ -193,21 +169,39 @@
       if (indicator) indicator.remove();
       const btn = r.querySelector('.focusBtn');
       
-      // Restore original state based on backend data
+      // Get class data from backend
       const classData = availableClasses.find(c => c.display === r.dataset.class);
+      const td = r.querySelector('td:first-child');
+      
       if (classData && classData.isActive) {
+        // Mark as active
         btn.disabled = true;
         btn.className = "focusBtn px-4 py-1 bg-green-600 text-white rounded cursor-not-allowed";
         btn.textContent = "Active";
         r.classList.add('bg-green-100', 'border-green-500');
-        const td = r.querySelector('td:first-child');
-        if (!td.querySelector('.activeIndicator')) {
-          td.innerHTML += '<span class="activeIndicator text-green-600 font-bold ml-2">✓ Active</span>';
+        
+        // Rebuild td content with proper badges
+        let html = classData.display;
+        if (classData.isPrimary) {
+          html += ' <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded ml-2">Primary</span>';
         }
+        html += ' <span class="activeIndicator text-green-600 font-bold ml-2">✓ Active</span>';
+        td.innerHTML = html;
+        
       } else {
+        // Mark as inactive
         btn.disabled = false;
         btn.className = "focusBtn px-4 py-1 bg-gray-200 rounded hover:bg-gray-300";
         btn.textContent = "Focus";
+        
+        // Rebuild td content with proper badges
+        if (classData) {
+          let html = classData.display;
+          if (classData.isPrimary) {
+            html += ' <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded ml-2">Primary</span>';
+          }
+          td.innerHTML = html;
+        }
       }
     });
   }
@@ -231,20 +225,37 @@
 
     console.log('🟢 Marking row as active:', row.dataset.class);
 
+    // Update row styling
     row.classList.remove('bg-yellow-100','border-yellow-400');
     row.classList.add('bg-green-100','border-green-500');
 
     const td = row.querySelector('td:first-child');
-    td.innerHTML = row.dataset.class +
-      (row.dataset.isPrimary === "true"
-        ? '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded ml-2">Primary</span>'
-        : '') +
-      '<span class="activeIndicator text-green-600 font-bold ml-2">✓ Active</span>';
+    if (!td) return;
 
+    // Get class info from backend data (availableClasses array)
+    const className = row.dataset.class;
+    const classInfo = availableClasses.find(cls => cls.display === className);
+    
+    // Always show the class name
+    let html = className;
+
+    // Use backend-provided isPrimary information
+    if (classInfo && classInfo.isPrimary) {
+      html += ' <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded ml-2">Primary</span>';
+    }
+
+    // Add active indicator
+    html += ' <span class="activeIndicator text-green-600 font-bold ml-2">✓ Active</span>';
+
+    td.innerHTML = html;
+
+    // Update focus button
     const btn = row.querySelector('.focusBtn');
-    btn.disabled = true;
-    btn.className = "focusBtn px-4 py-1 bg-green-600 text-white rounded cursor-not-allowed";
-    btn.textContent = "Active";
+    if (btn) {
+      btn.disabled = true;
+      btn.className = "focusBtn px-4 py-1 bg-green-600 text-white rounded cursor-not-allowed";
+      btn.textContent = "Active";
+    }
   }
 
 

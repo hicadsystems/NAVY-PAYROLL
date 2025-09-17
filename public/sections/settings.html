@@ -141,7 +141,7 @@
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            "Authorization": `Bearer ${token}`
           },
         });
 
@@ -154,19 +154,9 @@
 
         populateForm(user);
 
-        // 🔑 Map DB name → display name
-        const classMap = {
-          hicaddata: "OFFICERS",
-          hicaddata1: "WARRANT OFFICERS",
-          hicaddata2: "RATINGS",
-          hicaddata3: "RATINGS A",
-          hicaddata4: "RATINGS B",
-          hicaddata5: "JUNIOR TRAINEE"
-        };
-
         // Insert mapped class name into container
         viewContainer.textContent =
-          classMap[user.primary_class] || user.primary_class || "N/A";
+          user.class_display_name || user.primary_class || '';
 
       } catch (err) {
         console.error("❌ Error loading user:", err);
@@ -175,23 +165,23 @@
     }
 
     function populateForm(user) {
-        document.getElementById("user_id").value = user.user_id;
-        document.getElementById("full_name").value = user.full_name;
-        document.getElementById("email").value = user.email;
-        document.getElementById("phone_number").value = user.phone_number || "";
-        document.getElementById("user_role").value = user.user_role;
-        document.getElementById("status").value = user.status;
-        document.getElementById("expiry_date").value = user.expiry_date ? new Date(user.expiry_date).toISOString().split('T')[0] : "";
+      document.getElementById("user_id").value = user.user_id;
+      document.getElementById("full_name").value = user.full_name;
+      document.getElementById("email").value = user.email;
+      document.getElementById("phone_number").value = user.phone_number || "";
+      document.getElementById("user_role").value = user.user_role;
+      document.getElementById("status").value = user.status;
+      document.getElementById("expiry_date").value = user.expiry_date ? new Date(user.expiry_date).toISOString().split('T')[0] : "";
 
-        if (user.password) {
-            const pwd = user.password;
-            const masked =
-            pwd.length > 4
-                ? pwd.substring(0, 2) + "****" + pwd.substring(pwd.length - 2)
-                : "****";
-            document.getElementById("password").value = masked;
-        }
-}
+      if (user.password) {
+          const pwd = user.password;
+          const masked =
+          pwd.length > 4
+              ? pwd.substring(0, 2) + "****" + pwd.substring(pwd.length - 2)
+              : "****";
+          document.getElementById("password").value = masked;
+      }
+    }
 
 
 // 🔹 Edit / Save / Cancel toggle
@@ -242,9 +232,13 @@ saveBtn.addEventListener("click", async () => {
   console.log(">>> Saving user payload:", payload);
 
   try {
+    const token = localStorage.getItem("token");
     const res = await fetch(`/api/users/${payload.user_id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
       body: JSON.stringify(payload),
     });
 

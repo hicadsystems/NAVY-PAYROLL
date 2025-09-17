@@ -161,18 +161,28 @@ async function loadPayrollClasses() {
     const token = localStorage.getItem('token');
 
     const res = await fetch("/db_classes", {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` 
-        }                 
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
     });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! Status: ${res.status}`);
+    }
+
     const classes = await res.json();
     const select = document.getElementById("payroll-class");
 
-    // Clear existing options first
+    if (!select) {
+      console.error("⚠️ Element with id 'payroll-class' not found.");
+      return;
+    }
+
+    // Clear existing options
     select.innerHTML = "";
-    
+
     // Add default option
     const defaultOption = document.createElement("option");
     defaultOption.value = "";
@@ -181,19 +191,11 @@ async function loadPayrollClasses() {
     defaultOption.selected = true;
     select.appendChild(defaultOption);
 
-    const labelMap = {
-      hicaddata: "OFFICERS",
-      hicaddata1: "WARRANT OFFICERS",
-      hicaddata2: "RATINGS",
-      hicaddata3: "RATINGS A",
-      hicaddata4: "RATINGS B",
-      hicaddata5: "JUNIOR TRAINEE"
-    };
-
+    // Populate with DB data
     classes.forEach(cls => {
       const opt = document.createElement("option");
-      opt.value = cls.db_name;
-      opt.textContent = labelMap[cls.db_name] || cls.db_name;
+      opt.value = cls.db_name;            // backend value
+      opt.textContent = cls.display_name; // human-readable label
       select.appendChild(opt);
     });
   } catch (err) {
@@ -343,29 +345,26 @@ class PersonnelManager {
   showUserModal(user) {
     if (!this.viewModal || !this.viewContent) return;
 
-    const labelMap = {
-      hicaddata: "OFFICERS",
-      hicaddata1: "WARRANT OFFICERS",
-      hicaddata2: "RATINGS",
-      hicaddata3: "RATINGS A",
-      hicaddata4: "RATINGS B",
-      hicaddata5: "JUNIOR TRAINEE"
-    };
-
     const rows = [
       ['User ID', user.user_id || ''],
       ['Full name', user.full_name || ''],
-      ['Payroll Class', labelMap[user.primary_class] || user.primary_class || ''],
+      ['Payroll Class', user.class_display_name || user.primary_class || ''],
       ['Role', user.user_role || ''],
       ['Status', user.status || ''],
       ['Email', user.email || ''],
       ['Phone', user.phone_number || ''],
       ['Expiry Date', user.expiry_date ? new Date(user.expiry_date).toLocaleDateString() : '']
     ];
-    this.viewContent.innerHTML = rows.map(r => `<div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
-        <dt class="font-medium text-gray-600"><strong class="block text-sm text-gray-700">${r[0]}:</strong></dt>
+
+    this.viewContent.innerHTML = rows.map(r => `
+      <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
+        <dt class="font-medium text-gray-600">
+          <strong class="block text-sm text-gray-700">${r[0]}:</strong>
+        </dt>
         <dd class="col-span-2 text-gray-800">${r[1]}</dd>
-      </div>`).join('');
+      </div>
+    `).join('');
+
     this.viewModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
   }

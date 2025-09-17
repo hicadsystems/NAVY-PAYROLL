@@ -302,30 +302,56 @@ function repositionOpen(){
 window.addEventListener('resize', ()=>{ clearTimeout(t); t = setTimeout(repositionOpen, 120); });
 window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
 
-(function() {
-
   // Figure out the current time of day
   function getTimeOfDay() {
     const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) {
-      return 'Morning';
-    } else if (hour >= 12 && hour < 16) {
-      return 'Afternoon';
-    } else if (hour >= 16 && hour < 21) {
-      return 'Evening';
-    } else {
-      return 'Night';
-    }
+    if (hour >= 5 && hour < 12) return 'Morning';
+    if (hour >= 12 && hour < 16) return 'Afternoon';
+    if (hour >= 16 && hour < 21) return 'Evening';
+    return 'Night';
   }
 
-  //Get logged-in user from localStorage
+  // Get logged-in user from localStorage
   function getLoggedInUser() {
     return {
       user_id: localStorage.getItem("user_id"),
       full_name: localStorage.getItem("full_name"),
       role: localStorage.getItem("role"),
-      primary_class : localStorage.getItem("class"),
+      primary_class: localStorage.getItem("class"),
     };
+  }
+
+  // Cache for class mappings
+  let classMapping = {};
+  let selectedPayrollClass = sessionStorage.getItem("currentPayrollClass") || null;
+
+  // Load class mappings from backend endpoint
+  async function loadClassMappings() {
+    try {
+      const response = await fetch('/db_classes'); // ✅ use your backend route
+      const classes = await response.json();
+
+      // Create mapping from db_name → display_name
+      classMapping = {};
+      classes.forEach(cls => {
+        classMapping[cls.db_name] = cls.display_name;
+      });
+
+      console.log('📋 Loaded class mappings:', classMapping);
+    } catch (error) {
+      console.error('Failed to load class mappings:', error);
+      // Fallback mapping if endpoint fails
+      classMapping = {
+        'hicaddata': 'OFFICERS',
+        'hicaddata1': 'WARRANT OFFICERS',
+        'hicaddata2': 'RATINGS',
+        'hicaddata3': 'RATINGS A',
+        'hicaddata4': 'RATINGS B',
+        'hicaddata5': 'JUNIOR TRAINEE',
+        'civiliandata': 'CIVILIANS',
+        'pendata': 'PENSIONERS'
+      };
+    }
   }
 
   // Update greeting message
@@ -336,15 +362,18 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
     const user = getLoggedInUser();
     const timeOfDay = getTimeOfDay();
 
+    // Use current payroll class (session override) or fallback to user’s primary
+    const effectiveClass = selectedPayrollClass || user.primary_class;
+    const userClass = classMapping[effectiveClass] || effectiveClass || 'OFFICERS';
+
     // Default to "User" if no login info
     const userName = user?.full_name || user?.user_id || 'User';
-    const userClass = user?.current_class || 'OFFICERS';
 
     const greeting = `Good ${timeOfDay} ${userName}, welcome to ${userClass} payroll`;
     greetingElement.textContent = greeting;
   }
 
-  //Update current time display
+  // Update current time display
   function updateCurrentTime() {
     const timeElement = document.getElementById('currentTime');
     if (!timeElement) return;
@@ -370,23 +399,26 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
   };
 
   // Init only on dashboard pages
-  if (document.getElementById('dynamicGreeting')) {
-    updateGreeting();
-    updateCurrentTime();
+  (async function initDashboard() {
+    if (document.getElementById('dynamicGreeting')) {
+      await loadClassMappings();   // ✅ wait for mapping to load
+      updateGreeting();
+      updateCurrentTime();
 
-    setInterval(updateCurrentTime, 1000);  // Update time every second
-    setInterval(updateGreeting, 60000);    // Refresh greeting every minute
+      setInterval(updateCurrentTime, 1000);  // Update time every second
+      setInterval(updateGreeting, 60000);    // Refresh greeting every minute
 
-    // Watch for payroll class changes
-    setInterval(function() {
-      const storedClass = sessionStorage.getItem('currentPayrollClass');
-      if (storedClass && storedClass !== selectedPayrollClass) {
-        selectedPayrollClass = storedClass;
-        updateGreeting();
-      }
-    }, 1000);
-  }
-})();
+      // Watch for payroll class changes
+      setInterval(function () {
+        const storedClass = sessionStorage.getItem('currentPayrollClass');
+        if (storedClass && storedClass !== selectedPayrollClass) {
+          selectedPayrollClass = storedClass;
+          updateGreeting();
+        }
+      }, 1000);
+    }
+  })();
+
 
 // SIMPLE SUBSUBMENU FUNCTIONALITY - Direct approach
 document.addEventListener('DOMContentLoaded', function() {
@@ -481,8 +513,8 @@ function setupSubsubmenus() {
 
 /*const rolePermissions = {
   "data entry": {
-    base: ["reference-tables, data-entry, utilities"],
-    "-": ["paymenyts-deductions"],
+    base: ["reference-tables", "data-entry", "utilities"], 
+    "-": ["payments-deductions"], 
     "+": []
   },
   "operator": {
@@ -502,7 +534,7 @@ function setupSubsubmenus() {
   },
   "hicad": {
     base: ["*"],
-    "+": ["*"],
+    "+": [], 
     "-": []
   }
 };
@@ -511,60 +543,116 @@ function resolvePermissions(role) {
   const seen = new Set(); // prevent circular inheritance
   let current = role;
   let result = { base: [], "+": [], "-": [] };
-
+  
   while (current && !seen.has(current)) {
     seen.add(current);
     const cfg = rolePermissions[current] || {};
+    
+    // Collect base permissions
     if (cfg.base) result.base.push(...cfg.base);
-    if (cfg["+"]) result["+"] = [...cfg["+"], ...result["+"]];
-    if (cfg["-"]) result["-"] = [...cfg["-"], ...result["-"]];
+    
+    // Collect additions (reverse order for proper inheritance)
+    if (cfg["+"]) result["+"].unshift(...cfg["+"]);
+    
+    // Collect exclusions 
+    if (cfg["-"]) result["-"].push(...cfg["-"]);
+    
     current = cfg.inherit; // walk up inheritance
   }
-
-  // Deduplicate
+  
+  // Deduplicate arrays
   result.base = [...new Set(result.base)];
   result["+"] = [...new Set(result["+"])];
   result["-"] = [...new Set(result["-"])];
+  
   return result;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const role = (localStorage.getItem("role") || "").toLowerCase();
-  const cfg = resolvePermissions(role);
+// Alternative: Use in-memory storage instead of localStorage for Claude artifacts
+let currentUserRole = ""; // Store role in memory
 
+function setUserRole(role) {
+  currentUserRole = role.toLowerCase();
+  applyPermissions();
+}
+
+function applyPermissions() {
+  const cfg = resolvePermissions(currentUserRole);
+  
   // Hide all menus first
   document.querySelectorAll("[data-menu]").forEach(menu => {
     menu.style.display = "none";
   });
-
+  
   // Show base menus
-  document.querySelectorAll("[data-menu]").forEach(menu => {
-    const key = menu.getAttribute("data-menu");
-    if (cfg.base.includes("*") || cfg.base.includes(key)) {
+  if (cfg.base.includes("*")) {
+    // Show all menus if wildcard
+    document.querySelectorAll("[data-menu]").forEach(menu => {
       menu.style.display = "block";
-    }
+    });
+  } else {
+    // Show specific base menus
+    document.querySelectorAll("[data-menu]").forEach(menu => {
+      const key = menu.getAttribute("data-menu");
+      if (cfg.base.includes(key)) {
+        menu.style.display = "block";
+      }
+    });
+  }
+  
+  // Apply additions (+)
+  cfg["+"].forEach(section => {
+    const menuEl = document.querySelector(`[data-menu="${section}"]`);
+    if (menuEl) menuEl.style.display = "block";
+    
+    const sectionEl = document.querySelector(`[data-section="${section}"]`);
+    if (sectionEl) sectionEl.parentElement.style.display = "block";
   });
-
-  // Apply exclusions (-)
+  
+  // Apply exclusions (-) - these override additions
   cfg["-"].forEach(ex => {
     const subEl = document.querySelector(`[data-submenu="${ex}"]`);
     if (subEl) subEl.style.display = "none";
-
+    
     const linkEl = document.querySelector(`[data-section="${ex}"]`);
     if (linkEl) linkEl.parentElement.style.display = "none";
+    
+    const menuEl = document.querySelector(`[data-menu="${ex}"]`);
+    if (menuEl) menuEl.style.display = "none";
   });
+}
 
-  // Apply additions (+)
-  if (cfg["+"]?.includes("*")) {
-    document.querySelectorAll("[data-menu], [data-section]").forEach(el => {
-      el.style.display = "block";
-    });
-  } else {
-    cfg["+"]?.forEach(section => {
-      const el = document.querySelector(`[data-section="${section}"]`);
-      if (el) el.parentElement.style.display = "block";
-    });
+// Initialize when DOM is ready
+document.addEventListener("DOMContentLoaded", () => {
+  // For testing - set a default role or get from your auth system
+  setUserRole("operator"); // Replace with actual role from your backend
+});
+
+// Example usage with different roles:
+function testPermissions() {
+  console.log("Data Entry permissions:", resolvePermissions("data entry"));
+  console.log("Operator permissions:", resolvePermissions("operator"));
+  console.log("Processor permissions:", resolvePermissions("processor"));
+  console.log("Manager permissions:", resolvePermissions("manager"));
+  console.log("Hicad permissions:", resolvePermissions("hicad"));
+}
+
+// Backend integration example
+async function initializeUserPermissions() {
+  try {
+    // Replace with your actual API endpoint
+    const response = await fetch('/api/user/role');
+    const userData = await response.json();
+    setUserRole(userData.role);
+  } catch (error) {
+    console.error('Failed to fetch user role:', error);
+    // Fallback to most restrictive role
+    setUserRole("data entry");
   }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+
 });*/
 
 

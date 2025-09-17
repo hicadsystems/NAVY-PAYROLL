@@ -86,7 +86,11 @@ router.post("/login", async (req, res) => {
 //  Get all users
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM users');
+    const [rows] = await pool.query(`
+      SELECT u.*, c.display_name AS class_display_name
+      FROM users u
+      LEFT JOIN db_classes c ON u.primary_class = c.db_name
+    `);
     res.json(rows);
   } catch (err) {
     console.error('❌ Error fetching users:', err);
@@ -94,13 +98,21 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
-//  Get single user by ID
+
+// Get single user by ID
 router.get('/:id', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM users WHERE user_id = ?', [req.params.id]);
+    const [rows] = await pool.query(`
+      SELECT u.*, c.display_name AS class_display_name
+      FROM users u
+      LEFT JOIN db_classes c ON u.primary_class = c.db_name
+      WHERE u.user_id = ?
+    `, [req.params.id]);
+
     if (rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
+
     res.json(rows[0]);
   } catch (err) {
     console.error('❌ Error fetching user:', err);

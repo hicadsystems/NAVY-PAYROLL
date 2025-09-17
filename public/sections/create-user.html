@@ -228,18 +228,28 @@ async function loadPayrollClasses() {
     const token = localStorage.getItem('token');
 
     const res = await fetch("/db_classes", {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` 
-        }                 
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
     });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! Status: ${res.status}`);
+    }
+
     const classes = await res.json();
     const select = document.getElementById("payroll-class");
 
-    // Clear existing options first
+    if (!select) {
+      console.error("⚠️ Element with id 'payroll-class' not found.");
+      return;
+    }
+
+    // Clear existing options
     select.innerHTML = "";
-    
+
     // Add default option
     const defaultOption = document.createElement("option");
     defaultOption.value = "";
@@ -248,19 +258,11 @@ async function loadPayrollClasses() {
     defaultOption.selected = true;
     select.appendChild(defaultOption);
 
-    const labelMap = {
-      hicaddata: "OFFICERS",
-      hicaddata1: "WARRANT OFFICERS",
-      hicaddata2: "RATINGS",
-      hicaddata3: "RATINGS A",
-      hicaddata4: "RATINGS B",
-      hicaddata5: "JUNIOR TRAINEE"
-    };
-
+    // Populate with DB data
     classes.forEach(cls => {
       const opt = document.createElement("option");
-      opt.value = cls.db_name;
-      opt.textContent = labelMap[cls.db_name] || cls.db_name;
+      opt.value = cls.db_name;            // backend value
+      opt.textContent = cls.display_name; // human-readable label
       select.appendChild(opt);
     });
   } catch (err) {

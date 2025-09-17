@@ -6,16 +6,6 @@ const pool  = require('../../config/db'); // mysql2 pool
 
 const SECRET = process.env.JWT_SECRET;
 
-// Map frontend class names to backend database identifiers
-const CLASS_MAPPING = {
-  'OFFICER': 'hicaddata',      // officers -> hicaddata
-  'W/OFFICER': 'hicaddata1',   // wofficers -> hicaddata1
-  'RATINGS': 'hicaddata2',     // ratings -> hicaddata2  
-  'RATINGS A': 'hicaddata3',   // ratingsA -> hicaddata3
-  'RATINGS B': 'hicaddata4',   // ratingsB -> hicaddata4
-  'JUNIOR TRAINEE': 'hicaddata5' // juniorTrainee -> hicaddata5
-};
-
 // Reverse mapping for display
 const DISPLAY_MAPPING = {
   'hicaddata': 'OFFICER',

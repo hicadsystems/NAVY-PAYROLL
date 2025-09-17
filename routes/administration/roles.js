@@ -33,7 +33,9 @@ router.get("/classes", (req, res) => {
 // Get all dbs
 router.get("/db_classes", async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT db_name FROM db_classes ORDER BY db_name ASC");
+    const [rows] = await pool.query(
+      "SELECT db_name, display_name FROM db_classes WHERE is_active = 1 ORDER BY db_name ASC"
+    );
     res.json(rows);
   } catch (err) {
     console.error("❌ Failed to fetch db_classes:", err.message);

@@ -1,6 +1,10 @@
 const express = require('express');
 const pool  = require('../../config/db'); // mysql2 pool
 const router = express.Router();
+const path = require('path');
+const dotenv = require('dotenv');
+const envFile = '.env.local';
+dotenv.config({ path: path.resolve(__dirname, envFile) });
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
 const verifyToken = require('../../middware/authentication');
@@ -12,7 +16,7 @@ router.post("/login", async (req, res) => {
 
   try {
     // Always authenticate from officers database first
-    pool.useDatabase('hicaddata');
+    pool.useDatabase(process.env.DB_OFFICERS);
     
     const [rows] = await pool.query(
       "SELECT * FROM users WHERE user_id = ?",
@@ -56,7 +60,7 @@ router.post("/login", async (req, res) => {
         current_class: payroll_class // Same as primary_class on login
       },
       JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "8h" }
     );
 
     res.json({

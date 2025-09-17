@@ -1,6 +1,7 @@
 //administration
 const usersRoutes = require('./administration/users');
 const rolesRoutes = require('./administration/roles');
+const switchpayrollclassRoutes = require('./administration/switchpayrollclass');
 
 //utilities
 const backupRoutes = require('./utilities/backup-db');
@@ -16,6 +17,7 @@ module.exports = (app) => {
     //administration
     app.use('/api/users', usersRoutes);
     app.use('/', rolesRoutes);
+    app.use('/', switchpayrollclassRoutes);
 
     //utilities
     app.use('/api/backup-db', backupRoutes);

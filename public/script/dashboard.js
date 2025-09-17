@@ -303,7 +303,6 @@ window.addEventListener('resize', ()=>{ clearTimeout(t); t = setTimeout(repositi
 window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
 
 (function() {
-  let selectedPayrollClass = sessionStorage.getItem('currentPayrollClass') || 'OFFICERS';
 
   // Figure out the current time of day
   function getTimeOfDay() {
@@ -325,6 +324,7 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
       user_id: localStorage.getItem("user_id"),
       full_name: localStorage.getItem("full_name"),
       role: localStorage.getItem("role"),
+      primary_class : localStorage.getItem("class"),
     };
   }
 
@@ -338,8 +338,9 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
 
     // Default to "User" if no login info
     const userName = user?.full_name || user?.user_id || 'User';
+    const userClass = user?.current_class || 'OFFICERS';
 
-    const greeting = `Good ${timeOfDay} ${userName}, welcome to ${selectedPayrollClass} payroll`;
+    const greeting = `Good ${timeOfDay} ${userName}, welcome to ${userClass} payroll`;
     greetingElement.textContent = greeting;
   }
 

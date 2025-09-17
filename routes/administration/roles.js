@@ -1,6 +1,10 @@
 // routes/roles.js
 const express = require("express");
+const path = require('path');
 const pool = require('../../config/db');
+const dotenv = require('dotenv');
+const envFile = 'production' ? '.env.production' : '.env.local';
+dotenv.config({ path: path.resolve(__dirname, envFile) });
 const router = express.Router();
 
 // Get all roles
@@ -16,12 +20,12 @@ router.get("/roles", async (req, res) => {
 
 router.get("/classes", (req, res) => {
   const classes = [
-    { id: "hicaddata", name: "OFFICERS" },
-    { id: "hicaddata1", name: "W/OFFICERS" },
-    { id: "hicaddata2", name: "RATINGS" },
-    { id: "hicaddata3", name: "RATINGS A" },
-    { id: "hicaddata4", name: "RATINGS B" },
-    { id: "hicaddata5", name: "JUNIOR/TRAINEE" }
+    { id: process.env.DB_OFFICERS, name: "OFFICERS" },
+    { id: process.env.DB_WOFFICERS, name: "W/OFFICERS" },
+    { id: process.env.DB_RATINGS, name: "RATINGS" },
+    { id: process.env.DB_RATINGS_A, name: "RATINGS A" },
+    { id: process.env.DB_RATINGS_B, name: "RATINGS B" },
+    { id: process.env.DB_JUNIOR_TRAINEE, name: "JUNIOR/TRAINEE" }
   ];
   res.json(classes);
 });

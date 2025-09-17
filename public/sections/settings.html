@@ -129,7 +129,6 @@
     let originalUser = null;
 
     async function loadUser(userId) {
-      const token = localStorage.getItem("token");
       const viewContainer = document.getElementById("payrollClass");
 
       if (!viewContainer || !viewContainer.offsetParent) {
@@ -137,6 +136,7 @@
       }
 
       try {
+        const token = localStorage.getItem("token");
         const res = await fetch(`/api/users/${userId}`, {
           method: "GET",
           headers: {

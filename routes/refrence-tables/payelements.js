@@ -150,6 +150,10 @@ router.put('/elementtypes/:PaymentType', verifyToken, async (req, res) => {
     const params = [];
     const sets = [];
 
+    if (typeof PaymentType !== 'undefined' && PaymentType !== null) {
+      sets.push('PaymentType = ?'); params.push(PaymentType);
+    }
+
     if (typeof elmDesc !== 'undefined' && elmDesc !== null) {
       sets.push('elmDesc = ?'); params.push(elmDesc);
     }

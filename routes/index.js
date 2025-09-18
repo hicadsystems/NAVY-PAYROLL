@@ -12,6 +12,10 @@ const statesRoutes = require('./refrence-tables/states');
 const payelementsRoutes = require('./refrence-tables/payelements');
 const overtimeRoutes = require('./refrence-tables/overtime');
 const bankdetailsRoutes = require('./refrence-tables/bankdetails');
+const localgovernmentRoutes = require('./refrence-tables/localgovernment');
+const departmentRoutes = require('./refrence-tables/department');
+const commandRoutes = require('./refrence-tables/command');
+const taxRoutes = require('./refrence-tables/tax');
 
 
 module.exports = (app) => {
@@ -29,4 +33,8 @@ module.exports = (app) => {
     app.use("/", payelementsRoutes);
     app.use("/", overtimeRoutes);
     app.use("/api", bankdetailsRoutes);
+    app.use("/lg", localgovernmentRoutes);
+    app.use("/dept", departmentRoutes);
+    app.use("/cmd", commandRoutes);
+    app.use("/api/tax", taxRoutes);
 };

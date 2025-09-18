@@ -328,7 +328,16 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
   // Load class mappings from backend endpoint
   async function loadClassMappings() {
     try {
-      const response = await fetch('/db_classes'); // ✅ use your backend route
+      const token = localStorage.getItem('token');
+
+      const response = await fetch('/log-classes', {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+      }); 
+
       const classes = await response.json();
 
       // Create mapping from db_name → display_name
@@ -337,19 +346,17 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
         classMapping[cls.db_name] = cls.display_name;
       });
 
-      console.log('📋 Loaded class mappings:', classMapping);
     } catch (error) {
       console.error('Failed to load class mappings:', error);
+
       // Fallback mapping if endpoint fails
       classMapping = {
         'hicaddata': 'OFFICERS',
-        'hicaddata1': 'WARRANT OFFICERS',
+        'hicaddata1': 'W/OFFICERS',
         'hicaddata2': 'RATINGS',
         'hicaddata3': 'RATINGS A',
         'hicaddata4': 'RATINGS B',
-        'hicaddata5': 'JUNIOR TRAINEE',
-        'civiliandata': 'CIVILIANS',
-        'pendata': 'PENSIONERS'
+        'hicaddata5': 'JUNIOR/TRAINEE'
       };
     }
   }
@@ -519,7 +526,7 @@ function setupSubsubmenus() {
   },
   "operator": {
     inherit: "data entry",
-    "+": ["personnel-profile"],
+    "+": ["personel-profile"],
     "-": []
   },
   "processor": {
@@ -540,101 +547,127 @@ function setupSubsubmenus() {
 };
 
 function resolvePermissions(role) {
-  const seen = new Set(); // prevent circular inheritance
-  let current = role;
-  let result = { base: [], "+": [], "-": [] };
+  const seen = new Set();
+  const inheritanceChain = [];
   
+  // Build inheritance chain from role to root
+  let current = role;
   while (current && !seen.has(current)) {
     seen.add(current);
-    const cfg = rolePermissions[current] || {};
-    
-    // Collect base permissions
-    if (cfg.base) result.base.push(...cfg.base);
-    
-    // Collect additions (reverse order for proper inheritance)
-    if (cfg["+"]) result["+"].unshift(...cfg["+"]);
-    
-    // Collect exclusions 
-    if (cfg["-"]) result["-"].push(...cfg["-"]);
-    
-    current = cfg.inherit; // walk up inheritance
+    inheritanceChain.push(current);
+    const cfg = rolePermissions[current];
+    current = cfg ? cfg.inherit : null;
   }
   
-  // Deduplicate arrays
-  result.base = [...new Set(result.base)];
-  result["+"] = [...new Set(result["+"])];
-  result["-"] = [...new Set(result["-"])];
+  // Process inheritance chain from root to target role
+  let finalPermissions = [];
+  let finalExclusions = [];
   
-  return result;
+  // Start with base permissions from the most specific role (first in chain)
+  const targetRole = rolePermissions[inheritanceChain[0]];
+  if (targetRole && targetRole.base) {
+    finalPermissions.push(...targetRole.base);
+  }
+  
+  // Apply inheritance from parent to child (reverse order)
+  for (let i = inheritanceChain.length - 1; i >= 0; i--) {
+    const roleName = inheritanceChain[i];
+    const cfg = rolePermissions[roleName];
+    
+    if (cfg) {
+      // Add permissions from + array
+      if (cfg["+"]) {
+        finalPermissions.push(...cfg["+"]);
+      }
+      
+      // Add exclusions from - array
+      if (cfg["-"]) {
+        finalExclusions.push(...cfg["-"]);
+      }
+    }
+  }
+  
+  // Remove duplicates
+  finalPermissions = [...new Set(finalPermissions)];
+  finalExclusions = [...new Set(finalExclusions)];
+  
+  // Remove excluded permissions from final permissions
+  finalPermissions = finalPermissions.filter(perm => !finalExclusions.includes(perm));
+  
+  return {
+    permissions: finalPermissions,
+    exclusions: finalExclusions,
+    inheritanceChain: inheritanceChain
+  };
 }
 
-// Alternative: Use in-memory storage instead of localStorage for Claude artifacts
-let currentUserRole = ""; // Store role in memory
+// Store role in memory instead of localStorage
+let currentUserRole = "";
 
 function setUserRole(role) {
   currentUserRole = role.toLowerCase();
+  console.log(`Setting user role to: ${role}`);
   applyPermissions();
 }
 
 function applyPermissions() {
-  const cfg = resolvePermissions(currentUserRole);
+  const resolved = resolvePermissions(currentUserRole);
+  console.log(`Applying permissions for ${currentUserRole}:`, resolved);
   
   // Hide all menus first
-  document.querySelectorAll("[data-menu]").forEach(menu => {
-    menu.style.display = "none";
+  document.querySelectorAll("[data-menu], [data-section], [data-submenu]").forEach(element => {
+    element.style.display = "none";
   });
   
-  // Show base menus
-  if (cfg.base.includes("*")) {
-    // Show all menus if wildcard
-    document.querySelectorAll("[data-menu]").forEach(menu => {
-      menu.style.display = "block";
+  // Handle wildcard permissions (for hicad role)
+  if (resolved.permissions.includes("*")) {
+    document.querySelectorAll("[data-menu], [data-section], [data-submenu]").forEach(element => {
+      element.style.display = "block";
     });
-  } else {
-    // Show specific base menus
-    document.querySelectorAll("[data-menu]").forEach(menu => {
-      const key = menu.getAttribute("data-menu");
-      if (cfg.base.includes(key)) {
-        menu.style.display = "block";
-      }
-    });
+    return;
   }
   
-  // Apply additions (+)
-  cfg["+"].forEach(section => {
-    const menuEl = document.querySelector(`[data-menu="${section}"]`);
-    if (menuEl) menuEl.style.display = "block";
+  // Show permitted elements
+  resolved.permissions.forEach(permission => {
+    // Show menu items
+    const menuElements = document.querySelectorAll(`[data-menu="${permission}"]`);
+    menuElements.forEach(el => el.style.display = "block");
     
-    const sectionEl = document.querySelector(`[data-section="${section}"]`);
-    if (sectionEl) sectionEl.parentElement.style.display = "block";
+    // Show section items
+    const sectionElements = document.querySelectorAll(`[data-section="${permission}"]`);
+    sectionElements.forEach(el => {
+      el.style.display = "block";
+      // Also show the parent container if it exists
+      if (el.parentElement) {
+        el.parentElement.style.display = "block";
+      }
+    });
+    
+    // Show submenu items
+    const submenuElements = document.querySelectorAll(`[data-submenu="${permission}"]`);
+    submenuElements.forEach(el => el.style.display = "block");
   });
   
-  // Apply exclusions (-) - these override additions
-  cfg["-"].forEach(ex => {
-    const subEl = document.querySelector(`[data-submenu="${ex}"]`);
-    if (subEl) subEl.style.display = "none";
-    
-    const linkEl = document.querySelector(`[data-section="${ex}"]`);
-    if (linkEl) linkEl.parentElement.style.display = "none";
-    
-    const menuEl = document.querySelector(`[data-menu="${ex}"]`);
-    if (menuEl) menuEl.style.display = "none";
+  // Explicitly hide excluded elements (this ensures exclusions override permissions)
+  resolved.exclusions.forEach(exclusion => {
+    const excludedElements = document.querySelectorAll(
+      `[data-menu="${exclusion}"], [data-section="${exclusion}"], [data-submenu="${exclusion}"]`
+    );
+    excludedElements.forEach(el => el.style.display = "none");
   });
 }
 
-// Initialize when DOM is ready
-document.addEventListener("DOMContentLoaded", () => {
-  // For testing - set a default role or get from your auth system
-  setUserRole("operator"); // Replace with actual role from your backend
-});
-
-// Example usage with different roles:
+// Testing function to verify permissions work correctly
 function testPermissions() {
-  console.log("Data Entry permissions:", resolvePermissions("data entry"));
-  console.log("Operator permissions:", resolvePermissions("operator"));
-  console.log("Processor permissions:", resolvePermissions("processor"));
-  console.log("Manager permissions:", resolvePermissions("manager"));
-  console.log("Hicad permissions:", resolvePermissions("hicad"));
+  const roles = ["data entry", "operator", "processor", "manager", "hicad"];
+  
+  roles.forEach(role => {
+    const resolved = resolvePermissions(role);
+    console.log(`\n${role.toUpperCase()} Role:`);
+    console.log("  Inheritance Chain:", resolved.inheritanceChain);
+    console.log("  Final Permissions:", resolved.permissions);
+    console.log("  Exclusions:", resolved.exclusions);
+  });
 }
 
 // Backend integration example
@@ -651,9 +684,16 @@ async function initializeUserPermissions() {
   }
 }
 
+// Initialize when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
+  setUserRole("operator"); 
+   testPermissions();
+});
 
-});*/
+// Example function to change roles dynamically (for testing)
+function switchRole(newRole) {
+  setUserRole(newRole);
+}*/
 
 
 // Navigation handler for submenu items

@@ -9,27 +9,57 @@
   </div>
 
   <!-- Hidden Department Form -->
-  <form id="deptForm" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+  <form id="deptForm" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
     <div>
-      <label class="block text-sm font-medium text-gray-700">Department ID *</label>
-      <input type="text" id="deptId" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter ID">
-    </div>
-    <div>
-      <label class="block text-sm font-medium text-gray-700">Name *</label>
-      <input type="text" id="deptName" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter name">
-    </div>
-    <div class="md:col-span-2">
-      <label class="block text-sm font-medium text-gray-700">Description</label>
-      <textarea id="deptDesc" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter description"></textarea>
+      <label class="block text-sm font-medium text-gray-700">Factory Code *</label>
+      <input type="text" id="factcode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter Fact Code">
     </div>
     <div>
-      <label class="block text-sm font-medium text-gray-700">Status</label>
-      <select id="deptStatus" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white">
-        <option value="Active">Active</option>
-        <option value="Inactive">Inactive</option>
-      </select>
+      <label class="block text-sm font-medium text-gray-700">Department Code *</label>
+      <input type="text" id="deptcode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter Dept Code">
     </div>
-    <div class="col-span-1 md:col-span-2 flex justify-end gap-2">
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Factory Name</label>
+      <input type="text" id="factname" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter Fact Name">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Department Name</label>
+      <input type="text" id="deptname" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter Department Name">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Coor code</label>
+      <input id="coordcode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter coor code">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Manager</label>
+      <input type="text" id="manager" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter Manager">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700">HOD</label>
+      <input type="text" id="hod" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter HOD">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Account</label>
+      <input type="text" id="acct" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter Account Code">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Misc 1</label>
+      <input type="text" id="misc1" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter misc2">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Misc 2</label>
+      <input type="text" id="misc2" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter misc2">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Misc 3</label>
+      <input type="text" id="misc3" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter misc3">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Address Code</label>
+      <input type="text" id="AddressCode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter Address Code">
+    </div>
+
+    <div class="col-span-1 md:col-span-2 lg:col-span-3 flex justify-end gap-2">
       <button type="button" id="saveDeptBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Save</button>
       <button type="button" id="cancelDeptBtn" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
     </div>
@@ -40,10 +70,11 @@
     <table class="min-w-full border border-gray-200 rounded-lg text-sm">
       <thead class="bg-blue-100 text-blue-900">
         <tr>
-          <th class="border px-2 py-3 text-left">ID</th>
-          <th class="border px-2 py-3 text-left">Name</th>
-          <th class="border px-2 py-3 text-left">Description</th>
-          <th class="border px-2 py-3 text-left">Status</th>
+          <th class="border px-2 py-3 text-left">Factory Code</th>
+          <th class="border px-2 py-3 text-left">Factory Name</th>
+          <th class="border px-2 py-3 text-left">Dept Code</th>
+          <th class="border px-2 py-3 text-left">Dept Name</th>
+          <th class="border px-2 py-3 text-left">Manager</th>
           <th class="border px-2 py-3 text-left">Actions</th>
         </tr>
       </thead>
@@ -102,132 +133,254 @@
 </div>
 
 <script>
-  let deptData = [
-    { id: "2342", name: "CPO", description: "CENTRAL PAY OFFICE", status: "Active" },
-    { id: "2343", name: "MPB", description: "MILITARY PENSION BOARD", status: "Active" }
-  ];
-  let editingDeptIndex = null;
-  let pendingDeleteIndex = null;
+let deptData = [];
+let editingDeptIndex = null;
+let pendingDeleteDeptIndex = null;
 
-  const deptForm = document.getElementById("deptForm");
-  const addNewDeptBtn = document.getElementById("addNewDeptBtn");
-  const saveDeptBtn = document.getElementById("saveDeptBtn");
-  const cancelDeptBtn = document.getElementById("cancelDeptBtn");
-  const deptTableBody = document.getElementById("deptTableBody");
-  const searchDept = document.getElementById("searchDept");
+const deptForm = document.getElementById("deptForm");
+const addNewDeptBtn = document.getElementById("addNewDeptBtn");
+const saveDeptBtn = document.getElementById("saveDeptBtn");
+const cancelDeptBtn = document.getElementById("cancelDeptBtn");
+const deptTableBody = document.getElementById("deptTableBody");
+const searchDept = document.getElementById("searchDept");
 
-  addNewDeptBtn.addEventListener("click", () => {
-    deptForm.classList.remove("hidden");
-    editingDeptIndex = null;
-    resetDeptForm();
-  });
+// Load departments
+async function loadDepartments() {
+  try {
+    const token = localStorage.getItem('token');
 
-  saveDeptBtn.addEventListener("click", () => {
-    const deptRecord = {
-      id: document.getElementById("deptId").value.trim(),
-      name: document.getElementById("deptName").value.trim(),
-      description: document.getElementById("deptDesc").value.trim(),
-      status: document.getElementById("deptStatus").value.trim()
-    };
-    if (!deptRecord.id || !deptRecord.name) {
-      showErrorModal("Please fill in required fields: ID, Name");
-      return;
-    }
-    if (editingDeptIndex !== null) {
-      deptData[editingDeptIndex] = deptRecord;
-      showSuccessModal("Department updated successfully!");
-      editingDeptIndex = null;
-    } else {
-      deptData.push(deptRecord);
-      showSuccessModal("Department saved successfully!");
-    }
+    const res = await fetch("/dept/department", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    deptData = await res.json();
     renderDeptTable();
-    deptForm.classList.add("hidden");
-    resetDeptForm();
-  });
+  } catch (err) {
+    console.error("Error loading departments:", err);
+  }
+}
 
-  cancelDeptBtn.addEventListener("click", () => {
-    deptForm.classList.add("hidden");
-    resetDeptForm();
-    editingDeptIndex = null;
-  });
 
-  function resetDeptForm() {
-    deptForm.querySelectorAll('input, textarea, select').forEach(el => el.value = "");
+// Render Table
+function renderDeptTable(data = deptData) {
+  deptTableBody.innerHTML = data.map((d, i) => `
+    <tr class="hover:bg-gray-50">
+      <td class="border px-2 py-3">${d.factcode}</td>
+      <td class="border px-2 py-3">${d.factname}</td>
+      <td class="border px-2 py-3">${d.deptcode}</td>
+      <td class="border px-2 py-3">${d.deptname || ""}</td>
+      <td class="border px-2 py-3">${d.manager || ""}</td>
+      <td class="border px-2 py-3">
+        <button onclick="viewDept(${i})" class="text-blue-600 mr-2">View</button>
+        <button onclick="editDept(${i})" class="text-green-600 mr-2">Edit</button>
+        <button onclick="deleteDept(${i})" class="text-red-600">Delete</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+
+// Add new
+addNewDeptBtn.addEventListener("click", () => {
+  deptForm.classList.remove("hidden");
+  editingDeptIndex = null;
+  deptForm.reset();
+});
+
+// Save
+saveDeptBtn.addEventListener("click", async () => {
+  const item = {
+    factcode: document.getElementById("factcode").value.trim(),
+    deptcode: document.getElementById("deptcode").value.trim(),
+    factname: document.getElementById("factname").value.trim(),
+    deptname: document.getElementById("deptname").value.trim(),
+    coordcode: document.getElementById("coordcode").value.trim(),
+    manager: document.getElementById("manager").value.trim(),
+    hod: document.getElementById("hod").value.trim(),
+    acct: document.getElementById("acct").value.trim(),
+    misc1: document.getElementById("misc1").value.trim(),
+    misc2: document.getElementById("misc2").value.trim(),
+    misc3: document.getElementById("misc3").value.trim(),
+    AddressCode: document.getElementById("AddressCode").value.trim(),
+  };
+
+  if (!item.factcode || !item.deptcode || !item.factname  || !item.deptname || !item.coordcode ) {
+    showErrorModal("Factory code, Deptartment code, Factory Name, Department Name, and Coor Code are required.");
+    return;
   }
 
-  function renderDeptTable(filtered = deptData) {
-    deptTableBody.innerHTML = filtered.map((item, index) => `
-      <tr class="hover:bg-yellow-50">
-        <td class="border px-2 py-3">${item.id}</td>
-        <td class="border px-2 py-3">${item.name}</td>
-        <td class="border px-2 py-3">${item.description}</td>
-        <td class="border px-2 py-3">${item.status}</td>
-        <td class="border px-2 py-3">
-          <button onclick="viewDept(${index})" class="text-blue-600 hover:text-blue-900 mr-2">View</button>
-          <button onclick="editDept(${index})" class="text-green-600 hover:text-green-900 mr-2">Edit</button>
-          <button onclick="deleteDept(${index})" class="text-red-600 hover:text-red-900">Delete</button>
-        </td>
-      </tr>
-    `).join("");
-  }
+  try {
+    const token = localStorage.getItem('token');
 
-  window.viewDept = function(index) {
-    const item = deptData[index];
-    let html = `
-      <div class="grid grid-cols-3 gap-2 py-2 border-b">
-        <dt class="font-medium text-gray-600">ID:</dt>
-        <dd class="col-span-2 text-gray-900">${item.id}</dd>
-      </div>
-      <div class="grid grid-cols-3 gap-2 py-2 border-b">
-        <dt class="font-medium text-gray-600">Name:</dt>
-        <dd class="col-span-2 text-gray-900">${item.name}</dd>
-      </div>
-      <div class="grid grid-cols-3 gap-2 py-2 border-b">
-        <dt class="font-medium text-gray-600">Description:</dt>
-        <dd class="col-span-2 text-gray-900">${item.description || "N/A"}</dd>
-      </div>
-      <div class="grid grid-cols-3 gap-2 py-2 border-b">
-        <dt class="font-medium text-gray-600">Status:</dt>
-        <dd class="col-span-2 text-gray-900">${item.status}</dd>
-      </div>
-      <div class="grid grid-cols-3 gap-2 py-2">
-        <dt class="font-medium text-gray-600">Command ID:</dt>
-        <dd class="col-span-2 text-gray-900">none</dd>
-      </div>
-      <div class="grid grid-cols-3 gap-2 py-2">
-        <dt class="font-medium text-gray-600">LandSea:</dt>
-        <dd class="col-span-2 text-gray-900">none</dd>
-      </div>
-    `;
-    document.getElementById("deptViewContent").innerHTML = html;
-    showModal("deptViewModal");
-  };
+    if (editingDeptIndex !== null) {
+      await fetch(`/dept/${deptData[editingDeptIndex].factcode}/${deptData[editingDeptIndex].deptcode}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(item),
+      });
+      showSuccessModal("Department updated successfully!");
+    } else {
+      const token = localStorage.getItem("token");
 
-  window.editDept = function(index) {
-    const item = deptData[index];
-    document.getElementById("deptId").value = item.id;
-    document.getElementById("deptName").value = item.name;
-    document.getElementById("deptDesc").value = item.description;
-    document.getElementById("deptStatus").value = item.status;
-    editingDeptIndex = index;
-    deptForm.classList.remove("hidden");
-  };
-
-  window.deleteDept = function(index) {
-    pendingDeleteIndex = index;
-    showModal("deptConfirmModal");
-  };
-
-  document.getElementById("deptConfirmAction").addEventListener("click", () => {
-    if (pendingDeleteIndex !== null) {
-      deptData.splice(pendingDeleteIndex, 1);
-      renderDeptTable();
-      showSuccessModal("Department deleted successfully!");
-      pendingDeleteIndex = null;
+      await fetch("/dept/post-department", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(item),
+      });
+      showSuccessModal("Department created successfully!");
     }
-    closeModal("deptConfirmModal");
-  });
+
+    await loadDepartments();
+    deptForm.classList.add("hidden");
+    deptForm.reset();
+    editingDeptIndex = null;
+  } catch (err) {
+    showErrorModal("Error saving department:", err);
+  }
+});
+
+// Cancel
+cancelDeptBtn.addEventListener("click", () => {
+  deptForm.classList.add("hidden");
+  deptForm.reset();
+});
+
+// View
+window.viewDept = function(index) {
+  const item = deptData[index];
+
+  // Format date if present
+  let formattedDate = "";
+  if (item.datecreated) {
+    const dateObj = new Date(item.datecreated);
+    formattedDate = dateObj.toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true
+    });
+  }
+
+  let html = `
+    <div class="grid grid-cols-3 gap-2 py-2 border-b">
+      <dt class="font-medium">Fact Code:</dt><dd class="col-span-2">${item.factcode}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2 border-b">
+      <dt class="font-medium">Dept Code:</dt><dd class="col-span-2">${item.deptcode}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2 border-b">
+      <dt class="font-medium">Fact Name:</dt><dd class="col-span-2">${item.factname || ""}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2 border-b">
+      <dt class="font-medium">Dept Name:</dt><dd class="col-span-2">${item.deptname || ""}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2 border-b">
+      <dt class="font-medium">Description:</dt><dd class="col-span-2">${item.coordcode || ""}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2 border-b">
+      <dt class="font-medium">Manager:</dt><dd class="col-span-2">${item.manager || ""}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2 border-b">
+      <dt class="font-medium">HOD:</dt><dd class="col-span-2">${item.hod || ""}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2 border-b">
+      <dt class="font-medium">Account:</dt><dd class="col-span-2">${item.acct || ""}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2 border-b">
+      <dt class="font-medium">Misc:</dt><dd class="col-span-2">${item.misc1 || ""}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2 border-b">
+      <dt class="font-medium">Misc 2:</dt><dd class="col-span-2">${item.misc2 || ""}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2 border-b">
+      <dt class="font-medium">Misc 3:</dt><dd class="col-span-2">${item.misc3 || ""}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2 border-b">
+      <dt class="font-medium">Address Code:</dt><dd class="col-span-2">${item.AddressCode || ""}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2 border-b">
+      <dt class="font-medium">Created By:</dt><dd class="col-span-2">${item.createdby || ""}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2 border-b">
+      <dt class="font-medium">Date Created:</dt><dd class="col-span-2">${formattedDate}</dd>
+    </div>
+  `;
+  document.getElementById("deptViewContent").innerHTML = html;
+  showModal("deptViewModal");
+};
+
+// Edit
+window.editDept = function(index) {
+  const item = deptData[index];
+  document.getElementById("factcode").value = item.factcode;
+  document.getElementById("deptcode").value = item.deptcode;
+  document.getElementById("factname").value = item.factname || "";
+  document.getElementById("deptname").value = item.deptname || "";
+  document.getElementById("coordcode").value = item.coordcode || "";
+  document.getElementById("manager").value = item.manager || "";
+  document.getElementById("hod").value = item.hod || "";
+  document.getElementById("acct").value = item.acct || "";
+  document.getElementById("misc1").value = item.misc1 || "";
+  document.getElementById("misc2").value = item.misc2 || "";
+  document.getElementById("misc3").value = item.misc3 || "";
+  document.getElementById("AddressCode").value = item.AddressCode || "";
+
+  editingDeptIndex = index;
+  deptForm.classList.remove("hidden");
+};
+
+// Delete
+window.deleteDept = function(index) {
+  pendingDeleteDeptIndex = index;
+  showConfirmModal("Are you sure you want to delete this department?");
+};
+
+document.getElementById("deptConfirmAction").addEventListener("click", async () => {
+  if (pendingDeleteDeptIndex !== null) {
+    try {
+      const token = localStorage.getItem("token");
+
+      await fetch(`/dept/${deptData[pendingDeleteDeptIndex].factcode}/${deptData[pendingDeleteDeptIndex].deptcode}`, {
+        method: "DELETE",
+        headers:{ 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }        
+      });
+      showSuccessModal("Department deleted successfully!");
+      await loadDepartments();
+    } catch (err) {
+      showErrorModal("Error deleting department:", err);
+    }
+    pendingDeleteDeptIndex = null;
+  }
+  closeModal("confirmModal");
+});
+
+//
+// Search
+//
+searchDept.addEventListener("input", (e) => {
+  const term = e.target.value.toLowerCase();
+  const filtered = deptData.filter(d =>
+    d.factname?.toLowerCase().includes(term) ||
+    d.deptname?.toLowerCase().includes(term)
+  );
+  renderDeptTable(filtered);
+});
+
 
   function showModal(modalId) {
     document.getElementById(modalId).classList.remove("hidden");
@@ -255,7 +408,7 @@
   document.getElementById("closeViewModal").addEventListener("click", () => closeModal("deptViewModal"));
   document.getElementById("cancelConfirm").addEventListener("click", () => {
     closeModal("deptConfirmModal");
-    pendingDeleteIndex = null;
+    pendingDeleteDeptIndex = null;
   });
 
   searchDept.addEventListener("input", () => {
@@ -276,4 +429,6 @@
 
 
   renderDeptTable();
+  // Initial load
+  loadDepartments();
 </script>

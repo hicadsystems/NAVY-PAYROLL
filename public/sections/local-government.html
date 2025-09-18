@@ -19,6 +19,10 @@
       <input type="text" id="lgaCode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white">
     </div>
     <div>
+      <label class="block text-sm font-medium text-gray-700">Local Government Headquaters*</label>
+      <input type="text" id="lghqs" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white">
+    </div>
+    <div>
       <label class="block text-sm font-medium text-gray-700">Select State *</label>
       <select id="lgaState" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white"></select>
     </div>
@@ -121,17 +125,100 @@
 </div>
 
 <script>
-  let lgaData = [
-    { lgaName: "Ikeja", lgaCode: "IKJ", state: "Lagos" },
-    { lgaName: "Nsukka", lgaCode: "NSK", state: "Enugu" },
-    { lgaName: "Dala", lgaCode: "DLA", state: "Kano" }
-  ];
+  async function fetchStates(){
+    try{
+      const token = localStorage.getItem('token');
 
-  let stateData = [
-    { stateName: "Lagos", stateCode: "LA", geozone: "South West" },
-    { stateName: "Kano", stateCode: "KN", geozone: "North West" },
-    { stateName: "Enugu", stateCode: "EN", geozone: "South East" }
-  ];
+      const result = await fetch ("/dropdown-states", {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` 
+        }                 
+      })
+
+      const states = await result.json();
+      const select = document.getElementById("lgaState");
+
+      if (!select) {
+        console.error("⚠️ Element with id 'stateCode' not found.");
+        return;
+      }
+
+      // Clear existing options
+      select.innerHTML = "";
+
+      // Add default option
+      const defaultOption = document.createElement("option");
+      defaultOption.value = "";
+      defaultOption.textContent = "Select a state";
+      defaultOption.disabled = true;
+      defaultOption.selected = true;
+      select.appendChild(defaultOption);
+
+      // Populate with DB data
+      states.forEach(cls => {
+        const opt = document.createElement("option");
+        opt.value = cls.Statecode;            // backend value
+        opt.textContent = cls.Statename; // human-readable label
+        select.appendChild(opt);
+      });
+
+      // Build the stateMap for lookup
+      stateMap = states.reduce((acc, s) => {
+        acc[s.Statecode] = s.Statename;
+        return acc;
+      }, {});
+
+    } catch(err){
+      console.error("❌ Failed to load states:", err);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener("DOMContentLoaded", fetchStates);
+  } else {
+    fetchStates();
+  }
+
+  async function prefillStates(selectedCode = null) {
+    try {
+      const token = localStorage.getItem('token');
+
+      const res = await fetch("/dropdown-states", {
+          method: "GET",
+          headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}` 
+          }                 
+        });
+        
+      const states = await res.json();
+
+      lgaStateSelect.innerHTML = states.map(
+        s => `<option value="${s.Statecode}">${s.Statename}</option>`
+      ).join("");
+
+      // If editing, set selected value
+      if (selectedCode) {
+        lgaStateSelect.value = selectedCode;
+      }
+
+      // Build the stateMap for lookup
+      stateMap = states.reduce((acc, s) => {
+        acc[s.Statecode] = s.Statename;
+        return acc;
+      }, {});
+
+    } catch (err) {
+      console.error("Error fetching states:", err);
+    }
+  }
+
+
+
+  let lgaData = [];
+  let stateMap = {};
   let editingLgaIndex = null;
   let pendingDeleteLgaIndex = null;
 
@@ -143,20 +230,33 @@
   const searchLga = document.getElementById("searchLga");
   const lgaStateSelect = document.getElementById("lgaState");
 
-  // Populate state dropdown from stateData
-  function populateLgaStateOptions() {
-    lgaStateSelect.innerHTML = stateData.map(s => 
-      `<option value="${s.stateName}">${s.stateName}</option>`
-    ).join("");
+  // Fetch LGAs from backend
+  async function loadLGAs() {
+    try {
+      const token = localStorage.getItem('token');
+
+      const res = await fetch("lg/lga", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+      lgaData = await res.json();
+      renderLgaTable();
+    } catch (err) {
+      console.error("Error loading LGAs:", err);
+    }
   }
+  
 
   // Render LGA table
   function renderLgaTable(data = lgaData) {
     lgaTableBody.innerHTML = data.map((item, index) => `
       <tr class="hover:bg-gray-50">
-        <td class="border px-2 py-3">${item.lgaName}</td>
-        <td class="border px-2 py-3">${item.lgaCode}</td>
-        <td class="border px-2 py-3">${item.state}</td>
+        <td class="border px-2 py-3">${item.Lgname}</td>
+        <td class="border px-2 py-3">${item.Lgcode}</td>
+        <td class="border px-2 py-3">${stateMap[item.Statecode] || item.Statecode}</td>
         <td class="border px-2 py-3">
           <button onclick="viewLga(${index})" class="text-blue-600 mr-2">View</button>
           <button onclick="editLga(${index})" class="text-green-600 mr-2">Edit</button>
@@ -165,41 +265,65 @@
       </tr>
     `).join("");
   }
-  renderLgaTable();
 
   // Add new
   addNewLgaBtn.addEventListener("click", () => {
     lgaForm.classList.remove("hidden");
     editingLgaIndex = null;
     lgaForm.reset();
-    populateLgaStateOptions();
+    fetchStates();
   });
 
-  // Save
-  saveLgaBtn.addEventListener("click", () => {
+  // Save (Create or Update)
+  saveLgaBtn.addEventListener("click", async () => {
     const item = {
-      lgaName: document.getElementById("lgaName").value.trim(),
-      lgaCode: document.getElementById("lgaCode").value.trim(),
-      state: document.getElementById("lgaState").value
+      Lgname: document.getElementById("lgaName").value.trim(),
+      Lgcode: document.getElementById("lgaCode").value.trim(),
+      Statecode: document.getElementById("lgaState").value,
+      Lghqs: document.getElementById("lghqs").value.trim(),
     };
 
-    if (!item.lgaName || !item.lgaCode || !item.state) {
+    if (!item.Lgname || !item.Lgcode || !item.Statecode) {
       showErrorModal("Please fill in all required fields.");
       return;
     }
 
-    if (editingLgaIndex !== null) {
-      lgaData[editingLgaIndex] = item;
-      showSuccessModal("LGA record updated successfully!");
-    } else {
-      lgaData.push(item);
-      showSuccessModal("LGA record saved successfully!");
-    }
+    try {
+      const token = localStorage.getItem("token");
 
-    renderLgaTable();
-    lgaForm.classList.add("hidden");
-    lgaForm.reset();
-    editingLgaIndex = null;
+      if (editingLgaIndex !== null) {
+        // Update existing
+        await fetch(`lg/${lgaData[editingLgaIndex].Lgcode}`, {
+          method: "PUT",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify(item),
+        });
+        showSuccessModal("LGA record updated successfully!");
+      } else {
+        const token = localStorage.getItem("token");
+
+        // Create new
+        await fetch('lg/postlga', {
+          method: "POST",
+          headers:{ 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify(item),
+        });
+        showSuccessModal("LGA record saved successfully!");
+      }
+
+      await loadLGAs();
+      lgaForm.classList.add("hidden");
+      lgaForm.reset();
+      editingLgaIndex = null;
+    } catch (err) {
+      console.error("Error saving LGA:", err);
+    }
   });
 
   // Cancel
@@ -208,48 +332,65 @@
     lgaForm.reset();
   });
 
-  // Actions
+  // View
   window.viewLga = function(index) {
     const item = lgaData[index];
     let html = `
       <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
         <dt class="font-medium text-gray-600">LGA Name:</dt>
-        <dd class="col-span-2 text-gray-900">${item.lgaName}</dd>
+        <dd class="col-span-2 text-gray-900">${item.Lgname}</dd>
       </div>
       <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
         <dt class="font-medium text-gray-600">LGA Code:</dt>
-        <dd class="col-span-2 text-gray-900">${item.lgaCode}</dd>
+        <dd class="col-span-2 text-gray-900">${item.Lgcode}</dd>
+      </div>
+      <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
+        <dt class="font-medium text-gray-600">LGA Headquaters:</dt>
+        <dd class="col-span-2 text-gray-900">${item.Lghqs}</dd>
       </div>
       <div class="grid grid-cols-3 gap-2 py-2">
         <dt class="font-medium text-gray-600">State:</dt>
-        <dd class="col-span-2 text-gray-900">${item.state}</dd>
+        <dd class="col-span-2 text-gray-900">${stateMap[item.Statecode] || item.Statecode}</dd>
       </div>
     `;
     document.getElementById("viewContent").innerHTML = html;
     showModal("viewModal");
   };
 
+  // Edit
   window.editLga = function(index) {
     const item = lgaData[index];
-    document.getElementById("lgaName").value = item.lgaName;
-    document.getElementById("lgaCode").value = item.lgaCode;
-    populateLgaStateOptions();
-    document.getElementById("lgaState").value = item.state;
+    document.getElementById("lgaName").value = item.Lgname;
+    document.getElementById("lgaCode").value = item.Lgcode;
+    prefillStates(item.Statecode);
+    document.getElementById("lghqs").value = item.Lghqs;
     editingLgaIndex = index;
     lgaForm.classList.remove("hidden");
   };
 
+  // Delete
   window.deleteLga = function(index) {
     pendingDeleteLgaIndex = index;
     showConfirmModal("Are you sure you want to delete this local government record? This action cannot be undone.");
   };
 
-  // Confirm delete action
-  document.getElementById("confirmAction").addEventListener("click", () => {
+  document.getElementById("confirmAction").addEventListener("click", async () => {
     if (pendingDeleteLgaIndex !== null) {
-      lgaData.splice(pendingDeleteLgaIndex, 1);
-      renderLgaTable();
-      showSuccessModal("LGA record deleted successfully!");
+      try {
+        const token = localStorage.getItem("token");
+
+        await fetch(`lg/${lgaData[pendingDeleteLgaIndex].Lgcode}`, {
+          method: "DELETE",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+        });
+        showSuccessModal("LGA record deleted successfully!");
+        await loadLGAs();
+      } catch (err) {
+        console.error("Error deleting LGA:", err);
+      }
       pendingDeleteLgaIndex = null;
     }
     closeModal("confirmModal");
@@ -259,11 +400,12 @@
   searchLga.addEventListener("input", (e) => {
     const term = e.target.value.toLowerCase();
     const filtered = lgaData.filter(l =>
-      l.lgaName.toLowerCase().includes(term) || 
-      l.state.toLowerCase().includes(term)
+      l.Lgname.toLowerCase().includes(term) || 
+      l.Statecode.toLowerCase().includes(term)
     );
     renderLgaTable(filtered);
   });
+
 
     // Modal functions
   function showModal(modalId) {
@@ -306,4 +448,8 @@
       if (e.target === e.currentTarget) closeModal(modalId);
     });
   });
+
+  
+// Initial load
+loadLGAs();
 </script>

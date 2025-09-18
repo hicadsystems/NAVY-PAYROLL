@@ -20,6 +20,7 @@ console.log('Running in', process.env.NODE_ENV);
 //console.log('Database:', process.env.DB_NAME);
 
 
+
 // security headers & logging
 app.use(
   helmet.contentSecurityPolicy({
@@ -37,7 +38,8 @@ app.use(
 app.use(morgan('dev'));
 
 
-// CORS - should appear before session middleware if cookies are used cross-origin
+
+// CORS appears before session middleware if cookies are used cross-origin
 const corsOptions = {
   origin: [
     'http://localhost:5500',
@@ -53,9 +55,11 @@ app.use(cors(corsOptions));
 
 // trust proxy when behind load balancer (set in env when needed)
 if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
+
 // built-in body parsers (remove body-parser dependency)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 // session config (use env values in production)
 app.use(session({
   secret: process.env.SESSION_SECRET || 'super-secret',
@@ -69,20 +73,14 @@ app.use(session({
 }));
 
 
-
 // mount routes
 require('./routes')(app);
 
 
-//middleware
+
 // static files and directory listing
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/public', serveIndex(path.join(__dirname, 'public'), { icons: true }));
-
-// simple route example
-app.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
-});
 
 // small helper to expose credentials header for some clients
 app.use((req, res, next) => {

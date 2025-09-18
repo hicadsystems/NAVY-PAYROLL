@@ -93,6 +93,9 @@
   let currentFreepayConfig = {};
   let editingFreepayIndex = null;
 
+  const API_URL = "/api/tax";
+  const token = localStorage.getItem("token");
+
   const freepayMainForm = document.getElementById("freepayMainForm");
   const nestedForm = document.getElementById("nestedFreepayForm");
   const minimumFreepayBtn = document.getElementById("minimumFreepayBtn");
@@ -102,112 +105,127 @@
   const freepayTableBody = document.getElementById("freepayTableBody");
   const showFormBtn = document.getElementById("showFormBtn");
 
-  // Show nested form when Minimum Freepay is clicked
+  // Fetch all tax records from backend
+  async function loadFreepayData() {
+    try {
+      const res = await fetch(API_URL, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to load data");
+      freepayData = await res.json();
+      renderFreepayTable();
+    } catch (err) {
+      console.error(err);
+      alert("Error loading data.");
+    }
+  }
+
+  // Show nested form
   minimumFreepayBtn.addEventListener("click", () => {
-    // Validate main form first
     const interval = document.getElementById("interval").value.trim();
     const value = document.getElementById("value").value.trim();
     const percentage = document.getElementById("percentage_freepay").value.trim();
-
     if (!interval || !value || !percentage) {
-      alert("Please fill in all fields (Interval, Value, and Percentage) before proceeding.");
+      alert("Please fill in Interval, Value, and Percentage first.");
       return;
     }
-
-    // Store current config
     currentFreepayConfig = {
-      interval: interval,
-      value: parseFloat(value),
-      percentage: parseFloat(percentage)
+      INTER: interval,
+      val: parseInt(value),
+      perc: parseFloat(percentage),
+      cumulative: currentFreepayConfig.cumulative || "",
+      lowerbound: currentFreepayConfig.lowerbound || ""
     };
-
-    // Show nested form
     nestedForm.classList.remove("hidden");
-    
-    // Clear nested form fields
-    document.getElementById("cumulative").value = "";
-    document.getElementById("lowerbound").value = "";
+    document.getElementById("cumulative").value = currentFreepayConfig.cumulative;
+    document.getElementById("lowerbound").value = currentFreepayConfig.lowerbound;
   });
 
-    showFormBtn.addEventListener("click", () => {
+  showFormBtn.addEventListener("click", () => {
     freepayMainForm.classList.remove("hidden");
     editingFreepayIndex = null;
-    freepayMainForm.reset();
+    resetMainForm();
   });
 
   cancelFreepayBtn.addEventListener("click", () => {
+    resetMainForm();
     freepayMainForm.classList.add("hidden");
+    nestedForm.classList.add("hidden"); // ✅ close nested too
     editingFreepayIndex = null;
-    freepayMainForm.reset();
   });
 
-  // Save main form data
-  saveFreepayBtn.addEventListener("click", () => {
+  // Save or Update record
+  saveFreepayBtn.addEventListener("click", async () => {
     const interval = document.getElementById("interval").value.trim();
     const value = document.getElementById("value").value.trim();
     const percentage = document.getElementById("percentage_freepay").value.trim();
+    const cumulative = document.getElementById("cumulative").value.trim();
+    const lowerbound = document.getElementById("lowerbound").value.trim();
 
     if (!interval || !value || !percentage) {
       alert("Please fill in all required fields.");
       return;
     }
 
-    const config = {
-      interval: interval,
-      value: parseFloat(value),
-      percentage: parseFloat(percentage),
-      cumulative: currentFreepayConfig.cumulative || null,
-      lowerbound: currentFreepayConfig.lowerbound || null,
-      timestamp: new Date().toLocaleString()
+    const payload = {
+      INTER: interval,
+      val: parseInt(value),
+      perc: parseFloat(percentage),
+      cumval: cumulative ? parseFloat(cumulative) : null,
+      lowbound: lowerbound ? parseFloat(lowerbound) : null
     };
 
-    if (editingFreepayIndex !== null) {
-      // Update existing record
-      freepayData[editingFreepayIndex] = config;
-      editingFreepayIndex = null;
-    } else {
-      // Add new record
-      freepayData.push(config);
+    try {
+      if (editingFreepayIndex !== null) {
+        // Update
+        await fetch(`${API_URL}/${interval}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        // Create
+        await fetch(`${API_URL}/create`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+      }
+      await loadFreepayData();
+      resetMainForm();
+      freepayMainForm.classList.add("hidden");
+      nestedForm.classList.add("hidden");
+      showSuccessModal();
+    } catch (err) {
+      console.error(err);
+      alert("Error saving record.");
     }
-
-    renderFreepayTable();
-    resetMainForm();
-    showSuccessModal();
   });
 
-  // Cancel main form
-  cancelFreepayBtn.addEventListener("click", () => {
-    resetMainForm();
-    // Clear nested form values on cancel
-    document.getElementById("cumulative").value = "";
-    document.getElementById("lowerbound").value = "";
-  });
-
-  // Enter button (store nested form data and hide nested form)
+  // Enter button (nested form confirm)
   enterBtn.addEventListener("click", () => {
     const cumulative = document.getElementById("cumulative").value.trim();
     const lowerbound = document.getElementById("lowerbound").value.trim();
-
     if (!cumulative || !lowerbound) {
-      alert("Please fill in both Cumulative and Lower Bound fields.");
+      alert("Please fill in both Cumulative and Lower Bound.");
       return;
     }
-
-    // Store nested form data in current config
     currentFreepayConfig.cumulative = parseFloat(cumulative);
     currentFreepayConfig.lowerbound = parseFloat(lowerbound);
-
-    // Hide nested form but keep values
     hideNestedForm();
-    
-    // Show success message for Enter action
-    alert("Values entered successfully! Click Save to record the configuration.");
+    alert("Values entered successfully! Click Save to record.");
   });
 
   function resetMainForm() {
-    document.getElementById("interval").value = "";
-    document.getElementById("value").value = "";
-    document.getElementById("percentage_freepay").value = "";
+    ["interval", "value", "percentage_freepay", "cumulative", "lowerbound"].forEach(id => {
+      document.getElementById(id).value = "";
+    });
     currentFreepayConfig = {};
     editingFreepayIndex = null;
     hideNestedForm();
@@ -215,17 +233,16 @@
 
   function hideNestedForm() {
     nestedForm.classList.add("hidden");
-    // Don't clear nested form values here - they should persist
   }
 
   function renderFreepayTable() {
     freepayTableBody.innerHTML = freepayData.map((item, index) => `
       <tr class="hover:bg-yellow-50">
-        <td class="border px-2 py-3 text-left">${item.interval}</td>
-        <td class="border px-2 py-3 text-left">${item.value}</td>
-        <td class="border px-2 py-3 text-left">${item.percentage}%</td>
-        <td class="border px-2 py-3 text-left">${item.cumulative || 'N/A'}</td>
-        <td class="border px-2 py-3 text-left">${item.lowerbound || 'N/A'}</td>
+        <td class="border px-2 py-3 text-left">${item.INTER}</td>
+        <td class="border px-2 py-3 text-left">${item.val}</td>
+        <td class="border px-2 py-3 text-left">${item.perc}%</td>
+        <td class="border px-2 py-3 text-left">${item.cumval ?? "N/A"}</td>
+        <td class="border px-2 py-3 text-left">${item.lowbound ?? "N/A"}</td>
         <td class="border px-2 py-3 text-left text-sm font-medium">
           <button onclick="editFreepayRow(${index})" class="text-green-600 hover:text-green-900 px-2 py-1 rounded hover:bg-green-50 mr-2">Edit</button>
           <button onclick="deleteFreepayRow(${index})" class="text-red-600 hover:text-red-900 px-2 py-1 rounded hover:bg-red-50">Delete</button>
@@ -234,55 +251,51 @@
     `).join("");
   }
 
-  // Make functions global
+  // Edit record
   window.editFreepayRow = function(index) {
     const item = freepayData[index];
-    
-    // Fill main form
-    document.getElementById("interval").value = item.interval;
-    document.getElementById("value").value = item.value;
-    document.getElementById("percentage_freepay").value = item.percentage;
-    
-    // Store current config for editing
-    currentFreepayConfig = {
-      interval: item.interval,
-      value: item.value,
-      percentage: item.percentage,
-      cumulative: item.cumulative,
-      lowerbound: item.lowerbound
-    };
-    
-    // Fill nested form if values exist
-    if (item.cumulative !== null && item.lowerbound !== null) {
-      document.getElementById("cumulative").value = item.cumulative;
-      document.getElementById("lowerbound").value = item.lowerbound;
-    }
-    
+    document.getElementById("interval").value = item.INTER;
+    document.getElementById("value").value = item.val;
+    document.getElementById("percentage_freepay").value = item.perc;
+
+    //Always prefill cumulative + lowerbound
+    document.getElementById("cumulative").value = item.cumval ?? "";
+    document.getElementById("lowerbound").value = item.lowbound ?? "";
+
+    currentFreepayConfig = { ...item };
     editingFreepayIndex = index;
+    freepayMainForm.classList.remove("hidden");
+    nestedForm.classList.add("hidden"); // keep hidden until user clicks button
   };
 
-  window.deleteFreepayRow = function(index) {
+  // Delete record
+  window.deleteFreepayRow = async function(index) {
+    const item = freepayData[index];
     if (confirm("Are you sure you want to delete this configuration?")) {
-      freepayData.splice(index, 1);
-      renderFreepayTable();
+      try {
+        await fetch(`${API_URL}/${item.INTER}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        await loadFreepayData();
+      } catch (err) {
+        console.error(err);
+        alert("Error deleting record.");
+      }
     }
   };
 
   function showSuccessModal() {
     document.getElementById("freepaySuccessModal").classList.remove("hidden");
   }
-
   function closeSuccessModal() {
     document.getElementById("freepaySuccessModal").classList.add("hidden");
   }
-
-  // Modal event listeners
   document.getElementById("closeFreepayModal").addEventListener("click", closeSuccessModal);
-
   document.getElementById("freepaySuccessModal").addEventListener("click", (e) => {
     if (e.target === e.currentTarget) closeSuccessModal();
   });
 
-  // Initialize empty table
-  renderFreepayTable();
+  // Load initial data
+  loadFreepayData();
 </script>

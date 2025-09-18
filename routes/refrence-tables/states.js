@@ -73,6 +73,17 @@ router.get("/states", verifyToken, async (req, res) => {
   }
 });
 
+// GET - Get all states for dropdowns
+router.get("/dropdown-states", verifyToken, async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT Statecode, Statename FROM py_tblstates ORDER BY Statename ASC");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching states:", err);
+    res.status(500).json({ error: "Failed to fetch states" });
+  }
+});
+
 // GET - Get individual state by Statecode
 router.get('/states/:Statecode', verifyToken, async (req, res) => {
   try {

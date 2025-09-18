@@ -40,6 +40,10 @@
   .animate-expand {
     animation: expand .9s ease-in-out infinite;
   }
+
+  html {
+    overflow-y: scroll; /* scrollbar is always reserved */
+  }
 </style>
 
 <body class="bg-gradient-to-br from-amber-50 to-blue-100 min-h-screen antialiased dark">
@@ -266,7 +270,7 @@
               </div>
             </li>
 
-            <li class="relative" data-section="utilities">
+            <li class="relative" data-menu="utilities">
              <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
                 href="#" aria-expanded="false" role="button" tabindex="0"><span>Utilities</span><img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
               </a>

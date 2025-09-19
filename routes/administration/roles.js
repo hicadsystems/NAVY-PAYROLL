@@ -32,19 +32,6 @@ router.get("/classes", (req, res) => {
   res.json(classes);
 });
 
-//classes after user login
-router.get("/log-classes", verifyToken, (req, res) => {
-  const classes = [
-    { id: process.env.DB_OFFICERS, name: "OFFICERS" },
-    { id: process.env.DB_WOFFICERS, name: "W/OFFICERS" },
-    { id: process.env.DB_RATINGS, name: "RATINGS" },
-    { id: process.env.DB_RATINGS_A, name: "RATINGS A" },
-    { id: process.env.DB_RATINGS_B, name: "RATINGS B" },
-    { id: process.env.DB_JUNIOR_TRAINEE, name: "JUNIOR/TRAINEE" }
-  ];
-  res.json(classes);
-});
-
 // Get all dbs
 router.get("/db_classes", verifyToken, async (req, res) => {
   try {

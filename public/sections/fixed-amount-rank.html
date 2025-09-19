@@ -1,9 +1,9 @@
 <div class="p-6">
-<div class="">
+<div>
 <!-- Header -->
 <div class="px-6 py-2 flex items-center justify-between">
     <div class="flex items-center gap-2">
-        <h1 class="text-xl font-semibold">Fixed Amount By Rank Management</h1>
+        <h1 class="text-xl font-bold">Fixed Amount By Rank Management</h1>
     </div>
         <!-- Add Button -->
     <div class="mb-2 flex justify-end gap-2">
@@ -16,8 +16,8 @@
     <div id="rankAmountForm" class="hidden mb-2">
         <!-- Description Section -->
         <div class="mb-2">
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
-            <input type="text" id="description" class="w-full lg:w-1/2 md:w-2/3 border-2 border-blue-500 bg-transparent rounded px-3 py-2 text-sm focus:border-blue-600 focus:outline-none" placeholder="Enter description">
+            <label class="block text-md font-bold text-gray-700 mb-2">Description or Type</label>
+            <input type="text" maxlength="6" id="description" class="w-full lg:w-1/2 md:w-2/3 border-2 border-blue-500 bg-transparent rounded px-3 py-2 text-sm focus:border-blue-600 focus:outline-none" placeholder="Enter type">
         </div>
 
         <!-- Rank Grid -->
@@ -186,40 +186,8 @@
 
 <script>
 let editingIndex = null;
-
-// Dummy data
-let data = [
-{
-    description: "Basic Salary Allowance",
-    createdDate: "2024-01-15",
-    ranks: {
-        trainee: 50000, os: 65000, sm: 80000, ab: 95000, ls: 110000, po: 125000,
-        wo: 150000, mwo: 175000, cadet: 45000, nwo: 200000,
-        midshipman: 85000, slt: 180000, lt: 220000, ltcdr: 280000, cdr: 350000, capt: 420000,
-        cdre: 500000, radm: 650000, vadm: 800000, adm: 1000000, contract: 75000, rtdofficers: 90000
-    }
-},
-{
-    description: "Transport Allowance",
-    createdDate: "2024-02-10",
-    ranks: {
-        trainee: 15000, os: 20000, sm: 25000, ab: 30000, ls: 35000, po: 40000,
-        wo: 45000, mwo: 50000, cadet: 12000, nwo: 55000,
-        midshipman: 25000, slt: 50000, lt: 60000, ltcdr: 75000, cdr: 90000, capt: 105000,
-        cdre: 120000, radm: 140000, vadm: 160000, adm: 180000, contract: 20000, rtdofficers: 25000
-    }
-},
-{
-    description: "Housing Allowance",
-    createdDate: "2024-03-05",
-    ranks: {
-        trainee: 25000, os: 30000, sm: 40000, ab: 50000, ls: 60000, po: 70000,
-        wo: 85000, mwo: 100000, cadet: 20000, nwo: 120000,
-        midshipman: 45000, slt: 100000, lt: 130000, ltcdr: 160000, cdr: 200000, capt: 240000,
-        cdre: 300000, radm: 380000, vadm: 460000, adm: 550000, contract: 35000, rtdofficers: 45000
-    }
-}
-];
+let data = [];
+let originalData = null;
 
 const form = document.getElementById("rankAmountForm");
 const showFormBtn = document.getElementById("showFormBtn");
@@ -228,158 +196,323 @@ const cancelBtn = document.getElementById("cancelBtn");
 const tableBody = document.getElementById("rankAmountTable");
 
 const rankFields = [
-'trainee', 'os', 'sm', 'ab', 'ls', 'po', 'wo', 'mwo', 'cadet', 'nwo',
-'midshipman', 'slt', 'lt', 'ltcdr', 'cdr', 'capt', 'cdre', 'radm', 'vadm', 'adm', 'contract', 'rtdofficers'
+  'trainee', 'os', 'sm', 'ab', 'ls', 'po', 'wo', 'mwo', 'cadet', 'nwo',
+  'midshipman', 'slt', 'lt', 'ltcdr', 'cdr', 'capt', 'cdre', 'radm', 'vadm', 'adm', 'contract', 'rtdofficers'
 ];
 
-// Make functions global
-window.viewRow = function(index) {
-const item = data[index];
-let html = `
-    <div class="mb-4">
-        <h4 class="text-lg font-semibold text-gray-800 mb-2">Description: ${item.description}</h4>
-        <!--<p class="text-sm text-gray-600 mb-4">Created: ${item.createdDate}</p>-->
-    </div>
-    <div class="border-2 border-gray-300 rounded-lg p-4 bg-gray-50">
-        <h5 class="font-semibold text-gray-700 mb-3">Fixed Amounts by Rank:</h5>
-        <div class="grid grid-cols-4 gap-4 text-sm">
-`;
+// Map frontend rank fields -> backend DB columns
+const rankFieldMap = {
+  trainee: "one_amount01",
+  os: "one_amount02",
+  sm: "one_amount03",
+  ab: "one_amount04",
+  ls: "one_amount05",
+  po: "one_amount06",
+  wo: "one_amount07",
+  mwo: "one_amount08",
+  cadet: "one_amount09",
+  nwo: "one_amount10",
+  midshipman: "one_amount11",
+  slt: "one_amount12",
+  lt: "one_amount13",
+  ltcdr: "one_amount14",
+  cdr: "one_amount15",
+  capt: "one_amount16",
+  cdre: "one_amount17",
+  radm: "one_amount18",
+  vadm: "one_amount19",
+  adm: "one_amount20",
+  contract: "one_amount21",
+  rtdofficers: "one_amount22"
+};
 
-for (let rank in item.ranks) {
-    const displayRank = rank.charAt(0).toUpperCase() + rank.slice(1);
-    const amount = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(item.ranks[rank]);
-    html += `
-        <div class="flex justify-between bg-white p-2 rounded border">
-            <span class="font-medium">${displayRank.replace(/([A-Z])/g, ' $1').trim()}:</span>
-            <span class="text-blue-600 font-semibold">${amount}</span>
-        </div>
-    `;
+// Transform DB → frontend
+function transformFromBackend(item) {
+  const ranks = {};
+  rankFields.forEach(rank => {
+    ranks[rank] = item[rankFieldMap[rank]] || 0;
+  });
+  return {
+    one_type: item.one_type,
+    createdby: item.createdby,
+    datecreated: item.datecreated,
+    ranks
+  };
 }
 
-html += `</div></div>`;
-document.getElementById("viewContent").innerHTML = html;
-openModal("viewModal");
-};
+// Transform frontend → DB
+function transformToBackend(item) {
+  const payload = {
+    one_type: item.one_type,
+  };
+  rankFields.forEach(rank => {
+    payload[rankFieldMap[rank]] = item.ranks[rank] || 0;
+  });
+  return payload;
+}
 
-window.editRow = function(index) {
-const item = data[index];
-document.getElementById("description").value = item.description;
-
-// Populate rank fields
-rankFields.forEach(rank => {
-    const field = document.getElementById(rank);
-    if (field) {
-        field.value = item.ranks[rank] || 0;
-    }
+// Add new
+showFormBtn.addEventListener("click", () => {
+    form.classList.remove("hidden");
+    editingIndex = null;
+    clearForm();
 });
 
-editingIndex = index;
-form.classList.remove("hidden");
+//validations
+async function checkDuplicate(input, field, excludeType = null) {
+  const value = input.value.trim();
+  if (!value) {
+    input.setCustomValidity("");
+    input.reportValidity();
+    return;
+  }
+
+  // If editing, check if this field value has actually changed
+  if (originalData && originalData[field] === value) {
+    input.setCustomValidity(""); // Clear any existing validation message
+    input.reportValidity();
+    return; // Skip duplicate check if value hasn't changed
+  }
+
+  try {
+    const token = localStorage.getItem("token");
+    
+    // Build URL with optional excludeType parameter
+    let url = `/rank/check/${field}/${encodeURIComponent(value)}`;
+    if (excludeType) {
+      url += `?exclude=${excludeType}`;
+    }
+    
+    const res = await fetch(url, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+
+    if (!res.ok) {
+      console.error(`HTTP ${res.status}: ${res.statusText}`);
+      return;
+    }
+
+    const data = await res.json();
+    if (data.exists) {
+      input.setCustomValidity(`⚠️ This ${field} already exists.`);
+    } else {
+      input.setCustomValidity("");
+    }
+    input.reportValidity();
+  } catch (err) {
+    console.error(`Error checking ${field}:`, err);
+    input.setCustomValidity("");
+    input.reportValidity();
+  }
+}
+
+document.getElementById("description")?.addEventListener("blur", function () {
+    checkDuplicate(this, "one_type");
+});
+
+
+//  helper: get token
+function getToken() {
+  return localStorage.getItem("token");
+}
+
+//  Load from API
+async function loadData() {
+  try {
+    const res = await fetch("/rank", {
+      headers: { "Authorization": `Bearer ${getToken()}`}
+    });
+     const result = await res.json();
+     data = result.map(transformFromBackend);
+    renderTable();
+  } catch (err) {
+    console.error("Error loading:", err);
+  }
+}
+
+// View row
+window.viewRow = function(index) {
+  const item = data[index];
+  let html = `
+    <div class="mb-4">
+      <h4 class="text-lg font-semibold">Type: ${item.one_type}</h4>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+  `;
+  for (let rank in item.ranks) {
+    const displayRank = rank.charAt(0).toUpperCase() + rank.slice(1);
+    const amount = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(item.ranks[rank]);
+    html += `
+      <div class="flex justify-between bg-white p-2 rounded border">
+        <span class="font-medium">${displayRank}</span>
+        <span class="text-blue-600 font-semibold">${amount}</span>
+      </div>
+    `;
+  }
+  html += `</div>`;
+  document.getElementById("viewContent").innerHTML = html;
+  openModal("viewModal");
 };
 
-window.deleteRow = function(index) {
-if (confirm("Are you sure you want to delete this fixed amount configuration?")) {
+// Edit row
+window.editRow = function(index) {
+  const item = data[index];
+
+  //store original values for comparison
+  originalData = {
+    one_type: item.one_type
+  };
+
+  document.getElementById("description").value = item.one_type;
+  rankFields.forEach(rank => {
+    document.getElementById(rank).value = item.ranks[rank] || 0;
+  });
+
+  //clear any validation messages
+  document.getElementById('description').setCustomValidity("");
+
+  editingIndex = index;
+  form.classList.remove("hidden");
+};
+
+//  Delete
+window.deleteRow = async function(index) {
+  if (!confirm("Are you sure you want to delete this record?")) return;
+  const item = data[index];
+
+  try {
+    await fetch(`/rank/${item.one_type}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${getToken()}` }
+    });
     data.splice(index, 1);
     renderTable();
-}
+  } catch (err) {
+    console.error("Delete failed", err);
+  }
 };
 
-function renderTable() {
-tableBody.innerHTML = data.map((item, index) => {
-    return `
-        <tr class="hover:bg-gray-50">
-            <td class="border px-4 py-2 text-left">${item.description}</td>
-            <td class="border px-4 py-2 text-center">
-                <button onclick="viewRow(${index})" class="text-blue-600 hover:text-blue-800 mr-2 px-2 py-1 rounded hover:bg-blue-50">View</button>
-                <button onclick="editRow(${index})" class="text-green-600 hover:text-green-800 mr-2 px-2 py-1 rounded hover:bg-green-50">Edit</button>
-                <button onclick="deleteRow(${index})" class="text-red-600 hover:text-red-800 px-2 py-1 rounded hover:bg-red-50">Delete</button>
-            </td>
-        </tr>
-    `;
-}).join("");
-}
-
-renderTable();
-
-showFormBtn.addEventListener("click", () => {
-form.classList.remove("hidden");
-editingIndex = null;
-clearForm();
-});
-
-cancelBtn.addEventListener("click", () => {
-form.classList.add("hidden");
-editingIndex = null;
-clearForm();
-});
-
-saveBtn.addEventListener("click", () => {
-const description = document.getElementById("description").value.trim();
-
-if (!description) {
-    alert("Please enter a description");
+saveBtn.addEventListener("click", async () => {
+  const one_type = document.getElementById("description").value.trim();
+  if (!one_type) {
+    alert("Please enter a description / type");
     return;
-}
+  }
 
-const ranks = {};
-rankFields.forEach(rank => {
-    const field = document.getElementById(rank);
-    if (field) {
-        ranks[rank] = parseFloat(field.value) || 0;
+  // check for duplicates
+  const one_typeInput = document.getElementById("description");
+
+  // Get current one_type for editing
+  const currentOne_type = editingIndex;
+
+  //perform duplicate checks only for changed fields
+  await checkDuplicate(one_typeInput, 'one_type', currentOne_type);
+
+  //check if any validation error exists
+  if(!one_typeInput.checkValidity()){
+    alert("Please fix the validation errors before saving.");
+    return;
+  }
+
+  const ranks = {};
+  rankFields.forEach(rank => {
+    ranks[rank] = parseFloat(document.getElementById(rank).value) || 0;
+  });
+
+  const item = { one_type, ranks };
+  const payload = transformToBackend(item);
+
+  try {
+    if (editingIndex !== null) {
+      //UPDATE
+      const current = data[editingIndex];
+      const res = await fetch(`/rank/${current.one_type}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error("Update failed");
+
+      // keep frontend copy
+      data[editingIndex] = { one_type, ranks, createdDate: current.createdDate };
+
+    } else {
+      // CREATE
+      const res = await fetch("/rank/payrank", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error("Create failed");
+
+      //add to frontend list
+      data.push({
+        one_type,
+        ranks,
+        createdDate: new Date().toISOString().split("T")[0]
+      });
     }
-});
 
-const item = {
-    description: description,
-    createdDate: editingIndex !== null ? data[editingIndex].createdDate : new Date().toISOString().split('T')[0],
-    ranks: ranks
-};
-
-if (editingIndex !== null) {
-    data[editingIndex] = item;
+    renderTable();
+    form.classList.add("hidden");
+    clearForm();
+    openModal("successModal");
     editingIndex = null;
-} else {
-    data.push(item);
+    originalData =null;
+
+  } catch (err) {
+    console.error("Save failed:", err);
+    alert("Save failed, check console.");
+  }
+});
+
+// UI helpers
+function renderTable() {
+  tableBody.innerHTML = data.map((item, index) => `
+    <tr class="hover:bg-gray-50">
+      <td class="border px-4 py-2 text-left">${item.one_type}</td>
+      <td class="border px-4 py-2 text-center">
+        <button onclick="viewRow(${index})" class="text-blue-600 hover:text-blue-800 mr-2">View</button>
+        <button onclick="editRow(${index})" class="text-green-600 hover:text-green-800 mr-2">Edit</button>
+        <button onclick="deleteRow(${index})" class="text-red-600 hover:text-red-800">Delete</button>
+      </td>
+    </tr>
+  `).join("");
 }
 
-renderTable();
-form.classList.add("hidden");
-clearForm();
-openModal("successModal");
+// cancel button
+cancelBtn.addEventListener("click", () => {
+  form.classList.add("hidden");
+  editingIndex = null;
+  clearForm();
 });
 
+// Helpers
 function clearForm() {
-document.getElementById("description").value = "";
-rankFields.forEach(rank => {
-    const field = document.getElementById(rank);
-    if (field) {
-        field.value = "";
-    }
-});
+  document.getElementById("description").value = "";
+  rankFields.forEach(rank => {
+    document.getElementById(rank).value = "";
+  });
 }
 
 function openModal(id) {
-document.getElementById(id).classList.remove("hidden");
+  document.getElementById(id).classList.remove("hidden");
 }
-
 function closeModal(id) {
-document.getElementById(id).classList.add("hidden");
+  document.getElementById(id).classList.add("hidden");
 }
+document.getElementById("closeSuccessModal").addEventListener("click", () => closeModal("successModal"));
+document.getElementById("closeViewModal").addEventListener("click", () => closeModal("viewModal"));
 
-document.getElementById('closeSuccessModal').addEventListener('click', () => {
-closeModal('successModal');
-});
 
-document.getElementById('closeViewModal').addEventListener('click', () => {
-closeModal('viewModal');
-});
-
-// Close modals when clicking outside
-document.getElementById('successModal').addEventListener('click', (e) => {
-if (e.target === e.currentTarget) closeModal('successModal');
-});
-
-document.getElementById('viewModal').addEventListener('click', (e) => {
-if (e.target === e.currentTarget) closeModal('viewModal');
-});
+// load on page ready
+loadData();
 </script>

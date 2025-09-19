@@ -62,7 +62,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // session config (use env values in production)
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'super-secret',
+  secret: process.env.JWT_SECRET || 'super-secret',
   resave: false,
   saveUninitialized: false,
   cookie: {

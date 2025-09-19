@@ -32,6 +32,8 @@ router.post('/elementtypes', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'PaymentType, bpay, and yearend are required fields' });
     }
 
+    PaymentType = PaymentType.trim().toUpperCase();
+
     // Check if PaymentType already exists
     const [existing] = await pool.query('SELECT PaymentType FROM py_elementType WHERE PaymentType = ?', [PaymentType]);
     if (existing.length > 0) {
@@ -61,9 +63,10 @@ router.post('/elementtypes', verifyToken, async (req, res) => {
   }
 });
 
-
+//validation
 router.get('/elementtypes/check/:field/:value', verifyToken, async (req, res) => {
   const { field, value } = req.params;
+  const { exclude } = req.query;
 
   // Only allow specific fields to prevent SQL injection
   const allowedFields = ["PaymentType", "elmDesc"];
@@ -72,10 +75,16 @@ router.get('/elementtypes/check/:field/:value', verifyToken, async (req, res) =>
   }
 
   try {
-    const [existing] = await pool.query(
-      `SELECT ${field} FROM py_elementtype WHERE ${field} = ?`,
-      [value]
-    );
+    let query = `SELECT ${field} FROM py_elementtype WHERE ${field} = ?`;
+    let params = [value];
+
+    // If exclude PaymentType is provided, exclude that record from the check
+    if (exclude) {
+      query += ' AND PaymentType != ?';
+      params.push(exclude);
+    }
+
+    const [existing] = await pool.query(query, params);
 
     res.json({ exists: existing.length > 0 });
   } catch (err) {

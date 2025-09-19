@@ -18,6 +18,36 @@ router.post("/postlga", verifyToken, async (req, res) => {
   }
 });
 
+//validation
+router.get('/postlga/check/:field/:value', verifyToken, async (req, res) => {
+  const { field, value } = req.params;
+  const { exclude } = req.query;
+
+  // Only allow specific fields to prevent SQL injection
+  const allowedFields = ["Lgcode", "Lgname"];
+  if (!allowedFields.includes(field)) {
+    return res.status(400).json({ error: "Invalid field" });
+  }
+
+  try {
+    let query = `SELECT ${field} FROM py_tblLGA WHERE ${field} = ?`;
+    let params = [value];
+
+    // If exclude Lgcode is provided, exclude that record from the check
+    if (exclude) {
+      query += ' AND Lgcode != ?';
+      params.push(exclude);
+    }
+
+    const [existing] = await pool.query(query, params);
+
+    res.json({ exists: existing.length > 0 });
+  } catch (err) {
+    console.error(`Error checking ${field}:`, err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 // READ - Get all LGAs
 router.get("/lga", verifyToken, async (req, res) => {
   try {
@@ -44,10 +74,10 @@ router.get("/:Lgcode", verifyToken, async (req, res) => {
 // UPDATE - Modify LGA
 router.put("/:Lgcode", verifyToken, async (req, res) => {
   try {
-    const { Lgname, Lghqs, Statecode } = req.body;
+    const { Lgname, Lghqs, Lgcode } = req.body;
     const [result] = await pool.query(
-      "UPDATE py_tblLGA SET Lgname = ?, Lghqs = ?, Statecode = ? WHERE Lgcode = ?",
-      [Lgname, Lghqs, Statecode, req.params.Lgcode]
+      "UPDATE py_tblLGA SET Lgname = ?, Lghqs = ?, Lgcode = ? WHERE Lgcode = ?",
+      [Lgname, Lghqs, Lgcode, req.params.Lgcode]
     );
     if (result.affectedRows === 0) return res.status(404).json({ message: "LGA not found" });
     res.json({ message: "LGA updated" });

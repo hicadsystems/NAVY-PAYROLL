@@ -16,6 +16,7 @@ const localgovernmentRoutes = require('./refrence-tables/localgovernment');
 const departmentRoutes = require('./refrence-tables/department');
 const commandRoutes = require('./refrence-tables/command');
 const taxRoutes = require('./refrence-tables/tax');
+const payperrankRoutes = require('./refrence-tables/payperrank');
 
 
 module.exports = (app) => {
@@ -30,11 +31,12 @@ module.exports = (app) => {
 
     //refrence tables
     app.use("/", statesRoutes);
-    app.use("/", payelementsRoutes);
+    app.use("/pay", payelementsRoutes);
     app.use("/", overtimeRoutes);
+    app.use("/api/tax", taxRoutes);
     app.use("/api", bankdetailsRoutes);
     app.use("/lg", localgovernmentRoutes);
     app.use("/dept", departmentRoutes);
     app.use("/cmd", commandRoutes);
-    app.use("/api/tax", taxRoutes);
+    app.use("/rank", payperrankRoutes);
 };

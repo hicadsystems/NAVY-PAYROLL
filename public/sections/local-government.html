@@ -219,6 +219,7 @@
 
   let lgaData = [];
   let stateMap = {};
+  let originalLgaData = null;
   let editingLgaIndex = null;
   let pendingDeleteLgaIndex = null;
 
@@ -276,22 +277,44 @@
 
   // Save (Create or Update)
   saveLgaBtn.addEventListener("click", async () => {
-    const item = {
-      Lgname: document.getElementById("lgaName").value.trim(),
-      Lgcode: document.getElementById("lgaCode").value.trim(),
-      Statecode: document.getElementById("lgaState").value,
-      Lghqs: document.getElementById("lghqs").value.trim(),
-    };
-
-    if (!item.Lgname || !item.Lgcode || !item.Statecode) {
-      showErrorModal("Please fill in all required fields.");
-      return;
-    }
+    // Prevent multiple clicks during processing
+    if (saveLgaBtn.disabled) return;
+    
+    saveLgaBtn.disabled = true;
 
     try {
-      const token = localStorage.getItem("token");
+      const item = {
+        Lgname: document.getElementById("lgaName").value.trim(),
+        Lgcode: document.getElementById("lgaCode").value.trim(),
+        Statecode: document.getElementById("lgaState").value,
+        Lghqs: document.getElementById("lghqs").value.trim(),
+      };
+
+      if (!item.Lgname || !item.Lgcode || !item.Statecode) {
+        showErrorModal("Please fill in all required fields.");
+        return;
+      }
+
+      // Check for duplicates before saving
+      const lgCodeInput = document.getElementById("lgaCode");
+      const lgNameInput = document.getElementById("lgaName");
+
+      // Get the current lgaCode for editing
+      const currentlgCode = editingLgaIndex !== null ? lgaData[editingLgaIndex].Lgcode : null;
+
+      // Perform duplicate checks only for changed fields
+      await checkDuplicate(lgCodeInput, 'Lgcode', currentlgCode);
+      await checkDuplicate(lgNameInput, 'Lgname', currentlgCode);
+
+      // Check if any validation errors exist
+      if (!lgCodeInput.checkValidity() || !lgNameInput.checkValidity()) {
+        showSectionError("Please fix the validation errors before saving.");
+        return;
+      }
 
       if (editingLgaIndex !== null) {
+        const token = localStorage.getItem("token");
+
         // Update existing
         await fetch(`lg/${lgaData[editingLgaIndex].Lgcode}`, {
           method: "PUT",
@@ -321,9 +344,64 @@
       lgaForm.classList.add("hidden");
       lgaForm.reset();
       editingLgaIndex = null;
+      originalLgaData = null;
+
     } catch (err) {
       console.error("Error saving LGA:", err);
+    } finally{
+      saveLgaBtn.disabled = false;
     }
+  });
+
+  //validation
+  async function checkDuplicate(input, field, excludeLgCode = null) {
+    const value = input.value.trim();
+    if (!value) {
+      input.setCustomValidity("");
+      input.reportValidity();
+      return;
+    }
+
+    // If editing, check if this field value has actually changed
+    if (originalLgaData && originalLgaData[field] === value) {
+      input.setCustomValidity(""); // Clear any existing validation message
+      input.reportValidity();
+      return; // Skip duplicate check if value hasn't changed
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Build URL with optional excludeLgaCode parameter
+      let url = `lg/postlga/check/${field}/${encodeURIComponent(value)}`;
+      if (excludeLgCode) {
+        url += `?exclude=${excludeLgCode}`;
+      }
+      
+      const res = await fetch(url, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      const data = await res.json();
+      if (data.exists) {
+        input.setCustomValidity(`⚠️ This ${field} already exists.`);
+      } else {
+        input.setCustomValidity("");
+      }
+      input.reportValidity();
+    } catch (err) {
+      console.error(`Error checking ${field}:`, err);
+    }
+  }
+
+  document.getElementById("lgaName")?.addEventListener("blur", function () {
+    const currentlgCode = editingLgaIndex !== null ? lgaData[editingLgaIndex].Lgcode : null;
+    checkDuplicate(this, "Lgname", currentlgCode);
+  });
+
+  document.getElementById("lgaCode")?.addEventListener("blur", function () {
+    const currentlgCode = editingLgaIndex !== null ? lgaData[editingLgaIndex].Lgcode : null;
+    checkDuplicate(this, "Lgcode", currentlgCode);
   });
 
   // Cancel
@@ -360,10 +438,23 @@
   // Edit
   window.editLga = function(index) {
     const item = lgaData[index];
+
+    // Store original values for comparison
+    originalLgaData = {
+      Lgname: item.Lgname,
+      Lgcode: item.Lgcode
+    };
+
     document.getElementById("lgaName").value = item.Lgname;
     document.getElementById("lgaCode").value = item.Lgcode;
-    prefillStates(item.Statecode);
     document.getElementById("lghqs").value = item.Lghqs;
+
+    prefillStates(item.Statecode);
+
+    // Clear any existing validation messages
+    document.getElementById("lgaName").setCustomValidity("");
+    document.getElementById("lgaCode").setCustomValidity("");
+
     editingLgaIndex = index;
     lgaForm.classList.remove("hidden");
   };

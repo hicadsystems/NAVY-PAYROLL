@@ -136,6 +136,7 @@
 let deptData = [];
 let editingDeptIndex = null;
 let pendingDeleteDeptIndex = null;
+let originaldeptData = null;
 
 const deptForm = document.getElementById("deptForm");
 const addNewDeptBtn = document.getElementById("addNewDeptBtn");
@@ -191,6 +192,86 @@ addNewDeptBtn.addEventListener("click", () => {
   deptForm.reset();
 });
 
+//validations
+async function checkDepartmentDuplicate(input, field, excludeDeptCode = null) {
+  const value = input.value.trim();
+  if (!value) {
+    input.setCustomValidity("");
+    input.reportValidity();
+    return;
+  }
+
+  // If editing, check if this field value has actually changed
+  if (originaldeptData && originaldeptData[field] === value) {
+    input.setCustomValidity(""); // Clear any existing validation message
+    input.reportValidity();
+    return; // Skip duplicate check if value hasn't changed
+  }
+
+  try {
+    const token = localStorage.getItem("token");
+    
+    // Build URL with optional excludeDeptCode parameter
+    let url = `/dept/department/check/${field}/${encodeURIComponent(value)}`;
+    if (excludeDeptCode) {
+      url += `?exclude=${excludeDeptCode}`;
+    }
+    
+    const res = await fetch(url, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+
+    if (!res.ok) {
+      console.error(`HTTP ${res.status}: ${res.statusText}`);
+      return;
+    }
+
+    const data = await res.json();
+    if (data.exists) {
+      input.setCustomValidity(`⚠️ This ${field} already exists.`);
+    } else {
+      input.setCustomValidity("");
+    }
+    input.reportValidity();
+  } catch (err) {
+    console.error(`Error checking ${field}:`, err);
+    input.setCustomValidity("");
+    input.reportValidity();
+  }
+}
+
+// Add blur event listeners for the first 5 fields + acct
+document.getElementById("factcode")?.addEventListener("blur", function () {
+  const currentDeptCode = editingDeptIndex !== null ? deptData[editingDeptIndex].deptcode : null;
+  checkDepartmentDuplicate(this, "factcode", currentDeptCode);
+});
+
+document.getElementById("deptcode")?.addEventListener("blur", function () {
+  const currentDeptCode = editingDeptIndex !== null ? deptData[editingDeptIndex].deptcode : null;
+  checkDepartmentDuplicate(this, "deptcode", currentDeptCode);
+});
+
+document.getElementById("factname")?.addEventListener("blur", function () {
+  const currentDeptCode = editingDeptIndex !== null ? deptData[editingDeptIndex].deptcode : null;
+  checkDepartmentDuplicate(this, "factname", currentDeptCode);
+});
+
+document.getElementById("deptname")?.addEventListener("blur", function () {
+  const currentDeptCode = editingDeptIndex !== null ? deptData[editingDeptIndex].deptcode : null;
+  checkDepartmentDuplicate(this, "deptname", currentDeptCode);
+});
+
+document.getElementById("coordcode")?.addEventListener("blur", function () {
+  const currentDeptCode = editingDeptIndex !== null ? deptData[editingDeptIndex].deptcode : null;
+  checkDepartmentDuplicate(this, "coordcode", currentDeptCode);
+});
+
+document.getElementById("acct")?.addEventListener("blur", function () {
+  const currentDeptCode = editingDeptIndex !== null ? deptData[editingDeptIndex].deptcode : null;
+  checkDepartmentDuplicate(this, "acct", currentDeptCode);
+});
+
+
 // Save
 saveDeptBtn.addEventListener("click", async () => {
   const item = {
@@ -208,8 +289,35 @@ saveDeptBtn.addEventListener("click", async () => {
     AddressCode: document.getElementById("AddressCode").value.trim(),
   };
 
-  if (!item.factcode || !item.deptcode || !item.factname  || !item.deptname || !item.coordcode ) {
+  if (!item.factcode || !item.deptcode || !item.factname || !item.deptname || !item.coordcode || !item.acct) {
     showErrorModal("Factory code, Deptartment code, Factory Name, Department Name, and Coor Code are required.");
+    return;
+  }
+
+  // Check for duplicates before saving
+  const factcodeInput = document.getElementById("factcode");
+  const deptcodeInput = document.getElementById("deptcode");
+  const factnameInput = document.getElementById("factname");
+  const deptnameInput = document.getElementById("deptname");
+  const coordcodeInput = document.getElementById("coordcode");
+  const acctInput = document.getElementById("acct");
+
+  // Get the current deptcode for editing
+  const currentDeptCode = editingDeptIndex !== null ? deptData[editingDeptIndex].deptcode : null;
+
+  // Perform duplicate checks only for changed fields
+  await checkDepartmentDuplicate(factcodeInput, 'factcode', currentDeptCode);
+  await checkDepartmentDuplicate(deptcodeInput, 'deptcode', currentDeptCode);
+  await checkDepartmentDuplicate(factnameInput, 'factname', currentDeptCode);
+  await checkDepartmentDuplicate(deptnameInput, 'deptname', currentDeptCode);
+  await checkDepartmentDuplicate(coordcodeInput, 'coordcode', currentDeptCode);
+  await checkDepartmentDuplicate(acctInput, 'acct', currentDeptCode);
+
+  // Check if any validation errors exist
+  if (!factcodeInput.checkValidity() || !deptcodeInput.checkValidity() || 
+      !factnameInput.checkValidity() || !deptnameInput.checkValidity() || 
+      !coordcodeInput.checkValidity() || !acctInput.checkValidity()) {
+    showErrorModal("Please fix the validation errors before saving.");
     return;
   }
 
@@ -244,6 +352,8 @@ saveDeptBtn.addEventListener("click", async () => {
     deptForm.classList.add("hidden");
     deptForm.reset();
     editingDeptIndex = null;
+    originaldeptData = null;
+
   } catch (err) {
     showErrorModal("Error saving department:", err);
   }
@@ -263,7 +373,7 @@ window.viewDept = function(index) {
   let formattedDate = "";
   if (item.datecreated) {
     const dateObj = new Date(item.datecreated);
-    formattedDate = dateObj.toLocaleString("en-GB", {
+    formattedDate = dateObj.toLocaleString('en-US', {
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -323,7 +433,19 @@ window.viewDept = function(index) {
 
 // Edit
 window.editDept = function(index) {
+
   const item = deptData[index];
+
+  // Store original values for comparison
+  originaldeptData = {
+    factcode: item.factcode,
+    deptcode: item.deptcode,
+    factname: item.factname,
+    deptname: item.deptname,
+    coordcode: item.coordcode,
+    acct: item.acct
+  };
+
   document.getElementById("factcode").value = item.factcode;
   document.getElementById("deptcode").value = item.deptcode;
   document.getElementById("factname").value = item.factname || "";
@@ -336,6 +458,11 @@ window.editDept = function(index) {
   document.getElementById("misc2").value = item.misc2 || "";
   document.getElementById("misc3").value = item.misc3 || "";
   document.getElementById("AddressCode").value = item.AddressCode || "";
+
+  // Clear any existing validation messages
+  ["factcode", "deptcode", "factname", "deptname", "coordcode", "acct"].forEach(field => {
+    document.getElementById(field).setCustomValidity("");
+  });
 
   editingDeptIndex = index;
   deptForm.classList.remove("hidden");

@@ -4,13 +4,54 @@ const pool = require('../../config/db'); // mysql2 pool
 const verifyToken = require('../../middware/authentication');
 
 // CREATE
+router.get('/department/check/:field/:value', verifyToken, async (req, res) => {
+  const { field, value } = req.params;
+  const { exclude } = req.query;
+
+  // Only allow specific fields to prevent SQL injection
+  const allowedFields = ["factcode", "deptcode", "factname", "deptname", "coordcode", "acct"];
+  if (!allowedFields.includes(field)) {
+    return res.status(400).json({ error: "Invalid field" });
+  }
+
+  try {
+    let query = `SELECT ${field} FROM py_department WHERE ${field} = ?`;
+    let params = [value];
+
+    // If exclude deptcode is provided, exclude that record from the check
+    if (exclude) {
+      query += ' AND deptcode != ?';  
+      params.push(exclude);
+    }
+
+    const [existing] = await pool.query(query, params);
+    res.json({ exists: existing.length > 0 });
+  } catch (err) {
+    console.error(`Error checking ${field}:`, err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Updated POST route with validation
 router.post("/post-department", verifyToken, async (req, res) => {
   try {
-    const {
+    let {
       factcode, deptcode, factname, deptname,
       coordcode, manager, hod, acct,
       misc1, misc2, misc3, AddressCode
     } = req.body;
+
+    if (!factcode || !deptcode || !factname || !deptname || !coordcode || !acct) {
+      return res.status(400).json({ error: 'Required fields: factcode, deptcode, factname, deptname, coordcode, acct' });
+    }
+
+    // Apply proper casing/formatting
+    factcode = factcode.trim().toUpperCase();
+    deptcode = deptcode.trim().toUpperCase();
+    factname = toTitleCase(factname.trim());
+    deptname = toTitleCase(deptname.trim());
+    coordcode = coordcode.trim().toUpperCase();
+    acct = acct.trim();
 
     const createdby = req.user_fullname || "Admin User";
 
@@ -25,9 +66,20 @@ router.post("/post-department", verifyToken, async (req, res) => {
 
     res.status(201).json({ message: "Department created" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    if (err.code === 'ER_DUP_ENTRY') {
+      res.status(400).json({ error: "Duplicate entry detected" });
+    } else {
+      res.status(500).json({ error: err.message });
+    }
   }
 });
+
+// Helper function for title case
+function toTitleCase(str) {
+  return str.toLowerCase().split(' ').map(word => {
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }).join(' ');
+}
 
 // READ ALL
 router.get("/department", verifyToken, async (req, res) => {

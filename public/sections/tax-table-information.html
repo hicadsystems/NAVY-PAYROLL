@@ -120,25 +120,31 @@
     }
   }
 
-  // Show nested form
+  // Show nested form with proper pre-filling
   minimumFreepayBtn.addEventListener("click", () => {
     const interval = document.getElementById("interval").value.trim();
     const value = document.getElementById("value").value.trim();
     const percentage = document.getElementById("percentage_freepay").value.trim();
+    
     if (!interval || !value || !percentage) {
       alert("Please fill in Interval, Value, and Percentage first.");
       return;
     }
+
+    // Update current config with form values
     currentFreepayConfig = {
+      ...currentFreepayConfig, // Keep existing data (important for editing)
       INTER: interval,
       val: parseInt(value),
-      perc: parseFloat(percentage),
-      cumulative: currentFreepayConfig.cumulative || "",
-      lowerbound: currentFreepayConfig.lowerbound || ""
+      perc: parseFloat(percentage)
     };
+
+    // Show nested form
     nestedForm.classList.remove("hidden");
-    document.getElementById("cumulative").value = currentFreepayConfig.cumulative;
-    document.getElementById("lowerbound").value = currentFreepayConfig.lowerbound;
+    
+    // Pre-fill nested form fields (works for both new and edit modes)
+    document.getElementById("cumulative").value = currentFreepayConfig.cumval ?? currentFreepayConfig.cumulative ?? "";
+    document.getElementById("lowerbound").value = currentFreepayConfig.lowbound ?? currentFreepayConfig.lowerbound ?? "";
   });
 
   showFormBtn.addEventListener("click", () => {
@@ -150,7 +156,7 @@
   cancelFreepayBtn.addEventListener("click", () => {
     resetMainForm();
     freepayMainForm.classList.add("hidden");
-    nestedForm.classList.add("hidden"); // ✅ close nested too
+    nestedForm.classList.add("hidden");
     editingFreepayIndex = null;
   });
 
@@ -176,9 +182,13 @@
     };
 
     try {
+      let response;
       if (editingFreepayIndex !== null) {
-        // Update
-        await fetch(`${API_URL}/${interval}`, {
+        // Update - Debug the URL being called
+        const updateUrl = `${API_URL}/${interval}`;
+        console.log("UPDATE URL:", updateUrl); // Debug log
+        
+        response = await fetch(updateUrl, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -187,8 +197,11 @@
           body: JSON.stringify(payload)
         });
       } else {
-        // Create
-        await fetch(`${API_URL}/create`, {
+        // Create - Debug the URL being called
+        const createUrl = `${API_URL}/create`;
+        console.log("CREATE URL:", createUrl); // Debug log
+        
+        response = await fetch(createUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -197,14 +210,23 @@
           body: JSON.stringify(payload)
         });
       }
+
+      // Debug the response
+      const responseData = await response.json();
+      console.log("API Response:", responseData); // Debug log
+      
+      if (!response.ok) {
+        throw new Error(responseData.message || "API Error");
+      }
+
       await loadFreepayData();
       resetMainForm();
       freepayMainForm.classList.add("hidden");
       nestedForm.classList.add("hidden");
       showSuccessModal();
     } catch (err) {
-      console.error(err);
-      alert("Error saving record.");
+      console.error("Save Error:", err);
+      alert("Error saving record: " + err.message);
     }
   });
 
@@ -212,12 +234,18 @@
   enterBtn.addEventListener("click", () => {
     const cumulative = document.getElementById("cumulative").value.trim();
     const lowerbound = document.getElementById("lowerbound").value.trim();
+    
     if (!cumulative || !lowerbound) {
       alert("Please fill in both Cumulative and Lower Bound.");
       return;
     }
-    currentFreepayConfig.cumulative = parseFloat(cumulative);
-    currentFreepayConfig.lowerbound = parseFloat(lowerbound);
+    
+    // Update currentFreepayConfig with nested values
+    currentFreepayConfig.cumval = parseFloat(cumulative);
+    currentFreepayConfig.lowbound = parseFloat(lowerbound);
+    currentFreepayConfig.cumulative = parseFloat(cumulative); // backup key
+    currentFreepayConfig.lowerbound = parseFloat(lowerbound); // backup key
+    
     hideNestedForm();
     alert("Values entered successfully! Click Save to record.");
   });
@@ -251,18 +279,27 @@
     `).join("");
   }
 
-  // Edit record
+  // Edit record - Enhanced to properly handle nested form pre-filling
   window.editFreepayRow = function(index) {
     const item = freepayData[index];
+    
+    // Populate main form fields
     document.getElementById("interval").value = item.INTER;
     document.getElementById("value").value = item.val;
     document.getElementById("percentage_freepay").value = item.perc;
 
-    //Always prefill cumulative + lowerbound
+    // Always prefill cumulative + lowerbound in main form
     document.getElementById("cumulative").value = item.cumval ?? "";
     document.getElementById("lowerbound").value = item.lowbound ?? "";
 
-    currentFreepayConfig = { ...item };
+    // Store complete item data in currentFreepayConfig
+    currentFreepayConfig = { 
+      ...item,
+      // Add backup keys for consistency
+      cumulative: item.cumval,
+      lowerbound: item.lowbound
+    };
+    
     editingFreepayIndex = index;
     freepayMainForm.classList.remove("hidden");
     nestedForm.classList.add("hidden"); // keep hidden until user clicks button
@@ -288,9 +325,11 @@
   function showSuccessModal() {
     document.getElementById("freepaySuccessModal").classList.remove("hidden");
   }
+  
   function closeSuccessModal() {
     document.getElementById("freepaySuccessModal").classList.add("hidden");
   }
+  
   document.getElementById("closeFreepayModal").addEventListener("click", closeSuccessModal);
   document.getElementById("freepaySuccessModal").addEventListener("click", (e) => {
     if (e.target === e.currentTarget) closeSuccessModal();

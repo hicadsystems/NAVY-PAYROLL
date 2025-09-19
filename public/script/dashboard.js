@@ -330,7 +330,7 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
     try {
       const token = localStorage.getItem('token');
 
-      const response = await fetch('/log-classes', {
+      const response = await fetch('/db_classes', {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -348,16 +348,6 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
 
     } catch (error) {
       console.error('Failed to load class mappings:', error);
-
-      // Fallback mapping if endpoint fails
-      classMapping = {
-        'hicaddata': 'OFFICERS',
-        'hicaddata1': 'W/OFFICERS',
-        'hicaddata2': 'RATINGS',
-        'hicaddata3': 'RATINGS A',
-        'hicaddata4': 'RATINGS B',
-        'hicaddata5': 'JUNIOR/TRAINEE'
-      };
     }
   }
 

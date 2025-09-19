@@ -1,4 +1,3 @@
-
 <div class="p-6">
   <div class="flex justify-end mb-4 gap-2">
     <button id="showFormBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New</button>
@@ -96,8 +95,8 @@
       <label class="block text-sm font-medium text-gray-700">Account Ledger</label>
       <select id="accountLedger" maxlength="15" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
         <option value="">Select Accounting Ledger</option>
-        <option value="M">OFFICE FITTINGS</option>
-        <option value="Q">MOTOR VEHICLE</option>
+        <option value="OFFICE FITTINGS">OFFICE FITTINGS</option>
+        <option value="MOTOR VEHICLE">MOTOR VEHICLE</option>
       </select>
     </div>
 
@@ -173,6 +172,7 @@
   // Global variables
   let editingIndex = null;
   let data = [];
+  let originalData = [];
 
   // DOM elements
   const form = document.getElementById("payElementsForm");
@@ -187,7 +187,7 @@
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch('/elementtypes',{   
+      const response = await fetch('/pay/elementtypes',{   
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -208,7 +208,7 @@
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch('/elementtypes', {
+      const response = await fetch('/pay/elementtypes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -229,7 +229,8 @@
     }
   }
 
-  async function checkDuplicate(input, field) {
+  //validation
+  async function checkDuplicate(input, field, excludePaymentType = null) {
     const value = input.value.trim();
     if (!value) {
       input.setCustomValidity("");
@@ -237,9 +238,22 @@
       return;
     }
 
+      // If editing, check if this field value has actually changed
+    if (originalData && originalData[field] === value) {
+      input.setCustomValidity(""); // Clear any existing validation message
+      input.reportValidity();
+      return; // Skip duplicate check if value hasn't changed
+    }
+
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`/elementtypes/check/${field}/${encodeURIComponent(value)}`, {
+
+      let url = `/pay/elementtypes/check/${field}/${encodeURIComponent(value)}`;
+      if (excludePaymentType){
+        url += `?exclude=${excludePaymentType}`;
+      }
+
+      const res = await fetch(url, {
         headers: { "Authorization": `Bearer ${token}` }
       });
 
@@ -269,7 +283,7 @@
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch(`/elementtypes/${paymentType}`, {
+      const response = await fetch(`/pay/elementtypes/${paymentType}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -294,7 +308,7 @@
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch(`/elementtypes/${paymentType}`, {
+      const response = await fetch(`/pay/elementtypes/${paymentType}`, {
         method: 'DELETE', 
         headers: { 
           "Content-Type": "application/json",
@@ -446,10 +460,21 @@
     const item = data.find(d => d.PaymentType === paymentType);
     if (!item) return;
 
-    editingIndex = paymentType;
+    // Store original values for comparison
+    originalData = {
+      paymentType: item.PaymentType,
+      elmDesc: item.elmDesc
+    };
+
     populateForm(item);
-    document.getElementById("payElements").disabled = true; // Don't allow changing primary key
+
+    // Clear any existing validation messages
+    document.getElementById("payElements").setCustomValidity("");
+    document.getElementById("description").setCustomValidity("");
+
+    editingIndex = paymentType;
     form.classList.remove("hidden");
+    document.getElementById("payElements").disabled = true;
   };
 
   window.deleteRow = function(paymentType) {
@@ -481,10 +506,11 @@
 
   saveBtn.addEventListener("click", async () => {
     const formData = getFormData();
+
     
     // Basic validation
     if (!formData.PaymentType || !formData.bpay || !formData.yearend) {
-      showError("Please fill in Payment Type, Require For All, and Year End Clearance fields.");
+      showError("Please fill in Payment Type, bpay, and Year End Clearance fields.");
       return;
     }
 
@@ -493,10 +519,28 @@
       return;
     }
 
+    // Check for duplicates before saving
+    const paymentTypeInput = document.getElementById("payElements");
+    const elmDescInput = document.getElementById("description");
+
+    // Get the current stateCode for editing
+    const currentPaymentType = editingIndex;
+
+    // Perform duplicate checks only for changed fields
+    await checkDuplicate(paymentTypeInput, 'PaymentType', currentPaymentType);
+    await checkDuplicate(elmDescInput, 'elmDesc', currentPaymentType);
+
+    // Check if any validation errors exist
+    if (!paymentTypeInput.checkValidity() || 
+        !elmDescInput.checkValidity()) {
+      showError("Please fix the validation errors before saving.");
+      return;
+    }
+
     try {
-      if (editingIndex) {
+      if (currentPaymentType) {
         // Update existing
-        await updatePayElement(editingIndex, formData);
+        await updatePayElement(currentPaymentType, formData);
         showSuccess("Payment element updated successfully!");
       } else {
         // Create new
@@ -506,8 +550,9 @@
       
       form.classList.add("hidden");
       clearForm();
-      fetchPayElements(); // Refresh data
-      
+      await fetchPayElements();
+      originalData = null;
+
     } catch (error) {
       showError(error.message);
     }

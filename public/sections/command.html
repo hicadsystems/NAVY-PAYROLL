@@ -75,6 +75,7 @@
 
 <script>
   let commandData = [];
+  let originalCommandData = null;
   let editingSectionIndex = null;
   let pendingSectionDelete = null;
 
@@ -130,20 +131,41 @@
   }
 
   // Save record
-  saveSectionBtn.addEventListener("click", async () => {
-    const item = {
-      navalcmd: document.getElementById('navalcmd').value.trim(),
-      name: document.getElementById('name').value.trim(),
-    };
+  saveSectionBtn.addEventListener("click", async (e) => {
+    // Prevent multiple clicks during processing
+    if (saveSectionBtn.disabled) return;
+    
+    saveSectionBtn.disabled = true;
+    
+    try {
+      const item = {
+        navalcmd: document.getElementById('navalcmd').value.trim(),
+        name: document.getElementById('name').value.trim(),
+      };
 
-    if (!item.navalcmd || !item.name){
-      showSectionError('Naval Command and Name are required.');
-      return;
-    }
+      if (!item.navalcmd || !item.name){
+        showSectionError('Naval Command and Name are required.');
+        return;
+      }
 
-    try{
+      // Check for duplicates before saving
+      const navalcmdInput = document.getElementById("navalcmd");
+      const nameInput = document.getElementById("name");
 
-      if(editingSectionIndex !==null){
+      // Get the current navalcmd for editing
+      const currentNavalcmd = editingSectionIndex !== null ? commandData[editingSectionIndex].navalcmd : null;
+
+      // Perform duplicate checks only for changed fields
+      await checkDuplicate(navalcmdInput, 'navalcmd', currentNavalcmd);
+      await checkDuplicate(nameInput, 'name', currentNavalcmd);
+
+      // Check if any validation errors exist
+      if (!navalcmdInput.checkValidity() || !nameInput.checkValidity()) {
+        showSectionError("Please fix the validation errors before saving.");
+        return;
+      }
+
+      if(editingSectionIndex !== null){
         await fetch(`/cmd/${commandData[editingSectionIndex].navalcmd}`, {
           method: "PUT",
           headers: getAuthHeaders(),
@@ -162,12 +184,68 @@
       await loadCommand();
       sectionForm.classList.add("hidden");
       sectionForm.reset();
-      editingSectionIndex = null; 
+      editingSectionIndex = null;
+      originalCommandData = null; // Clear original data
 
     } catch (err){
       showSectionError("Error saving command:", err);
+    } finally {
+      saveSectionBtn.disabled = false; // Re-enable button
     }
   });
+
+  //validation
+  async function checkDuplicate(input, field, excludeNavalcmd = null) {
+    const value = input.value.trim();
+    if (!value) {
+      input.setCustomValidity("");
+      input.reportValidity();
+      return;
+    }
+
+    // If editing, check if this field value has actually changed
+    if (originalCommandData && originalCommandData[field] === value) {
+      input.setCustomValidity(""); // Clear any existing validation message
+      input.reportValidity();
+      return; // Skip duplicate check if value hasn't changed
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Build URL with optional excludeNavalcmd parameter
+      let url = `/cmd/post-command/check/${field}/${encodeURIComponent(value)}`;
+      if (excludeNavalcmd) {
+        url += `?exclude=${excludeNavalcmd}`;
+      }
+      
+      const res = await fetch(url, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      const data = await res.json();
+      if (data.exists) {
+        input.setCustomValidity(`⚠️ This ${field} already exists.`);
+      } else {
+        input.setCustomValidity("");
+      }
+      input.reportValidity();
+    } catch (err) {
+      console.error(`Error checking ${field}:`, err);
+    }
+  }
+
+  // Updated blur event listeners to pass exclude parameter
+  document.getElementById("navalcmd")?.addEventListener("blur", function () {
+    const currentNavalcmd = editingSectionIndex !== null ? commandData[editingSectionIndex].navalcmd : null;
+    checkDuplicate(this, "navalcmd", currentNavalcmd);
+  });
+
+  document.getElementById("name")?.addEventListener("blur", function () {
+    const currentNavalcmd = editingSectionIndex !== null ? commandData[editingSectionIndex].navalcmd : null;
+    checkDuplicate(this, "name", currentNavalcmd);
+  });
+
 
   cancelSectionBtn.addEventListener("click", () => {
     sectionForm.classList.add("hidden");
@@ -182,12 +260,25 @@
 
   window.editSection = function(index) {
     const item = commandData[index];
+    
+    // Store original values for comparison
+    originalCommandData = {
+      navalcmd: item.navalcmd,
+      name: item.name
+    };
+    
+    // Populate form fields
     document.getElementById("navalcmd").value = item.navalcmd;
     document.getElementById("name").value = item.name;
+    
+    // Clear any existing validation messages
+    document.getElementById("navalcmd").setCustomValidity("");
+    document.getElementById("name").setCustomValidity("");
+    
     editingSectionIndex = index;
     sectionForm.classList.remove("hidden");
-  }
-
+  };
+  
   window.deleteSection = function(index) {
     pendingSectionDelete = index;
      showConfirmModal("Are you sure you want to delete this command?");

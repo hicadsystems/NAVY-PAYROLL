@@ -6,16 +6,25 @@ const router = express.Router();
 // POST - Create new state
 router.post('/states', verifyToken, async (req, res) => {
   // Accept both formats (camelCase from frontend, PascalCase from DB)
-  const Statecode = req.body.Statecode || req.body.stateCode;
-  const Statename = req.body.Statename || req.body.stateName;
-  const Statecapital = req.body.Statecapital || req.body.stateCapital;
-  const createdby = req.user_fullname || "Admin User"; // fallback if not sent
+  let Statecode = req.body.Statecode || req.body.stateCode;
+  let Statename = req.body.Statename || req.body.stateName;
+  let Statecapital = req.body.Statecapital || req.body.stateCapital;
+  const createdby = req.user_fullname || "Admin User";
   const datecreated = new Date();
 
   try {
     if (!Statecode || !Statename || !Statecapital) {
       return res.status(400).json({ error: 'All fields are required' });
     }
+    
+    // State codes should be uppercase (standard convention: CA, TX, NY, etc.)
+    Statecode = Statecode.trim().toUpperCase();
+    
+    // State names should be in Title Case (proper nouns)
+    Statename = toTitleCase(Statename.trim());
+    
+    // State capitals should be in Title Case (proper nouns)
+    Statecapital = toTitleCase(Statecapital.trim());
 
     const [result] = await pool.query(
       `INSERT INTO py_tblstates 
@@ -39,9 +48,23 @@ router.post('/states', verifyToken, async (req, res) => {
   }
 });
 
+// Helper function for proper title casing
+function toTitleCase(str) {
+  return str.toLowerCase().split(' ').map(word => {
+    // Handle common exceptions (articles, prepositions, conjunctions)
+    const exceptions = ['of', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'with', 'by'];
+    
+    // Always capitalize first word, otherwise check exceptions
+    if (word.length === 0) return word;
+    
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  }).join(' ');
+}
+
 //validation
 router.get('/states/check/:field/:value', verifyToken, async (req, res) => {
   const { field, value } = req.params;
+  const { exclude } = req.query;
 
   // Only allow specific fields to prevent SQL injection
   const allowedFields = ["stateName", "stateCapital", "stateCode"];
@@ -50,10 +73,16 @@ router.get('/states/check/:field/:value', verifyToken, async (req, res) => {
   }
 
   try {
-    const [existing] = await pool.query(
-      `SELECT ${field} FROM py_tblstates WHERE ${field} = ?`,
-      [value]
-    );
+    let query = `SELECT ${field} FROM py_tblstates WHERE ${field} = ?`;
+    let params = [value];
+
+    // If exclude stateCode is provided, exclude that record from the check
+    if (exclude) {
+      query += ' AND stateCode != ?';
+      params.push(exclude);
+    }
+
+    const [existing] = await pool.query(query, params);
 
     res.json({ exists: existing.length > 0 });
   } catch (err) {

@@ -123,6 +123,7 @@
 
 <script>
 let stateData = [];
+let originalStateData = null;
 let editingStateId = null;
 let pendingDeleteStateId = null;
 
@@ -214,7 +215,7 @@ async function createState(item) {
 }
 
 //validation
-async function checkDuplicate(input, field) {
+async function checkDuplicate(input, field, excludeStateCode = null) {
   const value = input.value.trim();
   if (!value) {
     input.setCustomValidity("");
@@ -222,9 +223,23 @@ async function checkDuplicate(input, field) {
     return;
   }
 
+  // If editing, check if this field value has actually changed
+  if (originalStateData && originalStateData[field] === value) {
+    input.setCustomValidity(""); // Clear any existing validation message
+    input.reportValidity();
+    return; // Skip duplicate check if value hasn't changed
+  }
+
   try {
     const token = localStorage.getItem("token");
-    const res = await fetch(`/states/check/${field}/${encodeURIComponent(value)}`, {
+    
+    // Build URL with optional excludeStateCode parameter
+    let url = `/states/check/${field}/${encodeURIComponent(value)}`;
+    if (excludeStateCode) {
+      url += `?exclude=${excludeStateCode}`;
+    }
+    
+    const res = await fetch(url, {
       headers: { "Authorization": `Bearer ${token}` }
     });
 
@@ -240,7 +255,6 @@ async function checkDuplicate(input, field) {
   }
 }
 
-// State Name
 document.getElementById("stateName")?.addEventListener("blur", function () {
   checkDuplicate(this, "stateName");
 });
@@ -318,22 +332,47 @@ addNewStateBtn.addEventListener("click", () => {
 });
 
 // --- Save ---
-saveStateBtn.addEventListener("click", async () => {
-  const item = {
-    stateName: document.getElementById("stateName").value.trim(),
-    stateCode: document.getElementById("stateCode").value.trim(),
-    stateCapital: document.getElementById("stateCapital").value.trim()
-  };
-
-  if (!item.stateName || !item.stateCode || !item.stateCapital) {
-    showErrorModal("Please fill in all required fields.");
-    return;
-  }
-
-
+saveStateBtn.addEventListener("click", async (e) => {
+  // Prevent multiple clicks during processing
+  if (saveStateBtn.disabled) return;
+  
+  saveStateBtn.disabled = true;
+  
   try {
-    if (editingStateId) {
-      await updateState(editingStateId, item);
+    const item = {
+      stateName: document.getElementById("stateName").value.trim(),
+      stateCode: document.getElementById("stateCode").value.trim(),
+      stateCapital: document.getElementById("stateCapital").value.trim()
+    };
+
+    if (!item.stateName || !item.stateCode || !item.stateCapital) {
+      showErrorModal("Please fill in all required fields.");
+      return;
+    }
+
+    // Check for duplicates before saving
+    const stateNameInput = document.getElementById("stateName");
+    const stateCodeInput = document.getElementById("stateCode");
+    const stateCapitalInput = document.getElementById("stateCapital");
+
+    // Get the current stateCode for editing
+    const currentStateCode = editingStateId;
+
+    // Perform duplicate checks only for changed fields
+    await checkDuplicate(stateNameInput, 'stateName', currentStateCode);
+    await checkDuplicate(stateCodeInput, 'stateCode', currentStateCode);
+    await checkDuplicate(stateCapitalInput, 'stateCapital', currentStateCode);
+
+    // Check if any validation errors exist
+    if (!stateNameInput.checkValidity() || 
+        !stateCodeInput.checkValidity() || 
+        !stateCapitalInput.checkValidity()) {
+      showErrorModal("Please fix the validation errors before saving.");
+      return;
+    }
+
+    if (currentStateCode) {
+      await updateState(currentStateCode, item);
       showSuccessModal("State record updated successfully!");
     } else {
       await createState(item);
@@ -344,9 +383,13 @@ saveStateBtn.addEventListener("click", async () => {
     stateForm.classList.add("hidden");
     stateForm.reset();
     editingStateId = null;
+    originalStateData = null; // Clear original data
+    
   } catch (err) {
     showErrorModal("Error saving state.");
     console.error(err);
+  } finally {
+    saveStateBtn.disabled = false; // Re-enable button
   }
 });
 
@@ -356,15 +399,29 @@ cancelStateBtn.addEventListener("click", () => {
   stateForm.reset();
 });
 
+
 // --- Actions ---
 window.editState = function(Statecode) {
-  // Fixed: use Statecode instead of id to find the item
   const item = stateData.find(s => s.Statecode === Statecode);
   if (!item) return;
   
+  // Store original values for comparison
+  originalStateData = {
+    stateName: item.Statename,
+    stateCode: item.Statecode,
+    stateCapital: item.Statecapital
+  };
+  
+  // Populate form fields
   document.getElementById("stateName").value = item.Statename;
   document.getElementById("stateCode").value = item.Statecode;
   document.getElementById("stateCapital").value = item.Statecapital;
+  
+  // Clear any existing validation messages
+  document.getElementById("stateName").setCustomValidity("");
+  document.getElementById("stateCode").setCustomValidity("");
+  document.getElementById("stateCapital").setCustomValidity("");
+  
   editingStateId = Statecode; // Store Statecode as the editing ID
   stateForm.classList.remove("hidden");
 };

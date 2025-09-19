@@ -35,6 +35,36 @@ router.post("/post-command", verifyToken, async (req, res) => {
   }
 });
 
+//validation
+router.get('/post-command/check/:field/:value', verifyToken, async (req, res) => {
+  const { field, value } = req.params;
+  const { exclude } = req.query;
+
+  // Only allow specific fields to prevent SQL injection
+  const allowedFields = ["name", "navalcmd"];
+  if (!allowedFields.includes(field)) {
+    return res.status(400).json({ error: "Invalid field" });
+  }
+
+  try {
+    let query = `SELECT ${field} FROM py_navalcommand WHERE ${field} = ?`;
+    let params = [value];
+
+    // If exclude navalcmd is provided, exclude that record from the check
+    if (exclude) {
+      query += ' AND navalcmd != ?';
+      params.push(exclude);
+    }
+
+    const [existing] = await pool.query(query, params);
+
+    res.json({ exists: existing.length > 0 });
+  } catch (err) {
+    console.error(`Error checking ${field}:`, err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 // Update
 router.put("/:navalcmd", verifyToken, async (req, res) => {
   const { name } = req.body;

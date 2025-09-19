@@ -462,6 +462,7 @@ saveBtn.addEventListener("click", async () => {
     }
 
     renderTable();
+    await loadData();
     form.classList.add("hidden");
     clearForm();
     openModal("successModal");

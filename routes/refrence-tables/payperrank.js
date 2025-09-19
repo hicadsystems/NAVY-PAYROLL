@@ -60,8 +60,16 @@ router.get("/:one_type", verifyToken, async (req, res) => {
 //  Create new record
 router.post("/payrank", verifyToken, async (req, res) => {
   try {
-    const payload = req.body;
+    const payload = { ...req.body };
+
+    // Ensure one_type exists and format it properly
+    if (!payload.one_type) {
+      return res.status(400).json({ error: "one_type is required" });
+    }
+    payload.one_type = payload.one_type.trim().toUpperCase();
+
     payload.datecreated = new Date();
+    payload.createdby = req.user_fullname || "Admin User";
 
     const fields = Object.keys(payload);
     const values = Object.values(payload);
@@ -71,7 +79,7 @@ router.post("/payrank", verifyToken, async (req, res) => {
 
     res.json({ message: "Record created successfully" });
   } catch (err) {
-    console.error(err);
+    console.error("Insert failed:", err);
     res.status(500).json({ error: "Insert failed" });
   }
 });

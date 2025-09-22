@@ -6,7 +6,7 @@ const verifyToken = require('../../middware/authentication');
 
 // POST - Create new element type
 router.post('/elementtypes', verifyToken, async (req, res) => {
-  const {
+  let {
     PaymentType,
     elmDesc,
     Ledger,

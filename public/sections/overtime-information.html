@@ -42,7 +42,6 @@
 
         <!-- hidden fields -->
         <input type="hidden" name="basicpay">
-        <input type="hidden" name="createdby" value="HICAD">
         <input type="hidden" name="type" value="BT03">
 
         <div class="col-span-2 flex justify-end mt-4">
@@ -86,33 +85,40 @@
       for (let [k, v] of Object.entries(row)) {
         if (form.elements[k]) form.elements[k].value = v ?? '';
       }
+      //
+      form.elements['taxovertime'].value = row.basicpay == 1 ? "Yes" : "No";
     }
   }
 
-  // Save form
-  document.getElementById('overtimeForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const data = Object.fromEntries(new FormData(form).entries());
-    const token = localStorage.getItem("token");
+// Save form
+document.getElementById('overtimeForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const token = localStorage.getItem("token");
 
-    const res = await fetch('/overtime', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` 
-      },
-        
-      body: JSON.stringify(data)
-    });
+  // map taxovertime → basicpay
+  data.basicpay = data.taxovertime === "Yes" ? 1 : 0;
 
-    const result = await res.json();
-    if (res.ok) {
-      showModal();
-    } else {
-      alert("Error: " + (result.error || result.message));
-    }
+  // remove taxovertime so backend doesn't try to insert it
+  delete data.taxovertime;
+
+  const res = await fetch('/overtime', {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}` 
+    },
+    body: JSON.stringify(data)
   });
+
+  const result = await res.json();
+  if (res.ok) {
+    showModal();
+  } else {
+    alert("Error: " + (result.error || result.message));
+  }
+});
 
   // Prefill form on load
   loadForm();

@@ -455,6 +455,32 @@
     });
   });
 
+  // Capitalize first letter, keep the rest lower
+  function capitalizeWords(str) {
+    return str
+      ? str
+          .toLowerCase()
+          .split(" ")
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ")
+      : "";
+  }
+
+  ["address", "contactMgrAccountant"].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener("input", () => {
+      el.value = capitalizeWords(el.value);
+    });
+  });
+
+  //capitalize all
+  ["bankCode", "bankName", "branchName", "branchCode", "cbnCode", "cbnBranch"].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener("input", () => {
+      el.value = el.value.toUpperCase();
+    });
+  });
+
   // Init load
   loadBanks();
 </script>

@@ -338,6 +338,14 @@
     renderSectionTable(filtered);
   });
 
+  // Force uppercase as user types 
+["navalcmd", "name"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", () => {
+    el.value = el.value.toUpperCase();
+  });
+});
+
   // init
   renderSectionTable();
   loadCommand();

@@ -69,23 +69,6 @@
             </table>
         </div>
     </div>
-
-    <!-- Priority Selection Section 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Higher Priority</label>
-            <select id="higherPrioritySelect" class="w-full border-2 border-gray-300 rounded px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
-                <option value="">Select Higher Priority</option>
-            </select>
-        </div>
-        
-        <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Lower Priority</label>
-            <select id="lowerPrioritySelect" class="w-full border-2 border-gray-300 rounded px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
-                <option value="">Select Lower Priority</option>
-            </select>
-        </div>
-    </div>-->
 </div>
 </div>
 </div>
@@ -116,206 +99,199 @@
 
 <script>
 let editingIndex = null;
-
-// Dummy data matching the image
-let data = [
-    {
-        description: "ADMINISTRATIVE ALLOWANCE",
-        highPriority: "PT350",
-        lowerPriority: "PT358", 
-        detailDescription: "SPECIAL FORCES INACTIVE ALLCE"
-    },
-    {
-        description: "SBS ACTIVE ALLCE",
-        highPriority: "PT366",
-        lowerPriority: "PT365",
-        detailDescription: "SPECIAL FORCES INACTIVE ALLCE"
-    },
-    {
-        description: "SPECIAL FORCES ACTIVE ALLCE",
-        highPriority: "PT372",
-        lowerPriority: "PT381",
-        detailDescription: "SPECIAL FORCES INACTIVE ALLCE"
-    },
-    {
-        description: "SPECIAL FORCES INACTIVE ALLCE",
-        highPriority: "PT381",
-        lowerPriority: "PT381",
-        detailDescription: "SPECIAL FORCES INACTIVE ALLCE"
-    },
-    {
-        description: "ARTIFICER ALLCE",
-        highPriority: "PT385",
-        lowerPriority: "PT386",
-        detailDescription: "COMPUTER OPERATOR ALLCE"
-    }
-];
+let data = [];
 
 const form = document.getElementById("paymentTypeForm");
 const showFormBtn = document.getElementById("showFormBtn");
 const saveBtn = document.getElementById("saveBtn");
 const cancelBtn = document.getElementById("cancelBtn");
 const tableBody = document.getElementById("paymentTypesTable");
-const higherPrioritySelect = document.getElementById("higherPrioritySelect");
-const lowerPrioritySelect = document.getElementById("lowerPrioritySelect");
 
-// Make functions global
+const API_URL = "/mutually";
+const token = localStorage.getItem("token");
+
+// ==== VIEW ====
 window.viewRow = function(index) {
-const item = data[index];
-let html = `
+  const item = data[index];
+  let html = `
     <div class="grid grid-cols-2 gap-4">
-        <div class="bg-gray-50 p-3 rounded">
-            <h4 class="font-semibold text-gray-700 mb-2">Description:</h4>
-            <p class="text-gray-900">${item.description}</p>
-        </div>
-        <div class="bg-gray-50 p-3 rounded">
-            <h4 class="font-semibold text-gray-700 mb-2">Detail Description:</h4>
-            <p class="text-gray-900">${item.detailDescription}</p>
-        </div>
         <div class="bg-blue-50 p-3 rounded">
             <h4 class="font-semibold text-blue-700 mb-2">High Priority:</h4>
-            <p class="text-blue-900 font-mono">${item.highPriority}</p>
+            <p class="text-blue-900 font-mono">${item.typeH}</p>
+            <p class="text-gray-700">${item.typehdesc}</p>
         </div>
         <div class="bg-orange-50 p-3 rounded">
             <h4 class="font-semibold text-orange-700 mb-2">Lower Priority:</h4>
-            <p class="text-orange-900 font-mono">${item.lowerPriority}</p>
+            <p class="text-orange-900 font-mono">${item.typeL}</p>
+            <p class="text-gray-700">${item.typeldesc}</p>
         </div>
     </div>
-`;
-document.getElementById("viewContent").innerHTML = html;
-    openModal("viewModal");
+  `;
+  document.getElementById("viewContent").innerHTML = html;
+  openModal("viewModal");
 };
 
+// ==== EDIT ====
 window.editRow = function(index) {
-    const item = data[index];
-    document.getElementById("description").value = item.description;
-    document.getElementById("highPriority").value = item.highPriority;
-    document.getElementById("lowerPriority").value = item.lowerPriority;
-    document.getElementById("detailDescription").value = item.detailDescription;
+  const item = data[index];
+  document.getElementById("highPriority").value = item.typeH;
+  document.getElementById("description").value = item.typehdesc;
+  document.getElementById("lowerPriority").value = item.typeL;
+  document.getElementById("detailDescription").value = item.typeldesc;
 
-    editingIndex = index;
-    form.classList.remove("hidden");
+  editingIndex = index;
+  form.classList.remove("hidden");
 };
 
-window.deleteRow = function(index) {
-    if (confirm("Are you sure you want to delete this payment type?")) {
-        data.splice(index, 1);
-        renderTable();
-        updatePrioritySelects();
+// ==== DELETE ====
+window.deleteRow = async function(index) {
+  const item = data[index];
+  if (confirm("Are you sure you want to delete this payment type?")) {
+    try {
+      await fetch(`${API_URL}/${item.typeH}/${item.typeL}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      data.splice(index, 1);
+      renderTable();
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Error deleting record.");
     }
+  }
 };
 
+// ==== RENDER ====
 function renderTable() {
-tableBody.innerHTML = data.map((item, index) => {
-    const isSelected = index === 0; // First row is selected in the original
+  tableBody.innerHTML = data.map((item, index) => {
+    const isSelected = index === 0;
     return `
-        <tr class="hover:bg-gray-50 ${isSelected ? 'bg-yellow-100' : ''}">
-            <td class="border px-4 py-2 text-left">
-                ${isSelected ? '▶ ' : ''}${item.description}
-            </td>
-            <td class="border px-4 py-3 text-left">${item.highPriority}</td>
-            <td class="border px-4 py-3 text-left">${item.lowerPriority}</td>
-            <td class="border px-4 py-3 text-left">${item.detailDescription}</td>
-            <td class="border px-4 py-3 text-center">
-                <button onclick="editRow(${index})" class="text-green-600 hover:text-green-800 mr-2 px-2 py-1 rounded hover:bg-green-50 text-xs">Edit</button>
-                <button onclick="deleteRow(${index})" class="text-red-600 hover:text-red-800 px-2 py-1 rounded hover:bg-red-50 text-xs">Delete</button>
-            </td>
-        </tr>
+      <tr class="hover:bg-gray-50 ${isSelected ? 'bg-yellow-100' : ''}">
+        <td class="border px-4 py-2 text-left">${isSelected ? '▶ ' : ''}${item.typehdesc}</td>
+        <td class="border px-4 py-2 text-left">${item.typeH}</td>
+        <td class="border px-4 py-2 text-left">${item.typeL}</td>
+        <td class="border px-4 py-2 text-left">${item.typeldesc}</td>
+        <td class="border px-4 py-2 text-center">
+          <button onclick="editRow(${index})" class="text-green-600 hover:text-green-800 mr-2 px-2 py-1 rounded hover:bg-green-50 text-xs">Edit</button>
+          <button onclick="deleteRow(${index})" class="text-red-600 hover:text-red-800 px-2 py-1 rounded hover:bg-red-50 text-xs">Delete</button>
+        </td>
+      </tr>
     `;
-}).join("");
+  }).join("");
 }
 
-function updatePrioritySelects() {
-// Get unique priority codes
-const priorities = [...new Set([
-    ...data.map(item => item.highPriority),
-    ...data.map(item => item.lowerPriority)
-])].sort();
-
-const higherOptions = priorities.map(p => `<option value="${p}">${p}</option>`).join('');
-const lowerOptions = priorities.map(p => `<option value="${p}">${p}</option>`).join('');
-
-//higherPrioritySelect.innerHTML = '<option value="">Select Higher Priority</option>' + higherOptions;
-//lowerPrioritySelect.innerHTML = '<option value="">Select Lower Priority</option>' + lowerOptions;
+// ==== LOAD DATA ====
+async function loadData() {
+  try {
+    const res = await fetch(API_URL, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error("Failed to fetch data");
+    data = await res.json();
+    renderTable();
+  } catch (err) {
+    console.error("Error loading:", err);
+    alert("Failed to load data.");
+  }
 }
 
-renderTable();
-updatePrioritySelects();
 
-showFormBtn.addEventListener("click", () => {
-    form.classList.remove("hidden");
-    editingIndex = null;
+
+// ==== SAVE ====
+saveBtn.addEventListener("click", async () => {
+  // Collect values
+  const typeH = document.getElementById("highPriority").value.trim().toUpperCase();
+  const typehdesc = document.getElementById("description").value.trim().toUpperCase();
+  const typeL = document.getElementById("lowerPriority").value.trim().toUpperCase();
+  const typeldesc = document.getElementById("detailDescription").value.trim().toUpperCase();
+
+  if (!typeH || !typeL) {
+    alert("Please fill in both High and Low Priority codes.");
+    return;
+  }
+
+  // Ensure payload is uppercase (Option 1 - safety)
+  const payload = { typeH, typehdesc, typeL, typeldesc };
+
+  try {
+    if (editingIndex !== null) {
+      const existing = data[editingIndex];
+      await fetch(`${API_URL}/${existing.typeH}/${existing.typeL}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      data[editingIndex] = payload;
+      editingIndex = null;
+    } else {
+      await fetch(`${API_URL}/post`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      data.push(payload);
+    }
+
+    renderTable();
+    form.classList.add("hidden");
     clearForm();
+    openModal("successModal");
+  } catch (err) {
+    console.error("Save failed:", err);
+    alert("Error saving record.");
+  }
+});
+
+// Force uppercase as user types
+["highPriority", "lowerPriority", "description", "detailDescription"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", () => {
+    el.value = el.value.toUpperCase();
+  });
+});
+
+
+// ==== UI HELPERS ====
+showFormBtn.addEventListener("click", () => {
+  form.classList.remove("hidden");
+  editingIndex = null;
+  clearForm();
 });
 
 cancelBtn.addEventListener("click", () => {
-    form.classList.add("hidden");
-    editingIndex = null;
-    clearForm();
-});
-
-saveBtn.addEventListener("click", () => {
-const description = document.getElementById("description").value.trim();
-const highPriority = document.getElementById("highPriority").value.trim();
-const lowerPriority = document.getElementById("lowerPriority").value.trim();
-const detailDescription = document.getElementById("detailDescription").value.trim();
-
-if (!description || !highPriority || !lowerPriority) {
-    alert("Please fill in all required fields");
-    return;
-}
-
-const item = {
-    description,
-    highPriority,
-    lowerPriority,
-    detailDescription
-};
-
-if (editingIndex !== null) {
-    data[editingIndex] = item;
-    editingIndex = null;
-} else {
-    data.push(item);
-}
-
-renderTable();
-updatePrioritySelects();
-form.classList.add("hidden");
-clearForm();
-openModal("successModal");
+  form.classList.add("hidden");
+  editingIndex = null;
+  clearForm();
 });
 
 function clearForm() {
-    document.getElementById("description").value = "";
-    document.getElementById("highPriority").value = "";
-    document.getElementById("lowerPriority").value = "";
-    document.getElementById("detailDescription").value = "";
+  document.getElementById("description").value = "";
+  document.getElementById("highPriority").value = "";
+  document.getElementById("lowerPriority").value = "";
+  document.getElementById("detailDescription").value = "";
 }
 
 function openModal(id) {
-    document.getElementById(id).classList.remove("hidden");
+  document.getElementById(id).classList.remove("hidden");
 }
-
 function closeModal(id) {
-    document.getElementById(id).classList.add("hidden");
+  document.getElementById(id).classList.add("hidden");
 }
 
-document.getElementById('closeSuccessModal').addEventListener('click', () => {
-    closeModal('successModal');
-});
+document.getElementById('closeSuccessModal').addEventListener('click', () => closeModal('successModal'));
+document.getElementById('closeViewModal').addEventListener('click', () => closeModal('viewModal'));
 
-document.getElementById('closeViewModal').addEventListener('click', () => {
-    closeModal('viewModal');
-});
-
-// Close modals when clicking outside
 document.getElementById('successModal').addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) closeModal('successModal');
+  if (e.target === e.currentTarget) closeModal('successModal');
 });
-
 document.getElementById('viewModal').addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) closeModal('viewModal');
+  if (e.target === e.currentTarget) closeModal('viewModal');
 });
 
 // Add selection highlighting to table rows
@@ -331,12 +307,16 @@ tableBody.addEventListener('click', function(e) {
             }
         });
     
-    // Add selection to clicked row
-    row.classList.add('bg-yellow-100');
-    const firstCell = row.querySelector('td');
-    if (firstCell && !firstCell.innerHTML.startsWith('▶')) {
-        firstCell.innerHTML = '▶ ' + firstCell.innerHTML;
-    }
+        // Add selection to clicked row
+        row.classList.add('bg-yellow-100');
+        const firstCell = row.querySelector('td');
+        if (firstCell && !firstCell.innerHTML.startsWith('▶')) {
+            firstCell.innerHTML = '▶ ' + firstCell.innerHTML;
+        }
     }
 });
+
+
+// ==== INITIAL LOAD ====
+loadData();
 </script>

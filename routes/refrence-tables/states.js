@@ -134,9 +134,9 @@ router.get('/states/:Statecode', verifyToken, async (req, res) => {
 router.put('/states/:Statecode', verifyToken, async (req, res) => {
   const { Statecode } = req.params;
   // Accept both formats from frontend
-  const Statename = req.body.Statename || req.body.stateName;
-  const Statecapital = req.body.Statecapital || req.body.stateCapital;
-  const createdby = req.user_fullname || "Admin User";
+  let Statename = req.body.Statename || req.body.stateName;
+  let Statecapital = req.body.Statecapital || req.body.stateCapital;
+  //const createdby = req.user_fullname || "Admin User";
 
   try {
     // Check if state exists first

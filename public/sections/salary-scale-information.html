@@ -48,11 +48,11 @@
 
   <!-- Salary Scales -->
   <div id="scaleSection" class="hidden">
-    <div class="flex justify-between mb-4">
+    <div class="flex flex-wrap gap-4 justify-between mb-4">
       <div>
         <h2 class="text-xl lg:text-2xl text-blue-600 font-bold">Salary Scale</h2>
       </div>
-      <div>
+      <div class="flex gap-2">
         <button id="addNewScaleBtn" type="button"
           class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
           + Add New Scale
@@ -85,7 +85,7 @@
       </select>
 
       <div id="stepFields"
-          class="col-span-2 grid grid-cols-4 gap-2 mt-4 hidden"></div>
+          class="col-span-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-4 hidden"></div>
 
       <div class="col-span-2 flex justify-end mt-6 gap-2">
         <button type="submit"
@@ -101,32 +101,33 @@
 
     <!-- Batch Upload Form -->
     <div class="flex justify-end">
-    <form id="batchUploadForm"
-          class="hidden w-full max-w-lg rounded-2xl pt-6 p-2">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
-        <input type="file" id="batchFile"
-          class="mt-1 block w-full border border-blue-500 bg-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>
-        <p class="text-xs text-gray-500 mt-2">
-          Only .xlsx or .csv files allowed.
-          <a href="sample.csv" download
-            class="text-blue-600 hover:underline ml-2">Download Sample</a>
-        </p>
-      </div>
+      <form id="batchUploadForm"
+            class="hidden w-full max-w-lg rounded-2xl pt-6 p-2">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
+          <input type="file" id="batchFile"
+            class="mt-1 block w-full border border-blue-500 bg-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>
+          <p class="text-xs text-gray-500 mt-2">
+            Only .xlsx or .csv files allowed.
+            <button type="button" id="downloadSampleBtn" class="text-blue-600 hover:underline ml-2 bg-none border-none cursor-pointer">
+              Download Sample Template
+            </button>
+          </p>
+        </div>
 
-      <div class="flex justify-end space-x-4 mt-4">
-        <button type="button" id="uploadBatchBtn"
-          class="px-6 py-2 bg-green-600 hover:bg-green-700 rounded text-white">
-          Upload
-        </button>
+        <div class="flex justify-end space-x-4 mt-4">
+          <button type="button" id="uploadBatchBtn"
+            class="px-6 py-2 bg-green-600 hover:bg-green-700 rounded text-white">
+            Upload
+          </button>
 
-        <button type="button" id="cancelBatchBtn"
-          class="px-6 py-2 bg-gray-400 hover:bg-gray-500 rounded text-white">
-          Cancel
-        </button>
-      </div>
-    </form>
-  </div>
+          <button type="button" id="cancelBatchBtn"
+            class="px-6 py-2 bg-gray-400 hover:bg-gray-500 rounded text-white">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
 
     <!-- Table -->
     <div class="mt-6 overflow-x-auto">
@@ -164,368 +165,1022 @@
   </div>
 </div>
 
-<script>
-  // Simulated Data
-  let groups = [
-    {id:1, groupcode:"NAVY01", grpdesc:"NAVY PAY", effdate:"2025-01-01", lastdate:"2025-12-31"},
-    {id:2, groupcode:"DEFP02", grpdesc:"DEFENCE PAY", effdate:"2025-01-01", lastdate:"2025-12-31"}
-  ];
-  let elements = [
-    {id:1, code:"BP301", desc:"Pension Addition"},
-    {id:2, code:"BP302", desc:"Pension Deduction"}
-  ];
-  let grades = [
-    {id:1, code:"01", desc:"Level 1"},
-    {id:2, code:"02", desc:"Level 2"}
-  ];
-  let scales = [
-    {group:"NAVY01", element:"BP301", grade:"01", steps:["1000","1100","1200","","","","","","","","","","","","","","","","","15"]},
-    {group:"DEFP02", element:"BP302", grade:"02", steps:["2000","2100","2200","","","","","","","","","","","","","","","","","10"]}
-  ];
-  let editingScaleIndex = null;
-  let editingGroupIndex = null;
 
-  // Generate step fields dynamically
-  function generateStepFields() {
-    const stepFieldsContainer = document.getElementById("stepFields");
-    let stepHTML = '';
-    for(let i = 1; i <= 20; i++) {
-      stepHTML += `
-        <div>
-          <label class="block text-sm font-medium">Step ${i}</label>
-          <input type="text" id="step${i}" class="border p-2 rounded w-full">
-        </div>`;
+<script>
+// API Configuration
+const isLocal = window.location.hostname === "localhost";
+const API_BASE_URL = isLocal 
+  ? "http://localhost:5500/api/v1"   // local backend
+  : "https://hicad.ng/api/v1";       // prod backend
+
+
+// Global variables
+let groups = [];
+let elementTypes = [];
+let gradeLevels = [];
+let scales = [];
+let editingScaleIndex = null;
+let editingGroupIndex = null;
+
+// API Helper Functions
+class ApiService {
+  static async request(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    try {
+      const response = await fetch(url, config);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'API request failed');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('API Error:', error);
+      alert(`Error: ${error.message}`);
+      throw error;
     }
-    stepFieldsContainer.innerHTML = stepHTML;
   }
 
-  // Define all functions at the top level
-  window.viewScale = function(index) {
-    const s = scales[index];
+  // Salary Scale API calls
+  static async getAllScales(page = 1, limit = 100) {
+    return await this.request(`/salary-scales?page=${page}&limit=${limit}`);
+  }
+
+  static async getScale(salcode, saltype, grade) {
+    return await this.request(`/salary-scales/${salcode}/${saltype}/${grade}`);
+  }
+
+  static async createScale(scaleData) {
+    return await this.request('/salary-scales', {
+      method: 'POST',
+      body: JSON.stringify(scaleData),
+    });
+  }
+
+  static async updateScale(salcode, saltype, grade, scaleData) {
+    return await this.request(`/salary-scales/${salcode}/${saltype}/${grade}`, {
+      method: 'PUT',
+      body: JSON.stringify(scaleData),
+    });
+  }
+
+  static async deleteScale(salcode, saltype, grade) {
+    return await this.request(`/salary-scales/${salcode}/${saltype}/${grade}`, {
+      method: 'DELETE',
+    });
+  }
+
+  static async searchScales(filters) {
+    const params = new URLSearchParams(filters);
+    return await this.request(`/salary-scales/search?${params}`);
+  }
+
+  static async getProgressionSteps(salcode, saltype, grade) {
+    return await this.request(`/salary-scales/${salcode}/${saltype}/${grade}/progression-steps`);
+  }
+
+  static async validateProgression(progressionData) {
+    return await this.request('/salary-scales/validate-progression', {
+      method: 'POST',
+      body: JSON.stringify(progressionData),
+    });
+  }
+
+  // Salary Group API calls
+  static async getAllGroups(page = 1, limit = 100) {
+    return await this.request(`/salary-groups?page=${page}&limit=${limit}`);
+  }
+
+  static async getGroup(groupcode) {
+    return await this.request(`/salary-groups/${groupcode}`);
+  }
+
+  static async createGroup(groupData) {
+    return await this.request('/salary-groups', {
+      method: 'POST',
+      body: JSON.stringify(groupData),
+    });
+  }
+
+  static async updateGroup(groupcode, groupData) {
+    return await this.request(`/salary-groups/${groupcode}`, {
+      method: 'PUT',
+      body: JSON.stringify(groupData),
+    });
+  }
+
+  static async deleteGroup(groupcode) {
+    return await this.request(`/salary-groups/${groupcode}`, {
+      method: 'DELETE',
+    });
+  }
+
+  static async searchGroups(filters) {
+    const params = new URLSearchParams(filters);
+    return await this.request(`/salary-groups/search?${params}`);
+  }
+
+  static async getActiveGroups() {
+    return await this.request('/salary-groups/active/list');
+  }
+
+  // Element Types API call
+  static async getElementTypes() {
+    return await this.request('/elementtypes');
+  }
+
+  // Grade Levels API call
+  static async getGradeLevels() {
+    return await this.request('/gradelevels');
+  }
+
+  
+  // Batch upload API calls
+  static async batchUpload(formData) {
+    const url = `${API_BASE_URL}/salary-scales/batch-upload`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+          // Don't set Content-Type for FormData - browser will set it automatically with boundary
+        },
+        body: formData,
+      });
+      
+      // Check content type before parsing
+      const contentType = response.headers.get('content-type') || '';
+      
+      if (!response.ok) {
+        let errorMessage = `Upload failed: ${response.status} ${response.statusText}`;
+        
+        try {
+          if (contentType.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+          } else {
+            const errorText = await response.text();
+            // Don't try to show multipart boundary data as error
+            if (!errorText.startsWith('------') && errorText.length < 500) {
+              errorMessage = errorText;
+            }
+          }
+        } catch (parseError) {
+          console.log('Could not parse error response');
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      // Only try to parse as JSON if content-type indicates JSON
+      if (contentType.includes('application/json')) {
+        const data = await response.json();
+        return data;
+      } else {
+        // If not JSON response, return a success indicator
+        return { 
+          success: true, 
+          message: 'Upload completed',
+          summary: {
+            totalRecords: 'Unknown',
+            successful: 'Processing',
+            failed: 0,
+            errors: []
+          }
+        };
+      }
+      
+    } catch (error) {
+      console.error('Batch upload error:', error);
+      throw error;
+    }
+  }
+
+  static async downloadSampleTemplate() {
+    const url = `${API_BASE_URL}/salary-scales/sample-template`;
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      throw new Error('Authentication token not found. Please login again.');
+    }
+    
+    try {
+      console.log('Making download request with token:', token ? 'Token present' : 'No token');
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/octet-stream, text/csv, */*',
+        },
+      });
+      
+      console.log('Download response status:', response.status);
+      console.log('Download response headers:', Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Download error response:', errorText);
+        throw new Error(`Failed to download sample template: ${response.status} ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = 'salary_scale_sample.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Download failed:', error);
+      throw error;
+    }
+  }
+}
+
+
+// Initialize data from API
+async function initializeData() {
+  try {
+    //showLoading();
+    
+    // Load groups from API
+    await loadGroups();
+    
+    // Load element types from API
+    await loadElementTypes();
+    
+    // Load grade levels from API 
+    await loadGradeLevels();
+    
+    loadDropdowns();
+    //hideLoading();
+  } catch (error) {
+    //hideLoading();
+    console.error('Failed to initialize data:', error);
+  }
+}
+
+// Load groups from backend
+async function loadGroups() {
+  try {
+    const response = await ApiService.getAllGroups();
+    groups = response.data || [];
+    renderGroupTable();
+  } catch (error) {
+    console.error('Failed to load groups:', error);
+    groups = [];
+  }
+}
+
+// Load element types from backend
+async function loadElementTypes() {
+  try {
+    const response = await ApiService.getElementTypes();
+    elementTypes = response || [];   // no .data here
+  } catch (error) {
+    console.error('Failed to load element types:', error);
+    elementTypes = [];
+  }
+}
+
+// Load element types from backend
+async function loadGradeLevels() {
+  try {
+    const response = await ApiService.getGradeLevels();
+    gradeLevels = response || [];   // no .data here
+  } catch (error) {
+    console.error('Failed to load grade levels:', error);
+    gradeLevels = [];
+  }
+}
+
+
+
+// Generate step fields dynamically
+function generateStepFields() {
+  const stepFieldsContainer = document.getElementById("stepFields");
+  let stepHTML = '';
+  for(let i = 1; i <= 20; i++) {
+    const label = i === 20 ? 'Max Step' : `Step ${i}`;
+    const placeholder = i === 20 ? 'Max progression step (1-19)' : 'Enter salary amount';
+    stepHTML += `
+      <div>
+        <label class="block text-sm font-medium">${label}</label>
+        <input type="text" id="step${i}" class="border p-2 rounded w-full" placeholder="${placeholder}">
+      </div>`;
+  }
+  stepFieldsContainer.innerHTML = stepHTML;
+}
+
+// Load salary scales from backend
+async function loadScales() {
+  try {
+    //showLoading();
+    const response = await ApiService.getAllScales();
+    scales = response.data.map(scale => ({
+      salcode: scale.salcode,
+      saltype: scale.saltype,
+      grade: scale.grade,
+      group: scale.salcode, // Using salcode as group for compatibility
+      element: scale.saltype, // Using saltype as element for compatibility
+      steps: [
+        scale.step1, scale.step2, scale.step3, scale.step4, scale.step5,
+        scale.step6, scale.step7, scale.step8, scale.step9, scale.step10,
+        scale.step11, scale.step12, scale.step13, scale.step14, scale.step15,
+        scale.step16, scale.step17, scale.step18, scale.step19, scale.step20
+      ].map(step => step || ''),
+      user: scale.user
+    }));
+    renderScaleTable();
+    //hideLoading();
+  } catch (error) {
+    //hideLoading();
+    console.error('Failed to load scales:', error);
+  }
+}
+
+// Show/Hide loading indicator
+/*function //showLoading() {
+  const loadingDiv = document.getElementById('loadingIndicator') || createLoadingIndicator();
+  loadingDiv.classList.remove('hidden');
+}
+
+function //hideLoading() {
+  const loadingDiv = document.getElementById('loadingIndicator');
+  if (loadingDiv) {
+    loadingDiv.classList.add('hidden');
+  }
+}
+
+function createLoadingIndicator() {
+  const loadingDiv = document.createElement('div');
+  loadingDiv.id = 'loadingIndicator';
+  loadingDiv.className = 'fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50';
+  loadingDiv.innerHTML = `
+    <div class="bg-white p-4 rounded-lg shadow-lg">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+      <p class="mt-4 text-center">Loading...</p>
+    </div>
+  `;
+  document.body.appendChild(loadingDiv);
+  return loadingDiv;
+}*/
+
+// Define all functions at the top level
+window.viewScale = async function(index) {
+  const s = scales[index];
+  
+  try {
+    // Get progression steps for this scale
+    const progressionData = await ApiService.getProgressionSteps(s.salcode, s.saltype, s.grade);
+    const maxStep = progressionData.data.maxProgressionStep;
+    
     let html = `
       <div class="p-6 border rounded-2xl shadow-lg bg-gradient-to-br from-blue-50 to-white">
-        <div class="flex flex-wrap justify-between mb-4">
-          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-lg font-semibold text-gray-800">
-            <span class="text-blue-800 font-bold">Salary Code:</span> ${s.group}
+        <div class="flex items-center flex-wrap gap-6 mb-4">
+          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-[14px] font-semibold text-gray-800">
+            <span class="text-blue-800 font-bold">Salary Code:</span> ${s.salcode}
           </p>
-          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-lg font-semibold text-gray-800">
-            <span class="text-blue-800 font-bold">Paycode:</span> ${s.element}
+          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-[14px] font-semibold text-gray-800">
+            <span class="text-blue-800 font-bold">Salary Type:</span> ${s.saltype}
           </p>
-          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-lg font-semibold text-gray-800">
+          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-[14px] font-semibold text-gray-800">
             <span class="text-blue-800 font-bold">Grade:</span> ${s.grade}
+          </p>
+          <p class="border rounded rounded-lg p-2 bg-green-50 text-[14px] font-semibold text-gray-800">
+            <span class="text-red-600 font-bold">Max Progression:</span> Step ${maxStep}
           </p>
         </div>
 
-        <div class="grid grid-cols-5 gap-3 mt-6">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm" mt-6">
     `;
 
-    for (let i = 0; i < 20; i++) {
+    function formatToNGN(amount) {
+      if (amount == null || amount === "-") return "-";
+      return new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency: 'NGN',
+        minimumFractionDigits: 2,
+      }).format(amount);
+    }
+
+    for (let i = 0; i < 19; i++) {
+      const isAvailable = (i + 1) <= maxStep;
+      const bgColor = isAvailable ? 'bg-white' : 'bg-gray-100';
+      const textColor = isAvailable ? 'text-blue-600' : 'text-gray-400';
+
       html += `
-        <div class="flex justify-between bg-white p-2 rounded border hover:shadow-md transition">
-          <span class="text-base font-medium text-gray-600">Step ${i+1} :</span>
-          <span class="text-base font-semibold text-blue-600">${s.steps[i] || "-"}</span>
+        <div class="flex justify-between ${bgColor} p-2 rounded border hover:shadow-md transition ${!isAvailable ? 'opacity-50' : ''}">
+          <span class="text-base font-medium text-gray-600">Step ${i + 1}:</span>
+          <span class="text-base font-semibold ${textColor}">
+            ${s.steps[i] ? formatToNGN(s.steps[i]) : "-"}
+          </span>
         </div>`;
     }
 
     html += `
+        </div>
+        <div class="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+          <p class="text-sm font-medium text-yellow-800">
+            <span class="font-bold">Max Progression Limit:</span> Employees can progress up to Step ${maxStep} only
+          </p>
         </div>
       </div>
     `;
 
     document.getElementById("scaleViewContent").innerHTML = html;
     document.getElementById("scaleViewModal").classList.remove("hidden");
-  };
+  } catch (error) {
+    console.error('Failed to get progression steps:', error);
+    // Fallback to simple view without progression info
+    let html = `
+      <div class="p-6 border rounded-2xl shadow-lg bg-gradient-to-br from-blue-50 to-white">
+        <div class="flex flex-wrap justify-between mb-4">
+          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-lg font-semibold text-gray-800">
+            <span class="text-blue-800 font-bold">Salary Code:</span> ${s.salcode}
+          </p>
+          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-lg font-semibold text-gray-800">
+            <span class="text-blue-800 font-bold">Salary Type:</span> ${s.saltype}
+          </p>
+          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-lg font-semibold text-gray-800">
+            <span class="text-blue-800 font-bold">Grade:</span> ${s.grade}
+          </p>
+        </div>
+        <div class="grid grid-cols-5 gap-3 mt-6">`;
 
-  window.editScale = function(index) {
-    const s = scales[index];
-    document.getElementById("scaleGroup").value = s.group;
-    document.getElementById("scaleElement").value = s.element;
-    document.getElementById("scaleGrade").value = s.grade;
-    
-    // Populate step values
-    for(let i = 0; i < 20; i++) {
-      document.getElementById("step" + (i+1)).value = s.steps[i] || "";
+    for (let i = 0; i < 20; i++) {
+      html += `
+        <div class="flex justify-between bg-white p-2 rounded border hover:shadow-md transition">
+          <span class="text-base font-medium text-gray-600">${i === 19 ? 'Max Step' : 'Step ' + (i+1)}:</span>
+          <span class="text-base font-semibold text-blue-600">${s.steps[i] || "-"}</span>
+        </div>`;
     }
-    
-    editingScaleIndex = index;
-    document.getElementById("stepFields").classList.remove("hidden");
-    document.getElementById("scaleForm").classList.remove("hidden");
-    showSection("scaleSection","btnScales");
-  };
 
-  window.deleteScale = function(index) {
-    if(confirm("Delete this scale?")) {
-      scales.splice(index, 1);
-      renderScaleTable();
-    }
-  };
+    html += `</div></div>`;
+    document.getElementById("scaleViewContent").innerHTML = html;
+    document.getElementById("scaleViewModal").classList.remove("hidden");
+  }
+};
 
-  window.editGroup = function(index) {
-    const g = groups[index];
-    document.getElementById("groupCode").value = g.groupcode;
-    document.getElementById("groupDesc").value = g.grpdesc;
-    document.getElementById("groupEff").value = g.effdate;
-    document.getElementById("groupLast").value = g.lastdate;
-    
-    editingGroupIndex = index;
-    document.getElementById("groupForm").classList.remove("hidden");
-  };
-
-  // Initialize step fields on page load
-  generateStepFields();
-
-  // GROUP form show/hide
-  document.getElementById("addNewGroupBtn").addEventListener("click", () => {
-    document.getElementById("groupForm").classList.remove("hidden");
-  });
+window.editScale = function(index) {
+  const s = scales[index];
+  document.getElementById("scaleGroup").value = s.salcode;
+  document.getElementById("scaleElement").value = s.saltype;
+  document.getElementById("scaleGrade").value = s.grade;
   
-    document.getElementById("cancelGroupBtn").addEventListener("click", () => {
-    document.getElementById("groupForm").classList.add("hidden");
-    document.getElementById("groupForm").reset();
-    editingGroupIndex = null;
-  });
+  // Populate step values
+  for(let i = 0; i < 20; i++) {
+    document.getElementById("step" + (i+1)).value = s.steps[i] || "";
+  }
+  
+  editingScaleIndex = index;
+  document.getElementById("stepFields").classList.remove("hidden");
+  document.getElementById("scaleForm").classList.remove("hidden");
+  showSection("scaleSection","btnScales");
+};
 
-  const scaleForm = document.getElementById("scaleForm");
-  const batchForm = document.getElementById("batchUploadForm");
+window.deleteScale = async function(index) {
+  if(confirm("Delete this scale?")) {
+    const s = scales[index];
+    try {
+      //showLoading();
+      await ApiService.deleteScale(s.salcode, s.saltype, s.grade);
+      await loadScales(); // Reload scales after deletion
+      //hideLoading();
+      alert('Scale deleted successfully!');
+    } catch (error) {
+      //hideLoading();
+      console.error('Failed to delete scale:', error);
+    }
+  }
+};
 
-  // Add New Scale toggle
-  document.getElementById("addNewScaleBtn").addEventListener("click", () => {
-    // hide batch form
-    batchForm.classList.add("hidden");
-    // toggle scale form
-    scaleForm.classList.toggle("hidden");
-  });
 
-  // Batch Upload toggle
-  document.getElementById("tabBatchBtn").addEventListener("click", () => {
-    // hide scale form
-    scaleForm.classList.add("hidden");
-    // toggle batch form
-    batchForm.classList.toggle("hidden");
-  });
+window.editGroup = function(index) {
+  const g = groups[index];
+  document.getElementById("groupCode").value = g.groupcode;
+  document.getElementById("groupDesc").value = g.grpdesc;
+  document.getElementById("groupEff").value = g.effdate;
+  document.getElementById("groupLast").value = g.lastdate;
+  
+  editingGroupIndex = index;
+  document.getElementById("groupForm").classList.remove("hidden");
+};
+
+window.deleteGroup = async function(index) {
+  if(confirm("Delete this group?")) {
+    const g = groups[index];
+    try {
+      //showLoading();
+      await ApiService.deleteGroup(g.groupcode);
+      await loadGroups(); // Reload groups after deletion
+      loadDropdowns(); // Refresh dropdowns
+      //hideLoading();
+      alert('Group deleted successfully!');
+    } catch (error) {
+      //hideLoading();
+      console.error('Failed to delete group:', error);
+    }
+  }
+};
+
+// Initialize step fields on page load
+generateStepFields();
+
+// GROUP form show/hide
+document.getElementById("addNewGroupBtn").addEventListener("click", () => {
+  document.getElementById("groupForm").classList.remove("hidden");
+  editingGroupIndex = null;
+  document.getElementById("groupForm").reset();
+});
+
+document.getElementById("cancelGroupBtn").addEventListener("click", () => {
+  document.getElementById("groupForm").classList.add("hidden");
+  document.getElementById("groupForm").reset();
+  editingGroupIndex = null;
+});
+
+const scaleForm = document.getElementById("scaleForm");
+const batchForm = document.getElementById("batchUploadForm");
+
+// Add New Scale toggle
+document.getElementById("addNewScaleBtn").addEventListener("click", () => {
+  editingScaleIndex = null;
+  document.getElementById("scaleForm").reset();
+  batchForm.classList.add("hidden");
+  scaleForm.classList.toggle("hidden");
+  document.getElementById("stepFields").classList.add("hidden");
+});
+
+// Batch Upload toggle
+document.getElementById("tabBatchBtn").addEventListener("click", () => {
+  scaleForm.classList.add("hidden");
+  batchForm.classList.toggle("hidden");
+});
 
 // Cancel buttons
 document.getElementById("cancelScaleBtn").addEventListener("click", () => {
   scaleForm.classList.add("hidden");
   document.getElementById("stepFields").classList.add("hidden");
+  document.getElementById("scaleForm").reset();
+  editingScaleIndex = null;
 });
 
 document.getElementById("cancelBatchBtn").addEventListener("click", () => {
   batchForm.classList.add("hidden");
 });
+
+// Toggle Section
+function showSection(sectionId, btnId) {
+  ["groupSection","scaleSection"].forEach(id => {
+    document.getElementById(id).classList.add("hidden");
+  });
+  ["btnGroups","btnScales"].forEach(id => {
+    document.getElementById(id).classList.remove("bg-blue-600","text-white");
+    document.getElementById(id).classList.add("bg-yellow-400","text-gray-900");
+  });
+  document.getElementById(sectionId).classList.remove("hidden");
+  const btn = document.getElementById(btnId);
+  btn.classList.remove("bg-yellow-400","text-gray-900");
+  btn.classList.add("bg-blue-600","text-white");
+}
+
+document.getElementById("btnGroups").addEventListener("click", () => showSection("groupSection","btnGroups"));
+document.getElementById("btnScales").addEventListener("click", () => {
+  showSection("scaleSection","btnScales");
+  loadScales(); // Load scales when switching to scales section
+});
+
+// Initialize with groups section visible
+showSection("groupSection","btnGroups");
+
+// Populate dropdowns
+function loadDropdowns() {
+  const gSel = document.getElementById("scaleGroup");
+  const eSel = document.getElementById("scaleElement");
+  const grSel = document.getElementById("scaleGrade");
   
-  document.getElementById("cancelScaleBtn").addEventListener("click", () => {
-    document.getElementById("scaleForm").classList.add("hidden");
+  // Load groups (salary codes)
+  gSel.innerHTML = '<option value="">Select Salary Group</option>' + 
+    groups.map(g => `<option value="${g.groupcode}">${g.grpdesc}</option>`).join("");
+  
+  // Load element types
+  eSel.innerHTML = '<option value="">Select Element Type</option>' + 
+    elementTypes.map(e => `<option value="${e.PaymentType}">${e.elmDesc}</option>`).join("");
+  
+  // Load gradeLevels
+  grSel.innerHTML = '<option value="">Select Grade</option>' + 
+    gradeLevels.map(gr => `<option value="${gr.grade_no}">${gr.grade_desc}</option>`).join("");
+}
+
+// Show step fields when all 3 dropdowns selected
+function checkDropdownSelections() {
+  const g = document.getElementById("scaleGroup").value;
+  const e = document.getElementById("scaleElement").value;
+  const gr = document.getElementById("scaleGrade").value;
+  
+  if(g && e && gr) {
+    document.getElementById("stepFields").classList.remove("hidden");
+  } else {
     document.getElementById("stepFields").classList.add("hidden");
-    document.getElementById("scaleForm").reset();
-    editingScaleIndex = null;
-  });
-
-  // Toggle Section
-  function showSection(sectionId, btnId) {
-    ["groupSection","scaleSection"].forEach(id => {
-      document.getElementById(id).classList.add("hidden");
-    });
-    ["btnGroups","btnScales"].forEach(id => {
-      document.getElementById(id).classList.remove("bg-blue-600","text-white");
-      document.getElementById(id).classList.add("bg-yellow-400","text-gray-900");
-    });
-    document.getElementById(sectionId).classList.remove("hidden");
-    const btn = document.getElementById(btnId);
-    btn.classList.remove("bg-yellow-400","text-gray-900");
-    btn.classList.add("bg-blue-600","text-white");
   }
+}
 
-  document.getElementById("btnGroups").addEventListener("click", () => showSection("groupSection","btnGroups"));
-  document.getElementById("btnScales").addEventListener("click", () => showSection("scaleSection","btnScales"));
+["scaleGroup","scaleElement","scaleGrade"].forEach(id => {
+  document.getElementById(id).addEventListener("change", checkDropdownSelections);
+});
+
+// Save Group - Modified for backend integration
+document.getElementById("saveGroupBtn").addEventListener("click", async () => {
+  const groupData = {
+    groupcode: document.getElementById("groupCode").value,
+    grpdesc: document.getElementById("groupDesc").value,
+    effdate: document.getElementById("groupEff").value,
+    lastdate: document.getElementById("groupLast").value
+  };
   
-  // Initialize with groups section visible
-  showSection("groupSection","btnGroups");
-
-  // Populate dropdowns
-  function loadDropdowns() {
-    const gSel = document.getElementById("scaleGroup");
-    const eSel = document.getElementById("scaleElement");
-    const grSel = document.getElementById("scaleGrade");
-    
-    gSel.innerHTML = '<option value="">Select Group</option>' + 
-      groups.map(g => `<option value="${g.groupcode}">${g.grpdesc}</option>`).join("");
-    eSel.innerHTML = '<option value="">Select Element</option>' + 
-      elements.map(e => `<option value="${e.code}">${e.desc}</option>`).join("");
-    grSel.innerHTML = '<option value="">Select Grade</option>' + 
-      grades.map(gr => `<option value="${gr.code}">${gr.desc}</option>`).join("");
-  }
-
-  // Show step fields when all 3 dropdowns selected
-  function checkDropdownSelections() {
-    const g = document.getElementById("scaleGroup").value;
-    const e = document.getElementById("scaleElement").value;
-    const gr = document.getElementById("scaleGrade").value;
-    
-    if(g && e && gr) {
-      document.getElementById("stepFields").classList.remove("hidden");
-    } else {
-      document.getElementById("stepFields").classList.add("hidden");
-    }
-  }
-
-  ["scaleGroup","scaleElement","scaleGrade"].forEach(id => {
-    document.getElementById(id).addEventListener("change", checkDropdownSelections);
-  });
-
-  // Save Group
-  document.getElementById("saveGroupBtn").addEventListener("click", () => {
-    const newGroup = {
-      id: groups.length + 1,
-      groupcode: document.getElementById("groupCode").value,
-      grpdesc: document.getElementById("groupDesc").value,
-      effdate: document.getElementById("groupEff").value,
-      lastdate: document.getElementById("groupLast").value
-    };
-    
-    if(newGroup.groupcode && newGroup.grpdesc) {
+  if(groupData.groupcode && groupData.grpdesc) {
+    try {
+      //showLoading();
+      
       if(editingGroupIndex !== null) {
         // Update existing group
-        groups[editingGroupIndex] = newGroup;
-        editingGroupIndex = null;
+        await ApiService.updateGroup(groupData.groupcode, groupData);
+        alert('Group updated successfully!');
       } else {
-        // Add new group
-        groups.push(newGroup);
+        // Create new group
+        await ApiService.createGroup(groupData);
+        alert('Group created successfully!');
       }
-      renderGroupTable();
-      loadDropdowns(); // Refresh dropdowns
+      
+      // Reset form and reload data
       document.getElementById("groupForm").reset();
       document.getElementById("groupForm").classList.add("hidden");
-    } else {
-      alert("Please fill in all required fields");
+      editingGroupIndex = null;
+      
+      await loadGroups();
+      loadDropdowns(); // Refresh dropdowns
+      //hideLoading();
+      
+    } catch (error) {
+      //hideLoading();
+      console.error('Failed to save group:', error);
     }
-  });
+  } else {
+    alert("Please fill in all required fields");
+  }
+});
 
-  // Save Scale
-  document.getElementById("scaleForm").addEventListener("submit", e => {
-    e.preventDefault();
-    const record = {
-      group: document.getElementById("scaleGroup").value,
-      element: document.getElementById("scaleElement").value,
-      grade: document.getElementById("scaleGrade").value,
-      steps: []
-    };
-    
-    // Collect step values
-    for(let i = 1; i <= 20; i++) {
-      record.steps.push(document.getElementById("step" + i).value || "");
-    }
+// Save Scale - Modified for backend integration
+document.getElementById("scaleForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  
+  const salcode = document.getElementById("scaleGroup").value;
+  const saltype = document.getElementById("scaleElement").value;
+  const grade = document.getElementById("scaleGrade").value;
+  
+  // Collect step values
+  const scaleData = {
+    salcode: salcode,
+    saltype: saltype,
+    grade: grade
+  };
+  
+  // Add step values to scaleData
+  for(let i = 1; i <= 20; i++) {
+    const stepValue = document.getElementById("step" + i).value;
+    scaleData["step" + i] = stepValue || null;
+  }
+  
+  // Validate step20 (max progression step)
+  const maxStep = parseInt(scaleData.step20);
+  if (maxStep && (maxStep < 1 || maxStep > 19)) {
+    alert('Max progression step must be between 1 and 19');
+    return;
+  }
+  
+  try {
+    //showLoading();
     
     if(editingScaleIndex !== null) {
-      scales[editingScaleIndex] = record;
-      editingScaleIndex = null;
+      // Update existing scale
+      await ApiService.updateScale(salcode, saltype, grade, scaleData);
+      alert('Scale updated successfully!');
     } else {
-      scales.push(record);
+      // Create new scale
+      await ApiService.createScale(scaleData);
+      alert('Scale created successfully!');
     }
     
-    renderScaleTable();
+    // Reset form and reload data
     document.getElementById("scaleForm").reset();
     document.getElementById("stepFields").classList.add("hidden");
     document.getElementById("scaleForm").classList.add("hidden");
-  });
-
-  function renderScaleTable() {
-    const table = document.getElementById("scaleTable");
-    table.innerHTML = scales.map((s, i) => `
-      <tr>
-        <td class="border px-2 py-3 text-left">${s.group}</td>
-        <td class="border px-2 py-3 text-left">${s.element}</td>
-        <td class="border px-2 py-3 text-left">${s.grade}</td>
-        <td class="border px-2 py-3 text-left">
-          <button class="text-blue-600 hover:underline mr-2" onclick="viewScale(${i})">View</button>
-          <button class="text-green-600 hover:underline mr-2" onclick="editScale(${i})">Edit</button>
-          <button class="text-red-600 hover:underline" onclick="deleteScale(${i})">Delete</button>
-        </td>
-      </tr>
-    `).join("");
+    editingScaleIndex = null;
+    
+    await loadScales();
+    //hideLoading();
+    
+  } catch (error) {
+    //hideLoading();
+    console.error('Failed to save scale:', error);
   }
+});
 
-  function viewScale(index) {
-    const s = scales[index];
-    let html = `
-      <div class="p-4 border rounded-lg shadow bg-gray-50">
-        <p><strong>Salary Code:</strong> ${s.group}</p>
-        <p><strong>Paycode:</strong> ${s.element}</p>
-        <p><strong>Grade:</strong> ${s.grade}</p>
-        <div class="grid grid-cols-4 gap-2 mt-4">`;
-    
-    for(let i = 0; i < 20; i++) {
-      html += `
-        <div class="p-2 border rounded bg-white">
-          <strong>Step ${i+1}:</strong> ${s.steps[i] || "-"}
-        </div>`;
-    }
-    
-    html += `
-        </div>
-      </div>`;
-    
-    document.getElementById("scaleViewContent").innerHTML = html;
-    document.getElementById("scaleViewModal").classList.remove("hidden");
+function renderScaleTable() {
+  const table = document.getElementById("scaleTable");
+  table.innerHTML = scales.map((s, i) => `
+    <tr>
+      <td class="border px-2 py-3 text-left">${s.salcode}</td>
+      <td class="border px-2 py-3 text-left">${s.saltype}</td>
+      <td class="border px-2 py-3 text-left">${s.grade}</td>
+      <td class="border px-2 py-3 text-left">
+        <button class="text-blue-600 hover:underline mr-2" onclick="viewScale(${i})">View</button>
+        <button class="text-green-600 hover:underline mr-2" onclick="editScale(${i})">Edit</button>
+        <button class="text-red-600 hover:underline" onclick="deleteScale(${i})">Delete</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+document.getElementById("closeScaleView").addEventListener("click", () => {
+  document.getElementById("scaleViewModal").classList.add("hidden");
+});
+
+// Add group view modal close handler
+if (document.getElementById("closeGroupView")) {
+  document.getElementById("closeGroupView").addEventListener("click", () => {
+    document.getElementById("groupViewModal").classList.add("hidden");
+  });
+}
+
+// Render group table with backend data
+function renderGroupTable() {
+  const table = document.getElementById("groupTable");
+  table.innerHTML = groups.map((g, i) => `
+    <tr>
+      <td class="border px-2 py-3 text-left">${g.groupcode}</td>
+      <td class="border px-2 py-3 text-left">${g.grpdesc}</td>
+      <td class="border px-2 py-3 text-left">${g.effdate || 'N/A'}</td>
+      <td class="border px-2 py-3 text-left">${g.lastdate || 'N/A'}</td>
+      <td class="border px-2 py-3 text-left">
+        <button class="text-green-600 hover:underline mr-2" onclick="editGroup(${i})">Edit</button>
+        <button class="text-red-600 hover:underline" onclick="deleteGroup(${i})">Delete</button>
+      </td>
+    </tr>`).join("");
+}
+
+// Search functionality for scales
+async function searchScales() {
+  const searchTerm = document.getElementById('searchInput').value;
+  const searchType = document.getElementById('searchType').value;
+  
+  if (!searchTerm.trim()) {
+    await loadScales(); // Load all scales if search is empty
+    return;
   }
   
-  document.getElementById("closeScaleView").addEventListener("click", () => {
-    document.getElementById("scaleViewModal").classList.add("hidden");
+  try {
+    //showLoading();
+    const filters = {};
+    filters[searchType] = searchTerm;
+    
+    const response = await ApiService.searchScales(filters);
+    scales = response.data.map(scale => ({
+      salcode: scale.salcode,
+      saltype: scale.saltype,
+      grade: scale.grade,
+      group: scale.salcode,
+      element: scale.saltype,
+      steps: [
+        scale.step1, scale.step2, scale.step3, scale.step4, scale.step5,
+        scale.step6, scale.step7, scale.step8, scale.step9, scale.step10,
+        scale.step11, scale.step12, scale.step13, scale.step14, scale.step15,
+        scale.step16, scale.step17, scale.step18, scale.step19, scale.step20
+      ].map(step => step || ''),
+      user: scale.user
+    }));
+    
+    renderScaleTable();
+    //hideLoading();
+  } catch (error) {
+    //hideLoading();
+    console.error('Search failed:', error);
+  }
+}
+
+// Search functionality for groups
+async function searchGroups() {
+  const searchTerm = document.getElementById('groupSearchInput').value;
+  const searchType = document.getElementById('groupSearchType').value;
+  
+  if (!searchTerm.trim()) {
+    await loadGroups(); // Load all groups if search is empty
+    return;
+  }
+  
+  try {
+    //showLoading();
+    const filters = {};
+    filters[searchType] = searchTerm;
+    
+    const response = await ApiService.searchGroups(filters);
+    groups = response.data || [];
+    
+    renderGroupTable();
+    //hideLoading();
+  } catch (error) {
+    //hideLoading();
+    console.error('Group search failed:', error);
+  }
+}
+
+// Add search event listeners for scales
+if (document.getElementById('searchBtn')) {
+  document.getElementById('searchBtn').addEventListener('click', searchScales);
+}
+
+if (document.getElementById('searchInput')) {
+  document.getElementById('searchInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      searchScales();
+    }
   });
+}
 
-  function editScale(index) {
-    const s = scales[index];
-    document.getElementById("scaleGroup").value = s.group;
-    document.getElementById("scaleElement").value = s.element;
-    document.getElementById("scaleGrade").value = s.grade;
+// Add search event listeners for groups
+if (document.getElementById('groupSearchBtn')) {
+  document.getElementById('groupSearchBtn').addEventListener('click', searchGroups);
+}
+
+if (document.getElementById('groupSearchInput')) {
+  document.getElementById('groupSearchInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      searchGroups();
+    }
+  });
+}
+
+// Batch upload functionality
+document.getElementById("uploadBatchBtn").addEventListener("click", async () => {
+  const fileInput = document.getElementById("batchFile");
+  const file = fileInput.files[0];
+  
+  if (!file) {
+    alert('Please select a file to upload');
+    return;
+  }
+  
+  // Validate file type
+  const allowedTypes = ['text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+  const fileExtension = file.name.toLowerCase();
+  
+  if (!allowedTypes.includes(file.type) && 
+      !fileExtension.endsWith('.csv') && 
+      !fileExtension.endsWith('.xlsx') && 
+      !fileExtension.endsWith('.xls')) {
+    alert('Please upload only CSV or Excel files');
+    return;
+  }
+  
+  // Validate file size (5MB limit)
+  if (file.size > 5 * 1024 * 1024) {
+    alert('File size must be less than 5MB');
+    return;
+  }
+  
+  try {
+    console.log('Starting upload for file:', file.name);
     
-    // Populate step values
-    for(let i = 0; i < 20; i++) {
-      document.getElementById("step" + (i+1)).value = s.steps[i] || "";
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const result = await ApiService.batchUpload(formData);
+    
+    console.log('Upload result:', result);
+    
+    // Show results
+    if (result.summary) {
+      const summary = result.summary;
+      let message = `Batch upload completed!\n\n`;
+      message += `Total records: ${summary.totalRecords}\n`;
+      message += `Successful: ${summary.successful}\n`;
+      message += `Failed: ${summary.failed}\n`;
+      
+      if (summary.failed > 0 && summary.errors) {
+        message += `\nErrors:\n`;
+        summary.errors.slice(0, 5).forEach(error => {
+          message += `Row ${error.row}: ${error.error}\n`;
+        });
+        
+        if (summary.errors.length > 5) {
+          message += `... and ${summary.errors.length - 5} more errors`;
+        }
+      }
+      
+      alert(message);
+      
+      // Reset form and reload data if there were successful uploads
+      if (summary.successful > 0 || summary.successful === 'Processing') {
+        document.getElementById("batchUploadForm").reset();
+        document.getElementById("batchUploadForm").classList.add("hidden");
+        await loadScales();
+      }
+    } else {
+      alert('Upload completed successfully!');
+      document.getElementById("batchUploadForm").reset();
+      document.getElementById("batchUploadForm").classList.add("hidden");
+      await loadScales();
     }
     
-    editingScaleIndex = index;
-    document.getElementById("stepFields").classList.remove("hidden");
-    document.getElementById("scaleForm").classList.remove("hidden");
-    showSection("scaleSection","btnScales");
+  } catch (error) {
+    console.error('Batch upload failed:', error);
+    alert(`Upload failed: ${error.message}`);
   }
+});
+  
 
-  function deleteScale(index) {
-    if(confirm("Delete this scale?")) {
-      scales.splice(index, 1);
-      renderScaleTable();
+document.getElementById("downloadSampleBtn").addEventListener("click", (e) => {
+  e.preventDefault();
+  downloadSampleTemplate();
+});
+
+// Download sample template
+async function downloadSampleTemplate() {
+  try {
+    await ApiService.downloadSampleTemplate();
+  } catch (error) {
+    console.error('Failed to download sample:', error);
+    alert('Failed to download sample template');
+  }
+}
+
+// Add event listener for download sample link
+document.addEventListener('DOMContentLoaded', () => {
+  // File input change handler to show file info
+  const batchFileInput = document.getElementById("batchFile");
+  if (batchFileInput) {
+    batchFileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const fileInfo = document.createElement('div');
+        fileInfo.className = 'mt-2 text-sm text-gray-600';
+        fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        
+        // Remove any existing file info
+        const existingInfo = e.target.parentNode.querySelector('.file-info');
+        if (existingInfo) {
+          existingInfo.remove();
+        }
+        
+        fileInfo.className += ' file-info';
+        e.target.parentNode.appendChild(fileInfo);
+      }
+    });
+  }
+});
+
+// File input change handler to show file info
+document.getElementById("batchFile").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const fileInfo = document.createElement('div');
+    fileInfo.className = 'mt-2 text-sm text-gray-600';
+    fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+    
+    // Remove any existing file info
+    const existingInfo = e.target.parentNode.querySelector('.file-info');
+    if (existingInfo) {
+      existingInfo.remove();
     }
+    
+    fileInfo.className += ' file-info';
+    e.target.parentNode.appendChild(fileInfo);
   }
+});
 
-  // Render initial group table
-  function renderGroupTable() {
-    const t = document.getElementById("groupTable");
-    t.innerHTML = groups.map((g, i) => `
-      <tr>
-        <td class="border px-2 py-3 text-left">${g.groupcode}</td>
-        <td class="border px-2 py-3 text-left">${g.grpdesc}</td>
-        <td class="border px-2 py-3 text-left">${g.effdate}</td>
-        <td class="border px-2 py-3 text-left">${g.lastdate}</td>
-        <td class="border px-2 py-3 text-left">
-          <button class="text-green-600 hover:underline mr-2" onclick="editGroup(${i})">Edit</button>
-          <button class="text-red-600 hover:underline" onclick="deleteGroup(${i})">Delete</button>
-        </td>
-      </tr>`).join("");
-  }
-
-  function deleteGroup(index) {
-    if(confirm("Delete this group?")) {
-      groups.splice(index, 1);
-      renderGroupTable();
-      loadDropdowns(); // Refresh dropdowns
-    }
-  }
-
-  // Initialize
-  renderGroupTable();
-  renderScaleTable();
-  loadDropdowns();
+// Initialize
+initializeData();
+loadElementTypes();
+loadGradeLevels();
+loadGroups();
+loadScales();
+renderGroupTable();
+loadDropdowns();
 </script>
-
-</body>
-</html>

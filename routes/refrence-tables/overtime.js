@@ -12,8 +12,9 @@ router.post('/overtime', verifyToken, async (req, res) => {
       return res.status(400).json({ error: "Only one overtime record is allowed" });
     }
 
-    const data = req.body;
-    data.datecreated = new Date();
+    const data = { ...req.body };
+    //data.datecreated = new Date();
+    data.createdby = req.user_fullname || "Admin User";
 
     await pool.query("INSERT INTO py_stdrate SET ?", data);
     res.status(201).json({ message: "Overtime record created successfully" });

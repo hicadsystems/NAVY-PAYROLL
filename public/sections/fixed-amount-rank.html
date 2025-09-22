@@ -513,6 +513,14 @@ function closeModal(id) {
 document.getElementById("closeSuccessModal").addEventListener("click", () => closeModal("successModal"));
 document.getElementById("closeViewModal").addEventListener("click", () => closeModal("viewModal"));
 
+// Force uppercase as user types 
+["description"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", () => {
+    el.value = el.value.toUpperCase();
+  });
+});
+
 
 // load on page ready
 loadData();

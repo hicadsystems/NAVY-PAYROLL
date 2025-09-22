@@ -576,6 +576,14 @@
     if (e.target === e.currentTarget) closeModal('viewModal');
   });
 
+  // Force uppercase as user types 
+  ["payElements", "description"].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener("input", () => {
+      el.value = el.value.toUpperCase();
+    });
+  });
+
   // Initialize the application
   fetchPayElements();
 </script>

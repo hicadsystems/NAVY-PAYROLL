@@ -26,10 +26,11 @@ console.log('Cloud backups dir:', ROOT_CLOUD_BACKUP_DIR);
 const scheduledJobs = {}; // keep track of cron jobs
 
 //Helper Functions
-function listFilesInDir(dir) {
+function listFilesInDir(dir, dbName = null) {
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir)
     .filter(f => fs.statSync(path.join(dir, f)).isFile())
+    .filter(f => dbName ? f.startsWith(`${dbName}_`) : true) // Filter by database name if provided
     .map((file) => {
       const stats = fs.statSync(path.join(dir, file));
       return {
@@ -42,8 +43,8 @@ function listFilesInDir(dir) {
     .sort((a, b) => b.modified - a.modified); // newest first
 }
 
-function getLatestStats(dir) {
-  const files = listFilesInDir(dir);
+function getLatestStats(dir, dbName = null) {
+  const files = listFilesInDir(dir, dbName);
   if (files.length === 0) {
     return {
       successfulBackups: 0,
@@ -83,10 +84,12 @@ function runBackup({ dbName, backupType = 'full', compression = false, storage =
         dbName
       ];
 
-      if (backupType === 'incremental') {
-        // placeholder: real incremental requires binlogs; keeping placeholder as in original
-        args.push('--where=1=1');
+      if (backupType === 'structure') {
+        args.push('--no-data');
+      } else if (backupType === 'data') {
+        args.push('--no-create-info');
       }
+      // 'full' uses default mysqldump behavior (structure + data)
 
       const dump = spawn('mysqldump', args);
 
@@ -241,8 +244,9 @@ router.post('/backup/schedule', verifyToken, (req, res) => {
 });
 
 
-// Get list of all backups (local + cloud)
+// Get list of backups for current database only
 router.get('/backups', verifyToken, (req, res) => {
+  const dbName = req.current_class;
   const dirs = [
     { type: 'local', dir: ROOT_BACKUP_DIR },
     { type: 'cloud', dir: ROOT_CLOUD_BACKUP_DIR }
@@ -255,16 +259,19 @@ router.get('/backups', verifyToken, (req, res) => {
 
     const files = fs.readdirSync(dir);
     files.forEach(file => {
-      const filePath = path.join(dir, file);
-      const stats = fs.statSync(filePath);
+      // Filter files that belong to the current database
+      if (file.startsWith(`${dbName}_`)) {
+        const filePath = path.join(dir, file);
+        const stats = fs.statSync(filePath);
 
-      backups.push({
-        filename: file,
-        size: stats.size,
-        created: stats.birthtime,
-        modified: stats.mtime,
-        source: type
-      });
+        backups.push({
+          filename: file,
+          size: stats.size,
+          created: stats.birthtime,
+          modified: stats.mtime,
+          source: type
+        });
+      }
     });
   });
 
@@ -275,8 +282,9 @@ router.get('/backups', verifyToken, (req, res) => {
 });
 
 
-// Get backup statistics
+// Get backup statistics for current database only
 router.get('/backup/stats', verifyToken, (req, res) => {
+  const dbName = req.current_class;
   const dirs = [ROOT_BACKUP_DIR, ROOT_CLOUD_BACKUP_DIR];
 
   let totalStorage = 0;
@@ -288,14 +296,17 @@ router.get('/backup/stats', verifyToken, (req, res) => {
 
     const files = fs.readdirSync(dir);
     files.forEach(file => {
-      const filePath = path.join(dir, file);
-      const stats = fs.statSync(filePath);
+      // Filter files that belong to the current database
+      if (file.startsWith(`${dbName}_`)) {
+        const filePath = path.join(dir, file);
+        const stats = fs.statSync(filePath);
 
-      successfulBackups++;
-      totalStorage += stats.size;
+        successfulBackups++;
+        totalStorage += stats.size;
 
-      if (!lastBackup || stats.mtime > lastBackup) {
-        lastBackup = stats.mtime;
+        if (!lastBackup || stats.mtime > lastBackup) {
+          lastBackup = stats.mtime;
+        }
       }
     });
   });
@@ -303,7 +314,8 @@ router.get('/backup/stats', verifyToken, (req, res) => {
   res.json({
     successfulBackups,
     totalStorage,
-    lastBackup
+    lastBackup,
+    database: dbName
   });
 });
 

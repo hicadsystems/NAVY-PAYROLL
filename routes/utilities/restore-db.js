@@ -48,13 +48,20 @@ const upload = multer({
 });
 
 // Helper functions for managing restore history
-const loadHistory = () => {
+const loadHistory = (dbName = null) => {
     try {
         if (!fs.existsSync(HISTORY_FILE)) {
             return [];
         }
         const data = fs.readFileSync(HISTORY_FILE, 'utf8');
-        return JSON.parse(data);
+        const allHistory = JSON.parse(data);
+        
+        // Filter by database if provided
+        if (dbName) {
+            return allHistory.filter(entry => entry.database === dbName);
+        }
+        
+        return allHistory;
     } catch (err) {
         console.error('Error loading history:', err);
         return [];
@@ -70,14 +77,15 @@ const saveHistory = (history) => {
 };
 
 const addToHistory = (entry) => {
-    const history = loadHistory();
-    history.push({
+    // Load all history (not filtered)
+    const allHistory = loadHistory();
+    allHistory.push({
         ...entry,
         id: Date.now(),
         date: new Date().toISOString()
     });
-    saveHistory(history);
-    return history;
+    saveHistory(allHistory);
+    return allHistory;
 };
 
 /**
@@ -103,6 +111,41 @@ function runCommand(command, callback) {
         }
         
         callback(null, stdout);
+    });
+}
+
+/**
+ * Create a backup before overwrite restore
+ */
+async function createBackupBeforeRestore(database) {
+    return new Promise((resolve, reject) => {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const backupDir = path.join(process.cwd(), 'backups', 'pre-restore');
+        
+        // Ensure backup directory exists
+        if (!fs.existsSync(backupDir)) {
+            fs.mkdirSync(backupDir, { recursive: true });
+        }
+        
+        const backupFile = path.join(backupDir, `${database}_pre-restore_${timestamp}.sql`);
+        
+        const dbUser = process.env.DB_USER || dbConfig.user;
+        const dbPassword = process.env.DB_PASSWORD || dbConfig.password;
+        const dbHost = process.env.DB_HOST || dbConfig.host || 'localhost';
+        const dbPort = process.env.DB_PORT || dbConfig.port || 3306;
+        
+        const backupCommand = `mysqldump -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} ${database} > "${backupFile}"`;
+        
+        runCommand(backupCommand, (err, output) => {
+            if (err) {
+                console.warn('Failed to create pre-restore backup:', err.message);
+                // Continue with restore even if backup fails
+                resolve(null);
+            } else {
+                console.log('Pre-restore backup created:', backupFile);
+                resolve(backupFile);
+            }
+        });
     });
 }
 
@@ -172,8 +215,8 @@ router.get('/database', verifyToken, (req, res) => {
  * POST /api/restore-db/restore
  * Upload and restore database
  */
-router.post("/restore", verifyToken, (req, res) => {
-    upload.single("file")(req, res, (uploadErr) => {
+router.post("/restore", verifyToken, async (req, res) => {
+    upload.single("file")(req, res, async (uploadErr) => {
         if (uploadErr) {
             console.error("Upload error:", uploadErr.message);
             return res.status(400).json({ 
@@ -182,7 +225,8 @@ router.post("/restore", verifyToken, (req, res) => {
             });
         }
 
-        const { database, mode = "overwrite", engine = "mysql" } = req.body;
+        const { mode = "overwrite", engine = "mysql" } = req.body;
+        const database = req.current_class; // Use database from JWT token
         const file = req.file;
 
         if (!file || !database) {
@@ -194,93 +238,138 @@ router.post("/restore", verifyToken, (req, res) => {
 
         const restoreFile = file.path;
         const originalFilename = file.originalname;
+        let preRestoreBackup = null;
 
-        // Build command based on database engine
-        let command;
-        const dbUser = process.env.DB_USER || dbConfig.user;
-        const dbPassword = process.env.DB_PASSWORD || dbConfig.password;
-        const dbHost = process.env.DB_HOST || dbConfig.host || 'localhost';
-        const dbPort = process.env.DB_PORT || dbConfig.port || 3306;
-
-        switch (engine.toLowerCase()) {
-            case "mysql":
-                // Handle different file types
-                if (originalFilename.endsWith('.gz')) {
-                    command = `gunzip < "${restoreFile}" | mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} ${database}`;
-                } else {
-                    command = `mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword} ${database} < "${restoreFile}"`;
-                }
-                break;
-            case "postgres":
-                command = `psql -h ${dbHost} -p ${dbPort} -U ${dbUser} -d ${database} -f "${restoreFile}"`;
-                break;
-            case "mongo":
-                command = `mongorestore --host ${dbHost}:${dbPort} --db ${database} "${restoreFile}"`;
-                break;
-            default:
-                return res.status(400).json({ 
-                    success: false, 
-                    error: `Unsupported database engine: ${engine}` 
-                });
-        }
-
-        // Execute the restore command
-        runCommand(command, (err, output) => {
-            const historyEntry = {
-                filename: originalFilename,
-                storedFilename: path.basename(restoreFile),
-                database,
-                engine,
-                mode,
-                status: err ? "Failed" : "Success",
-                error: err ? err.message : null,
-                output: output || null
-            };
-
-            // Add to history
-            addToHistory(historyEntry);
-
-            // Clean up uploaded file after processing
-            setTimeout(() => {
-                try {
-                    if (fs.existsSync(restoreFile)) {
-                        fs.unlinkSync(restoreFile);
-                    }
-                } catch (cleanupErr) {
-                    console.error("Cleanup error:", cleanupErr.message);
-                }
-            }, 1000);
-
-            if (err) {
-                return res.status(500).json({ 
-                    success: false, 
-                    error: "Database restore failed", 
-                    details: err.message 
-                });
+        try {
+            // Create backup before restore if mode is overwrite
+            if (mode === "overwrite") {
+                preRestoreBackup = await createBackupBeforeRestore(database);
             }
 
-            res.json({ 
-                success: true, 
-                message: "Database restore completed successfully", 
-                entry: historyEntry 
+            // Build command based on database engine and mode
+            let command;
+            const dbUser = process.env.DB_USER || dbConfig.user;
+            const dbPassword = process.env.DB_PASSWORD || dbConfig.password;
+            const dbHost = process.env.DB_HOST || dbConfig.host || 'localhost';
+            const dbPort = process.env.DB_PORT || dbConfig.port || 3306;
+
+            switch (engine.toLowerCase()) {
+                case "mysql":
+                    let mysqlOptions = `-h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword}`;
+                    
+                    if (mode === "merge") {
+                        // For merge mode, add --force to continue on duplicate key errors
+                        mysqlOptions += " --force";
+                    }
+                    
+                    // Handle different file types
+                    if (originalFilename.endsWith('.gz')) {
+                        command = `gunzip < "${restoreFile}" | mysql ${mysqlOptions} ${database}`;
+                    } else {
+                        command = `mysql ${mysqlOptions} ${database} < "${restoreFile}"`;
+                    }
+                    break;
+                    
+                case "postgres":
+                    let pgOptions = `-h ${dbHost} -p ${dbPort} -U ${dbUser} -d ${database}`;
+                    
+                    if (mode === "merge") {
+                        pgOptions += " --on-conflict-do-nothing";
+                    }
+                    
+                    command = `psql ${pgOptions} -f "${restoreFile}"`;
+                    break;
+                    
+                case "mongo":
+                    let mongoOptions = `--host ${dbHost}:${dbPort} --db ${database}`;
+                    
+                    if (mode === "overwrite") {
+                        mongoOptions += " --drop";
+                    }
+                    
+                    command = `mongorestore ${mongoOptions} "${restoreFile}"`;
+                    break;
+                    
+                default:
+                    return res.status(400).json({ 
+                        success: false, 
+                        error: `Unsupported database engine: ${engine}` 
+                    });
+            }
+
+            // Execute the restore command
+            runCommand(command, (err, output) => {
+                const historyEntry = {
+                    filename: originalFilename,
+                    storedFilename: path.basename(restoreFile),
+                    database,
+                    engine,
+                    mode,
+                    status: err ? "Failed" : "Success",
+                    error: err ? err.message : null,
+                    output: output || null,
+                    preRestoreBackup: preRestoreBackup ? path.basename(preRestoreBackup) : null,
+                    userId: req.user_id,
+                    userName: req.user_fullname
+                };
+
+                // Add to history
+                addToHistory(historyEntry);
+
+                // Clean up uploaded file after processing
+                setTimeout(() => {
+                    try {
+                        if (fs.existsSync(restoreFile)) {
+                            fs.unlinkSync(restoreFile);
+                        }
+                    } catch (cleanupErr) {
+                        console.error("Cleanup error:", cleanupErr.message);
+                    }
+                }, 1000);
+
+                if (err) {
+                    return res.status(500).json({ 
+                        success: false, 
+                        error: "Database restore failed", 
+                        details: err.message 
+                    });
+                }
+
+                res.json({ 
+                    success: true, 
+                    message: `Database restore completed successfully (${mode} mode)`, 
+                    entry: historyEntry 
+                });
             });
-        });
+            
+        } catch (error) {
+            console.error('Restore process error:', error);
+            return res.status(500).json({ 
+                success: false, 
+                error: "Restore process failed", 
+                details: error.message 
+            });
+        }
     });
 });
 
 /**
  * GET /api/restore-db/history
+ * Get restore history for current database only
  */
 router.get("/history", verifyToken, (req, res) => {
-    const history = loadHistory();
+    const database = req.current_class;
+    const history = loadHistory(database); // Filter by current database
     res.json({ history });
 });
 
 /**
  * GET /api/restore-db/stats
+ * Get restore stats for current database only
  */
 router.get("/stats", verifyToken, (req, res) => {
-    const history = loadHistory();
+    const database = req.current_class;
+    const history = loadHistory(database); // Filter by current database
     
     const successful = history.filter(h => h.status === "Success").length;
     const failed = history.filter(h => h.status === "Failed").length;
@@ -288,31 +377,36 @@ router.get("/stats", verifyToken, (req, res) => {
         ? history[history.length - 1].date 
         : null;
 
-    res.json({ successful, failed, lastRestore });
+    res.json({ successful, failed, lastRestore, database });
 });
 
 /**
  * DELETE /api/restore-db/restore/:filename
- * Delete a restore entry from history
+ * Delete a restore entry from history (only for current database)
  */
 router.delete('/restore/:filename', verifyToken, (req, res) => {
     try {
         const filename = decodeURIComponent(req.params.filename);
-        const history = loadHistory();
+        const database = req.current_class;
         
-        // Find and remove the entry
-        const entryIndex = history.findIndex(entry => entry.filename === filename);
+        // Load all history (not filtered)
+        const allHistory = loadHistory();
+        
+        // Find the entry that matches both filename and current database
+        const entryIndex = allHistory.findIndex(entry => 
+            entry.filename === filename && entry.database === database
+        );
         
         if (entryIndex === -1) {
             return res.status(404).json({ 
                 success: false, 
-                error: 'Restore entry not found' 
+                error: 'Restore entry not found for your database' 
             });
         }
 
         // Remove the entry from history
-        const removedEntry = history.splice(entryIndex, 1)[0];
-        saveHistory(history);
+        const removedEntry = allHistory.splice(entryIndex, 1)[0];
+        saveHistory(allHistory);
 
         // Try to delete the associated file if it still exists
         if (removedEntry.storedFilename) {
@@ -323,6 +417,18 @@ router.delete('/restore/:filename', verifyToken, (req, res) => {
                 }
             } catch (fileErr) {
                 console.warn('Could not delete associated file:', fileErr.message);
+            }
+        }
+
+        // Try to delete pre-restore backup if it exists
+        if (removedEntry.preRestoreBackup) {
+            const backupPath = path.join(process.cwd(), 'backups', 'pre-restore', removedEntry.preRestoreBackup);
+            try {
+                if (fs.existsSync(backupPath)) {
+                    fs.unlinkSync(backupPath);
+                }
+            } catch (backupErr) {
+                console.warn('Could not delete pre-restore backup:', backupErr.message);
             }
         }
 

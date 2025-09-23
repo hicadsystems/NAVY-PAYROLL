@@ -61,34 +61,37 @@
     </div>
   </div>
 
+
 <script>
-  function showModal() {
-    const modal = document.getElementById('successModal');
-    modal.classList.remove("hidden");
-    setTimeout(() => modal.classList.add("hidden"), 1000);
-  }
+let hasOvertime = false; // track if record exists
 
-  // Load the single overtime row
-  async function loadForm() {
-    const token = localStorage.getItem("token");
+function showModal() { 
+  const modal = document.getElementById('successModal'); 
+  modal.classList.remove("hidden"); 
+  setTimeout(() => 
+  modal.classList.add("hidden"), 1000); 
+}
 
-    const res = await fetch('/overtime', {   
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}` 
-      }
-    });
-    const row = await res.json();
-    if (row && Object.keys(row).length > 0) {
-      const form = document.getElementById('overtimeForm');
-      for (let [k, v] of Object.entries(row)) {
-        if (form.elements[k]) form.elements[k].value = v ?? '';
-      }
-      //
-      form.elements['taxovertime'].value = row.basicpay == 1 ? "Yes" : "No";
+async function loadForm() {
+  const token = localStorage.getItem("token");
+  const res = await fetch('/overtime', {   
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}` 
     }
+  });
+  const row = await res.json();
+  if (row && Object.keys(row).length > 0) {
+    hasOvertime = true; // record exists
+    const form = document.getElementById('overtimeForm');
+    for (let [k, v] of Object.entries(row)) {
+      if (form.elements[k]) form.elements[k].value = v ?? '';
+    }
+    // map basicpay → taxovertime field
+    form.elements['taxovertime'].value = row.basicpay == 1 ? "Yes" : "No";
   }
+}
 
 // Save form
 document.getElementById('overtimeForm').addEventListener('submit', async (e) => {
@@ -99,12 +102,13 @@ document.getElementById('overtimeForm').addEventListener('submit', async (e) => 
 
   // map taxovertime → basicpay
   data.basicpay = data.taxovertime === "Yes" ? 1 : 0;
-
-  // remove taxovertime so backend doesn't try to insert it
   delete data.taxovertime;
 
+  // Use PUT if record exists, otherwise POST
+  const method = hasOvertime ? "PUT" : "POST";
+
   const res = await fetch('/overtime', {
-    method: 'POST',
+    method,
     headers: { 
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}` 
@@ -115,14 +119,12 @@ document.getElementById('overtimeForm').addEventListener('submit', async (e) => 
   const result = await res.json();
   if (res.ok) {
     showModal();
+    hasOvertime = true; // ensure next save uses PUT
   } else {
     alert("Error: " + (result.error || result.message));
   }
 });
 
-  // Prefill form on load
-  loadForm();
+// Prefill form on load
+loadForm();
 </script>
-
-</body>
-</html>

@@ -75,7 +75,7 @@ router.get('/elementtypes/check/:field/:value', verifyToken, async (req, res) =>
   }
 
   try {
-    let query = `SELECT ${field} FROM py_elementtype WHERE ${field} = ?`;
+    let query = `SELECT ${field} FROM py_elementType WHERE ${field} = ?`;
     let params = [value];
 
     // If exclude PaymentType is provided, exclude that record from the check

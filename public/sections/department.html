@@ -290,7 +290,7 @@ saveDeptBtn.addEventListener("click", async () => {
   };
 
   if (!item.factcode || !item.deptcode || !item.factname || !item.deptname || !item.coordcode || !item.acct) {
-    showErrorModal("Factory code, Deptartment code, Factory Name, Department Name, and Coor Code are required.");
+    showErrorModal("Factory code, Deptartment code, Factory Name, Department Name, account, and Coor Code are required.");
     return;
   }
 
@@ -493,7 +493,7 @@ document.getElementById("deptConfirmAction").addEventListener("click", async () 
     }
     pendingDeleteDeptIndex = null;
   }
-  closeModal("confirmModal");
+  closeModal("deptConfirmModal");
 });
 
 //

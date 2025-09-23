@@ -16,7 +16,7 @@
     </div>
     <div>
       <label class="block text-sm font-medium text-gray-700">Local Government Code *</label>
-      <input type="text" id="lgaCode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white">
+      <input type="text" maxlength="3" id="lgaCode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white">
     </div>
     <div>
       <label class="block text-sm font-medium text-gray-700">Local Government Headquaters*</label>
@@ -61,7 +61,7 @@
         <h3 class="text-lg font-semibold text-green-600">Success!</h3>
       </div>
     </div>
-    <p id="successMessage" class="mb-4 text-gray-700">Bank record saved successfully!</p>
+    <p id="successMessage" class="mb-4 text-gray-700">Record saved successfully!</p>
     <div class="flex justify-end">
       <button id="closeSuccessModal" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">OK</button>
     </div>
@@ -347,7 +347,7 @@
       originalLgaData = null;
 
     } catch (err) {
-      console.error("Error saving LGA:", err);
+      showErrorModal("Error saving LGA:", err);
     } finally{
       saveLgaBtn.disabled = false;
     }
@@ -537,6 +537,32 @@
   modals.forEach(modalId => {
     document.getElementById(modalId).addEventListener("click", (e) => {
       if (e.target === e.currentTarget) closeModal(modalId);
+    });
+  });
+
+  // Capitalize first letter, keep the rest lower
+  function capitalizeWords(str) {
+    return str
+      ? str
+          .toLowerCase()
+          .split(" ")
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ")
+      : "";
+  }
+
+  ["lgaName", "lghqs"].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener("input", () => {
+      el.value = capitalizeWords(el.value);
+    });
+  });
+
+  // Force uppercase as user types
+  ["lgaCode"].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener("input", () => {
+      el.value = el.value.toUpperCase();
     });
   });
 

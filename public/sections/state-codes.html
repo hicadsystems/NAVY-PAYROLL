@@ -16,7 +16,7 @@
     </div>
     <div>
       <label class="block text-sm font-medium text-gray-700">State Code *</label>
-      <input type="text" id="stateCode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white">
+      <input type="text" maxlength="2" id="stateCode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white">
     </div>
     <div>
       <label class="block text-sm font-medium text-gray-700">State Capital *</label>
@@ -496,6 +496,32 @@ searchState.addEventListener("input", (e) => {
     s.Statecapital.toLowerCase().includes(term)
   );
   renderStateTable(filtered);
+});
+
+// Capitalize first letter, keep the rest lower
+function capitalizeWords(str) {
+  return str
+    ? str
+        .toLowerCase()
+        .split(" ")
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ")
+    : "";
+}
+
+["stateName", "stateCapital"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", () => {
+    el.value = capitalizeWords(el.value);
+  });
+});
+
+// Force uppercase as user types
+["stateCode"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", () => {
+    el.value = el.value.toUpperCase();
+  });
 });
 
 // --- Init ---

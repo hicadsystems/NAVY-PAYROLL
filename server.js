@@ -17,7 +17,6 @@ const PORT = process.env.PORT || 5500;
 // Load env variables
 dotenv.config({ path: path.resolve(__dirname, envFile) });
 console.log('Running in', process.env.NODE_ENV);
-//console.log('Database:', process.env.DB_NAME);
 
 
 

@@ -67,102 +67,138 @@
   </div>
 </div>
 
+<!-- Modal -->
+<div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+  <div class="bg-white p-6 rounded-xl shadow-xl text-center">
+    <p class="text-lg font-semibold text-green-600">✅ Saved Successfully!</p>
+  </div>
+</div>
+
+<!-- Alert Modal -->
+<div id="alertModal" 
+     class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+  <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center">
+    <h3 id="alertTitle" class="text-lg font-semibold text-gray-800 mb-2">Alert!</h3>
+    <p id="alertMessage" class="text-gray-600 mb-4"></p>
+    <button id="alertOkBtn" 
+      class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+      OK
+    </button>
+  </div>
+</div>
+
+
 <script>
-  // Dummy storage
-  let salaryData = [
-    { id: 1, salary: "BASIC PAY", percentage: 0.5 },
-    { id: 2, salary: "HOUSING ALLOWANCE", percentage: 0.2 },
-  ];
-  let editId = null;
+const apiUrl = "/overpayment"; 
+let bt04 = null; // holds BT04 record
 
-  const salaryTable = document.getElementById("salaryTable");
-  const salaryForm = document.getElementById("salaryForm");
-  const addNewBtn = document.getElementById("addNewBtn");
-  const saveBtn = document.getElementById("saveBtn");
-  const cancelBtn = document.getElementById("cancelBtn");
-  const salaryInput = document.getElementById("salaryInput");
-  const percentageInput = document.getElementById("percentageInput");
+function showModal() { 
+  const modal = document.getElementById('successModal'); 
+  modal.classList.remove("hidden"); 
+  setTimeout(() => 
+  modal.classList.add("hidden"), 1000); 
+}
 
-  // Render table
-  function renderTable() {
-    salaryTable.innerHTML = "";
-    salaryData.forEach((item) => {
-      const row = document.createElement("tr");
+function showAlert(message, title = "Alert") {
+  const modal = document.getElementById("alertModal");
+  const msg = document.getElementById("alertMessage");
+  const ttl = document.getElementById("alertTitle");
+  const okBtn = document.getElementById("alertOkBtn");
 
-      row.innerHTML = `
-        <td class="border px-3 py-2">${item.salary}</td>
-        <td class="border px-3 py-2">${item.percentage}%</td>
-        <td class="border px-3 py-2 text-center">
-          <button class="text-blue-500 mr-2 editBtn" data-id="${item.id}">Edit</button>
-          <button class="text-red-500 deleteBtn" data-id="${item.id}">Delete</button>
-        </td>
-      `;
-      salaryTable.appendChild(row);
-    });
+  ttl.textContent = title;
+  msg.textContent = message;
+
+  modal.classList.remove("hidden");
+
+  okBtn.onclick = () => {
+    modal.classList.add("hidden");
+  };
+}
+
+
+const salaryMap = {
+  1: "BASIC PAY",
+  2: "HOUSING ALLOWANCE",
+  3: "TRANSPORT ALLOWANCE",
+  4: "MEAL SUBSIDY"
+};
+
+async function loadOverpayment() {
+  const res = await fetch(apiUrl, { 
+    headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+  });
+  bt04 = await res.json();
+
+ renderTable();
+
+}
+
+// Render table
+function renderTable() {
+  salaryTable.innerHTML = "";
+  if (bt04 && bt04.basicpay) {
+    const code = parseInt(bt04.basicpay);
+    const label = salaryMap[code] || bt04.basicpay;
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td class="border px-3 py-2">${label}</td>
+      <td class="border px-3 py-2">${bt04.ord || 0}%</td>
+      <td class="border px-3 py-2 text-center">
+        <button class="text-blue-500 editBtn">Edit</button>
+      </td>
+    `;
+    salaryTable.appendChild(row);
+  }
+}
+
+// Show form
+addNewBtn.addEventListener("click", () => {
+  salaryInput.value = bt04?.basicpay || "";
+  percentageInput.value = bt04?.ord || ""; // use "ord" or another float col
+  salaryForm.classList.remove("hidden");
+});
+
+// Save
+saveBtn.addEventListener("click", async () => {
+  const salary = salaryInput.value.trim();
+  const percentage = parseFloat(percentageInput.value);
+
+  if (!salary || isNaN(percentage)) {
+    showAlert("Please enter salary and percentage");
+    return;
   }
 
-  // Show form for add
-  addNewBtn.addEventListener("click", () => {
-    editId = null;
-    salaryInput.value = "";
-    percentageInput.value = "";
+  const body = JSON.stringify({ basicpay: salary, ord: percentage });
+  const headers = { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` };
+
+  if (bt04 && bt04.type === "BT04") {
+    const res = await fetch(apiUrl, { method: "PUT", headers, body });
+    if (!res.ok) throw new Error("Failed to update");
+    showModal();
+  } else {
+    const res = await fetch(apiUrl, { method: "POST", headers, body });
+    if (!res.ok) throw new Error("Failed to create");
+    showModal();
+  }
+  
+  salaryForm.classList.add("hidden");
+  await loadOverpayment();
+});
+
+// Edit
+salaryTable.addEventListener("click", (e) => {
+  if (e.target.classList.contains("editBtn")) {
+    salaryInput.value = bt04.basicpay;
+    percentageInput.value = bt04.ord || 0;
     salaryForm.classList.remove("hidden");
-  });
+  }
+});
 
-  // Save (add or edit)
-  saveBtn.addEventListener("click", () => {
-    const salary = salaryInput.value.trim();
-    const percentage = parseFloat(percentageInput.value);
+// Cancel
+cancelBtn.addEventListener("click", () => {
+  salaryForm.classList.add("hidden");
+});
 
-    if (!salary || isNaN(percentage)) {
-      alert("Please enter salary and percentage");
-      return;
-    }
-
-    if (editId) {
-      // Update existing
-      const item = salaryData.find((d) => d.id === editId);
-      item.salary = salary;
-      item.percentage = percentage;
-    } else {
-      // Add new
-      salaryData.push({
-        id: Date.now(),
-        salary,
-        percentage,
-      });
-    }
-
-    renderTable();
-    salaryForm.classList.add("hidden");
-    salaryInput.value = "";
-    percentageInput.value = "";
-    editId = null;
-  });
-
-  // Cancel
-  cancelBtn.addEventListener("click", () => {
-    salaryForm.classList.add("hidden");
-    salaryInput.value = "";
-    percentageInput.value = "";
-    editId = null;
-  });
-
-  // Delegate Edit/Delete
-  salaryTable.addEventListener("click", (e) => {
-    if (e.target.classList.contains("editBtn")) {
-      editId = parseInt(e.target.dataset.id);
-      const item = salaryData.find((d) => d.id === editId);
-      salaryInput.value = item.salary;
-      percentageInput.value = item.percentage;
-      salaryForm.classList.remove("hidden");
-    } else if (e.target.classList.contains("deleteBtn")) {
-      const id = parseInt(e.target.dataset.id);
-      salaryData = salaryData.filter((d) => d.id !== id);
-      renderTable();
-    }
-  });
-
-  // Initial render
-  renderTable();
+// Init
+loadOverpayment();
 </script>

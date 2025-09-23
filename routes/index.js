@@ -3,9 +3,16 @@ const usersRoutes = require('./administration/users');
 const rolesRoutes = require('./administration/roles');
 const switchpayrollclassRoutes = require('./administration/switchpayrollclass');
 
+
+//Personnel Profile
+
+
+
 //utilities
 const backupRoutes = require('./utilities/backup-db');
 const restoreRoutes = require('./utilities/restore-db');
+
+
 
 //refrence tables
 const statesRoutes = require('./refrence-tables/states');
@@ -19,10 +26,14 @@ const taxRoutes = require('./refrence-tables/tax');
 const payperrankRoutes = require('./refrence-tables/payperrank');
 const mutuallyexclusiveRoutes = require('./refrence-tables/mutuallyexclusive');
 const salaryscaleRoutes = require('./refrence-tables/salaryscale');
+const pfaRoutes = require('./refrence-tables/pfa');
+
 
 
 //file-upload-helper
 const salaryscaleuploadRoutes = require('./file-upload-helper/salaryscaleupload');
+
+
 
 module.exports = (app) => {
     //administration
@@ -30,9 +41,13 @@ module.exports = (app) => {
     app.use('/', rolesRoutes);
     app.use('/', switchpayrollclassRoutes);
 
+
+
     //utilities
     app.use('/api/backup-db', backupRoutes);
     app.use("/api/restore-db", restoreRoutes);
+
+
 
     //refrence tables
     app.use("/", statesRoutes);
@@ -46,6 +61,8 @@ module.exports = (app) => {
     app.use("/cmd", commandRoutes);
     app.use("/rank", payperrankRoutes);
     app.use("/mutually", mutuallyexclusiveRoutes);
+    app.use("/pfa", pfaRoutes)
+    
 
 
     //file-upload-helper

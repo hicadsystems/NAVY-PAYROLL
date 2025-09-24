@@ -2,6 +2,8 @@
 const usersRoutes = require('./administration/users');
 const rolesRoutes = require('./administration/roles');
 const switchpayrollclassRoutes = require('./administration/switchpayrollclass');
+const permissionsRouter = require('./administration/permissions');
+
 
 
 //Personnel Profile
@@ -40,6 +42,8 @@ module.exports = (app) => {
     app.use('/api/users', usersRoutes);
     app.use('/', rolesRoutes);
     app.use('/', switchpayrollclassRoutes);
+    app.use('/roles', permissionsRouter);
+
 
 
 

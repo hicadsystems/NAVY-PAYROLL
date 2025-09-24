@@ -2,7 +2,7 @@
   <!-- Section Command Header -->
   <div class="flex flex-wrap justify-between mb-6">
     <h3 class="text-xl font-semibold text-gray-800">Command Management</h3>
-    <div class="flex gap-2">
+    <div class="flex flex-wrap gap-2">
       <input type="text" id="searchSection" placeholder="Name or UnitCode..." class="border rounded px-3 py-2">
       <button id="addNewSectionBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add Command</button>
     </div>
@@ -98,6 +98,7 @@
   addNewSectionBtn.addEventListener("click", () => {
     sectionForm.classList.remove("hidden");
     editingSectionIndex = null;
+    document.getElementById("navalcmd").disabled = false;
     resetSectionForm();
   });
 
@@ -276,6 +277,7 @@
     document.getElementById("name").setCustomValidity("");
     
     editingSectionIndex = index;
+    document.getElementById("navalcmd").disabled = true;
     sectionForm.classList.remove("hidden");
   };
   

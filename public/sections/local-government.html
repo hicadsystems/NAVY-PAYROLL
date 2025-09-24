@@ -1,8 +1,8 @@
 <div class="p-6 mt-10">
   <!-- Local Government Section Header -->
-  <div class="flex flex-wrap justify-between mb-6">
+  <div class="flex flex-wrap gap-2 justify-between mb-6">
     <h3 class="text-xl font-semibold text-gray-800">Local Government Management</h3>
-    <div class="flex gap-2">
+    <div class="flex flex-wrap gap-2">
       <input type="text" id="searchLga" placeholder="Search by name or state" class="border rounded px-3 py-2">
       <button id="addNewLgaBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New LGA</button>
     </div>
@@ -271,6 +271,7 @@
   addNewLgaBtn.addEventListener("click", () => {
     lgaForm.classList.remove("hidden");
     editingLgaIndex = null;
+    document.getElementById("lgaCode").disabled = false;
     lgaForm.reset();
     fetchStates();
   });
@@ -456,6 +457,7 @@
     document.getElementById("lgaCode").setCustomValidity("");
 
     editingLgaIndex = index;
+    document.getElementById("lgaCode").disabled = true;
     lgaForm.classList.remove("hidden");
   };
 

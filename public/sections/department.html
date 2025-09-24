@@ -1,8 +1,8 @@
 <div class="p-6">
   <!-- Department Section Header -->
-  <div class="flex flex-wrap justify-between mb-6">
+  <div class="flex flex-wrap gap-2 justify-between mb-6">
     <h3 class="text-xl font-semibold text-gray-800">Department Management</h3>
-    <div class="flex gap-2">
+    <div class="flex flex-wrap gap-2">
       <input type="text" id="searchDept" placeholder="Search by ID or Name" class="border rounded px-3 py-2">
       <button id="addNewDeptBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add Department</button>
     </div>
@@ -189,6 +189,8 @@ function renderDeptTable(data = deptData) {
 addNewDeptBtn.addEventListener("click", () => {
   deptForm.classList.remove("hidden");
   editingDeptIndex = null;
+  document.getElementById("factcode").disabled = false; 
+  document.getElementById("deptcode").disabled = false; 
   deptForm.reset();
 });
 
@@ -465,6 +467,8 @@ window.editDept = function(index) {
   });
 
   editingDeptIndex = index;
+  document.getElementById("factcode").disabled = true; 
+  document.getElementById("deptcode").disabled = true; 
   deptForm.classList.remove("hidden");
 };
 

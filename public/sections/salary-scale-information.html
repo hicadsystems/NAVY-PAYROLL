@@ -52,7 +52,7 @@
       <div>
         <h2 class="text-xl lg:text-2xl text-blue-600 font-bold">Salary Scale</h2>
       </div>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2">
         <button id="addNewScaleBtn" type="button"
           class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
           + Add New Scale
@@ -716,7 +716,12 @@ window.editScale = function(index) {
   for(let i = 0; i < 20; i++) {
     document.getElementById("step" + (i+1)).value = s.steps[i] || "";
   }
-  
+
+  //disable edit for main fields
+  document.getElementById("scaleGroup").disabled = true;
+  document.getElementById("scaleElement").disabled = true;
+  document.getElementById("scaleGrade").disabled = true;
+
   editingScaleIndex = index;
   document.getElementById("stepFields").classList.remove("hidden");
   document.getElementById("scaleForm").classList.remove("hidden");
@@ -748,6 +753,7 @@ window.editGroup = function(index) {
   document.getElementById("groupLast").value = g.lastdate;
   
   editingGroupIndex = index;
+  document.getElementById("groupCode").disabled = true;
   document.getElementById("groupForm").classList.remove("hidden");
 };
 
@@ -777,6 +783,7 @@ generateStepFields();
 document.getElementById("addNewGroupBtn").addEventListener("click", () => {
   document.getElementById("groupForm").classList.remove("hidden");
   editingGroupIndex = null;
+  document.getElementById("groupCode").disabled = false;
   document.getElementById("groupForm").reset();
 });
 
@@ -795,6 +802,9 @@ document.getElementById("addNewScaleBtn").addEventListener("click", () => {
   document.getElementById("scaleForm").reset();
   batchForm.classList.add("hidden");
   scaleForm.classList.toggle("hidden");
+  document.getElementById("scaleGroup").disabled = false;
+  document.getElementById("scaleElement").disabled = false;
+  document.getElementById("scaleGrade").disabled = false;
   document.getElementById("stepFields").classList.add("hidden");
 });
 

@@ -1,12 +1,12 @@
 <div class="p-6">
 <div>
 <!-- Header -->
-<div class="px-6 py-2 flex items-center justify-between">
-    <div class="flex items-center gap-2">
+<div class="px-6 py-2 flex flex-wrap gap-2 items-center justify-between">
+    <div class="flex items-center">
         <h1 class="text-xl font-bold">Fixed Amount By Rank Management</h1>
     </div>
         <!-- Add Button -->
-    <div class="mb-2 flex justify-end gap-2">
+    <div class="mb-2 flex justify-end">
         <button id="showFormBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New</button>
     </div>
 </div>
@@ -25,7 +25,7 @@
             <h3 class="text-sm lg:text-lg font-bold text-blue-700 mb-2">Set Fixed Amounts by Rank</h3>
             
             <!-- First Row -->
-            <div class="grid grid-cols-6 gap-4 mb-4">
+            <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
                 <div class="flex flex-col">
                     <label class="text-xs font-semibold text-gray-700 mb-1">Trainee</label>
                     <input type="number" id="trainee" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
@@ -53,7 +53,7 @@
             </div>
 
             <!-- Second Row -->
-            <div class="grid grid-cols-6 gap-4 border-b-2 pb-4">
+            <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 border-b-2 pb-4">
                 <div class="flex flex-col">
                     <label class="text-xs font-semibold text-gray-700 mb-1">WO</label>
                     <input type="number" id="wo" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
@@ -81,7 +81,7 @@
             </div>
 
             <!-- Third Row -->
-            <div class="grid grid-cols-6 gap-4 pt-2 mb-4">
+            <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 pt-2 mb-4">
                 <div class="flex flex-col">
                     <label class="text-xs font-semibold text-gray-700 mb-1">MIDSHIPMAN</label>
                     <input type="number" id="midshipman" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
@@ -109,7 +109,7 @@
             </div>
 
             <!-- Fourth Row -->
-            <div class="grid grid-cols-6 gap-4">
+            <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 <div class="flex flex-col">
                     <label class="text-xs font-semibold text-gray-700 mb-1">Cdre</label>
                     <input type="number" id="cdre" class="border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:outline-none" placeholder="0">
@@ -328,6 +328,7 @@ function transformToBackend(item) {
 showFormBtn.addEventListener("click", () => {
     form.classList.remove("hidden");
     editingIndex = null;
+    document.getElementById('description').disabled = false;
     clearForm();
 });
 
@@ -424,7 +425,7 @@ window.viewRow = function(index) {
   }
   html += `</div>`;
   document.getElementById("viewContent").innerHTML = html;
-  openModal("viewModal");
+  document.getElementById("viewModal").classList.remove("hidden");
 };
 
 // Edit row
@@ -445,6 +446,7 @@ window.editRow = function(index) {
   document.getElementById('description').setCustomValidity("");
 
   editingIndex = index;
+  document.getElementById('description').disabled = true;
   form.classList.remove("hidden");
 };
 

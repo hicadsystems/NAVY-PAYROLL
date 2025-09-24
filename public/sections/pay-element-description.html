@@ -5,7 +5,7 @@
   </div>
 
   <!-- Hidden Form -->
-  <form id="payElementsForm" class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6 hidden p-4 rounded border">
+  <form id="payElementsForm" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 p-4 rounded border">
     <div>
       <label class="block text-sm font-medium text-gray-700">Payment Type *</label>
       <input type="text" id="payElements" maxlength="6" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent" required>
@@ -64,7 +64,21 @@
 
     <div>
       <label class="block text-sm font-medium text-gray-700">Starting Month</label>
-      <input type="text" id="startingMonth" maxlength="2" placeholder="01-12" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+      <select id="startingMonth" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+          <option value="">Select Month</option>
+          <option value="01">01 - January</option>
+          <option value="02">02 - February</option>
+          <option value="03">03 - March</option>
+          <option value="04">04 - April</option>
+          <option value="05">05 - May</option>
+          <option value="06">06 - June</option>
+          <option value="07">07 - July</option>
+          <option value="08">08 - August</option>
+          <option value="09">09 - September</option>
+          <option value="10">10 - October</option>
+          <option value="11">11 - November</option>
+          <option value="12">12 - December</option>
+      </select>
     </div>
 
     <div>
@@ -109,7 +123,7 @@
       </select>
     </div>
 
-    <div class="col-span-2 flex justify-end gap-2 lg:col-span-3">
+    <div class="col-span-1 flex justify-end gap-2 md:col-span-2 lg:col-span-3">
       <button type="button" id="saveBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Save</button>
       <button type="button" id="cancelBtn" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
     </div>

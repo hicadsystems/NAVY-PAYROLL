@@ -6,7 +6,7 @@
         
         <div >
           <label class="text-sm font-semibold text-gray-600">Standard or Fixed</label>
-          <input class="border p-2 rounded w-full" name="stdfix" placeholder="StdFix" value="F">
+          <input class="border p-2 rounded w-full" id="stdfix" name="stdfix" placeholder="StdFix" value="F">
         </div>
 
         <div >
@@ -65,6 +65,11 @@
 <script>
 let hasOvertime = false; // track if record exists
 
+function updateStdfixState() {
+  const stdfix = document.getElementById('stdfix');
+  stdfix.disabled = hasOvertime;
+}
+
 function showModal() { 
   const modal = document.getElementById('successModal'); 
   modal.classList.remove("hidden"); 
@@ -91,6 +96,7 @@ async function loadForm() {
     // map basicpay → taxovertime field
     form.elements['taxovertime'].value = row.basicpay == 1 ? "Yes" : "No";
   }
+  updateStdfixState();
 }
 
 // Save form
@@ -100,11 +106,9 @@ document.getElementById('overtimeForm').addEventListener('submit', async (e) => 
   const data = Object.fromEntries(new FormData(form).entries());
   const token = localStorage.getItem("token");
 
-  // map taxovertime → basicpay
   data.basicpay = data.taxovertime === "Yes" ? 1 : 0;
   delete data.taxovertime;
 
-  // Use PUT if record exists, otherwise POST
   const method = hasOvertime ? "PUT" : "POST";
 
   const res = await fetch('/overtime', {
@@ -119,11 +123,13 @@ document.getElementById('overtimeForm').addEventListener('submit', async (e) => 
   const result = await res.json();
   if (res.ok) {
     showModal();
-    hasOvertime = true; // ensure next save uses PUT
+    hasOvertime = true;
+    updateStdfixState();
   } else {
     alert("Error: " + (result.error || result.message));
   }
 });
+
 
 // Prefill form on load
 loadForm();

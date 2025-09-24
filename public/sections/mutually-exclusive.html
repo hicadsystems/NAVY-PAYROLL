@@ -2,13 +2,13 @@
 <div class="p-6">
 <div class="">
 <!-- Header -->
-<div class="px-6 py-4 flex items-center justify-between">
-    <div class="flex items-center gap-2">
+<div class="px-6 py-4 flex flex-wrap gap-2 items-center justify-between">
+    <div class="flex items-center">
         <h1 class="text-xl font-semibold">PAYMENT TYPES</h1>
     </div>
 
         <!-- Add Button -->
-    <div class="flex justify-end gap-2">
+    <div class="flex justify-end">
         <button id="showFormBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New</button>
     </div>
 </div>
@@ -166,6 +166,8 @@ window.editRow = function(index) {
   document.getElementById("detailDescription").value = item.typeldesc;
 
   editingIndex = index;
+  document.getElementById("highPriority").disabled = true;
+  document.getElementById("lowerPriority").disabled = true;
   form.classList.remove("hidden");
 };
 
@@ -290,6 +292,8 @@ saveBtn.addEventListener("click", async () => {
 showFormBtn.addEventListener("click", () => {
   form.classList.remove("hidden");
   editingIndex = null;
+  document.getElementById("highPriority").disabled = false;
+  document.getElementById("lowerPriority").disabled = false;
   clearForm();
 });
 

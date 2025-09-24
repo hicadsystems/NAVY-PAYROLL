@@ -1,8 +1,8 @@
 <div class="p-6">
   <!-- States Section Header -->
-  <div class="flex flex-wrap justify-between mb-6">
+  <div class="flex flex-wrap gap-2 justify-between mb-6">
     <h3 class="text-xl font-semibold text-gray-800">States Management</h3>
-    <div class="flex gap-2">
+    <div class="flex flex-wrap gap-2">
       <input type="text" id="searchState" placeholder="Search name or capital" class="border rounded px-3 py-2">
       <button id="addNewStateBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New State</button>
     </div>
@@ -328,6 +328,7 @@ function renderStateTable(data = stateData) {
 addNewStateBtn.addEventListener("click", () => {
   stateForm.classList.remove("hidden");
   editingStateId = null;
+  document.getElementById("stateCode").disabled = false;
   stateForm.reset();
 });
 
@@ -422,7 +423,8 @@ window.editState = function(Statecode) {
   document.getElementById("stateCode").setCustomValidity("");
   document.getElementById("stateCapital").setCustomValidity("");
   
-  editingStateId = Statecode; // Store Statecode as the editing ID
+  editingStateId = Statecode; 
+  stateForm.stateCode.disabled =true;
   stateForm.classList.remove("hidden");
 };
 

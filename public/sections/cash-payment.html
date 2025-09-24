@@ -13,8 +13,8 @@
   <!-- Add/Edit Form (hidden initially) -->
   <div
     id="salaryForm"
-    class="hidden items mb-4 border rounded-lg p-4 max-w-lg mr-auto">
-    <h4 class="text-md font-bold text-blue-600 mb-3">Add/Edit Overpayment Percentage</h4>
+    class="hidden items mb-4 border rounded-lg p-4 max-w-lg mx-auto">
+    <h4 class="text-lg font-bold text-blue-600 mb-3">Add/Edit Overpayment Percentage</h4>
     <form class="space-y-4">
       <div>
         <label class="block text-sm font-medium mb-1">Basic Salary</label>
@@ -154,8 +154,9 @@ function renderTable() {
 // Show form
 addNewBtn.addEventListener("click", () => {
   salaryInput.value = bt04?.basicpay || "";
-  percentageInput.value = bt04?.ord || ""; // use "ord" or another float col
+  percentageInput.value = bt04?.ord || ""; 
   salaryForm.classList.remove("hidden");
+  document.getElementById("salaryInput").disabled = false;
 });
 
 // Save
@@ -190,6 +191,7 @@ salaryTable.addEventListener("click", (e) => {
   if (e.target.classList.contains("editBtn")) {
     salaryInput.value = bt04.basicpay;
     percentageInput.value = bt04.ord || 0;
+    document.getElementById("salaryInput").disabled = true;
     salaryForm.classList.remove("hidden");
   }
 });

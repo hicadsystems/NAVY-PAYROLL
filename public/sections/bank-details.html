@@ -215,6 +215,8 @@
   addNewBankBtn.addEventListener("click", () => {
     bankForm.classList.remove("hidden");
     editingBankIndex = null;
+    document.getElementById("bankCode").disabled = false;
+    document.getElementById("branchCode").disabled = false;
     resetBankForm();
   });
 
@@ -387,6 +389,8 @@
     document.getElementById("cbnBranch").value = item.cbn_branch;
 
     editingBankIndex = index;
+    document.getElementById("bankCode").disabled = true;
+    document.getElementById("branchCode").disabled = true;
     bankForm.classList.remove("hidden");
   };
 

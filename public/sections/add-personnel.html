@@ -104,7 +104,7 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Exit Mode</label>
-        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+        <select id="exittype" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option>Select Exit Mode</option>
         </select>
       </div>
@@ -112,6 +112,8 @@
         <label class="block text-sm font-medium text-gray-700">Taxed ?</label>
         <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option>Select</option>
+          <option value="YES">YES</option>
+          <option value="NO">NO</option>
         </select>
       </div>
       <div>
@@ -120,7 +122,7 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Tax State</label>
-        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+        <select id="state" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option>Select Tax State</option>
         </select>
       </div>
@@ -130,31 +132,31 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Pension Fund Administrator</label>
-        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+        <select id="pfa" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option>Select Administrator</option>
         </select>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Payroll Process Category</label>
-        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+        <select id="payrollProcess" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option>Select Payroll Process</option>
         </select>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Salary Group</label>
-        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+        <select id="salarygroup" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option>Select Salary Group</option>
         </select>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Salary Grade</label>
-        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+        <select id="salarygrade" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option>Select Salary Grade</option>
         </select>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Bank Branch</label>
-        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+        <select id="bankbranch" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option>Select Bank Branch</option>
         </select>
       </div>
@@ -174,24 +176,26 @@
         <label class="block text-sm font-medium text-gray-700">Ship/Establishment</label>
         <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option>select</option>
+          <option value="SHIP">Ship</option>
+          <option value="ESTABLISHMENT">Establishment</option>
         </select>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Branch</label>
-        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+        <select id="branch" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option>Select Branch</option>
         </select>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Command</label>
-        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+        <select id="command" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option>Select Command</option>
         </select>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700">Specialization</label>
-        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Specialization</option>
+        <label class="block text-sm font-medium text-gray-700">Specialisation</label>
+        <select id="specialisation" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <option>Select Specialisation</option>
         </select>
       </div>
       <div>
@@ -206,6 +210,8 @@
         <label class="block text-sm font-medium text-gray-700">Emolument Form Received?</label>
         <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option>Select</option>
+          <option value="YES">YES</option>
+          <option value="NO">NO</option>
         </select>
       </div>
       <div>
@@ -214,7 +220,7 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Bank Code</label>
-        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+        <select id="bankcode" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option>Select Bank Code</option>
         </select>
       </div>
@@ -224,13 +230,13 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Country</label>
-        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+        <select id="country" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option>Select Country</option>
         </select>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">Accommodation Type</label>
-        <select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+        <select  class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option>Select Accommodation Type</option>
         </select>
       </div>
@@ -515,11 +521,118 @@
 </div>
 
 <script>
+// API Configuration
+const API_BASE = '/personnel';
+const API_HEADERS = {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${localStorage.getItem('token')}`
+};
+
+//dropdown helper step1
+const dropdownConfig = {
+  "Sex": { endpoint: "sex", value: "sex_code", text: "sex_desc" },
+  "Marital Status": { endpoint: "marital", value: "MaritalCode", text: "MaritalStatus" },
+  "State Of Origin": { endpoint: "state", value: "Statecode", text: "Statename" },
+  "Local Government": { endpoint: "lga", value: "Lgcode", text: "Lgname" },
+  "Rank": { endpoint: "title", value: "Titlecode", text: "Description" },
+  "Religion": { endpoint: "religion", value: "ReligionCode", text: "ReligionName" }
+};
+
+async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
+  try {
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(`/reference/${endpoint}` ,{   
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      }
+    });
+    const data = await response.json();
+
+    const dropdown = document.getElementById(elementId);
+    if (!dropdown) return;
+
+    dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+
+    data.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item[valueField];
+      option.textContent = item[textField];
+      dropdown.appendChild(option);
+    });
+  } catch (err) {
+    console.error(`Failed to load ${endpoint}:`, err);
+  }
+}
+
+function initializeDropdowns() {
+  Object.keys(dropdownConfig).forEach(field => {
+    const cfg = dropdownConfig[field];
+    const elementId = `field-${field.replace(/\s+/g, '-').toLowerCase()}`;
+    loadDropdown(cfg.endpoint, elementId, cfg.value, cfg.text, `Select ${field}`);
+  });
+}
+
+window.addEventListener("DOMContentLoaded", initializeDropdowns);
+
+//dropdown helper 2&3
+async function loadDropdown(endpoint, elementId, valueField, textField) {
+  try {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`/reference/${endpoint}`, {   
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      }
+    });
+    const data = await response.json();
+
+    const dropdown = document.getElementById(elementId);
+    dropdown.innerHTML = "<option value=''>-- Select --</option>";
+
+    data.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item[valueField];
+      option.textContent = item[textField];
+      dropdown.appendChild(option);
+    });
+  } catch (err) {
+    console.error(`Failed to load ${endpoint}:`, err);
+  }
+}
+
+/**
+ * Bundle all dropdowns
+ */
+function loadAllDropdowns() {
+  loadDropdown("bankbranch", "bankbranch", "bankcode", "branchname");
+  loadDropdown("bankcode", "bankcode", "bankcode", "bankcode");
+  loadDropdown("state", "state", "Statecode", "Statename");
+  //loadDropdown("status", "status", "StatusCode", "StatusDescrip");
+  loadDropdown("country", "country", "countrycode", "Countryname");
+  loadDropdown("command", "command", "navalcmd", "name");
+  loadDropdown("pfa", "pfa", "pfacode", "pfadesc");
+  loadDropdown("salarygroup", "salarygroup", "groupcode", "grpdesc");
+  loadDropdown("salarygrade", "salarygrade", "grade_no", "grade_desc");
+  //loadDropdown("title", "title", "Titlecode", "Description");
+  loadDropdown("exittype", "exittype", "Name", "Description");
+  loadDropdown("specialisation", "specialisation", "sp_desc", "sp_desc");
+}
+
+// Load everything once page is ready
+window.addEventListener("DOMContentLoaded", loadAllDropdowns);
+
+
 // Global variables and helper functions
 let nokCounter = 0;
 let spouseCounter = 0;
 let childCounter = 0;
-const editState = { type: null, id: null, row: null };
+let currentEmployeeId = null; // Set this when editing an existing employee
+const editState = { type: null, id: null, row: null, data: null };
 
 // Helper functions
 function val(id) { 
@@ -565,38 +678,98 @@ function showPopup(message) {
   }, 1500);
 }
 
+function showError(message) {
+  alert(`Error: ${message}`);
+}
+
+// API Helper Functions
+async function apiRequest(url, options = {}) {
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: { ...API_HEADERS, ...options.headers }
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('API Request failed:', error);
+    showError(error.message);
+    throw error;
+  }
+}
+
 function actionBtns(type, id) {
   return `
     <button onclick="viewRow('${type}', ${id})" class="px-2 text-blue-600 hover:underline">View</button>
     <button onclick="editRow('${type}', ${id})" class="px-2 text-green-600 hover:underline">Edit</button>
-    <button onclick="deleteRow(this)" class="px-2 text-red-600 hover:underline">Delete</button>
+    <button onclick="deleteRow(this, '${type}', ${id})" class="px-2 text-red-600 hover:underline">Delete</button>
   `;
 }
 
 // Global functions for row actions
 window.viewRow = (t,i)=>showPopup(`Viewing ${t} #${i}`);
 
-let deleteTargetRow = null; // store which row to delete
+let deleteTargetRow = null;
+let deleteTargetType = null;
+let deleteTargetId = null;
 
-window.deleteRow = function(btn){
+window.deleteRow = function(btn, type, id){
   deleteTargetRow = btn.closest('tr');
+  deleteTargetType = type;
+  deleteTargetId = id;
   document.getElementById('deleteModal').classList.remove('hidden');
 };
 
-// modal button events
+// Modal button events
 document.getElementById('deleteCancelBtn').onclick = () => {
   deleteTargetRow = null;
+  deleteTargetType = null;
+  deleteTargetId = null;
   document.getElementById('deleteModal').classList.add('hidden');
 };
 
-document.getElementById('deleteConfirmBtn').onclick = () => {
-  if(deleteTargetRow){
-    deleteTargetRow.remove();
+document.getElementById('deleteConfirmBtn').onclick = async () => {
+  if(deleteTargetRow && deleteTargetType && deleteTargetId){
+    try {
+      await deleteRecord(deleteTargetType, deleteTargetId);
+      deleteTargetRow.remove();
+      showPopup("Record deleted successfully");
+    } catch (error) {
+      // Error already handled in deleteRecord
+    }
+    
     deleteTargetRow = null;
-    showPopup("Deleting Record...");
+    deleteTargetType = null;
+    deleteTargetId = null;
   }
   document.getElementById('deleteModal').classList.add('hidden');
 };
+
+// Delete API Functions
+async function deleteRecord(type, id) {
+  let url;
+  switch(type) {
+    case 'NOK':
+      url = `${API_BASE}/nextofkin/${id}`;
+      break;
+    case 'Spouse':
+      url = `${API_BASE}/spouse/${id}`;
+      break;
+    case 'Child':
+      url = `${API_BASE}/children/${id}`;
+      break;
+    default:
+      throw new Error('Invalid record type');
+  }
+  
+  return await apiRequest(url, { method: 'DELETE' });
+}
 
 window.editRow = function(type, id) {
   const row = document.querySelector(`tr[data-type="${type}"][data-id="${id}"]`);
@@ -618,7 +791,7 @@ window.editRow = function(type, id) {
     document.getElementById('nokMobile').value = cells[2].textContent;
     document.getElementById('nokEmail').value  = cells[3].textContent;
 
-   // Show form
+    // Show form
     const wrap = document.getElementById('nokFormWrap');
     const btn = document.getElementById('nokToggleBtn');
     wrap.classList.remove('hidden');
@@ -657,20 +830,39 @@ const popup = document.getElementById("uploadSuccessPopup");
 const closePopupBtn = document.getElementById("closePopupBtn");
 const cancelBtn = document.getElementById("cancelBatchBtn");
 
-uploadBtn.addEventListener("click", () => {
+uploadBtn.addEventListener("click", async () => {
   const fileInput = document.getElementById("batchFile");
   if (!fileInput.files.length) {
     alert("Please select a file to upload!");
     return;
   }
 
+  const formData = new FormData();
+  formData.append('file', fileInput.files[0]);
+
   uploadBtn.innerText = "Uploading...";
   uploadBtn.disabled = true;
-  setTimeout(() => {
+  
+  try {
+    // Note: You'll need to add a batch upload endpoint to your API
+    const response = await fetch(`${API_BASE}/batch-upload`, {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Upload failed');
+    }
+    
+    popup.classList.remove("hidden");
+  } catch (error) {
+    showError(error.message);
+  } finally {
     uploadBtn.innerText = "Upload";
     uploadBtn.disabled = false;
-    popup.classList.remove("hidden");
-  }, 2000);
+  }
 });
 
 closePopupBtn.addEventListener("click", () => {
@@ -690,25 +882,29 @@ function showTab(name) {
     const tabBtn = document.getElementById('tab-' + t);
     const section = document.getElementById('section-' + t);
     
-    tabBtn.classList.remove('bg-blue-600', 'text-white');
-    tabBtn.classList.add('bg-yellow-400', 'text-gray-900');
-    section.classList.add('hidden');
+    if (tabBtn && section) {
+      tabBtn.classList.remove('bg-blue-600', 'text-white');
+      tabBtn.classList.add('bg-yellow-400', 'text-gray-900');
+      section.classList.add('hidden');
+    }
   });
   
   const activeTab = document.getElementById('tab-' + name);
   const activeSection = document.getElementById('section-' + name);
   
-  activeTab.classList.add('bg-blue-600', 'text-white');
-  activeTab.classList.remove('bg-yellow-400', 'text-gray-900');
-  activeSection.classList.remove('hidden');
+  if (activeTab && activeSection) {
+    activeTab.classList.add('bg-blue-600', 'text-white');
+    activeTab.classList.remove('bg-yellow-400', 'text-gray-900');
+    activeSection.classList.remove('hidden');
+  }
 }
 
 // Set up tab click handlers
-document.getElementById('tab-personnel').onclick = () => showTab('personnel');
-document.getElementById('tab-nok').onclick = () => showTab('nok');
-document.getElementById('tab-spouse').onclick = () => showTab('spouse');
-document.getElementById('tab-children').onclick = () => showTab('children');
-document.getElementById('tab-batch').onclick = () => showTab('batch');
+document.getElementById('tab-personnel')?.addEventListener('click', () => showTab('personnel'));
+document.getElementById('tab-nok')?.addEventListener('click', () => showTab('nok'));
+document.getElementById('tab-spouse')?.addEventListener('click', () => showTab('spouse'));
+document.getElementById('tab-children')?.addEventListener('click', () => showTab('children'));
+document.getElementById('tab-batch')?.addEventListener('click', () => showTab('batch'));
 
 // Default to personnel tab
 showTab('personnel');
@@ -733,74 +929,124 @@ function controlWrap(label, control) {
 }
 
 function renderStep1() {
+  if (!step1Container) return;
+  
   step1Container.innerHTML = fieldsStep1.map(field => {
-    if (["Rank", "Religion", "State Of Origin", "Local Government",  "Sex", "Marital Status"].includes(field)) {
+    if (["Rank", "Religion", "State Of Origin", "Local Government", "Sex", "Marital Status"].includes(field)) {
       return controlWrap(field,
-        `<select class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-           <option>Select ${field}</option>
+        `<select id="field-${field.replace(/\s+/g, '-').toLowerCase()}" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+           <option value="">Select ${field}</option>
          </select>`);
     }
     if (field === "Passport Photograph") {
       return controlWrap(field,
-        `<input type="file" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`);
+        `<input id="field-${field.replace(/\s+/g, '-').toLowerCase()}" type="file" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`);
     }
     if (field === "Date of Birth") {
       return controlWrap(field,
-        `<input type="date" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`);
+        `<input id="field-${field.replace(/\s+/g, '-').toLowerCase()}" type="date" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`);
     }
     return controlWrap(field,
-      `<input type="text" placeholder="${field}" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`);
+      `<input id="field-${field.replace(/\s+/g, '-').toLowerCase()}" type="text" placeholder="${field}" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`);
   }).join("");
 }
 
 function toggleStep(step) {
-  if (step === 1) {
-    step1Container.classList.remove("hidden");
-    step2Container.classList.add("hidden");
-    step3Container.classList.add("hidden");
-    btnStep1.classList.add("bg-blue-600", "text-white");
-    btnStep1.classList.remove("bg-yellow-400", "text-gray-900");
-    btnStep2.classList.add("bg-yellow-400", "text-gray-900");
-    btnStep2.classList.remove("bg-blue-600", "text-white");
-    btnStep3.classList.add("bg-yellow-400", "text-gray-900");
-    btnStep3.classList.remove("bg-blue-600", "text-white");
-  } else if (step === 2) {
-    step1Container.classList.add("hidden");
-    step2Container.classList.remove("hidden");
-    step3Container.classList.add("hidden");
-    btnStep2.classList.add("bg-blue-600", "text-white");
-    btnStep2.classList.remove("bg-yellow-400", "text-gray-900");
-    btnStep1.classList.add("bg-yellow-400", "text-gray-900");
-    btnStep1.classList.remove("bg-blue-600", "text-white");
-    btnStep3.classList.add("bg-yellow-400", "text-gray-900");
-    btnStep3.classList.remove("bg-blue-600", "text-white");
-  } else {
-    step1Container.classList.add("hidden");
-    step2Container.classList.add("hidden");
-    step3Container.classList.remove("hidden");
-    btnStep3.classList.add("bg-blue-600", "text-white");
-    btnStep3.classList.remove("bg-yellow-400", "text-gray-900");
-    btnStep2.classList.add("bg-yellow-400", "text-gray-900");
-    btnStep2.classList.remove("bg-blue-600", "text-white");
-    btnStep1.classList.add("bg-yellow-400", "text-gray-900");
-    btnStep1.classList.remove("bg-blue-600", "text-white");
+  const containers = [step1Container, step2Container, step3Container];
+  const buttons = [btnStep1, btnStep2, btnStep3];
+  
+  containers.forEach((container, i) => {
+    if (container) {
+      if (i === step - 1) {
+        container.classList.remove("hidden");
+      } else {
+        container.classList.add("hidden");
+      }
+    }
+  });
+  
+  buttons.forEach((button, i) => {
+    if (button) {
+      if (i === step - 1) {
+        button.classList.add("bg-blue-600", "text-white");
+        button.classList.remove("bg-yellow-400", "text-gray-900");
+      } else {
+        button.classList.add("bg-yellow-400", "text-gray-900");
+        button.classList.remove("bg-blue-600", "text-white");
+      }
+    }
+  });
+}
+
+// Personnel form submission
+async function submitPersonnelForm() {
+  const formData = new FormData(document.getElementById('personnelForm'));
+  const personnelData = {};
+  
+  // Collect all form data
+  for (let [key, value] of formData.entries()) {
+    if (value.trim()) {
+      personnelData[key] = value.trim();
+    }
+  }
+  
+  try {
+    let result;
+    if (currentEmployeeId) {
+      // Update existing employee
+      result = await apiRequest(`${API_BASE}/employees/${currentEmployeeId}`, {
+        method: 'PUT',
+        body: JSON.stringify(personnelData)
+      });
+    } else {
+      // Create new employee
+      // Generate Empl_ID if not provided
+      if (!personnelData.Empl_ID) {
+        personnelData.Empl_ID = 'EMP' + 1; // Simple ID generation
+      }
+      
+      result = await apiRequest(`${API_BASE}/employees`, {
+        method: 'POST',
+        body: JSON.stringify(personnelData)
+      });
+      
+      // Set current employee ID for adding family members
+      currentEmployeeId = personnelData.Empl_ID;
+    }
+    
+    showPopup(currentEmployeeId ? "Personnel updated successfully" : "Personnel created successfully");
+    
+    // Don't reset form to allow adding family members
+    if (!currentEmployeeId) {
+      document.getElementById("personnelForm").reset();
+      toggleStep(1);
+    }
+    
+  } catch (error) {
+    // Error already handled in apiRequest
   }
 }
 
 function cancelPersonnelForm() {
   document.getElementById("personnelForm").reset();
+  currentEmployeeId = null;
   toggleStep(1);
 }
 
 // Initialize personnel form
-formTitleEl.textContent = formTitle;
+if (formTitleEl) formTitleEl.textContent = formTitle;
 renderStep1();
+initializeDropdowns();
+loadAllDropdowns();
 toggleStep(1);
 
-btnStep1.addEventListener("click", () => toggleStep(1));
-btnStep2.addEventListener("click", () => toggleStep(2));
-btnStep3.addEventListener("click", () => toggleStep(3));
-personnelCancelBtn.addEventListener("click", cancelPersonnelForm);
+btnStep1?.addEventListener("click", () => toggleStep(1));
+btnStep2?.addEventListener("click", () => toggleStep(2));
+btnStep3?.addEventListener("click", () => toggleStep(3));
+personnelCancelBtn?.addEventListener("click", cancelPersonnelForm);
+
+// Add submit button handler
+document.querySelector('#personnelForm button[type="button"]:last-child')?.addEventListener('click', submitPersonnelForm);
 
 // NOK functionality
 const nokFormWrap = document.getElementById('nokFormWrap');
@@ -808,57 +1054,99 @@ const nokToggleBtn = document.getElementById('nokToggleBtn');
 const nokSaveBtn = document.getElementById('nokSave');
 const nokCancelBtn = document.getElementById('nokCancel');
 
-nokToggleBtn.onclick = () => toggleBlock(nokFormWrap, nokToggleBtn);
+nokToggleBtn?.addEventListener('click', () => toggleBlock(nokFormWrap, nokToggleBtn));
 
-nokCancelBtn.onclick = () => {
-  document.getElementById('nokForm').reset();
+nokCancelBtn?.addEventListener('click', () => {
+  document.getElementById('nokForm')?.reset();
   editState.type = null;
   editState.row = null;
+  editState.id = null;
   toggleBlock(nokFormWrap, nokToggleBtn);
-};
+});
 
-nokSaveBtn.onclick = () => {
+nokSaveBtn?.addEventListener('click', async () => {
   const first = val('nokFirst');
   const last = val('nokLast');
   const rel = val('nokRelationship');
   const mobile = val('nokMobile');
   const email = val('nokEmail');
+  const dob = val('nokDob');
+  const address = val('nokAddress');
+  const home = val('nokHome');
+  const work = val('nokWork');
+  const type = val('nokType');
 
-  if (!first || !last || !rel || !mobile || !email) {
+  if (!first || !last || !rel || !mobile || !email || !address) {
     alert('Please fill all required fields');
     return;
   }
 
-  const list = document.getElementById('nokList');
-  const empty = document.getElementById('nokEmpty');
-  if (empty) empty.remove();
-
-  if(editState.type==="NOK" && editState.row){
-    // Update existing row
-    const cells = editState.row.querySelectorAll('td');
-    cells[0].textContent = `${first} ${last}`;
-    cells[1].textContent = rel;
-    cells[2].textContent = mobile;
-    cells[3].textContent = email;
-    editState.type = null;
-    editState.row = null; 
-    showPopup("Updating NOK");
-  }else{
-    nokCounter++;
-    list.insertAdjacentHTML('beforeend',`
-      <tr data-type="NOK" data-id="${nokCounter}" class="hover:bg-yellow-50">
-        <td class="border px-3 py-2">${escapeHtml(first)} ${escapeHtml(last)}</td>
-        <td class="border px-3 py-2">${escapeHtml(rel)}</td>
-        <td class="border px-3 py-2">${escapeHtml(mobile)}</td>
-        <td class="border px-3 py-2">${escapeHtml(email)}</td>
-        <td class="border px-3 py-2">${actionBtns('NOK', nokCounter)}</td>
-      </tr>`);
-    showPopup("Saving NOK");
+  if (!currentEmployeeId) {
+    alert('Please create/select an employee first');
+    return;
   }
 
-  document.getElementById('nokForm').reset();
-  toggleBlock(nokFormWrap, nokToggleBtn);
-};
+  const nokData = {
+    FirstName: first,
+    LastName: last,
+    NextofkinType: type || 'Main',
+    Relationship: rel,
+    MobileNumber: mobile,
+    HomeNumber: home,
+    EmailAddress: email,
+    DateOfBirth: dob,
+    FullAddress: address,
+    PlaceOfWork: work
+  };
+
+  try {
+    const list = document.getElementById('nokList');
+    const empty = document.getElementById('nokEmpty');
+
+    if (editState.type === "NOK" && editState.row && editState.id) {
+      // Update existing NOK
+      const result = await apiRequest(`${API_BASE}/nextofkin/${editState.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(nokData)
+      });
+
+      const cells = editState.row.querySelectorAll('td');
+      cells[0].textContent = `${first} ${last}`;
+      cells[1].textContent = rel;
+      cells[2].textContent = mobile;
+      cells[3].textContent = email;
+      
+      editState.type = null;
+      editState.row = null;
+      editState.id = null;
+      showPopup("NOK updated successfully");
+    } else {
+      // Create new NOK
+      const result = await apiRequest(`${API_BASE}/employees/${currentEmployeeId}/nextofkin`, {
+        method: 'POST',
+        body: JSON.stringify(nokData)
+      });
+
+      if (empty) empty.remove();
+      
+      nokCounter++;
+      list.insertAdjacentHTML('beforeend', `
+        <tr data-type="NOK" data-id="${result.nokId}" class="hover:bg-yellow-50">
+          <td class="border px-3 py-2">${escapeHtml(first)} ${escapeHtml(last)}</td>
+          <td class="border px-3 py-2">${escapeHtml(rel)}</td>
+          <td class="border px-3 py-2">${escapeHtml(mobile)}</td>
+          <td class="border px-3 py-2">${escapeHtml(email)}</td>
+          <td class="border px-3 py-2">${actionBtns('NOK', result.nokId)}</td>
+        </tr>`);
+      showPopup("NOK saved successfully");
+    }
+
+    document.getElementById('nokForm')?.reset();
+    toggleBlock(nokFormWrap, nokToggleBtn);
+  } catch (error) {
+    // Error already handled in apiRequest
+  }
+});
 
 // Spouse functionality
 const spouseFormWrap = document.getElementById('spouseFormWrap');
@@ -866,53 +1154,97 @@ const spouseToggleBtn = document.getElementById('spouseToggleBtn');
 const spouseSaveBtn = document.getElementById('spouseSave');
 const spouseCancelBtn = document.getElementById('spouseCancel');
 
-spouseToggleBtn.onclick = () => toggleBlock(spouseFormWrap, spouseToggleBtn);
+spouseToggleBtn?.addEventListener('click', () => toggleBlock(spouseFormWrap, spouseToggleBtn));
 
-spouseCancelBtn.onclick = () => {
-  document.getElementById('spouseForm').reset();
+spouseCancelBtn?.addEventListener('click', () => {
+  document.getElementById('spouseForm')?.reset();
   editState.type = null;
   editState.row = null;
+  editState.id = null;
   toggleBlock(spouseFormWrap, spouseToggleBtn);
-};
+});
 
-spouseSaveBtn.onclick = () => {
+spouseSaveBtn?.addEventListener('click', async () => {
   const name = val('spouseName');
   const phone = val('spousePhone');
   const email = val('spouseEmail');
+  const dob = val('spouseDob');
+  const dom = val('spouseDom');
+  const street = val('spouseStreet');
+  const town = val('spouseTown');
+  const state = val('spouseState');
+  const lga = val('spouseLga');
+  const poBox = val('spousePoBox');
 
   if (!name) {
     alert('Full Name is required');
     return;
   }
 
-  const list = document.getElementById('spouseList');
-  const empty = document.getElementById('spouseEmpty');
-  if (empty) empty.remove();
-
-  if(editState.type==="Spouse" && editState.row){
-    // Update existing row
-    const cells = editState.row.querySelectorAll('td');
-    cells[0].textContent = name;
-    cells[1].textContent = phone;
-    cells[2].textContent = email;
-    editState.type = null;
-    editState.row = null;
-    showPopup("Updating Spouse");
-  }else{
-    spouseCounter++;
-    list.insertAdjacentHTML('beforeend',`
-      <tr data-type="Spouse" data-id="${spouseCounter}" class="hover:bg-yellow-50">
-        <td class="border px-3 py-2">${escapeHtml(name)}</td>
-        <td class="border px-3 py-2">${escapeHtml(phone)}</td>
-        <td class="border px-3 py-2">${escapeHtml(email)}</td>
-        <td class="border px-3 py-2">${actionBtns('Spouse', spouseCounter)}</td>
-      </tr>`);
-    showPopup("Saving Spouse");
+  if (!currentEmployeeId) {
+    alert('Please create/select an employee first');
+    return;
   }
 
-  document.getElementById('spouseForm').reset();
-  toggleBlock(spouseFormWrap, spouseToggleBtn);
-};
+  const spouseData = {
+    FullName: name,
+    Phone: phone,
+    Email: email,
+    DateOfBirth: dob,
+    marrieddate: dom,
+    Street: street,
+    Town: town,
+    State: state,
+    LocalGovernment: lga,
+    POBox: poBox
+  };
+
+  try {
+    const list = document.getElementById('spouseList');
+    const empty = document.getElementById('spouseEmpty');
+
+    if (editState.type === "Spouse" && editState.row && editState.id) {
+      // Update existing spouse
+      const result = await apiRequest(`${API_BASE}/spouse/${editState.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(spouseData)
+      });
+
+      const cells = editState.row.querySelectorAll('td');
+      cells[0].textContent = name;
+      cells[1].textContent = phone;
+      cells[2].textContent = email;
+      
+      editState.type = null;
+      editState.row = null;
+      editState.id = null;
+      showPopup("Spouse updated successfully");
+    } else {
+      // Create new spouse
+      const result = await apiRequest(`${API_BASE}/employees/${currentEmployeeId}/spouse`, {
+        method: 'POST',
+        body: JSON.stringify(spouseData)
+      });
+
+      if (empty) empty.remove();
+      
+      spouseCounter++;
+      list.insertAdjacentHTML('beforeend', `
+        <tr data-type="Spouse" data-id="${result.spouseId}" class="hover:bg-yellow-50">
+          <td class="border px-3 py-2">${escapeHtml(name)}</td>
+          <td class="border px-3 py-2">${escapeHtml(phone)}</td>
+          <td class="border px-3 py-2">${escapeHtml(email)}</td>
+          <td class="border px-3 py-2">${actionBtns('Spouse', result.spouseId)}</td>
+        </tr>`);
+      showPopup("Spouse saved successfully");
+    }
+
+    document.getElementById('spouseForm')?.reset();
+    toggleBlock(spouseFormWrap, spouseToggleBtn);
+  } catch (error) {
+    // Error already handled in apiRequest
+  }
+});
 
 // Children functionality
 const childFormWrap = document.getElementById('childFormWrap');
@@ -920,54 +1252,379 @@ const childToggleBtn = document.getElementById('childToggleBtn');
 const childSaveBtn = document.getElementById('childSave');
 const childCancelBtn = document.getElementById('childCancel');
 
-childToggleBtn.onclick = () => toggleBlock(childFormWrap, childToggleBtn);
+childToggleBtn?.addEventListener('click', () => toggleBlock(childFormWrap, childToggleBtn));
 
-childCancelBtn.onclick = () => {
-  document.getElementById('childForm').reset();
+childCancelBtn?.addEventListener('click', () => {
+  document.getElementById('childForm')?.reset();
   editState.type = null;
   editState.row = null;
+  editState.id = null;
   toggleBlock(childFormWrap, childToggleBtn);
-};
+});
 
-childSaveBtn.onclick = () => {
+childSaveBtn?.addEventListener('click', async () => {
   const name = val('childName');
   const sex = val('childSex');
   const dob = val('childDob');
   const phone = val('childPhone');
+  const email = val('childEmail');
+  const street = val('childStreet');
+  const town = val('childTown');
+  const state = val('childState');
+  const lga = val('childLga');
+  const poBox = val('childPoBox');
+  const school = val('childSchool');
+  const office = val('childOffice');
+  const occupation = val('childOccupation');
 
   if (!name) {
     alert('Full Name is required');
     return;
   }
 
-  const list = document.getElementById('childList');
-  const empty = document.getElementById('childEmpty');
-  if (empty) empty.remove();
-
-  if(editState.type==="Child" && editState.row){
-    // Update existing row
-    const cells = editState.row.querySelectorAll('td');
-    cells[0].textContent = name;
-    cells[1].textContent = sex;
-    cells[2].textContent = dob;
-    cells[3].textContent = phone;
-    editState.type = null;
-    editState.row = null;
-    showPopup("Updating Child");
-  }else{
-    childCounter++;
-    list.insertAdjacentHTML('beforeend',`
-      <tr data-type="Child" data-id="${childCounter}" class="hover:bg-yellow-50">
-        <td class="border px-3 py-2">${escapeHtml(name)}</td>
-        <td class="border px-3 py-2">${escapeHtml(sex)}</td>
-        <td class="border px-3 py-2">${escapeHtml(dob)}</td>
-        <td class="border px-3 py-2">${escapeHtml(phone)}</td>
-        <td class="border px-3 py-2">${actionBtns('Child', childCounter)}</td>
-      </tr>`);
-    showPopup("Saving Child");
+  if (!currentEmployeeId) {
+    alert('Please create/select an employee first');
+    return;
   }
 
-  document.getElementById('childForm').reset();
-  toggleBlock(childFormWrap, childToggleBtn);
+  const childData = {
+    FullName: name,
+    Sex: sex,
+    dateofbirth: dob,
+    Phone: phone,
+    Email: email,
+    Street: street,
+    Town: town,
+    State: state,
+    LocalGovernment: lga,
+    POBox: poBox,
+    School: school,
+    OfficeAddress: office,
+    Occupation: occupation
+  };
+
+  try {
+    const list = document.getElementById('childList');
+    const empty = document.getElementById('childEmpty');
+
+    if (editState.type === "Child" && editState.row && editState.id) {
+      // Update existing child
+      const result = await apiRequest(`${API_BASE}/children/${editState.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(childData)
+      });
+
+      const cells = editState.row.querySelectorAll('td');
+      cells[0].textContent = name;
+      cells[1].textContent = sex;
+      cells[2].textContent = dob;
+      cells[3].textContent = phone;
+      
+      editState.type = null;
+      editState.row = null;
+      editState.id = null;
+      showPopup("Child updated successfully");
+    } else {
+      // Create new child
+      const result = await apiRequest(`${API_BASE}/employees/${currentEmployeeId}/children`, {
+        method: 'POST',
+        body: JSON.stringify(childData)
+      });
+
+      if (empty) empty.remove();
+      
+      childCounter++;
+      list.insertAdjacentHTML('beforeend', `
+        <tr data-type="Child" data-id="${result.childId}" class="hover:bg-yellow-50">
+          <td class="border px-3 py-2">${escapeHtml(name)}</td>
+          <td class="border px-3 py-2">${escapeHtml(sex)}</td>
+          <td class="border px-3 py-2">${escapeHtml(dob)}</td>
+          <td class="border px-3 py-2">${escapeHtml(phone)}</td>
+          <td class="border px-3 py-2">${actionBtns('Child', result.childId)}</td>
+        </tr>`);
+      showPopup("Child saved successfully");
+    }
+
+    document.getElementById('childForm')?.reset();
+    toggleBlock(childFormWrap, childToggleBtn);
+  } catch (error) {
+    // Error already handled in apiRequest
+  }
+});
+
+// Load existing employee data function
+async function loadEmployeeData(employeeId) {
+  try {
+    const result = await apiRequest(`${API_BASE}/employees/${employeeId}`);
+    const { employee, children, nextOfKin, spouse } = result.data;
+    
+    currentEmployeeId = employeeId;
+    
+    // Populate employee form (you'll need to map fields to your form inputs)
+    
+    // Load NOK data
+    const nokList = document.getElementById('nokList');
+    nokList.innerHTML = '';
+    if (nextOfKin.length === 0) {
+      nokList.innerHTML = '<tr id="nokEmpty"><td colspan="5" class="py-4 text-gray-500">No NOKs yet.</td></tr>';
+    } else {
+      nextOfKin.forEach(nok => {
+        nokList.insertAdjacentHTML('beforeend', `
+          <tr data-type="NOK" data-id="${nok.nok_id}" class="hover:bg-yellow-50">
+            <td class="border px-3 py-2">${escapeHtml(nok.FirstName)} ${escapeHtml(nok.LastName)}</td>
+            <td class="border px-3 py-2">${escapeHtml(nok.Relationship)}</td>
+            <td class="border px-3 py-2">${escapeHtml(nok.MobileNumber)}</td>
+            <td class="border px-3 py-2">${escapeHtml(nok.EmailAddress)}</td>
+            <td class="border px-3 py-2">${actionBtns('NOK', nok.nok_id)}</td>
+          </tr>`);
+      });
+    }
+    
+    // Load spouse data
+    const spouseList = document.getElementById('spouseList');
+    spouseList.innerHTML = '';
+    if (spouse.length === 0) {
+      spouseList.innerHTML = '<tr id="spouseEmpty"><td colspan="4" class="py-4 text-gray-500">No spouse records yet.</td></tr>';
+    } else {
+      spouse.forEach(sp => {
+        spouseList.insertAdjacentHTML('beforeend', `
+          <tr data-type="Spouse" data-id="${sp.spouse_id}" class="hover:bg-yellow-50">
+            <td class="border px-3 py-2">${escapeHtml(sp.FullName)}</td>
+            <td class="border px-3 py-2">${escapeHtml(sp.Phone)}</td>
+            <td class="border px-3 py-2">${escapeHtml(sp.Email)}</td>
+            <td class="border px-3 py-2">${actionBtns('Spouse', sp.spouse_id)}</td>
+          </tr>`);
+      });
+    }
+    
+    // Load children data
+    const childList = document.getElementById('childList');
+    childList.innerHTML = '';
+    if (children.length === 0) {
+      childList.innerHTML = '<tr id="childEmpty"><td colspan="5" class="py-4 text-gray-500">No children yet.</td></tr>';
+    } else {
+      children.forEach(child => {
+        childList.insertAdjacentHTML('beforeend', `
+          <tr data-type="Child" data-id="${child.child_id}" class="hover:bg-yellow-50">
+            <td class="border px-3 py-2">${escapeHtml(child.FullName)}</td>
+            <td class="border px-3 py-2">${escapeHtml(child.Sex)}</td>
+            <td class="border px-3 py-2">${escapeHtml(child.dateofbirth)}</td>
+            <td class="border px-3 py-2">${escapeHtml(child.Phone)}</td>
+            <td class="border px-3 py-2">${actionBtns('Child', child.child_id)}</td>
+          </tr>`);
+      });
+    }
+    
+    showPopup("Employee data loaded successfully");
+  } catch (error) {
+    // Error already handled in apiRequest
+  }
+}
+
+// Utility function to populate form fields from employee data
+function populateEmployeeForm(employee) {
+  // Map API field names to form field IDs
+  const fieldMappings = {
+    'Service Number': 'field-service-number',
+    'Rank': 'field-rank',
+    'Surname': 'field-surname',
+    'Other Names': 'field-other-names',
+    'Date of Birth': 'field-date-of-birth',
+    'State Of Origin': 'field-state-of-origin',
+    'Local Government': 'field-local-government',
+    'Town': 'field-town',
+    'Residential Address': 'field-residential-address',
+    'Email Address': 'field-email-address',
+    'GSM Number': 'field-gsm-number',
+    'Sex': 'field-sex',
+    'Marital Status': 'field-marital-status',
+    'Religion': 'field-religion'
+  };
+
+  // Populate form fields
+  Object.entries(fieldMappings).forEach(([label, fieldId]) => {
+    const element = document.getElementById(fieldId);
+    if (element && employee[label]) {
+      element.value = employee[label];
+    }
+  });
+}
+
+// Search and load employee functionality
+async function searchEmployee(query) {
+  try {
+    const result = await apiRequest(`${API_BASE}/employees?search=${encodeURIComponent(query)}`);
+    return result.data;
+  } catch (error) {
+    return [];
+  }
+}
+
+// Initialize employee search if needed
+function initializeEmployeeSearch() {
+  const searchInput = document.getElementById('employeeSearch');
+  const searchResults = document.getElementById('searchResults');
+  
+  if (searchInput && searchResults) {
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(searchTimeout);
+      const query = e.target.value.trim();
+      
+      if (query.length < 2) {
+        searchResults.innerHTML = '';
+        searchResults.classList.add('hidden');
+        return;
+      }
+      
+      searchTimeout = setTimeout(async () => {
+        try {
+          const employees = await searchEmployee(query);
+          displaySearchResults(employees, searchResults);
+        } catch (error) {
+          console.error('Search failed:', error);
+        }
+      }, 300);
+    });
+  }
+}
+
+function displaySearchResults(employees, container) {
+  if (employees.length === 0) {
+    container.innerHTML = '<div class="p-2 text-gray-500">No employees found</div>';
+    container.classList.remove('hidden');
+    return;
+  }
+  
+  container.innerHTML = employees.map(emp => `
+    <div class="p-2 hover:bg-gray-100 cursor-pointer border-b" 
+         onclick="selectEmployee('${emp.Empl_ID}')">
+      <div class="font-medium">${escapeHtml(emp.Surname)} ${escapeHtml(emp.OtherName)}</div>
+      <div class="text-sm text-gray-500">${escapeHtml(emp.Empl_ID)} - ${escapeHtml(emp.Rank)}</div>
+    </div>
+  `).join('');
+  
+  container.classList.remove('hidden');
+}
+
+window.selectEmployee = async function(employeeId) {
+  const searchResults = document.getElementById('searchResults');
+  if (searchResults) {
+    searchResults.classList.add('hidden');
+  }
+  
+  await loadEmployeeData(employeeId);
+  
+  // Switch to personnel tab to show loaded data
+  showTab('personnel');
+};
+
+// Enhanced form validation
+function validatePersonnelForm() {
+  const requiredFields = [
+    'field-service-number',
+    'field-rank', 
+    'field-surname',
+    'field-other-names',
+    'field-date-of-birth'
+  ];
+  
+  const missingFields = [];
+  
+  requiredFields.forEach(fieldId => {
+    const element = document.getElementById(fieldId);
+    if (element && !element.value.trim()) {
+      missingFields.push(element.placeholder || fieldId);
+    }
+  });
+  
+  if (missingFields.length > 0) {
+    alert(`Please fill in the following required fields:\n${missingFields.join('\n')}`);
+    return false;
+  }
+  
+  return true;
+}
+
+// Enhanced personnel form submission with validation
+async function submitPersonnelFormWithValidation() {
+  if (!validatePersonnelForm()) {
+    return;
+  }
+  
+  await submitPersonnelForm();
+}
+
+// Get all employees for listing
+async function loadAllEmployees() {
+  try {
+    const result = await apiRequest(`${API_BASE}/employees`);
+    return result.data;
+  } catch (error) {
+    return [];
+  }
+}
+
+// Export functions for external use
+window.PersonnelAPI = {
+  loadEmployeeData,
+  loadAllEmployees,
+  searchEmployee,
+  selectEmployee,
+  deleteRecord,
+  setCurrentEmployee: (id) => { currentEmployeeId = id; },
+  getCurrentEmployee: () => currentEmployeeId,
+  validateForm: validatePersonnelForm
+};
+
+// Initialize the application
+document.addEventListener('DOMContentLoaded', function() {
+  initializeEmployeeSearch();
+  
+  // Set up form validation on submit
+  const submitButton = document.querySelector('#personnelForm button[type="button"]:last-child');
+  if (submitButton) {
+    submitButton.removeEventListener('click', submitPersonnelForm);
+    submitButton.addEventListener('click', submitPersonnelFormWithValidation);
+  }
+});
+
+// Additional utility functions for data management
+function resetAllForms() {
+  const forms = ['personnelForm', 'nokForm', 'spouseForm', 'childForm'];
+  forms.forEach(formId => {
+    const form = document.getElementById(formId);
+    if (form) form.reset();
+  });
+  
+  currentEmployeeId = null;
+  editState.type = null;
+  editState.row = null;
+  editState.id = null;
+}
+
+function clearAllTables() {
+  const tables = [
+    { listId: 'nokList', emptyId: 'nokEmpty', colspan: '5', message: 'No NOKs yet.' },
+    { listId: 'spouseList', emptyId: 'spouseEmpty', colspan: '4', message: 'No spouse records yet.' },
+    { listId: 'childList', emptyId: 'childEmpty', colspan: '5', message: 'No children yet.' }
+  ];
+  
+  tables.forEach(({ listId, emptyId, colspan, message }) => {
+    const list = document.getElementById(listId);
+    if (list) {
+      list.innerHTML = `<tr id="${emptyId}"><td colspan="${colspan}" class="py-4 text-gray-500">${message}</td></tr>`;
+    }
+  });
+}
+
+// Export additional utilities
+window.PersonnelUtils = {
+  resetAllForms,
+  clearAllTables,
+  escapeHtml,
+  showPopup,
+  showError
 };
 </script>

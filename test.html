@@ -1,301 +1,47 @@
-<script>
-let elementTypeData = [];
-let editingElementId = null;
-let pendingDeleteElementId = null;
+<style>
+ .container{
+  display: flex;
+  flex-direction: column;
+  justify-items: center;
+  align-items: center;
+ }
 
-const elementForm = document.getElementById("elementForm");
-const addNewElementBtn = document.getElementById("addNewElementBtn");
-const saveElementBtn = document.getElementById("saveElementBtn");
-const cancelElementBtn = document.getElementById("cancelElementBtn");
-const elementTableBody = document.getElementById("elementTableBody");
-const searchElement = document.getElementById("searchElement");
+   @media (max-width: 4000px) and (min-width: 1700px) {
+    html {
+      font-size: 100% !important;
+    } 
 
-// --- API Helpers ---
-async function fetchElementTypes() {
-  try {
-    const res = await fetch("/elementtypes");
-    elementTypeData = await res.json();
-    renderElementTable();
-  } catch (err) {
-    showErrorModal("Failed to load element types.");
-    console.error(err);
-  }
-}
-
-async function createElementType(item) {
-  const res = await fetch("/elementtypes", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(item),
-  });
-  
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to create element type');
-  }
-  
-  return res.json();
-}
-
-async function updateElementType(PaymentType, item) {
-  const res = await fetch(`/elementtypes/${PaymentType}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(item),
-  });
-  
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to update element type');
-  }
-  
-  return res.json();
-}
-
-async function deleteElementTypeApi(PaymentType) {
-  const res = await fetch(`/elementtypes/${PaymentType}`, { 
-    method: "DELETE" 
-  });
-  
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to delete element type');
-  }
-  
-  return res.json();
-}
-
-// --- Render Table ---
-function renderElementTable(data = elementTypeData) {
-  elementTableBody.innerHTML = data.map((item, index) => `
-    <tr class="hover:bg-gray-50">
-      <td class="border px-2 py-3">${item.PaymentType}</td>
-      <td class="border px-2 py-3">${item.elmDesc || '-'}</td>
-      <td class="border px-2 py-3">${item.Ledger || '-'}</td>
-      <td class="border px-2 py-3">${item.perc || '-'}</td>
-      <td class="border px-2 py-3">${item.std ? parseFloat(item.std).toLocaleString() : '-'}</td>
-      <td class="border px-2 py-3">${item.maxi ? parseFloat(item.maxi).toLocaleString() : '-'}</td>
-      <td class="border px-2 py-3">
-        <span class="px-2 py-1 text-xs rounded ${item.bpay === 'YES' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-          ${item.bpay}
-        </span>
-      </td>
-      <td class="border px-2 py-3">
-        <span class="px-2 py-1 text-xs rounded ${item.yearend === 'YES' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-          ${item.yearend}
-        </span>
-      </td>
-      <td class="border px-2 py-3">
-        <span class="px-2 py-1 text-xs rounded ${item.Status === 'Active' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">
-          ${item.Status || 'N/A'}
-        </span>
-      </td>
-      <td class="border px-2 py-3">${item.dependence || '-'}</td>
-      <td class="border px-2 py-3">
-        <button onclick="viewElement('${item.PaymentType}')" class="text-blue-600 mr-2">View</button>
-        <button onclick="editElement('${item.PaymentType}')" class="text-green-600 mr-2">Edit</button>
-        <button onclick="deleteElement('${item.PaymentType}')" class="text-red-600">Delete</button>
-      </td>
-    </tr>
-  `).join("");
-}
-
-// --- Add New ---
-addNewElementBtn.addEventListener("click", () => {
-  elementForm.classList.remove("hidden");
-  editingElementId = null;
-  elementForm.reset();
-  document.getElementById("PaymentType").disabled = false; // Enable for new records
-});
-
-// --- Save ---
-saveElementBtn.addEventListener("click", async () => {
-  const item = {
-    PaymentType: document.getElementById("PaymentType").value.trim().toUpperCase(),
-    elmDesc: document.getElementById("elmDesc").value.trim(),
-    Ledger: document.getElementById("Ledger").value.trim(),
-    perc: document.getElementById("perc").value.trim(),
-    std: parseFloat(document.getElementById("std").value) || null,
-    maxi: parseFloat(document.getElementById("maxi").value) || null,
-    bpay: document.getElementById("bpay").value,
-    yearend: document.getElementById("yearend").value,
-    Status: document.getElementById("Status").value,
-    dependence: document.getElementById("dependence").value.trim() || null,
-    payfreq: document.getElementById("payfreq").value || null,
-    pmonth: document.getElementById("pmonth").value || null,
-    freetax: parseFloat(document.getElementById("freetax").value) || null,
-    ipis: document.getElementById("ipis").value || null
-  };
-
-  // Validation
-  if (!item.PaymentType || !item.bpay || !item.yearend) {
-    showErrorModal("Please fill in Payment Type, Basic Pay, and Year End fields.");
-    return;
-  }
-
-  if (item.PaymentType.length > 6) {
-    showErrorModal("Payment Type cannot exceed 6 characters.");
-    return;
-  }
-
-  try {
-    if (editingElementId) {
-      await updateElementType(editingElementId, item);
-      showSuccessModal("Element type updated successfully!");
-    } else {
-      await createElementType(item);
-      showSuccessModal("Element type created successfully!");
+    label{
+      font-size: 100% !important;
     }
-
-    await fetchElementTypes();
-    elementForm.classList.add("hidden");
-    elementForm.reset();
-    editingElementId = null;
-    
-  } catch (err) {
-    showErrorModal(err.message);
-    console.error(err);
   }
-});
 
-// --- Cancel ---
-cancelElementBtn.addEventListener("click", () => {
-  elementForm.classList.add("hidden");
-  elementForm.reset();
-  editingElementId = null;
-});
-
-// --- Actions ---
-window.viewElement = function(PaymentType) {
-  const item = elementTypeData.find(e => e.PaymentType === PaymentType);
-  if (!item) return;
-
-  // Populate view modal with data
-  document.getElementById("viewContent").innerHTML = `
-    <div class="grid grid-cols-2 gap-4">
-      <div><strong>Payment Type:</strong> ${item.PaymentType}</div>
-      <div><strong>Description:</strong> ${item.elmDesc || 'N/A'}</div>
-      <div><strong>Ledger:</strong> ${item.Ledger || 'N/A'}</div>
-      <div><strong>Percentage:</strong> ${item.perc || 'N/A'}</div>
-      <div><strong>Standard Amount:</strong> ${item.std ? parseFloat(item.std).toLocaleString() : 'N/A'}</div>
-      <div><strong>Maximum:</strong> ${item.maxi ? parseFloat(item.maxi).toLocaleString() : 'N/A'}</div>
-      <div><strong>Basic Pay:</strong> ${item.bpay}</div>
-      <div><strong>Year End:</strong> ${item.yearend}</div>
-      <div><strong>Status:</strong> ${item.Status || 'N/A'}</div>
-      <div><strong>Dependence:</strong> ${item.dependence || 'N/A'}</div>
-      <div><strong>Pay Frequency:</strong> ${item.payfreq || 'N/A'}</div>
-      <div><strong>Pay Month:</strong> ${item.pmonth || 'N/A'}</div>
-      <div><strong>Free Tax:</strong> ${item.freetax ? parseFloat(item.freetax).toLocaleString() : 'N/A'}</div>
-      <div><strong>IPIS:</strong> ${item.ipis || 'N/A'}</div>
-      <div><strong>Created By:</strong> ${item.createdby || 'N/A'}</div>
-      <div><strong>Date Created:</strong> ${item.datecreated ? new Date(item.datecreated).toLocaleString() : 'N/A'}</div>
-    </div>
-  `;
-  
-  showModal("viewModal");
-};
-
-window.editElement = function(PaymentType) {
-  const item = elementTypeData.find(e => e.PaymentType === PaymentType);
-  if (!item) return;
-  
-  // Populate form fields
-  document.getElementById("PaymentType").value = item.PaymentType;
-  document.getElementById("elmDesc").value = item.elmDesc || '';
-  document.getElementById("Ledger").value = item.Ledger || '';
-  document.getElementById("perc").value = item.perc || '';
-  document.getElementById("std").value = item.std || '';
-  document.getElementById("maxi").value = item.maxi || '';
-  document.getElementById("bpay").value = item.bpay || 'NO';
-  document.getElementById("yearend").value = item.yearend || 'NO';
-  document.getElementById("Status").value = item.Status || 'Active';
-  document.getElementById("dependence").value = item.dependence || '';
-  document.getElementById("payfreq").value = item.payfreq || '';
-  document.getElementById("pmonth").value = item.pmonth || '';
-  document.getElementById("freetax").value = item.freetax || '';
-  document.getElementById("ipis").value = item.ipis || '';
-  
-  editingElementId = PaymentType;
-  document.getElementById("PaymentType").disabled = true; // Disable editing of primary key
-  elementForm.classList.remove("hidden");
-};
-
-window.deleteElement = function(PaymentType) {
-  pendingDeleteElementId = PaymentType;
-  const item = elementTypeData.find(e => e.PaymentType === PaymentType);
-  const description = item ? item.elmDesc || PaymentType : PaymentType;
-  showConfirmModal(`Are you sure you want to delete "${description}"? This action cannot be undone.`);
-};
-
-// --- Confirm delete action ---
-document.getElementById("confirmAction").addEventListener("click", async () => {
-  if (pendingDeleteElementId) {
-    try {
-      await deleteElementTypeApi(pendingDeleteElementId);
-      await fetchElementTypes();
-      showSuccessModal("Element type deleted successfully!");
-    } catch (err) {
-      showErrorModal(err.message);
-      console.error(err);
+  @media (max-width: 1023px) and (min-width: 600px) {
+    .p-6 {
+        padding-top: 7% !important;
     }
-    pendingDeleteElementId = null;
   }
-  closeModal("confirmModal");
-});
 
-// Modal functions
-function showModal(modalId) {
-  document.getElementById(modalId).classList.remove("hidden");
+  @media (max-width: 768px) {
+    html {
+      font-size: 85% !important;
+    }
+  }
+
+  @media (max-width: 600px) {
+    html {
+    font-size: 70% !important;
+  }
+
+    @media (max-width: 468px) {
+    .email-wrap {
+      word-break: break-word;
+      max-width: 70px;
+    }
+  }
 }
+</style>
 
-function closeModal(modalId) {
-  document.getElementById(modalId).classList.add("hidden");
-}
+<div class="flex, flex-col, justify-between, items-center">
 
-function showSuccessModal(message) {
-  document.getElementById("successMessage").textContent = message;
-  showModal("successModal");
-}
-
-function showErrorModal(message) {
-  document.getElementById("errorMessage").textContent = message;
-  showModal("errorModal");
-}
-
-function showConfirmModal(message) {
-  document.getElementById("confirmMessage").textContent = message;
-  showModal("confirmModal");
-}
-
-// Modal event listeners
-document.getElementById("closeSuccessModal").addEventListener("click", () => closeModal("successModal"));
-document.getElementById("closeErrorModal").addEventListener("click", () => closeModal("errorModal"));
-document.getElementById("closeViewModal").addEventListener("click", () => closeModal("viewModal"));
-
-document.getElementById("cancelConfirm").addEventListener("click", () => {
-  closeModal("confirmModal");
-});
-
-// Close modals when clicking outside
-const modals = ['successModal', 'errorModal', 'confirmModal', 'viewModal'];
-modals.forEach(modalId => {
-  document.getElementById(modalId).addEventListener("click", (e) => {
-    if (e.target === e.currentTarget) closeModal(modalId);
-  });
-});
-
-// --- Search ---
-searchElement.addEventListener("input", (e) => {
-  const term = e.target.value.toLowerCase();
-  const filtered = elementTypeData.filter(e =>
-    e.PaymentType.toLowerCase().includes(term) || 
-    (e.elmDesc && e.elmDesc.toLowerCase().includes(term)) ||
-    (e.Ledger && e.Ledger.toLowerCase().includes(term)) ||
-    (e.Status && e.Status.toLowerCase().includes(term))
-  );
-  renderElementTable(filtered);
-});
-
-// --- Initialize ---
-fetchElementTypes();
-</script>
+</div>

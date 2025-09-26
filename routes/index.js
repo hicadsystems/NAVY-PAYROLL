@@ -2,11 +2,12 @@
 const usersRoutes = require('./administration/users');
 const rolesRoutes = require('./administration/roles');
 const switchpayrollclassRoutes = require('./administration/switchpayrollclass');
-const permissionsRouter = require('./administration/permissions');
+const permissionsRoutes = require('./administration/permissions');
 
 
 
 //Personnel Profile
+const personnelRoutes = require('./personnel-profile/personnels');
 
 
 
@@ -29,6 +30,8 @@ const payperrankRoutes = require('./refrence-tables/payperrank');
 const mutuallyexclusiveRoutes = require('./refrence-tables/mutuallyexclusive');
 const salaryscaleRoutes = require('./refrence-tables/salaryscale');
 const pfaRoutes = require('./refrence-tables/pfa');
+const dropdownhelperRoutes = require('./refrence-tables/dropdownhelper');
+
 
 
 
@@ -42,9 +45,11 @@ module.exports = (app) => {
     app.use('/api/users', usersRoutes);
     app.use('/', rolesRoutes);
     app.use('/', switchpayrollclassRoutes);
-    app.use('/roles', permissionsRouter);
+    app.use('/roles', permissionsRoutes);
 
 
+    //personnel profile
+    app.use('/personnel', personnelRoutes);
 
 
     //utilities
@@ -65,7 +70,8 @@ module.exports = (app) => {
     app.use("/cmd", commandRoutes);
     app.use("/rank", payperrankRoutes);
     app.use("/mutually", mutuallyexclusiveRoutes);
-    app.use("/pfa", pfaRoutes)
+    app.use("/pfa", pfaRoutes);
+    app.use("/reference", dropdownhelperRoutes);
     
 
 

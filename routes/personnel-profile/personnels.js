@@ -20,7 +20,7 @@ router.get('/employees', verifyToken, async (req, res) => {
       LEFT JOIN NextOfKin n ON e.Empl_ID = n.Empl_ID AND n.IsActive = 1
       LEFT JOIN Spouse s ON e.Empl_ID = s.Empl_ID AND s.spactive = 1
       GROUP BY e.Empl_ID
-      ORDER BY e.Surname, e.OtherName
+      ORDER BY e.Empl_ID ASC
     `);
     res.json({ success: true, data: rows });
   } catch (error) {
@@ -69,15 +69,26 @@ router.get('/employees/:id', verifyToken, async (req, res) => {
   }
 });
 
-// POST create new employee
+// POST create employee
 router.post('/employees', verifyToken, async (req, res) => {
   try {
+    console.log('=== CREATE EMPLOYEE ===');
+    console.log('Received fields:', Object.keys(req.body));
+    console.log('Passport present?', !!req.body.passport);
+    if (req.body.passport) {
+      console.log('Passport length:', req.body.passport.length);
+    }
+    
     const fields = Object.keys(req.body);
     const values = Object.values(req.body);
     const placeholders = fields.map(() => '?').join(', ');
     
     const query = `INSERT INTO hr_employees (${fields.join(', ')}) VALUES (${placeholders})`;
+    console.log('Executing query with', fields.length, 'fields');
+    
     const [result] = await pool.execute(query, values);
+    
+    console.log('Insert successful, ID:', req.body.Empl_ID);
     
     res.status(201).json({ 
       success: true, 
@@ -85,6 +96,7 @@ router.post('/employees', verifyToken, async (req, res) => {
       employeeId: req.body.Empl_ID 
     });
   } catch (error) {
+    console.error('CREATE ERROR:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -92,6 +104,14 @@ router.post('/employees', verifyToken, async (req, res) => {
 // PUT update employee
 router.put('/employees/:id', verifyToken, async (req, res) => {
   try {
+    console.log('=== UPDATE EMPLOYEE ===');
+    console.log('Employee ID:', req.params.id);
+    console.log('Received fields:', Object.keys(req.body));
+    console.log('Passport present?', !!req.body.passport);
+    if (req.body.passport) {
+      console.log('Passport length:', req.body.passport.length);
+    }
+    
     const fields = Object.keys(req.body);
     const values = Object.values(req.body);
     const setClause = fields.map(field => `${field} = ?`).join(', ');
@@ -99,12 +119,15 @@ router.put('/employees/:id', verifyToken, async (req, res) => {
     const query = `UPDATE hr_employees SET ${setClause} WHERE Empl_ID = ?`;
     const [result] = await pool.execute(query, [...values, req.params.id]);
     
+    console.log('Affected rows:', result.affectedRows);
+    
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Employee not found' });
     }
     
     res.json({ success: true, message: 'Employee updated successfully' });
   } catch (error) {
+    console.error('UPDATE ERROR:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });

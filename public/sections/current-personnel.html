@@ -178,13 +178,20 @@
 </div>
 
 <script>
-// Personnel management functionality
+// Current Personnel Management Script with Integrated View
+const API_BASE = '/personnel';
+const API_HEADERS = {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${localStorage.getItem('token')}`
+};
+
 class PersonnelManager {
   constructor() {
     this.currentPage = 1;
     this.recordsPerPage = 10;
-    this.personnel = []; // This would come from your backend
+    this.personnel = [];
     this.filteredPersonnel = [];
+    this.currentViewId = null;
     this.init();
   }
 
@@ -193,16 +200,38 @@ class PersonnelManager {
     this.setupEventListeners();
   }
 
-  loadPersonnelData() {
-    // Mock data - replace with actual API call
-    this.personnel = [
-      { id: 'NN003', name: 'MD Manager', rank: 'Lt', status: 'active', tribe: 'Yoruba', religion: 'Islam', phone: '08012345678', email: 'md.manager@example.com' },
-      { id: 'NN004', name: 'PO Officer', rank: 'PO', status: 'suspended', tribe: 'Igbo', religion: 'Christianity', phone: '08087654321', email: 'po.officer@example.com' },
-      { id: 'NN002', name: 'Chief Admin', rank: 'Cdr', status: 'active', tribe: 'Tiv', religion: 'Christianity', phone: '08023456789', email: 'chief.admin@example.com' },
-      { id: 'NN001', name: 'Wizzy Hicad', rank: 'Adm', status: 'active', tribe: 'Efik', religion: 'Islam', phone: '08034567890', email: 'wizzy.hicad@example.com' },
-    ];
-    this.filteredPersonnel = [...this.personnel];
-    this.renderTable();
+  async apiRequest(url, options = {}) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: { ...API_HEADERS, ...options.headers }
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('API Request failed:', error);
+      this.showError(error.message);
+      throw error;
+    }
+  }
+
+  async loadPersonnelData() {
+    try {
+      const result = await this.apiRequest(`${API_BASE}/employees`);
+      this.personnel = result.data || [];
+      this.filteredPersonnel = [...this.personnel];
+      this.renderTable();
+    } catch (error) {
+      this.personnel = [];
+      this.filteredPersonnel = [];
+      this.renderTable();
+    }
   }
 
   setupEventListeners() {
@@ -210,36 +239,41 @@ class PersonnelManager {
     const rankFilter = document.getElementById('rank-filter');
     const statusFilter = document.getElementById('status-filter');
 
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        this.filterPersonnel();
-      });
-    }
+    searchInput?.addEventListener('input', () => this.filterPersonnel());
+    rankFilter?.addEventListener('change', () => this.filterPersonnel());
+    statusFilter?.addEventListener('change', () => this.filterPersonnel());
 
-    if (rankFilter) {
-      rankFilter.addEventListener('change', (e) => {
-        this.filterPersonnel();
-      });
-    }
+    const prevPageBtn = document.getElementById('prev-page');
+    const nextPageBtn = document.getElementById('next-page');
 
-    if (statusFilter) {
-      statusFilter.addEventListener('change', (e) => {
-        this.filterPersonnel();
-      });
-    }
+    prevPageBtn?.addEventListener('click', () => {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+        this.renderTable();
+      }
+    });
+
+    nextPageBtn?.addEventListener('click', () => {
+      const totalPages = Math.ceil(this.filteredPersonnel.length / this.recordsPerPage);
+      if (this.currentPage < totalPages) {
+        this.currentPage++;
+        this.renderTable();
+      }
+    });
   }
 
   filterPersonnel() {
-    const search = document.getElementById('personnel-search').value.toLowerCase();
-    const rank = document.getElementById('rank-filter').value;
-    const status = document.getElementById('status-filter').value;
+    const search = document.getElementById('personnel-search')?.value.toLowerCase() || '';
+    const rank = document.getElementById('rank-filter')?.value || '';
+    const status = document.getElementById('status-filter')?.value || '';
 
     this.filteredPersonnel = this.personnel.filter(person => {
-      const matchesSearch = person.name.toLowerCase().includes(search) || 
-                           person.id.toLowerCase().includes(search) ||
-                           person.rank.toLowerCase().includes(search);
-      const matchesRank = !rank || person.rank === rank;
-      const matchesStatus = !status || person.status === status;
+      const matchesSearch = person.Surname?.toLowerCase().includes(search) || 
+                           person.OtherName?.toLowerCase().includes(search) ||
+                           person.Empl_ID?.toLowerCase().includes(search) ||
+                           person.Title?.toLowerCase().includes(search);
+      const matchesRank = !rank || person.Title === rank;
+      const matchesStatus = !status || person.Status === status;
 
       return matchesSearch && matchesRank && matchesStatus;
     });
@@ -250,26 +284,34 @@ class PersonnelManager {
 
   renderTable() {
     const tbody = document.getElementById('personnel-table-body');
+    if (!tbody) return;
+
     const startIndex = (this.currentPage - 1) * this.recordsPerPage;
     const endIndex = startIndex + this.recordsPerPage;
     const pageData = this.filteredPersonnel.slice(startIndex, endIndex);
 
+    if (pageData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">No personnel found</td></tr>';
+      this.updatePaginationInfo();
+      return;
+    }
+
     tbody.innerHTML = pageData.map(person => `
       <tr class="hover:bg-gray-50">
-        <td class="border border-gray-300 px-4 py-2">${person.id}</td>
-        <td class="border border-gray-300 px-4 py-2 font-medium">${person.name}</td>
-        <td class="border border-gray-300 px-4 py-2">${person.rank}</td>
+        <td class="border border-gray-300 px-4 py-2">${this.escapeHtml(person.Empl_ID || '')}</td>
+        <td class="border border-gray-300 px-4 py-2 font-medium">${this.escapeHtml(person.Surname || '')} ${this.escapeHtml(person.OtherName || '')}</td>
+        <td class="border border-gray-300 px-4 py-2">${this.escapeHtml(person.Title || '')}</td>
         <td class="border border-gray-300 px-4 py-2">
-          <span class="px-2 py-1 rounded-full text-xs ${this.getStatusClass(person.status)}">
-            ${person.status.charAt(0).toUpperCase() + person.status.slice(1)}
+          <span class="px-2 py-1 rounded-full text-xs ${this.getStatusClass(person.Status || 'ACTIVE')}">
+            ${this.capitalizeFirst(person.Status || 'ACTIVE')}
           </span>
         </td>
         <td class="border border-gray-300 px-4 py-2 text-center">
-          <button onclick="personnelManager.viewEmployee('${person.id}')" 
+          <button onclick="personnelManager.viewEmployee('${person.Empl_ID}')" 
                   class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 mr-1">View</button>
-          <button onclick="personnelManager.editEmployee('${person.id}')" 
+          <button onclick="personnelManager.editEmployee('${person.Empl_ID}')" 
                   class="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 mr-1">Edit</button>
-          <button onclick="personnelManager.deleteEmployee('${person.id}')" 
+          <button onclick="personnelManager.deleteEmployee('${person.Empl_ID}')" 
                   class="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700">Delete</button>
         </td>
       </tr>
@@ -279,26 +321,38 @@ class PersonnelManager {
   }
 
   getStatusClass(status) {
-    switch(status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-red-100 text-red-800';
-      case 'suspended': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    const s = status?.toUpperCase();
+    if (s === 'ACTIVE' || s === '1') return 'bg-green-100 text-green-800';
+    if (s === 'INACTIVE' || s === '0') return 'bg-red-100 text-red-800';
+    return 'bg-yellow-100 text-yellow-800';
   }
 
   updatePaginationInfo() {
     const total = this.filteredPersonnel.length;
-    const start = (this.currentPage - 1) * this.recordsPerPage + 1;
+    const start = total > 0 ? (this.currentPage - 1) * this.recordsPerPage + 1 : 0;
     const end = Math.min(start + this.recordsPerPage - 1, total);
 
     const showingStart = document.getElementById('showing-start');
     const showingEnd = document.getElementById('showing-end');
     const totalRecords = document.getElementById('total-records');
 
-    if (showingStart) showingStart.textContent = total > 0 ? start : 0;
+    if (showingStart) showingStart.textContent = start;
     if (showingEnd) showingEnd.textContent = end;
     if (totalRecords) totalRecords.textContent = total;
+
+    const prevBtn = document.getElementById('prev-page');
+    const nextBtn = document.getElementById('next-page');
+    const totalPages = Math.ceil(total / this.recordsPerPage);
+
+    if (prevBtn) {
+      prevBtn.disabled = this.currentPage <= 1;
+      prevBtn.classList.toggle('opacity-50', this.currentPage <= 1);
+    }
+
+    if (nextBtn) {
+      nextBtn.disabled = this.currentPage >= totalPages;
+      nextBtn.classList.toggle('opacity-50', this.currentPage >= totalPages);
+    }
   }
 
   showSuccess(message) {
@@ -306,128 +360,145 @@ class PersonnelManager {
     const icon = document.getElementById('popupIcon');
     const text = document.getElementById('popupText');
 
-    // Reset to spinner
+    if (!popup || !icon || !text) return;
+
     icon.className = "mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin";
     text.textContent = message;
-
     popup.classList.remove('hidden');
 
-    setTimeout(()=>{
+    setTimeout(() => {
       icon.className = "mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-green-500 text-white";
       icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                         </svg>`;
       text.textContent = "Success!";
-      setTimeout(()=>{
+      setTimeout(() => {
         popup.classList.add('hidden');
-        icon.innerHTML = ""; // clear so spinner can be restored next call
-      },1000);
-    },1500);
+        icon.innerHTML = "";
+      }, 1000);
+    }, 1500);
   }
 
+  showError(message) {
+    alert(`Error: ${message}`);
+  }
 
-  viewEmployee(id) {
-    const employee = this.personnel.find(p => p.id === id);
-    if (employee) {
-      document.getElementById("viewEmployeeContent").innerHTML = `
-        <p><strong>Name:</strong> ${employee.name}</p>
-        <p><strong>Personnel No:</strong> ${employee.id}</p>
-        <p><strong>Status:</strong> ${employee.status}</p>
-        <p><strong>Rank:</strong> ${employee.rank}</p>
-        <p><strong>Tribe:</strong> ${employee.tribe}</p>
-        <p><strong>Religion:</strong> ${employee.religion}</p>
-        <p><strong>Phone:</strong> ${employee.phone}</p>
-        <p><strong>Email:</strong> ${employee.email}</p>
-      `;
-      document.getElementById("viewEmployeeModal").classList.remove("hidden");
+  async viewEmployee(id) {
+    this.currentViewId = id;
+    
+    // Navigate to view-personnel section and load data
+    if (window.navigation?.navigateToSection) {
+      window.navigation.navigateToSection('view-personnel', 'View Personnel');
+      setTimeout(() => {
+        if (window.ViewPersonnel?.loadEmployee) {
+          window.ViewPersonnel.loadEmployee(id);
+        }
+      }, 100);
     }
   }
 
-  closeViewEmployee() {
-    document.getElementById("viewEmployeeModal").classList.add("hidden");
-  }
+  async editEmployee(id) {
+    try {
+      // set flag before navigating
+        console.log("Edit employee called, setting flag true for:", id);
+        window.navigatedFromCurrentPersonnel = true;
 
+      if (window.navigation?.navigateToSection) {
+        window.navigation.navigateToSection('add-personnel', 'Edit Personnel');
+      }
 
-  editEmployee(id) {
-    const employee = this.personnel.find(p => p.id === id);
-    if (employee) {
-      document.getElementById("editEmployeeId").value = employee.id;
-      document.getElementById("editEmployeeName").value = employee.name;
-      document.getElementById("editEmployeeEmail").value = employee.email;
-      document.getElementById("editEmployeePhone").value = employee.phone;
-      document.getElementById("editEmployeeStatus").value = employee.status;
-      document.getElementById("editEmployeeRank").value = employee.rank;
-      document.getElementById("editEmployeeModal").classList.remove("hidden");
+      setTimeout(async () => {
+        if (window.PersonnelAPI?.loadEmployeeDataForEdit) {
+          await window.PersonnelAPI.loadEmployeeDataForEdit(id);
+        }
+      }, 100);
+
+    } catch (error) {
+      this.showError('Failed to load employee for editing: ' + error.message);
     }
-  }
-
-  closeEditEmployee() {
-    document.getElementById("editEmployeeModal").classList.add("hidden");
   }
 
   deleteEmployee(id) {
-    this.deleteId = id; // store temporarily
-    document.getElementById("deleteEmployeeModal").classList.remove("hidden");
+    this.deleteId = id;
+    document.getElementById("deleteEmployeeModal")?.classList.remove("hidden");
   }
 
   closeDeleteEmployee() {
     this.deleteId = null;
-    document.getElementById("deleteEmployeeModal").classList.add("hidden");
-  };
+    document.getElementById("deleteEmployeeModal")?.classList.add("hidden");
+  }
 
-  // Method to reinitialize after DOM changes
+  async confirmDeleteEmployee() {
+    if (!this.deleteId) return;
+
+    try {
+      await this.apiRequest(`${API_BASE}/employees/${this.deleteId}`, {
+        method: 'DELETE'
+      });
+
+      this.personnel = this.personnel.filter(p => p.Empl_ID !== this.deleteId);
+      this.filterPersonnel();
+      
+      this.showSuccess("Personnel and all related records deleted successfully");
+      this.closeDeleteEmployee();
+      
+    } catch (error) {
+      this.showError('Failed to delete personnel: ' + error.message);
+    }
+  }
+
+  escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    }[m]));
+  }
+
+  capitalizeFirst(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
+
+  async refresh() {
+    await this.loadPersonnelData();
+  }
+
   reinitialize() {
     this.setupEventListeners();
     this.renderTable();
   }
 }
 
-// Save Edit
-document.getElementById("editEmployeeForm").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const id = document.getElementById("editEmployeeId").value;
-  const employee = window.personnelManager.personnel.find(p => p.id == id);
-  if (employee) {
-    employee.name = document.getElementById("editEmployeeName").value;
-    employee.email = document.getElementById("editEmployeeEmail").value;
-    employee.phone = document.getElementById("editEmployeePhone").value;
-    employee.status = document.getElementById("editEmployeeStatus").value;
-    employee.rank = document.getElementById("editEmployeeRank").value;
-    window.personnelManager.renderTable();
-    window.personnelManager.closeEditEmployee();
-    window.personnelManager.showSuccess("Updating Personnel...");
+// Event Listeners
+document.addEventListener('DOMContentLoaded', function() {
+  const confirmDeleteBtn = document.getElementById("confirmDeleteEmployeeBtn");
+  if (confirmDeleteBtn) {
+    confirmDeleteBtn.addEventListener("click", () => {
+      if (window.personnelManager) {
+        window.personnelManager.confirmDeleteEmployee();
+      }
+    });
   }
 });
 
-// Confirm Delete
-document.getElementById("confirmDeleteEmployeeBtn").addEventListener("click", () => {
-  if (window.personnelManager.deleteId) {
-    window.personnelManager.personnel = window.personnelManager.personnel.filter(
-      p => p.id !== window.personnelManager.deleteId
-    );
-    window.personnelManager.filterPersonnel();
-    window.personnelManager.deleteId = null;
-    window.personnelManager.closeDeleteEmployee();
-    window.personnelManager.showSuccess("Deleting Personnel...");
-  }
-});
+// Initialize
+let personnelManager;
 
-// Initialize when section loads
-const personnelManager = new PersonnelManager();
-
-// Initialize globally
-window.personnelManager = new PersonnelManager();
-
-// Make sure to attach to window object for global access
-if (!window.personnelManager) {
-  window.personnelManager = new PersonnelManager();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializePersonnelManager);
 } else {
-  // If it already exists, reinitialize it
-  window.personnelManager.reinitialize();
+  initializePersonnelManager();
 }
 
-// Also expose as global variable for backward compatibility
-if (typeof personnelManager === 'undefined') {
-  const personnelManager = window.personnelManager;
+function initializePersonnelManager() {
+  if (!window.personnelManager) {
+    personnelManager = new PersonnelManager();
+    window.personnelManager = personnelManager;
+  } else {
+    window.personnelManager.reinitialize();
+    personnelManager = window.personnelManager;
+  }
 }
+
+window.personnelManager = window.personnelManager || {};
 </script>

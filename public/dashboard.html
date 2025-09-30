@@ -41,14 +41,27 @@
     animation: expand .9s ease-in-out infinite;
   }
 
-  html {
+  html { 
     overflow-y: scroll; /* scrollbar is always reserved */
+    scrollbar-width: none;       /* Firefox */
+    -ms-overflow-style: none; 
+  }
+
+  body {
+    overflow: auto;              /* keep scrolling */
+    scrollbar-width: none;       /* Firefox */
+    -ms-overflow-style: none;    /* IE/Edge */
+  }
+
+  body::-webkit-scrollbar,
+  html::-webkit-scrollbar {
+    display: none;               /* Chrome, Safari, Opera */
   }
 </style>
 
-<body class="bg-gradient-to-br from-amber-50 to-blue-100 min-h-screen antialiased dark">
+<body class="bg-gradient-to-br from-amber-50 to-blue-100 min-h-dvh antialiased dark overflow-auto">
   <!-- container padded to 1440px on large screens -->
-  <div class="max-w-layout mx-auto min-h-screen">
+  <div class="max-w-layout mx-auto min-h-dvh flex flex-col">
 
     <!-- top row: left hamburger + brand, right logo -->
     <header class="flex items-center justify-between py-4 px-2 lg:px-0">
@@ -90,10 +103,11 @@
       <img src="photos/rectangle171997-waq-200w.png" alt="logo" class="hidden sm:block lg:w-[57px] h-[68px] object-contain" />
     </header>
 
-    <div class="grid grid-cols-1 lg:grid-cols-[250px_1fr] gap-6">
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-[250px_1fr] gap-6 overflow-hidden">
 
       <!-- Sidebar -->
-      <aside id="sidebar" class="overlap-wrapper shadow-lg lg:sticky lg:top-6 lg:h-[calc(100vh-48px)] overflow-y-auto">
+      <aside id="sidebar" 
+             class="overlap-wrapper shadow-lg lg:sticky lg:top-0 h-full overflow-y-auto">
         <div class="p-5">
         </div>
 

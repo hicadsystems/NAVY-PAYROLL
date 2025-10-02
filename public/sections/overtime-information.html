@@ -65,10 +65,10 @@
 <script>
 let hasOvertime = false; // track if record exists
 
-function updateStdfixState() {
+/*function updateStdfixState() {
   const stdfix = document.getElementById('stdfix');
   stdfix.disabled = hasOvertime;
-}
+}*/
 
 function showModal() { 
   const modal = document.getElementById('successModal'); 
@@ -96,7 +96,7 @@ async function loadForm() {
     // map basicpay → taxovertime field
     form.elements['taxovertime'].value = row.basicpay == 1 ? "Yes" : "No";
   }
-  updateStdfixState();
+  //updateStdfixState();
 }
 
 // Save form
@@ -124,7 +124,7 @@ document.getElementById('overtimeForm').addEventListener('submit', async (e) => 
   if (res.ok) {
     showModal();
     hasOvertime = true;
-    updateStdfixState();
+    //updateStdfixState();
   } else {
     alert("Error: " + (result.error || result.message));
   }

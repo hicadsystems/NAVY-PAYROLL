@@ -111,6 +111,22 @@ router.put('/overpayment', verifyToken, async (req, res) => {
   }
 });
 
+router.delete('/overpayment', verifyToken, async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT type FROM py_stdrate WHERE type = 'BT04' LIMIT 1");
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "No overpayment (BT04) record exists to delete" });
+    }
+
+    await pool.query("DELETE FROM py_stdrate WHERE type = 'BT04'");
+    res.json({ message: "Overpayment (BT04) deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting overpayment:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 
 /* ============================================
    PAYROLL STATUS (BT05)

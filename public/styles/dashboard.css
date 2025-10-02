@@ -109,3 +109,86 @@ body.no-scroll {
 .no-scroll {
   overflow: hidden;
 }
+
+/* Left bar (grows from bottom up) */
+@keyframes grow-up {
+  0%, 100% { height: 0; bottom: 0; top: auto; }
+  50% { height: 100%; bottom: 0; top: auto; }
+}
+
+/* Right bar (grows from top down) */
+@keyframes grow-down {
+  0%, 100% { height: 0; top: 0; bottom: auto; }
+  50% { height: 100%; top: 0; bottom: auto; }
+}
+
+/* Middle bar expands horizontally */
+@keyframes expand {
+  0%, 100% { width: 0; }
+  50% { width: 30px; }
+}
+
+.animate-grow-up {
+  animation: grow-up .9s ease-in-out infinite;
+}
+.animate-grow-down {
+  animation: grow-down .9s ease-in-out infinite;
+}
+.animate-expand {
+  animation: expand .9s ease-in-out infinite;
+}
+
+html { 
+  overflow-y: scroll; /* scrollbar is always reserved */
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none; 
+}
+
+body {
+  overflow: auto;              /* keep scrolling */
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE/Edge */
+}
+
+body::-webkit-scrollbar,
+html::-webkit-scrollbar {
+  display: none;               /* Chrome, Safari, Opera */
+}
+
+  @media print {
+  /* Hide non-printable elements */
+  button, input, .no-print {
+    display: none !important;
+  }
+  
+  /* Style the print table */
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  
+  .print-table th {
+    background-color: #f3f4f6 !important;
+    color: #1f2937 !important;
+    padding: 12px;
+    text-align: left;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .print-table td {
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .print-header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .print-footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 12px;
+  }
+}

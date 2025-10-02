@@ -6,8 +6,10 @@
         <h1 class="text-xl font-bold">Fixed Amount By Rank Management</h1>
     </div>
         <!-- Add Button -->
-    <div class="mb-2 flex justify-end">
+    <div class="mb-2 gap-2 flex justify-end">
         <button id="showFormBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New</button>
+         <button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+        <i class="fas fa-file-alt mr-2"></i>Generate Report</button>
     </div>
 </div>
 
@@ -17,7 +19,10 @@
         <!-- Description Section -->
         <div class="mb-2">
             <label class="block text-md font-bold text-gray-700 mb-2">Description or Type</label>
-            <input type="text" maxlength="6" id="description" class="w-full lg:w-1/2 md:w-2/3 border-2 border-blue-500 bg-transparent rounded px-3 py-2 text-sm focus:border-blue-600 focus:outline-none" placeholder="Enter type">
+            <select id="description" class="w-full lg:w-1/2 md:w-2/3 border-2 border-blue-500 bg-transparent rounded px-3 py-2 text-sm focus:border-blue-600 focus:outline-none">
+                <option value="" disabled selected>Select Description / Type</option>
+                 <!-- populated-->
+            </select>
         </div>
 
         <!-- Rank Grid -->
@@ -213,6 +218,7 @@
 <script>
 let editingIndex = null;
 let data = [];
+let elementTypeData = [];
 let originalData = null;
 
 const form = document.getElementById("rankAmountForm");
@@ -220,6 +226,55 @@ const showFormBtn = document.getElementById("showFormBtn");
 const saveBtn = document.getElementById("saveBtn");
 const cancelBtn = document.getElementById("cancelBtn");
 const tableBody = document.getElementById("rankAmountTable");
+
+async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`/reference/${endpoint}`, {   
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      }
+    });
+    const data = await response.json();
+    const dropdown = document.getElementById(elementId);
+    if (!dropdown) return;
+    dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+    data.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item[valueField];
+      option.textContent = item[textField];
+      dropdown.appendChild(option);
+    });
+    return data;
+  } catch (err) {
+    console.error(`Failed to load ${endpoint}:`, err);
+    return [];
+  }
+}
+
+async function loadAllDropdowns() {
+  try {
+    console.log("Loading dropdowns...");
+    elementTypeData = await loadDropdown(
+      "elementType", 
+      "description", 
+      "PaymentType", 
+      "elmDesc", 
+      "Select Element Type"
+    );
+    console.log("Dropdown data loaded:", elementTypeData);
+  } catch (err) {
+    console.error("Error loading dropdowns:", err);
+  }
+}
+
+// Helper function to get elmDesc from PaymentType
+function getElmDesc(paymentType) {
+  const element = elementTypeData.find(item => item.PaymentType === paymentType);
+  return element ? element.elmDesc : paymentType;
+}
 
 const rankFields = [
   'trainee', 'os', 'sm', 'ab', 'ls', 'po', 'wo', 'mwo', 'cadet', 'nwo',
@@ -393,6 +448,9 @@ function getToken() {
 //  Load from API
 async function loadData() {
   try {
+    // Load dropdowns first
+    await loadAllDropdowns();
+
     const res = await fetch("/rank", {
       headers: { "Authorization": `Bearer ${getToken()}`}
     });
@@ -409,7 +467,7 @@ window.viewRow = function(index) {
   const item = data[index];
   let html = `
     <div class="mb-4">
-      <h4 class="text-lg font-semibold">Type: ${item.one_type}</h4>
+      <h4 class="text-lg font-semibold">Type: ${getElmDesc(item.one_type)}</h4>
     </div>
     <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
   `;
@@ -429,24 +487,28 @@ window.viewRow = function(index) {
 };
 
 // Edit row
-window.editRow = function(index) {
+window.editRow = async function(index) {
   const item = data[index];
 
-  //store original values for comparison
+  // Store original values for comparison
   originalData = {
     one_type: item.one_type
   };
 
-  document.getElementById("description").value = item.one_type;
+  // Wait for dropdowns to load before setting values
+  await loadAllDropdowns();
+
+  // Set the select dropdown value
+  const descriptionSelect = document.getElementById("description");
+  descriptionSelect.value = item.one_type;
+  descriptionSelect.disabled = true;
+
+  // Set all rank field values
   rankFields.forEach(rank => {
     document.getElementById(rank).value = item.ranks[rank] || 0;
   });
 
-  //clear any validation messages
-  document.getElementById('description').setCustomValidity("");
-
   editingIndex = index;
-  document.getElementById('description').disabled = true;
   form.classList.remove("hidden");
 };
 
@@ -558,7 +620,7 @@ saveBtn.addEventListener("click", async () => {
 function renderTable() {
   tableBody.innerHTML = data.map((item, index) => `
     <tr class="hover:bg-gray-50">
-      <td class="border px-4 py-2 text-left">${item.one_type}</td>
+      <td class="border px-4 py-2 text-left">${getElmDesc(item.one_type)}</td>
       <td class="border px-4 py-2 text-center">
         <button onclick="viewRow(${index})" class="text-blue-600 hover:text-blue-800 mr-2">View</button>
         <button onclick="editRow(${index})" class="text-green-600 hover:text-green-800 mr-2">Edit</button>
@@ -613,7 +675,176 @@ document.getElementById("closeViewModal").addEventListener("click", () => closeM
   });
 });
 
+//generate report functionality
+function generateReport() {
+  const now = new Date();
+  const dateStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  
+  const printWindow = window.open('', '_blank');
+
+  // Group ranks by category
+  const rankGroups = {
+    'Non-Commissioned Officers': ['trainee', 'os', 'sm', 'ab', 'ls', 'po', 'wo', 'mwo'],
+    'Cadets': ['cadet', 'nwo', 'midshipman'],
+    'Junior Officers': ['slt', 'lt', 'ltcdr'],
+    'Senior Officers': ['cdr', 'capt', 'cdre'],
+    'Flag Officers': ['radm', 'vadm', 'adm'],
+    'Special Categories': ['contract', 'rtdofficers']
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN'
+    }).format(amount || 0);
+  };
+
+  const printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Fixed Amount by Rank Report</title>
+      <style>
+        body { 
+          font-family: Arial, sans-serif;
+          margin: 20px;
+          color: #333;
+        }
+        .report-header {
+          text-align: center;
+          margin-bottom: 20px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid #1a56db;
+        }
+        .date-time {
+          font-size: 14px;
+          color: #666;
+          margin: 10px 0;
+        }
+        .report-title {
+          font-size: 24px;
+          color: #1a56db;
+          margin: 10px 0;
+        }
+        .element-section {
+          margin-bottom: 20px;
+          border: 1px solid #e5e7eb;
+          padding: 15px;
+          border-radius: 5px;
+        }
+        .element-title {
+          font-size: 18px;
+          color: #1a56db;
+          margin-bottom: 15px;
+          padding-bottom: 5px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        .rank-group {
+          margin-bottom: 15px;
+        }
+        .group-title {
+          font-size: 14px;
+          font-weight: bold;
+          color: #4b5563;
+          margin: 10px 0;
+          background-color: #f9fafb;
+          padding: 5px;
+        }
+        .rank-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 10px;
+          font-size: 11px;
+        }
+        .rank-table th {
+          background-color: #f3f4f6;
+          padding: 6px;
+          text-align: left;
+          border: 1px solid #e5e7eb;
+        }
+        .rank-table td {
+          padding: 6px;
+          border: 1px solid #e5e7eb;
+        }
+        .amount {
+          text-align: right;
+          font-family: monospace;
+        }
+        .report-footer {
+          margin-top: 20px;
+          text-align: center;
+          font-size: 12px;
+          color: #666;
+          border-top: 1px solid #e5e7eb;
+          padding-top: 15px;
+        }
+        @media print {
+          .rank-table th {
+            background-color: #f3f4f6 !important;
+            -webkit-print-color-adjust: exact;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="report-header">
+        <div class="report-title">Fixed Amount by Rank Report</div>
+        <div class="date-time">Generated on: ${dateStr} at ${timeStr}</div>
+      </div>
+
+      ${data.map(item => `
+        <div class="element-section">
+          <div class="element-title">
+            ${getElmDesc(item.one_type)}
+          </div>
+          
+          ${Object.entries(rankGroups).map(([groupName, ranks]) => `
+            <div class="rank-group">
+              <div class="group-title">${groupName}</div>
+              <table class="rank-table">
+                <thead>
+                  <tr>
+                    <th width="60%">Rank</th>
+                    <th width="40%">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${ranks.map(rank => `
+                    <tr>
+                      <td>${rank.toUpperCase()}</td>
+                      <td class="amount">${formatCurrency(item.ranks[rank])}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `).join('')}
+        </div>
+      `).join('')}
+
+      <div class="report-footer">
+        <p>Total Records: ${data.length}</p>
+        <p>Generated by: ${localStorage.getItem('full_name') || 'System User'}</p>
+        <p>*** End of Report ***</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.write(printContent);
+  printWindow.document.close();
+
+  printWindow.onload = function() {
+    printWindow.print();
+  };
+}
+
+// Add event listener to generate report button
+document.getElementById('generateReportBtn').addEventListener('click', generateReport);
+
 
 // load on page ready
 loadData();
+loadAllDropdowns();
 </script>

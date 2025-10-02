@@ -12,15 +12,16 @@ const tables = {
   sex: "py_sex",
   relationship: "py_relationship",
   status: "py_status",
-  country: "py_country",
-  marital: "py_maritalstatus",
-  title: "py_title",
+  country: "py_Country",
+  marital: "py_MaritalStatus",
+  title: "py_Title",
   specialisation: "py_specialisationarea",
   state: "py_tblstates",
-  lga: "py_tbllga",
+  lga: "py_tblLGA",
   pfa: "py_pfa",
   religion: "py_religion",
-  exittype: "py_exittype"
+  exittype: "py_exittype",
+  elementtype: "py_elementType"
 };
 
 

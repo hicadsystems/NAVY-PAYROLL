@@ -5,6 +5,8 @@
     <div class="flex flex-wrap gap-2">
       <input type="text" id="searchSection" placeholder="Name or UnitCode..." class="border rounded px-3 py-2">
       <button id="addNewSectionBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add Command</button>
+      <button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+        <i class="fas fa-file-alt mr-2"></i>Generate Report</button>
     </div>
   </div>
 
@@ -117,18 +119,23 @@
     }
   }
 
-  function renderSectionTable(data = commandData) {
+  function renderSectionTable(data = commandData, isFiltered = false) {
     const tbody = document.getElementById("sectionTableBody");
-    tbody.innerHTML = data.map((item, index) => `
-      <tr class="hover:bg-gray-50">
-        <td class="border px-2 py-3">${item.navalcmd}</td>
-        <td class="border px-2 py-3">${item.name}</td>
-        <td class="border px-2 py-3">
-          <button onclick="editSection(${index})" class="text-green-600 hover:text-green-900 mr-2">Edit</button>
-          <button onclick="deleteSection('${index}')" class="text-red-600 hover:text-red-900">Delete</button>
-        </td>
-      </tr>
-    `).join("");
+    tbody.innerHTML = data.map((item, index) => {
+      // If filtered, use _originalIndex; otherwise, fall back to index
+      const realIndex = isFiltered ? item._originalIndex : index;
+
+      return `
+        <tr class="hover:bg-gray-50">
+          <td class="border px-2 py-3">${item.navalcmd}</td>
+          <td class="border px-2 py-3">${item.name}</td>
+          <td class="border px-2 py-3">
+            <button onclick="editSection(${realIndex})" class="text-green-600 hover:text-green-900 mr-2">Edit</button>
+            <button onclick="deleteSection(${realIndex})" class="text-red-600 hover:text-red-900">Delete</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
   }
 
   // Save record
@@ -144,8 +151,11 @@
         name: document.getElementById('name').value.trim(),
       };
 
-      if (!item.navalcmd || !item.name){
-        showSectionError('Naval Command and Name are required.');
+      const requiredFields = ['navalcmd', 'name'];
+      let missingFields = requiredFields.filter(field => !item[field]);
+
+      if (missingFields.length > 0) {
+        showSectionError(`Please fill in all required fields: ${missingFields.join(", ")}`);
         return;
       }
 
@@ -334,19 +344,126 @@
   // search
   searchSection.addEventListener("input", () => {
     const query = searchSection.value.toLowerCase();
-    const filtered = commandData.filter(item =>
-      item.name.toLowerCase().includes(query) || item.navalcmd.toLowerCase().includes(query)
-    );
-    renderSectionTable(filtered);
+    
+    const filtered = commandData
+      .map((item, index) => ({ ...item, _originalIndex: index })) // attach original index
+      .filter(item =>
+        item.name.toLowerCase().includes(query) || item.navalcmd.toLowerCase().includes(query)
+      );
+
+    renderSectionTable(filtered, true); // pass flag to tell table we're using filtered data
   });
 
   // Force uppercase as user types 
-["navalcmd", "name"].forEach(id => {
-  const el = document.getElementById(id);
-  el.addEventListener("input", () => {
-    el.value = el.value.toUpperCase();
+  ["navalcmd", "name"].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener("input", () => {
+      el.value = el.value.toUpperCase();
+    });
   });
-});
+
+  //generate reports
+  function generateReport() {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    const dateStr = `${day}-${month}-${year}`;
+    
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    
+    // Generate HTML content
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Commands Report</title>
+        <style>
+          body { 
+            font-family: Arial, sans-serif;
+            margin: 40px; 
+          }
+          .print-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 20px; 
+          }
+          .print-table th { 
+            background-color: #f3f4f6; 
+            color: #1f2937;
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #e5e7eb;
+          }
+          .print-table td { 
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+          }
+          .print-header { 
+            text-align: center; 
+            margin-bottom: 20px; 
+          }
+          .date-generated {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 30px;
+          }
+          .print-footer { 
+            text-align: center; 
+            margin-top: 20px; 
+            font-size: 12px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-header">
+          <h1>States Report</h1>
+          <p class="date-generated">Generated on: ${dateStr}</p>
+        </div>
+        
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Command</th>
+              <th>Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${commandData.map((item, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${item.navalcmd}</td>
+                <td>${item.name}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="print-footer">
+          <p>Total Records: ${commandData.length}</p>
+          <p>Generated by: ${localStorage.getItem('full_name') || 'System User'}</p>
+          <p>*** End of Report ***</p>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    // Write content to new window
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    
+    // Wait for content to load then print
+    printWindow.onload = function() {
+      printWindow.print();
+    };
+  }
+
+  // Add event listener to generate report button
+  document.getElementById('generateReportBtn').addEventListener('click', generateReport);
 
   // init
   renderSectionTable();

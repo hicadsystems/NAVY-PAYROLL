@@ -5,6 +5,8 @@
     <div class="flex flex-wrap gap-2">
       <input type="text" id="searchLga" placeholder="Search by name or state" class="border rounded px-3 py-2">
       <button id="addNewLgaBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New LGA</button>
+       <button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+        <i class="fas fa-file-alt mr-2"></i>Generate Report</button>
     </div>
   </div>
 
@@ -252,19 +254,24 @@
   
 
   // Render LGA table
-  function renderLgaTable(data = lgaData) {
-    lgaTableBody.innerHTML = data.map((item, index) => `
+  function renderLgaTable(data = lgaData, isFiltered = false) {
+    lgaTableBody.innerHTML = data.map((item, index) => {
+
+      const realIndex = isFiltered ? item._originalIndex : index;
+
+      return `
       <tr class="hover:bg-gray-50">
         <td class="border px-2 py-3">${item.Lgname}</td>
         <td class="border px-2 py-3">${item.Lgcode}</td>
         <td class="border px-2 py-3">${stateMap[item.Statecode] || item.Statecode}</td>
         <td class="border px-2 py-3">
-          <button onclick="viewLga(${index})" class="text-blue-600 mr-2">View</button>
-          <button onclick="editLga(${index})" class="text-green-600 mr-2">Edit</button>
-          <button onclick="deleteLga(${index})" class="text-red-600">Delete</button>
+          <button onclick="viewLga(${realIndex})" class="text-blue-600 mr-2">View</button>
+          <button onclick="editLga(${realIndex})" class="text-green-600 mr-2">Edit</button>
+          <button onclick="deleteLga(${realIndex})" class="text-red-600">Delete</button>
         </td>
       </tr>
-    `).join("");
+    `;
+    }).join("");
   }
 
   // Add new
@@ -291,8 +298,12 @@
         Lghqs: document.getElementById("lghqs").value.trim(),
       };
 
-      if (!item.Lgname || !item.Lgcode || !item.Statecode) {
-        showErrorModal("Please fill in all required fields.");
+      const requiredFields = ["Lgname", "Lgcode", "Statecode"];
+      
+      const missingFields = requiredFields.filter(field => !item[field]);
+
+      if (missingFields.length > 0) {
+        showErrorModal(`Please fill in all required fields: ${missingFields.join(", ")}`);
         return;
       }
 
@@ -492,11 +503,13 @@
   // Search
   searchLga.addEventListener("input", (e) => {
     const term = e.target.value.toLowerCase();
-    const filtered = lgaData.filter(l =>
-      l.Lgname.toLowerCase().includes(term) || 
-      l.Statecode.toLowerCase().includes(term)
+    const filtered = lgaData.
+    map((item, index) => ({ ...item, _originalIndex: index })) // attach original index.
+    .filter(item =>
+      item.Lgname.toLowerCase().includes(term) || 
+      item.Statecode.toLowerCase().includes(term)
     );
-    renderLgaTable(filtered);
+    renderLgaTable(filtered, true);
   });
 
 
@@ -567,6 +580,113 @@
       el.value = el.value.toUpperCase();
     });
   });
+
+  //generate report functionality
+  function generateReport() {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  const dateStr = `${day}-${month}-${year}`;
+  
+  // Create a new window for printing
+  const printWindow = window.open('', '_blank');
+  
+  // Generate HTML content
+  const printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Local Government Report</title>
+      <style>
+        body { 
+          font-family: Arial, sans-serif;
+          margin: 40px; 
+        }
+        .print-table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          margin-bottom: 20px; 
+        }
+        .print-table th { 
+          background-color: #f3f4f6; 
+          color: #1f2937;
+          padding: 12px;
+          text-align: left;
+          border: 1px solid #e5e7eb;
+        }
+        .print-table td { 
+          padding: 12px;
+          border: 1px solid #e5e7eb;
+        }
+        .print-header { 
+          text-align: center; 
+          margin-bottom: 20px; 
+        }
+        .date-generated {
+          font-size: 14px;
+          color: #666;
+          margin-bottom: 30px;
+        }
+        .print-footer { 
+          text-align: center; 
+          margin-top: 20px; 
+          font-size: 12px;
+          border-top: 1px solid #eee;
+          padding-top: 20px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="print-header">
+        <h1>States Report</h1>
+        <p class="date-generated">Generated on: ${dateStr}</p>
+      </div>
+      
+      <table class="print-table">
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>LGA Name</th>
+            <th>LGA Code</th>
+            <th>State</th>
+            <th>LGA Headquaters</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lgaData.map((item, index) => `
+            <tr>
+              <td>${index + 1}</td>
+              <td>${item.Lgname}</td>
+              <td>${item.Lgcode}</td>
+              <td>${stateMap[item.Statecode] || item.Statecode}</td>
+              <td>${item.Lghqs}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      
+      <div class="print-footer">
+        <p>Total Records: ${lgaData.length}</p>
+        <p>Generated by: ${localStorage.getItem('full_name') || 'System User'}</p>
+        <p>*** End of Report ***</p>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  // Write content to new window
+  printWindow.document.write(printContent);
+  printWindow.document.close();
+  
+  // Wait for content to load then print
+  printWindow.onload = function() {
+    printWindow.print();
+  };
+}
+
+// Add event listener to generate report button
+document.getElementById('generateReportBtn').addEventListener('click', generateReport);
 
   
 // Initial load

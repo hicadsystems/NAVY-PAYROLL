@@ -3,8 +3,9 @@
   <div class="flex flex-wrap gap-2 justify-between mb-6">
     <h3 class="text-xl font-semibold text-gray-800">Department Management</h3>
     <div class="flex flex-wrap gap-2">
-      <input type="text" id="searchDept" placeholder="Search by ID or Name" class="border rounded px-3 py-2">
       <button id="addNewDeptBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add Department</button>
+      <button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+       <i class="fas fa-file-alt mr-2"></i>Generate Report</button>
     </div>
   </div>
 
@@ -143,7 +144,7 @@ const addNewDeptBtn = document.getElementById("addNewDeptBtn");
 const saveDeptBtn = document.getElementById("saveDeptBtn");
 const cancelDeptBtn = document.getElementById("cancelDeptBtn");
 const deptTableBody = document.getElementById("deptTableBody");
-const searchDept = document.getElementById("searchDept");
+//const searchDept = document.getElementById("searchDept");
 
 // Load departments
 async function loadDepartments() {
@@ -291,8 +292,12 @@ saveDeptBtn.addEventListener("click", async () => {
     AddressCode: document.getElementById("AddressCode").value.trim(),
   };
 
-  if (!item.factcode || !item.deptcode || !item.factname || !item.deptname || !item.coordcode || !item.acct) {
-    showErrorModal("Factory code, Deptartment code, Factory Name, Department Name, account, and Coor Code are required.");
+  const requiredFields = ["factcode", "deptcode", "factname", "deptname", "coordcode", "acct"];
+
+  let missingFields = requiredFields.filter(field => !item[field] && item[field] !== 0);
+
+  if (missingFields.length > 0) {
+    showErrorModal(`Please fill in all required fields: ${missingFields.join(', ')}`);
     return;
   }
 
@@ -500,18 +505,6 @@ document.getElementById("deptConfirmAction").addEventListener("click", async () 
   closeModal("deptConfirmModal");
 });
 
-//
-// Search
-//
-searchDept.addEventListener("input", (e) => {
-  const term = e.target.value.toLowerCase();
-  const filtered = deptData.filter(d =>
-    d.factname?.toLowerCase().includes(term) ||
-    d.deptname?.toLowerCase().includes(term)
-  );
-  renderDeptTable(filtered);
-});
-
 
   function showModal(modalId) {
     document.getElementById(modalId).classList.remove("hidden");
@@ -542,21 +535,220 @@ searchDept.addEventListener("input", (e) => {
     pendingDeleteDeptIndex = null;
   });
 
-  searchDept.addEventListener("input", () => {
+  /*searchDept.addEventListener("input", () => {
     const query = searchDept.value.toLowerCase();
     const filtered = deptData.filter(item =>
       item.id.toLowerCase().includes(query) || item.name.toLowerCase().includes(query)
     );
     renderDeptTable(filtered);
-  });
+  });*/
 
-    // Close modals when clicking outside
+  // Close modals when clicking outside
   const modals = ['deptSuccessModal', 'deptErrorModal', 'deptConfirmModal', 'deptViewModal'];
   modals.forEach(modalId => {
     document.getElementById(modalId).addEventListener("click", (e) => {
       if (e.target === e.currentTarget) closeModal(modalId);
     });
   });
+
+    function generateReport() {
+    const now = new Date();
+    const dateStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    const printWindow = window.open('', '_blank');
+    
+    const formatCurrency = (amount) => {
+      if (!amount) return '-';
+      return new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency: 'NGN'
+      }).format(amount);
+    };
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Departments Report</title>
+        <style>
+          body { 
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #333;
+          }
+          .report-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #1a56db;
+          }
+          .report-title {
+            font-size: 24px;
+            color: #1a56db;
+            margin: 10px 0;
+          }
+          .date-time {
+            font-size: 14px;
+            color: #666;
+            margin: 10px 0;
+          }
+          .element-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 11px;
+          }
+          .element-table th {
+            background-color: #f3f4f6;
+            padding: 6px;
+            text-align: left;
+            border: 1px solid #e5e7eb;
+          }
+          .element-table td {
+            padding: 6px;
+            border: 1px solid #e5e7eb;
+          }
+          .amount {
+            text-align: right;
+          }
+          .report-footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 15px;
+          }
+          .status-active {
+            color: green;
+            font-weight: bold;
+          }
+          .status-inactive {
+            color: red;
+            font-weight: bold;
+          }
+          @media print {
+            .element-table th {
+              background-color: #f3f4f6 !important;
+              -webkit-print-color-adjust: exact;
+            }
+            .sn-column {
+              width: 40px;
+              text-align: center;
+              font-weight: bold;
+              background-color: #f3f4f6;
+              vertical-align: middle;
+              border-right: 2px solid #1a56db;
+            }
+            .element-section {
+              margin-bottom: 30px;
+              padding-bottom: 10px;
+              border-bottom: 1px dashed #e5e7eb;
+            }
+            .combined-tables {
+              border: 1px solid #e5e7eb;
+              margin-bottom: 20px;
+            }
+            .element-table {
+              margin-bottom: 0;
+              border: none;
+            }
+            .element-table:first-child {
+              border-bottom: 2px solid #e5e7eb;
+            }
+        </style>
+      </head>
+      <body>
+        <div class="report-header">
+          <div class="report-title">Pay Element Description Report</div>
+          <div class="date-time">Generated on: ${dateStr} at ${timeStr}</div>
+        </div>
+
+
+      ${deptData.map((item, index) => `
+        <div class="combined-tables">          
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td class="sn-column" rowspan="4" style="width: 40px;">
+                ${index + 1}
+              </td>
+              <td style="padding: 0;">
+                <!-- First table -->
+                <table class="element-table" style="width: 100%;">
+                  <thead>
+                    <tr>
+                      <th>Factory Code</th>
+                      <th>Factory Name</th>
+                      <th>Dept Code</th>
+                      <th>Dept Name</th>
+                      <th>Coord Code</th>
+                      <th>Manager</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>${item.factcode}</td>
+                      <td>${item.factname}</td>
+                      <td>${item.deptcode}</td>
+                      <td>${item.deptname}</td>
+                      <td>${item.coordcode}</td>
+                      <td>${item.manager}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0;">
+                <!-- Second table -->
+                <table class="element-table" style="width: 100%;">
+                  <thead>
+                    <tr>
+                      <th>HOD</th>
+                      <th>Account</th>
+                      <th>Misc 1</th>
+                      <th>Misc 2</th>
+                      <th>Misc 3</th>
+                      <th>Address Code</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>${item.hod}</td>
+                      <td>${item.acct}</td>
+                      <td>${item.misc1}</td>
+                      <td>${item.misc2 }</td>
+                      <td>${item.misc3}</td>
+                      <td>${item.AddressCode}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </div>
+      `).join('')}
+
+      <div class="report-footer">
+        <p>Total Records: ${deptData.length}</p>
+        <p>Generated by: ${localStorage.getItem('full_name') || 'System User'}</p>
+        <p>*** End of Report ***</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+
+    printWindow.onload = function() {
+      printWindow.print();
+    };
+  }
+
+  // Add event listener to generate report button
+  document.getElementById('generateReportBtn').addEventListener('click', generateReport);
 
 
   renderDeptTable();

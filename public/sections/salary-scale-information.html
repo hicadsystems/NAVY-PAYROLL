@@ -10,7 +10,11 @@
   <div id="groupSection">
     <div class="flex justify-between mb-4">
       <h2 class="text-xl lg:text-2xl text-blue-600 font-bold">Salary Groups</h2>
-      <button id="addNewGroupBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New Group</button>
+      <div class="flex flex-wrap gap-2">
+        <button id="addNewGroupBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New Group</button>
+        <!--<button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+        <i class="fas fa-file-alt mr-2"></i>Generate Report</button>      -->
+      </div>
     </div>
 
     <form id="groupForm" class="hidden grid grid-cols-2 gap-4">
@@ -61,10 +65,8 @@
           class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
           Batch Upload
         </button>
-        <button id="generateReportsBtn" type="button"
-          class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
-          Generate Reports
-        </button>
+         <button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+        <i class="fas fa-file-alt mr-2"></i>Generate Report</button>
       </div>
     </div>
 
@@ -888,16 +890,25 @@ function checkDropdownSelections() {
 
 // Save Group - Modified for backend integration
 document.getElementById("saveGroupBtn").addEventListener("click", async () => {
+
   const groupData = {
     groupcode: document.getElementById("groupCode").value,
     grpdesc: document.getElementById("groupDesc").value,
     effdate: document.getElementById("groupEff").value,
     lastdate: document.getElementById("groupLast").value
   };
-  
+
+  const requiredFields = ['groupcode', 'grpdesc'];
+
+  let missingFields = requiredFields.filter(field => !groupData[field]);
+
+  if (missingFields.length > 0) {
+    showAlert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+    return;
+  }
+
   if(groupData.groupcode && groupData.grpdesc) {
     try {
-
       
       if(editingGroupIndex !== null) {
         // Update existing group
@@ -956,7 +967,16 @@ document.getElementById("scaleForm").addEventListener("submit", async (e) => {
   }
   
   try {
-    
+
+    const requiredFields = ['salcode', 'saltype', 'grade'];
+
+    let missingFields = requiredFields.filter(field => !scaleData[field]);
+
+    if (missingFields.length > 0) {
+      showAlert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      return;
+    }
+
     if(editingScaleIndex !== null) {
       // Update existing scale
       await ApiService.updateScale(salcode, saltype, grade, scaleData);
@@ -1271,6 +1291,258 @@ function capitalizeWords(str) {
     el.value = el.value.toUpperCase();
   });
 });
+
+function generateReport() {
+  const activeSection = document.getElementById('groupSection').classList.contains('hidden') ? 'scale' : 'group';
+  const now = new Date();
+  const dateStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  
+  const printWindow = window.open('', '_blank');
+  
+  const printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${activeSection === 'scale' ? 'Salary Scale' : 'Salary Group'} Report</title>
+      <style>
+        @page { margin: 1in; }
+        body { 
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 20px;
+          color: #333;
+        }
+        .report-header {
+          text-align: center;
+          margin-bottom: 30px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid #1a56db;
+        }
+        .logo {
+          width: 100px;
+          height: auto;
+          margin-bottom: 10px;
+        }
+        .date-time {
+          font-size: 14px;
+          color: #666;
+          margin: 10px 0;
+        }
+        .report-title {
+          font-size: 24px;
+          color: #1a56db;
+          margin: 10px 0;
+        }
+        .report-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 20px 0;
+          font-size: 12px;
+        }
+        .report-table th {
+          background-color: #f3f4f6;
+          padding: 12px 8px;
+          text-align: left;
+          border: 1px solid #e5e7eb;
+          font-weight: bold;
+        }
+        .report-table td {
+          padding: 8px;
+          border: 1px solid #e5e7eb;
+        }
+        .report-table tr:nth-child(even) {
+          background-color: #f9fafb;
+        }
+        .step-value {
+          text-align: right;
+          font-family: monospace;
+        }
+        .report-footer {
+          margin-top: 30px;
+          text-align: center;
+          font-size: 12px;
+          color: #666;
+          border-top: 1px solid #e5e7eb;
+          padding-top: 20px;
+        }
+        .group-info {
+          margin: 20px 0;
+          padding: 15px;
+          background-color: #f9fafb;
+          border-radius: 8px;
+        }
+        @media print {
+          .report-table th {
+            background-color: #f3f4f6 !important;
+            -webkit-print-color-adjust: exact;
+          }
+          .report-table tr:nth-child(even) {
+            background-color: #f9fafb !important;
+            -webkit-print-color-adjust: exact;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="report-header">
+        <div class="report-title">
+          ${activeSection === 'scale' ? 'Salary Scale Configuration' : 'Salary Group Configuration'} Report
+        </div>
+        <div class="date-time">Generated on: ${dateStr} at ${timeStr}</div>
+      </div>
+      
+      ${activeSection === 'scale' ? generateScaleReport() : generateGroupReport()}
+      
+      <div class="report-footer">
+        <p>Total Records: ${activeSection === 'scale' ? scales.length : groups.length}</p>
+        <p>*** End of Report ***</p>
+        <p>Generated by: ${localStorage.getItem('full_name') || 'System User'}</p>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(printContent);
+  printWindow.document.close();
+  
+  printWindow.onload = function() {
+    printWindow.print();
+  };
+}
+
+function generateScaleReport() {
+  const formatCurrency = (amount) => {
+    if (!amount) return '-';
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 2
+    }).format(amount);
+  };
+
+  let html = '';
+  const groupedScales = {};
+  scales.forEach(scale => {
+    if (!groupedScales[scale.salcode]) {
+      groupedScales[scale.salcode] = [];
+    }
+    groupedScales[scale.salcode].push(scale);
+  });
+
+  Object.keys(groupedScales).sort().forEach(salcode => {
+    const groupScales = groupedScales[salcode];
+    const group = groups.find(g => g.groupcode === salcode);
+    
+    html += `
+      <div class="group-info" style="page-break-inside: avoid; margin-bottom: 20px;">
+        <h3>Salary Group: ${salcode} - ${group?.grpdesc || 'N/A'}</h3>
+        <p>Effective Date: ${group?.effdate || 'N/A'} | Last Date: ${group?.lastdate || 'N/A'}</p>
+      </div>
+
+      ${groupScales.map(scale => `
+        <div style="page-break-inside: avoid; margin-bottom: 30px;">
+          <h4 style="margin-bottom: 10px;">Grade: ${scale.grade} - Element: ${scale.saltype}</h4>
+          
+          <!-- Steps 1-10 -->
+          <table class="report-table" style="margin-bottom: 5px;">
+            <tr>
+              <th>Step</th>
+              ${Array.from({length: 10}, (_, i) => `<th>Step ${i + 1}</th>`).join('')}
+            </tr>
+            <tr>
+              <td><strong>Amount</strong></td>
+              ${scale.steps.slice(0, 10).map(step => `
+                <td class="step-value">${formatCurrency(step)}</td>
+              `).join('')}
+            </tr>
+          </table>
+
+          <!-- Steps 11-20 -->
+          <table class="report-table">
+            <tr>
+              <th>Step</th>
+              ${Array.from({length: 9}, (_, i) => `<th>Step ${i + 11}</th>`).join('')}
+              <th>Max Step</th>
+            </tr>
+            <tr>
+              <td><strong>Amount</strong></td>
+              ${scale.steps.slice(10).map(step => `
+                <td class="step-value">${formatCurrency(step)}</td>
+              `).join('')}
+            </tr>
+          </table>
+        </div>
+      `).join('')}
+    `;
+  });
+
+  return `
+    <style>
+      @media print {
+        .group-info {
+          background-color: #f9fafb !important;
+          -webkit-print-color-adjust: exact;
+          padding: 15px;
+          margin: 20px 0;
+          border: 1px solid #e5e7eb;
+        }
+        .report-table {
+          font-size: 11px;
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .report-table th,
+        .report-table td {
+          padding: 6px 4px;
+          border: 1px solid #e5e7eb;
+          text-align: center;
+        }
+        .report-table th {
+          background-color: #f3f4f6 !important;
+          -webkit-print-color-adjust: exact;
+        }
+        .step-value {
+          white-space: nowrap;
+          text-align: right;
+        }
+        h4 {
+          color: #1a56db;
+          margin: 15px 0 5px 0;
+        }
+      }
+    </style>
+    ${html}
+  `;
+}
+
+function generateGroupReport() {
+  return `
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Group Code</th>
+          <th>Description</th>
+          <th>Effective Date</th>
+          <th>Last Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${groups.map(group => `
+          <tr>
+            <td>${group.groupcode}</td>
+            <td>${group.grpdesc}</td>
+            <td>${group.effdate || 'N/A'}</td>
+            <td>${group.lastdate || 'N/A'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// Add event listener to generate report button
+document.getElementById('generateReportBtn').addEventListener('click', generateReport);
 
 // Initialize
 initializeData();

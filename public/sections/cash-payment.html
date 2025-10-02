@@ -87,10 +87,56 @@
   </div>
 </div>
 
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+    <h3 id="confirmTitle" class="text-lg font-semibold mb-3">Confirm</h3>
+    <p id="confirmMessage" class="text-gray-700 mb-6"></p>
+    <div class="flex justify-end gap-3">
+      <button id="confirmNoBtn" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded">No</button>
+      <button id="confirmYesBtn" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded">Yes</button>
+    </div>
+  </div>
+</div>
+
 
 <script>
 const apiUrl = "/overpayment"; 
 let bt04 = null; // holds BT04 record
+
+// Storage key for the mapping
+const STORAGE_KEY = "overpayment_basicpay_map";
+
+// Load mapping from localStorage
+function loadMapping() {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  return stored ? JSON.parse(stored) : {};
+}
+
+// Save mapping to localStorage
+function saveMapping(map) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+}
+
+// Get original input from storage
+function getOriginalBasicPay(code) {
+  const map = loadMapping();
+  return map[code] || null;
+}
+
+// Set original input in storage
+function setOriginalBasicPay(code, value) {
+  const map = loadMapping();
+  map[code] = value;
+  saveMapping(map);
+}
+
+// Clear mapping for a specific code
+function clearOriginalBasicPay(code) {
+  const map = loadMapping();
+  delete map[code];
+  saveMapping(map);
+}
 
 function showModal() { 
   const modal = document.getElementById('successModal'); 
@@ -115,12 +161,30 @@ function showAlert(message, title = "Alert") {
   };
 }
 
+function showConfirm(message, title = "Confirm", onConfirm) {
+  const modal = document.getElementById("confirmModal");
+  const msg = document.getElementById("confirmMessage");
+  const ttl = document.getElementById("confirmTitle");
+  const yesBtn = document.getElementById("confirmYesBtn");
+  const noBtn = document.getElementById("confirmNoBtn");
+
+  ttl.textContent = title;
+  msg.textContent = message;
+
+  modal.classList.remove("hidden");
+
+  yesBtn.onclick = () => {
+    modal.classList.add("hidden");
+    if (onConfirm) onConfirm();
+  };
+
+  noBtn.onclick = () => {
+    modal.classList.add("hidden");
+  };
+}
 
 const salaryMap = {
   1: "BASIC PAY",
-  2: "HOUSING ALLOWANCE",
-  3: "TRANSPORT ALLOWANCE",
-  4: "MEAL SUBSIDY"
 };
 
 async function loadOverpayment() {
@@ -129,8 +193,7 @@ async function loadOverpayment() {
   });
   bt04 = await res.json();
 
- renderTable();
-
+  renderTable();
 }
 
 // Render table
@@ -138,13 +201,15 @@ function renderTable() {
   salaryTable.innerHTML = "";
   if (bt04 && bt04.basicpay) {
     const code = parseInt(bt04.basicpay);
-    const label = salaryMap[code] || bt04.basicpay;
+    // Display the original input from storage or fallback to mapped value
+    const label = getOriginalBasicPay(code) || salaryMap[code] || bt04.basicpay;
     const row = document.createElement("tr");
     row.innerHTML = `
       <td class="border px-3 py-2">${label}</td>
       <td class="border px-3 py-2">${bt04.ord || 0}%</td>
       <td class="border px-3 py-2 text-center">
-        <button class="text-blue-500 editBtn">Edit</button>
+        <button class="text-blue-500 editBtn mr-2">Edit</button>
+        <button class="text-red-500 deleteBtn">Delete</button>
       </td>
     `;
     salaryTable.appendChild(row);
@@ -153,8 +218,14 @@ function renderTable() {
 
 // Show form
 addNewBtn.addEventListener("click", () => {
-  salaryInput.value = bt04?.basicpay || "";
-  percentageInput.value = bt04?.ord || ""; 
+  // Check if record already exists
+  if (bt04 && bt04.basicpay) {
+    showAlert("A record already exists. Please edit the existing record instead of adding a new one.", "Cannot Add New Record");
+    return;
+  }
+  
+  salaryInput.value = "";
+  percentageInput.value = ""; 
   salaryForm.classList.remove("hidden");
   document.getElementById("salaryInput").disabled = false;
 });
@@ -169,14 +240,28 @@ saveBtn.addEventListener("click", async () => {
     return;
   }
 
-  const body = JSON.stringify({ basicpay: salary, ord: percentage });
+  // Store the original input in localStorage mapped to code 1
+  setOriginalBasicPay(1, salary);
+  
+  // Always map to 1 for storage
+  const body = JSON.stringify({ 
+    basicpay: "1", 
+    ord: percentage
+  });
+  
   const headers = { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` };
 
   if (bt04 && bt04.type === "BT04") {
+    // Update existing record
     const res = await fetch(apiUrl, { method: "PUT", headers, body });
     if (!res.ok) throw new Error("Failed to update");
     showModal();
   } else {
+    // Only create if no record exists
+    if (bt04 && bt04.basicpay) {
+      showAlert("A record already exists. Cannot create a new one.", "Error");
+      return;
+    }
     const res = await fetch(apiUrl, { method: "POST", headers, body });
     if (!res.ok) throw new Error("Failed to create");
     showModal();
@@ -186,13 +271,45 @@ saveBtn.addEventListener("click", async () => {
   await loadOverpayment();
 });
 
-// Edit
+// Delete
+async function deleteRecord() {
+  try {
+    const headers = { "Authorization": `Bearer ${localStorage.getItem("token")}` };
+    const res = await fetch(apiUrl, { method: "DELETE", headers });
+    
+    if (!res.ok) throw new Error("Failed to delete");
+    
+    showModal();
+    
+    // Clear the mapping when deleted
+    if (bt04 && bt04.basicpay) {
+      clearOriginalBasicPay(parseInt(bt04.basicpay));
+    }
+    
+    bt04 = null;
+    renderTable();
+  } catch (error) {
+    showAlert("Failed to delete record. Please try again.", "Error");
+  }
+}
+
+// Edit and Delete handlers
 salaryTable.addEventListener("click", (e) => {
   if (e.target.classList.contains("editBtn")) {
-    salaryInput.value = bt04.basicpay;
+    const code = parseInt(bt04.basicpay);
+    // Show the original input value from storage or fallback
+    salaryInput.value = getOriginalBasicPay(code) || salaryMap[code] || bt04.basicpay;
     percentageInput.value = bt04.ord || 0;
     document.getElementById("salaryInput").disabled = true;
     salaryForm.classList.remove("hidden");
+  }
+  
+  if (e.target.classList.contains("deleteBtn")) {
+    showConfirm(
+      "Are you sure you want to delete this record? This action cannot be undone.",
+      "Confirm Delete",
+      deleteRecord
+    );
   }
 });
 

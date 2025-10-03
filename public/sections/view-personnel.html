@@ -56,6 +56,100 @@ class ViewPersonnelManager {
     await this.switchTab('personnel');
   }
 
+  // Format date from ddmmyyyy to yyyy-mm-dd (for displaying in date inputs)
+  formatDateForDisplay(ddmmyyyyDate) {
+    if (!ddmmyyyyDate || ddmmyyyyDate.length !== 8) {
+      return '';
+    }
+    
+    const day = ddmmyyyyDate.substring(0, 2);
+    const month = ddmmyyyyDate.substring(2, 4);
+    const year = ddmmyyyyDate.substring(4, 8);
+    
+    return `${year}-${month}-${day}`;
+  }
+
+  // Format date from ddmmyyyy to readable format (e.g., "15 Mar 2024")
+  formatDateReadable(ddmmyyyyDate) {
+    if (!ddmmyyyyDate || ddmmyyyyDate.length !== 8) {
+      return '';
+    }
+    
+    const day = ddmmyyyyDate.substring(0, 2);
+    const month = ddmmyyyyDate.substring(2, 4);
+    const year = ddmmyyyyDate.substring(4, 8);
+    
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    return `${day} ${monthNames[parseInt(month) - 1]} ${year}`;
+  }
+
+  // Format ISO datetime (2010-10-02T00:00:00.000Z) to yyyy-mm-dd (for date inputs)
+  formatISODateForDisplay(isoDate) {
+    if (!isoDate) {
+      return '';
+    }
+    
+    try {
+      const date = new Date(isoDate);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error('Invalid ISO date:', isoDate);
+      return '';
+    }
+  }
+
+  // Format ISO datetime (2010-10-02T00:00:00.000Z) to readable format (e.g., "02 Oct 2010")
+  formatISODateReadable(isoDate) {
+    if (!isoDate) {
+      return '';
+    }
+    
+    try {
+      const date = new Date(isoDate);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = date.getMonth();
+      const year = date.getFullYear();
+      
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      return `${day} ${monthNames[month]} ${year}`;
+    } catch (error) {
+      console.error('Invalid ISO date:', isoDate);
+      return '';
+    }
+  }
+
+  // Format ISO datetime with time (2010-10-02T00:00:00.000Z) to readable format with time
+  formatISODateTimeReadable(isoDate) {
+    if (!isoDate) {
+      return '';
+    }
+    
+    try {
+      const date = new Date(isoDate);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = date.getMonth();
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      return `${day} ${monthNames[month]} ${year} ${hours}:${minutes}`;
+    } catch (error) {
+      console.error('Invalid ISO date:', isoDate);
+      return '';
+    }
+  }
+
   async loadEmployeeData() {
     try {
       const token = localStorage.getItem('token');
@@ -191,7 +285,7 @@ class ViewPersonnelManager {
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Date of Birth:</dt>
-                    <dd class="col-span-2">${this.formatDate(emp.Birthdate)}</dd>
+                    <dd class="col-span-2">${this.formatDateForDisplay(emp.Birthdate)}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Marital Status:</dt>
@@ -246,11 +340,11 @@ class ViewPersonnelManager {
                 <div class="space-y-3">
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Date Employed:</dt>
-                    <dd class="col-span-2">${this.formatDate(emp.DateEmpl)}</dd>
+                    <dd class="col-span-2">${this.formatDateForDisplay(emp.DateEmpl)}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Date Confirmed:</dt>
-                    <dd class="col-span-2">${this.formatDate(emp.dateconfirmed)}</dd>
+                    <dd class="col-span-2">${this.formatDateForDisplay(emp.dateconfirmed)}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Entry Mode:</dt>
@@ -258,7 +352,7 @@ class ViewPersonnelManager {
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Date Left:</dt>
-                    <dd class="col-span-2">${this.formatDate(emp.DateLeft) || 'N/A'}</dd>
+                    <dd class="col-span-2">${this.formatDateForDisplay(emp.DateLeft) || 'N/A'}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Exit Type:</dt>
@@ -266,7 +360,7 @@ class ViewPersonnelManager {
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Seniority Date:</dt>
-                    <dd class="col-span-2">${this.formatDate(emp.seniorno)}</dd>
+                    <dd class="col-span-2">${this.formatDateForDisplay(emp.datepmted)}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Location:</dt>
@@ -381,7 +475,7 @@ class ViewPersonnelManager {
                 <div class="space-y-2">
                   <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Date of Birth:</dt>
-                    <dd class="col-span-2">${this.formatDate(nok.dateofbirth)}</dd>
+                    <dd class="col-span-2">${this.formatDateForDisplay(nok.dateofbirth)}</dd>
                   </div>
                   <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium text-gray-700 block mb-1">Address:</dt>
@@ -431,11 +525,11 @@ class ViewPersonnelManager {
                     </div>
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium">Date of Birth:</dt>
-                      <dd class="text-gray-900">${this.formatDate(spouse.DateOfBirth)}</dd>
+                      <dd class="text-gray-900">${this.formatDateForDisplay(spouse.DateOfBirth)}</dd>
                     </div>
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium">Married Date:</dt>
-                      <dd class="text-gray-900">${this.formatDate(spouse.marrieddate)}</dd>
+                      <dd class="text-gray-900">${this.formatDateForDisplay(spouse.marrieddate)}</dd>
                     </div>
                   </div>
                 </div>

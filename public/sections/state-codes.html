@@ -24,6 +24,13 @@
       <label class="block text-sm font-medium text-gray-700">State Capital *</label>
       <input type="text" id="stateCapital" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white">
     </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Geo Zone *</label>
+      <select id="geoZone" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white">
+        <option value="">Select Geo Zone</option>
+        <!--Js populated-->
+      </select>
+    </div>
     <div class="col-span-1 md:col-span-3 flex justify-end gap-2">
       <button type="button" id="saveStateBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Save</button>
       <button type="button" id="cancelStateBtn" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancel</button>
@@ -39,6 +46,7 @@
           <th class="border px-2 py-3 text-left">State Name</th>
           <th class="border px-6 py-3 text-left">State Code</th>
           <th class="border px-6 py-3 text-left">State Capital</th>
+          <th class="border px-6 py-3 text-left">Geo Zone</th>
           <th class="border px-6 py-3 text-left">Actions</th>
         </tr>
       </thead>
@@ -125,6 +133,7 @@
 
 <script>
 let stateData = [];
+let geozoneData = [];
 let originalStateData = null;
 let editingStateId = null;
 let pendingDeleteStateId = null;
@@ -136,6 +145,54 @@ const cancelStateBtn = document.getElementById("cancelStateBtn");
 const stateTableBody = document.getElementById("stateTableBody");
 const searchState = document.getElementById("searchState");
 const errorMessage = document.getElementById("errorMessage");
+
+async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`/reference/${endpoint}`, {   
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      }
+    });
+    const data = await response.json();
+    const dropdown = document.getElementById(elementId);
+    if (!dropdown) return;
+    dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+    data.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item[valueField];
+      option.textContent = item[textField];
+      dropdown.appendChild(option);
+    });
+    return data;
+  } catch (err) {
+    console.error(`Failed to load ${endpoint}:`, err);
+    return [];
+  }
+}
+
+async function loadAllDropdowns() {
+  try {
+    geozoneData = await loadDropdown(
+      "geozone", 
+      "geoZone", 
+      "geocode", 
+      "geoname", 
+      "Select Geo Zone"
+    );
+    console.log("Dropdown data loaded:", geozoneData);
+  } catch (err) {
+    console.error("Error loading dropdowns:", err);
+  }
+}
+
+// Helper function to get geoname from geocode
+function getGeoName(geocode) {
+  const element = geozoneData.find(item => item.geocode === geocode);
+  return element ? element.geoname : geocode;
+}
 
 //validations
 // Only letters, spaces, and hyphen
@@ -173,6 +230,9 @@ stateCode.addEventListener("input", () => {
 async function fetchStates() {
   try {
     const token = localStorage.getItem("token");
+
+    // Load dropdowns first
+    await loadAllDropdowns();
 
     const res = await fetch("/states",{   
       method: "GET",
@@ -313,11 +373,21 @@ async function deleteStateApi(Statecode) {
 
 // --- Render Table ---
 function renderStateTable(data = stateData) {
+  // Check if geozoneData is loaded
+  if (!geozoneData || geozoneData.length === 0) {
+    // Load the dropdown data if not available
+    loadAllDropdowns().then(() => {
+      renderStateTable(data);
+    });
+    return;
+  }
+
   stateTableBody.innerHTML = data.map((item, index) => `
     <tr class="hover:bg-gray-50">
       <td class="border px-2 py-3">${item.Statename}</td>
       <td class="border px-2 py-3">${item.Statecode}</td>
       <td class="border px-2 py-3">${item.Statecapital}</td>
+      <td class="border px-2 py-3">${getGeoName(item.geoZone)}</td>
       <td class="border px-2 py-3">
         <button onclick="editState('${item.Statecode}')" class="text-green-600 mr-2">Edit</button>
         <button onclick="deleteState('${item.Statecode}')" class="text-red-600">Delete</button>
@@ -325,7 +395,6 @@ function renderStateTable(data = stateData) {
     </tr>
   `).join("");
 }
-
 // --- Add New ---
 addNewStateBtn.addEventListener("click", () => {
   stateForm.classList.remove("hidden");
@@ -345,12 +414,17 @@ saveStateBtn.addEventListener("click", async (e) => {
     const item = {
       stateName: document.getElementById("stateName").value.trim(),
       stateCode: document.getElementById("stateCode").value.trim(),
-      stateCapital: document.getElementById("stateCapital").value.trim()
+      stateCapital: document.getElementById("stateCapital").value.trim(),
+      geoZone: document.getElementById("geoZone").value.trim()
     };
 
-    if (!item.stateName || !item.stateCode || !item.stateCapital) {
-      showErrorModal("Please fill in all required fields.");
-      return;
+    const requiredFields = ["stateName", "stateCode", "stateCapital", "geoZone"];
+
+    let missingFields = requiredFields.filter(field => !item[field] && item[field] !== 0);
+
+    if (missingFields.length > 0) {
+      showErrorModal(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      return;    
     }
 
     // Check for duplicates before saving
@@ -404,7 +478,7 @@ cancelStateBtn.addEventListener("click", () => {
 
 
 // --- Actions ---
-window.editState = function(Statecode) {
+window.editState = async function(Statecode) {
   const item = stateData.find(s => s.Statecode === Statecode);
   if (!item) return;
   
@@ -412,19 +486,28 @@ window.editState = function(Statecode) {
   originalStateData = {
     stateName: item.Statename,
     stateCode: item.Statecode,
-    stateCapital: item.Statecapital
+    stateCapital: item.Statecapital,
+    geoZone: item.geoZone
   };
+
+  // Wait for dropdowns to load before setting values
+  await loadAllDropdowns();
+
+  // Set the selected values for dropdowns
+  const geoZoneSelect = document.getElementById("geoZone");
+  geoZoneSelect.value = item.geoZone;
   
   // Populate form fields
   document.getElementById("stateName").value = item.Statename;
   document.getElementById("stateCode").value = item.Statecode;
   document.getElementById("stateCapital").value = item.Statecapital;
-  
+
   // Clear any existing validation messages
   document.getElementById("stateName").setCustomValidity("");
   document.getElementById("stateCode").setCustomValidity("");
   document.getElementById("stateCapital").setCustomValidity("");
-  
+  document.getElementById("geoZone").setCustomValidity("");
+
   editingStateId = Statecode; 
   stateForm.stateCode.disabled =true;
   stateForm.classList.remove("hidden");
@@ -597,6 +680,7 @@ function generateReport() {
             <th>State Name</th>
             <th>State Code</th>
             <th>State Capital</th>
+            <th>Geo Zone</th>
           </tr>
         </thead>
         <tbody>
@@ -606,6 +690,7 @@ function generateReport() {
               <td>${item.Statename}</td>
               <td>${item.Statecode}</td>
               <td>${item.Statecapital}</td>
+              <td>${getGeoName(item.geoZone)}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -635,4 +720,5 @@ document.getElementById('generateReportBtn').addEventListener('click', generateR
 
 // --- Init ---
 fetchStates();
+loadAllDropdowns();
 </script>

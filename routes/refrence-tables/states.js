@@ -9,11 +9,12 @@ router.post('/states', verifyToken, async (req, res) => {
   let Statecode = req.body.Statecode || req.body.stateCode;
   let Statename = req.body.Statename || req.body.stateName;
   let Statecapital = req.body.Statecapital || req.body.stateCapital;
+  let geoZone = req.body.GeoZone || req.body.geoZone;
   const createdby = req.user_fullname || "Admin User";
   const datecreated = new Date();
 
   try {
-    if (!Statecode || !Statename || !Statecapital) {
+    if (!Statecode || !Statename || !Statecapital || !geoZone) {
       return res.status(400).json({ error: 'All fields are required' });
     }
     
@@ -28,9 +29,9 @@ router.post('/states', verifyToken, async (req, res) => {
 
     const [result] = await pool.query(
       `INSERT INTO py_tblstates 
-       (Statecode, Statename, Statecapital, createdby, datecreated) 
-       VALUES (?, ?, ?, ?, ?)`,
-      [Statecode, Statename, Statecapital, createdby, datecreated]
+       (Statecode, Statename, Statecapital, createdby, datecreated, geoZone) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [Statecode, Statename, Statecapital, createdby, datecreated, geoZone]
     );
 
     res.status(201).json({
@@ -39,7 +40,8 @@ router.post('/states', verifyToken, async (req, res) => {
       Statecode,
       Statename,
       Statecapital,
-      createdby
+      createdby,
+      geoZone
     });
 
   } catch (err) {
@@ -137,6 +139,7 @@ router.put('/states/:Statecode', verifyToken, async (req, res) => {
   let Statename = req.body.Statename || req.body.stateName;
   let Statecapital = req.body.Statecapital || req.body.stateCapital;
   //const createdby = req.user_fullname || "Admin User";
+  let geoZone = req.body.GeoZone || req.body.geoZone;
 
   try {
     // Check if state exists first
@@ -160,6 +163,10 @@ router.put('/states/:Statecode', verifyToken, async (req, res) => {
     if (typeof createdby !== 'undefined' && createdby !== null) {
       sets.push('createdby = ?');
       params.push(createdby);
+    }
+   if (typeof geoZone !== 'undefined' && geoZone !== null) {
+      sets.push('geoZone = ?');
+      params.push(geoZone);
     }
 
     // If no fields to update

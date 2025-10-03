@@ -21,7 +21,8 @@ const tables = {
   pfa: "py_pfa",
   religion: "py_religion",
   exittype: "py_exittype",
-  elementtype: "py_elementType"
+  elementtype: "py_elementType",
+  geozone: "geozone"
 };
 
 

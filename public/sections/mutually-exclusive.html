@@ -415,6 +415,7 @@ tableBody.addEventListener('click', function(e) {
     }
 });
 
+// ==== REPORT GENERATION ====
 function generateReport() {
   const now = new Date();
   const day = String(now.getDate()).padStart(2, '0');
@@ -472,7 +473,7 @@ function generateReport() {
     </head>
     <body>
       <div class="print-header">
-        <h1>States Report</h1>
+        <h1>Mutually Exclusive Payments Report</h1>
         <p class="date-generated">Generated on: ${dateStr}</p>
       </div>
       

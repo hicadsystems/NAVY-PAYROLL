@@ -399,14 +399,16 @@ class PersonnelManager {
 
   async editEmployee(id) {
     try {
-      // set flag before navigating
-        console.log("Edit employee called, setting flag true for:", id);
-        window.navigatedFromCurrentPersonnel = true;
+      // Set flag to indicate navigation source
+      localStorage.setItem('navigatedFromCurrentPersonnel', 'true');
+      localStorage.setItem('editingEmployeeId', id);
 
+      // Navigate to add-personnel section
       if (window.navigation?.navigateToSection) {
         window.navigation.navigateToSection('add-personnel', 'Edit Personnel');
       }
 
+      // Give time for navigation to complete before loading data
       setTimeout(async () => {
         if (window.PersonnelAPI?.loadEmployeeDataForEdit) {
           await window.PersonnelAPI.loadEmployeeDataForEdit(id);
@@ -420,13 +422,45 @@ class PersonnelManager {
 
   deleteEmployee(id) {
     this.deleteId = id;
-    document.getElementById("deleteEmployeeModal")?.classList.remove("hidden");
+    const modal = document.getElementById("deleteEmployeeModal");
+    const confirmBtn = document.getElementById("confirmDeleteEmployeeBtn");
+    
+    if (modal) {
+      modal.classList.remove("hidden");
+      
+      // Remove any existing event listeners to prevent duplicates
+      const newBtn = confirmBtn.cloneNode(true);
+      confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+      
+      // Add new event listener
+      newBtn.addEventListener("click", async () => {
+        try {
+          await this.apiRequest(`${API_BASE}/employees/${this.deleteId}`, {
+            method: 'DELETE'
+          });
+
+          this.personnel = this.personnel.filter(p => p.Empl_ID !== this.deleteId);
+          this.filterPersonnel();
+          this.showSuccess("Personnel deleted successfully");
+          this.closeDeleteEmployee();
+        } catch (error) {
+          this.showError('Failed to delete personnel: ' + error.message);
+        }
+      });
+    }
   }
 
   closeDeleteEmployee() {
     this.deleteId = null;
     document.getElementById("deleteEmployeeModal")?.classList.add("hidden");
   }
+
+
+// Remove the separate event listener setup from DOMContentLoaded
+  /*document.addEventListener('DOMContentLoaded', function() {
+    initializePersonnelManager();
+  });
+
 
   async confirmDeleteEmployee() {
     if (!this.deleteId) return;
@@ -445,7 +479,7 @@ class PersonnelManager {
     } catch (error) {
       this.showError('Failed to delete personnel: ' + error.message);
     }
-  }
+  }*/
 
   escapeHtml(str) {
     if (!str) return '';
@@ -470,7 +504,7 @@ class PersonnelManager {
 }
 
 // Event Listeners
-document.addEventListener('DOMContentLoaded', function() {
+/*document.addEventListener('DOMContentLoaded', function() {
   const confirmDeleteBtn = document.getElementById("confirmDeleteEmployeeBtn");
   if (confirmDeleteBtn) {
     confirmDeleteBtn.addEventListener("click", () => {
@@ -479,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
-});
+});*/
 
 // Initialize
 let personnelManager;

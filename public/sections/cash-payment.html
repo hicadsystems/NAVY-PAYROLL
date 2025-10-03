@@ -279,7 +279,7 @@ async function deleteRecord() {
     
     if (!res.ok) throw new Error("Failed to delete");
     
-    showModal();
+    showAlert("Record deleted successfully");
     
     // Clear the mapping when deleted
     if (bt04 && bt04.basicpay) {

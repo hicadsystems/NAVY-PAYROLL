@@ -138,24 +138,56 @@ body.no-scroll {
   animation: expand .9s ease-in-out infinite;
 }
 
-html { 
-  overflow-y: scroll; /* scrollbar is always reserved */
-  scrollbar-width: none;       /* Firefox */
-  -ms-overflow-style: none; 
+
+/* Custom CSS to hide scrollbars for seamless appearance */
+
+/* 1. Hide the main browser scrollbar and force main content to handle scrolling */
+html, body {
+  overflow: hidden;              /* Prevent native browser scrolling */
+  scrollbar-width: none;         /* Firefox */
+  -ms-overflow-style: none;      /* IE/Edge */
 }
 
-body {
-  overflow: auto;              /* keep scrolling */
+/* Chrome, Safari, Opera scrollbar hiding for html/body */
+html::-webkit-scrollbar, 
+body::-webkit-scrollbar {
+  display: none;               
+}
+
+/* 2. Hide scrollbar for the fixed sidebar */
+#sidebar {
+  scrollbar-width: none;         /* Firefox */
+  -ms-overflow-style: none;      /* IE/Edge */
+}
+
+/* Chrome, Safari, Opera scrollbar hiding for sidebar */
+#sidebar::-webkit-scrollbar {
+  display: none;               
+}
+
+/* Targeting the main scrollable content wrapper */
+.main-content-wrapper {
   scrollbar-width: none;       /* Firefox */
   -ms-overflow-style: none;    /* IE/Edge */
 }
 
-body::-webkit-scrollbar,
-html::-webkit-scrollbar {
+.main-content-wrapper::-webkit-scrollbar {
   display: none;               /* Chrome, Safari, Opera */
 }
 
-  @media print {
+.shadow-right-only {
+  box-shadow: 
+    /* Right Side Shadow: Positive X-offset (5px), Zero Y-offset (0) */
+    5px 0 10px -5px rgba(0, 0, 0, 0.1),   /* Main, soft right shadow */
+    2px 0 5px -5px rgba(0, 0, 0, 0.08),   /* Finer, sharper right shadow */
+
+    /* Top Side Shadow: Zero X-offset (0), Negative Y-offset (-5px) */
+    0px -5px 10px -5px rgba(0, 0, 0, 0.1), /* Main, soft top shadow */
+    0px -2px 5px -5px rgba(0, 0, 0, 0.08); /* Finer, sharper top shadow */
+}
+
+
+@media print {
   /* Hide non-printable elements */
   button, input, .no-print {
     display: none !important;

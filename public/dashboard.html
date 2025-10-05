@@ -17,7 +17,7 @@
   <div class="max-w-layout mx-auto min-h-dvh flex flex-col">
 
     <!-- top row: left hamburger + brand, right logo -->
-    <header class="flex items-center justify-between py-4 px-2 lg:px-0">
+    <header class="fixed top-0 w-full z-30 bg-transparent flex items-center justify-between py-4 px-2 lg:px-4 h-20">
       <div class="flex items-center gap-4">
         <button id="menu-toggle" class="p-2 rounded focus:outline-none" aria-label="Toggle menu">
             <div class="menu flex flex-col gap-1.5" aria-hidden="true">
@@ -56,11 +56,12 @@
       <img src="photos/rectangle171997-waq-200w.png" alt="logo" class="hidden sm:block lg:w-[57px] h-[68px] object-contain" />
     </header>
 
-    <div class="flex-1 grid grid-cols-1 lg:grid-cols-[250px_1fr] gap-6 overflow-hidden">
+    <div class="main-content-wrapper pt-20 lg:pl-[250px] h-dvh overflow-y-auto">
 
       <!-- Sidebar -->
       <aside id="sidebar" 
-             class="overlap-wrapper shadow-lg lg:sticky lg:top-0 h-full overflow-y-auto">
+           class="overlap-wrapper lg:fixed lg:top-[5rem] lg:left-0 z-20 lg:w-[250px] 
+                  bg-transparent lg:h-[calc(100vh-5rem)] shadow-lg overflow-y-auto">
         <div class="p-5">
         </div>
 

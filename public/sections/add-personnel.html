@@ -1022,7 +1022,13 @@ function cancelPersonnelForm() {
     editState.row = null;
     editState.id = null;
 
-    // 8. Navigate back if came from current personnel
+    // 8. restore batch upload button if it was disabled
+    if (localStorage.getItem('isEditMode') === 'true') {
+      const batchButton = document.getElementById('tab-batch');
+      localStorage.removeItem('isEditMode');
+    }
+
+    // 9. Navigate back if came from current personnel
     const navigatedFromCurrent = localStorage.getItem('navigatedFromCurrentPersonnel') === 'true';
     if (navigatedFromCurrent) {
       localStorage.removeItem('navigatedFromCurrentPersonnel');

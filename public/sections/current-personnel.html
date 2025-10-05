@@ -19,25 +19,21 @@
   </div>
 
   <!-- Search and Filter -->
-  <div class="mb-6 flex flex-col md:flex-row gap-4">
+  <div class="mb-6 flex flex-wrap justify-between">
     <div class="flex-1">
       <input type="text" id="personnel-search" placeholder="Search by name, PersonnelNo. or Phone..." 
-        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+        class="w-2/3 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
     </div>
-    <div class="flex gap-2">
+    <div class="flex flex-end gap-2">
       <select id="rank-filter" class="px-3 py-2 border border-gray-300 rounded-md">
         <option value="">All Ranks</option>
-        <option value="Adm">Adm</option>
-        <option value="Cdr">Cdr</option>
-        <option value="Lt">Lt</option>
-        <option value="PO">PO</option>
       </select>
-      <select id="status-filter" class="px-3 py-2 border border-gray-300 rounded-md">
+      <!--<select id="status-filter" class="px-3 py-2 border border-gray-300 rounded-md">
         <option value="">All Status</option>
         <option value="active">Active</option>
         <option value="inactive">Inactive</option>
         <option value="suspended">Suspended</option>
-      </select>
+      </select>-->
     </div>
   </div>
 
@@ -198,6 +194,41 @@ class PersonnelManager {
   init() {
     this.loadPersonnelData();
     this.setupEventListeners();
+    this.loadAllDropdowns();
+  }
+
+  async loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/reference/${endpoint}`, {   
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        }
+      });
+      const data = await response.json();
+      const dropdown = document.getElementById(elementId);
+      if (!dropdown) return;
+      dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+      data.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item[valueField];
+        option.textContent = item[textField];
+        dropdown.appendChild(option);
+      });
+      return data;
+    } catch (err) {
+      console.error(`Failed to load ${endpoint}:`, err);
+      return [];
+    }
+  }
+
+  async loadAllDropdowns() {
+    const promises = [
+      this.loadDropdown("title", "rank-filter", "Titlecode", "Description", "All Ranks"),
+    ];
+    await Promise.all(promises);
   }
 
   async apiRequest(url, options = {}) {
@@ -402,10 +433,11 @@ class PersonnelManager {
       // Set flag to indicate navigation source
       localStorage.setItem('navigatedFromCurrentPersonnel', 'true');
       localStorage.setItem('editingEmployeeId', id);
+      localStorage.setItem('isEditMode', 'true');
 
-      // Navigate to add-personnel section
+      // Navigate to add-personnel section with edit mode state
       if (window.navigation?.navigateToSection) {
-        window.navigation.navigateToSection('add-personnel', 'Edit Personnel');
+        window.navigation.navigateToSection('add-personnel', 'Edit Personnel', { isEditMode: true });
       }
 
       // Give time for navigation to complete before loading data
@@ -518,21 +550,22 @@ class PersonnelManager {
 // Initialize
 let personnelManager;
 
+function initializePersonnelManager() {
+  if (!window.personnelManager || !(window.personnelManager instanceof PersonnelManager)) {
+    // Create a fresh instance
+    personnelManager = new PersonnelManager();
+    window.personnelManager = personnelManager;
+  } else {
+    // Reinitialize existing one
+    window.personnelManager.reinitialize?.();
+    personnelManager = window.personnelManager;
+  }
+}
+
+// Run when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializePersonnelManager);
 } else {
   initializePersonnelManager();
 }
-
-function initializePersonnelManager() {
-  if (!window.personnelManager) {
-    personnelManager = new PersonnelManager();
-    window.personnelManager = personnelManager;
-  } else {
-    window.personnelManager.reinitialize();
-    personnelManager = window.personnelManager;
-  }
-}
-
-window.personnelManager = window.personnelManager || {};
 </script>

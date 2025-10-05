@@ -691,6 +691,7 @@ class NavigationSystem {
   constructor() {
     this.currentSection = null;
     this.cache = new Map(); // Cache loaded content
+    this.state = {}; // State for section navigation
     this.init();
   }
 
@@ -804,7 +805,7 @@ class NavigationSystem {
     }
   }
 
-  async navigateToSection(sectionId, sectionName) {
+  async navigateToSection(sectionId, sectionName, state = {}) {
     try {
       // Check if content exists on current page
       const existingElement = document.querySelector(`#${sectionId}`);
@@ -813,11 +814,24 @@ class NavigationSystem {
         return;
       }
 
+      // Store the navigation state
+      this.state = state;
+
       // Load content from file
       const content = await this.loadSectionContent(sectionId, sectionName);
       this.renderSection(sectionName, content);
       this.updateHistory(sectionId, sectionName);
       this.currentSection = sectionId;
+
+      // Initialize any dynamic behavior based on state
+      if (sectionId === 'add-personnel' && state.isEditMode) {
+        const batchButton = document.getElementById('tab-batch');
+        if (batchButton) {
+          batchButton.disabled = true;
+          batchButton.classList.add('opacity-50', 'cursor-not-allowed');
+          batchButton.classList.remove('hover:bg-blue-600');
+        }
+      }
 
     } catch (error) {
       this.showErrorState(sectionName, error);

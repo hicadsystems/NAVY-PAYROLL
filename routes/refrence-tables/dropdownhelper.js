@@ -25,6 +25,21 @@ const tables = {
   geozone: "geozone"
 };
 
+// Get LGAs by State Code
+router.get("/lga/:statecode", verifyToken, async (req, res) => {
+  const { statecode } = req.params;
+  
+  try {
+    const [rows] = await pool.query(
+      `SELECT * FROM py_tblLGA WHERE Statecode = ?`, 
+      [statecode]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 // Generic GET for dropdowns
 router.get("/:table", verifyToken, async (req, res) => {

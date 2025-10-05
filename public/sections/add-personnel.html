@@ -73,7 +73,7 @@
       </button>
     </div>
 
-    <button onclick="window.navigation?.navigateToSection ? window.navigation.navigateToSection('current-personnel','Current Personnel') : alert('Hook your navigation here.')"
+    <button onclick="window.navigation?.navigateToSection ? window.navigation.navigateToSection('current-personnel','Current Personnel') : showAlert('Hook your navigation here.')"
       class="px-4 text-sm lg:text-lg py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
       Current Personnel
     </button>
@@ -286,9 +286,7 @@
         <label class="block text-sm font-medium text-gray-700">Relationship <span class="text-red-500">*</span></label>
         <select id="nokRelationship" required class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500">
           <option value="">Select</option>
-          <option>Spouse</option><option>Father</option><option>Mother</option>
-          <option>Son</option><option>Daughter</option><option>Brother</option>
-          <option>Sister</option><option>Uncle</option><option>Aunt</option><option>Friend</option>
+
         </select>
       </div>
       <div>
@@ -520,6 +518,19 @@
   </div>
 </div>
 
+<!-- Alert Modal -->
+<div id="alertModal" 
+     class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+  <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center">
+    <h3 id="alertTitle" class="text-lg font-semibold text-gray-800 mb-2">Alert!</h3>
+    <p id="alertMessage" class="text-gray-600 mb-4"></p>
+    <button id="alertOkBtn" 
+      class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+      OK
+    </button>
+  </div>
+</div>
+
 <!-- Delete Confirmation Modal -->
 <div id="deleteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
   <div class="bg-white rounded-2xl shadow-xl w-96 p-6">
@@ -639,6 +650,30 @@ async function initializeDropdowns() {
   await Promise.all(promises);
 }
 
+function handleSpouseTabVisibility() {
+  const maritalStatusDropdown = document.getElementById('field-marital-status');
+  const spouseTab = document.getElementById('tab-spouse');
+
+  if (!maritalStatusDropdown || !spouseTab) return;
+
+  const updateSpouseTab = () => {
+    const selectedText = maritalStatusDropdown.options[maritalStatusDropdown.selectedIndex]?.text?.trim().toLowerCase();
+
+    // Show tab only if Married OR placeholder
+    if (!selectedText || selectedText === 'select marital status' || selectedText === 'married') {
+      spouseTab.style.display = 'inline-flex';
+    } else {
+      spouseTab.style.display = 'none';
+    }
+  };
+
+  // Run once on page load
+  updateSpouseTab();
+
+  // Watch for dropdown changes
+  maritalStatusDropdown.addEventListener('change', updateSpouseTab);
+}
+
 async function loadAllDropdowns() {
   const promises = [
     loadDropdown("bankbranch", "bankbranch", "branchname", "branchname", "Select Bank Branch"),
@@ -657,10 +692,68 @@ async function loadAllDropdowns() {
     //spouse and child state/lga dropdowns would be populated dynamically based on selection
     loadDropdown("state", "spouseState", "Statecode", "Statename", "Select State"),
     loadDropdown("state", "childState", "Statecode", "Statename", "Select State"),
-    loadDropdown("lga", "spouseLga", "Lgcode", "Lgname", "Select LGA"),
-    loadDropdown("lga", "childLga", "Lgcode", "Lgname", "Select LGA")
+    loadDropdown("lga", "spouseLga", "Lgcode", "Lgname", "Select State First"),
+    loadDropdown("lga", "childLga", "Lgcode", "Lgname", "Select State First"),
+
+    //Nok relationship
+    loadDropdown("relationship", "nokRelationship", "RShipcode", "Relationship", "Select Relationship")
   ];
   await Promise.all(promises);
+}
+
+//cascade state/lga
+function setupStateLGACascade(stateFieldId, lgaFieldId) {
+  const stateDropdown = document.getElementById(stateFieldId);
+  const lgaDropdown = document.getElementById(lgaFieldId);
+  
+  if (!stateDropdown || !lgaDropdown) {
+    console.error(`Dropdowns not found: state=${stateFieldId}, lga=${lgaFieldId}`);
+    return;
+  }
+  
+  // Initially disable LGA dropdown
+  lgaDropdown.disabled = true;
+  lgaDropdown.innerHTML = '<option value="">Select State First</option>';
+  
+  stateDropdown.addEventListener('change', async function(e) {
+    const stateCode = e.target.value;
+    
+    if (!stateCode) {
+      lgaDropdown.disabled = true;
+      lgaDropdown.innerHTML = '<option value="">Select State First</option>';
+      lgaDropdown.value = '';
+      return;
+    }
+    
+    lgaDropdown.disabled = false;
+    lgaDropdown.innerHTML = '<option value="">Loading LGAs...</option>';
+    
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/reference/lga/${stateCode}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!res.ok) throw new Error('Failed to load LGAs');
+      
+      const lgas = await res.json();
+      lgaDropdown.innerHTML = '<option value="">Select LGA</option>';
+      
+      lgas.forEach(lga => {
+        const option = document.createElement('option');
+        option.value = lga.Lgcode;
+        option.textContent = lga.Lgname;
+        lgaDropdown.appendChild(option);
+      });
+    } catch (err) {
+      console.error('Error loading LGAs:', err);
+      lgaDropdown.innerHTML = '<option value="">Error loading LGAs</option>';
+      lgaDropdown.disabled = true;
+    }
+  });
 }
 
 // Format date from ddmmyyyy to yyyy-mm-dd (for displaying in date inputs)
@@ -757,6 +850,22 @@ function formatISODateTimeReadable(isoDate) {
   }
 }
 
+function showAlert(message, title = "Alert!") {
+  const modal = document.getElementById("alertModal");
+  const msg = document.getElementById("alertMessage");
+  const ttl = document.getElementById("alertTitle");
+  const okBtn = document.getElementById("alertOkBtn");
+
+  ttl.textContent = title;
+  msg.textContent = message;
+
+  modal.classList.remove("hidden");
+
+  okBtn.onclick = () => {
+    modal.classList.add("hidden");
+  };
+}
+
 // Global state
 let formMode = 'create';
 let currentEmployeeId = localStorage.getItem('editing_employee');
@@ -817,7 +926,7 @@ function showPopup(message, callback) {
 }
 
 function showError(message) {
-  alert(`Error: ${message}`);
+  showAlert(`Error: ${message}`);
 }
 
 // API Helper
@@ -856,7 +965,7 @@ function validatePersonnelForm() {
   });
   
   if (missingFields.length > 0) {
-    alert(`Please fill in the following required fields:\n${missingFields.join('\n')}`);
+    showAlert(`Please fill in the following required fields:\n${missingFields.join('\n')}`);
     return false;
   }
   
@@ -952,7 +1061,7 @@ const cancelBatchBtn = document.getElementById("cancelBatchBtn");
 uploadBtn?.addEventListener("click", async () => {
   const fileInput = document.getElementById("batchFile");
   if (!fileInput.files.length) {
-    alert("Please select a file to upload!");
+    showAlert("Please select a file to upload!");
     return;
   }
 
@@ -1022,6 +1131,16 @@ document.getElementById('tab-nok')?.addEventListener('click', () => showTab('nok
 document.getElementById('tab-spouse')?.addEventListener('click', () => showTab('spouse'));
 document.getElementById('tab-children')?.addEventListener('click', () => showTab('children'));
 document.getElementById('tab-batch')?.addEventListener('click', () => showTab('batch'));
+
+// Check if we're in edit mode from localStorage
+if (localStorage.getItem('isEditMode') === 'true') {
+  const batchButton = document.getElementById('tab-batch');
+  if (batchButton) {
+    batchButton.disabled = true;
+    batchButton.classList.add('opacity-50', 'cursor-not-allowed');
+    batchButton.classList.remove('hover:bg-blue-600');
+  }
+}
 
 showTab('personnel');
 
@@ -1095,9 +1214,16 @@ function toggleStep(step) {
 if (formTitleEl) formTitleEl.textContent = 'Add New Personnel';
 renderStep1();
 toggleStep(1);
+handleSpouseTabVisibility(),
 
-initializeDropdowns();
-loadAllDropdowns();
+Promise.all([
+  initializeDropdowns(),
+  loadAllDropdowns(),
+  setupStateLGACascade('spouseState', 'spouseLga'),
+  setupStateLGACascade('childState', 'childLga')
+]).then(() => {
+  setupStateLGACascade('field-state-of-origin', 'field-local-government', 'Local Government');
+});
 
 
 btnStep1?.addEventListener("click", () => toggleStep(1));
@@ -1146,19 +1272,41 @@ window.viewFamilyRecord = async function(type, id) {
   if (!data) return;
   
   let content = '<div class="space-y-2 max-h-96 overflow-y-auto">';
+
   Object.entries(data).forEach(([key, value]) => {
     if (!key.startsWith('_') && !key.includes('id') && value) {
       const displayKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-      content += `<p><span class="font-medium text-gray-700">${displayKey}:</span> <span class="text-gray-900">${escapeHtml(String(value))}</span></p>`;
+      let displayValue = String(value);
+
+      // Format dates (detects yyyy-mm-dd or ISO strings)
+      const datePattern = /^\d{4}-\d{2}-\d{2}(T.*)?$/;
+      if (datePattern.test(displayValue)) {
+        const date = new Date(displayValue);
+        if (!isNaN(date)) {
+          displayValue = date.toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+          });
+        }
+      }
+
+      // Append styled block
+      content += `
+        <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
+          <dt class="font-medium text-gray-600">${displayKey}:</dt>
+          <dd class="col-span-2 text-gray-900">${escapeHtml(displayValue) || "N/A"}</dd>
+        </div>`;
     }
   });
+
   content += '</div>';
-  
+
   const modal = document.createElement('div');
-  modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+  modal.className = 'fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50';
   modal.innerHTML = `
-    <div class="bg-white rounded-lg shadow-xl p-6 w-[500px] max-h-[80vh] overflow-y-auto">
-      <h3 class="text-lg font-semibold text-blue-800 mb-4">${type} Details</h3>
+    <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-screen overflow-y-auto">
+      <h3 class="text-lg font-semibold text-blue-600">${type} Details</h3>
       ${content}
       <button onclick="this.closest('.fixed').remove()" 
               class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full">
@@ -1245,7 +1393,14 @@ async function deleteRecord(type, id) {
   return await apiRequest(urls[type], { method: 'DELETE' });
 }
 
-// Edit functionality - FIXED TO USE FULL DATA
+// Separate edit states for each form type
+const editStates = {
+  NOK: { id: null, row: null },
+  Spouse: { id: null, row: null },
+  Child: { id: null, row: null }
+};
+
+// Edit functionality - FIXED WITH SEPARATE EDIT STATES
 window.editRow = async function(type, id) {
   let data;
   
@@ -1274,9 +1429,9 @@ window.editRow = async function(type, id) {
   
   if (!data) return;
   
-  editState.type = type;
-  editState.id = id;
-  editState.row = document.querySelector(`tr[data-type="${type}"][data-id="${id}"]`);
+  // Set edit state for THIS specific type only
+  editStates[type].id = id;
+  editStates[type].row = document.querySelector(`tr[data-type="${type}"][data-id="${id}"]`);
 
   // Helper function to format dates
   const formatDate = (value) => {
@@ -1376,9 +1531,8 @@ nokToggleBtn?.addEventListener('click', () => toggleBlock(nokFormWrap, nokToggle
 
 nokCancelBtn?.addEventListener('click', () => {
   document.getElementById('nokForm')?.reset();
-  editState.type = null;
-  editState.row = null;
-  editState.id = null;
+  editStates.NOK.id = null;
+  editStates.NOK.row = null;
   toggleBlock(nokFormWrap, nokToggleBtn);
 });
 
@@ -1420,7 +1574,7 @@ nokSaveBtn?.addEventListener('click', async () => {
 
   let missingFields = requiredFields.filter(f => !f.value).map(f => f.field);
   if (missingFields.length > 0) { 
-    alert('Please fill in the following required fields:\n' + missingFields.join('\n'));
+    showAlert('Please fill in the following required fields:\n' + missingFields.join('\n'));
     return; 
   }
 
@@ -1428,28 +1582,27 @@ nokSaveBtn?.addEventListener('click', async () => {
     const list = document.getElementById('nokList');
     const empty = document.getElementById('nokEmpty');
 
-    if (editState.type === "NOK" && editState.row && editState.id) {
+    if (editStates.NOK.row && editStates.NOK.id) {
       if (formMode === 'edit') {
-        await apiRequest(`${API_BASE}/nextofkin/${editState.id}`, {
+        await apiRequest(`${API_BASE}/nextofkin/${editStates.NOK.id}`, {
           method: 'PUT',
           body: JSON.stringify(nokData)
         });
       } else {
-        const index = pendingFamilyData.nok.findIndex(n => n._tempId === editState.id);
+        const index = pendingFamilyData.nok.findIndex(n => n._tempId === editStates.NOK.id);
         if (index !== -1) {
-          pendingFamilyData.nok[index] = { ...nokData, _tempId: editState.id };
+          pendingFamilyData.nok[index] = { ...nokData, _tempId: editStates.NOK.id };
         }
       }
 
-      const cells = editState.row.querySelectorAll('td');
+      const cells = editStates.NOK.row.querySelectorAll('td');
       cells[0].textContent = `${first} ${last}`;
       cells[1].textContent = rel;
       cells[2].textContent = mobile;
       cells[3].textContent = email;
       
-      editState.type = null;
-      editState.row = null;
-      editState.id = null;
+      editStates.NOK.row = null;
+      editStates.NOK.id = null;
       showPopup("NOK updated successfully");
     } else {
       if (formMode === 'edit' && currentEmployeeId) {
@@ -1505,9 +1658,8 @@ spouseToggleBtn?.addEventListener('click', () => toggleBlock(spouseFormWrap, spo
 
 spouseCancelBtn?.addEventListener('click', () => {
   document.getElementById('spouseForm')?.reset();
-  editState.type = null;
-  editState.row = null;
-  editState.id = null;
+  editStates.Spouse.id = null;
+  editStates.Spouse.row = null;
   toggleBlock(spouseFormWrap, spouseToggleBtn);
 });
 
@@ -1549,7 +1701,7 @@ spouseSaveBtn?.addEventListener('click', async () => {
 
   let missingFields = requiredFields.filter(f => !f.value).map(f => f.field);
   if (missingFields.length > 0) {
-    alert('Please fill in the required fields: ' + missingFields.join(', '));
+    showAlert('Please fill in the required fields: ' + missingFields.join(', '));
     return;
   }
 
@@ -1557,27 +1709,26 @@ spouseSaveBtn?.addEventListener('click', async () => {
     const list = document.getElementById('spouseList');
     const empty = document.getElementById('spouseEmpty');
 
-    if (editState.type === "Spouse" && editState.row && editState.id) {
+    if (editStates.Spouse.row && editStates.Spouse.id) {
       if (formMode === 'edit') {
-        await apiRequest(`${API_BASE}/spouse/${editState.id}`, {
+        await apiRequest(`${API_BASE}/spouse/${editStates.Spouse.id}`, {
           method: 'PUT',
           body: JSON.stringify(spouseData)
         });
       } else {
-        const index = pendingFamilyData.spouse.findIndex(s => s._tempId === editState.id);
+        const index = pendingFamilyData.spouse.findIndex(s => s._tempId === editStates.Spouse.id);
         if (index !== -1) {
-          pendingFamilyData.spouse[index] = { ...spouseData, _tempId: editState.id };
+          pendingFamilyData.spouse[index] = { ...spouseData, _tempId: editStates.Spouse.id };
         }
       }
 
-      const cells = editState.row.querySelectorAll('td');
+      const cells = editStates.Spouse.row.querySelectorAll('td');
       cells[0].textContent = name;
       cells[1].textContent = phone;
       cells[2].textContent = email;
       
-      editState.type = null;
-      editState.row = null;
-      editState.id = null;
+      editStates.Spouse.row = null;
+      editStates.Spouse.id = null;
       showPopup("Spouse updated successfully");
     } else {
       if (formMode === 'edit' && currentEmployeeId) {
@@ -1631,9 +1782,8 @@ childToggleBtn?.addEventListener('click', () => toggleBlock(childFormWrap, child
 
 childCancelBtn?.addEventListener('click', () => {
   document.getElementById('childForm')?.reset();
-  editState.type = null;
-  editState.row = null;
-  editState.id = null;
+  editStates.Child.id = null;
+  editStates.Child.row = null;
   toggleBlock(childFormWrap, childToggleBtn);
 });
 
@@ -1681,7 +1831,7 @@ childSaveBtn?.addEventListener('click', async () => {
 
   let missingFields = requiredFields.filter(f => !f.value).map(f => f.field);
   if (missingFields.length > 0) {
-    alert('Please fill in the required fields: ' + missingFields.join(', '));
+    showAlert('Please fill in the required fields: ' + missingFields.join(', '));
     return;
   }
 
@@ -1689,28 +1839,27 @@ childSaveBtn?.addEventListener('click', async () => {
     const list = document.getElementById('childList');
     const empty = document.getElementById('childEmpty');
 
-    if (editState.type === "Child" && editState.row && editState.id) {
+    if (editStates.Child.row && editStates.Child.id) {
       if (formMode === 'edit') {
-        await apiRequest(`${API_BASE}/children/${editState.id}`, {
+        await apiRequest(`${API_BASE}/children/${editStates.Child.id}`, {
           method: 'PUT',
           body: JSON.stringify(childData)
         });
       } else {
-        const index = pendingFamilyData.children.findIndex(c => c._tempId === editState.id);
+        const index = pendingFamilyData.children.findIndex(c => c._tempId === editStates.Child.id);
         if (index !== -1) {
-          pendingFamilyData.children[index] = { ...childData, _tempId: editState.id };
+          pendingFamilyData.children[index] = { ...childData, _tempId: editStates.Child.id };
         }
       }
 
-      const cells = editState.row.querySelectorAll('td');
+      const cells = editStates.Child.row.querySelectorAll('td');
       cells[0].textContent = name;
       cells[1].textContent = sex;
       cells[2].textContent = dob;
       cells[3].textContent = phone;
       
-      editState.type = null;
-      editState.row = null;
-      editState.id = null;
+      editStates.Child.row = null;
+      editStates.Child.id = null;
       showPopup("Child updated successfully");
     } else {
       if (formMode === 'edit' && currentEmployeeId) {
@@ -1795,9 +1944,13 @@ async function loadEmployeeDataForEdit(employeeId) {
 
     await initializeDropdowns();
     await loadAllDropdowns();
+    //await setupStateLGACascade('spouseState', 'spouseLga');
+    //await setupStateLGACascade('childState', 'childLga');
     
     setTimeout(() => {
       populatePersonnelForm(employee);
+      handleSpouseTabVisibility();
+      setupStateLGACascade('field-state-of-origin', 'field-local-government');
     }, 500);
     
     loadNOKRecords(nextOfKin);
@@ -2202,6 +2355,7 @@ async function submitPersonnelForm() {
       showPopup("Personnel updated successfully", () => {
       localStorage.removeItem('editing_employee'); // Remove only after successful update
       localStorage.removeItem('navigatedFromCurrentPersonnel');
+      localStorage.removeItem('isEditMode'); // Clear edit mode flag
 
       if (window.navigation?.navigateToSection) {
         window.navigation.navigateToSection('current-personnel', 'Current Personnel');
@@ -2210,7 +2364,7 @@ async function submitPersonnelForm() {
     } else {
       const serviceNo = document.getElementById('field-service-number')?.value.trim();
       if (!serviceNo) {
-        alert('Service Number is required');
+        showAlert('Service Number is required');
         return;
       }
       
@@ -2274,7 +2428,7 @@ async function submitPersonnelForm() {
     
   } catch (error) {
     console.error('Submit failed:', error);
-    alert('Failed to save employee: ' + error.message);
+    showAlert('Failed to save employee: ' + error.message);
   }
 }
 

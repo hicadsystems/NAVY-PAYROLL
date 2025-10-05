@@ -9,28 +9,30 @@
   </div>
 
   <!-- Styled Tabs (matching add-personnel style) -->
-  <div class="flex flex-wrap justify-center bg-white/50 rounded-xl border border-amber-50 shadow-sm p-2 gap-2 mb-6">
-    <button id="view-tab-personnel" 
-            onclick="window.ViewPersonnel?.switchTab('personnel')"
-            class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-600">
-      Personnel Details
-    </button>
-    <button id="view-tab-nok" 
-            onclick="window.ViewPersonnel?.switchTab('nok')"
-            class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
-      Next of Kin
-    </button>
-    <button id="view-tab-spouse" 
-            onclick="window.ViewPersonnel?.switchTab('spouse')"
-            class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
-      Spouse
-    </button>
-    <button id="view-tab-children" 
-            onclick="window.ViewPersonnel?.switchTab('children')"
-            class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
-      Children
-    </button>
-  </div>
+   <div class="flex flex-wrap justify-center">
+    <div class="w-fit flex flex-wrap item justify-center bg-white/50 rounded-xl border border-amber-50 shadow-sm p-2 gap-2 mb-6">
+      <button id="view-tab-personnel" 
+              onclick="window.ViewPersonnel?.switchTab('personnel')"
+              class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-600">
+        Personnel Details
+      </button>
+      <button id="view-tab-nok" 
+              onclick="window.ViewPersonnel?.switchTab('nok')"
+              class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
+        Next of Kin
+      </button>
+      <button id="view-tab-spouse" 
+              onclick="window.ViewPersonnel?.switchTab('spouse')"
+              class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
+        Spouse
+      </button>
+      <button id="view-tab-children" 
+              onclick="window.ViewPersonnel?.switchTab('children')"
+              class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
+        Children
+      </button>
+    </div>
+   </div>
 
   <!-- Content Area -->
   <div id="view-detail-content" class="p-6 min-h-[400px]">
@@ -48,10 +50,22 @@ class ViewPersonnelManager {
     this.currentEmployeeId = null;
     this.employeeData = null;
     this.currentTab = 'personnel';
+    this.lookupMaps = {}; // Stores all endpoint lookups
+    this.lookupsLoaded = false; // Track if lookups are loaded
   }
 
   async loadEmployee(employeeId) {
     this.currentEmployeeId = employeeId;
+    
+    // Store in sessionStorage to persist across page navigation
+    sessionStorage.setItem('currentEmployeeId', employeeId);
+    
+    // Load lookups first if not already loaded
+    if (!this.lookupsLoaded) {
+      await this.loadLookupData();
+      this.lookupsLoaded = true;
+    }
+    
     await this.loadEmployeeData();
     await this.switchTab('personnel');
   }
@@ -150,6 +164,104 @@ class ViewPersonnelManager {
     }
   }
 
+  async loadLookupData() {
+    const endpoints = [
+      'bankcode', 'bankbranch', 'state', 'lga', 
+      'command', 'title', 'religion', 'pfa', 'salarygrade', 'salarygroup', 'country',
+      'relationship', 'marital', 'exittype',
+    ];
+    
+    const token = localStorage.getItem('token');
+    
+    await Promise.all(endpoints.map(async endpoint => {
+      try {
+        const res = await fetch(`/reference/${endpoint}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!res.ok) {
+          console.warn(`Failed to fetch ${endpoint}: ${res.status}`);
+          this.lookupMaps[endpoint] = {};
+          return;
+        }
+        
+        const result = await res.json();
+        
+        // Handle different response formats
+        let data = result;
+        if (result.data) {
+          data = result.data;
+        }
+        
+        // Ensure data is an array
+        if (!Array.isArray(data)) {
+          console.warn(`${endpoint} did not return an array:`, data);
+          this.lookupMaps[endpoint] = {};
+          return;
+        }
+        
+        // Build lookup map based on endpoint
+        const valueField = this.getValueField(endpoint);
+        const textField = this.getTextField(endpoint);
+        
+        this.lookupMaps[endpoint] = Object.fromEntries(
+          data.map(item => [item[valueField], item[textField]])
+        );
+      } catch (err) {
+        console.error(`Failed to load ${endpoint}:`, err);
+        this.lookupMaps[endpoint] = {};
+      }
+    }));
+  }
+
+  getValueField(endpoint) {
+    const fieldMap = {
+      //'bankcode': 'bankcode',
+      //'bankbranch': 'branchcode',
+      'state': 'Statecode',
+      'lga': 'Lgcode',
+      'command': 'navalcmd',
+      'title': 'Titlecode',
+      'religion': 'ReligionCode',
+      'pfa': 'pfacode',
+      'relationship': 'RShipcode',
+      'marital': 'MaritalCode',
+      'exittype': 'Name',
+      'salarygrade': 'grade_no',
+      'salarygroup': 'groupcode',
+      'country': 'countrycode'
+    };
+    return fieldMap[endpoint] || 'code';
+  }
+
+  getTextField(endpoint) {
+    const fieldMap = {
+      //'bank': 'bankcode',
+      //'branches': 'branchcode',
+      'state': 'Statename',
+      'lga': 'Lgname',
+      'command': 'name',
+      'title': 'Description',
+      'religion': 'ReligionName',
+      'pfa': 'pfadesc',
+      'relationship': 'Relationship',
+      'marital': 'MaritalStatus',
+      'exittype': 'Description',
+      'salarygrade': 'grade_desc',
+      'salarygroup': 'grpdesc',
+      'country': 'Countryname'
+    };
+    return fieldMap[endpoint] || 'name';
+  }
+
+  resolveName(code, endpoint) {
+    if (!code) return 'N/A';
+    return this.lookupMaps[endpoint]?.[code] || code;
+  }
+
   async loadEmployeeData() {
     try {
       const token = localStorage.getItem('token');
@@ -175,6 +287,7 @@ class ViewPersonnelManager {
           <p class="text-sm mt-2">${error.message}</p>
         </div>
       `;
+      throw error;
     }
   }
 
@@ -238,7 +351,7 @@ class ViewPersonnelManager {
             <div class="space-y-3">
             <h4 class="text-lg font-semibold text-blue-700 border-b pb-2">Banking Details</h4>
             <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                <dt class="font-medium text-sm">Bank Code:</dt>
+                <dt class="font-medium text-sm">Bank:</dt>
                 <dd class="col-span-2 text-sm">${this.escape(emp.Bankcode || 'N/A')}</dd>
             </div>
             <div class="grid grid-cols-3 gap-2 py-2 border-b">
@@ -277,7 +390,7 @@ class ViewPersonnelManager {
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Rank:</dt>
-                    <dd class="col-span-2 font-semibold text-blue-600">${this.escape(emp.Title || 'N/A')}</dd>
+                    <dd class="col-span-2 font-semibold text-blue-600">${this.escape(this.resolveName(emp.Title, 'title'))}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Sex:</dt>
@@ -289,11 +402,11 @@ class ViewPersonnelManager {
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Marital Status:</dt>
-                    <dd class="col-span-2">${this.escape(emp.MaritalStatus || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.MaritalStatus, 'marital'))}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Religion:</dt>
-                    <dd class="col-span-2">${this.escape(emp.religion || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.religion, 'religion'))}</dd>
                 </div>
                 </div>
             </div>
@@ -312,11 +425,11 @@ class ViewPersonnelManager {
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">State of Origin:</dt>
-                    <dd class="col-span-2">${this.escape(emp.StateofOrigin || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.StateofOrigin, 'state'))}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">LGA:</dt>
-                    <dd class="col-span-2">${this.escape(emp.LocalGovt || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.LocalGovt, 'lga'))}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Town:</dt>
@@ -348,7 +461,7 @@ class ViewPersonnelManager {
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Entry Mode:</dt>
-                    <dd class="col-span-2">${this.escape(emp.entry_mode || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.entry_mode, 'entrymode'))}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Date Left:</dt>
@@ -356,7 +469,7 @@ class ViewPersonnelManager {
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Exit Type:</dt>
-                    <dd class="col-span-2">${this.escape(emp.exittype || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.exittype, 'exittype'))}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Seniority Date:</dt>
@@ -364,15 +477,15 @@ class ViewPersonnelManager {
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Location:</dt>
-                    <dd class="col-span-2">${this.escape(emp.Location || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.Location, 'locations'))}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Command:</dt>
-                    <dd class="col-span-2">${this.escape(emp.command || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.command, 'command'))}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Specialisation:</dt>
-                    <dd class="col-span-2">${this.escape(emp.specialisation || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.specialisation, 'specialisations'))}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Job Title:</dt>
@@ -398,36 +511,36 @@ class ViewPersonnelManager {
                     <dd class="col-span-2">${this.escape(emp.TaxCode || 'N/A')}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">State:</dt>
-                    <dd class="col-span-2">${this.escape(emp.state || 'N/A')}</dd>
+                    <dt class="font-medium">Tax State:</dt>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.state, 'state'))}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">NSITF Code:</dt>
                     <dd class="col-span-2">${this.escape(emp.NSITFcode || 'N/A')}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">PFA Code:</dt>
-                    <dd class="col-span-2">${this.escape(emp.pfacode || 'N/A')}</dd>
+                    <dt class="font-medium">PFA:</dt>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.pfacode, 'pfa'))}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Grade Level:</dt>
-                    <dd class="col-span-2">${this.escape(emp.gradelevel || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.gradelevel, 'salarygrade'))}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Grade Type:</dt>
-                    <dd class="col-span-2">${this.escape(emp.gradetype || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.gradetype, 'salarygroup'))}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">NHF Code:</dt>
                     <dd class="col-span-2">${this.escape(emp.NHFcode || 'N/A')}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Emolument Form:</dt>
+                    <dt class="font-medium">Emolument Form?</dt>
                     <dd class="col-span-2">${this.escape(emp.emolumentform || 'N/A')}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Country:</dt>
-                    <dd class="col-span-2">${this.escape(emp.Country || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.Country, 'country'))}</dd>
                 </div>
                 </div>
             </div>
@@ -456,7 +569,7 @@ class ViewPersonnelManager {
                   <div class="space-y-2">
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium">Relationship:</dt>
-                      <dd class="col-span-2">${this.escape(nok.Relationship || nok.RShipcode || 'N/A')}</dd>
+                      <dd class="col-span-2">${this.escape(this.resolveName(nok.RShipcode, 'relationship'))}</dd>
                     </div>
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium">Type:</dt>
@@ -475,7 +588,7 @@ class ViewPersonnelManager {
                 <div class="space-y-2">
                   <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Date of Birth:</dt>
-                    <dd class="col-span-2">${this.formatDateForDisplay(nok.dateofbirth)}</dd>
+                    <dd class="col-span-2">${this.formatISODateForDisplay(nok.dateofbirth)}</dd>
                   </div>
                   <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium text-gray-700 block mb-1">Address:</dt>
@@ -513,35 +626,46 @@ class ViewPersonnelManager {
             <div class="border-2 border-green-200 rounded-lg p-6 bg-gradient-to-r from-green-50 to-white shadow-md hover:shadow-lg transition-shadow">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-3">
-                  <h5 class="text-lg font-bold text-green-800">${this.escape(spouse.FullName || '')}</h5>
+                  <h5 class="text-lg font-bold text-green-800">${this.escape(spouse.spname || '')}</h5>
                   <div class="space-y-2">
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium">Phone:</dt>
-                      <dd class="text-gray-900">${this.escape(spouse.Phone || 'N/A')}</dd>
+                      <dd class="col-span-2">${this.escape(spouse.spphone || 'N/A')}</dd>
                     </div>
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium">Email:</dt>
-                      <dd class="text-gray-900">${this.escape(spouse.Email || 'N/A')}</dd>
+                      <dd class="col-span-2">${this.escape(spouse.spemail || 'N/A')}</dd>
                     </div>
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium">Date of Birth:</dt>
-                      <dd class="text-gray-900">${this.formatDateForDisplay(spouse.DateOfBirth)}</dd>
+                      <dd class="col-span-2">${this.formatISODateForDisplay(spouse.dateofbirth)}</dd>
                     </div>
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium">Married Date:</dt>
-                      <dd class="text-gray-900">${this.formatDateForDisplay(spouse.marrieddate)}</dd>
+                      <dd class="col-span-2">${this.formatISODateForDisplay(spouse.marrieddate)}</dd>
                     </div>
                   </div>
                 </div>
-                <div class="space-y-3">
-                  <div>
-                    <span class="font-medium text-gray-700 block mb-2">Address:</span>
-                    <div class="text-gray-900 space-y-1">
-                      ${spouse.Street ? `<p>${this.escape(spouse.Street)}</p>` : ''}
-                      ${spouse.Town || spouse.State ? `<p>${this.escape(spouse.Town || '')}, ${this.escape(spouse.State || '')}</p>` : ''}
-                      ${spouse.LocalGovernment ? `<p>${this.escape(spouse.LocalGovernment)}</p>` : ''}
-                      ${spouse.POBox ? `<p>P.O Box: ${this.escape(spouse.POBox)}</p>` : ''}
-                    </div>
+                <div class="space-y-2">
+                  <div class="grid grid-cols-3 gap-2 py-2 border-b">
+                    <dt class="font-medium">State:</dt>
+                    <dd class="col-span-2">${this.escape(this.resolveName(spouse.Statecode, 'state'))}</dd>
+                  </div>
+                  <div class="grid grid-cols-3 gap-2 py-2 border-b">
+                    <dt class="font-medium">Local Government:</dt>
+                    <dd class="col-span-2">${this.escape(this.resolveName(spouse.Lgcode, 'lga'))}</dd>
+                  </div>
+                  <div class="grid grid-cols-3 gap-2 py-2 border-b">
+                    <dt class="font-medium">Town:</dt>
+                    <dd class="col-span-2">${this.escape(this.resolveName(spouse.sptown, ' '))}</dd>
+                  </div>
+                  <div class="grid grid-cols-3 gap-2 py-2 border-b">
+                    <dt class="font-medium text-gray-700">Address:</dt>
+                    <dd class="col-span-2">${this.escape(spouse.spstreet || 'N/A')}</dd>
+                  </div>
+                  <div class="grid grid-cols-3 gap-2 py-2 border-b">
+                    <dt class="font-medium">PoBox:</dt>
+                    <dd class="col-span-2">${this.escape(spouse.sppobox || 'N/A')}</dd>
                   </div>
                 </div>
               </div>
@@ -571,59 +695,59 @@ class ViewPersonnelManager {
                   <div class="space-y-2">
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium">Sex:</dt>
-                      <dd class="text-gray-900">${this.escape(child.Sex || 'N/A')}</dd>
+                      <dd class="col-span-2">${this.escape(child.Sex || 'N/A')}</dd>
                     </div>
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium">Date of Birth:</dt>
-                      <dd class="text-gray-900">${this.formatDate(child.dateofbirth)}</dd>
+                      <dd class="col-span-2">${this.formatISODateForDisplay(child.dateofbirth)}</dd>
                     </div>
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium">Age:</dt>
-                      <dd class="text-gray-900 font-semibold">${this.calculateAge(child.dateofbirth)} years</dd>
+                      <dd class="col-span-2 font-semibold">${this.calculateAge(child.dateofbirth)} years</dd>
                     </div>
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium">Phone:</dt>
-                      <dd class="text-gray-900">${this.escape(child.chphone || 'N/A')}</dd>
+                      <dd class="col-span-2">${this.escape(child.chphone || 'N/A')}</dd>
                     </div>
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium">Email:</dt>
-                      <dd class="text-gray-900">${this.escape(child.chemail || 'N/A')}</dd>
+                      <dd class="col-span-2">${this.escape(child.chemail || 'N/A')}</dd>
                     </div>
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium">POBOX:</dt>
-                      <dd class="text-gray-900">${this.escape(child.chpobox || 'N/A')}</dd>
+                      <dd class="col-span-2">${this.escape(child.chpobox || 'N/A')}</dd>
                     </div>
                   </div>
                 </div>
                 <div class="space-y-3">
                   <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">School:</dt>
-                    <dd class="text-gray-900">${this.escape(child.chschool || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(child.chschool || 'N/A')}</dd>
                   </div>
                   <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Occupation:</dt>
-                    <dd class="text-gray-900">${this.escape(child.occupation || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(child.occupation || 'N/A')}</dd>
                   </div>
                   <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium text-gray-700 block mb-1">Office Address:</dt>
-                    <dd class="text-gray-900">${this.escape(child.officeaddress || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(child.officeaddress || 'N/A')}</dd>
                   </div>
                   <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium text-gray-700 block mb-1">Address:</dt>
-                    <dd class="text-gray-900">${this.escape(child.chstreet || 'N/A')}</dd>
+                    <dd class="col-span-2">${this.escape(child.chstreet || 'N/A')}</dd>
                   </div>
-                   <div class="text-gray-900 space-y-1">
+                   <div class="col-span-2 space-y-1">
                      <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium text-gray-700 block mb-1">Town:</dt>
-                      <dd class="text-gray-900">${this.escape(child.chtown || 'N/A')}</dd>
+                      <dd class="col-span-2">${this.escape(this.resolveName(child.chtown, ' '))}</dd>
                     </div>
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium text-gray-700 block mb-1">State:</dt>
-                      <dd class="text-gray-900">${this.escape(child.Statecode || 'N/A')}</dd>
+                      <dd class="col-span-2">${this.escape(this.resolveName(child.Statecode, 'state'))}</dd>
                     </div>
                     <div class="grid grid-cols-3 gap-2 py-2 border-b">
                       <dt class="font-medium text-gray-700 block mb-1">LGA:</dt>
-                      <dd class="text-gray-900">${this.escape(child.Lgcode || 'N/A')}</dd>
+                      <dd class="col-span-2">${this.escape(this.resolveName(child.Lgcode, 'lga'))}</dd>
                     </div>
                     </div>
                   </div>
@@ -674,4 +798,12 @@ class ViewPersonnelManager {
 
 // Initialize
 window.ViewPersonnel = new ViewPersonnelManager();
+
+// Auto-reload employee if navigating back to this view
+(function() {
+  const savedEmployeeId = sessionStorage.getItem('currentEmployeeId');
+  if (savedEmployeeId && document.getElementById('view-detail-content')) {
+    window.ViewPersonnel.loadEmployee(savedEmployeeId);
+  }
+})();
 </script>

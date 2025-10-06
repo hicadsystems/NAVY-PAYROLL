@@ -768,26 +768,16 @@ class NavigationSystem {
   showLoadingState(sectionName) {
     const mainContent = document.querySelector('main');
     if (mainContent) {
+      // Hide immediately like renderSection does
+      mainContent.style.opacity = '0';
+      mainContent.style.transition = 'none';
+      
       mainContent.innerHTML = `
-        <div class="mt-6">
-          <!-- Return to Dashboard Button -->
-          <div class="mb-4">
-            <button 
-              onclick="this.returnToDashboard()" 
-              class="bg-yellow-500 hover:bg-red-500 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center gap-2"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-              </svg>
-              Return to Dashboard
-            </button>
-          </div>
-          
+        <div class="mt-6 min-h-screen">
           <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
-          <div class="bg-transparent rounded-xl p-6 shadow-sm border border-gray-100">
+          <div class="bg-transparent rounded-xl p-6 shadow-sm border border-gray-100 min-h-[500px]">
             <div class="flex items-center justify-center py-12">
-              <body class="flex items-center justify-center h-screen bg-gray-100">
-              <div class="relative w-10 h-10">
+              <div class="relative w-10 h-10 mr-3">
                 <!-- Left bar (bottom-up) -->
                 <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
 
@@ -802,6 +792,16 @@ class NavigationSystem {
           </div>
         </div>
       `;
+      
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      
+      // Fade in the loading state
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          mainContent.style.transition = 'opacity 0.3s ease';
+          mainContent.style.opacity = '1';
+        });
+      });
     }
   }
 
@@ -890,36 +890,57 @@ class NavigationSystem {
     `;
   }
 
-  renderSection(sectionName, content) {
-    const mainContent = document.querySelector('main');
-    if (mainContent) {
-      mainContent.innerHTML = `
-        <div class="mt-6">
-          <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
-          <div class="bg-white/10 rounded-xl shadow-lg border border-gray-100">
-            ${content}
-          </div>
-
-          <!-- Return to Dashboard Button -->
-          <div class="my-12">
-            <button 
-              onclick="window.navigation.returnToDashboard()" 
-              class="bg-yellow-500 hover:bg-red-500 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center gap-2"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-              </svg>
-              Return
-            </button>
-          </div>
+renderSection(sectionName, content) {
+  const mainContent = document.querySelector('main');
+  if (mainContent) {
+    // FIRST: Immediately hide content to prevent any visual flicker
+    mainContent.style.opacity = '0';
+    mainContent.style.transition = 'none'; // No transition for instant hide
+    
+    // SECOND: Update content while hidden
+    mainContent.innerHTML = `
+      <div class="mt-6 min-h-screen">
+        <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
+        <div class="bg-white/10 rounded-xl shadow-lg border border-gray-100 min-h-[500px]">
+          ${content}
         </div>
-      `;
-      
-      // Initialize any scripts in the loaded content
-      this.initializeLoadedScripts();
-    }
-  }
 
+        <!-- Return to Dashboard Button -->
+        <div class="my-6">
+          <button 
+            onclick="window.navigation.returnToDashboard()" 
+            class="bg-yellow-500 hover:bg-red-500 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center gap-2"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Return
+          </button>
+        </div>
+      </div>
+    `;
+    
+    // THIRD: Scroll to top while still hidden
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    
+    // FOURTH: After a tiny delay, fade in with animation
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        mainContent.style.transition = 'opacity 0.3s ease';
+        mainContent.style.opacity = '1';
+        
+        // Add fade-up animation to the container
+        const container = mainContent.querySelector('.mt-6');
+        if (container) {
+          container.classList.add('animate-fade-up');
+        }
+      });
+    });
+    
+    // Initialize any scripts in the loaded content
+    this.initializeLoadedScripts();
+  }
+}
   initializeLoadedScripts() {
     // Execute any scripts in the newly loaded content
     const scripts = document.querySelectorAll('main script');

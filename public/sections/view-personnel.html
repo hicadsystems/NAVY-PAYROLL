@@ -294,11 +294,23 @@ class ViewPersonnelManager {
   async switchTab(tab) {
     this.currentTab = tab;
     
+    // Check marital status to determine if spouse tab should be visible
+    const isMarried = this.employeeData?.employee?.MaritalStatus === 'M' || 
+                      this.employeeData?.employee?.MaritalStatus === 'Married';
+    
     // Update tab styling
     const tabs = ['personnel', 'nok', 'spouse', 'children'];
     tabs.forEach(t => {
       const tabBtn = document.getElementById(`view-tab-${t}`);
       if (tabBtn) {
+        // Hide spouse tab if not married
+        if (t === 'spouse' && !isMarried) {
+          tabBtn.style.display = 'none';
+          return;
+        } else {
+          tabBtn.style.display = ''; // Show the tab
+        }
+        
         if (t === tab) {
           tabBtn.className = 'px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-600';
         } else {
@@ -306,6 +318,12 @@ class ViewPersonnelManager {
         }
       }
     });
+
+    // If spouse tab was active but user is not married, switch to personnel tab
+    if (tab === 'spouse' && !isMarried) {
+      this.switchTab('personnel');
+      return;
+    }
 
     // Render content
     const contentArea = document.getElementById('view-detail-content');
@@ -326,7 +344,7 @@ class ViewPersonnelManager {
         break;
     }
   }
-
+  
   renderPersonnelDetails() {
     const emp = this.employeeData.employee;
     // Check if passport exists and format it properly for display

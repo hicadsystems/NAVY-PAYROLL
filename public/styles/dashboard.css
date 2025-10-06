@@ -146,6 +146,7 @@ html, body {
   overflow: hidden;              /* Prevent native browser scrolling */
   scrollbar-width: none;         /* Firefox */
   -ms-overflow-style: none;      /* IE/Edge */
+  scroll-behavior: smooth;
 }
 
 /* Chrome, Safari, Opera scrollbar hiding for html/body */
@@ -169,21 +170,26 @@ body::-webkit-scrollbar {
 .main-content-wrapper {
   scrollbar-width: none;       /* Firefox */
   -ms-overflow-style: none;    /* IE/Edge */
+   transition: opacity 0.15s ease;
 }
 
 .main-content-wrapper::-webkit-scrollbar {
   display: none;               /* Chrome, Safari, Opera */
 }
 
-.shadow-right-only {
-  box-shadow: 
-    /* Right Side Shadow: Positive X-offset (5px), Zero Y-offset (0) */
-    5px 0 10px -5px rgba(0, 0, 0, 0.1),   /* Main, soft right shadow */
-    2px 0 5px -5px rgba(0, 0, 0, 0.08),   /* Finer, sharper right shadow */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-    /* Top Side Shadow: Zero X-offset (0), Negative Y-offset (-5px) */
-    0px -5px 10px -5px rgba(0, 0, 0, 0.1), /* Main, soft top shadow */
-    0px -2px 5px -5px rgba(0, 0, 0, 0.08); /* Finer, sharper top shadow */
+.animate-fade-up {
+  animation: fadeInUp 0.4s ease-out forwards;
 }
 
 

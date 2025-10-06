@@ -711,7 +711,38 @@ class NavigationSystem {
         const sectionName = link.textContent.trim();
         
         if (sectionId) {
-          // Close all submenus first
+          // CHECK EDIT MODE BEFORE SHOWING LOADING STATE
+          const isEditMode = localStorage.getItem('isEditMode') === 'true';
+          const currentHash = window.location.hash.substring(1);
+          
+          // If clicking add-personnel while already in edit mode, keep edit mode
+          if (sectionId === 'add-personnel' && isEditMode && currentHash === 'add-personnel') {
+            // Already on add-personnel in edit mode, do nothing
+            return;
+          }
+          
+          if (isEditMode && currentHash === 'add-personnel' && sectionId !== 'add-personnel') {
+            const confirmed = confirm(
+              'You are currently editing a personnel record. ' +
+              'Any unsaved changes will be lost. Do you want to continue?'
+            );
+            
+            if (!confirmed) {
+              console.log('Navigation cancelled by user');
+              return;
+            }
+            
+            // User confirmed, clean up edit state
+            localStorage.removeItem('editing_employee_id');
+            localStorage.removeItem('isEditMode');
+            localStorage.removeItem('navigatedFromCurrentPersonnel');
+            
+            if (window.PersonnelAPI?.setCreateMode) {
+              window.PersonnelAPI.setCreateMode();
+            }
+          }
+          
+          // Close all submenus
           if (typeof closeAll === 'function') {
             closeAll();
           }
@@ -719,11 +750,14 @@ class NavigationSystem {
           // Hide mobile menu
           this.hideMobileMenu();
           
-          // Show loading state
-          this.showLoadingState(sectionName);
+          // Show loading state (use "Edit Personnel" if in edit mode and going to add-personnel)
+          const displayName = (sectionId === 'add-personnel' && isEditMode) 
+            ? 'Edit Personnel' 
+            : sectionName;
+          this.showLoadingState(displayName);
           
           // Navigate to section
-          await this.navigateToSection(sectionId, sectionName);
+          await this.navigateToSection(sectionId, displayName);
         }
       });
     });
@@ -890,57 +924,67 @@ class NavigationSystem {
     `;
   }
 
-renderSection(sectionName, content) {
-  const mainContent = document.querySelector('main');
-  if (mainContent) {
-    // FIRST: Immediately hide content to prevent any visual flicker
-    mainContent.style.opacity = '0';
-    mainContent.style.transition = 'none'; // No transition for instant hide
-    
-    // SECOND: Update content while hidden
-    mainContent.innerHTML = `
-      <div class="mt-6 min-h-screen">
-        <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
-        <div class="bg-white/10 rounded-xl shadow-lg border border-gray-100 min-h-[500px]">
-          ${content}
-        </div>
+  renderSection(sectionName, content) {
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+      // Instantly hide content to prevent flicker
+      mainContent.style.opacity = '0';
+      mainContent.style.transition = 'none';
 
-        <!-- Return to Dashboard Button -->
-        <div class="my-6">
-          <button 
-            onclick="window.navigation.returnToDashboard()" 
-            class="bg-yellow-500 hover:bg-red-500 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center gap-2"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-            </svg>
-            Return
-          </button>
+      // Update content while hidden
+      mainContent.innerHTML = `
+        <div class="mt-6 min-h-screen">
+          <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
+          <div class="bg-white/10 rounded-xl shadow-lg border border-gray-100 min-h-[500px]">
+            ${content}
+          </div>
+
+          <!-- Return to Dashboard Button -->
+          <div class="my-6">
+            <button 
+              onclick="window.navigation.returnToDashboard()" 
+              class="bg-yellow-500 hover:bg-red-500 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Return
+            </button>
+          </div>
         </div>
-      </div>
-    `;
-    
-    // THIRD: Scroll to top while still hidden
-    window.scrollTo({ top: 0, behavior: 'instant' });
-    
-    // FOURTH: After a tiny delay, fade in with animation
-    requestAnimationFrame(() => {
+      `;
+
+      // Scroll to top before revealing
+      window.scrollTo({ top: 0, behavior: 'instant' });
+
+      // Fade in smoothly
       requestAnimationFrame(() => {
-        mainContent.style.transition = 'opacity 0.3s ease';
-        mainContent.style.opacity = '1';
-        
-        // Add fade-up animation to the container
-        const container = mainContent.querySelector('.mt-6');
-        if (container) {
-          container.classList.add('animate-fade-up');
-        }
+        requestAnimationFrame(() => {
+          mainContent.style.transition = 'opacity 0.3s ease';
+          mainContent.style.opacity = '1';
+
+          // Apply the fade-up animation
+          const container = mainContent.querySelector('.mt-6');
+          if (container) {
+            container.classList.add('animate-fade-up');
+
+            // Remove fade-up transform after animation completes
+            container.addEventListener('animationend', (e) => {
+              if (e.animationName === 'fadeInUp' || e.animationName === 'fadeInUpInner') {
+                container.classList.remove('animate-fade-up');
+                container.style.transform = 'none'; // ensure no transform remains
+              }
+            }, { once: true });
+          }
+        });
       });
-    });
-    
-    // Initialize any scripts in the loaded content
-    this.initializeLoadedScripts();
+
+      // Initialize any scripts in loaded content
+      this.initializeLoadedScripts();
+    }
   }
-}
+
   initializeLoadedScripts() {
     // Execute any scripts in the newly loaded content
     const scripts = document.querySelectorAll('main script');

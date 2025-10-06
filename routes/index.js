@@ -37,6 +37,7 @@ const dropdownhelperRoutes = require('./refrence-tables/dropdownhelper');
 
 //file-upload-helper
 const salaryscaleuploadRoutes = require('./file-upload-helper/salaryscaleupload');
+const personnelUploadRoutes = require('./file-upload-helper/personnelUpload');
 
 
 
@@ -77,4 +78,5 @@ module.exports = (app) => {
 
     //file-upload-helper
     app.use("/api/v1", salaryscaleuploadRoutes);
+    app.use('/batchpersonnel', personnelUploadRoutes);
 };

@@ -38,8 +38,9 @@
                class="mt-1 block w-full border border-blue-500 bg-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
         <p class="text-xs text-gray-500 mt-2">
           Only .xlsx or .csv files allowed. 
-          <a href="sample.csv" download 
-             class="text-blue-600 hover:underline ml-2">Download Sample</a>
+          <button type="button" id="downloadSampleBtn" class="text-blue-600 hover:underline ml-2 bg-none border-none cursor-pointer">
+            Download Sample Template
+          </button>
         </p>
       </div>
 
@@ -51,16 +52,6 @@
           class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white">Upload</button>
       </div>
     </form>
-  </div>
-</div>
-
-<!-- SUCCESS POPUP -->
-<div id="uploadSuccessPopup" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-  <div class="bg-white rounded-2xl shadow-lg p-6 w-96 text-center">
-    <h4 class="text-xl font-semibold text-green-600 mb-2">Upload Successful!</h4>
-    <p class="text-gray-600 mb-4">Your batch file has been uploaded successfully.</p>
-    <button id="closePopupBtn" 
-      class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">Close</button>
   </div>
 </div>
 
@@ -83,7 +74,7 @@
       </button>
     </div>
 
-    <button onclick="window.navigation?.navigateToSection ? window.navigation.navigateToSection('current-personnel','Current Personnel') : showAlert('Hook your navigation here.')"
+    <button onclick="window.navigation?.navigateToSection ? window.navigation.navigateToSection('current-personnel','Current Personnel') : showAlert('Hook your navigation here.')" id="currentPersonnelBtn"
       class="px-4 text-sm lg:text-lg py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
       Current Personnel
     </button>
@@ -520,6 +511,16 @@
   </div>
 </div>
 
+<!-- SUCCESS POPUP -->
+<div id="uploadSuccessPopup" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+  <div class="bg-white rounded-2xl shadow-lg p-6 w-96 text-center">
+    <h4 class="text-xl font-semibold text-green-600 mb-2">Upload Successful!</h4>
+    <p class="text-gray-600 mb-4">Your batch file has been uploaded successfully.</p>
+    <button id="closePopupBtn" 
+      class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">Close</button>
+  </div>
+</div>
+
 <!-- Action Popup -->
 <div id="actionPopup" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
   <div class="bg-white p-6 rounded-2xl shadow-xl text-center w-64">
@@ -556,6 +557,7 @@
 <script>
 // Complete Personnel Management Script
 const API_BASE = '/personnel';
+const API_BATCH = '/batchpersonnel';
 const API_HEADERS = {
   'Content-Type': 'application/json',
   'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -888,23 +890,32 @@ const EDIT_KEY = 'editing_employee_id';
 let currentEmployeeId = localStorage.getItem(EDIT_KEY);
 //console.log('Initial currentEmployeeId:', currentEmployeeId);
 
+
+// Navigation guard to warn about unsaved changes
+function setupNavigationGuard() {
+  // Navigation guard is now handled in setupSubmenuNavigation
+}
+
 // Modify window load event handler
 (async function checkAndLoadEditMode() {
-  //console.log('=== CHECKING EDIT MODE (immediate) ===');
   const editingId = localStorage.getItem(EDIT_KEY);
-  //console.log('editingId from localStorage:', editingId);
   
   if (editingId && editingId !== 'null' && editingId !== 'undefined') {
-    //console.log('✅ CALLING loadEmployeeDataForEdit for:', editingId);
     try {
       // Wait a tiny bit for DOM to be ready
       await new Promise(resolve => setTimeout(resolve, 100));
       await loadEmployeeDataForEdit(editingId);
-      //console.log('✅ loadEmployeeDataForEdit completed successfully');
+      
+      // Setup navigation guard after loading edit data
+      setupNavigationGuard();
     } catch (error) {
-      console.error('❌ loadEmployeeDataForEdit failed:', error);
+      console.error('Failed to load employee data:', error);
       localStorage.removeItem(EDIT_KEY);
+      localStorage.removeItem('isEditMode');
     }
+  } else {
+    // Setup navigation guard even when not in edit mode
+    setupNavigationGuard();
   }
 })();
 
@@ -1055,9 +1066,10 @@ function cancelPersonnelForm() {
     editState.row = null;
     editState.id = null;
 
-    // 8. restore batch upload button if it was disabled
+    // 8. restore batch upload/current personnel button if it was disabled
     if (localStorage.getItem('isEditMode') === 'true') {
       const batchButton = document.getElementById('tab-batch');
+      const currentPersonnelButton = document.getElementById('currentPersonnelBtn');
       localStorage.removeItem('isEditMode');
     }
 
@@ -1091,54 +1103,6 @@ function clearAllFamilyTables() {
   });
 }
 
-// Batch Upload
-const uploadBtn = document.getElementById("uploadBatchBtn");
-const popup = document.getElementById("uploadSuccessPopup");
-const closePopupBtn = document.getElementById("closePopupBtn");
-const cancelBatchBtn = document.getElementById("cancelBatchBtn");
-
-uploadBtn?.addEventListener("click", async () => {
-  const fileInput = document.getElementById("batchFile");
-  if (!fileInput.files.length) {
-    showAlert("Please select a file to upload!");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append('file', fileInput.files[0]);
-
-  uploadBtn.innerText = "Uploading...";
-  uploadBtn.disabled = true;
-  
-  try {
-    const response = await fetch(`${API_BASE}/batch-upload`, {
-      method: 'POST',
-      body: formData
-    });
-    
-    const result = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(result.error || 'Upload failed');
-    }
-    
-    popup.classList.remove("hidden");
-  } catch (error) {
-    showError(error.message);
-  } finally {
-    uploadBtn.innerText = "Upload";
-    uploadBtn.disabled = false;
-  }
-});
-
-closePopupBtn?.addEventListener("click", () => {
-  popup.classList.add("hidden");
-  document.getElementById("batchUploadForm")?.reset();
-});
-
-cancelBatchBtn?.addEventListener("click", () => {
-  document.getElementById("batchUploadForm")?.reset();
-});
 
 // Tab functionality
 const tabs = ['personnel', 'nok', 'spouse', 'children', 'batch'];
@@ -1174,10 +1138,18 @@ document.getElementById('tab-batch')?.addEventListener('click', () => showTab('b
 // Check if we're in edit mode from localStorage
 if (localStorage.getItem('isEditMode') === 'true') {
   const batchButton = document.getElementById('tab-batch');
+  const currentPersonnelButton = document.getElementById('currentPersonnelBtn');
+
   if (batchButton) {
     batchButton.disabled = true;
-    batchButton.classList.add('opacity-50', 'cursor-not-allowed');
-    batchButton.classList.remove('hover:bg-blue-600');
+    batchButton.classList.add('opacity-50', 'cursor-none');
+    batchButton.classList.remove('hover:bg-blue-600', 'cursor-not-allowed');
+  }
+
+  if (currentPersonnelButton) {
+    currentPersonnelButton.disabled = true;
+    currentPersonnelButton.classList.add('opacity-50', 'cursor-none');
+    currentPersonnelButton.classList.remove('hover:bg-green-700', 'cursor-not-allowed');
   }
 }
 
@@ -2481,6 +2453,223 @@ async function submitPersonnelForm() {
     showAlert('Failed to save employee: ' + error.message);
   }
 }
+
+
+// Batch upload functionality
+document.getElementById("uploadBatchBtn").addEventListener("click", async () => {
+  const fileInput = document.getElementById("batchFile");
+  const file = fileInput.files[0];
+  
+  if (!file) {
+    showAlert('Please select a file to upload');
+    return;
+  }
+  
+// Validate file input
+
+if (!file) {
+  showAlert('Please select a file to upload');
+  return;
+}
+
+// ✅ safer validation by extension
+const allowedExtensions = ['.csv', '.xlsx', '.xls'];
+const fileName = file.name.toLowerCase();
+const isExcelOrCsv = allowedExtensions.some(ext => fileName.endsWith(ext));
+
+if (!isExcelOrCsv) {
+  showAlert('Please upload only CSV or Excel files');
+  return;
+}
+
+// ✅ Size validation
+if (file.size > 5 * 1024 * 1024) {
+  showAlert('File size must be less than 5MB');
+  return;
+}
+
+  try {
+    console.log('Starting upload for file:', file.name);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_BATCH}/batch-upload`, {
+      method: 'POST',
+      headers: {
+        "Authorization": `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    let result;
+
+    // Try to parse JSON safely (even when error occurs)
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error(`Unexpected server response (${response.status})`);
+    }
+
+    if (!response.ok) {
+      // If backend sends { error: "something went wrong" }
+      const message = result.error || result.message || response.statusText || "Unknown error";
+      throw new Error(message);
+    }
+
+    console.log('Upload result:', result);
+
+// ✅ Handle success response
+if (result.summary) {
+  const summary = result.summary;
+  let message = `Batch upload completed!\n\n`;
+  message += `Total Records: ${summary.totalRecords}\n`;
+  message += `Inserted: ${summary.inserted}\n`;
+  message += `Successful Inserts: ${summary.successful}\n`;
+  message += `Failed Inserts: ${summary.failed}\n`;
+
+  if (summary.duplicates && summary.duplicates.length > 0) {
+    message += `\n⚠️ Duplicate Service Numbers (already exist):\n`;
+    message += summary.duplicates.slice(0, 10).join(', ');
+    if (summary.duplicates.length > 10) {
+      message += ` ...and ${summary.duplicates.length - 10} more`;
+    }
+  }
+
+  if (summary.errors && summary.errors.length > 0) {
+    message += `\n\n❌ Row Errors:\n`;
+    summary.errors.slice(0, 5).forEach(error => {
+      message += `Row ${error.row} (${error.serviceNumber}): ${error.error}\n`;
+    });
+    if (summary.errors.length > 5) {
+      message += `...and ${summary.errors.length - 5} more errors`;
+    }
+  }
+
+  showAlert(message);
+
+
+      if (summary.successful > 0 || summary.successful === 'Processing') {
+        document.getElementById("batchUploadForm").reset();
+        document.getElementById("batchUploadForm").classList.add("hidden");
+        //await loadScales();
+        resetBatchUploadForm();
+
+        showPopup("Personnels Uploaded successfully", () => {
+          if (window.navigation?.navigateToSection) {
+            window.navigation.navigateToSection('current-personnel', 'Current Personnel');
+            setTimeout(() => {
+              if (window.personnelManager?.refresh) {
+                window.personnelManager.refresh();
+              }
+            }, 100);
+          }
+        });
+      }
+    } else {
+      showPopup('Upload completed successfully!');
+      document.getElementById("batchUploadForm").reset();
+      document.getElementById("batchUploadForm").classList.add("hidden");
+
+      showPopup("Personnels Uploaded successfully", () => {
+        if (window.navigation?.navigateToSection) {
+          window.navigation.navigateToSection('current-personnel', 'Current Personnel');
+          setTimeout(() => {
+            if (window.personnelManager?.refresh) {
+              window.personnelManager.refresh();
+            }
+          }, 100);
+        }
+      });
+    }
+
+  } catch (error) {
+    console.error('Batch upload failed:', error);
+    showAlert(`❌ Upload failed:\n${error.message}`);
+  }
+});
+
+
+// Download sample template
+document.getElementById("downloadSampleBtn").addEventListener("click", async (e) => {
+  e.preventDefault();
+  try {
+    const response = await fetch(`${API_BATCH}/batch-template`, {
+      method: 'GET',
+      headers: API_HEADERS
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to download sample: ${response.statusText}`);
+    }
+
+    // Handle file download
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sample_template.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Failed to download sample:', error);
+    showAlert('Failed to download sample template');
+  }
+});
+
+
+// Show selected file info
+document.addEventListener('DOMContentLoaded', () => {
+  const batchFileInput = document.getElementById("batchFile");
+  if (batchFileInput) {
+    batchFileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const fileInfo = document.createElement('div');
+        fileInfo.className = 'mt-2 text-sm text-gray-600 file-info';
+        fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+
+        const existingInfo = e.target.parentNode.querySelector('.file-info');
+        if (existingInfo) existingInfo.remove();
+
+        e.target.parentNode.appendChild(fileInfo);
+      }
+    });
+  }
+});
+
+// Cancel Batch Upload — reset everything cleanly
+function resetBatchUploadForm() {
+  const form = document.getElementById("batchUploadForm");
+  const fileInput = document.getElementById("batchFile");
+
+  if (!form) return;
+
+  // Clear file input
+  if (fileInput) {
+    fileInput.value = "";
+  }
+
+  // Remove file info (e.g., "Selected: file.xlsx (123 KB)")
+  const fileInfo = form.querySelector(".file-info");
+  if (fileInfo) {
+    fileInfo.remove();
+  }
+
+  // Hide the form
+  //form.classList.add("hidden");
+
+  // Optionally clear alerts or messages
+  if (typeof clearAlerts === "function") clearAlerts();
+
+  console.log("✅ Batch upload form reset successfully");
+}
+
+// Cancel Button handler
+document.getElementById("cancelBatchBtn").addEventListener("click", resetBatchUploadForm);
 
 // Global API
 window.PersonnelAPI = {

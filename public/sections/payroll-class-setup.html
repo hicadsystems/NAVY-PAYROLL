@@ -4,8 +4,8 @@
   
   <!-- Form -->
   <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-      <input id="payrollCode" type="text" placeholder="Enter Code"
-          class="border bg-transparent border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
+      <input id="payrollCode" type="text" placeholder="Enter Code"  
+       class="border bg-transparent border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
       <input id="payrollDesc" type="text" placeholder="Enter Description"
           class="border bg-transparent border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
       <input id="payrollYear" type="text" placeholder="Enter Year"
@@ -32,7 +32,7 @@
   </div>
 
   <!--<div class="mb-6">
-      <button onclick="window.navigation?.navigateToSection?.('change-payroll-class', 'Change Payroll Class')" 
+      <button onclick="window.navigation?.navigateToSection?.('change-payroll-setup', 'Change Payroll Class')" 
           class="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">
           Change Payroll Class
       </button>
@@ -51,46 +51,7 @@
               </tr>
           </thead>
           <tbody id="payrollTableBody" class="text-center">
-              <!-- Sample Data -->
-              <tr class="hover:bg-gray-50">
-                  <td class="border py-2 px-4">1</td>
-                  <td class="border py-2 px-4">OFFICER</td>
-                  <td class="border py-2 px-4">2025</td>
-                  <td class="border py-2 px-4">08</td>
-                  <td class="border py-2 px-4 space-x-2">
-                      <button class="text-blue-600 hover:underline editBtn">Edit</button> |
-                      <button class="text-red-600 hover:underline deleteBtn">Delete</button>
-                      <button class="bg-green-500 text-white px-3 py-1 rounded text-xs hover:bg-green-600 toggleBtn" data-status="active">
-                          Active
-                      </button>
-                  </td>
-              </tr>
-              <tr class="hover:bg-gray-50">
-                  <td class="border py-2 px-4">2</td>
-                  <td class="border py-2 px-4">W/OFFICER</td>
-                  <td class="border py-2 px-4">2025</td>
-                  <td class="border py-2 px-4">08</td>
-                  <td class="border py-2 px-4 space-x-2">
-                      <button class="text-blue-600 hover:underline editBtn">Edit</button> |
-                      <button class="text-red-600 hover:underline deleteBtn">Delete</button>
-                      <button class="bg-green-500 text-white px-3 py-1 rounded text-xs hover:bg-green-600 toggleBtn" data-status="active">
-                          Active
-                      </button>
-                  </td>
-              </tr>
-              <tr class="hover:bg-gray-50">
-                  <td class="border py-2 px-4">3</td>
-                  <td class="border py-2 px-4">RATE A</td>
-                  <td class="border py-2 px-4">2025</td>
-                  <td class="border py-2 px-4">07</td>
-                  <td class="border py-2 px-4 space-x-2">
-                      <button class="text-blue-600 hover:underline editBtn">Edit</button> |
-                      <button class="text-red-600 hover:underline deleteBtn">Delete</button>
-                      <button class="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600 toggleBtn" data-status="inactive">
-                          Inactive
-                      </button>
-                  </td>
-              </tr>
+
           </tbody>
       </table>
   </div>
@@ -119,6 +80,66 @@
 
 <script>
   (function () {
+      // API functions
+      const API = {
+          // Get auth token from localStorage
+          getToken() {
+              return localStorage.getItem('token');
+          },
+
+          // Generic fetch helper with auth and error handling
+          async fetchWithAuth(url, options = {}) {
+              const token = this.getToken();
+              if (!token) {
+                  throw new Error('Authentication required');
+              }
+
+              const response = await fetch(url, {
+                  ...options,
+                  headers: {
+                      ...options.headers,
+                      'Authorization': `Bearer ${token}`,
+                      'Content-Type': 'application/json'
+                  }
+              });
+
+              if (!response.ok) {
+                  const error = await response.json();
+                  throw new Error(error.error || 'API request failed');
+              }
+
+              return response.json();
+          },
+
+          // GET /payroll-setup
+          async getAllClasses() {
+              return this.fetchWithAuth('/payroll-setup');
+          },
+
+          // POST /payroll-setup/create
+          async createClass(data) {
+              return this.fetchWithAuth('/payroll-setup/create', {
+                  method: 'POST',
+                  body: JSON.stringify(data)
+              });
+          },
+
+          // PUT /payroll-setup/:classcode
+          async updateClass(classcode, data) {
+              return this.fetchWithAuth(`/payroll-setup/${classcode}`, {
+                  method: 'PUT',
+                  body: JSON.stringify(data)
+              });
+          },
+
+          // DELETE /payroll-setup/:classcode
+          async deleteClass(classcode) {
+              return this.fetchWithAuth(`/payroll-setup/${classcode}`, {
+                  method: 'DELETE'
+              });
+          }
+      };
+
       const addBtn = document.getElementById("addPayrollBtn");
       const codeInput = document.getElementById("payrollCode");
       const descInput = document.getElementById("payrollDesc");
@@ -130,6 +151,22 @@
       const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
       const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
 
+      // Load existing payroll classes
+      async function loadPayrollClasses() {
+          try {
+              const response = await API.getAllClasses();
+              tableBody.innerHTML = ''; // Clear existing rows
+              response.data.forEach(item => {
+                  tableBody.appendChild(createRow(item.classcode, item.classname, item.year, item.month)); // Default values for missing fields
+              });
+          } catch (error) {
+              handleError(error, 'loading payroll classes');
+          }
+      }
+
+      // Load data when page loads
+      loadPayrollClasses();
+
       const successModal = document.getElementById("successModal");
       const spinner = document.getElementById("spinner");
       const checkmark = document.getElementById("checkmark");
@@ -138,11 +175,12 @@
       let rowToDelete = null;
       let nextCode = 4; // Start from 4 since we have sample data 1-3
 
-      // Show success modal (spinner → tick)
+      // Enhanced feedback system
       function showSuccess(message) {
           spinner.classList.remove("hidden");
           checkmark.classList.add("hidden");
           successMessage.textContent = "Processing...";
+          successMessage.className = "text-gray-800";
           successModal.classList.remove("hidden");
 
           setTimeout(() => {
@@ -154,6 +192,24 @@
           setTimeout(() => {
               successModal.classList.add("hidden");
           }, 2500);
+      }
+
+      function showError(message) {
+          spinner.classList.add("hidden");
+          checkmark.classList.add("hidden");
+          successMessage.textContent = `Error: ${message}`;
+          successMessage.className = "text-red-600";
+          successModal.classList.remove("hidden");
+
+          setTimeout(() => {
+              successModal.classList.add("hidden");
+          }, 3000);
+      }
+
+      // Replace plain alerts with the modal system
+      function handleError(error, context) {
+          console.error(`Error in ${context}:`, error);
+          showError(error.message || 'An unexpected error occurred');
       }
 
       function createRow(code, desc, year, month) {
@@ -354,7 +410,7 @@
       });
 
       // Add new record
-      addBtn.addEventListener("click", () => {
+      addBtn.addEventListener("click", async () => {
           const code = codeInput.value.trim();
           const desc = descInput.value.trim();
           const year = yearInput.value;
@@ -365,15 +421,26 @@
               return;
           }
 
-          tableBody.appendChild(createRow(code, desc, year, month));
-          showSuccess("Added Successfully");
+          try {
+              await API.createClass({
+                  classcode: code,
+                  classname: desc,
+                  year: parseInt(year),
+                  month: parseInt(month)
+              });
+              
+              // Reload the table to show the new record
+              await loadPayrollClasses();
+              showSuccess("Added Successfully");
 
-          // Clear form
-          codeInput.value = "";
-          descInput.value = "";
-          yearInput.value = "";
-          monthInput.value = "";
-          nextCode++;
+              // Clear form
+              codeInput.value = "";
+              descInput.value = "";
+              yearInput.value = "";
+              monthInput.value = "";
+          } catch (error) {
+              handleError(error, 'adding payroll class');
+          }
       });
 
       // Cancel delete
@@ -383,12 +450,20 @@
       });
 
       // Confirm delete
-      confirmDeleteBtn.addEventListener("click", () => {
+      confirmDeleteBtn.addEventListener("click", async () => {
           if (rowToDelete) {
-              rowToDelete.remove();
-              rowToDelete = null;
-              deleteModal.classList.add("hidden");
-              showSuccess("Deleted Successfully");
+              try {
+                  const classcode = rowToDelete.children[0].textContent; // Get class code from first cell
+                  await API.deleteClass(classcode);
+                  
+                  rowToDelete.remove();
+                  rowToDelete = null;
+                  deleteModal.classList.add("hidden");
+                  showSuccess("Deleted Successfully");
+              } catch (error) {
+                  handleError(error, 'deleting payroll class');
+                  deleteModal.classList.add("hidden");
+              }
           }
       });
 

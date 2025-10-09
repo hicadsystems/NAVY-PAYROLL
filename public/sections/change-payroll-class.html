@@ -7,23 +7,32 @@
     <form id="changesForm" class="space-y-4">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Personnel select -->
-        <select name="personnel" id="personnel"
-            class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
-            <option value="">Select Personnel</option>
-            <option value="NN001">NN001</option>
-            <option value="NN002">NN002</option>
-            <option value="NN003">NN003</option>
-            <option value="NN004">NN004</option>
-        </select>
+        <div class="relative">
+          <input 
+            type="text" 
+            id="searchInput"
+            class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"
+            placeholder="Search by Name or Number..."
+            autocomplete="off">
+          <input type="hidden" id="hiddenInput">
+          <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </span>
+          
+          <!-- Dropdown List -->
+          <div id="dropdownList" class="absolute z-10 w-full mt-1 bg-yellow-50 border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto hidden">
+            <div class="py-1">
+              <div class="px-3 py-2 text-center text-gray-500">Click to load employees...</div>
+            </div>
+          </div>
+        </div>
 
         <!-- New Class select -->
         <select name="newClass" id="newClass"
             class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
             <option value="">Select Payroll Class</option>
-            <option value="OFFICERS">OFFICERS</option>
-            <option value="W/OFFICERS">W/OFFICERS</option>
-            <option value="RATINGS">RATINGS</option>
-            <option value="RATINGS B">RATINGS B</option>
         </select>
 
         <!-- Empty spacer for alignment -->
@@ -32,11 +41,11 @@
         <!-- Buttons row -->
         <div class="col-span-1 md:col-span-3 flex flex-wrap gap-2 justify-end">
             <button type="button" id="changeButton"
-            class="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
             Change Payroll Class
             </button>
             <button type="button" id="clearButton"
-            class="px-6 py-2 bg-gray-300 rounded rounded-lg shadow hover:bg-gray-400 transition">
+            class="px-6 py-2 bg-gray-300 rounded-lg shadow hover:bg-gray-400 transition">
             Clear
             </button>
         </div>
@@ -45,16 +54,21 @@
   </div>
 
   <!-- Current Selection Display -->
-  <div id="selectionDisplay" class="mt-6 p-4 bg-gray-100 rounded-lg hidden">
+  <div id="selectionDisplay" class="mt-6 p-4 rounded-lg hidden">
     <h3 class="font-semibold text-gray-700 mb-2">Current Selection:</h3>
     <p id="selectionText" class="text-gray-600"></p>
   </div>
 
   <!-- Payroll Classes Management -->
-    <div class="p-6 max-w-4xl mx-auto my-6">
-        <h2 class="text-xl font-bold text-gray-800 mb-4">Existing Payroll Classes</h2>
-        <div id="classCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+  <div class="p-6 max-w-4xl mx-auto my-6">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">Payroll Class Statistics</h2>
+    <div id="classCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="col-span-full text-center py-8">
+        <div class="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-gray-500 mt-2">Loading statistics...</p>
+      </div>
     </div>
+  </div>
 </div>
 
 <!-- Confirm Modal -->
@@ -80,7 +94,7 @@
   </div>
 </div>
 
-<!-- Final Success (tick) -->
+<!-- Final Success -->
 <div id="finalSuccess" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
     <div class="flex justify-center mb-4">
@@ -98,136 +112,458 @@
   </div>
 </div>
 
+<!-- Error Modal -->
+<div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6">
+    <h2 class="text-lg font-semibold text-red-600 mb-4">Error</h2>
+    <p id="errorMessage" class="text-gray-600 mb-6"></p>
+    <div class="flex justify-end">
+      <button id="closeError" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
-  // Simulated personnel current class mapping
-  const personnelData = {
-    "NN001": "OFFICERS",
-    "NN002": "W/OFFICERS",
-    "NN003": "RATINGS",
-    "NN004": "RATINGS B"
-  };
+  const API_BASE = '/payroll-change';
+  const token = localStorage.getItem('token');
 
-  // Simulated personnel names
-  const personnelNames = {
-    "NN001": "Mr. Hicad",
-    "NN002": "Mrs. Ronke",
-    "NN003": "Mr. Benjamin",
-    "NN004": "Ms. Judith"
-  };
-
-  let selectedPersonnel = null;
+  // State management
+  let allEmployees = [];
+  let payrollClasses = {};
+  let selectedEmployee = null;
   let currentClass = null;
   let newClass = null;
+  let isLoading = false;
 
-    // Initial payroll class counts
-    let payrollClasses = {
-    "OFFICERS": 50,
-    "W/OFFICERS": 300,
-    "RATINGS": 800,
-    "RATINGS B": 2000
-    };
+  // DOM elements
+  const searchInput = document.getElementById('searchInput');
+  const hiddenInput = document.getElementById('hiddenInput');
+  const dropdownList = document.getElementById('dropdownList');
+  const newClassSelect = document.getElementById('newClass');
+  const selectionDisplay = document.getElementById('selectionDisplay');
+  const selectionText = document.getElementById('selectionText');
+  const changeButton = document.getElementById('changeButton');
 
-  const personnelSelect = document.getElementById("personnel");
-  const newClassSelect = document.getElementById("newClass");
-  const selectionDisplay = document.getElementById("selectionDisplay");
-  const selectionText = document.getElementById("selectionText");
+  // API helper
+  async function apiRequest(url, options = {}) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          ...options.headers
+        }
+      });
 
-    // Render payroll class cards
-    function renderClassCards() {
-    const container = document.getElementById("classCards");
-    container.innerHTML = Object.entries(payrollClasses).map(([cls, count]) => `
-        <div class="border border-gray-200 rounded-lg p-4 text-center shadow-sm hover:shadow-md transition">
-        <h3 class="font-semibold text-blue-600">${cls}</h3>
-        <p class="text-sm text-gray-600 mt-1">${count} Personnel</p>
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+
+      return data;
+    } catch (error) {
+      showError(error.message);
+      throw error;
+    }
+  }
+
+  // Show error modal
+  function showError(message) {
+    document.getElementById('errorMessage').textContent = message;
+    document.getElementById('errorModal').classList.remove('hidden');
+  }
+
+  document.getElementById('closeError').addEventListener('click', () => {
+    document.getElementById('errorModal').classList.add('hidden');
+  });
+
+  // ==================== LOAD PERSONNEL WITH DROPDOWN ====================
+  async function loadPersonnel() {
+    if (isLoading) return;
+    if (allEmployees.length > 0) return; // Already loaded
+    
+    isLoading = true;
+    
+    // Show loading state
+    dropdownList.innerHTML = `
+      <div class="py-1">
+        <div class="px-3 py-4 text-center text-gray-500">
+          <svg class="animate-spin h-5 w-5 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Loading employees...
         </div>
-    `).join("");
+      </div>
+    `;
+    
+    try {
+      const result = await apiRequest(`${API_BASE}/employees`);
+      allEmployees = result.data || result.employees || result.results || (Array.isArray(result) ? result : []);
+      
+      console.log('Loaded employees:', allEmployees.length);
+      
+      if (allEmployees.length === 0) {
+        dropdownList.innerHTML = `
+          <div class="py-1">
+            <div class="px-3 py-4 text-center text-gray-500">No employees found</div>
+          </div>
+        `;
+      } else {
+        renderDropdown(allEmployees);
+      }
+      
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      dropdownList.innerHTML = `
+        <div class="py-1">
+          <div class="px-3 py-4 text-center text-red-500">
+            Failed to load employees<br>
+            <span class="text-xs">${error.message}</span>
+          </div>
+        </div>
+      `;
+    } finally {
+      isLoading = false;
     }
+  }
 
-    // Call once on page load
-    renderClassCards();
-
-  // Handle personnel change
-  personnelSelect.addEventListener("change", () => {
-    selectedPersonnel = personnelSelect.value;
-    if (selectedPersonnel) {
-      currentClass = personnelData[selectedPersonnel];
-      const name = personnelNames[selectedPersonnel] || "";
-      selectionDisplay.classList.remove("hidden");
-      selectionText.textContent = `Selected personnel ${selectedPersonnel} (${name}) is on ${currentClass}`;
-    } else {
-      selectionDisplay.classList.add("hidden");
-    }
-  });
-
-  // Handle new class change
-  newClassSelect.addEventListener("change", () => {
-    newClass = newClassSelect.value;
-    if (selectedPersonnel && newClass) {
-      const name = personnelNames[selectedPersonnel] || "";
-      selectionText.textContent =
-        `You want to change ${selectedPersonnel} (${name}) from ${currentClass} to ${newClass}`;
-    }
-  });
-
-  // Handle button click
-  document.getElementById("changeButton").addEventListener("click", () => {
-    if (!selectedPersonnel || !newClass) {
-      alert("Please select both personnel and new payroll class.");
+  // ==================== RENDER DROPDOWN WITH EMPLOYEES ====================
+  function renderDropdown(employees) {
+    if (!employees || employees.length === 0) {
+      dropdownList.innerHTML = `
+        <div class="py-1">
+          <div class="px-3 py-4 text-center text-gray-500">No employees found</div>
+        </div>
+      `;
       return;
     }
-    const name = personnelNames[selectedPersonnel] || "";
-    document.getElementById("confirmMessage").textContent =
-      `Are you sure you want to change ${selectedPersonnel} (${name}) from ${currentClass} to ${newClass}?`;
-    document.getElementById("confirmModal").classList.remove("hidden");
-  });
 
-  // Confirm modal actions
-  document.getElementById("cancelConfirm").addEventListener("click", () => {
-    document.getElementById("confirmModal").classList.add("hidden");
-  });
+    const html = employees.map(emp => {
+      const id = emp.Empl_ID || emp.EMPL_ID || emp.id || 'N/A';
+      const surname = emp.Surname || emp.surname || '';
+      const otherName = emp.OtherName || emp.otherName || '';
+      const name = `${surname} ${otherName}`.trim() || emp.name || 'Unknown';
+      const rank = emp.Title || emp.title || emp.rank || '';
+      const payrollClass = emp.PayrollClass || emp.payrollClass || '';
+      
+      return `
+        <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" 
+             data-value="${id}" 
+             data-name="${name}"
+             data-class="${payrollClass}">
+          <span class="font-semibold text-blue-600">${id}</span> - ${name}
+          ${rank ? `<span class="text-gray-500 text-sm ml-1">(${rank})</span>` : ''}
+        </div>
+      `;
+    }).join('');
 
-    // When confirming change
-    document.getElementById("okConfirm").addEventListener("click", () => {
-    document.getElementById("confirmModal").classList.add("hidden");
-    document.getElementById("successModal").classList.remove("hidden");
+    dropdownList.innerHTML = `<div class="py-1">${html}</div>`;
+    
+    // Attach click handlers to all dropdown items
+    attachDropdownHandlers();
+  }
 
-    setTimeout(() => {
-        document.getElementById("successModal").classList.add("hidden");
-        document.getElementById("finalSuccess").classList.remove("hidden");
+  // ==================== ATTACH HANDLERS TO DROPDOWN ITEMS ====================
+  function attachDropdownHandlers() {
+    const dropdownItems = dropdownList.querySelectorAll('.dropdown-item');
+    
+    dropdownItems.forEach(item => {
+      item.addEventListener('click', function() {
+        const id = this.getAttribute('data-value');
+        const name = this.getAttribute('data-name');
+        const payrollClass = this.getAttribute('data-class');
+        const text = this.textContent.trim();
+        
+        // Store selected employee
+        selectedEmployee = {
+          Empl_ID: id,
+          Fullname: name,
+          PayrollClass: payrollClass
+        };
+        
+        currentClass = payrollClass;
+        
+        searchInput.value = text;
+        hiddenInput.value = id;
+        dropdownList.classList.add('hidden');
+        
+        console.log('Selected employee:', selectedEmployee);
+        
+        // Update selection display with CLASS NAME not code
+        const currentClassName = getClassName(currentClass);
+        selectionDisplay.classList.remove('hidden');
+        selectionText.textContent = `Selected personnel ${id} (${name}) is on ${currentClassName}`;
+        
+        // Auto-prefill "New Class" dropdown with current class ONLY if class exists
+        if (currentClass && currentClass !== 'N/A' && currentClass !== '' && currentClass !== null) {
+          const matchingOption = Array.from(newClassSelect.options)
+            .find(opt => opt.value === currentClass);
 
-        // ✅ Update personnel class mapping
-        const oldClass = currentClass;
-        personnelData[selectedPersonnel] = newClass;
-        currentClass = newClass;
+          if (matchingOption) {
+            newClassSelect.value = currentClass;
+          } else {
+            newClassSelect.value = '';
+          }
+        } else {
+          newClassSelect.value = '';
+        }
+      });
+    });
+  }
 
-        // ✅ Update counts
-        if (oldClass) payrollClasses[oldClass] = Math.max(0, payrollClasses[oldClass] - 1);
-        if (newClass) payrollClasses[newClass] = (payrollClasses[newClass] || 0) + 1;
+  // ==================== FILTER DROPDOWN AS USER TYPES ====================
+  function filterDropdown(searchText) {
+    if (allEmployees.length === 0) return;
+    
+    const searchTerm = searchText.toLowerCase();
+    
+    if (!searchTerm) {
+      // Show all employees
+      renderDropdown(allEmployees);
+    } else {
+      // Filter employees
+      const filtered = allEmployees.filter(emp => {
+        const id = (emp.Empl_ID || emp.EMPL_ID || emp.id || '').toString().toLowerCase();
+        const surname = (emp.Surname || emp.surname || '').toLowerCase();
+        const otherName = (emp.OtherName || emp.otherName || '').toLowerCase();
+        const name = `${surname} ${otherName}`.toLowerCase();
+        const rank = (emp.Title || emp.title || emp.rank || '').toLowerCase();
+        
+        return id.includes(searchTerm) || name.includes(searchTerm) || rank.includes(searchTerm);
+      });
+      
+      renderDropdown(filtered);
+    }
+    
+    dropdownList.classList.remove('hidden');
+  }
 
-        // ✅ Rerender cards
-        renderClassCards();
+  // Load payroll classes
+  async function loadPayrollClasses() {
+    try {
+      const result = await apiRequest(`/payroll-setup`);
+      const classes = result.data || [];
 
-        // ✅ Update display
-        const name = personnelNames[selectedPersonnel] || "";
-        selectionText.textContent = `Selected personnel ${selectedPersonnel} (${name}) is on ${currentClass}`;
-    }, 2000);
+      newClassSelect.innerHTML = '<option value="">Select Payroll Class</option>';
+
+      classes.forEach(cls => {
+        const option = document.createElement('option');
+        option.value = cls.classcode;
+        option.textContent = cls.classname 
+          ? `${cls.classcode} - ${cls.classname}` 
+          : cls.classcode;
+        newClassSelect.appendChild(option);
+
+        // Store class info for helper function
+        payrollClasses[cls.classcode] = {
+          classname: cls.classname || cls.classcode
+        };
+      });
+
+    } catch (error) {
+      console.error('Error loading payroll classes:', error);
+    }
+  }
+
+  // Load class statistics
+  async function loadClassStatistics() {
+    try {
+      const result = await apiRequest(`${API_BASE}/payroll-class-stats`);
+      const stats = result.data || {};
+      
+      // Merge stats with existing class info
+      Object.entries(stats).forEach(([code, data]) => {
+        if (payrollClasses[code]) {
+          payrollClasses[code].count = data.count;
+        } else {
+          payrollClasses[code] = data;
+        }
+      });
+      
+      renderClassCards();
+    } catch (error) {
+      console.error('Error loading class statistics:', error);
+      renderClassCards();
+    }
+  }
+
+  // Render payroll class cards
+  function renderClassCards() {
+    const container = document.getElementById('classCards');
+    
+    if (Object.keys(payrollClasses).length === 0) {
+      container.innerHTML = '<p class="text-gray-500 col-span-full text-center">No statistics available</p>';
+      return;
+    }
+
+    // Filter to show only classes with personnel count > 0
+    const classesWithPersonnel = Object.entries(payrollClasses).filter(([code, data]) => {
+      const count = data.count || 0;
+      return count > 0;
     });
 
-  // Close final success
-  document.getElementById("closeFinalSuccess").addEventListener("click", () => {
-    document.getElementById("finalSuccess").classList.add("hidden");
+    if (classesWithPersonnel.length === 0) {
+      container.innerHTML = '<p class="text-gray-500 col-span-full text-center">No personnel assigned to any class</p>';
+      return;
+    }
+
+    container.innerHTML = classesWithPersonnel.map(([code, data]) => `
+      <div class="border border-gray-200 rounded-lg p-4 text-center shadow-sm hover:shadow-md transition">
+        <h3 class="font-semibold text-blue-600">${data.classname || code}</h3>
+        <p class="text-sm text-gray-600 mt-1">${data.count} Personnel</p>
+      </div>
+    `).join('');
+  }
+
+  // Helper to get readable class name safely
+  function getClassName(code) {
+    if (!code || code === 'N/A' || code === '' || code === null) return 'Not Assigned';
+    const cls = payrollClasses[code];
+    if (!cls) return code;
+    return cls.classname || code;
+  }
+
+  // New class select change
+  newClassSelect.addEventListener('change', () => {
+    newClass = newClassSelect.value;
+    if (selectedEmployee && newClass) {
+      const name = selectedEmployee.Fullname || '';
+      const fromName = getClassName(currentClass);
+      const toName = getClassName(newClass);
+      selectionText.textContent = `You want to change ${selectedEmployee.Empl_ID} (${name}) from ${fromName} to ${toName}`;
+    }
   });
 
-  document.getElementById("clearButton").addEventListener("click", () => {
-    // reset dropdowns
-    personnelSelect.value = "";
-    newClassSelect.value = "";
+  // Change button click
+  changeButton.addEventListener('click', () => {
+    if (!selectedEmployee || !newClass) {
+      showError('Please select both personnel and new payroll class.');
+      return;
+    }
+    if (currentClass === newClass) {
+      showError('Personnel is already in the selected class.');
+      return;
+    }
 
-    // reset display + vars
-    selectionDisplay.classList.add("hidden");
-    selectionText.textContent = "";
-    selectedPersonnel = null;
+    const name = selectedEmployee.Fullname || '';
+    const fromName = getClassName(currentClass);
+    const toName = getClassName(newClass);
+
+    document.getElementById('confirmMessage').textContent =
+      `Are you sure you want to change ${selectedEmployee.Empl_ID} (${name}) from ${fromName} to ${toName}?`;
+    document.getElementById('confirmModal').classList.remove('hidden');
+  });
+
+  // Cancel confirm
+  document.getElementById('cancelConfirm').addEventListener('click', () => {
+    document.getElementById('confirmModal').classList.add('hidden');
+  });
+
+  // Confirm change
+  document.getElementById('okConfirm').addEventListener('click', async () => {
+    document.getElementById('confirmModal').classList.add('hidden');
+    document.getElementById('successModal').classList.remove('hidden');
+
+    try {
+      // Update personnel payroll class via API
+      await apiRequest(`${API_BASE}/payroll-class`, {
+        method: 'POST',
+        body: JSON.stringify({
+          Empl_ID: selectedEmployee.Empl_ID,
+          PayrollClass: newClass
+        })
+      });
+
+      setTimeout(async () => {
+        document.getElementById('successModal').classList.add('hidden');
+        document.getElementById('finalSuccess').classList.remove('hidden');
+
+        // Update local data
+        selectedEmployee.PayrollClass = newClass;
+        currentClass = newClass;
+
+        // Reload statistics
+        await loadClassStatistics();
+
+        const name = selectedEmployee.Fullname || '';
+        const currentClassName = getClassName(currentClass);
+
+        selectionText.textContent = `Selected personnel ${selectedEmployee.Empl_ID} (${name}) is now on ${currentClassName}`;
+      }, 2000);
+
+    } catch (error) {
+      document.getElementById('successModal').classList.add('hidden');
+      console.error('Error updating payroll class:', error);
+    }
+  });
+
+  // Close final success
+  document.getElementById('closeFinalSuccess').addEventListener('click', () => {
+    document.getElementById('finalSuccess').classList.add('hidden');
+  });
+
+  // Clear button
+  document.getElementById('clearButton').addEventListener('click', () => {
+    searchInput.value = '';
+    hiddenInput.value = '';
+    newClassSelect.value = '';
+    selectionDisplay.classList.add('hidden');
+    selectionText.textContent = '';
+    dropdownList.classList.add('hidden');
+    
+    selectedEmployee = null;
     currentClass = null;
     newClass = null;
   });
+
+  // ==================== EVENT LISTENERS ====================
+
+  // Show dropdown when input is clicked or focused
+  searchInput.addEventListener('focus', () => {
+    if (allEmployees.length === 0) {
+      loadPersonnel();
+    }
+    dropdownList.classList.remove('hidden');
+  });
+
+  // Filter items as user types
+  searchInput.addEventListener('input', function() {
+    const searchText = this.value.toLowerCase();
+    
+    if (allEmployees.length === 0) {
+      loadPersonnel().then(() => {
+        filterDropdown(searchText);
+      });
+    } else {
+      filterDropdown(searchText);
+    }
+  });
+
+  // Hide dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) {
+      dropdownList.classList.add('hidden');
+    }
+  });
+
+  // Clear selection if user manually types
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      selectedEmployee = null;
+      hiddenInput.value = '';
+      currentClass = null;
+      selectionDisplay.classList.add('hidden');
+    }
+  });
+
+  // Initialize on load
+  async function initialize() {
+    await loadPayrollClasses();
+    await loadClassStatistics();
+  }
+
+  initialize();
 </script>

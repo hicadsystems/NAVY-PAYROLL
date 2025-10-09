@@ -3,6 +3,9 @@ const usersRoutes = require('./administration/users');
 const rolesRoutes = require('./administration/roles');
 const switchpayrollclassRoutes = require('./administration/switchpayrollclass');
 const permissionsRoutes = require('./administration/permissions');
+const payrollclassSetupRoutes = require('./administration/payrollclassSetup');
+const payrollclassChangeRoutes = require('./administration/payrollclassChange');
+const changeregNoRoutes = require('./administration/changeregNo');
 
 
 
@@ -47,6 +50,9 @@ module.exports = (app) => {
     app.use('/', rolesRoutes);
     app.use('/', switchpayrollclassRoutes);
     app.use('/roles', permissionsRoutes);
+    app.use('/payroll-setup', payrollclassSetupRoutes);
+    app.use('/payroll-change', payrollclassChangeRoutes);
+    app.use('/regno', changeregNoRoutes);
 
 
     //personnel profile

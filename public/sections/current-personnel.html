@@ -1,4 +1,4 @@
-<div class="p-6">
+<div id="current-personnel-section" data-personnel-type="current" class="p-6">
   <div class="flex flex-wrap gap-2 justify-between items-center mb-6">
     <div>
       <h3 class="text-lg font-semibold text-gray-900">Manage Current Personnels</h3>
@@ -15,7 +15,6 @@
         View Old Personnel
         </button>
     </div>
-
   </div>
 
   <!-- Search and Filter -->
@@ -69,89 +68,6 @@
     </div>
   </div>
 
-    <!-- View Employee Modal -->
-  <div id="viewEmployeeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-lg shadow-lg p-6 w-96">
-      <h3 class="text-lg font-semibold mb-4 text-gray-800">Personnel Details</h3>
-      <div id="viewEmployeeContent" class="space-y-2 text-gray-700"></div>
-      <div class="flex justify-end mt-6">
-        <button onclick="window.personnelManager.closeViewEmployee()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Edit Employee Modal -->
-  <div id="editEmployeeModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-lg w-96">
-      <!-- Header -->
-      <div class="p-4 border-b">
-        <h2 class="text-lg font-semibold">Edit Personnel</h2>
-      </div>
-
-      <!-- Form -->
-      <form id="editEmployeeForm" class="p-4 space-y-4">
-        <!-- ID -->
-        <div>
-          <label class="block text-sm font-medium mb-1">ID</label>
-          <input type="text" id="editEmployeeId" 
-                class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-
-        <!-- Name -->
-        <div>
-          <label class="block text-sm font-medium mb-1">Name</label>
-          <input type="text" id="editEmployeeName" 
-                class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-
-        <!-- Email -->
-        <div>
-          <label class="block text-sm font-medium mb-1">Email</label>
-          <input type="email" id="editEmployeeEmail" 
-                class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-
-        <!-- Phone -->
-        <div>
-          <label class="block text-sm font-medium mb-1">Phone</label>
-          <input type="text" id="editEmployeePhone" 
-                class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-
-        <!-- Status -->
-        <div>
-          <label class="block text-sm font-medium mb-1">Status</label>
-          <select id="editEmployeeStatus" 
-                  class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="suspended">Suspended</option>
-          </select>
-        </div>
-
-        <!-- Rank -->
-        <div>
-          <label class="block text-sm font-medium mb-1">Rank</label>
-          <select id="editEmployeeRank" 
-                  class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="Adm">Adm</option>
-            <option value="Cdr">Cdr</option>
-            <option value="Lt">Lt</option>
-            <option value="PO">PO</option>
-          </select>
-        </div>
-
-        <!-- Buttons -->
-        <div class="flex justify-end space-x-2 pt-4 border-t">
-          <button type="button" onclick="window.personnelManager.closeEditEmployee()" 
-            class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
-          <button type="submit" 
-            class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Save</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <!-- Delete Employee Modal -->
   <div id="deleteEmployeeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
     <div class="bg-white rounded-lg shadow-lg p-6 w-96">
@@ -174,7 +90,7 @@
 </div>
 
 <script>
-// Current Personnel Management Script with Integrated View
+// Old Personnel Management Script with Integrated View
 const API_BASE = '/personnel';
 const API_HEADERS = {
   'Content-Type': 'application/json',
@@ -188,11 +104,11 @@ class PersonnelManager {
     this.personnel = [];
     this.filteredPersonnel = [];
     this.currentViewId = null;
+    this.personnelType = 'current';
     this.init();
   }
 
   init() {
-    this.loadPersonnelData();
     this.setupEventListeners();
     this.loadAllDropdowns();
   }
@@ -252,15 +168,40 @@ class PersonnelManager {
     }
   }
 
-  async loadPersonnelData() {
+  async loadPersonnelData(type = 'current') {
     try {
       const result = await this.apiRequest(`${API_BASE}/employees`);
-      this.personnel = result.data || [];
+      const allPersonnel = result.data || [];
+
+      // Normalize statuses based on exit fields
+      const normalized = allPersonnel.map(p => {
+        // If personnel has exit info, force status to INACTIVE
+        if (p.DateLeft || p.exittype) {
+          return { ...p, Status: 'INACTIVE' };
+        }
+        return { ...p, Status: p.Status || 'ACTIVE' };
+      });
+
+      // Filter based on personnel type
+      if (type === 'old') {
+        // Show only those who have exited (with DateLeft or exittype)
+        this.personnel = normalized.filter(p => p.DateLeft || p.exittype);
+      } else {
+        // Show only current personnel (no DateLeft and no exittype)
+        this.personnel = normalized.filter(p => !p.DateLeft && !p.exittype);
+      }
+
       this.filteredPersonnel = [...this.personnel];
+      this.personnelType = type;
       this.renderTable();
+
+      console.log(`Loaded ${this.personnel.length} ${type} personnel records`);
+
     } catch (error) {
+      console.error('Failed to load personnel:', error);
       this.personnel = [];
       this.filteredPersonnel = [];
+      this.personnelType = type;
       this.renderTable();
     }
   }
@@ -487,32 +428,6 @@ class PersonnelManager {
     document.getElementById("deleteEmployeeModal")?.classList.add("hidden");
   }
 
-
-// Remove the separate event listener setup from DOMContentLoaded
-  /*document.addEventListener('DOMContentLoaded', function() {
-    initializePersonnelManager();
-  });
-
-
-  async confirmDeleteEmployee() {
-    if (!this.deleteId) return;
-
-    try {
-      await this.apiRequest(`${API_BASE}/employees/${this.deleteId}`, {
-        method: 'DELETE'
-      });
-
-      this.personnel = this.personnel.filter(p => p.Empl_ID !== this.deleteId);
-      this.filterPersonnel();
-      
-      this.showSuccess("Personnel and all related records deleted successfully");
-      this.closeDeleteEmployee();
-      
-    } catch (error) {
-      this.showError('Failed to delete personnel: ' + error.message);
-    }
-  }*/
-
   escapeHtml(str) {
     if (!str) return '';
     return String(str).replace(/[&<>"']/g, m => ({
@@ -526,7 +441,7 @@ class PersonnelManager {
   }
 
   async refresh() {
-    await this.loadPersonnelData();
+    await this.loadPersonnelData(this.personnelType);
   }
 
   reinitialize() {
@@ -535,36 +450,78 @@ class PersonnelManager {
   }
 }
 
-// Event Listeners
-/*document.addEventListener('DOMContentLoaded', function() {
-  const confirmDeleteBtn = document.getElementById("confirmDeleteEmployeeBtn");
-  if (confirmDeleteBtn) {
-    confirmDeleteBtn.addEventListener("click", () => {
-      if (window.personnelManager) {
-        window.personnelManager.confirmDeleteEmployee();
-      }
-    });
-  }
-});*/
-
 // Initialize
 let personnelManager;
 
-function initializePersonnelManager() {
-  if (!window.personnelManager || !(window.personnelManager instanceof PersonnelManager)) {
-    // Create a fresh instance
-    personnelManager = new PersonnelManager();
-    window.personnelManager = personnelManager;
-  } else {
-    // Reinitialize existing one
-    window.personnelManager.reinitialize?.();
-    personnelManager = window.personnelManager;
+async function initializePersonnelManager(sectionType = null) {
+  try {
+    // Ensure global instance exists
+    if (!window.personnelManager || !(window.personnelManager instanceof PersonnelManager)) {
+      personnelManager = new PersonnelManager();
+      window.personnelManager = personnelManager;
+    } else {
+      // Reinitialize existing one
+      if (typeof window.personnelManager.reinitialize === 'function') {
+        window.personnelManager.reinitialize();
+      }
+      personnelManager = window.personnelManager;
+    }
+
+    // Determine section type with multiple fallback methods
+    let type = sectionType; // Use explicit parameter first
+    
+    if (!type) {
+      // Method 1: Check for section-specific data attributes
+      const currentSection = document.querySelector('[data-personnel-type]');
+      if (currentSection) {
+        type = currentSection.getAttribute('data-personnel-type');
+      }
+    }
+    
+    if (!type) {
+      // Method 2: Check visible section containers
+      const oldSection = document.querySelector('#old-personnel-section, .old-personnel-section, [data-section="old-personnel"]');
+      const currentPersonnelSection = document.querySelector('#current-personnel-section, .current-personnel-section, [data-section="current-personnel"]');
+      
+      if (oldSection && window.getComputedStyle(oldSection).display !== 'none') {
+        type = 'old';
+      } else if (currentPersonnelSection && window.getComputedStyle(currentPersonnelSection).display !== 'none') {
+        type = 'current';
+      }
+    }
+    
+    if (!type) {
+      // Method 3: Check page title or hash
+      const pageTitle = document.title.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      
+      if (pageTitle.includes('old personnel') || hash.includes('old-personnel')) {
+        type = 'old';
+      } else if (pageTitle.includes('current personnel') || hash.includes('current-personnel')) {
+        type = 'current';
+      }
+    }
+    
+    // Default to 'current' if still undefined
+    if (!type) {
+      type = 'current';
+      console.warn('Could not detect personnel section type, defaulting to "current"');
+    }
+
+    await personnelManager.loadPersonnelData(type);
+
+    console.log(`Personnel Manager initialized for: ${type.toUpperCase()} personnel (${personnelManager.personnel.length} records)`);
+  } catch (error) {
+    console.error('Failed to initialize personnel manager:', error);
   }
 }
 
+// Expose initialization function globally for explicit calls
+window.initializePersonnelManager = initializePersonnelManager;
+
 // Run when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializePersonnelManager);
+  document.addEventListener('DOMContentLoaded', () => initializePersonnelManager());
 } else {
   initializePersonnelManager();
 }

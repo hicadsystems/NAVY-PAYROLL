@@ -65,8 +65,17 @@ class ViewPersonnelManager {
       await this.loadLookupData();
       this.lookupsLoaded = true;
     }
-    
+
     await this.loadEmployeeData();
+
+    // Ensure lookups are really ready before rendering anything
+    if (!this.lookupMaps || Object.keys(this.lookupMaps).length === 0) {
+      console.warn("Lookup data not ready, retrying...");
+      await new Promise(resolve => setTimeout(resolve, 200)); // small delay
+      await this.loadLookupData();
+    }
+
+    // Now safely render tab
     await this.switchTab('personnel');
   }
 
@@ -293,6 +302,14 @@ class ViewPersonnelManager {
 
   async switchTab(tab) {
     this.currentTab = tab;
+
+    
+    // Prevent rendering before data is ready
+    if (!this.employeeData || !this.lookupsLoaded) {
+      console.warn("Data not ready yet, retrying...");
+      setTimeout(() => this.switchTab(tab), 150);
+      return;
+    }
     
     // Check marital status to determine if spouse tab should be visible
     const isMarried = this.employeeData?.employee?.MaritalStatus === 'M' || 

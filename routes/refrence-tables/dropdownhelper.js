@@ -22,7 +22,8 @@ const tables = {
   religion: "py_religion",
   exittype: "py_exittype",
   elementtype: "py_elementType",
-  geozone: "geozone"
+  geozone: "geozone",
+  payrollclass: "py_payrollclass"
 };
 
 // Get LGAs by State Code

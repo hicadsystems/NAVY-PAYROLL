@@ -357,7 +357,9 @@ class PersonnelManager {
 
   async viewEmployee(id) {
     this.currentViewId = id;
-    
+
+    localStorage.setItem('navigatedFromCurrentPersonnel', 'true');
+
     // Navigate to view-personnel section and load data
     if (window.navigation?.navigateToSection) {
       window.navigation.navigateToSection('view-personnel', 'View Personnel');

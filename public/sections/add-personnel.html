@@ -1,513 +1,517 @@
-<!-- TABS -->
-<div class="p-6">
-  <div class="flex flex-wrap justify-between bg-white/50 rounded-xl border border-amber-50 shadow-sm p-2 gap-2">
-    <div class="flex flex-wrap justify-start gap-2">
-      <button type="button" id="tab-batch" class="px-4 py-2 rounded-md bg-yellow-400 text-grey hover:bg-blue-600">
-        Batch Upload
-      </button>
-    </div>
-    <div class="flex flex-wrap justify-end gap-2">
-      <button id="tab-personnel" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-600">Personnel</button>
-      <button id="tab-nok" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">NOK</button>
-      <button id="tab-spouse" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Spouse</button>
-      <button id="tab-children" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Children</button>
+<div>
+  <!-- TABS -->
+  <div class="p-6">
+    <div class="flex flex-wrap justify-between bg-white/50 rounded-xl border border-amber-50 shadow-sm p-2 gap-2">
+      <div class="flex flex-wrap justify-start gap-2">
+        <button type="button" id="tab-batch" class="px-4 py-2 rounded-md bg-yellow-400 text-grey hover:bg-blue-600">
+          Batch Upload
+        </button>
+      </div>
+      <div class="flex flex-wrap justify-end gap-2">
+        <button id="tab-personnel" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-600">Personnel</button>
+        <button id="tab-nok" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">NOK</button>
+        <button id="tab-spouse" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Spouse</button>
+        <button id="tab-children" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Children</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- BATCH UPLOAD SECTION -->
-<div id="section-batch" class="px-6 py-4 flex justify-center">
-  <div class="w-full max-w-lg rounded-2xl">
-    <h3 class="text-2xl font-bold text-blue-800 mb-4">Batch Upload</h3>
+  <!-- BATCH UPLOAD SECTION -->
+  <div id="section-batch" class="px-6 py-4 flex justify-center">
+    <div class="w-full max-w-lg rounded-2xl">
+      <h3 class="text-2xl font-bold text-blue-800 mb-4">Batch Upload</h3>
 
-    <!-- Notes -->
-    <div class="mb-6">
-      <h4 class="font-semibold text-blue-700 mb-2">Please Note:</h4>
-      <ul class="list-disc list-inside text-gray-700 text-sm space-y-1">
-        <li>Ensure your file is properly formatted before uploading.</li>
-        <li>If you encounter any issues, please contact support.</li>
-        <li>Duplicate Service Number will not be uploaded.</li>
-      </ul>
+      <!-- Notes -->
+      <div class="mb-6">
+        <h4 class="font-semibold text-blue-700 mb-2">Please Note:</h4>
+        <ul class="list-disc list-inside text-gray-700 text-sm space-y-1">
+          <li>Ensure your file is properly formatted before uploading.</li>
+          <li>If you encounter any issues, please contact support.</li>
+          <li>Duplicate Service Number will not be uploaded.</li>
+        </ul>
+      </div>
+      
+      <form id="batchUploadForm" class="space-y-6">
+        <!-- File Upload -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
+          <input type="file" id="batchFile" 
+                class="mt-1 block w-full border border-blue-500 bg-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+          <p class="text-xs text-gray-500 mt-2">
+            Only .xlsx or .csv files allowed. 
+            <button type="button" id="downloadSampleBtn" class="text-blue-600 hover:underline ml-2 bg-none border-none cursor-pointer">
+              Download Sample Template
+            </button>
+          </p>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex justify-end space-x-4">
+          <button type="button" id="cancelBatchBtn"
+            class="px-6 py-2 bg-gray-400 hover:bg-gray-500 rounded-lg text-white">Cancel</button>
+          <button type="button" id="uploadBatchBtn"
+            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white">Upload</button>
+        </div>
+      </form>
     </div>
-    
-    <form id="batchUploadForm" class="space-y-6">
-      <!-- File Upload -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
-        <input type="file" id="batchFile" 
-               class="mt-1 block w-full border border-blue-500 bg-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-        <p class="text-xs text-gray-500 mt-2">
-          Only .xlsx or .csv files allowed. 
-          <button type="button" id="downloadSampleBtn" class="text-blue-600 hover:underline ml-2 bg-none border-none cursor-pointer">
-            Download Sample Template
-          </button>
-        </p>
+  </div>
+
+  <!-- PERSONNEL SECTION -->
+  <div id="section-personnel" class="px-6 mb-4">
+    <!-- Title -->
+    <h3 id="formTitle" class="hidden text-2xl font-bold text-blue-800 mb-4"></h3>
+
+    <!-- Step Buttons + Current Personnel -->
+    <div class="flex flex-wrap items-center gap-2 justify-between mb-4">
+      <div class=" flex flex-wrap gap-2 items-center">
+        <button id="btnStep1" class="relative px-4 text-sm lg:text-lg py-2 rounded-md bg-blue-600 hover:bg-blue-600 text-white transition-all overflow-hidden group">
+          <span class="relative z-10">Step 1: Basic Details</span>
+        </button>
+        <button id="btnStep2" class="relative px-4 text-sm lg:text-lg py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600 transition-all overflow-hidden group">
+          <span class="relative z-10">Step 2: Official Info</span>
+        </button>
+        <button id="btnStep3" class="relative px-4 text-sm lg:text-lg py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600 transition-all overflow-hidden group">
+          <span class="relative z-10">Step 3: Additional Info</span>
+        </button>
       </div>
 
-      <!-- Buttons -->
-      <div class="flex justify-end space-x-4">
-        <button type="button" id="cancelBatchBtn"
-          class="px-6 py-2 bg-gray-400 hover:bg-gray-500 rounded-lg text-white">Cancel</button>
-        <button type="button" id="uploadBatchBtn"
-          class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white">Upload</button>
+      <button onclick="window.navigation?.navigateToSection ? window.navigation.navigateToSection('current-personnel','Current Personnel') : showAlert('Hook your navigation here.')" id="currentPersonnelBtn"
+        class="px-4 text-sm lg:text-lg py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+        Current Personnel
+      </button>
+    </div>
+
+    <!-- Form -->
+    <form id="personnelForm" class="space-y-6">
+      <!-- Step 1 (dynamic, with labels) -->
+      <div id="step1" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+      <!-- Step 2 (static, with labels) -->
+      <div id="step2" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Date Joined</label>
+          <input type="date" name="DateEmpl" id="DateEmpl" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Date Commissioned</label>
+          <input type="date" name="dateconfirmed" id="dateconfirmed" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Entry Mode</label>
+          <input type="text" name="entry_mode" id="entry_mode" placeholder="Entry Mode" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Date Left</label>
+          <input type="date" name="DateLeft" id="DateLeft" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Exit Mode</label>
+          <select id="exittype" name="exittype" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select Exit Mode</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Taxed ?</label>
+          <select name="taxed" id="taxed" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select</option>
+            <option value="YES">YES</option>
+            <option value="NO">NO</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">TaxID No(TIN)</label>
+          <input type="text" name="TaxCode" id="TaxCode" placeholder="TaxID N0" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Tax State</label>
+          <select id="state" name="state" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select Tax State</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">RSA(Pension) Code</label>
+          <input type="text" name="NSITFcode" id="NSITFcode" placeholder="RSA(Pension) Code" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Pension Fund Administrator</label>
+          <select id="pfa" name="pfacode" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select Administrator</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Payroll Process Category</label>
+          <select id="payrollProcess" name="payrollclass" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select Payroll Process</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Salary Group</label>
+          <select id="salarygroup" name="gradetype" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select Salary Group</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Salary Grade</label>
+          <select id="salarygrade" name="gradelevel" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select Salary Grade</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Bank Branch</label>
+          <select id="bankbranch" name="bankbranch" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select Bank Branch</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Account Number</label>
+          <input type="text" name="BankACNumber" id="BankACNumber" placeholder="Account Number" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+      </div>
+
+      <!-- Step 3 (static, with labels) -->
+      <div id="step3" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Senority Date</label>
+          <input type="date" name="datepmted" id="datepmted" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Ship/Establishment</label>
+          <select name="Location" id="step3-ship" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>select</option>
+            <option value="SHIP">Ship</option>
+            <option value="ESTABLISHMENT">Establishment</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Branch</label>
+          <select id="branch" name="Factory" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select Branch</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Command</label>
+          <select id="command" name="command" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select Command</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Specialisation</label>
+          <select id="specialisation" name="specialisation" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select Specialisation</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Present Appointment</label>
+          <input type="text" name="Jobtitle" id="Jobtitle" placeholder="Present Appointment" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Award/Decoration</label>
+          <input type="text" name="award" id="award" placeholder="Award/Decoration" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Emolument Form Received?</label>
+          <select name="emolumentform" id="emolumentform" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select</option>
+            <option value="YES">YES</option>
+            <option value="NO">NO</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">NHF Code</label>
+          <input type="text" name="NHFcode" id="NHFcode" placeholder="NHF Code" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Bank Code</label>
+          <select id="bankcode" name="Bankcode" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select Bank Code</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">IPPIS NO</label>
+          <input type="text" name="InternalACNo" id="InternalACNo" placeholder="IPPIS NO" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Country</label>
+          <select id="country" name="Country" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select Country</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Accommodation Type</label>
+          <select name="accomm_type" id="accomm_type" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select Accommodation Type</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Rent Subsidy</label>
+          <select name="rent_subsidy" id="rent_subsidy" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select</option>
+            <option value="YES">YES</option>
+            <option value="NO">NO</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="col-span-full flex justify-end space-x-4 pt-4">
+        <button type="button" id="cancelBtn" class="px-6 py-2 bg-gray-400 hover:bg-gray-500 rounded-lg text-white">Cancel</button>
+        <button type="button" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white">Submit</button>
       </div>
     </form>
   </div>
-</div>
 
-<!-- PERSONNEL SECTION -->
-<div id="section-personnel" class="px-6 mb-4">
-  <!-- Title -->
-  <h3 id="formTitle" class="hidden text-2xl font-bold text-blue-800 mb-4"></h3>
-
-  <!-- Step Buttons + Current Personnel -->
-  <div class="flex flex-wrap items-center gap-2 justify-between mb-4">
-    <div class=" flex flex-wrap gap-2 items-center">
-      <button id="btnStep1" class="relative px-4 text-sm lg:text-lg py-2 rounded-md bg-blue-600 hover:bg-blue-600 text-white transition-all overflow-hidden group">
-        <span class="relative z-10">Step 1: Basic Details</span>
-      </button>
-      <button id="btnStep2" class="relative px-4 text-sm lg:text-lg py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600 transition-all overflow-hidden group">
-        <span class="relative z-10">Step 2: Official Info</span>
-      </button>
-      <button id="btnStep3" class="relative px-4 text-sm lg:text-lg py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600 transition-all overflow-hidden group">
-        <span class="relative z-10">Step 3: Additional Info</span>
-      </button>
+  <!-- NOK SECTION -->
+  <div id="section-nok" class="hidden p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-2xl font-bold text-blue-800">Next of Kin</h3>
+      <button id="nokToggleBtn" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">+ Add</button>
     </div>
 
-    <button onclick="window.navigation?.navigateToSection ? window.navigation.navigateToSection('current-personnel','Current Personnel') : showAlert('Hook your navigation here.')" id="currentPersonnelBtn"
-      class="px-4 text-sm lg:text-lg py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-      Current Personnel
-    </button>
-  </div>
+    <!-- Form -->
+    <div id="nokFormWrap" class="hidden">
+      <form id="nokForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">First Name <span class="text-red-500">*</span></label>
+          <input id="nokFirst" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Last Name <span class="text-red-500">*</span></label>
+          <input id="nokLast" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Date of Birth</label>
+          <input id="nokDob" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Full Address <span class="text-red-500">*</span></label>
+          <input id="nokAddress" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Relationship <span class="text-red-500">*</span></label>
+          <select id="nokRelationship" required class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option value="">Select</option>
 
-  <!-- Form -->
-  <form id="personnelForm" class="space-y-6">
-    <!-- Step 1 (dynamic, with labels) -->
-    <div id="step1" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-
-    <!-- Step 2 (static, with labels) -->
-    <div id="step2" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date Joined</label>
-        <input type="date" name="DateEmpl" id="DateEmpl" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date Commissioned</label>
-        <input type="date" name="dateconfirmed" id="dateconfirmed" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Entry Mode</label>
-        <input type="text" name="entry_mode" id="entry_mode" placeholder="Entry Mode" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date Left</label>
-        <input type="date" name="DateLeft" id="DateLeft" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Exit Mode</label>
-        <select id="exittype" name="exittype" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Exit Mode</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Taxed ?</label>
-        <select name="taxed" id="taxed" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select</option>
-          <option value="YES">YES</option>
-          <option value="NO">NO</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">TaxID No(TIN)</label>
-        <input type="text" name="TaxCode" id="TaxCode" placeholder="TaxID N0" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Tax State</label>
-        <select id="state" name="state" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Tax State</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">RSA(Pension) Code</label>
-        <input type="text" name="NSITFcode" id="NSITFcode" placeholder="RSA(Pension) Code" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Pension Fund Administrator</label>
-        <select id="pfa" name="pfacode" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Administrator</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Payroll Process Category</label>
-        <select id="payrollProcess" name="payrollclass" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Payroll Process</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Salary Group</label>
-        <select id="salarygroup" name="gradetype" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Salary Group</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Salary Grade</label>
-        <select id="salarygrade" name="gradelevel" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Salary Grade</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Bank Branch</label>
-        <select id="bankbranch" name="bankbranch" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Bank Branch</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Account Number</label>
-        <input type="text" name="BankACNumber" id="BankACNumber" placeholder="Account Number" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Mobile Number <span class="text-red-500">*</span></label>
+          <input id="nokMobile" required type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Home Number</label>
+          <input id="nokHome" type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Email Address <span class="text-red-500">*</span></label>
+          <input id="nokEmail" required type="email" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Place Of Work</label>
+          <input id="nokWork" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Next Of Kin Type</label>
+          <select id="nokType" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Main</option><option>Alternate</option>
+          </select>
+        </div>
+      </form>
+      <div class="flex justify-end gap-3 mb-6">
+        <button id="nokCancel" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
+        <button id="nokSave" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
       </div>
     </div>
 
-    <!-- Step 3 (static, with labels) -->
-    <div id="step3" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Senority Date</label>
-        <input type="date" name="datepmted" id="datepmted" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Ship/Establishment</label>
-        <select name="Location" id="step3-ship" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>select</option>
-          <option value="SHIP">Ship</option>
-          <option value="ESTABLISHMENT">Establishment</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Branch</label>
-        <select id="branch" name="Factory" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Branch</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Command</label>
-        <select id="command" name="command" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Command</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Specialisation</label>
-        <select id="specialisation" name="specialisation" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Specialisation</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Present Appointment</label>
-        <input type="text" name="Jobtitle" id="Jobtitle" placeholder="Present Appointment" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Award/Decoration</label>
-        <input type="text" name="award" id="award" placeholder="Award/Decoration" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Emolument Form Received?</label>
-        <select name="emolumentform" id="emolumentform" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select</option>
-          <option value="YES">YES</option>
-          <option value="NO">NO</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">NHF Code</label>
-        <input type="text" name="NHFcode" id="NHFcode" placeholder="NHF Code" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Bank Code</label>
-        <select id="bankcode" name="Bankcode" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Bank Code</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">IPPIS NO</label>
-        <input type="text" name="InternalACNo" id="InternalACNo" placeholder="IPPIS NO" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Country</label>
-        <select id="country" name="Country" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Country</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Accommodation Type</label>
-        <select name="accomm_type" id="accomm_type" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select Accommodation Type</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Rent Subsidy</label>
-        <select name="rent_subsidy" id="rent_subsidy" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Select</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="col-span-full flex justify-end space-x-4 pt-4">
-      <button type="button" id="cancelBtn" class="px-6 py-2 bg-gray-400 hover:bg-gray-500 rounded-lg text-white">Cancel</button>
-      <button type="button" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white">Submit</button>
-    </div>
-  </form>
-</div>
-
-<!-- NOK SECTION -->
-<div id="section-nok" class="hidden p-6">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-2xl font-bold text-blue-800">Next of Kin</h3>
-    <button id="nokToggleBtn" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">+ Add</button>
-  </div>
-
-  <!-- Form -->
-  <div id="nokFormWrap" class="hidden">
-    <form id="nokForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">First Name <span class="text-red-500">*</span></label>
-        <input id="nokFirst" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Last Name <span class="text-red-500">*</span></label>
-        <input id="nokLast" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date of Birth</label>
-        <input id="nokDob" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Full Address <span class="text-red-500">*</span></label>
-        <input id="nokAddress" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Relationship <span class="text-red-500">*</span></label>
-        <select id="nokRelationship" required class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option value="">Select</option>
-
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Mobile Number <span class="text-red-500">*</span></label>
-        <input id="nokMobile" required type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Home Number</label>
-        <input id="nokHome" type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Email Address <span class="text-red-500">*</span></label>
-        <input id="nokEmail" required type="email" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Place Of Work</label>
-        <input id="nokWork" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Next Of Kin Type</label>
-        <select id="nokType" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500">
-          <option>Main</option><option>Alternate</option>
-        </select>
-      </div>
-    </form>
-    <div class="flex justify-end gap-3 mb-6">
-      <button id="nokCancel" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
-      <button id="nokSave" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
+    <!-- List -->
+    <div class="overflow-x-auto">
+      <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+        <thead class="bg-blue-100 text-blue-900">
+          <tr>
+            <th class="py-2 px-3 border">Name</th>
+            <th class="py-2 px-3 border">Relationship</th>
+            <th class="py-2 px-3 border">Mobile</th>
+            <th class="py-2 px-3 border">Email</th>
+            <th class="py-2 px-3 border">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="nokList" class="text-center">
+          <tr id="nokEmpty"><td colspan="4" class="py-4 text-gray-500">No NOKs yet.</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- List -->
-  <div class="overflow-x-auto">
-    <table class="min-w-full border border-gray-200 rounded-lg text-sm">
-      <thead class="bg-blue-100 text-blue-900">
-        <tr>
-          <th class="py-2 px-3 border">Name</th>
-          <th class="py-2 px-3 border">Relationship</th>
-          <th class="py-2 px-3 border">Mobile</th>
-          <th class="py-2 px-3 border">Email</th>
-          <th class="py-2 px-3 border">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="nokList" class="text-center">
-        <tr id="nokEmpty"><td colspan="4" class="py-4 text-gray-500">No NOKs yet.</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+  <!-- SPOUSE SECTION -->
+  <div id="section-spouse" class="hidden p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-2xl font-bold text-blue-800">Spouse</h3>
+      <button id="spouseToggleBtn" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">+ Add</button>
+    </div>
 
-<!-- SPOUSE SECTION -->
-<div id="section-spouse" class="hidden p-6">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-2xl font-bold text-blue-800">Spouse</h3>
-    <button id="spouseToggleBtn" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">+ Add</button>
-  </div>
+    <div id="spouseFormWrap" class="hidden">
+      <form id="spouseForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Full Name <span class="text-red-500">*</span></label>
+          <input id="spouseName" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Date Of Birth</label>
+          <input id="spouseDob" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Date of Married</label>
+          <input id="spouseDom" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Street</label>
+          <input id="spouseStreet" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Town</label>
+          <input id="spouseTown" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">State</label>
+          <select id="spouseState" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none">
+            <option value="">Select State</option>
+            <!--options would be populated dynamically-->
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Local Government</label>
+          <select id="spouseLga" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none">
+            <option value="">Select LGA</option>
+            <!--options would be populated dynamically-->
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Phone</label>
+          <input id="spousePhone" type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Email</label>
+          <input id="spouseEmail" type="email" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">P.O Box</label>
+          <input id="spousePoBox" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+      </form>
+      <div class="flex justify-end gap-3 mb-6">
+        <button id="spouseCancel" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
+        <button id="spouseSave" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
+      </div>
+    </div>
 
-  <div id="spouseFormWrap" class="hidden">
-    <form id="spouseForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Full Name <span class="text-red-500">*</span></label>
-        <input id="spouseName" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date Of Birth</label>
-        <input id="spouseDob" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date of Married</label>
-        <input id="spouseDom" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Street</label>
-        <input id="spouseStreet" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Town</label>
-        <input id="spouseTown" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">State</label>
-        <select id="spouseState" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none">
-          <option value="">Select State</option>
-          <!--options would be populated dynamically-->
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Local Government</label>
-        <select id="spouseLga" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none">
-          <option value="">Select LGA</option>
-           <!--options would be populated dynamically-->
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Phone</label>
-        <input id="spousePhone" type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Email</label>
-        <input id="spouseEmail" type="email" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">P.O Box</label>
-        <input id="spousePoBox" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-    </form>
-    <div class="flex justify-end gap-3 mb-6">
-      <button id="spouseCancel" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
-      <button id="spouseSave" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
+    <div class="overflow-x-auto">
+      <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+        <thead class="bg-blue-100 text-blue-900">
+          <tr>
+            <th class="py-2 px-3 border">Full Name</th>
+            <th class="py-2 px-3 border">Phone</th>
+            <th class="py-2 px-3 border">Email</th>
+            <th class="py-2 px-3 border">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="spouseList" class="text-center">
+          <tr id="spouseEmpty"><td colspan="3" class="py-4 text-gray-500">No spouse records yet.</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <div class="overflow-x-auto">
-    <table class="min-w-full border border-gray-200 rounded-lg text-sm">
-      <thead class="bg-blue-100 text-blue-900">
-        <tr>
-          <th class="py-2 px-3 border">Full Name</th>
-          <th class="py-2 px-3 border">Phone</th>
-          <th class="py-2 px-3 border">Email</th>
-          <th class="py-2 px-3 border">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="spouseList" class="text-center">
-        <tr id="spouseEmpty"><td colspan="3" class="py-4 text-gray-500">No spouse records yet.</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- CHILDREN SECTION -->
-<div id="section-children" class="hidden p-6">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-2xl font-bold text-blue-800">Children</h3>
-    <button id="childToggleBtn" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">+ Add</button>
-  </div>
-
-  <div id="childFormWrap" class="hidden">
-    <form id="childForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Full Name <span class="text-red-500">*</span></label>
-        <input id="childName" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Street</label>
-        <input id="childStreet" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Town</label>
-        <input id="childTown" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">State</label>
-        <select id="childState" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none">
-          <option value="">Select State</option>
-          <!--options would be populated dynamically-->
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Local Government</label>
-        <select id="childLga" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none">
-          <option value="">Select LGA</option>
-          <!--options would be populated dynamically-->
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Phone</label>
-        <input id="childPhone" type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Email</label>
-        <input id="childEmail" type="email" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">P.O Box</label>
-        <input id="childPoBox" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Sex</label>
-        <select id="childSex" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none">
-          <option value="">Select</option><option>Male</option><option>Female</option><option>Other</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Date of Birth</label>
-        <input id="childDob" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">School</label>
-        <input id="childSchool" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Office Address</label>
-        <input id="childOffice" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-      <div >
-        <label class="block text-sm font-medium text-gray-700">Occupation</label>
-        <input id="childOccupation" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
-      </div>
-    </form>
-    <div class="flex justify-end gap-3 mb-6">
-      <button id="childCancel" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
-      <button id="childSave" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
+  <!-- CHILDREN SECTION -->
+  <div id="section-children" class="hidden p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-2xl font-bold text-blue-800">Children</h3>
+      <button id="childToggleBtn" class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">+ Add</button>
     </div>
-  </div>
 
-  <div class="overflow-x-auto">
-    <table class="min-w-full border border-gray-200 rounded-lg text-sm">
-      <thead class="bg-blue-100 text-blue-900">
-        <tr>
-          <th class="py-2 px-3 border">Full Name</th>
-          <th class="py-2 px-3 border">Sex</th>
-          <th class="py-2 px-3 border">DOB</th>
-          <th class="py-2 px-3 border">Phone</th>
-          <th class="py-2 px-3 border">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="childList" class="text-center">
-        <tr id="childEmpty"><td colspan="4" class="py-4 text-gray-500">No children yet.</td></tr>
-      </tbody>
-    </table>
+    <div id="childFormWrap" class="hidden">
+      <form id="childForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Full Name <span class="text-red-500">*</span></label>
+          <input id="childName" required type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Street</label>
+          <input id="childStreet" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Town</label>
+          <input id="childTown" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">State</label>
+          <select id="childState" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none">
+            <option value="">Select State</option>
+            <!--options would be populated dynamically-->
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Local Government</label>
+          <select id="childLga" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none">
+            <option value="">Select LGA</option>
+            <!--options would be populated dynamically-->
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Phone</label>
+          <input id="childPhone" type="tel" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Email</label>
+          <input id="childEmail" type="email" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">P.O Box</label>
+          <input id="childPoBox" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Sex</label>
+          <select id="childSex" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none">
+            <option value="">Select</option><option>Male</option><option>Female</option><option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Date of Birth</label>
+          <input id="childDob" type="date" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">School</label>
+          <input id="childSchool" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Office Address</label>
+          <input id="childOffice" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+        <div >
+          <label class="block text-sm font-medium text-gray-700">Occupation</label>
+          <input id="childOccupation" type="text" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent focus:ring-2 focus:ring-yellow-500 focus:outline-none" />
+        </div>
+      </form>
+      <div class="flex justify-end gap-3 mb-6">
+        <button id="childCancel" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
+        <button id="childSave" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Save</button>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+        <thead class="bg-blue-100 text-blue-900">
+          <tr>
+            <th class="py-2 px-3 border">Full Name</th>
+            <th class="py-2 px-3 border">Sex</th>
+            <th class="py-2 px-3 border">DOB</th>
+            <th class="py-2 px-3 border">Phone</th>
+            <th class="py-2 px-3 border">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="childList" class="text-center">
+          <tr id="childEmpty"><td colspan="4" class="py-4 text-gray-500">No children yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -888,6 +892,7 @@ let childCounter = 0;
 const editState = { type: null, id: null, row: null };
 const EDIT_KEY = 'editing_employee_id';
 let currentEmployeeId = localStorage.getItem(EDIT_KEY);
+let originalData = [];
 //console.log('Initial currentEmployeeId:', currentEmployeeId);
 
 
@@ -1018,6 +1023,9 @@ function cancelPersonnelForm() {
       const confirmed = confirm('Are you sure you want to cancel editing? Any unsaved changes will be lost.');
       if (!confirmed) return;
 
+      // Enable Service Number field
+      document.getElementById("field-service-number").disabled = false;
+
       // Clear editing state
       localStorage.removeItem('editing_employee_id');
       setCreateMode();
@@ -1075,12 +1083,21 @@ function cancelPersonnelForm() {
 
     // 9. Navigate back if came from current personnel
     const navigatedFromCurrent = localStorage.getItem('navigatedFromCurrentPersonnel') === 'true';
-    if (navigatedFromCurrent) {
+    const navigatedFromOld = localStorage.getItem('navigatedFromOldPersonnel') === 'true';
+    if (navigatedFromOld) {
+      localStorage.removeItem('navigatedFromOldPersonnel');
+      if (window.navigation?.navigateToSection) {
+        window.navigation.navigateToSection('old-personnel', 'Old Personnel');
+      }
+    } else if (navigatedFromCurrent) {
       localStorage.removeItem('navigatedFromCurrentPersonnel');
       if (window.navigation?.navigateToSection) {
         window.navigation.navigateToSection('current-personnel', 'Current Personnel');
       }
     }
+
+    // 10. Remove Validation Blur
+    //checkDuplicate();
 
   } catch (error) {
     console.error('Error in cancelPersonnelForm:', error);
@@ -1932,6 +1949,9 @@ function setEditMode(employeeId, employeeData) {
   formMode = 'edit';
   currentEmployeeId = employeeId;
   editingEmployeeData = employeeData;
+
+  //Disable Service Number
+  document.getElementById("field-service-number").disabled = true;
   
   // Set localStorage with explicit string
   localStorage.setItem(EDIT_KEY, String(employeeId));
@@ -2046,7 +2066,7 @@ function populatePersonnelForm(employee) {
           element.value = value;
         }
         
-        //console.log(`✅ Prefilled [${formField}] (dbField: ${dbField}) with value: ${value}`);
+        //console.log(` Prefilled [${formField}] (dbField: ${dbField}) with value: ${value}`);
       } else {
         //console.warn(`⚠️ No element found for formField: ${formField} (dbField: ${dbField}), value: ${value}`);
       }
@@ -2254,208 +2274,273 @@ function cleanFormData(formData) {
   return cleanData;
 }
 
+//validation
+async function checkDuplicate(input, field, excludeId = null) {
+  const value = input.value.trim();
+  if (!value) {
+    input.setCustomValidity("");
+    input.reportValidity();
+    return;
+  }
+
+  // Use your actual edit flag
+  const isEditing = (formMode === 'edit' && currentEmployeeId);
+  const dbField = DB_FIELD_MAP[field] || field;
+
+  // Skip if editing and value hasn’t changed
+  if (isEditing && originalData && originalData[dbField] === value) {
+    input.setCustomValidity("");
+    input.reportValidity();
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("token");
+
+    let url = `${API_BASE}/employees/check/${field}/${encodeURIComponent(value)}`;
+    if (isEditing && excludeId) {
+      url += `?exclude=${excludeId}`;
+    }
+
+    const res = await fetch(url, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (data.exists) {
+      input.setCustomValidity(`⚠️ This ${field} already exists, please use a different one.`);
+      input.reportValidity();
+
+      // Keep focus trapped in the field until fixed
+      input.focus();
+      input.select();
+    } else {
+      input.setCustomValidity("");
+      input.reportValidity();
+    }
+  } catch (err) {
+    console.error(`Error checking ${field}:`, err);
+  }
+}
+
+// attach validation on blur
+document.getElementById("field-service-number").addEventListener("blur", function () {
+    checkDuplicate(this, 'Empl_ID');
+  });
+
 // Form submission - Collect ALL steps
 async function submitPersonnelForm() {
   const personnelData = {};
-  
+  const duplicateFields = ["Service Number"]; // fields to check for duplicates
+
   // Handle passport photograph
   let passportBase64 = null;
   const passportInput = document.querySelector('input[name="Passport Photograph"]');
-  
+
   if (passportInput) {
-    // Check if in avatar mode (edit mode with existing photo)
     const currentPassport = passportInput.getAttribute('data-current-passport');
     const passportChanged = passportInput.getAttribute('data-passport-changed');
-    
+
     if (currentPassport && !passportChanged) {
-      // Use existing passport data
       passportBase64 = currentPassport;
-      console.log('Using existing passport photo');
     } else if (currentPassport && passportChanged) {
-      // Use updated passport data
       passportBase64 = currentPassport;
-      console.log('Using updated passport photo');
     } else if (passportInput.files && passportInput.files[0]) {
-      // New upload (create mode)
-      console.log('File found:', passportInput.files[0].name, passportInput.files[0].size, 'bytes');
-      
       passportBase64 = await new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = reader.result.split(',')[1];
-          console.log('Base64 conversion successful, length:', base64.length);
-          resolve(base64);
-        };
+        reader.onloadend = () => resolve(reader.result.split(',')[1]);
         reader.onerror = reject;
         reader.readAsDataURL(passportInput.files[0]);
       });
     }
   }
-  
-  // Collect ALL form fields from all 3 steps
+
+  // Collect ALL form fields
   const allInputs = document.querySelectorAll('#step1 input, #step1 select, #step2 input, #step2 select, #step3 input, #step3 select');
-  
-  allInputs.forEach(input => {
+
+  for (const input of allInputs) {
     const fieldName = input.getAttribute('name') || '';
-    
-    // Skip file input - we handled it separately
-    if (input.type === 'file') {
-      return;
-    }
-    
-    // Skip hidden fields and disabled fields
-    if (input.type === 'hidden' || input.disabled) {
-      return;
-    }
-    
-    // Skip checkboxes that are not checked
-    if (input.type === 'checkbox' && !input.checked) {
-      return;
-    }
-    
-    // Skip radio buttons that are not checked
-    if (input.type === 'radio' && !input.checked) {
-      return;
-    }
-    
-    const value = input.value?.trim();
-    
-    // Skip empty values
-    if (!value || value === '') {
-      return;
-    }
-    
-    // Skip default select placeholder values (common patterns)
+
+    if (input.type === 'file' || input.type === 'hidden' || input.disabled) continue;
+    if ((input.type === 'checkbox' || input.type === 'radio') && !input.checked) continue;
+
+    let value = input.value?.trim() ?? '';
+
+    // Handle SELECT
     if (input.tagName === 'SELECT') {
       const lowerValue = value.toLowerCase();
-      // Skip if it's a placeholder like "select", "select taxed", "choose", etc.
-      if (lowerValue === 'select' || 
-          lowerValue.startsWith('select ') || 
-          lowerValue === 'choose' || 
-          lowerValue.startsWith('choose ') ||
-          lowerValue === '--' ||
-          lowerValue === '---' ||
-          value === '') {
-        return;
+      const isPlaceholder =
+        lowerValue === 'select' ||
+        lowerValue.startsWith('select ') ||
+        lowerValue === 'choose' ||
+        lowerValue.startsWith('choose ') ||
+        lowerValue === '--' ||
+        lowerValue === '---' ||
+        value === '';
+
+      if (DB_FIELD_MAP[fieldName]) {
+        personnelData[DB_FIELD_MAP[fieldName]] = isPlaceholder ? null : value;
       }
+      continue;
     }
-    
-    // Only include fields that are mapped
-    if (DB_FIELD_MAP[fieldName]) {
-      // Format date inputs to ddmmyyyy
-      if (input.type === 'date' && value) {
-        // Convert from yyyy-mm-dd to ddmmyyyy
+
+    // Handle DATE
+    if (input.type === 'date') {
+      if (!value) {
+        if (DB_FIELD_MAP[fieldName]) personnelData[DB_FIELD_MAP[fieldName]] = null;
+      } else {
         const dateObj = new Date(value);
         const day = String(dateObj.getDate()).padStart(2, '0');
         const month = String(dateObj.getMonth() + 1).padStart(2, '0');
         const year = dateObj.getFullYear();
-        personnelData[DB_FIELD_MAP[fieldName]] = `${day}${month}${year}`;
-      } else {
-        personnelData[DB_FIELD_MAP[fieldName]] = value;
+        if (DB_FIELD_MAP[fieldName]) personnelData[DB_FIELD_MAP[fieldName]] = `${day}${month}${year}`;
+      }
+      continue;
+    }
+
+    // Normal inputs
+    if (DB_FIELD_MAP[fieldName]) {
+      personnelData[DB_FIELD_MAP[fieldName]] = value === '' ? null : value;
+    }
+  }
+
+  // Add passport
+  if (passportBase64) personnelData.passport = passportBase64;
+
+  console.log('Final personnelData:', personnelData);
+
+  try {
+    // Duplicate validation before submission
+    for (const field of duplicateFields) {
+      const input = document.querySelector(`[name="${field}"]`);
+      if (input) {
+        await checkDuplicate(input, field);
+        if (input.validationMessage) {
+          showAlert(input.validationMessage);
+          return; // stop submit if any duplicate found
+        }
       }
     }
-  });
 
-  // Add passport data if exists
-  if (passportBase64) {
-    personnelData.passport = passportBase64;
-    console.log('Passport added to personnelData');
-  }
-  
-  console.log('Final personnelData keys:', Object.keys(personnelData));
-  console.log('Passport included?', !!personnelData.passport);
-  
-  try {
     if (formMode === 'edit' && currentEmployeeId) {
       console.log('Updating employee:', currentEmployeeId);
-      
+
       await apiRequest(`${API_BASE}/employees/${currentEmployeeId}`, {
         method: 'PUT',
         body: JSON.stringify(personnelData)
       });
-      
-      showPopup("Personnel updated successfully", () => {
-      localStorage.removeItem('editing_employee_id'); // Remove only after successful update
-      localStorage.removeItem('navigatedFromCurrentPersonnel');
-      localStorage.removeItem('isEditMode'); // Clear edit mode flag
 
-      if (window.navigation?.navigateToSection) {
-        window.navigation.navigateToSection('current-personnel', 'Current Personnel');
-      }
-    });
+      // Redirect logic (DateLeft / ExitType)
+      const dateLeftVal = personnelData.DateLeft;
+      const exitTypeVal = personnelData.exittype;
+
+      const hasExited =
+        (dateLeftVal && dateLeftVal !== null && dateLeftVal !== '') ||
+        (exitTypeVal && exitTypeVal !== null && exitTypeVal !== '');
+
+      const redirectSection = hasExited ? 'old-personnel' : 'current-personnel';
+      const redirectTitle = hasExited ? 'Old Personnel' : 'Current Personnel';
+
+      showPopup("Personnel updated successfully", () => {
+        localStorage.removeItem('editing_employee_id');
+        localStorage.removeItem('navigatedFromCurrentPersonnel');
+        localStorage.removeItem('navigatedFromOldPersonnel');
+        localStorage.removeItem('isEditMode');
+
+        if (window.navigation?.navigateToSection) {
+          window.navigation.navigateToSection(redirectSection, redirectTitle);
+        }
+      });
+
     } else {
       const serviceNo = document.getElementById('field-service-number')?.value.trim();
       if (!serviceNo) {
         showAlert('Service Number is required');
         return;
       }
-      
+
       personnelData.Empl_ID = serviceNo;
-      
+
       console.log('Creating new employee with service number:', serviceNo);
-      
-      // Create employee first
+
       await apiRequest(`${API_BASE}/employees`, {
         method: 'POST',
         body: JSON.stringify(personnelData)
       });
-      
-      // Then create family members
-      if (pendingFamilyData.nok.length > 0) {
-        for (const nok of pendingFamilyData.nok) {
-          delete nok._tempId;
-          await apiRequest(`${API_BASE}/employees/${serviceNo}/nextofkin`, {
-            method: 'POST',
-            body: JSON.stringify(nok)
-          });
+
+      // Post family data
+      for (const type of ['nok', 'spouse', 'children']) {
+        if (pendingFamilyData[type].length > 0) {
+          for (const member of pendingFamilyData[type]) {
+            delete member._tempId;
+            await apiRequest(`${API_BASE}/employees/${serviceNo}/${type}`, {
+              method: 'POST',
+              body: JSON.stringify(member)
+            });
+          }
         }
       }
-      
-      if (pendingFamilyData.spouse.length > 0) {
-        for (const spouse of pendingFamilyData.spouse) {
-          delete spouse._tempId;
-          await apiRequest(`${API_BASE}/employees/${serviceNo}/spouse`, {
-            method: 'POST',
-            body: JSON.stringify(spouse)
-          });
-        }
-      }
-      
-      if (pendingFamilyData.children.length > 0) {
-        for (const child of pendingFamilyData.children) {
-          delete child._tempId;
-          await apiRequest(`${API_BASE}/employees/${serviceNo}/children`, {
-            method: 'POST',
-            body: JSON.stringify(child)
-          });
-        }
-      }
-      
+
       showPopup("Personnel and family records created successfully", () => {
         if (window.navigation?.navigateToSection) {
           window.navigation.navigateToSection('current-personnel', 'Current Personnel');
           setTimeout(() => {
-            if (window.personnelManager?.refresh) {
-              window.personnelManager.refresh();
-            }
+            if (window.personnelManager?.refresh) window.personnelManager.refresh();
           }, 100);
         }
       });
-      
+
       document.getElementById('personnelForm')?.reset();
       pendingFamilyData = { nok: [], spouse: [], children: [] };
       clearAllFamilyTables();
       toggleStep(1);
     }
-    
+
   } catch (error) {
     console.error('Submit failed:', error);
     showAlert('Failed to save employee: ' + error.message);
   }
 }
 
+// Capitalize first letter, keep the rest lower
+function capitalizeWords(str) {
+  return str
+    ? str
+        .toLowerCase()
+        .split(" ")
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ")
+    : "";
+}
 
-// Batch upload functionality
+["field-residential-address", "field-surname", "field-othername", "field-town","nokFirst", "nokLast", "nokAddress", "nokWork", "spouseName", "spouseStreet", "spouseTown", "childName", "childStreet", "childTown", "childOffice", "childOccupation"].forEach(fieldId => {
+  const el = document.getElementById(fieldId);
+  el.addEventListener("input", () => {
+    el.value = capitalizeWords(el.value);
+  });
+});
+
+//capitalize all
+["field-service-number", "TaxCode", "NSITFcode", "award", "InternalACNo", "Jobtitle", "NHFcode", "spousePoBox", "childPoBox"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", () => {
+    el.value = el.value.toUpperCase();
+  });
+});
+
+//Numeric only
+["field-gsm-number",  "BankACNumber", "nokMobile", "nokHome", "spousePhone", "childPhone"].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener("input", () => {
+      el.value = el.value.replace(/[^0-9]/g, '');
+    });
+  }
+});
+
+
+
+//----------Batch Upload Handlers----------//
 document.getElementById("uploadBatchBtn").addEventListener("click", async () => {
   const fileInput = document.getElementById("batchFile");
   const file = fileInput.files[0];
@@ -2472,7 +2557,7 @@ if (!file) {
   return;
 }
 
-// ✅ safer validation by extension
+//  safer validation by extension
 const allowedExtensions = ['.csv', '.xlsx', '.xls'];
 const fileName = file.name.toLowerCase();
 const isExcelOrCsv = allowedExtensions.some(ext => fileName.endsWith(ext));
@@ -2482,7 +2567,7 @@ if (!isExcelOrCsv) {
   return;
 }
 
-// ✅ Size validation
+//  Size validation
 if (file.size > 5 * 1024 * 1024) {
   showAlert('File size must be less than 5MB');
   return;
@@ -2520,7 +2605,7 @@ if (file.size > 5 * 1024 * 1024) {
 
     console.log('Upload result:', result);
 
-// ✅ Handle success response
+//  Handle success response
 if (result.summary) {
   const summary = result.summary;
   let message = `Batch upload completed!\n\n`;
@@ -2590,7 +2675,6 @@ if (result.summary) {
   }
 });
 
-
 // Download sample template
 document.getElementById("downloadSampleBtn").addEventListener("click", async (e) => {
   e.preventDefault();
@@ -2659,13 +2743,10 @@ function resetBatchUploadForm() {
     fileInfo.remove();
   }
 
-  // Hide the form
-  //form.classList.add("hidden");
-
   // Optionally clear alerts or messages
   if (typeof clearAlerts === "function") clearAlerts();
 
-  console.log("✅ Batch upload form reset successfully");
+  console.log(" Batch upload form reset successfully");
 }
 
 // Cancel Button handler
@@ -2683,6 +2764,9 @@ window.PersonnelAPI = {
   clearAllFamilyTables,
   setNavigatedFromCurrentPersonnel: (value) => {
     navigatedFromCurrentPersonnel = value;
+  },
+  setNavigatedFromOldPersonnel: (value) => {
+    navigatedFromOldPersonnel = value;
   }
 };
 

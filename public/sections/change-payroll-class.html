@@ -62,7 +62,7 @@
   <!-- Payroll Classes Management -->
   <div class="p-6 max-w-4xl mx-auto my-6">
     <h2 class="text-xl font-bold text-gray-800 mb-4">Payroll Class Statistics</h2>
-    <div id="classCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div id="classCards" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       <div class="col-span-full text-center py-8">
         <div class="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         <p class="text-gray-500 mt-2">Loading statistics...</p>
@@ -247,7 +247,7 @@
       const otherName = emp.OtherName || emp.otherName || '';
       const name = `${surname} ${otherName}`.trim() || emp.name || 'Unknown';
       const rank = emp.Title || emp.title || emp.rank || '';
-      const payrollClass = emp.PayrollClass || emp.payrollClass || '';
+      const payrollClass = emp.payrollclass || emp.PayrollClass || emp.PAYROLLCLASS || '';
       
       return `
         <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" 
@@ -277,14 +277,32 @@
         const payrollClass = this.getAttribute('data-class');
         const text = this.textContent.trim();
         
+        // Find the full employee object from allEmployees
+        const employee = allEmployees.find(emp => 
+          (emp.Empl_ID || emp.EMPL_ID || emp.id) === id
+        );
+        
+        // Get payroll class from employee object (check multiple possible field names)
+        const actualClass = employee ? (
+          employee.payrollclass || 
+          employee.PayrollClass || 
+          employee.PAYROLLCLASS ||
+          employee.payroll_class ||
+          payrollClass ||
+          null
+        ) : payrollClass;
+        
+        console.log('Employee data:', employee);
+        console.log('Payroll class:', actualClass);
+        
         // Store selected employee
         selectedEmployee = {
           Empl_ID: id,
           Fullname: name,
-          PayrollClass: payrollClass
+          PayrollClass: actualClass
         };
         
-        currentClass = payrollClass;
+        currentClass = actualClass;
         
         searchInput.value = text;
         hiddenInput.value = id;
@@ -324,15 +342,21 @@
       // Show all employees
       renderDropdown(allEmployees);
     } else {
-      // Filter employees
+      // Filter employees - include ALL fields in search
       const filtered = allEmployees.filter(emp => {
         const id = (emp.Empl_ID || emp.EMPL_ID || emp.id || '').toString().toLowerCase();
         const surname = (emp.Surname || emp.surname || '').toLowerCase();
         const otherName = (emp.OtherName || emp.otherName || '').toLowerCase();
         const name = `${surname} ${otherName}`.toLowerCase();
         const rank = (emp.Title || emp.title || emp.rank || '').toLowerCase();
+        const titleDesc = (emp.TITLEDESC || emp.titleDesc || '').toLowerCase();
         
-        return id.includes(searchTerm) || name.includes(searchTerm) || rank.includes(searchTerm);
+        return id.includes(searchTerm) || 
+               surname.includes(searchTerm) || 
+               otherName.includes(searchTerm) ||
+               name.includes(searchTerm) || 
+               rank.includes(searchTerm) ||
+               titleDesc.includes(searchTerm);
       });
       
       renderDropdown(filtered);
@@ -481,22 +505,38 @@
         document.getElementById('successModal').classList.add('hidden');
         document.getElementById('finalSuccess').classList.remove('hidden');
 
-        // Update local data
+        // Update local employee data
+        const employeeIndex = allEmployees.findIndex(emp => 
+          (emp.Empl_ID || emp.EMPL_ID || emp.id) === selectedEmployee.Empl_ID
+        );
+
+        if (employeeIndex !== -1) {
+          allEmployees[employeeIndex].payrollclass = newClass;
+        }
+
         selectedEmployee.PayrollClass = newClass;
         currentClass = newClass;
 
-        // Reload statistics
-        await loadClassStatistics();
+        // Re-fetch class statistics and update global variable
+        const stats = await loadClassStatistics(); // ensure this returns data
+
+        if (stats && stats.data) {
+          payrollClasses = stats.data; // ensure global variable is refreshed
+        }
+
+        // Re-render the cards with new counts
+        renderClassCards();
 
         const name = selectedEmployee.Fullname || '';
         const currentClassName = getClassName(currentClass);
-
-        selectionText.textContent = `Selected personnel ${selectedEmployee.Empl_ID} (${name}) is now on ${currentClassName}`;
+        selectionText.textContent = 
+          `Selected personnel ${selectedEmployee.Empl_ID} (${name}) is now on ${currentClassName}`;
       }, 2000);
 
     } catch (error) {
       document.getElementById('successModal').classList.add('hidden');
       console.error('Error updating payroll class:', error);
+      showError('Error updating payroll class');
     }
   });
 

@@ -2,8 +2,8 @@
   <!-- Header -->
   <div class="flex justify-between items-center mb-6">
     <h3 class="text-2xl font-bold text-blue-800">Personnel Details</h3>
-    <button onclick="window.navigation?.navigateToSection('current-personnel', 'Current Personnel')" 
-            class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
+    <button id="backBtn" 
+      class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
       Back to List
     </button>
   </div>
@@ -176,7 +176,7 @@ class ViewPersonnelManager {
   async loadLookupData() {
     const endpoints = [
       'bankcode', 'bankbranch', 'state', 'lga', 
-      'command', 'title', 'religion', 'pfa', 'salarygrade', 'salarygroup', 'country',
+      'command', 'title', 'religion', 'pfa', 'salarygrade', 'salarygroup', 'country', 'payrollclass',
       'relationship', 'marital', 'exittype',
     ];
     
@@ -241,7 +241,8 @@ class ViewPersonnelManager {
       'exittype': 'Name',
       'salarygrade': 'grade_no',
       'salarygroup': 'groupcode',
-      'country': 'countrycode'
+      'country': 'countrycode',
+      'payrollclass': 'classcode',
     };
     return fieldMap[endpoint] || 'code';
   }
@@ -261,7 +262,8 @@ class ViewPersonnelManager {
       'exittype': 'Description',
       'salarygrade': 'grade_desc',
       'salarygroup': 'grpdesc',
-      'country': 'Countryname'
+      'country': 'Countryname',
+      'payrollclass': 'classname',
     };
     return fieldMap[endpoint] || 'name';
   }
@@ -401,6 +403,27 @@ class ViewPersonnelManager {
                 <dt class="font-medium text-sm">Internal AC No:</dt>
                 <dd class="col-span-2 text-sm">${this.escape(emp.InternalACNo || 'N/A')}</dd>
             </div>
+            </div>
+
+            <!-- Other Details -->
+                        <div class="space-y-3">
+            <h4 class="text-lg font-semibold text-blue-700 border-b pb-2">Other Details</h4>
+            <div class="grid grid-cols-3 gap-2 py-2 border-b">
+                <dt class="font-medium text-sm">Payroll Class:</dt>
+                <dd class="col-span-2 text-sm">${this.escape(this.resolveName(emp.payrollclass, 'payrollclass'))}</dd>
+            </div>
+            <div class="grid grid-cols-3 gap-2 py-2 border-b">
+                <dt class="font-medium text-sm">Rent Subsidy:</dt>
+                <dd class="col-span-2 text-sm">${this.escape(emp.rent_subsidy || 'N/A')}</dd>
+            </div>
+            <div class="grid grid-cols-3 gap-2 py-2 border-b">
+                <dt class="font-medium text-sm">Accomm Type:</dt>
+                <dd class="col-span-2 text-sm">${this.escape(emp.accomm_type || 'N/A')}</dd>
+            </div>
+            <!--<div class="grid grid-cols-3 gap-2 py-2 border-b">
+                <dt class="font-medium text-sm">Internal AC No:</dt>
+                <dd class="col-span-2 text-sm">${this.escape(emp.InternalACNo || 'N/A')}</dd>
+            </div>-->
             </div>
         </div>
 
@@ -833,6 +856,23 @@ class ViewPersonnelManager {
 
 // Initialize
 window.ViewPersonnel = new ViewPersonnelManager();
+
+document.getElementById('backBtn').addEventListener('click', () => {
+  const navigatedFromCurrent = localStorage.getItem('navigatedFromCurrentPersonnel') === 'true';
+  const navigatedFromOld = localStorage.getItem('navigatedFromOldPersonnel') === 'true';
+  if (navigatedFromOld) {
+    localStorage.removeItem('navigatedFromOldPersonnel');
+    if (window.navigation?.navigateToSection) {
+      window.navigation.navigateToSection('old-personnel', 'Old Personnel');
+    }
+  } else if (navigatedFromCurrent) {
+    localStorage.removeItem('navigatedFromCurrentPersonnel');
+    if (window.navigation?.navigateToSection) {
+      window.navigation.navigateToSection('current-personnel', 'Current Personnel');
+    }
+  }
+});
+
 
 // Auto-reload employee if navigating back to this view
 (function() {

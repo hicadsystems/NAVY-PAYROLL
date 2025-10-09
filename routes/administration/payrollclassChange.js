@@ -42,7 +42,7 @@ router.get('/payroll-class-stats', verifyToken, async (req, res) => {
         COUNT(*) AS count
       FROM hr_employees e
       LEFT JOIN py_payrollclass pc 
-        ON e.payrollclass COLLATE utf8mb3_general_ci = pc.classcode COLLATE utf8mb3_general_ci
+        ON e.payrollclass
       WHERE 
         (e.DateLeft IS NULL OR e.DateLeft = '')
         AND (exittype IS NULL OR exittype = '')

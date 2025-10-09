@@ -76,7 +76,8 @@ router.post('/create', verifyToken, async (req, res) => {
 router.get('/', verifyToken, async (req, res) => {
   try {
     const query = `
-      SELECT classcode, classname, year, month
+      SELECT classcode, classname, year, month,
+      LOWER(COALESCE(status, 'inactive')) AS status
       FROM py_payrollclass
       ORDER BY classcode ASC
     `;
@@ -101,7 +102,8 @@ router.get('/:classcode', verifyToken, async (req, res) => {
 
   try {
     const query = `
-      SELECT classcode, classname, year, month
+      SELECT classcode, classname, year, month, 
+      LOWER(COALESCE(status, 'inactive')) AS status
       FROM py_payrollclass
       WHERE classcode = ?
     `;
@@ -123,20 +125,24 @@ router.get('/:classcode', verifyToken, async (req, res) => {
   }
 });
 
-// ==================== UPDATE ====================
+// ==================== UPDATE ==================== 
 router.put('/:classcode', verifyToken, async (req, res) => {
   const { classcode } = req.params;
-  const { classname} = req.body;
+  const { newClasscode, classname, year, month, status } = req.body;
 
   // Validation
   if (classname && classname.length > 30) {
     return res.status(400).json({ error: 'Class name must not exceed 30 characters' });
   }
 
+  if (status && !['active', 'inactive'].includes(status.toLowerCase())) {
+    return res.status(400).json({ error: 'Status must be either "active" or "inactive"' });
+  }
+
   try {
     // Check if record exists
     const [existing] = await pool.query(
-      `SELECT classcode FROM py_payrollclass WHERE classcode = ?`,
+      `SELECT * FROM py_payrollclass WHERE classcode = ?`,
       [classcode]
     );
 
@@ -144,18 +150,73 @@ router.put('/:classcode', verifyToken, async (req, res) => {
       return res.status(404).json({ error: 'Payroll class not found' });
     }
 
-    // Update record
+    // Check if new classcode already exists (when changing classcode)
+    if (newClasscode && newClasscode !== classcode) {
+      const [duplicate] = await pool.query(
+        `SELECT classcode FROM py_payrollclass WHERE classcode = ?`,
+        [newClasscode]
+      );
+      if (duplicate.length > 0) {
+        return res.status(400).json({ error: 'New class code already exists' });
+      }
+    }
+
+    // Build dynamic query
+    const fields = [];
+    const values = [];
+
+    if (newClasscode) {
+      fields.push('classcode = ?');
+      values.push(newClasscode.trim());
+    }
+
+    if (classname) {
+      fields.push('classname = ?');
+      values.push(classname.trim());
+    }
+
+    if (year) {
+      fields.push('year = ?');
+      values.push(year);
+    }
+
+    if (month) {
+      fields.push('month = ?');
+      values.push(month);
+    }
+
+    if (status) {
+      fields.push('status = ?');
+      values.push(status.toLowerCase());
+    }
+
+    // Always update timestamp
+    fields.push('dateupdated = NOW()');
+
+    if (fields.length === 0) {
+      return res.status(400).json({ error: 'No fields provided for update' });
+    }
+
+    values.push(classcode); // for WHERE clause
+
     const updateQuery = `
       UPDATE py_payrollclass
-      SET classname = ?
+      SET ${fields.join(', ')}
       WHERE classcode = ?
     `;
 
-    await pool.query(updateQuery, [classname ? classname.trim() : null, classcode]);
+    await pool.query(updateQuery, values);
 
     res.status(200).json({
       message: 'Payroll class updated successfully',
-      data: { classcode, classname: classname ? classname.trim() : null }
+      data: {
+        classcode: newClasscode || classcode,
+        classname,
+        year,
+        month,
+        status,
+        dateupdated: new Date().toISOString().slice(0, 19).replace('T', ' ')
+      }
     });
 
   } catch (error) {

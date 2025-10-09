@@ -69,32 +69,69 @@ router.get('/employees/:id', verifyToken, async (req, res) => {
   }
 });
 
+//validation
+router.get('/employees/check/:field/:value', verifyToken, async (req, res) => {
+  const { field, value } = req.params;
+  const { exclude } = req.query;
+
+  // Only allow specific fields to prevent SQL injection
+  const allowedFields = ["Empl_ID"];
+  if (!allowedFields.includes(field)) {
+    return res.status(400).json({ error: "Invalid field" });
+  }
+
+  try {
+    let query = `SELECT ${field} FROM hr_employees WHERE ${field} = ?`;
+    let params = [value];
+
+    // If exclude Empl_ID is provided, exclude that record from the check
+    if (exclude) {
+      query += ' AND Empl_ID != ?';
+      params.push(exclude);
+    }
+
+    const [existing] = await pool.query(query, params);
+
+    res.json({ exists: existing.length > 0 });
+  } catch (err) {
+    console.error(`Error checking ${field}:`, err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 // POST create employee
 router.post('/employees', verifyToken, async (req, res) => {
   try {
     console.log('=== CREATE EMPLOYEE ===');
     console.log('Received fields:', Object.keys(req.body));
     console.log('Passport present?', !!req.body.passport);
+
     if (req.body.passport) {
       console.log('Passport length:', req.body.passport.length);
     }
-    
+
+    // Add created_by automatically
+    const createdBy = req.user_fullname || 'System';
+    req.body.createdby = createdBy;
+
     const fields = Object.keys(req.body);
     const values = Object.values(req.body);
     const placeholders = fields.map(() => '?').join(', ');
-    
+
     const query = `INSERT INTO hr_employees (${fields.join(', ')}) VALUES (${placeholders})`;
     console.log('Executing query with', fields.length, 'fields');
-    
+
     const [result] = await pool.execute(query, values);
-    
+
     console.log('Insert successful, ID:', req.body.Empl_ID);
-    
-    res.status(201).json({ 
-      success: true, 
+
+    res.status(201).json({
+      success: true,
       message: 'Employee created successfully',
-      employeeId: req.body.Empl_ID 
+      employeeId: req.body.Empl_ID,
+      created_by: createdBy
     });
+
   } catch (error) {
     console.error('CREATE ERROR:', error.message);
     res.status(500).json({ success: false, error: error.message });

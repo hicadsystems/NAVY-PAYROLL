@@ -359,6 +359,8 @@ class PersonnelManager {
   async viewEmployee(id) {
     this.currentViewId = id;
     
+    localStorage.setItem('navigatedFromOldPersonnel', 'true');
+    
     // Navigate to view-personnel section and load data
     if (window.navigation?.navigateToSection) {
       window.navigation.navigateToSection('view-personnel', 'View Personnel');
@@ -373,7 +375,7 @@ class PersonnelManager {
   async editEmployee(id) {
     try {
       // Set flag to indicate navigation source
-      localStorage.setItem('navigatedFromCurrentPersonnel', 'true');
+      localStorage.setItem('navigatedFromOldPersonnel', 'true');
       localStorage.setItem('editingEmployeeId', id);
       localStorage.setItem('isEditMode', 'true');
 

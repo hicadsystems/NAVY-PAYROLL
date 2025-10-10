@@ -392,13 +392,20 @@
     }
   }
 
-  // Load class statistics
+ // Load class statistics
   async function loadClassStatistics() {
     try {
       const result = await apiRequest(`${API_BASE}/payroll-class-stats`);
       const stats = result.data || {};
       
-      // Merge stats with existing class info
+      // RESET payrollClasses counts to 0 first
+      Object.keys(payrollClasses).forEach(code => {
+        if (payrollClasses[code]) {
+          payrollClasses[code].count = 0;
+        }
+      });
+      
+      // Then update with fresh stats from API
       Object.entries(stats).forEach(([code, data]) => {
         if (payrollClasses[code]) {
           payrollClasses[code].count = data.count;
@@ -441,7 +448,6 @@
       </div>
     `).join('');
   }
-
   // Helper to get readable class name safely
   function getClassName(code) {
     if (!code || code === 'N/A' || code === '' || code === null) return 'Not Assigned';

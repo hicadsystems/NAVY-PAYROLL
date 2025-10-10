@@ -358,16 +358,41 @@ class PersonnelManager {
   async viewEmployee(id) {
     this.currentViewId = id;
 
+    // Store for fallback
+    sessionStorage.setItem('pendingEmployeeView', id);
     localStorage.setItem('navigatedFromCurrentPersonnel', 'true');
 
-    // Navigate to view-personnel section and load data
-    if (window.navigation?.navigateToSection) {
-      window.navigation.navigateToSection('view-personnel', 'View Personnel');
-      setTimeout(() => {
-        if (window.ViewPersonnel?.loadEmployee) {
-          window.ViewPersonnel.loadEmployee(id);
+    try {
+      // Navigate to view-personnel section
+      if (window.navigation?.navigateToSection) {
+        await window.navigation.navigateToSection('view-personnel', 'View Personnel');
+        
+        // Wait a bit for section to render
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Ensure ViewPersonnel exists
+        if (!window.ViewPersonnel) {
+          window.ViewPersonnel = new ViewPersonnelManager();
         }
-      }, 100);
+        
+        // Wait for initialization
+        let attempts = 0;
+        while (!window.ViewPersonnel?.loadEmployee && attempts < 10) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+          attempts++;
+        }
+        
+        // Load employee
+        if (window.ViewPersonnel?.loadEmployee) {
+          await window.ViewPersonnel.loadEmployee(id);
+          sessionStorage.removeItem('pendingEmployeeView'); // Clear fallback
+        } else {
+          console.warn('ViewPersonnel not ready, will use fallback on page load');
+        }
+      }
+    } catch (error) {
+      console.error('Error navigating to view personnel:', error);
+      // Fallback will still work since we stored the ID
     }
   }
 

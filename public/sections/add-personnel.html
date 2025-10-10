@@ -2348,7 +2348,11 @@ async function submitPersonnelForm() {
     } else if (passportInput.files && passportInput.files[0]) {
       passportBase64 = await new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+        reader.onloadend = () => {
+          const base64 = reader.result.split(',')[1];
+          console.log('Base64 conversion successful, length:', base64.length);
+          resolve(base64);
+        };
         reader.onerror = reject;
         reader.readAsDataURL(passportInput.files[0]);
       });
@@ -2405,7 +2409,14 @@ async function submitPersonnelForm() {
   }
 
   // Add passport
-  if (passportBase64) personnelData.passport = passportBase64;
+  if (passportBase64) {
+    personnelData.passport = passportBase64;
+    console.log('Passport added to personnelData');
+  }
+  
+  console.log('Final personnelData keys:', Object.keys(personnelData));
+  console.log('Passport included?', !!personnelData.passport);
+
 
   console.log('Final personnelData:', personnelData);
 
@@ -2467,27 +2478,55 @@ async function submitPersonnelForm() {
         method: 'POST',
         body: JSON.stringify(personnelData)
       });
-
-      // Post family data
-      for (const type of ['nok', 'spouse', 'children']) {
-        if (pendingFamilyData[type].length > 0) {
-          for (const member of pendingFamilyData[type]) {
-            delete member._tempId;
-            await apiRequest(`${API_BASE}/employees/${serviceNo}/${type}`, {
-              method: 'POST',
-              body: JSON.stringify(member)
-            });
-          }
+           
+      // Then create family members
+      if (pendingFamilyData.nok.length > 0) {
+        for (const nok of pendingFamilyData.nok) {
+          delete nok._tempId;
+          await apiRequest(`${API_BASE}/employees/${serviceNo}/nextofkin`, {
+            method: 'POST',
+            body: JSON.stringify(nok)
+          });
+        }
+      }
+      
+      if (pendingFamilyData.spouse.length > 0) {
+        for (const spouse of pendingFamilyData.spouse) {
+          delete spouse._tempId;
+          await apiRequest(`${API_BASE}/employees/${serviceNo}/spouse`, {
+            method: 'POST',
+            body: JSON.stringify(spouse)
+          });
+        }
+      }
+      
+      if (pendingFamilyData.children.length > 0) {
+        for (const child of pendingFamilyData.children) {
+          delete child._tempId;
+          await apiRequest(`${API_BASE}/employees/${serviceNo}/children`, {
+            method: 'POST',
+            body: JSON.stringify(child)
+          });
         }
       }
 
       showPopup("Personnel and family records created successfully", () => {
         if (window.navigation?.navigateToSection) {
-          window.navigation.navigateToSection('current-personnel', 'Current Personnel');
-          setTimeout(() => {
-            if (window.personnelManager?.refresh) window.personnelManager.refresh();
-          }, 100);
+          // Redirect logic (DateLeft / ExitType)
+          const dateLeftVal = personnelData.DateLeft;
+          const exitTypeVal = personnelData.exittype;
+
+          const hasExited =
+            (dateLeftVal && dateLeftVal !== null && dateLeftVal !== '') ||
+            (exitTypeVal && exitTypeVal !== null && exitTypeVal !== '');
+
+          const redirectSection = hasExited ? 'old-personnel' : 'current-personnel';
+          const redirectTitle = hasExited ? 'Old Personnel' : 'Current Personnel';
+          window.navigation.navigateToSection(redirectSection, redirectTitle);
         }
+        setTimeout(() => {
+          if (window.personnelManager?.refresh) window.personnelManager.refresh();
+        }, 100);
       });
 
       document.getElementById('personnelForm')?.reset();

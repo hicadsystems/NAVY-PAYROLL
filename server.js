@@ -56,8 +56,8 @@ app.use(cors(corsOptions));
 if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
 
 // built-in body parsers (remove body-parser dependency)
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // session config (use env values in production)
 app.use(session({

@@ -456,7 +456,7 @@ class ViewPersonnelManager {
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Date of Birth:</dt>
-                    <dd class="col-span-2">${this.formatDateForDisplay(emp.Birthdate)}</dd>
+                    <dd class="col-span-2">${this.formatDateForDisplay(emp.Birthdate) || 'N/A'}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Marital Status:</dt>
@@ -511,11 +511,11 @@ class ViewPersonnelManager {
                 <div class="space-y-3">
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Date Employed:</dt>
-                    <dd class="col-span-2">${this.formatDateForDisplay(emp.DateEmpl)}</dd>
+                    <dd class="col-span-2">${this.formatDateForDisplay(emp.DateEmpl) || 'N/A'}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Date Confirmed:</dt>
-                    <dd class="col-span-2">${this.formatDateForDisplay(emp.dateconfirmed)}</dd>
+                    <dd class="col-span-2">${this.formatDateForDisplay(emp.dateconfirmed) || 'N/A'}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Entry Mode:</dt>
@@ -531,7 +531,7 @@ class ViewPersonnelManager {
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Seniority Date:</dt>
-                    <dd class="col-span-2">${this.formatDateForDisplay(emp.datepmted)}</dd>
+                    <dd class="col-span-2">${this.formatDateForDisplay(emp.datepmted) || 'N/A'}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Location:</dt>

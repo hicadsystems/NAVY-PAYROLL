@@ -6,6 +6,7 @@ const permissionsRoutes = require('./administration/permissions');
 const payrollclassSetupRoutes = require('./administration/payrollclassSetup');
 const payrollclassChangeRoutes = require('./administration/payrollclassChange');
 const changeregNoRoutes = require('./administration/changeregNo');
+const companyProfileRoutes = require('./administration/companyProfile');
 
 
 
@@ -53,6 +54,7 @@ module.exports = (app) => {
     app.use('/payroll-setup', payrollclassSetupRoutes);
     app.use('/payroll-change', payrollclassChangeRoutes);
     app.use('/regno', changeregNoRoutes);
+    app.use('/company', companyProfileRoutes);
 
 
     //personnel profile

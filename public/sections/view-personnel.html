@@ -175,9 +175,8 @@ class ViewPersonnelManager {
 
   async loadLookupData() {
     const endpoints = [
-      'bankcode', 'bankbranch', 'state', 'lga', 
-      'command', 'title', 'religion', 'pfa', 'salarygrade', 'salarygroup', 'country', 'payrollclass',
-      'relationship', 'marital', 'exittype',
+      'location', 'branch', 'state', 'lga', 
+      'command', 'title', 'religion', 'pfa', 'salarygrade', 'salarygroup', 'country', 'payrollclass', 'relationship', 'marital', 'exittype',
     ];
     
     const token = localStorage.getItem('token');
@@ -228,8 +227,8 @@ class ViewPersonnelManager {
 
   getValueField(endpoint) {
     const fieldMap = {
-      //'bankcode': 'bankcode',
-      //'bankbranch': 'branchcode',
+      'location': 'unitcode',
+      'branch': 'buscode',
       'state': 'Statecode',
       'lga': 'Lgcode',
       'command': 'navalcmd',
@@ -242,15 +241,15 @@ class ViewPersonnelManager {
       'salarygrade': 'grade_no',
       'salarygroup': 'groupcode',
       'country': 'countrycode',
-      'payrollclass': 'classcode',
+      'payrollclass': 'classcode',      
     };
     return fieldMap[endpoint] || 'code';
   }
 
   getTextField(endpoint) {
     const fieldMap = {
-      //'bank': 'bankcode',
-      //'branches': 'branchcode',
+      'location': 'unitdesc',
+      'branch': 'busline',
       'state': 'Statename',
       'lga': 'Lgname',
       'command': 'name',
@@ -535,7 +534,7 @@ class ViewPersonnelManager {
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Location:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.Location, 'locations'))}</dd>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.Location, 'location'))}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Command:</dt>
@@ -591,6 +590,10 @@ class ViewPersonnelManager {
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">NHF Code:</dt>
                     <dd class="col-span-2">${this.escape(emp.NHFcode || 'N/A')}</dd>
+                </div>
+                <div class="grid grid-cols-3 gap-2 py-2 border-b">
+                    <dt class="font-medium">Branch:</dt>
+                    <dd class="col-span-2">${this.escape(this.resolveName(emp.Factory, 'branch'))}</dd>
                 </div>
                 <div class="grid grid-cols-3 gap-2 py-2 border-b">
                     <dt class="font-medium">Emolument Form?</dt>

@@ -66,11 +66,11 @@ const FIELD_MAPPING = {
   'RSA Code': 'NSITFcode',
   'PFA Code': 'pfacode',
   'Payroll Class': 'payrollclass',
-  'Grade Level': 'gradelevel',
-  'Grade Type': 'gradetype',
+  'Salary Grade': 'gradelevel',
+  'Salary Group': 'gradetype',
   'Bank Branch': 'bankbranch',
   'Account Number': 'BankACNumber',
-  'Senority Date': 'datepmted',
+  'Seniority Date': 'datepmted',
   'Location': 'Location',
   'Factory': 'Factory',
   'Command': 'command',
@@ -282,10 +282,10 @@ router.post('/batch-upload', verifyToken, upload.single('file'), async (req, res
     }
     }
 
-    // ✅ Add duplicates to failed count after insertion loop
+    // Add duplicates to failed count after insertion loop
     results.failed += results.duplicates.length;
 
-    // ✅ If any duplicates, push them as “soft errors” for frontend visibility
+    // If any duplicates, push them as “soft errors” for frontend visibility
     if (results.duplicates.length > 0) {
     results.errors.push(
         ...results.duplicates.map(sn => ({
@@ -322,23 +322,19 @@ router.get('/batch-template', verifyToken, (req, res) => {
   // Create sample data
   const sampleData = [{
     'Service Number': 'NN001',
-    'Rank': 'DD',
     'Surname': 'Mr.',
     'Other Name': 'John',
     'Date of Birth': '15/06/1985',
     'Sex': 'M',
     'State Of Origin': 'LG',
     'Local Government': 'IKJ',
-    'Town': 'Ikeja',
-    'Residential Address': '123 Sample Street',
-    'Email Address': 'john.mr@example.com',
     'GSM Number': '08012345678',
     'Bank Code': 'BK001',
-    'Bank Branch': 'Main Branch',
     'Account Number': '1234567890',
-    'Entry Mode': 'Direct',
     'Date Joined': '01/01/2010',
-    'Date Commissioned': '01/01/2012',
+    'Seniority Date': '01/01/2015',
+    'Salary Grade': 'Level 02',
+    'Salary Group': 'GRP001',
   }];
   
   // Create workbook

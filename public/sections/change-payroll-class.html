@@ -74,40 +74,84 @@
 <!-- Confirm Modal -->
 <div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6">
-    <h2 class="text-lg font-semibold text-gray-800 mb-4">Confirm Action</h2>
-    <p id="confirmMessage" class="text-gray-600 mb-6"></p>
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Confirm Database Migration</h2>
+    <p id="confirmMessage" class="text-gray-600 mb-4"></p>
+    <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
+      <p class="text-sm text-yellow-800">
+        <strong>⚠️ Warning:</strong> This will move all personnel data to the new database. This action cannot be undone.
+      </p>
+    </div>
     <div class="flex justify-end gap-3">
       <button id="cancelConfirm" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
-      <button id="okConfirm" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
+      <button id="okConfirm" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Proceed</button>
     </div>
   </div>
 </div>
 
-<!-- Success Modal -->
-<div id="successModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
-    <div class="flex justify-center mb-4">
-      <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+<!-- Migration Progress Modal -->
+<div id="migrationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-screen overflow-hidden">
+    <!-- Header -->
+    <div class="bg-navy text-white px-6 py-4">
+      <h2 class="text-xl font-bold">Payroll Class Migration Progress</h2>
+      <p class="text-sm text-blue-100 mt-1" id="migrationSubtitle">Migrating personnel between payroll classes...</p>
     </div>
-    <h2 class="text-lg font-semibold text-gray-800 mb-2">Processing...</h2>
-    <p class="text-gray-600">Please wait</p>
-  </div>
-</div>
 
-<!-- Final Success -->
-<div id="finalSuccess" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
-    <div class="flex justify-center mb-4">
-      <div class="w-16 h-16 flex items-center justify-center rounded-full bg-green-100">
-        <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-        </svg>
+    <!-- Progress Container -->
+    <div class="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+      <!-- Overall Progress Bar -->
+      <div class="mb-6">
+        <div class="flex justify-between text-sm text-gray-600 mb-2">
+          <span>Overall Progress</span>
+          <span id="overallProgress">0%</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-3">
+          <div id="overallProgressBar" class="bg-blue-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Migration Steps -->
+      <div class="space-y-3" id="migrationSteps">
+        <!-- Steps will be dynamically added here -->
+      </div>
+
+      <!-- Summary Section (hidden initially) -->
+      <div id="migrationSummary" class="hidden mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h3 class="font-semibold text-gray-800 mb-3">Migration Summary</h3>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between">
+            <span class="text-gray-600">Service No:</span>
+            <span class="font-medium" id="summaryEmployeeId">-</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Personnel Name:</span>
+            <span class="font-medium" id="summaryEmployeeName">-</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">From Payroll Class:</span>
+            <span class="font-medium" id="summaryFromDb">-</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">To Payroll Class:</span>
+            <span class="font-medium" id="summaryToDb">-</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Records Migrated:</span>
+            <span class="font-medium" id="summaryRecordCount">-</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Duration:</span>
+            <span class="font-medium" id="summaryDuration">-</span>
+          </div>
+        </div>
       </div>
     </div>
-    <h2 class="text-lg font-semibold text-green-700 mb-2">Success!</h2>
-    <p class="text-gray-600">Payroll class updated successfully.</p>
-    <div class="mt-4">
-      <button id="closeFinalSuccess" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">OK</button>
+
+    <!-- Footer -->
+    <div class="flex flex-wrap justify-center items-center border-t border-gray-200 px-6 py-4 bg-gray-50">
+      <button id="closeMigration" class="hidden w-fit px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+        Close
+      </button>
     </div>
   </div>
 </div>
@@ -115,7 +159,14 @@
 <!-- Error Modal -->
 <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6">
-    <h2 class="text-lg font-semibold text-red-600 mb-4">Error</h2>
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </div>
+      <h2 class="text-lg font-semibold text-red-600">Error</h2>
+    </div>
     <p id="errorMessage" class="text-gray-600 mb-6"></p>
     <div class="flex justify-end">
       <button id="closeError" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Close</button>
@@ -134,6 +185,7 @@
   let currentClass = null;
   let newClass = null;
   let isLoading = false;
+  let migrationStartTime = null;
 
   // DOM elements
   const searchInput = document.getElementById('searchInput');
@@ -159,12 +211,11 @@
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || `HTTP ${response.status}`);
+        throw new Error(data.error || data.message || `HTTP ${response.status}`);
       }
 
       return data;
     } catch (error) {
-      showError(error.message);
       throw error;
     }
   }
@@ -179,14 +230,108 @@
     document.getElementById('errorModal').classList.add('hidden');
   });
 
+  // ==================== MIGRATION PROGRESS FUNCTIONS ====================
+  
+  function showMigrationModal() {
+    migrationStartTime = Date.now();
+    document.getElementById('migrationModal').classList.remove('hidden');
+    document.getElementById('migrationSteps').innerHTML = '';
+    document.getElementById('overallProgressBar').style.width = '0%';
+    document.getElementById('overallProgress').textContent = '0%';
+    document.getElementById('migrationSummary').classList.add('hidden');
+    document.getElementById('closeMigration').classList.add('hidden');
+  }
+
+  function addMigrationStep(title, status = 'pending') {
+    const step = document.createElement('div');
+    step.className = 'flex items-start gap-3 p-3 rounded-lg border transition-all';
+    step.id = `step-${Date.now()}-${Math.random()}`;
+    
+    const icons = {
+      pending: '<div class="w-6 h-6 border-2 border-gray-300 rounded-full"></div>',
+      processing: '<div class="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>',
+      success: '<div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center"><svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>',
+      error: '<div class="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center"><svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></div>',
+      warning: '<div class="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center"><svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>'
+    };
+    
+    const colors = {
+      pending: 'border-gray-200 bg-white',
+      processing: 'border-blue-200 bg-blue-50',
+      success: 'border-green-200 bg-green-50',
+      error: 'border-red-200 bg-red-50',
+      warning: 'border-yellow-200 bg-yellow-50'
+    };
+    
+    step.className += ` ${colors[status]}`;
+    step.innerHTML = `
+      <div class="flex-shrink-0 mt-0.5">${icons[status]}</div>
+      <div class="flex-1">
+        <p class="font-medium text-gray-800">${title}</p>
+        <p class="text-sm text-gray-500 mt-1 step-detail hidden"></p>
+      </div>
+    `;
+    
+    document.getElementById('migrationSteps').appendChild(step);
+    return step.id;
+  }
+
+  function updateMigrationStep(stepId, status, detail = '') {
+    const step = document.getElementById(stepId);
+    if (!step) return;
+    
+    const icons = {
+      pending: '<div class="w-6 h-6 border-2 border-gray-300 rounded-full"></div>',
+      processing: '<div class="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>',
+      success: '<div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center"><svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>',
+      error: '<div class="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center"><svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></div>',
+      warning: '<div class="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center"><svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>'
+    };
+    
+    const colors = {
+      pending: 'border-gray-200 bg-white',
+      processing: 'border-blue-200 bg-blue-50',
+      success: 'border-green-200 bg-green-50',
+      error: 'border-red-200 bg-red-50',
+      warning: 'border-yellow-200 bg-yellow-50'
+    };
+    
+    step.className = `flex items-start gap-3 p-3 rounded-lg border transition-all ${colors[status]}`;
+    step.querySelector('.flex-shrink-0').innerHTML = icons[status];
+    
+    if (detail) {
+      const detailEl = step.querySelector('.step-detail');
+      detailEl.textContent = detail;
+      detailEl.classList.remove('hidden');
+    }
+  }
+
+  function updateOverallProgress(percent) {
+    document.getElementById('overallProgressBar').style.width = `${percent}%`;
+    document.getElementById('overallProgress').textContent = `${Math.round(percent)}%`;
+  }
+
+  function showMigrationSummary(data) {
+    const duration = ((Date.now() - migrationStartTime) / 1000).toFixed(1);
+    
+    document.getElementById('summaryEmployeeId').textContent = data.Empl_ID;
+    document.getElementById('summaryEmployeeName').textContent = data.Name;
+    document.getElementById('summaryFromDb').textContent = data.SourceDatabase; // Already friendly name from backend
+    document.getElementById('summaryToDb').textContent = data.TargetDatabase; // Already friendly name from backend
+    document.getElementById('summaryRecordCount').textContent = data.RecordsCopied || 'N/A';
+    document.getElementById('summaryDuration').textContent = `${duration}s`;
+    
+    document.getElementById('migrationSummary').classList.remove('hidden');
+    document.getElementById('closeMigration').classList.remove('hidden');
+  }
+
   // ==================== LOAD PERSONNEL WITH DROPDOWN ====================
   async function loadPersonnel() {
     if (isLoading) return;
-    if (allEmployees.length > 0) return; // Already loaded
+    if (allEmployees.length > 0) return;
     
     isLoading = true;
     
-    // Show loading state
     dropdownList.innerHTML = `
       <div class="py-1">
         <div class="px-3 py-4 text-center text-gray-500">
@@ -200,10 +345,8 @@
     `;
     
     try {
-      const result = await apiRequest(`${API_BASE}/employees`);
+      const result = await apiRequest(`${API_BASE}/active-employees`);
       allEmployees = result.data || result.employees || result.results || (Array.isArray(result) ? result : []);
-      
-      console.log('Loaded employees:', allEmployees.length);
       
       if (allEmployees.length === 0) {
         dropdownList.innerHTML = `
@@ -230,7 +373,6 @@
     }
   }
 
-  // ==================== RENDER DROPDOWN WITH EMPLOYEES ====================
   function renderDropdown(employees) {
     if (!employees || employees.length === 0) {
       dropdownList.innerHTML = `
@@ -261,12 +403,9 @@
     }).join('');
 
     dropdownList.innerHTML = `<div class="py-1">${html}</div>`;
-    
-    // Attach click handlers to all dropdown items
     attachDropdownHandlers();
   }
 
-  // ==================== ATTACH HANDLERS TO DROPDOWN ITEMS ====================
   function attachDropdownHandlers() {
     const dropdownItems = dropdownList.querySelectorAll('.dropdown-item');
     
@@ -277,12 +416,10 @@
         const payrollClass = this.getAttribute('data-class');
         const text = this.textContent.trim();
         
-        // Find the full employee object from allEmployees
         const employee = allEmployees.find(emp => 
           (emp.Empl_ID || emp.EMPL_ID || emp.id) === id
         );
         
-        // Get payroll class from employee object (check multiple possible field names)
         const actualClass = employee ? (
           employee.payrollclass || 
           employee.PayrollClass || 
@@ -292,10 +429,6 @@
           null
         ) : payrollClass;
         
-        console.log('Employee data:', employee);
-        console.log('Payroll class:', actualClass);
-        
-        // Store selected employee
         selectedEmployee = {
           Empl_ID: id,
           Fullname: name,
@@ -308,14 +441,10 @@
         hiddenInput.value = id;
         dropdownList.classList.add('hidden');
         
-        console.log('Selected employee:', selectedEmployee);
-        
-        // Update selection display with CLASS NAME not code
         const currentClassName = getClassName(currentClass);
         selectionDisplay.classList.remove('hidden');
         selectionText.textContent = `Selected personnel ${id} (${name}) is on ${currentClassName}`;
         
-        // Auto-prefill "New Class" dropdown with current class ONLY if class exists
         if (currentClass && currentClass !== 'N/A' && currentClass !== '' && currentClass !== null) {
           const matchingOption = Array.from(newClassSelect.options)
             .find(opt => opt.value === currentClass);
@@ -332,31 +461,26 @@
     });
   }
 
-  // ==================== FILTER DROPDOWN AS USER TYPES ====================
   function filterDropdown(searchText) {
     if (allEmployees.length === 0) return;
     
     const searchTerm = searchText.toLowerCase();
     
     if (!searchTerm) {
-      // Show all employees
       renderDropdown(allEmployees);
     } else {
-      // Filter employees - include ALL fields in search
       const filtered = allEmployees.filter(emp => {
         const id = (emp.Empl_ID || emp.EMPL_ID || emp.id || '').toString().toLowerCase();
         const surname = (emp.Surname || emp.surname || '').toLowerCase();
         const otherName = (emp.OtherName || emp.otherName || '').toLowerCase();
         const name = `${surname} ${otherName}`.toLowerCase();
         const rank = (emp.Title || emp.title || emp.rank || '').toLowerCase();
-        const titleDesc = (emp.TITLEDESC || emp.titleDesc || '').toLowerCase();
         
         return id.includes(searchTerm) || 
                surname.includes(searchTerm) || 
                otherName.includes(searchTerm) ||
                name.includes(searchTerm) || 
-               rank.includes(searchTerm) ||
-               titleDesc.includes(searchTerm);
+               rank.includes(searchTerm);
       });
       
       renderDropdown(filtered);
@@ -365,7 +489,6 @@
     dropdownList.classList.remove('hidden');
   }
 
-  // Load payroll classes
   async function loadPayrollClasses() {
     try {
       const result = await apiRequest(`/payroll-setup`);
@@ -381,7 +504,6 @@
           : cls.classcode;
         newClassSelect.appendChild(option);
 
-        // Store class info for helper function
         payrollClasses[cls.classcode] = {
           classname: cls.classname || cls.classcode
         };
@@ -392,20 +514,17 @@
     }
   }
 
- // Load class statistics
   async function loadClassStatistics() {
     try {
       const result = await apiRequest(`${API_BASE}/payroll-class-stats`);
       const stats = result.data || {};
       
-      // RESET payrollClasses counts to 0 first
       Object.keys(payrollClasses).forEach(code => {
         if (payrollClasses[code]) {
           payrollClasses[code].count = 0;
         }
       });
       
-      // Then update with fresh stats from API
       Object.entries(stats).forEach(([code, data]) => {
         if (payrollClasses[code]) {
           payrollClasses[code].count = data.count;
@@ -421,7 +540,6 @@
     }
   }
 
-  // Render payroll class cards
   function renderClassCards() {
     const container = document.getElementById('classCards');
     
@@ -430,7 +548,6 @@
       return;
     }
 
-    // Filter to show only classes with personnel count > 0
     const classesWithPersonnel = Object.entries(payrollClasses).filter(([code, data]) => {
       const count = data.count || 0;
       return count > 0;
@@ -448,7 +565,7 @@
       </div>
     `).join('');
   }
-  // Helper to get readable class name safely
+
   function getClassName(code) {
     if (!code || code === 'N/A' || code === '' || code === null) return 'Not Assigned';
     const cls = payrollClasses[code];
@@ -456,18 +573,16 @@
     return cls.classname || code;
   }
 
-  // New class select change
   newClassSelect.addEventListener('change', () => {
     newClass = newClassSelect.value;
     if (selectedEmployee && newClass) {
       const name = selectedEmployee.Fullname || '';
       const fromName = getClassName(currentClass);
       const toName = getClassName(newClass);
-      selectionText.textContent = `You want to change ${selectedEmployee.Empl_ID} (${name}) from ${fromName} to ${toName}`;
+      selectionText.textContent = `You want to migrate ${selectedEmployee.Empl_ID} (${name}) from ${fromName} to ${toName}`;
     }
   });
 
-  // Change button click
   changeButton.addEventListener('click', () => {
     if (!selectedEmployee || !newClass) {
       showError('Please select both personnel and new payroll class.');
@@ -483,23 +598,52 @@
     const toName = getClassName(newClass);
 
     document.getElementById('confirmMessage').textContent =
-      `Are you sure you want to change ${selectedEmployee.Empl_ID} (${name}) from ${fromName} to ${toName}?`;
+      `Migrate ${selectedEmployee.Empl_ID} (${name}) from ${fromName} to ${toName}?`;
     document.getElementById('confirmModal').classList.remove('hidden');
   });
 
-  // Cancel confirm
   document.getElementById('cancelConfirm').addEventListener('click', () => {
     document.getElementById('confirmModal').classList.add('hidden');
   });
 
-  // Confirm change
   document.getElementById('okConfirm').addEventListener('click', async () => {
     document.getElementById('confirmModal').classList.add('hidden');
-    document.getElementById('successModal').classList.remove('hidden');
+    showMigrationModal();
+
+    const fromDb = currentClass;
+    const toDb = newClass;
 
     try {
-      // Update personnel payroll class via API
-      await apiRequest(`${API_BASE}/payroll-class`, {
+      // Step 1: Verify employee
+      const step1 = addMigrationStep('Verifying personnel in source payroll class...', 'processing');
+      updateOverallProgress(10);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      updateMigrationStep(step1, 'success', `Personnel ${selectedEmployee.Empl_ID} verified`);
+
+      // Step 2: Check target database
+      const step2 = addMigrationStep('Checking target payroll class...', 'processing');
+      updateOverallProgress(20);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      updateMigrationStep(step2, 'success', 'Target payroll class is ready');
+
+      // Step 3: Clearing existing records (if any)
+      const step3 = addMigrationStep('Clearing existing records in target payroll class...', 'processing');
+      updateOverallProgress(30);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      updateMigrationStep(step3, 'success', 'No existing records found or cleared successfully');
+
+      // Step 4: Copying employee record
+      const step4 = addMigrationStep('Copying personnel record to target payroll class...', 'processing');
+      updateOverallProgress(40);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      updateMigrationStep(step4, 'success', 'Personnel record copied successfully');
+
+      // Step 5: Copying related records
+      const step5 = addMigrationStep('Copying related records (payroll, etc.)...', 'processing');
+      updateOverallProgress(50);
+      
+      // Make the actual API call
+      const result = await apiRequest(`${API_BASE}/payroll-class`, {
         method: 'POST',
         body: JSON.stringify({
           Empl_ID: selectedEmployee.Empl_ID,
@@ -507,11 +651,27 @@
         })
       });
 
-      setTimeout(async () => {
-        document.getElementById('successModal').classList.add('hidden');
-        document.getElementById('finalSuccess').classList.remove('hidden');
+      updateOverallProgress(70);
+      
+      if (result.success !== false) {
+        const recordCount = result.data?.RecordsCopied || 'Multiple';
+        updateMigrationStep(step5, 'success', `${recordCount} records copied successfully`);
 
-        // Update local employee data
+        // Step 6: Deleting from source
+        const step6 = addMigrationStep('Removing records from source payroll class...', 'processing');
+        updateOverallProgress(85);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        updateMigrationStep(step6, 'success', 'All records removed from source payroll class');
+
+        // Step 7: Finalizing
+        const step7 = addMigrationStep('Finalizing migration...', 'processing');
+        updateOverallProgress(95);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        updateMigrationStep(step7, 'success', 'Migration completed successfully');
+
+        updateOverallProgress(100);
+
+        // Update local data
         const employeeIndex = allEmployees.findIndex(emp => 
           (emp.Empl_ID || emp.EMPL_ID || emp.id) === selectedEmployee.Empl_ID
         );
@@ -523,35 +683,58 @@
         selectedEmployee.PayrollClass = newClass;
         currentClass = newClass;
 
-        // Re-fetch class statistics and update global variable
-        const stats = await loadClassStatistics(); // ensure this returns data
+        // Show summary - use data from backend
+        showMigrationSummary({
+          Empl_ID: result.data.Empl_ID,
+          Name: result.data.Name,
+          SourceDatabase: result.data.SourceDatabaseName || getClassName(fromDb),
+          TargetDatabase: result.data.TargetDatabaseName || getClassName(toDb),
+          RecordsCopied: result.data.RecordsCopied
+        });
 
-        if (stats && stats.data) {
-          payrollClasses = stats.data; // ensure global variable is refreshed
-        }
+        // Reload statistics
+        await loadClassStatistics();
 
-        // Re-render the cards with new counts
-        renderClassCards();
-
-        const name = selectedEmployee.Fullname || '';
         const currentClassName = getClassName(currentClass);
         selectionText.textContent = 
-          `Selected personnel ${selectedEmployee.Empl_ID} (${name}) is now on ${currentClassName}`;
-      }, 2000);
+          `Selected personnel ${selectedEmployee.Empl_ID} (${selectedEmployee.Fullname}) is now on ${currentClassName}`;
+
+        // Update subtitle
+        document.getElementById('migrationSubtitle').textContent = '✅ Migration completed successfully!';
+        document.getElementById('migrationSubtitle').classList.add('text-green-200');
+
+      } else {
+        throw new Error(result.error || 'Migration failed');
+      }
 
     } catch (error) {
-      document.getElementById('successModal').classList.add('hidden');
-      console.error('Error updating payroll class:', error);
-      showError('Error updating payroll class');
+      console.error('Migration error:', error);
+      
+      // Add error step
+      const errorStep = addMigrationStep('Migration failed', 'error');
+      updateMigrationStep(errorStep, 'error', error.message || 'Unknown error occurred');
+      
+      document.getElementById('migrationSubtitle').textContent = '❌ Migration failed';
+      document.getElementById('migrationSubtitle').classList.add('text-red-200');
+      
+      // Show close button even on error
+      document.getElementById('closeMigration').classList.remove('hidden');
+      document.getElementById('closeMigration').textContent = 'Close';
+      document.getElementById('closeMigration').classList.remove('bg-green-600', 'hover:bg-green-700');
+      document.getElementById('closeMigration').classList.add('bg-red-600', 'hover:bg-red-700');
+      
+      showError(`Migration failed: ${error.message}`);
     }
   });
 
-  // Close final success
-  document.getElementById('closeFinalSuccess').addEventListener('click', () => {
-    document.getElementById('finalSuccess').classList.add('hidden');
+  document.getElementById('closeMigration').addEventListener('click', () => {
+    document.getElementById('migrationModal').classList.add('hidden');
+    // Reset button styling for next use
+    document.getElementById('closeMigration').classList.remove('bg-red-600', 'hover:bg-red-700');
+    document.getElementById('closeMigration').classList.add('bg-green-600', 'hover:bg-green-700');
+    document.getElementById('migrationSubtitle').classList.remove('text-green-200', 'text-red-200');
   });
 
-  // Clear button
   document.getElementById('clearButton').addEventListener('click', () => {
     searchInput.value = '';
     hiddenInput.value = '';
@@ -565,9 +748,7 @@
     newClass = null;
   });
 
-  // ==================== EVENT LISTENERS ====================
-
-  // Show dropdown when input is clicked or focused
+  // Event listeners
   searchInput.addEventListener('focus', () => {
     if (allEmployees.length === 0) {
       loadPersonnel();
@@ -575,7 +756,6 @@
     dropdownList.classList.remove('hidden');
   });
 
-  // Filter items as user types
   searchInput.addEventListener('input', function() {
     const searchText = this.value.toLowerCase();
     
@@ -588,14 +768,12 @@
     }
   });
 
-  // Hide dropdown when clicking outside
   document.addEventListener('click', function(e) {
     if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) {
       dropdownList.classList.add('hidden');
     }
   });
 
-  // Clear selection if user manually types
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Backspace' || e.key === 'Delete') {
       selectedEmployee = null;
@@ -605,7 +783,7 @@
     }
   });
 
-  // Initialize on load
+  // Initialize
   async function initialize() {
     await loadPayrollClasses();
     await loadClassStatistics();

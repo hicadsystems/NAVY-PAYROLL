@@ -7,23 +7,108 @@ const router = express.Router();
 // HR_EMPLOYEES CRUD OPERATIONS
 // =============================================================================
 
-// GET all employees
-router.get('/employees', verifyToken, async (req, res) => {
+// GET all current employees
+router.get('/employees-current', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.execute(`
-      SELECT e.*, 
-             COUNT(DISTINCT c.child_id) as children_count,
-             COUNT(DISTINCT n.nok_id) as nok_count,
-             COUNT(DISTINCT s.spouse_id) as spouse_count
-      FROM hr_employees e
-      LEFT JOIN Children c ON e.Empl_ID = c.Empl_ID AND c.chactive = 1
-      LEFT JOIN NextOfKin n ON e.Empl_ID = n.Empl_ID AND n.IsActive = 1
-      LEFT JOIN Spouse s ON e.Empl_ID = s.Empl_ID AND s.spactive = 1
-      GROUP BY e.Empl_ID
-      ORDER BY e.Empl_ID ASC
+    const currentDb = pool.getCurrentDatabase(req.user_id);
+    console.log('🔍 Current database for query:', currentDb);
+    console.log('🔍 User ID:', req.user_id);
+    
+    // Get employees first
+    const [rows] = await pool.query(`
+      SELECT * 
+      FROM hr_employees 
+      WHERE (DateLeft IS NULL OR DateLeft = '')
+        AND (exittype IS NULL OR exittype = '')
+      ORDER BY Empl_ID ASC
     `);
+
+    // Add counts to each employee
+    for (let employee of rows) {
+      const [children] = await pool.query(
+        'SELECT COUNT(*) as count FROM Children WHERE Empl_ID = ? AND chactive = 1',
+        [employee.Empl_ID]
+      );
+      const [nok] = await pool.query(
+        'SELECT COUNT(*) as count FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1',
+        [employee.Empl_ID]
+      );
+      const [spouse] = await pool.query(
+        'SELECT COUNT(*) as count FROM Spouse WHERE Empl_ID = ? AND spactive = 1',
+        [employee.Empl_ID]
+      );
+      
+      employee.children_count = children[0].count;
+      employee.nok_count = nok[0].count;
+      employee.spouse_count = spouse[0].count;
+    }
+    
+    console.log('🔍 Query returned:', rows.length, 'records');
+    console.log('🔍 Employee IDs:', rows.map(r => r.Empl_ID).join(', '));
+    
+    // ✅ Add no-cache headers
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    
     res.json({ success: true, data: rows });
   } catch (error) {
+    console.error('❌ Query error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+//Old Employees endpoint
+router.get('/employees-old', verifyToken, async (req, res) => {
+  try {
+    const currentDb = pool.getCurrentDatabase(req.user_id);
+    console.log('🔍 Current database for query:', currentDb);
+    console.log('🔍 User ID:', req.user_id);
+    
+    // Get employees first
+    const [rows] = await pool.query(`
+      SELECT * 
+      FROM hr_employees 
+      WHERE DateLeft IS NOT NULL
+        OR exittype IS NOT NULL
+      ORDER BY Empl_ID ASC;
+    `);
+
+    // Add counts to each employee
+    for (let employee of rows) {
+      const [children] = await pool.query(
+        'SELECT COUNT(*) as count FROM Children WHERE Empl_ID = ? AND chactive = 1',
+        [employee.Empl_ID]
+      );
+      const [nok] = await pool.query(
+        'SELECT COUNT(*) as count FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1',
+        [employee.Empl_ID]
+      );
+      const [spouse] = await pool.query(
+        'SELECT COUNT(*) as count FROM Spouse WHERE Empl_ID = ? AND spactive = 1',
+        [employee.Empl_ID]
+      );
+      
+      employee.children_count = children[0].count;
+      employee.nok_count = nok[0].count;
+      employee.spouse_count = spouse[0].count;
+    }
+    
+    console.log('🔍 Query returned:', rows.length, 'records');
+    console.log('🔍 Employee IDs:', rows.map(r => r.Empl_ID).join(', '));
+    
+    // ✅ Add no-cache headers
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('❌ Query error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -31,7 +116,7 @@ router.get('/employees', verifyToken, async (req, res) => {
 // GET single employee with all related data
 router.get('/employees/:id', verifyToken, async (req, res) => {
   try {
-    const [employee] = await pool.execute(
+    const [employee] = await pool.query(
       'SELECT * FROM hr_employees WHERE Empl_ID = ?', 
       [req.params.id]
     );
@@ -40,17 +125,17 @@ router.get('/employees/:id', verifyToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Employee not found' });
     }
 
-    const [children] = await pool.execute(
+    const [children] = await pool.query(
       'SELECT * FROM Children WHERE Empl_ID = ? AND chactive = 1 ORDER BY dateofbirth', 
       [req.params.id]
     );
 
-    const [nextOfKin] = await pool.execute(
+    const [nextOfKin] = await pool.query(
       'SELECT * FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1 ORDER BY NextofkinType DESC, FirstName', 
       [req.params.id]
     );
 
-    const [spouse] = await pool.execute(
+    const [spouse] = await pool.query(
       'SELECT * FROM Spouse WHERE Empl_ID = ? AND spactive = 1 ORDER BY marrieddate DESC', 
       [req.params.id]
     );
@@ -121,7 +206,7 @@ router.post('/employees', verifyToken, async (req, res) => {
     const query = `INSERT INTO hr_employees (${fields.join(', ')}) VALUES (${placeholders})`;
     console.log('Executing query with', fields.length, 'fields');
 
-    const [result] = await pool.execute(query, values);
+    const [result] = await pool.query(query, values);
 
     console.log('Insert successful, ID:', req.body.Empl_ID);
 
@@ -154,7 +239,7 @@ router.put('/employees/:id', verifyToken, async (req, res) => {
     const setClause = fields.map(field => `${field} = ?`).join(', ');
     
     const query = `UPDATE hr_employees SET ${setClause} WHERE Empl_ID = ?`;
-    const [result] = await pool.execute(query, [...values, req.params.id]);
+    const [result] = await pool.query(query, [...values, req.params.id]);
     
     console.log('Affected rows:', result.affectedRows);
     
@@ -172,7 +257,7 @@ router.put('/employees/:id', verifyToken, async (req, res) => {
 // DELETE employee (cascades to related tables)
 router.delete('/employees/:id', verifyToken, async (req, res) => {
   try {
-    const [result] = await pool.execute(
+    const [result] = await pool.query(
       'DELETE FROM hr_employees WHERE Empl_ID = ?', 
       [req.params.id]
     );
@@ -194,7 +279,7 @@ router.delete('/employees/:id', verifyToken, async (req, res) => {
 // GET all children for an employee
 router.get('/employees/:id/children', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.execute(
+    const [rows] = await pool.query(
       'SELECT * FROM Children WHERE Empl_ID = ? AND chactive = 1 ORDER BY dateofbirth', 
       [req.params.id]
     );
@@ -213,7 +298,7 @@ router.post('/employees/:id/children', verifyToken, async (req, res) => {
     const placeholders = fields.map(() => '?').join(', ');
     
     const query = `INSERT INTO Children (${fields.join(', ')}) VALUES (${placeholders})`;
-    const [result] = await pool.execute(query, values);
+    const [result] = await pool.query(query, values);
     
     res.status(201).json({ 
       success: true, 
@@ -233,7 +318,7 @@ router.put('/children/:childId', verifyToken, async (req, res) => {
     const setClause = fields.map(field => `${field} = ?`).join(', ');
     
     const query = `UPDATE Children SET ${setClause} WHERE child_id = ?`;
-    const [result] = await pool.execute(query, [...values, req.params.childId]);
+    const [result] = await pool.query(query, [...values, req.params.childId]);
     
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Child record not found' });
@@ -248,7 +333,7 @@ router.put('/children/:childId', verifyToken, async (req, res) => {
 // DELETE child (soft delete by setting chactive = 0)
 router.delete('/children/:childId', verifyToken, async (req, res) => {
   try {
-    const [result] = await pool.execute(
+    const [result] = await pool.query(
       'UPDATE Children SET chactive = 0 WHERE child_id = ?', 
       [req.params.childId]
     );
@@ -270,7 +355,7 @@ router.delete('/children/:childId', verifyToken, async (req, res) => {
 // GET all next of kin for an employee
 router.get('/employees/:id/nextofkin', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.execute(
+    const [rows] = await pool.query(
       'SELECT * FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1 ORDER BY NextofkinType DESC, FirstName', 
       [req.params.id]
     );
@@ -289,7 +374,7 @@ router.post('/employees/:id/nextofkin', verifyToken, async (req, res) => {
     const placeholders = fields.map(() => '?').join(', ');
     
     const query = `INSERT INTO NextOfKin (${fields.join(', ')}) VALUES (${placeholders})`;
-    const [result] = await pool.execute(query, values);
+    const [result] = await pool.query(query, values);
     
     res.status(201).json({ 
       success: true, 
@@ -309,7 +394,7 @@ router.put('/nextofkin/:nokId', verifyToken, async (req, res) => {
     const setClause = fields.map(field => `${field} = ?`).join(', ');
     
     const query = `UPDATE NextOfKin SET ${setClause} WHERE nok_id = ?`;
-    const [result] = await pool.execute(query, [...values, req.params.nokId]);
+    const [result] = await pool.query(query, [...values, req.params.nokId]);
     
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Next of kin record not found' });
@@ -324,7 +409,7 @@ router.put('/nextofkin/:nokId', verifyToken, async (req, res) => {
 // DELETE next of kin (soft delete by setting IsActive = 0)
 router.delete('/nextofkin/:nokId', verifyToken, async (req, res) => {
   try {
-    const [result] = await pool.execute(
+    const [result] = await pool.query(
       'UPDATE NextOfKin SET IsActive = 0 WHERE nok_id = ?', 
       [req.params.nokId]
     );
@@ -346,7 +431,7 @@ router.delete('/nextofkin/:nokId', verifyToken, async (req, res) => {
 // GET all spouse records for an employee
 router.get('/employees/:id/spouse', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.execute(
+    const [rows] = await pool.query(
       'SELECT * FROM Spouse WHERE Empl_ID = ? AND spactive = 1 ORDER BY marrieddate DESC', 
       [req.params.id]
     );
@@ -365,7 +450,7 @@ router.post('/employees/:id/spouse', verifyToken, async (req, res) => {
     const placeholders = fields.map(() => '?').join(', ');
     
     const query = `INSERT INTO Spouse (${fields.join(', ')}) VALUES (${placeholders})`;
-    const [result] = await pool.execute(query, values);
+    const [result] = await pool.query(query, values);
     
     res.status(201).json({ 
       success: true, 
@@ -385,7 +470,7 @@ router.put('/spouse/:spouseId', verifyToken, async (req, res) => {
     const setClause = fields.map(field => `${field} = ?`).join(', ');
     
     const query = `UPDATE Spouse SET ${setClause} WHERE spouse_id = ?`;
-    const [result] = await pool.execute(query, [...values, req.params.spouseId]);
+    const [result] = await pool.query(query, [...values, req.params.spouseId]);
     
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Spouse record not found' });
@@ -400,7 +485,7 @@ router.put('/spouse/:spouseId', verifyToken, async (req, res) => {
 // DELETE spouse (soft delete by setting spactive = 0)
 router.delete('/spouse/:spouseId', verifyToken, async (req, res) => {
   try {
-    const [result] = await pool.execute(
+    const [result] = await pool.query(
       'UPDATE Spouse SET spactive = 0 WHERE spouse_id = ?', 
       [req.params.spouseId]
     );
@@ -422,7 +507,7 @@ router.delete('/spouse/:spouseId', verifyToken, async (req, res) => {
 // GET complete family profile (employee + all related records)
 router.get('/employees/:id/profile', verifyToken, async (req, res) => {
   try {
-    const [employee] = await pool.execute(
+    const [employee] = await pool.query(
       'SELECT * FROM hr_employees WHERE Empl_ID = ?', 
       [req.params.id]
     );
@@ -431,20 +516,20 @@ router.get('/employees/:id/profile', verifyToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Employee not found' });
     }
 
-    const [children] = await pool.execute(
+    const [children] = await pool.query(
       `SELECT *, YEAR(CURDATE()) - YEAR(dateofbirth) as age 
        FROM Children WHERE Empl_ID = ? AND chactive = 1 
        ORDER BY dateofbirth`, 
       [req.params.id]
     );
 
-    const [nextOfKin] = await pool.execute(
+    const [nextOfKin] = await pool.query(
       `SELECT * FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1 
        ORDER BY NextofkinType DESC, FirstName`, 
       [req.params.id]
     );
 
-    const [spouse] = await pool.execute(
+    const [spouse] = await pool.query(
       `SELECT * FROM Spouse WHERE Empl_ID = ? AND spactive = 1 
        ORDER BY marrieddate DESC`, 
       [req.params.id]
@@ -474,9 +559,9 @@ router.get('/employees/:id/profile', verifyToken, async (req, res) => {
 // DELETE all family records for an employee (soft delete)
 router.delete('/employees/:id/family', verifyToken, async (req, res) => {
   try {
-    await pool.execute('UPDATE Children SET chactive = 0 WHERE Empl_ID = ?', [req.params.id]);
-    await pool.execute('UPDATE NextOfKin SET IsActive = 0 WHERE Empl_ID = ?', [req.params.id]);
-    await pool.execute('UPDATE Spouse SET spactive = 0 WHERE Empl_ID = ?', [req.params.id]);
+    await pool.query('UPDATE Children SET chactive = 0 WHERE Empl_ID = ?', [req.params.id]);
+    await pool.query('UPDATE NextOfKin SET IsActive = 0 WHERE Empl_ID = ?', [req.params.id]);
+    await pool.query('UPDATE Spouse SET spactive = 0 WHERE Empl_ID = ?', [req.params.id]);
     
     res.json({ success: true, message: 'All family records deleted successfully' });
   } catch (error) {

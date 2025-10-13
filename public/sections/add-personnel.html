@@ -171,15 +171,13 @@
       <!-- Step 3 (static, with labels) -->
       <div id="step3" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700">Senority Date</label>
+          <label class="block text-sm font-medium text-gray-700">Seniority Date</label>
           <input type="date" name="datepmted" id="datepmted" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700">Ship/Establishment</label>
           <select name="Location" id="step3-ship" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
             <option>select</option>
-            <option value="SHIP">Ship</option>
-            <option value="ESTABLISHMENT">Establishment</option>
           </select>
         </div>
         <div>
@@ -676,7 +674,7 @@ function handleSpouseTabVisibility() {
     const selectedText = maritalStatusDropdown.options[maritalStatusDropdown.selectedIndex]?.text?.trim().toLowerCase();
 
     // Show tab only if Married OR placeholder
-    if (!selectedText || selectedText === 'select marital status' || selectedText === 'married') {
+    if (!selectedText || selectedText === 'married') {
       spouseTab.style.display = 'inline-flex';
     } else {
       spouseTab.style.display = 'none';
@@ -702,7 +700,8 @@ async function loadAllDropdowns() {
     loadDropdown("salarygrade", "salarygrade", "grade_no", "grade_desc", "Select Salary Grade"),
     loadDropdown("exittype", "exittype", "Name", "Description", "Select Exit Type"),
     loadDropdown("specialisation", "specialisation", "sp_desc", "sp_desc", "Select Specialisation"),
-    //loadDropdown("branch", "branch", "branchcode", "branchname", "Select Branch"),
+    loadDropdown("branch", "branch", "busline", "busdesc", "Select Branch"),
+    loadDropdown("location", "step3-ship", "unitcode", "unitdesc", "Select location"),
     loadDropdown("payrollclass", "payrollProcess", "classcode", "classname", "Select Payroll Process"),
 
     //spouse and child state/lga dropdowns would be populated dynamically based on selection

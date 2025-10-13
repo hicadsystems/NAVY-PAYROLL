@@ -105,7 +105,7 @@ class PersonnelManager {
     this.personnel = [];
     this.filteredPersonnel = [];
     this.currentViewId = null;
-    this.personnelType = 'current';
+    this.personnelType = 'old';
     this.init();
   }
 
@@ -169,9 +169,9 @@ class PersonnelManager {
     }
   }
 
-  async loadPersonnelData(type = 'current') {
+  async loadPersonnelData(type = 'old') {
     try {
-      const result = await this.apiRequest(`${API_BASE}/employees`);
+      const result = await this.apiRequest(`${API_BASE}/employees-old`);
       const allPersonnel = result.data || [];
 
       // Normalize statuses based on exit fields

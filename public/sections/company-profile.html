@@ -2,7 +2,7 @@
   <!-- Profile Header -->
   <div class="flex flex-wrap gap-2 items-center justify-between space-x-4 mb-6">
     <!-- Image with WhatsApp-style hover overlay -->
-    <div class="relative group w-20 h-20">
+    <div class="relative group w-13 h-16">
       <img id="companyLogo" src="" alt="Logo" class="w-full h-full rounded-full border shadow object-cover">
       <div class="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onclick="document.getElementById('logoUpload').click()">
         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,8 +130,8 @@
         <dt class="text-sm font-medium text-gray-500">Independent Monthly Tax</dt>
         <dd id="independentMonthlyTaxDisplay" class="text-lg font-semibold text-gray-800">Loading...</dd>
         <select id="independentMonthlyTaxInput" name="mthly_tax" class="hidden w-full border rounded px-2 py-1 mt-2">
-          <option value="1">YES</option>
-          <option value="0">NO</option>
+          <option value="YES">YES</option>
+          <option value="NO">NO</option>
         </select>
       </div>
 
@@ -303,6 +303,20 @@
     }
   }
 
+  // Clean data before sending to server (convert empty strings to null for numeric fields)
+  function cleanDataForUpdate(data) {
+    const cleanedData = { ...data };
+    const numericFields = ['processmonth', 'Processyear', 'retireage', 'serverport'];
+    
+    numericFields.forEach(field => {
+      if (cleanedData[field] === '' || cleanedData[field] === null || cleanedData[field] === undefined) {
+        cleanedData[field] = null;
+      }
+    });
+    
+    return cleanedData;
+  }
+
   // Save logo to server
   async function saveLogoToServer(base64Image) {
     if (!currentSystemId) {
@@ -312,15 +326,40 @@
 
     try {
       const token = localStorage.getItem('token');
+      
+      // Fetch current data from server to ensure we have the latest values
+      const fetchResponse = await fetch(`/company/paysystem/${currentSystemId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const fetchResult = await fetchResponse.json();
+
+      if (!fetchResult.success || !fetchResult.data) {
+        throw new Error('Failed to fetch current system data');
+      }
+
+      // Merge logo update with fresh data from server
+      let updateData = {
+        ...fetchResult.data,
+        company_image: base64Image
+      };
+      
+      // Remove Id from the update data as it shouldn't be modified
+      delete updateData.Id;
+      delete updateData.datecreated; // Don't update creation date
+      
+      // Clean the data to handle empty numeric fields
+      updateData = cleanDataForUpdate(updateData);
+      
       const response = await fetch(`/company/paysystem/${currentSystemId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          company_image: base64Image
-        })
+        body: JSON.stringify(updateData)
       });
 
       const result = await response.json();
@@ -328,6 +367,9 @@
       if (!result.success) {
         throw new Error(result.error || 'Failed to upload logo');
       }
+
+      // Update originalData to reflect the new logo
+      originalData.company_image = base64Image;
 
       // Show success notification
       const notification = document.createElement('div');
@@ -524,8 +566,35 @@
 
     try {
       const token = localStorage.getItem('token');
+      
+      // Fetch current data from server to preserve image and other fields
+      const fetchResponse = await fetch(`/company/paysystem/${currentSystemId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const fetchResult = await fetchResponse.json();
+
+      if (!fetchResult.success || !fetchResult.data) {
+        throw new Error('Failed to fetch current system data');
+      }
+
       const formData = new FormData(form);
-      const data = Object.fromEntries(formData.entries());
+      let formValues = Object.fromEntries(formData.entries());
+      
+      // Merge form values with fresh data, preserving image and system fields
+      let data = {
+        ...fetchResult.data,
+        ...formValues
+      };
+      
+      // Remove fields that shouldn't be modified
+      delete data.Id;
+      delete data.datecreated;
+      
+      // Clean the data to handle empty numeric fields
+      data = cleanDataForUpdate(data);
 
       const response = await fetch(`/company/paysystem/${currentSystemId}`, {
         method: 'PUT',

@@ -170,7 +170,7 @@ class PersonnelManager {
 
   async loadPersonnelData(type = 'current') {
     try {
-      const result = await this.apiRequest(`${API_BASE}/employees`);
+      const result = await this.apiRequest(`${API_BASE}/employees-current`);
       const allPersonnel = result.data || [];
 
       // Normalize statuses based on exit fields

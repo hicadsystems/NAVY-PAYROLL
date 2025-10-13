@@ -23,7 +23,9 @@ const tables = {
   exittype: "py_exittype",
   elementtype: "py_elementType",
   geozone: "geozone",
-  payrollclass: "py_payrollclass"
+  payrollclass: "py_payrollclass",
+  location: "ac_costcentre",
+  branch: "ac_businessline",
 };
 
 // Get LGAs by State Code

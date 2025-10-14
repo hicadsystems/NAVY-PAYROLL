@@ -218,7 +218,7 @@ class databaseRestore {
 
             const option = document.createElement("option");
             option.value = data.database;
-            option.textContent = data.database;
+            option.textContent = data.class_name;
             option.selected = true;
 
             select.appendChild(option);
@@ -346,9 +346,9 @@ class databaseRestore {
                             </div>
                             <div>
                                 <p class="font-medium text-sm text-gray-900">${entry.filename}</p>
-                                <p class="text-sm text-gray-500">
-                                    ${entry.database} • ${new Date(entry.date).toLocaleString()} • 
-                                    <span class="${entry.status === "Success" ? "text-green-600" : "text-red-600"}">
+                                <p class="text-[13px] text-gray-500">
+                                    ${entry.class_name} • ${new Date(entry.date).toLocaleString()} • 
+                                    <span class="${entry.status === "Success" ? "text-success" : "text-red-600"}">
                                         ${entry.status}
                                     </span>
                                 </p>

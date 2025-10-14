@@ -694,6 +694,8 @@
 
         // Reload statistics
         await loadClassStatistics();
+        allEmployees = []; // Clear cache to force reload
+        loadPersonnel();
 
         const currentClassName = getClassName(currentClass);
         selectionText.textContent = 

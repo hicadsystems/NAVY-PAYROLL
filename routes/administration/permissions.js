@@ -11,7 +11,7 @@ class PermissionService {
   // Get user with role information
   static async getUserWithRole(pool, userId) {
     try {
-      const [rows] = await pool.execute(`
+      const [rows] = await pool.query(`
         SELECT 
           u.user_id,
           u.full_name,
@@ -35,7 +35,7 @@ class PermissionService {
   // Get user permissions based on their role
   static async getUserPermissions(pool, userId) {
     try {
-      const [rows] = await pool.execute(`
+      const [rows] = await pool.query(`
         SELECT DISTINCT
           p.id,
           p.name,
@@ -57,7 +57,7 @@ class PermissionService {
   // Get all roles
   static async getAllRoles(pool) {
     try {
-      const [rows] = await pool.execute(`
+      const [rows] = await pool.query(`
         SELECT id, name, description
         FROM roles
         ORDER BY name
@@ -72,7 +72,7 @@ class PermissionService {
   // Get all permissions
   static async getAllPermissions(pool) {
     try {
-      const [rows] = await pool.execute(`
+      const [rows] = await pool.query(`
         SELECT id, name, description
         FROM permissions
         ORDER BY name

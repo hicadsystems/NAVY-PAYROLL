@@ -102,8 +102,7 @@ class ViewPersonnelManager {
     const month = ddmmyyyyDate.substring(2, 4);
     const year = ddmmyyyyDate.substring(4, 8);
     
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     
     return `${day} ${monthNames[parseInt(month) - 1]} ${year}`;
   }
@@ -139,8 +138,7 @@ class ViewPersonnelManager {
       const month = date.getMonth();
       const year = date.getFullYear();
       
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       
       return `${day} ${monthNames[month]} ${year}`;
     } catch (error) {
@@ -163,8 +161,7 @@ class ViewPersonnelManager {
       const hours = String(date.getHours()).padStart(2, '0');
       const minutes = String(date.getMinutes()).padStart(2, '0');
       
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       
       return `${day} ${monthNames[month]} ${year} ${hours}:${minutes}`;
     } catch (error) {
@@ -175,8 +172,7 @@ class ViewPersonnelManager {
 
   async loadLookupData() {
     const endpoints = [
-      'location', 'branch', 'state', 'lga', 
-      'command', 'title', 'religion', 'pfa', 'salarygrade', 'salarygroup', 'country', 'payrollclass', 'relationship', 'marital', 'exittype',
+      'location', 'branch', 'state', 'lga', 'command', 'title', 'religion', 'pfa', 'salarygrade', 'salarygroup', 'country', 'payrollclass', 'relationship', 'marital', 'exittype',
     ];
     
     const token = localStorage.getItem('token');
@@ -228,7 +224,7 @@ class ViewPersonnelManager {
   getValueField(endpoint) {
     const fieldMap = {
       'location': 'unitcode',
-      'branch': 'buscode',
+      'branch': 'busline',
       'state': 'Statecode',
       'lga': 'Lgcode',
       'command': 'navalcmd',
@@ -249,7 +245,7 @@ class ViewPersonnelManager {
   getTextField(endpoint) {
     const fieldMap = {
       'location': 'unitdesc',
-      'branch': 'busline',
+      'branch': 'busdesc',
       'state': 'Statename',
       'lga': 'Lgname',
       'command': 'name',

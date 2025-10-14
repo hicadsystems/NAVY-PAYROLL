@@ -2,8 +2,8 @@
   <!-- Profile Header -->
   <div class="flex flex-wrap gap-2 items-center justify-between space-x-4 mb-6">
     <!-- Image with WhatsApp-style hover overlay -->
-    <div class="relative group w-13 h-16">
-      <img id="companyLogo" src="" alt="Logo" class="w-full h-full rounded-full border shadow object-cover">
+    <div class="relative group w-13 h-14">
+      <img id="companyLogo" src="" alt="Logo" class="w-13 h-14 bg-red rounded-[50%] object-contain">
       <div class="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onclick="document.getElementById('logoUpload').click()">
         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -402,12 +402,6 @@
       });
 
       const result = await response.json();
-
-      // DEBUG: Check what we're actually getting
-      console.log('Result:', result);
-      console.log('company_image type:', typeof result.data?.company_image);
-      console.log('company_image value:', result.data?.company_image);
-
       const logoImg = document.getElementById('companyLogo');
 
       if (result.success && result.data && result.data.company_image) {

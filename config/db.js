@@ -117,7 +117,7 @@ const pool = {
   async execute(sql, params = []) {
     const sessionId = sessionContext.getStore() || 'default';
     const currentDatabase = sessionDatabases.get(sessionId);
-    
+
     if (!currentDatabase) {
       throw new Error(`❌ No database selected for session ${sessionId}. Call pool.useDatabase(databaseName) first.`);
     }
@@ -126,7 +126,10 @@ const pool = {
     try {
       connection = await connectionPool.getConnection();
       await connection.query(`USE \`${currentDatabase}\``);
-      const [rows, fields] = await connection.execute(sql, params);
+
+      // Use query() instead of execute() to avoid prepared statement cache issues
+      // after USE database - execute() can return stale data from wrong database
+      const [rows, fields] = await connection.query(sql, params);
       return [rows, fields];
     } catch (error) {
       console.error(`❌ Database execute error on ${currentDatabase} for session ${sessionId}:`, error.message);
@@ -237,7 +240,7 @@ const pool = {
     }
     const wasCleared = sessionDatabases.delete(sessionId);
     if (wasCleared) {
-      console.log(`🗑️ Database context cleared for session: ${sessionId}`);
+      console.log(`Database context cleared for session: ${sessionId}`);
     }
     return wasCleared;
   },

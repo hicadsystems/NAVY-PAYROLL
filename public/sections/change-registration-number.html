@@ -220,35 +220,187 @@ function filterDropdown(searchText) {
 }
 
 // ==================== UPDATE REGISTRATION NUMBER ====================
+// Add modal HTML
+const modalHTML = `
+  <!-- Validation Modal -->
+  <div id="validationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+      <div class="flex items-center mb-4">
+        <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mr-4">
+          <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900">Validation Error</h3>
+      </div>
+      <p id="validationMessage" class="text-gray-600 mb-6"></p>
+      <div class="flex justify-end">
+        <button onclick="closeValidationModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+      <div class="flex items-center mb-4">
+        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
+          <i class="fas fa-question-circle text-blue-600 text-xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900">Confirm Update</h3>
+      </div>
+      <p id="confirmMessage" class="text-gray-600 mb-6"></p>
+      <div class="flex justify-end space-x-3">
+        <button onclick="closeConfirmModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+          Cancel
+        </button>
+        <button id="confirmBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div id="successModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+      <div class="flex items-center mb-4">
+        <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">
+          <i class="fas fa-check-circle text-green-600 text-xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900">Success</h3>
+      </div>
+      <p id="successMessage" class="text-gray-600 mb-6"></p>
+      <div class="flex justify-end">
+        <button onclick="closeSuccessModal()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Modal -->
+  <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+      <div class="flex items-center mb-4">
+        <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mr-4">
+          <i class="fas fa-times-circle text-red-600 text-xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900">Error</h3>
+      </div>
+      <p id="errorMessage" class="text-gray-600 mb-6"></p>
+      <div class="flex justify-end">
+        <button onclick="closeErrorModal()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Modal -->
+  <div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
+      <div class="flex flex-col items-center">
+        <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-gray-700 font-medium">Updating...</p>
+      </div>
+    </div>
+  </div>
+`;
+
+// Insert modals into the page
+document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+// Modal control functions
+function showValidationModal(message) {
+  document.getElementById('validationMessage').textContent = message;
+  document.getElementById('validationModal').classList.remove('hidden');
+}
+
+window.closeValidationModal = function () {
+  document.getElementById('validationModal').classList.add('hidden');
+}
+
+function showConfirmModal(message) {
+  return new Promise((resolve) => {
+    document.getElementById('confirmMessage').textContent = message;
+    document.getElementById('confirmModal').classList.remove('hidden');
+    
+    const confirmBtn = document.getElementById('confirmBtn');
+    const closeBtn = () => {
+      document.getElementById('confirmModal').classList.add('hidden');
+      resolve(false);
+    };
+    
+    confirmBtn.onclick = () => {
+      document.getElementById('confirmModal').classList.add('hidden');
+      resolve(true);
+    };
+    
+    window.closeConfirmModal = closeBtn;
+  });
+}
+
+function showSuccessModal(message) {
+  document.getElementById('successMessage').textContent = message;
+  document.getElementById('successModal').classList.remove('hidden');
+}
+
+window.closeSuccessModal = function () {
+  document.getElementById('successModal').classList.add('hidden');
+}
+
+function showErrorModal(message) {
+  document.getElementById('errorMessage').textContent = message;
+  document.getElementById('errorModal').classList.remove('hidden');
+}
+
+window.closeErrorModal = function () {
+  document.getElementById('errorModal').classList.add('hidden');
+}
+
+function showLoadingModal() {
+  document.getElementById('loadingModal').classList.remove('hidden');
+}
+
+window.hideLoadingModal= function() {
+  document.getElementById('loadingModal').classList.add('hidden');
+}
+
+// Updated function with modals
 async function updateRegistrationNumber() {
-  const oldRegNo = hiddenInput.value || (selectedEmployee ? selectedEmployee.Empl_ID : '');
+  const oldRegNo = hiddenInput.value;
   const newRegNo = newRegInput.value.trim();
 
   // Validation
   if (!oldRegNo) {
-    alert('Please select an employee first');
+    showValidationModal('Please select an employee first');
     return;
   }
 
   if (!newRegNo) {
-    alert('Please enter a new registration number');
+    showValidationModal('Please enter a new registration number');
     return;
   }
 
   if (newRegNo === oldRegNo) {
-    alert('New registration number must be different from the current one');
+    showValidationModal('New registration number must be different from the current one');
     return;
   }
 
   // Confirm
-  const employeeName = selectedEmployee ? selectedEmployee.Surname : 'this employee';
-  if (!confirm(`Update registration number from "${oldRegNo}" to "${newRegNo}" for ${employeeName}?`)) {
+  const employeeName = selectedEmployee ? selectedEmployee.Fullname : 'this employee';
+  const confirmed = await showConfirmModal(
+    `Update registration number from "${oldRegNo}" to "${newRegNo}" for ${employeeName}?`
+  );
+  
+  if (!confirmed) {
     return;
   }
 
   // Show loading
+  showLoadingModal();
   saveBtn.disabled = true;
-  saveBtn.innerHTML = '<span class="animate-pulse">Updating...</span>';
 
   try {
     const token = localStorage.getItem('token');
@@ -274,7 +426,8 @@ async function updateRegistrationNumber() {
       throw new Error(data.error || 'Update failed');
     }
 
-    alert(`✅ Registration number updated successfully from ${oldRegNo} to ${newRegNo}`);
+    hideLoadingModal();
+    showSuccessModal(`Registration number for ${employeeName} updated successfully from ${oldRegNo} to ${newRegNo}`);
     console.log('Update successful:', data);
     
     // Reset form and reload employees
@@ -284,10 +437,10 @@ async function updateRegistrationNumber() {
 
   } catch (error) {
     console.error('Update error:', error);
-    alert('Failed to update: ' + error.message);
+    hideLoadingModal();
+    showErrorModal('Failed to update: ' + error.message);
   } finally {
     saveBtn.disabled = false;
-    saveBtn.textContent = 'Save Changes';
   }
 }
 
@@ -347,6 +500,13 @@ newRegInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') {
     updateRegistrationNumber();
   }
+});
+
+["new-reg"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", () => {
+    el.value = el.value.toUpperCase();
+  });
 });
 
 // ==================== INITIALIZE ====================

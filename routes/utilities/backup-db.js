@@ -65,11 +65,11 @@ function getLatestStats(dir, dbName = null) {
 }
 
 /* Runs the actual mysqldump, returns a Promise that resolves with { path, filename } or rejects */
-function runBackup({ dbName, backupType = 'full', compression = false, storage = 'local' }) {
+function runBackup({ dbName, friendlyName, backupType = 'full', compression = false, storage = 'local' }) {
   return new Promise((resolve, reject) => {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      let filename = `${dbName}_${backupType}_${timestamp}.sql`;
+      let filename = `${friendlyName}_${backupType}_${timestamp}.sql`;
       if (compression) filename += '.gz';
 
       const backupDir = storage === 'cloud' ? ROOT_CLOUD_BACKUP_DIR : ROOT_BACKUP_DIR;
@@ -154,12 +154,12 @@ router.get('/database', verifyToken, (req, res) => {
     
     // Get friendly name for the database
     const dbToClassMap = {
-      'hicaddata': 'OFFICERS',
-      'hicaddata1': 'W/OFFICERS', 
-      'hicaddata2': 'RATINGS',
-      'hicaddata3': 'RATINGS A',
-      'hicaddata4': 'RATINGS B',
-      'hicaddata5': 'JUNIOR/TRAINEE'
+      [process.env.DB_OFFICERS]: 'OFFICERS',
+      [process.env.DB_WOFFICERS]: 'W/OFFICERS', 
+      [process.env.DB_RATINGS]: 'RATINGS',
+      [process.env.DB_RATINGS_A]: 'RATINGS A',
+      [process.env.DB_RATINGS_B]: 'RATINGS B',
+      [process.env.DB_JUNIOR_TRAINEE]: 'JUNIOR/TRAINEE'
     };
 
     const friendlyName = dbToClassMap[currentClass] || 'Unknown Class';
@@ -193,8 +193,32 @@ router.post('/backup/mysql', verifyToken, async (req, res) => {
     const { backupType = 'full', compression = false, storage = 'local' } = req.body || {};
     const dbName = req.current_class;
 
-    const result = await runBackup({ dbName, backupType, compression, storage });
-    return res.json({ success: true, filename: result.filename, path: result.path });
+    // Get friendly name for the database
+    const dbToClassMap = {
+      [process.env.DB_OFFICERS]: 'OFFICERS',
+      [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
+      [process.env.DB_RATINGS]: 'RATINGS',
+      [process.env.DB_RATINGS_A]: 'RATINGS_A',
+      [process.env.DB_RATINGS_B]: 'RATINGS_B',
+      [process.env.DB_JUNIOR_TRAINEE]: 'JUNIOR_TRAINEE'
+    };
+
+    const friendlyName = dbToClassMap[dbName] || dbName;
+
+    const result = await runBackup({ 
+      dbName, 
+      friendlyName, 
+      backupType, 
+      compression, 
+      storage 
+    });
+    
+    return res.json({ 
+      success: true, 
+      filename: result.filename, 
+      path: result.path,
+      class_name: friendlyName
+    });
   } catch (err) {
     console.error('Backup failed:', err);
     return res.status(500).json({ success: false, error: err.message || 'Backup process failed' });
@@ -209,6 +233,18 @@ router.post('/backup/schedule', verifyToken, (req, res) => {
   try {
     const { schedule, backupType = 'full', compression = false, storage = 'local' } = req.body || {};
     const dbName = req.current_class;
+
+    // Get friendly name for the database
+    const dbToClassMap = {
+      [process.env.DB_OFFICERS]: 'OFFICERS',
+      [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
+      [process.env.DB_RATINGS]: 'RATINGS',
+      [process.env.DB_RATINGS_A]: 'RATINGS_A',
+      [process.env.DB_RATINGS_B]: 'RATINGS_B',
+      [process.env.DB_JUNIOR_TRAINEE]: 'JUNIOR_TRAINEE'
+    };
+
+    const friendlyName = dbToClassMap[dbName] || dbName;
 
     const scheduleMap = {
       hourly: '0 * * * *',
@@ -225,28 +261,44 @@ router.post('/backup/schedule', verifyToken, (req, res) => {
     }
 
     const job = cron.schedule(cronExp, async () => {
-      console.log(`Running scheduled backup for ${dbName} (${schedule})`);
+      console.log(`Running scheduled backup for ${friendlyName} (${schedule})`);
       try {
-        await runBackup({ dbName, backupType, compression, storage });
-        console.log('Scheduled backup finished');
+        await runBackup({ dbName, friendlyName, backupType, compression, storage });
+        console.log(`Scheduled backup finished for ${friendlyName}`);
       } catch (err) {
-        console.error('Scheduled backup failed:', err);
+        console.error(`Scheduled backup failed for ${friendlyName}:`, err);
       }
     });
 
     scheduledJobs[schedule] = job;
 
-    res.json({ success: true, message: `Backup scheduled (${schedule}) for database ${dbName}` });
+    res.json({ 
+      success: true, 
+      message: `Backup scheduled (${schedule}) for ${friendlyName}`,
+      class_name: friendlyName
+    });
   } catch (err) {
     console.error('Schedule error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-
 // Get list of backups for current database only
 router.get('/backups', verifyToken, (req, res) => {
   const dbName = req.current_class;
+  
+  // Get friendly name for the database
+  const dbToClassMap = {
+    [process.env.DB_OFFICERS]: 'OFFICERS',
+    [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
+    [process.env.DB_RATINGS]: 'RATINGS',
+    [process.env.DB_RATINGS_A]: 'RATINGS_A',
+    [process.env.DB_RATINGS_B]: 'RATINGS_B',
+    [process.env.DB_JUNIOR_TRAINEE]: 'JUNIOR_TRAINEE'
+  };
+
+  const friendlyName = dbToClassMap[dbName] || dbName;
+
   const dirs = [
     { type: 'local', dir: ROOT_BACKUP_DIR },
     { type: 'cloud', dir: ROOT_CLOUD_BACKUP_DIR }
@@ -259,8 +311,8 @@ router.get('/backups', verifyToken, (req, res) => {
 
     const files = fs.readdirSync(dir);
     files.forEach(file => {
-      // Filter files that belong to the current database
-      if (file.startsWith(`${dbName}_`)) {
+      // Filter files that belong to the current database (check both raw dbName and friendlyName)
+      if (file.startsWith(`${dbName}_`) || file.startsWith(`${friendlyName}_`)) {
         const filePath = path.join(dir, file);
         const stats = fs.statSync(filePath);
 
@@ -278,13 +330,30 @@ router.get('/backups', verifyToken, (req, res) => {
   // sort newest → oldest
   backups.sort((a, b) => b.modified - a.modified);
 
-  res.json({ backups });
+  res.json({ 
+    backups,
+    database: dbName,
+    class_name: friendlyName
+  });
 });
 
 
 // Get backup statistics for current database only
 router.get('/backup/stats', verifyToken, (req, res) => {
   const dbName = req.current_class;
+  
+  // Get friendly name for the database
+  const dbToClassMap = {
+    [process.env.DB_OFFICERS]: 'OFFICERS',
+    [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
+    [process.env.DB_RATINGS]: 'RATINGS',
+    [process.env.DB_RATINGS_A]: 'RATINGS_A',
+    [process.env.DB_RATINGS_B]: 'RATINGS_B',
+    [process.env.DB_JUNIOR_TRAINEE]: 'JUNIOR_TRAINEE'
+  };
+
+  const friendlyName = dbToClassMap[dbName] || dbName;
+
   const dirs = [ROOT_BACKUP_DIR, ROOT_CLOUD_BACKUP_DIR];
 
   let totalStorage = 0;
@@ -296,8 +365,8 @@ router.get('/backup/stats', verifyToken, (req, res) => {
 
     const files = fs.readdirSync(dir);
     files.forEach(file => {
-      // Filter files that belong to the current database
-      if (file.startsWith(`${dbName}_`)) {
+      // Filter files that belong to the current database (check both raw dbName and friendlyName)
+      if (file.startsWith(`${dbName}_`) || file.startsWith(`${friendlyName}_`)) {
         const filePath = path.join(dir, file);
         const stats = fs.statSync(filePath);
 
@@ -315,10 +384,10 @@ router.get('/backup/stats', verifyToken, (req, res) => {
     successfulBackups,
     totalStorage,
     lastBackup,
-    database: dbName
+    database: dbName,
+    class_name: friendlyName
   });
 });
-
 
 /*
   Download and Delete routes (use ROOT dirs)

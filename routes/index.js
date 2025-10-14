@@ -8,6 +8,7 @@ const payrollclassChangeRoutes = require('./administration/payrollclassChange');
 const changeregNoRoutes = require('./administration/changeregNo');
 const companyProfileRoutes = require('./administration/companyProfile');
 const monthendProcessingRoutes = require('./administration/monthendProcessing');
+const oneoffrankRoutes = require('./administration/irregular-oneoff/oneoffrank');
 
 
 
@@ -57,6 +58,7 @@ module.exports = (app) => {
     app.use('/regno', changeregNoRoutes);
     app.use('/company', companyProfileRoutes);
     app.use('/monthend', monthendProcessingRoutes);
+    app.use('/oneoffrank', oneoffrankRoutes);
 
 
     //personnel profile

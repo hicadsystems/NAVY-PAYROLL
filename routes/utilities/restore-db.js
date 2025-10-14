@@ -47,6 +47,20 @@ const upload = multer({
     }
 });
 
+// Helper function to get friendly name
+const getFriendlyName = (dbName) => {
+    const dbToClassMap = {
+        [process.env.DB_OFFICERS]: 'OFFICERS',
+        [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
+        [process.env.DB_RATINGS]: 'RATINGS',
+        [process.env.DB_RATINGS_A]: 'RATINGS_A',
+        [process.env.DB_RATINGS_B]: 'RATINGS_B',
+        [process.env.DB_JUNIOR_TRAINEE]: 'JUNIOR_TRAINEE'
+    };
+    
+    return dbToClassMap[dbName] || dbName;
+};
+
 // Helper functions for managing restore history
 const loadHistory = (dbName = null) => {
     try {
@@ -56,12 +70,18 @@ const loadHistory = (dbName = null) => {
         const data = fs.readFileSync(HISTORY_FILE, 'utf8');
         const allHistory = JSON.parse(data);
         
+        // Add friendly names to existing entries that don't have them
+        const historyWithNames = allHistory.map(entry => ({
+            ...entry,
+            class_name: entry.class_name || getFriendlyName(entry.database)
+        }));
+        
         // Filter by database if provided
         if (dbName) {
-            return allHistory.filter(entry => entry.database === dbName);
+            return historyWithNames.filter(entry => entry.database === dbName);
         }
         
-        return allHistory;
+        return historyWithNames;
     } catch (err) {
         console.error('Error loading history:', err);
         return [];
@@ -79,11 +99,16 @@ const saveHistory = (history) => {
 const addToHistory = (entry) => {
     // Load all history (not filtered)
     const allHistory = loadHistory();
-    allHistory.push({
+    
+    // Add friendly name to new entry
+    const newEntry = {
         ...entry,
         id: Date.now(),
-        date: new Date().toISOString()
-    });
+        date: new Date().toISOString(),
+        class_name: getFriendlyName(entry.database)
+    };
+    
+    allHistory.push(newEntry);
     saveHistory(allHistory);
     return allHistory;
 };
@@ -181,12 +206,12 @@ router.get('/database', verifyToken, (req, res) => {
     
     // Get friendly name for the database
     const dbToClassMap = {
-      'hicaddata': 'OFFICERS',
-      'hicaddata1': 'W/OFFICERS', 
-      'hicaddata2': 'RATINGS',
-      'hicaddata3': 'RATINGS A',
-      'hicaddata4': 'RATINGS B',
-      'hicaddata5': 'JUNIOR/TRAINEE'
+    [process.env.DB_OFFICERS]: 'OFFICERS',
+    [process.env.DB_WOFFICERS]: 'W/OFFICERS', 
+    [process.env.DB_RATINGS]: 'RATINGS',
+    [process.env.DB_RATINGS_A]: 'RATINGS A',
+    [process.env.DB_RATINGS_B]: 'RATINGS B',
+    [process.env.DB_JUNIOR_TRAINEE]: 'JUNIOR/TRAINEE'
     };
 
     const friendlyName = dbToClassMap[currentClass] || 'Unknown Class';
@@ -353,14 +378,28 @@ router.post("/restore", verifyToken, async (req, res) => {
     });
 });
 
-/**
- * GET /api/restore-db/history
- * Get restore history for current database only
- */
+//Get restore history for current database only
 router.get("/history", verifyToken, (req, res) => {
     const database = req.current_class;
+
+    // Get friendly name for the database
+    const dbToClassMap = {
+      [process.env.DB_OFFICERS]: 'OFFICERS',
+      [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
+      [process.env.DB_RATINGS]: 'RATINGS',
+      [process.env.DB_RATINGS_A]: 'RATINGS_A',
+      [process.env.DB_RATINGS_B]: 'RATINGS_B',
+      [process.env.DB_JUNIOR_TRAINEE]: 'JUNIOR_TRAINEE'
+    };
+
+    const friendlyName = dbToClassMap[database] || database;
+
     const history = loadHistory(database); // Filter by current database
-    res.json({ history });
+    res.json({ 
+      history,
+      database: database,
+      class_name: friendlyName
+    });
 });
 
 /**

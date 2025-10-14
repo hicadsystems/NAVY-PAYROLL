@@ -22,7 +22,7 @@ router.post('/paysystem', verifyToken, async (req, res) => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    const [result] = await pool.execute(query, [
+    const [result] = await pool.query(query, [
       comp_code, comp_name, Address, Processyear, processmonth,
       createdby, salaryscale, retireage, hrlink, town, lg, state,
       email, box, tel, serveraddr, serverport, email_pword,
@@ -56,7 +56,7 @@ router.get('/paysystem', verifyToken, async (req, res) => {
       ORDER BY datecreated DESC
     `;
 
-    const [rows] = await pool.execute(query);
+    const [rows] = await pool.query(query);
 
     res.json({
       success: true,
@@ -86,7 +86,7 @@ router.get('/paysystem/:id', verifyToken, async (req, res) => {
       WHERE Id = ?
     `;
 
-    const [rows] = await pool.execute(query, [id]);
+    const [rows] = await pool.query(query, [id]);
 
     if (rows.length === 0) {
       return res.status(404).json({
@@ -165,7 +165,7 @@ router.put('/paysystem/:id', verifyToken, async (req, res) => {
       id
     ];
 
-    const [result] = await pool.execute(query, params);
+    const [result] = await pool.query(query, params);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({
@@ -193,7 +193,7 @@ router.delete('/paysystem/:id', verifyToken, async (req, res) => {
     const { id } = req.params;
 
     const query = 'DELETE FROM py_paysystem WHERE Id = ?';
-    const [result] = await pool.execute(query, [id]);
+    const [result] = await pool.query(query, [id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({

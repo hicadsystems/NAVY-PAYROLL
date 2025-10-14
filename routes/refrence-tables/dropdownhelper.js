@@ -26,6 +26,7 @@ const tables = {
   payrollclass: "py_payrollclass",
   location: "ac_costcentre",
   branch: "ac_businessline",
+  oneoff: "py_oneofftype"
 };
 
 // Get LGAs by State Code

@@ -6,7 +6,7 @@ const router = express.Router();
 // GET all PFAs
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.execute('SELECT * FROM py_pfa ORDER BY pfacode');
+    const [rows] = await pool.query('SELECT * FROM py_pfa ORDER BY pfacode');
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -16,7 +16,7 @@ router.get('/', verifyToken, async (req, res) => {
 // GET single PFA by code
 router.get('/:pfacode', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.execute('SELECT * FROM py_pfa WHERE pfacode = ?', [req.params.pfacode]);
+    const [rows] = await pool.query('SELECT * FROM py_pfa WHERE pfacode = ?', [req.params.pfacode]);
     if (rows.length === 0) {
       return res.status(404).json({ error: 'PFA not found' });
     }
@@ -65,7 +65,7 @@ router.post('/post', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'pfacode is required' });
     }
 
-    await pool.execute(
+    await pool.query(
       'INSERT INTO py_pfa (pfacode, pfadesc, pfapfcname, pfapfc) VALUES (?, ?, ?, ?)',
       [pfacode, pfadesc, pfapfcname, pfapfc]
     );
@@ -84,7 +84,7 @@ router.put('/:pfacode', verifyToken, async (req, res) => {
   try {
     const { pfadesc, pfapfcname, pfapfc } = req.body;
     
-    const [result] = await pool.execute(
+    const [result] = await pool.query(
       'UPDATE py_pfa SET pfadesc = ?, pfapfcname = ?, pfapfc = ? WHERE pfacode = ?',
       [pfadesc, pfapfcname, pfapfc, req.params.pfacode]
     );
@@ -102,7 +102,7 @@ router.put('/:pfacode', verifyToken, async (req, res) => {
 // DELETE PFA
 router.delete('/:pfacode', verifyToken, async (req, res) => {
   try {
-    const [result] = await pool.execute('DELETE FROM py_pfa WHERE pfacode = ?', [req.params.pfacode]);
+    const [result] = await pool.query('DELETE FROM py_pfa WHERE pfacode = ?', [req.params.pfacode]);
     
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'PFA not found' });

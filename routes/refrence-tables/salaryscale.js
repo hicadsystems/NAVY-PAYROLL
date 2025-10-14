@@ -35,7 +35,7 @@ router.post('/salary-scales', verifyToken, async (req, res) => {
             step14, step15, step16, step17, step18, step19, step20, user
         ];
 
-        const [result] = await pool.execute(query, values);
+        const [result] = await pool.query(query, values);
 
         res.status(201).json({
             message: 'Salary scale created successfully',
@@ -60,7 +60,7 @@ router.get('/salary-scales', verifyToken, async (req, res) => {
       FROM py_salaryscale 
       ORDER BY salcode, saltype, grade
     `;
-    const [rows] = await pool.execute(query);
+    const [rows] = await pool.query(query);
 
     res.json({ data: rows });
   } catch (error) {
@@ -82,7 +82,7 @@ router.get('/salary-scales/:salcode/:saltype/:grade', verifyToken, async (req, r
         }
 
         const query = 'SELECT * FROM py_salaryscale WHERE salcode = ? AND saltype = ? AND grade = ?';
-        const [rows] = await pool.execute(query, [salcode, saltype, grade]);
+        const [rows] = await pool.query(query, [salcode, saltype, grade]);
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Salary scale not found' });
@@ -131,7 +131,7 @@ router.get('/salary-scales/search', verifyToken, async (req, res) => {
 
         // Count total matching records
         const countQuery = `SELECT COUNT(*) as total FROM py_salaryscale ${whereClause}`;
-        const [countResult] = await pool.execute(countQuery, params);
+        const [countResult] = await pool.query(countQuery, params);
         const total = countResult[0].total;
 
         // Get paginated search results
@@ -142,7 +142,7 @@ router.get('/salary-scales/search', verifyToken, async (req, res) => {
         `;
         params.push(limit, offset);
 
-        const [rows] = await pool.execute(query, params);
+        const [rows] = await pool.query(query, params);
 
         res.json({
             data: rows,
@@ -193,7 +193,7 @@ router.put('/salary-scales/:salcode/:saltype/:grade', verifyToken, async (req, r
 
         updateValues.push(salcode, saltype, grade);
 
-        const [result] = await pool.execute(query, updateValues);
+        const [result] = await pool.query(query, updateValues);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: 'Salary scale not found' });
@@ -222,7 +222,7 @@ router.delete('/salary-scales/:salcode/:saltype/:grade', verifyToken, async (req
         }
 
         const query = 'DELETE FROM py_salaryscale WHERE salcode = ? AND saltype = ? AND grade = ?';
-        const [result] = await pool.execute(query, [salcode, saltype, grade]);
+        const [result] = await pool.query(query, [salcode, saltype, grade]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: 'Salary scale not found' });
@@ -257,7 +257,7 @@ router.get('/salary-scales/:salcode/:saltype/:grade/step/:step', verifyToken, as
 
         // Get the salary scale record including step20 (max progression limit)
         const query = `SELECT step${stepNum} as salary, step20 as max_step FROM py_salaryscale WHERE salcode = ? AND saltype = ? AND grade = ?`;
-        const [rows] = await pool.execute(query, [salcode, saltype, grade]);
+        const [rows] = await pool.query(query, [salcode, saltype, grade]);
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Salary scale not found' });
@@ -302,7 +302,7 @@ router.get('/salary-scales/:salcode/:saltype/:grade/progression-steps', verifyTo
         }
 
         const query = `SELECT step20 as max_step FROM py_salaryscale WHERE salcode = ? AND saltype = ? AND grade = ?`;
-        const [rows] = await pool.execute(query, [salcode, saltype, grade]);
+        const [rows] = await pool.query(query, [salcode, saltype, grade]);
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Salary scale not found' });
@@ -343,7 +343,7 @@ router.post('/salary-scales/validate-progression', verifyToken, async (req, res)
         }
 
         const query = `SELECT step20 as max_step FROM py_salaryscale WHERE salcode = ? AND saltype = ? AND grade = ?`;
-        const [rows] = await pool.execute(query, [salcode, saltype, grade]);
+        const [rows] = await pool.query(query, [salcode, saltype, grade]);
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Salary scale not found' });
@@ -430,7 +430,7 @@ router.post('/salary-groups', verifyToken, async (req, res) => {
 
         const values = [groupcode.trim().toUpperCase(), effdate, lastdate, grpdesc];
 
-        const [result] = await pool.execute(query, values);
+        const [result] = await pool.query(query, values);
 
         res.status(201).json({
             message: 'Salary group created successfully',
@@ -456,7 +456,7 @@ router.get('/salary-groups', verifyToken, async (req, res) => {
       ORDER BY groupcode
     `;
 
-    const [rows] = await pool.execute(query);
+    const [rows] = await pool.query(query);
 
     res.json({
       data: rows
@@ -480,7 +480,7 @@ router.get('/salary-groups/:groupcode', verifyToken, async (req, res) => {
         }
 
         const query = 'SELECT * FROM py_salarygroup WHERE groupcode = ?';
-        const [rows] = await pool.execute(query, [groupcode]);
+        const [rows] = await pool.query(query, [groupcode]);
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Salary group not found' });
@@ -529,7 +529,7 @@ router.get('/salary-groups/search', verifyToken, async (req, res) => {
 
         // Count total matching records
         const countQuery = `SELECT COUNT(*) as total FROM py_salarygroup ${whereClause}`;
-        const [countResult] = await pool.execute(countQuery, params);
+        const [countResult] = await pool.query(countQuery, params);
         const total = countResult[0].total;
 
         // Get paginated search results
@@ -540,7 +540,7 @@ router.get('/salary-groups/search', verifyToken, async (req, res) => {
         `;
         params.push(limit, offset);
 
-        const [rows] = await pool.execute(query, params);
+        const [rows] = await pool.query(query, params);
 
         res.json({
             data: rows,
@@ -592,7 +592,7 @@ router.put('/salary-groups/:groupcode', verifyToken, async (req, res) => {
 
         // Get current record to validate date logic
         if (updateData.effdate || updateData.lastdate) {
-            const [currentRecord] = await pool.execute(
+            const [currentRecord] = await pool.query(
                 'SELECT effdate, lastdate FROM py_salarygroup WHERE groupcode = ?',
                 [groupcode]
             );
@@ -623,7 +623,7 @@ router.put('/salary-groups/:groupcode', verifyToken, async (req, res) => {
 
         updateValues.push(groupcode);
 
-        const [result] = await pool.execute(query, updateValues);
+        const [result] = await pool.query(query, updateValues);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: 'Salary group not found' });
@@ -652,7 +652,7 @@ router.delete('/salary-groups/:groupcode', verifyToken, async (req, res) => {
         }
 
         const query = 'DELETE FROM py_salarygroup WHERE groupcode = ?';
-        const [result] = await pool.execute(query, [groupcode]);
+        const [result] = await pool.query(query, [groupcode]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: 'Salary group not found' });
@@ -681,7 +681,7 @@ router.get('/salary-groups/active/list', verifyToken, async (req, res) => {
             ORDER BY groupcode
         `;
 
-        const [rows] = await pool.execute(query, [currentDate, currentDate]);
+        const [rows] = await pool.query(query, [currentDate, currentDate]);
 
         res.json({
             data: rows,
@@ -721,7 +721,7 @@ router.get('/salary-groups/date-range/:startDate/:endDate', verifyToken, async (
             ORDER BY groupcode
         `;
 
-        const [rows] = await pool.execute(query, [endDate, startDate]);
+        const [rows] = await pool.query(query, [endDate, startDate]);
 
         res.json({
             data: rows,
@@ -758,7 +758,7 @@ router.get('/salary-groups/:groupcode/active/:date', verifyToken, async (req, re
             WHERE groupcode = ?
         `;
 
-        const [rows] = await pool.execute(query, [date, date, groupcode]);
+        const [rows] = await pool.query(query, [date, date, groupcode]);
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Salary group not found' });
@@ -801,7 +801,7 @@ router.get('/elementtypes', verifyToken, async (req, res) => {
 // GET - All Grade Levels
 router.get('/gradelevels', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.execute(
+    const [rows] = await pool.query(
       'SELECT grade_no, grade_desc FROM py_gradelevel ORDER BY grade_no'
     );
     res.json(rows);

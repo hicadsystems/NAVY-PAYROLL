@@ -33,16 +33,8 @@
         </div>
 
         <div id="dropdownList" class="absolute z-10 w-full mt-1 bg-yellow-50 border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto hidden">
-          <div class="py-1">
-            <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" data-value="NN001">
-              <span class="font-semibold text-blue-600">NN001</span> - Lt. James 
-            </div>
-            <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" data-value="NN002">
-              <span class="font-semibold text-blue-600">NN002</span> - Mr. Johnson
-            </div>
-            <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" data-value="NN003">
-              <span class="font-semibold text-blue-600">NN003</span> - CPO Hicad
-            </div>
+          <div class="py-1" id="employeeDropdownItems">
+            <!-- Items will be loaded dynamically -->
           </div>
         </div>
       </div>
@@ -51,8 +43,8 @@
       <div class="col-span-1">
         <select id="type" class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
           <option value="">Select Type</option>
-          <option>BP001</option>
-          <option>BP002</option>
+          <!-- Options will be loaded dynamically -->
+          <option value="BP302">BP302</option>
         </select>
       </div>
 
@@ -60,8 +52,8 @@
       <div class="col-span-1">
         <select id="mak1" class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
           <option value="">Select Marker 1</option>
-          <option>Yes</option>
-          <option>No</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
         </select>
       </div>
 
@@ -70,6 +62,7 @@
         <input 
           id="amtp" 
           type="number" 
+          step="0.01"
           placeholder="Payment Amount (amtp)" 
           class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"
         />
@@ -79,17 +72,18 @@
       <div class="col-span-1">
         <select id="mak2" class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
           <option value="">Select Marker 2</option>
-          <option>Yes</option>
-          <option>No</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
         </select>
       </div>
 
-      <!-- Amount To Date -->
+      <!-- Amount -->
       <div class="col-span-1">
         <input 
           id="amt" 
           type="number" 
-          placeholder="Amount To Date (amt)" 
+          step="0.01"
+          placeholder="Amount (amt)" 
           class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"
         />
       </div>
@@ -98,9 +92,12 @@
       <div class="col-span-1">
         <select id="payind" class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
           <option value="">Pay Indicator</option>
-          <option value="P">Permanent</option>
-          <option value="L">Loan</option>
-          <option value="T">Temporary</option>
+          <option value="P">P - Permanent</option>
+          <option value="L">L - Loan</option>
+          <option value="T">T - Temporary</option>
+          <option value="F">F - Free Pay</option>
+          <option value="H">H - Hourly Paid</option>
+          <option value="X">X - Independent Input</option>
         </select>
       </div>
 
@@ -129,7 +126,9 @@
         <tr>
           <th class="py-2 px-4 border">Personnel ID</th>
           <th class="py-2 px-4 border">Type</th>
-          <th class="py-2 px-4 border">Amount Paid</th>
+          <th class="py-2 px-4 border">Marker 1</th>
+          <th class="py-2 px-4 border">Amount Payable</th>
+          <th class="py-2 px-4 border">Marker 2</th>
           <th class="py-2 px-4 border">Amount To Date</th>
           <th class="py-2 px-4 border">Pay Indicator</th>
           <th class="py-2 px-4 border">Months</th>
@@ -137,20 +136,9 @@
         </tr>
       </thead>
       <tbody id="payDedTableBody" class="text-center text-sm">
-        <!-- Dynamic rows will go here -->
-        <tr class="hover:bg-yellow-50">
-          <td class="py-2 px-4 border">NN001</td>
-          <td class="py-2 px-4 border">BP001</td>
-          <td class="py-2 px-4 border">₦50,000</td>
-          <td class="py-2 px-4 border">₦50,100</td>
-          <td class="py-2 px-4 border">T</td>
-          <td class="py-2 px-4 border">3</td>
-          <td class="py-2 px-4 border">
-            <button onclick="editRow(this)" class="text-blue-600 hover:underline">Edit</button> |
-            <button onclick="deleteRow(this)" class="text-red-600 hover:underline">Delete</button>
-          </td>
+        <tr>
+          <td colspan="9" class="py-4 text-gray-500">Loading...</td>
         </tr>
-      </tbody>
       </tbody>
     </table>
   </div>
@@ -181,79 +169,33 @@
               </svg>
           </div>
       </div>
+      <div id="errorIcon" class="hidden flex justify-center mb-4">
+          <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+          </div>
+      </div>
       <p id="successMessage" class="text-gray-700 font-medium">Processing...</p>
   </div>
 </div>
 
 <script>
-// searchable dropdown
-const searchInput = document.getElementById('searchInput');
-const dropdownList = document.getElementById('dropdownList');
-const dropdownItems = document.querySelectorAll('.dropdown-item');
-
-// Add hidden input to store the selected employee ID
-const hiddenInput = document.createElement('input');
-hiddenInput.type = 'hidden';
-hiddenInput.name = 'emplId';
-hiddenInput.id = 'emplId';
-document.getElementById('payDedForm').appendChild(hiddenInput);
-
-// Show dropdown when input is clicked or focused
-searchInput.addEventListener('focus', () => {
-  dropdownList.classList.remove('hidden');
-});
-
-// Filter items as user types
-searchInput.addEventListener('input', function() {
-  const searchText = this.value.toLowerCase();
-  
-  dropdownItems.forEach(item => {
-    const text = item.textContent.toLowerCase();
-    const shouldShow = text.includes(searchText);
-    item.style.display = shouldShow ? 'block' : 'none';
-  });
-  
-  dropdownList.classList.remove('hidden');
-});
-
-// Handle item selection
-dropdownItems.forEach(item => {
-  item.addEventListener('click', function() {
-    const value = this.getAttribute('data-value');
-    const text = this.textContent.trim();
-    
-    searchInput.value = text;
-    hiddenInput.value = value;
-    dropdownList.classList.add('hidden');
-  });
-});
-
-// Hide dropdown when clicking outside
-document.addEventListener('click', function(e) {
-  if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) {
-    dropdownList.classList.add('hidden');
-  }
-});
-
-// Basic keyboard support
-searchInput.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    dropdownList.classList.add('hidden');
-    this.blur();
-  }
-});
-
 (function () {
+  const API_BASE = '/payded';
+  
   const formWrapper = document.getElementById("payDedFormWrapper");
   const form = document.getElementById("payDedForm");
   const tableBody = document.getElementById("payDedTableBody");
   const saveBtn = document.getElementById("saveBtn");
+  const formTitle = document.getElementById("formTitle");
 
   // Modals
   const confirmModal = document.getElementById("confirmModal");
   const successModal = document.getElementById("successModal");
   const loadingSpinner = document.getElementById("loadingSpinner");
   const successTick = document.getElementById("successTick");
+  const errorIcon = document.getElementById("errorIcon");
   const successMessage = document.getElementById("successMessage");
 
   const createBtn = document.getElementById("createPayDedBtn");
@@ -262,9 +204,239 @@ searchInput.addEventListener('keydown', function(e) {
   const cancelDelete = document.getElementById("cancelDelete");
   const confirmDelete = document.getElementById("confirmDelete");
 
+  // Dropdown elements
+  const searchInput = document.getElementById('searchInput');
+  const dropdownList = document.getElementById('dropdownList');
+  const employeeDropdownItems = document.getElementById('employeeDropdownItems');
+
+  // Add hidden input to store the selected employee ID
+  const hiddenInput = document.createElement('input');
+  hiddenInput.type = 'hidden';
+  hiddenInput.name = 'emplId';
+  hiddenInput.id = 'emplId';
+  form.appendChild(hiddenInput);
+
   let isEditing = false;
-  let currentEditRow = null;
+  let currentEditEmplId = null;
+  let currentEditType = null;
   let rowToDelete = null;
+  let allEmployees = [];
+
+  // ============================================
+  // API FUNCTIONS
+  // ============================================
+
+  async function fetchAllDeductions() {
+    try {
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`${API_BASE}/active/all`, {
+        method: 'GET',
+        headers: {
+          'content-type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        renderTable(result.data);
+      } else {
+        showError('Failed to load deductions');
+      }
+    } catch (error) {
+      console.error('Error fetching deductions:', error);
+      showError('Error loading deductions');
+    }
+  }
+
+  async function fetchEmployees() {
+    try {
+      const token = localStorage.getItem('token');
+
+      const response = await fetch('/personnel/employees-current',{
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        allEmployees = result.data;
+        renderEmployeeDropdown(allEmployees);
+      }
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+    }
+  }
+
+  async function createDeduction(data) {
+    try {
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`${API_BASE}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          Empl_id: data.emplId,
+          type: data.type,
+          amtp: parseFloat(data.amtp),
+          mak1: data.mak1,
+          mak2: data.mak2,
+          amt: parseFloat(data.amt),
+          payind: data.payind,
+          nomth: parseInt(data.nomth) || 0,
+          createdby: 'CURRENT_USER' // Replace with actual logged-in user
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        showSuccessModal('Record added successfully!');
+        await fetchAllDeductions();
+        clearForm();
+        toggleForm();
+      } else {
+        showError(result.message || 'Failed to create deduction');
+      }
+    } catch (error) {
+      console.error('Error creating deduction:', error);
+      showError('Error creating deduction');
+    }
+  }
+
+  async function updateDeduction(emplId, type, data) {
+    try {
+      const token = localStorage.getItem('token');
+
+      const encodedType = encodeURIComponent(type);
+      const response = await fetch(`${API_BASE}/${emplId}/${encodedType}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          amtp: parseFloat(data.amtp),
+          mak1: data.mak1,
+          mak2: data.mak2,
+          amt: parseFloat(data.amt),
+          payind: data.payind,
+          nomth: parseInt(data.nomth) || 0
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        showSuccessModal('Record updated successfully!');
+        await fetchAllDeductions();
+        clearForm();
+        toggleForm();
+      } else {
+        showError(result.message || 'Failed to update deduction');
+      }
+    } catch (error) {
+      console.error('Error updating deduction:', error);
+      showError('Error updating deduction');
+    }
+  }
+
+  async function deleteDeduction(emplId, type) {
+    try {
+      const token = localStorage.getItem('token');
+
+      const encodedType = encodeURIComponent(type);
+      const response = await fetch(`${API_BASE}/${emplId}/${encodedType}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        showSuccessModal('Record deleted successfully!');
+        await fetchAllDeductions();
+      } else {
+        showError(result.message || 'Failed to delete deduction');
+      }
+    } catch (error) {
+      console.error('Error deleting deduction:', error);
+      showError('Error deleting deduction');
+    }
+  }
+
+  // ============================================
+  // UI FUNCTIONS
+  // ============================================
+
+  function renderTable(data) {
+    tableBody.innerHTML = '';
+    
+    if (!data || data.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="9" class="py-4 text-gray-500">No records found</td>
+        </tr>
+      `;
+      return;
+    }
+
+    data.forEach(item => {
+      const row = document.createElement('tr');
+      row.className = 'hover:bg-yellow-50';
+      row.innerHTML = `
+        <td class="py-2 px-4 border">${item.Empl_id}</td>
+        <td class="py-2 px-4 border">${item.type}</td>
+        <td class="py-2 px-4 border">${item.delete_maker_annual || '-'}</td>
+        <td class="py-2 px-4 border">₦${Number(item.amount_to_deduct || 0).toLocaleString()}</td>
+        <td class="py-2 px-4 border">${item.delete_maker_cumulative || '-'}</td>
+        <td class="py-2 px-4 border">₦${Number(item.current_total || 0).toLocaleString()}</td>
+        <td class="py-2 px-4 border">${item.indicator || '-'}</td>
+        <td class="py-2 px-4 border">${item.months_remaining || '-'}</td>
+        <td class="py-2 px-4 border">
+          <button onclick="editRow('${item.Empl_id}', '${escapeQuotes(item.type)}')" class="text-blue-600 hover:underline">Edit</button> |
+          <button onclick="deleteRow('${item.Empl_id}', '${escapeQuotes(item.type)}')" class="text-red-600 hover:underline">Delete</button>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+  }
+
+  function escapeQuotes(str) {
+    return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+  }
+
+  function renderEmployeeDropdown(employees) {
+    employeeDropdownItems.innerHTML = '';
+    
+    employees.forEach(emp => {
+      const div = document.createElement('div');
+      div.className = 'dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100';
+      div.setAttribute('data-value', emp.Empl_ID);
+      div.innerHTML = `
+        <span class="font-semibold text-blue-600">${emp.Empl_ID}</span> - ${emp.Surname} ${emp.OtherName}
+      `;
+      
+      div.addEventListener('click', function() {
+        const value = this.getAttribute('data-value');
+        const text = this.textContent.trim();
+        
+        searchInput.value = text;
+        hiddenInput.value = value;
+        dropdownList.classList.add('hidden');
+      });
+      
+      employeeDropdownItems.appendChild(div);
+    });
+  }
 
   function toggleForm() {
     formWrapper.classList.toggle("hidden");
@@ -272,121 +444,166 @@ searchInput.addEventListener('keydown', function(e) {
 
   function clearForm() {
     form.reset();
+    hiddenInput.value = '';
+    searchInput.value = '';
     isEditing = false;
-    currentEditRow = null;
-    formTitle.textContent = "Create Payment/Deduction";
+    currentEditEmplId = null;
+    currentEditType = null;
+    formTitle.textContent = "Add New Payment/Deduction";
     saveBtn.textContent = "Save";
   }
 
-  function showSuccessModal(message) {
+  function showSuccessModal(message, isError = false) {
     successMessage.textContent = "Processing...";
     loadingSpinner.classList.remove("hidden");
     successTick.classList.add("hidden");
+    errorIcon.classList.add("hidden");
     successModal.classList.remove("hidden");
 
-    // Show spinner for 1 second
     setTimeout(() => {
       loadingSpinner.classList.add("hidden");
-      successTick.classList.remove("hidden");
+      
+      if (isError) {
+        errorIcon.classList.remove("hidden");
+      } else {
+        successTick.classList.remove("hidden");
+      }
+      
       successMessage.textContent = message;
       
-      // Hide modal after 2 seconds
       setTimeout(() => {
-          successModal.classList.add("hidden");
+        successModal.classList.add("hidden");
       }, 2000);
     }, 1000);
+  }
+
+  function showError(message) {
+    showSuccessModal(message, true);
   }
 
   function savePayDed(e) {
     e.preventDefault();
 
     const data = {
-      emplId: document.getElementById("emplId").value.trim(),
+      emplId: hiddenInput.value.trim(),
       type: document.getElementById("type").value,
-      mak1: document.getElementById("mak1").value.trim(),
+      mak1: document.getElementById("mak1").value,
       amtp: document.getElementById("amtp").value,
-      mak2: document.getElementById("mak2").value.trim(),
+      mak2: document.getElementById("mak2").value,
       amt: document.getElementById("amt").value,
       payind: document.getElementById("payind").value,
       nomth: document.getElementById("nomth").value,
     };
 
-    if (!data.emplId || !data.type || !data.amtp || !data.amt) {
-      alert("Please fill at least Employee ID, Type, and Payment Amount.");
+    if (!data.emplId || !data.type || !data.amtp || !data.payind) {
+      alert("Please fill required fields: Employee ID, Type, Amount Payable, and Pay Indicator");
       return;
     }
 
-    if (isEditing && currentEditRow) {
-    // Update existing row
-    const cells = currentEditRow.querySelectorAll('td');
-    cells[0].textContent = `${data.emplId}`;
-    cells[1].textContent = `${data.type}`;
-    cells[2].textContent = `₦${Number(data.amtp).toLocaleString()}`;
-    cells[3].textContent = `₦${Number(data.amt).toLocaleString()}`;
-    cells[4].textContent = `${data.payind || "-"}`;
-    cells[5].textContent = `${data.nomth || "-"}`;
-
-        showSuccessModal("Record updated successfully!");
+    if (isEditing) {
+      updateDeduction(currentEditEmplId, currentEditType, data);
     } else {
-        const row = document.createElement("tr");
-        row.className = "hover:bg-yellow-50";
-        row.innerHTML = `
-          <td class="py-2 px-4 border">${data.emplId}</td>
-          <td class="py-2 px-4 border">${data.type}</td>
-          <td class="py-2 px-4 border">₦${Number(data.amtp || data.amtp).toLocaleString()}</td>
-          <td class="py-2 px-4 border">₦${Number(data.amt || data.amt).toLocaleString()}</td>
-          <td class="py-2 px-4 border">${data.payind || "-"}</td>
-          <td class="py-2 px-4 border">${data.nomth || "-"}</td>
-          <td class="py-2 px-4 border">
-            <button onclick="editRow(this)" class="text-blue-600 hover:underline">Edit</button> |
-            <button onclick="deleteRow(this)" class="text-red-600 hover:underline">Delete</button>
-          </td>
-        `;
-
-    tableBody.appendChild(row);
-    showSuccessModal("Record added successfully!");
+      createDeduction(data);
     }
+  }
 
-    clearForm();
-    toggleForm();
+  async function loadDeductionForEdit(emplId, type) {
+    try {
+      const token = localStorage.getItem('token');
+
+      const encodedType = encodeURIComponent(type);
+      const response = await fetch(`${API_BASE}/${emplId}/${encodedType}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        const data = result.data;
+        
+        hiddenInput.value = data.Empl_id;
+        searchInput.value = data.Empl_id;
+        document.getElementById("type").value = data.type;
+        document.getElementById("mak1").value = data.delete_maker_annual || '';
+        document.getElementById("amtp").value = data.amount_payable || 0;
+        document.getElementById("mak2").value = data.delete_maker_cumulative || '';
+        document.getElementById("amt").value = data.amt || 0;
+        document.getElementById("payind").value = data.indicator || '';
+        document.getElementById("nomth").value = data.number_of_months || 0;
+        
+        isEditing = true;
+        currentEditEmplId = emplId;
+        currentEditType = type;
+        formTitle.textContent = "Edit Payment/Deduction";
+        saveBtn.textContent = "Update";
+        
+        formWrapper.classList.remove("hidden");
+      } else {
+        showError('Failed to load deduction details');
+      }
+    } catch (error) {
+      console.error('Error loading deduction:', error);
+      showError('Error loading deduction details');
+    }
   }
 
   function generateReport() {
     alert("Payments/Deductions Report generated (placeholder). Implement export here.");
   }
 
-  window.editRow = function(button) {
-    const row = button.closest('tr');
-    const cells = row.querySelectorAll('td');
+  // ============================================
+  // GLOBAL FUNCTIONS FOR ONCLICK HANDLERS
+  // ============================================
 
-    // Map exactly to your table structure:
-    hiddenInput.value = cells[0].textContent.trim();
-    searchInput.value = cells[0].textContent.trim(); 
-    document.getElementById("type").value = cells[1].textContent.trim();
-    document.getElementById("amtp").value = cells[2].textContent.replace(/₦|,/g, '');
-    document.getElementById("amt").value = cells[3].textContent.replace(/₦|,/g, '');
-    document.getElementById("payind").value = cells[4].textContent.trim();
-    document.getElementById("nomth").value = cells[5].textContent.trim()
-      
-      .replace(/,/g, '')
-      .trim(); 
-
-    // Set edit mode
-    isEditing = true;
-    currentEditRow = row;
-    formTitle.textContent = "Edit Payment/Deduction";
-    saveBtn.textContent = "Update";
-
-    // Show form
-    formWrapper.classList.remove("hidden");
+  window.editRow = function(emplId, type) {
+    loadDeductionForEdit(emplId, type);
   };
 
-  window.deleteRow = function(button) {
-    rowToDelete = button.closest('tr');
+  window.deleteRow = function(emplId, type) {
+    rowToDelete = { emplId, type };
     confirmModal.classList.remove("hidden");
   };
 
-  // Bind events
+  // ============================================
+  // DROPDOWN FUNCTIONALITY
+  // ============================================
+
+  searchInput.addEventListener('focus', () => {
+    dropdownList.classList.remove('hidden');
+  });
+
+  searchInput.addEventListener('input', function() {
+    const searchText = this.value.toLowerCase();
+    const items = employeeDropdownItems.querySelectorAll('.dropdown-item');
+    
+    items.forEach(item => {
+      const text = item.textContent.toLowerCase();
+      const shouldShow = text.includes(searchText);
+      item.style.display = shouldShow ? 'block' : 'none';
+    });
+    
+    dropdownList.classList.remove('hidden');
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) {
+      dropdownList.classList.add('hidden');
+    }
+  });
+
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      dropdownList.classList.add('hidden');
+      this.blur();
+    }
+  });
+
+  // ============================================
+  // EVENT LISTENERS
+  // ============================================
+
   createBtn.addEventListener("click", () => {
     clearForm();
     toggleForm();
@@ -407,14 +624,12 @@ searchInput.addEventListener('keydown', function(e) {
 
   confirmDelete.addEventListener("click", () => {
     if (rowToDelete) {
-      rowToDelete.remove();
-      showSuccessModal("Record deleted successfully!");
+      deleteDeduction(rowToDelete.emplId, rowToDelete.type);
     }
     confirmModal.classList.add("hidden");
     rowToDelete = null;
   });
 
-  // Close modals when clicking outside
   confirmModal.addEventListener("click", (e) => {
     if (e.target === confirmModal) {
       confirmModal.classList.add("hidden");
@@ -427,5 +642,12 @@ searchInput.addEventListener('keydown', function(e) {
       successModal.classList.add("hidden");
     }
   });
+
+  // ============================================
+  // INITIALIZE
+  // ============================================
+
+  fetchAllDeductions();
+  fetchEmployees();
 })();
 </script>

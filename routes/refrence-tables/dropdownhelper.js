@@ -26,7 +26,12 @@ const tables = {
   payrollclass: "py_payrollclass",
   location: "ac_costcentre",
   branch: "ac_businessline",
-  oneoff: "py_oneofftype"
+  oneoff: "py_oneofftype",
+  ledger: "accchart",
+  functiontype: "py_FunctionType",
+  payindicator: "py_payind",
+  payfrequency: "py_paydesc",
+  entrymode: "entrymode"
 };
 
 // Get LGAs by State Code

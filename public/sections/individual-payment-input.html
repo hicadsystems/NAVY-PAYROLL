@@ -364,8 +364,10 @@
   async function updatePayment(his_empno, his_type, data) {
     try {
       const token = localStorage.getItem('token');
+      const hisEmpno = his_empno.replace(/\//g, '_SLASH_');
+      const hisType = his_type.replace(/\//g, '_SLASH_');
 
-      const response = await fetch(`/individual/${his_empno}/${his_type}`, {
+      const response = await fetch(`/individual/${hisEmpno}/${hisType}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -393,8 +395,10 @@
   async function deletePayment(his_empno, his_type) {
     try {
       const token = localStorage.getItem('token');
+      const hisEmpno = his_empno.replace(/\//g, '_SLASH_');
+      const hisType = his_type.replace(/\//g, '_SLASH_');
 
-      const response = await fetch(`/individual/${his_empno}/${his_type}`, {
+      const response = await fetch(`/individual/${hisEmpno}/${hisType}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -476,12 +480,15 @@
     try {
       const token = localStorage.getItem('token');
 
+      // Encode only slashes, not all underscores
+      const safeEmpno = his_empno.replace(/\//g, '_SLASH_');
+
       // Fetch employees if not already loaded
       if (allEmployees.length === 0) {
         await fetchEmployees();
       }
 
-      const response = await fetch(`/individual/${his_empno}`, {
+      const response = await fetch(`/individual/${safeEmpno}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -495,15 +502,12 @@
 
         if (payment) {
           document.getElementById('paymentName').value = payment.his_empno;
-          
-          // Find employee in allEmployees to display full name
+
           const employee = allEmployees.find(emp => emp.Empl_ID === payment.his_empno);
-          if (employee) {
-            document.getElementById('searchInput').value = `${employee.Empl_ID} - ${employee.Surname} ${employee.OtherName}`;
-          } else {
-            document.getElementById('searchInput').value = payment.his_empno;
-          }
-          
+          document.getElementById('searchInput').value = employee
+            ? `${employee.Empl_ID} - ${employee.Surname} ${employee.OtherName}`
+            : payment.his_empno;
+
           document.getElementById('description').value = payment.his_type;
           document.getElementById('paymentAmount').value = payment.amtthismth;
 
@@ -525,8 +529,12 @@
   }
 
   window.editRow = function(his_empno, his_type) {
-    loadPaymentForEdit(his_empno, his_type);
+    // Decode properly
+    const unescapedType = his_type.replace(/_SLASH_/g, '/');
+    const unescapedEmpno = his_empno.replace(/_SLASH_/g, '/');
+    loadPaymentForEdit(unescapedEmpno, unescapedType);
   };
+
 
   window.deleteRow = function(his_empno, his_type) {
     rowToDelete = { his_empno, his_type };

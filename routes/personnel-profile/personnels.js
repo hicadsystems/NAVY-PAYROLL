@@ -176,10 +176,12 @@ router.get('/employees-old', verifyToken, async (req, res) => {
 
 // GET single employee with all related data
 router.get('/employees/:id', verifyToken, async (req, res) => {
+  const id = req.params.id.replace(/_SLASH_/g, '/');
+
   try {
     const [employee] = await pool.query(
       'SELECT * FROM hr_employees WHERE Empl_ID = ?', 
-      [req.params.id]
+      [id]
     );
     
     if (employee.length === 0) {
@@ -188,17 +190,17 @@ router.get('/employees/:id', verifyToken, async (req, res) => {
 
     const [children] = await pool.query(
       'SELECT * FROM Children WHERE Empl_ID = ? AND chactive = 1 ORDER BY dateofbirth', 
-      [req.params.id]
+      [id]
     );
 
     const [nextOfKin] = await pool.query(
       'SELECT * FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1 ORDER BY NextofkinType DESC, FirstName', 
-      [req.params.id]
+      [id]
     );
 
     const [spouse] = await pool.query(
       'SELECT * FROM Spouse WHERE Empl_ID = ? AND spactive = 1 ORDER BY marrieddate DESC', 
-      [req.params.id]
+      [id]
     );
 
     res.json({
@@ -287,10 +289,13 @@ router.post('/employees', verifyToken, async (req, res) => {
 // PUT update employee
 router.put('/employees/:id', verifyToken, async (req, res) => {
   try {
+    const id = req.params.id.replace(/_SLASH_/g, '/');
+
     console.log('=== UPDATE EMPLOYEE ===');
-    console.log('Employee ID:', req.params.id);
+    console.log('Employee ID:', id);
     console.log('Received fields:', Object.keys(req.body));
     console.log('Passport present?', !!req.body.passport);
+
     if (req.body.passport) {
       console.log('Passport length:', req.body.passport.length);
     }
@@ -300,7 +305,7 @@ router.put('/employees/:id', verifyToken, async (req, res) => {
     const setClause = fields.map(field => `${field} = ?`).join(', ');
     
     const query = `UPDATE hr_employees SET ${setClause} WHERE Empl_ID = ?`;
-    const [result] = await pool.query(query, [...values, req.params.id]);
+    const [result] = await pool.query(query, [...values, id]);
     
     console.log('Affected rows:', result.affectedRows);
     
@@ -318,9 +323,11 @@ router.put('/employees/:id', verifyToken, async (req, res) => {
 // DELETE employee (cascades to related tables)
 router.delete('/employees/:id', verifyToken, async (req, res) => {
   try {
+    const id = req.params.id.replace(/_SLASH_/g, '/');
+    
     const [result] = await pool.query(
       'DELETE FROM hr_employees WHERE Empl_ID = ?', 
-      [req.params.id]
+      [id]
     );
     
     if (result.affectedRows === 0) {
@@ -340,9 +347,10 @@ router.delete('/employees/:id', verifyToken, async (req, res) => {
 // GET all children for an employee
 router.get('/employees/:id/children', verifyToken, async (req, res) => {
   try {
+    const id = req.params.id.replace(/_SLASH_/g, '/');
     const [rows] = await pool.query(
       'SELECT * FROM Children WHERE Empl_ID = ? AND chactive = 1 ORDER BY dateofbirth', 
-      [req.params.id]
+      [id]
     );
     res.json({ success: true, data: rows });
   } catch (error) {
@@ -353,7 +361,30 @@ router.get('/employees/:id/children', verifyToken, async (req, res) => {
 // POST create new child
 router.post('/employees/:id/children', verifyToken, async (req, res) => {
   try {
-    const childData = { ...req.body, Empl_ID: req.params.id };
+    // Convert URL-safe format back to actual employee ID
+    const id = req.params.id.replace(/_SLASH_/g, '/');
+    
+    console.log('📝 Creating child for employee:', id);
+    
+    // Verify employee exists
+    const [employeeCheck] = await pool.query(
+      'SELECT Empl_ID FROM hr_employees WHERE Empl_ID = ?',
+      [id]
+    );
+    
+    if (employeeCheck.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Employee not found',
+        message: `Employee with ID ${id} does not exist in the system`
+      });
+    }
+    
+    const childData = { 
+      ...req.body, 
+      Empl_ID: id  // Use the converted ID
+    };
+    
     const fields = Object.keys(childData);
     const values = Object.values(childData);
     const placeholders = fields.map(() => '?').join(', ');
@@ -361,13 +392,30 @@ router.post('/employees/:id/children', verifyToken, async (req, res) => {
     const query = `INSERT INTO Children (${fields.join(', ')}) VALUES (${placeholders})`;
     const [result] = await pool.query(query, values);
     
+    console.log('✅ Child created successfully, ID:', result.insertId);
+    
     res.status(201).json({ 
       success: true, 
       message: 'Child record created successfully',
-      childId: result.insertId 
+      childId: result.insertId,
+      employeeId: id
     });
+    
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('❌ Child creation failed:', error.message);
+    
+    if (error.code === 'ER_NO_REFERENCED_ROW_2') {
+      return res.status(400).json({
+        success: false,
+        error: 'Foreign key constraint failed',
+        message: 'The specified employee does not exist'
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
   }
 });
 
@@ -416,9 +464,10 @@ router.delete('/children/:childId', verifyToken, async (req, res) => {
 // GET all next of kin for an employee
 router.get('/employees/:id/nextofkin', verifyToken, async (req, res) => {
   try {
+    const id = req.params.id.replace(/_SLASH_/g, '/');
     const [rows] = await pool.query(
-      'SELECT * FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1 ORDER BY NextofkinType DESC, FirstName', 
-      [req.params.id]
+      'SELECT * FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1 ORDER BY NextofkinType DESC, FirstName',
+      [id]
     );
     res.json({ success: true, data: rows });
   } catch (error) {
@@ -429,23 +478,94 @@ router.get('/employees/:id/nextofkin', verifyToken, async (req, res) => {
 // POST create new next of kin
 router.post('/employees/:id/nextofkin', verifyToken, async (req, res) => {
   try {
-    const nokData = { ...req.body, Empl_ID: req.params.id };
+    // Convert URL-safe format back to actual employee ID
+    const id = req.params.id.replace(/_SLASH_/g, '/');
+    
+    console.log('📝 Creating NOK for employee:', id);
+    console.log('📝 Original URL param:', req.params.id);
+    
+    // First, verify the employee exists
+    const [employeeCheck] = await pool.query(
+      'SELECT Empl_ID FROM hr_employees WHERE Empl_ID = ?',
+      [id]
+    );
+    
+    if (employeeCheck.length === 0) {
+      console.error('❌ Employee not found:', id);
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Employee not found',
+        message: `Employee with ID ${id} does not exist in the system`
+      });
+    }
+    
+    console.log('✅ Employee found:', employeeCheck[0].Empl_ID);
+    
+    // Build the NOK data with the correct Empl_ID
+    const nokData = { 
+      ...req.body, 
+      Empl_ID: id  // Use the converted ID, not the URL param
+    };
+    
+    // Validate required fields
+    const requiredFields = ['FirstName', 'LastName', 'RShipcode', 'MobileNumber'];
+    const missingFields = requiredFields.filter(field => !nokData[field]);
+    
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields',
+        message: `Please provide: ${missingFields.join(', ')}`
+      });
+    }
+    
     const fields = Object.keys(nokData);
     const values = Object.values(nokData);
     const placeholders = fields.map(() => '?').join(', ');
     
     const query = `INSERT INTO NextOfKin (${fields.join(', ')}) VALUES (${placeholders})`;
+    
+    console.log('🔄 Executing query with Empl_ID:', id);
+    
     const [result] = await pool.query(query, values);
+    
+    console.log('✅ NOK created successfully, ID:', result.insertId);
     
     res.status(201).json({ 
       success: true, 
       message: 'Next of kin record created successfully',
-      nokId: result.insertId 
+      nokId: result.insertId,
+      employeeId: id
     });
+    
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('❌ NOK creation failed:', error.message);
+    
+    // Handle specific database errors
+    if (error.code === 'ER_NO_REFERENCED_ROW_2') {
+      return res.status(400).json({
+        success: false,
+        error: 'Foreign key constraint failed',
+        message: 'The specified employee does not exist'
+      });
+    }
+    
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({
+        success: false,
+        error: 'Duplicate entry',
+        message: 'This next of kin record already exists'
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      code: error.code 
+    });
   }
 });
+
 
 // PUT update next of kin
 router.put('/nextofkin/:nokId', verifyToken, async (req, res) => {
@@ -492,9 +612,10 @@ router.delete('/nextofkin/:nokId', verifyToken, async (req, res) => {
 // GET all spouse records for an employee
 router.get('/employees/:id/spouse', verifyToken, async (req, res) => {
   try {
+    const id = req.params.id.replace(/_SLASH_/g, '/');
     const [rows] = await pool.query(
       'SELECT * FROM Spouse WHERE Empl_ID = ? AND spactive = 1 ORDER BY marrieddate DESC', 
-      [req.params.id]
+      [id]
     );
     res.json({ success: true, data: rows });
   } catch (error) {
@@ -505,7 +626,30 @@ router.get('/employees/:id/spouse', verifyToken, async (req, res) => {
 // POST create new spouse record
 router.post('/employees/:id/spouse', verifyToken, async (req, res) => {
   try {
-    const spouseData = { ...req.body, Empl_ID: req.params.id };
+    // Convert URL-safe format back to actual employee ID
+    const id = req.params.id.replace(/_SLASH_/g, '/');
+    
+    console.log('📝 Creating spouse for employee:', id);
+    
+    // Verify employee exists
+    const [employeeCheck] = await pool.query(
+      'SELECT Empl_ID FROM hr_employees WHERE Empl_ID = ?',
+      [id]
+    );
+    
+    if (employeeCheck.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Employee not found',
+        message: `Employee with ID ${id} does not exist in the system`
+      });
+    }
+    
+    const spouseData = { 
+      ...req.body, 
+      Empl_ID: id  // Use the converted ID
+    };
+    
     const fields = Object.keys(spouseData);
     const values = Object.values(spouseData);
     const placeholders = fields.map(() => '?').join(', ');
@@ -513,13 +657,30 @@ router.post('/employees/:id/spouse', verifyToken, async (req, res) => {
     const query = `INSERT INTO Spouse (${fields.join(', ')}) VALUES (${placeholders})`;
     const [result] = await pool.query(query, values);
     
+    console.log('✅ Spouse created successfully, ID:', result.insertId);
+    
     res.status(201).json({ 
       success: true, 
       message: 'Spouse record created successfully',
-      spouseId: result.insertId 
+      spouseId: result.insertId,
+      employeeId: id
     });
+    
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('❌ Spouse creation failed:', error.message);
+    
+    if (error.code === 'ER_NO_REFERENCED_ROW_2') {
+      return res.status(400).json({
+        success: false,
+        error: 'Foreign key constraint failed',
+        message: 'The specified employee does not exist'
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
   }
 });
 

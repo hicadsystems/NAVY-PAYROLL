@@ -302,7 +302,9 @@ class ViewPersonnelManager {
   async loadEmployeeData() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/personnel/employees/${this.currentEmployeeId}`, {
+      const safeId = this.currentEmployeeId.replace(/\//g, '_SLASH_');
+      
+      const response = await fetch(`/personnel/employees/${safeId}`, {
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -316,6 +318,7 @@ class ViewPersonnelManager {
       }
       
       this.employeeData = result.data;
+      
     } catch (error) {
       console.error('Failed to load employee:', error);
       document.getElementById('view-detail-content').innerHTML = `
@@ -331,7 +334,6 @@ class ViewPersonnelManager {
   async switchTab(tab) {
     this.currentTab = tab;
 
-    
     // Prevent rendering before data is ready
     if (!this.employeeData || !this.lookupsLoaded) {
       console.warn("Data not ready yet, retrying...");

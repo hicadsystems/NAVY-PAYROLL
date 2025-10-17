@@ -139,12 +139,6 @@
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700">Payroll Process Category</label>
-          <select id="payrollProcess" name="payrollclass" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-            <option>Select Payroll Process</option>
-          </select>
-        </div>
-        <div>
           <label class="block text-sm font-medium text-gray-700">Salary Group</label>
           <select id="salarygroup" name="gradetype" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
             <option>Select Salary Group</option>
@@ -154,6 +148,12 @@
           <label class="block text-sm font-medium text-gray-700">Salary Grade</label>
           <select id="salarygrade" name="gradelevel" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
             <option>Select Salary Grade</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Bank Code</label>
+          <select id="bankcode" name="Bankcode" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select Bank Code</option>
           </select>
         </div>
         <div>
@@ -219,9 +219,9 @@
           <input type="text" name="NHFcode" id="NHFcode" placeholder="NHF Code" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700">Bank Code</label>
-          <select id="bankcode" name="Bankcode" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-            <option>Select Bank Code</option>
+          <label class="block text-sm font-medium text-gray-700">Payroll Process Category</label>
+          <select id="payrollProcess" name="payrollclass" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option>Select Payroll Process</option>
           </select>
         </div>
         <div>
@@ -1272,6 +1272,8 @@ function actionBtns(type, id) {
 // View Family Record Modal - FULL DATA
 window.viewFamilyRecord = async function(type, id) {
   let data;
+
+  const safeId = currentEmployeeId.replace(/\//g, '_SLASH_');
   
   if (formMode === 'create') {
     if (type === 'NOK') data = pendingFamilyData.nok.find(n => n._tempId === id);
@@ -1281,13 +1283,13 @@ window.viewFamilyRecord = async function(type, id) {
     try {
       let result;
       if (type === 'NOK') {
-        result = await apiRequest(`${API_BASE}/employees/${currentEmployeeId}`);
+        result = await apiRequest(`${API_BASE}/employees/${safeId}`);
         data = result.data.nextOfKin.find(n => n.nok_id == id);
       } else if (type === 'Spouse') {
-        result = await apiRequest(`${API_BASE}/employees/${currentEmployeeId}`);
+        result = await apiRequest(`${API_BASE}/employees/${safeId}`);
         data = result.data.spouse.find(s => s.spouse_id == id);
       } else if (type === 'Child') {
-        result = await apiRequest(`${API_BASE}/employees/${currentEmployeeId}`);
+        result = await apiRequest(`${API_BASE}/employees/${safeId}`);
         data = result.data.children.find(c => c.child_id == id);
       }
     } catch (error) {
@@ -1430,6 +1432,7 @@ const editStates = {
 // Edit functionality - FIXED WITH SEPARATE EDIT STATES
 window.editRow = async function(type, id) {
   let data;
+  const safeId = currentEmployeeId.replace(/\//g, '_SLASH_');
   
   if (formMode === 'create') {
     if (type === 'NOK') data = pendingFamilyData.nok.find(n => n._tempId === id);
@@ -1439,13 +1442,13 @@ window.editRow = async function(type, id) {
     try {
       let result;
       if (type === 'NOK') {
-        result = await apiRequest(`${API_BASE}/employees/${currentEmployeeId}`);
+        result = await apiRequest(`${API_BASE}/employees/${safeId}`);
         data = result.data.nextOfKin.find(n => n.nok_id == id);
       } else if (type === 'Spouse') {
-        result = await apiRequest(`${API_BASE}/employees/${currentEmployeeId}`);
+        result = await apiRequest(`${API_BASE}/employees/${safeId}`);
         data = result.data.spouse.find(s => s.spouse_id == id);
       } else if (type === 'Child') {
-        result = await apiRequest(`${API_BASE}/employees/${currentEmployeeId}`);
+        result = await apiRequest(`${API_BASE}/employees/${safeId}`);
         data = result.data.children.find(c => c.child_id == id);
       }
     } catch (error) {
@@ -1633,7 +1636,8 @@ nokSaveBtn?.addEventListener('click', async () => {
       showPopup("NOK updated successfully");
     } else {
       if (formMode === 'edit' && currentEmployeeId) {
-        const result = await apiRequest(`${API_BASE}/employees/${currentEmployeeId}/nextofkin`, {
+        const safeId = currentEmployeeId.replace(/\//g, '_SLASH_');
+        const result = await apiRequest(`${API_BASE}/employees/${safeId}/nextofkin`, {
           method: 'POST',
           body: JSON.stringify(nokData)
         });
@@ -1759,7 +1763,8 @@ spouseSaveBtn?.addEventListener('click', async () => {
       showPopup("Spouse updated successfully");
     } else {
       if (formMode === 'edit' && currentEmployeeId) {
-        const result = await apiRequest(`${API_BASE}/employees/${currentEmployeeId}/spouse`, {
+        const safeId = currentEmployeeId.replace(/\//g, '_SLASH_');
+        const result = await apiRequest(`${API_BASE}/employees/${safeId}/spouse`, {
           method: 'POST',
           body: JSON.stringify(spouseData)
         });
@@ -1890,7 +1895,8 @@ childSaveBtn?.addEventListener('click', async () => {
       showPopup("Child updated successfully");
     } else {
       if (formMode === 'edit' && currentEmployeeId) {
-        const result = await apiRequest(`${API_BASE}/employees/${currentEmployeeId}/children`, {
+        const safeId = currentEmployeeId.replace(/\//g, '_SLASH_');
+        const result = await apiRequest(`${API_BASE}/employees/${safeId}/children`, {
           method: 'POST',
           body: JSON.stringify(childData)
         });
@@ -1970,8 +1976,10 @@ function setEditMode(employeeId, employeeData) {
 async function loadEmployeeDataForEdit(employeeId) {
   //console.log('>>> loadEmployeeDataForEdit START for:', employeeId);
   try {
+    const safeId = employeeId.replace(/\//g, '_SLASH_');
+
     //console.log('>>> Making API request...');
-    const result = await apiRequest(`${API_BASE}/employees/${employeeId}`);
+    const result = await apiRequest(`${API_BASE}/employees/${safeId}`);
     //console.log('>>> API response received:', result);
     
     const { employee, children, nextOfKin, spouse } = result.data;
@@ -2435,7 +2443,9 @@ async function submitPersonnelForm() {
     if (formMode === 'edit' && currentEmployeeId) {
       console.log('Updating employee:', currentEmployeeId);
 
-      await apiRequest(`${API_BASE}/employees/${currentEmployeeId}`, {
+      const safeId = currentEmployeeId.replace(/\//g, '_SLASH_');
+
+      await apiRequest(`${API_BASE}/employees/${safeId}`, {
         method: 'PUT',
         body: JSON.stringify(personnelData)
       });
@@ -2551,7 +2561,7 @@ function capitalizeWords(str) {
     : "";
 }
 
-["field-residential-address", "field-surname", "field-othername", "field-town","nokFirst", "nokLast", "nokAddress", "nokWork", "spouseName", "spouseStreet", "spouseTown", "childName", "childStreet", "childTown", "childOffice", "childOccupation"].forEach(fieldId => {
+["field-residential-address", "field-surname", "field-othername", "field-town","nokFirst", "nokLast", "nokAddress", "nokWork", "spouseName", "spouseStreet", "spouseTown", "childName", "childStreet", "childTown", "childOffice", "childschool", "childOccupation"].forEach(fieldId => {
   const el = document.getElementById(fieldId);
   el.addEventListener("input", () => {
     el.value = capitalizeWords(el.value);

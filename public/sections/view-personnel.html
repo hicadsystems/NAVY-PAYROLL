@@ -79,17 +79,48 @@ class ViewPersonnelManager {
     await this.switchTab('personnel');
   }
 
-  // Format date from ddmmyyyy to yyyy-mm-dd (for displaying in date inputs)
-  formatDateForDisplay(ddmmyyyyDate) {
-    if (!ddmmyyyyDate || ddmmyyyyDate.length !== 8) {
+  // Format date from ddmmyyyy, yyyymmdd, or d/m/yyyy to yyyy-mm-dd (for displaying in date inputs)
+  formatDateForDisplay(dateInput) {
+    if (!dateInput) {
       return '';
     }
     
-    const day = ddmmyyyyDate.substring(0, 2);
-    const month = ddmmyyyyDate.substring(2, 4);
-    const year = ddmmyyyyDate.substring(4, 8);
+    // Remove any whitespace
+    const trimmedDate = dateInput.toString().trim();
     
-    return `${year}-${month}-${day}`;
+    // Check if format is d/m/yyyy or dd/mm/yyyy
+    if (trimmedDate.includes('/')) {
+      const parts = trimmedDate.split('/');
+      if (parts.length !== 3) {
+        return '';
+      }
+      
+      const day = parts[0].padStart(2, '0');
+      const month = parts[1].padStart(2, '0');
+      const year = parts[2];
+      
+      return `${year}-${month}-${day}`;
+    }
+    
+    // Check if format is yyyymmdd (8 digits starting with 19xx or 20xx)
+    if (trimmedDate.length === 8 && /^(19|20)\d{6}$/.test(trimmedDate)) {
+      const year = trimmedDate.substring(0, 4);
+      const month = trimmedDate.substring(4, 6);
+      const day = trimmedDate.substring(6, 8);
+      
+      return `${year}-${month}-${day}`;
+    }
+    
+    // Check if format is ddmmyyyy (8 digits NOT starting with 19xx or 20xx)
+    if (trimmedDate.length === 8 && /^\d{8}$/.test(trimmedDate)) {
+      const day = trimmedDate.substring(0, 2);
+      const month = trimmedDate.substring(2, 4);
+      const year = trimmedDate.substring(4, 8);
+      
+      return `${year}-${month}-${day}`;
+    }
+    
+    return '';
   }
 
   // Format date from ddmmyyyy to readable format (e.g., "15 Mar 2024")

@@ -110,41 +110,6 @@ class PersonnelManager {
 
   init() {
     this.setupEventListeners();
-    this.loadAllDropdowns();
-  }
-
-  async loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/reference/${endpoint}`, {   
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` 
-        }
-      });
-      const data = await response.json();
-      const dropdown = document.getElementById(elementId);
-      if (!dropdown) return;
-      dropdown.innerHTML = `<option value="">${placeholder}</option>`;
-      data.forEach(item => {
-        const option = document.createElement("option");
-        option.value = item[valueField];
-        option.textContent = item[textField];
-        dropdown.appendChild(option);
-      });
-      return data;
-    } catch (err) {
-      console.error(`Failed to load ${endpoint}:`, err);
-      return [];
-    }
-  }
-
-  async loadAllDropdowns() {
-    const promises = [
-      this.loadDropdown("title", "rank-filter", "Titlecode", "Description", "All Ranks"),
-    ];
-    await Promise.all(promises);
   }
 
   async apiRequest(url, options = {}) {
@@ -168,10 +133,13 @@ class PersonnelManager {
     }
   }
 
-  async loadPersonnelData(type = 'current') {
+  async loadPersonnelData(type = 'current', page = 1) {
     try {
-      const result = await this.apiRequest(`${API_BASE}/employees-current`);
+      const result = await this.apiRequest(`${API_BASE}/employees-current-pages?page=${page}&limit=10`);
       const allPersonnel = result.data || [];
+
+      // Store pagination info from backend
+      this.paginationInfo = result.pagination || {};
 
       // Normalize statuses based on exit fields
       const normalized = allPersonnel.map(p => {
@@ -193,6 +161,7 @@ class PersonnelManager {
 
       this.filteredPersonnel = [...this.personnel];
       this.personnelType = type;
+      this.currentPage = page;
       this.renderTable();
 
       console.log(`Loaded ${this.personnel.length} ${type} personnel records`);
@@ -205,7 +174,7 @@ class PersonnelManager {
       this.renderTable();
     }
   }
-
+    
   setupEventListeners() {
     const searchInput = document.getElementById('personnel-search');
     const rankFilter = document.getElementById('rank-filter');
@@ -219,17 +188,14 @@ class PersonnelManager {
     const nextPageBtn = document.getElementById('next-page');
 
     prevPageBtn?.addEventListener('click', () => {
-      if (this.currentPage > 1) {
-        this.currentPage--;
-        this.renderTable();
+      if (this.paginationInfo.hasPreviousPage) {
+        this.loadPersonnelData(this.personnelType, this.currentPage - 1);
       }
     });
 
     nextPageBtn?.addEventListener('click', () => {
-      const totalPages = Math.ceil(this.filteredPersonnel.length / this.recordsPerPage);
-      if (this.currentPage < totalPages) {
-        this.currentPage++;
-        this.renderTable();
+      if (this.paginationInfo.hasNextPage) {
+        this.loadPersonnelData(this.personnelType, this.currentPage + 1);
       }
     });
   }
@@ -241,26 +207,25 @@ class PersonnelManager {
 
     this.filteredPersonnel = this.personnel.filter(person => {
       const matchesSearch = person.Surname?.toLowerCase().includes(search) || 
-                           person.OtherName?.toLowerCase().includes(search) ||
-                           person.Empl_ID?.toLowerCase().includes(search) ||
-                           person.Title?.toLowerCase().includes(search);
+                          person.OtherName?.toLowerCase().includes(search) ||
+                          person.Empl_ID?.toLowerCase().includes(search) ||
+                          person.Title?.toLowerCase().includes(search);
       const matchesRank = !rank || person.Title === rank;
       const matchesStatus = !status || person.Status === status;
 
       return matchesSearch && matchesRank && matchesStatus;
     });
 
-    this.currentPage = 1;
+    // Reset to page 1 when filtering
     this.renderTable();
   }
-
+    
   renderTable() {
     const tbody = document.getElementById('personnel-table-body');
     if (!tbody) return;
 
-    const startIndex = (this.currentPage - 1) * this.recordsPerPage;
-    const endIndex = startIndex + this.recordsPerPage;
-    const pageData = this.filteredPersonnel.slice(startIndex, endIndex);
+    // Remove client-side pagination - show all filtered results
+    const pageData = this.filteredPersonnel;
 
     if (pageData.length === 0) {
       tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">No personnel found</td></tr>';
@@ -291,7 +256,7 @@ class PersonnelManager {
 
     this.updatePaginationInfo();
   }
-
+  
   getStatusClass(status) {
     const s = status?.toUpperCase();
     if (s === 'ACTIVE' || s === '1') return 'bg-green-100 text-green-800';
@@ -300,9 +265,12 @@ class PersonnelManager {
   }
 
   updatePaginationInfo() {
-    const total = this.filteredPersonnel.length;
-    const start = total > 0 ? (this.currentPage - 1) * this.recordsPerPage + 1 : 0;
-    const end = Math.min(start + this.recordsPerPage - 1, total);
+    const paginationInfo = this.paginationInfo || {};
+    
+    // Use backend pagination info
+    const start = this.personnel.length > 0 ? ((paginationInfo.currentPage || 1) - 1) * (paginationInfo.limit || 10) + 1 : 0;
+    const end = start + this.personnel.length - 1;
+    const total = paginationInfo.totalRecords || this.personnel.length;
 
     const showingStart = document.getElementById('showing-start');
     const showingEnd = document.getElementById('showing-end');
@@ -314,16 +282,15 @@ class PersonnelManager {
 
     const prevBtn = document.getElementById('prev-page');
     const nextBtn = document.getElementById('next-page');
-    const totalPages = Math.ceil(total / this.recordsPerPage);
 
     if (prevBtn) {
-      prevBtn.disabled = this.currentPage <= 1;
-      prevBtn.classList.toggle('opacity-50', this.currentPage <= 1);
+      prevBtn.disabled = !paginationInfo.hasPreviousPage;
+      prevBtn.classList.toggle('opacity-50', !paginationInfo.hasPreviousPage);
     }
 
     if (nextBtn) {
-      nextBtn.disabled = this.currentPage >= totalPages;
-      nextBtn.classList.toggle('opacity-50', this.currentPage >= totalPages);
+      nextBtn.disabled = !paginationInfo.hasNextPage;
+      nextBtn.classList.toggle('opacity-50', !paginationInfo.hasNextPage);
     }
   }
 
@@ -358,9 +325,18 @@ class PersonnelManager {
   async viewEmployee(id) {
     this.currentViewId = id;
 
-    // Store for fallback
+    // Store current page and filter state before navigation
+    console.log('🔵 Saving state - Page:', this.currentPage, 'Type:', this.personnelType);
     sessionStorage.setItem('pendingEmployeeView', id);
+    sessionStorage.setItem('currentPersonnelPage', this.currentPage);
+    sessionStorage.setItem('currentPersonnelType', this.personnelType);
     localStorage.setItem('navigatedFromCurrentPersonnel', 'true');
+
+    console.log('🔵 Stored values:', {
+      page: sessionStorage.getItem('currentPersonnelPage'),
+      type: sessionStorage.getItem('currentPersonnelType'),
+      flag: localStorage.getItem('navigatedFromCurrentPersonnel')
+    });
 
     try {
       // Navigate to view-personnel section
@@ -398,7 +374,9 @@ class PersonnelManager {
 
   async editEmployee(id) {
     try {
-      // Set flag to indicate navigation source
+      // Store current page and filter state before navigation
+      sessionStorage.setItem('currentPersonnelPage', this.currentPage);
+      sessionStorage.setItem('currentPersonnelType', this.personnelType);
       localStorage.setItem('navigatedFromCurrentPersonnel', 'true');
       localStorage.setItem('editingEmployeeId', id);
       localStorage.setItem('isEditMode', 'true');
@@ -420,6 +398,25 @@ class PersonnelManager {
     }
   }
 
+  // Add this method to restore page state when returning to current-personnel
+  async restorePageState() {
+    const savedPage = sessionStorage.getItem('currentPersonnelPage');
+    const savedType = sessionStorage.getItem('currentPersonnelType');
+    
+    if (savedPage) {
+      const page = parseInt(savedPage);
+      const type = savedType || 'current';
+      
+      console.log(`Restoring to page ${page} with type ${type}`);
+      
+      await this.loadPersonnelData(type, page);
+      
+      // Clear the saved state after restoring
+      sessionStorage.removeItem('currentPersonnelPage');
+      sessionStorage.removeItem('currentPersonnelType');
+    }
+  }
+    
   deleteEmployee(id) {
     this.deleteId = id;
     const modal = document.getElementById("deleteEmployeeModal");
@@ -482,23 +479,45 @@ let personnelManager;
 
 async function initializePersonnelManager(sectionType = null) {
   try {
+    console.log('🟢 initializePersonnelManager called');
+    
     // Ensure global instance exists
     if (!window.personnelManager || !(window.personnelManager instanceof PersonnelManager)) {
       personnelManager = new PersonnelManager();
       window.personnelManager = personnelManager;
     } else {
-      // Reinitialize existing one
-      if (typeof window.personnelManager.reinitialize === 'function') {
-        window.personnelManager.reinitialize();
-      }
       personnelManager = window.personnelManager;
     }
 
-    // Determine section type with multiple fallback methods
-    let type = sectionType; // Use explicit parameter first
+    // Check if we're returning from navigation (Check sessionStorage now)
+    const isReturning = sessionStorage.getItem('navigatedFromCurrentPersonnel');
+    const savedPage = sessionStorage.getItem('currentPersonnelPage');
+    const savedType = sessionStorage.getItem('currentPersonnelType');
+    
+    console.log('🟢 Restoration check:', { isReturning, savedPage, savedType });
+    
+    if (isReturning === 'true' && savedPage && savedType) {
+      console.log(`🟢 Restoring to page ${savedPage} with type ${savedType}`);
+      
+      // Clear the flags first
+      sessionStorage.removeItem('navigatedFromCurrentPersonnel');
+      sessionStorage.removeItem('currentPersonnelPage');
+      sessionStorage.removeItem('currentPersonnelType');
+      
+      // Restore the saved page
+      await personnelManager.loadPersonnelData(savedType, parseInt(savedPage));
+      personnelManager.setupEventListeners();
+      
+      console.log('✅ State restored successfully');
+      return;
+    }
+
+    // Normal initialization flow
+    console.log('🟢 Normal initialization flow');
+    
+    let type = sectionType;
     
     if (!type) {
-      // Method 1: Check for section-specific data attributes
       const currentSection = document.querySelector('[data-personnel-type]');
       if (currentSection) {
         type = currentSection.getAttribute('data-personnel-type');
@@ -506,7 +525,6 @@ async function initializePersonnelManager(sectionType = null) {
     }
     
     if (!type) {
-      // Method 2: Check visible section containers
       const oldSection = document.querySelector('#old-personnel-section, .old-personnel-section, [data-section="old-personnel"]');
       const currentPersonnelSection = document.querySelector('#current-personnel-section, .current-personnel-section, [data-section="current-personnel"]');
       
@@ -518,7 +536,6 @@ async function initializePersonnelManager(sectionType = null) {
     }
     
     if (!type) {
-      // Method 3: Check page title or hash
       const pageTitle = document.title.toLowerCase();
       const hash = window.location.hash.toLowerCase();
       
@@ -529,13 +546,14 @@ async function initializePersonnelManager(sectionType = null) {
       }
     }
     
-    // Default to 'current' if still undefined
     if (!type) {
       type = 'current';
       console.warn('Could not detect personnel section type, defaulting to "current"');
     }
 
-    await personnelManager.loadPersonnelData(type);
+    console.log('🟢 Loading type:', type, 'page: 1');
+    await personnelManager.loadPersonnelData(type, 1);
+    personnelManager.setupEventListeners();
 
     console.log(`Personnel Manager initialized for: ${type.toUpperCase()} personnel (${personnelManager.personnel.length} records)`);
   } catch (error) {

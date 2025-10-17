@@ -10,6 +10,7 @@ const companyProfileRoutes = require('./administration/companyProfile');
 const monthendProcessingRoutes = require('./administration/monthendProcessing');
 const oneoffrankRoutes = require('./administration/irregular-oneoff/oneoffrank');
 const reportRequirementSetupRoutes = require('./administration/irregular-oneoff/reportRequirementSetup');
+const individualPaymentRoutes = require('./administration/irregular-oneoff/individualPayment');
 
 
 
@@ -116,6 +117,7 @@ module.exports = (app) => {
     app.use('/monthend', monthendProcessingRoutes);
     app.use('/oneoffrank', oneoffrankRoutes);
     app.use('/off', reportRequirementSetupRoutes);
+    app.use('/individual', individualPaymentRoutes);
 
 
     //personnel profile

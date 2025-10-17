@@ -290,7 +290,6 @@
           amt: parseFloat(data.amt),
           payind: data.payind,
           nomth: parseInt(data.nomth) || 0,
-          createdby: 'CURRENT_USER' // Replace with actual logged-in user
         })
       });
 
@@ -496,7 +495,7 @@
     };
 
     if (!data.emplId || !data.type || !data.amtp || !data.payind) {
-      alert("Please fill required fields: Employee ID, Type, Amount Payable, and Pay Indicator");
+      showError("Please fill required fields: Employee ID, Type, Amount Payable, and Pay Indicator");
       return;
     }
 

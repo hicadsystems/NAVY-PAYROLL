@@ -5,7 +5,7 @@ const mysql = require('mysql2/promise');
 const mssqlConfig = {
   user: 'sa',
   password: 'H1cadServer',
-  server: 'DESKTOP-NIL5C6H\\SQL2022',
+  server: 'HICAD-THREEONE\\SQL2022',
   port: 1433,
   database: 'HicadData',
   options: {
@@ -23,7 +23,7 @@ const mysqlConfig = {
 };
 
 const tablesToMigrate = [
-  "dbo.py_totalemolument",
+  /*"dbo.py_totalemolument",
   "dbo.hr_employees",
   "dbo.py_temprecon",
   "dbo.py_masterpayded",
@@ -139,7 +139,8 @@ const tablesToMigrate = [
   "dbo.py_Title",
   "dbo.py_webpayslip",
   "dbo.py_wkemployees_bad",
-  "dbo.py_workpayslip"
+  "dbo.py_workpayslip"*/
+  "dbo.py_tblstates"
 ];
 
 // Helper: Check if two strings match with at least 5 consecutive letters
@@ -199,8 +200,25 @@ function mapDataType(mssqlType, length, precision, scale) {
   return mysqlType;
 }
 
+// Parse table name to extract schema and table
+function parseTableName(fullTableName) {
+  const parts = fullTableName.split('.');
+  if (parts.length === 2) {
+    return {
+      schema: parts[0],
+      table: parts[1]
+    };
+  }
+  return {
+    schema: 'dbo', // default schema
+    table: fullTableName
+  };
+}
+
 // Get column definitions from MSSQL
 async function getMSSQLColumns(mssqlPool, tableName) {
+  const { schema, table } = parseTableName(tableName);
+  
   const query = `
     SELECT 
       COLUMN_NAME,
@@ -211,12 +229,14 @@ async function getMSSQLColumns(mssqlPool, tableName) {
       IS_NULLABLE,
       COLUMN_DEFAULT
     FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_NAME = @tableName
+    WHERE TABLE_SCHEMA = @schema
+    AND TABLE_NAME = @tableName
     ORDER BY ORDINAL_POSITION
   `;
   
   const result = await mssqlPool.request()
-    .input('tableName', sql.VarChar, tableName)
+    .input('schema', sql.VarChar, schema)
+    .input('tableName', sql.VarChar, table)
     .query(query);
   
   return result.recordset;
@@ -225,7 +245,7 @@ async function getMSSQLColumns(mssqlPool, tableName) {
 // Get existing MySQL columns
 async function getMySQLColumns(mysqlConn, tableName) {
   try {
-    const [rows] = await mysqlConn.query(`SHOW COLUMNS FROM ${tableName}`);
+    const [rows] = await mysqlConn.query(`SHOW COLUMNS FROM \`${tableName}\``);
     return rows.map(row => row.Field);
   } catch (err) {
     return []; // Table doesn't exist
@@ -243,7 +263,7 @@ async function tableExists(mysqlConn, tableName) {
 }
 
 // Create MySQL table from MSSQL schema
-async function createMySQLTable(mysqlConn, tableName, mssqlColumns) {
+async function createMySQLTable(mysqlConn, mysqlTableName, mssqlColumns) {
   const columnDefs = mssqlColumns.map(col => {
     const mysqlType = mapDataType(
       col.DATA_TYPE,
@@ -267,17 +287,17 @@ async function createMySQLTable(mysqlConn, tableName, mssqlColumns) {
   });
 
   const createTableSQL = `
-    CREATE TABLE IF NOT EXISTS \`${tableName}\` (
+    CREATE TABLE IF NOT EXISTS \`${mysqlTableName}\` (
       ${columnDefs.join(',\n      ')}
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `;
 
   await mysqlConn.query(createTableSQL);
-  console.log(`📋 Created table: ${tableName}`);
+  console.log(`📋 Created table: ${mysqlTableName}`);
 }
 
 // Add missing columns to existing table
-async function addMissingColumns(mysqlConn, tableName, mssqlColumns, existingColumns) {
+async function addMissingColumns(mysqlConn, mysqlTableName, mssqlColumns, existingColumns) {
   for (const col of mssqlColumns) {
     const columnName = col.COLUMN_NAME;
     
@@ -301,7 +321,7 @@ async function addMissingColumns(mysqlConn, tableName, mssqlColumns, existingCol
       
       const nullable = col.IS_NULLABLE === 'YES' ? 'NULL' : 'NOT NULL';
       
-      const alterSQL = `ALTER TABLE \`${tableName}\` ADD COLUMN \`${columnName}\` ${mysqlType} ${nullable}`;
+      const alterSQL = `ALTER TABLE \`${mysqlTableName}\` ADD COLUMN \`${columnName}\` ${mysqlType} ${nullable}`;
       
       try {
         await mysqlConn.query(alterSQL);
@@ -358,7 +378,7 @@ async function hasUniqueConstraint(mysqlConn, tableName, columnName) {
 }
 
 // Find primary key or unique identifier column
-async function findIdentifierColumn(mysqlConn, tableName, mssqlColNames) {
+async function findIdentifierColumn(mysqlConn, mysqlTableName, mssqlColNames) {
   // First check for primary key
   const [pkRows] = await mysqlConn.query(`
     SELECT COLUMN_NAME 
@@ -367,7 +387,7 @@ async function findIdentifierColumn(mysqlConn, tableName, mssqlColNames) {
     AND TABLE_NAME = ? 
     AND COLUMN_KEY = 'PRI'
     ORDER BY ORDINAL_POSITION
-  `, [mysqlConfig.database, tableName]);
+  `, [mysqlConfig.database, mysqlTableName]);
   
   if (pkRows.length > 0) {
     return pkRows[0].COLUMN_NAME;
@@ -381,7 +401,7 @@ async function findIdentifierColumn(mysqlConn, tableName, mssqlColNames) {
     AND TABLE_NAME = ? 
     AND COLUMN_KEY = 'UNI'
     ORDER BY ORDINAL_POSITION
-  `, [mysqlConfig.database, tableName]);
+  `, [mysqlConfig.database, mysqlTableName]);
   
   for (const row of uniqueRows) {
     if (mssqlColNames.includes(row.COLUMN_NAME)) {
@@ -390,7 +410,7 @@ async function findIdentifierColumn(mysqlConn, tableName, mssqlColNames) {
   }
   
   // Fallback: look for common ID column names in MSSQL data
-  const commonIdNames = ['id', 'ID', 'Id', tableName + 'ID', tableName + 'Id', tableName.toLowerCase() + '_id'];
+  const commonIdNames = ['id', 'ID', 'Id', mysqlTableName + 'ID', mysqlTableName + 'Id', mysqlTableName.toLowerCase() + '_id'];
   for (const idName of commonIdNames) {
     if (mssqlColNames.includes(idName)) {
       return idName;
@@ -401,53 +421,58 @@ async function findIdentifierColumn(mysqlConn, tableName, mssqlColNames) {
 }
 
 // Main migration function
-async function migrateTable(tableName) {
+async function migrateTable(fullTableName) {
   let mssqlPool, mysqlConn;
   
   try {
-    console.log(`\n🔄 Processing table: ${tableName}`);
+    const { schema, table } = parseTableName(fullTableName);
+    const mysqlTableName = table; // Use only table name for MySQL
+    
+    console.log(`\n🔄 Processing table: ${fullTableName}`);
     
     mssqlPool = await sql.connect(mssqlConfig);
     mysqlConn = await mysql.createConnection(mysqlConfig);
 
     // Get MSSQL schema
-    const mssqlColumns = await getMSSQLColumns(mssqlPool, tableName);
+    const mssqlColumns = await getMSSQLColumns(mssqlPool, fullTableName);
     
     if (mssqlColumns.length === 0) {
-      console.log(`  ⚠️  Table ${tableName} not found in MSSQL`);
+      console.log(`  ⚠️  Table ${fullTableName} not found in MSSQL`);
+      console.log(`  💡 Tip: Check if table exists in schema '${schema}'`);
       return;
     }
 
     // Check if MySQL table exists
-    const exists = await tableExists(mysqlConn, tableName);
+    const exists = await tableExists(mysqlConn, mysqlTableName);
     
     if (!exists) {
       // Create table
-      await createMySQLTable(mysqlConn, tableName, mssqlColumns);
+      await createMySQLTable(mysqlConn, mysqlTableName, mssqlColumns);
     } else {
       // Add missing columns
-      const existingColumns = await getMySQLColumns(mysqlConn, tableName);
-      await addMissingColumns(mysqlConn, tableName, mssqlColumns, existingColumns);
+      const existingColumns = await getMySQLColumns(mysqlConn, mysqlTableName);
+      await addMissingColumns(mysqlConn, mysqlTableName, mssqlColumns, existingColumns);
     }
 
-    // Get data from MSSQL
-    const result = await mssqlPool.request().query(`SELECT * FROM ${tableName}`);
+    // Get data from MSSQL (use full table name with schema)
+    const selectQuery = schema ? `SELECT * FROM [${schema}].[${table}]` : `SELECT * FROM [${table}]`;
+    const result = await mssqlPool.request().query(selectQuery);
     const rows = result.recordset;
 
     if (rows.length === 0) {
-      console.log(`  ℹ️  No data to migrate in ${tableName}`);
+      console.log(`  ℹ️  No data to migrate in ${fullTableName}`);
       return;
     }
 
     // Get current MySQL columns for mapping
-    const currentMySQLColumns = await getMySQLColumns(mysqlConn, tableName);
+    const currentMySQLColumns = await getMySQLColumns(mysqlConn, mysqlTableName);
     
     // Map MSSQL columns to MySQL columns
     const mssqlColNames = mssqlColumns.map(c => c.COLUMN_NAME);
     const columnMapping = mapColumnNames(mssqlColNames, currentMySQLColumns);
 
     // Find identifier column for UPDATE operations
-    const identifierCol = await findIdentifierColumn(mysqlConn, tableName, mssqlColNames);
+    const identifierCol = await findIdentifierColumn(mysqlConn, mysqlTableName, mssqlColNames);
     
     // Determine which columns to insert (only those from MSSQL)
     const columnsToInsert = mssqlColNames.map(col => columnMapping[col]);
@@ -485,7 +510,7 @@ async function migrateTable(tableName) {
             if (idValue !== null && idValue !== undefined) {
               // Check if record exists
               const [existing] = await mysqlConn.query(
-                `SELECT COUNT(*) as count FROM \`${tableName}\` WHERE \`${columnMapping[identifierCol]}\` = ?`,
+                `SELECT COUNT(*) as count FROM \`${mysqlTableName}\` WHERE \`${columnMapping[identifierCol]}\` = ?`,
                 [idValue]
               );
               
@@ -502,7 +527,7 @@ async function migrateTable(tableName) {
                 
                 updateValues.push(idValue);
                 
-                const updateQuery = `UPDATE \`${tableName}\` SET ${updatePairs} WHERE \`${columnMapping[identifierCol]}\` = ?`;
+                const updateQuery = `UPDATE \`${mysqlTableName}\` SET ${updatePairs} WHERE \`${columnMapping[identifierCol]}\` = ?`;
                 await mysqlConn.execute(updateQuery, updateValues);
                 updatedCount++;
                 continue; // ← PREVENTS DUPLICATE INSERT
@@ -513,14 +538,14 @@ async function migrateTable(tableName) {
           // INSERT new record (only if it doesn't exist)
           try {
             const placeholders = columnsToInsert.map(() => '?').join(',');
-            const insertQuery = `INSERT INTO \`${tableName}\` (${columnsToInsert.map(c => `\`${c}\``).join(',')}) VALUES (${placeholders})`;
+            const insertQuery = `INSERT INTO \`${mysqlTableName}\` (${columnsToInsert.map(c => `\`${c}\``).join(',')}) VALUES (${placeholders})`;
             await mysqlConn.execute(insertQuery, values);
             insertedCount++;
           } catch (insertErr) {
             // Handle duplicate key errors gracefully
             if (insertErr.code === 'ER_DUP_ENTRY') {
               skippedCount++;
-              console.log(`  ⏭️  Skipped duplicate record in ${tableName}`);
+              console.log(`  ⏭️  Skipped duplicate record in ${mysqlTableName}`);
             } else {
               throw insertErr;
             }
@@ -532,14 +557,14 @@ async function migrateTable(tableName) {
       }
     }
 
-    if (updatedCount > 0) {
-      console.log(`  ✅ Inserted ${insertedCount} | Updated ${updatedCount} | Total: ${insertedCount + updatedCount}/${rows.length} rows`);
+    if (updatedCount > 0 || skippedCount > 0) {
+      console.log(`  ✅ Inserted ${insertedCount} | Updated ${updatedCount} | Skipped ${skippedCount} | Total: ${insertedCount + updatedCount}/${rows.length} rows`);
     } else {
-      console.log(`  ✅ Migrated ${insertedCount}/${rows.length} rows to ${tableName}`);
+      console.log(`  ✅ Migrated ${insertedCount}/${rows.length} rows to ${mysqlTableName}`);
     }
     
   } catch (err) {
-    console.error(`  ❌ Error migrating ${tableName}:`, err.message);
+    console.error(`  ❌ Error migrating ${fullTableName}:`, err.message);
   } finally {
     if (mssqlPool) await mssqlPool.close();
     if (mysqlConn) await mysqlConn.end();

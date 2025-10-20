@@ -87,28 +87,28 @@ router.get('/payroll-class-stats', verifyToken, async (req, res) => {
 // ==================== UPDATE EMPLOYEE PAYROLL CLASS ====================
 // Database mapping configuration (BACKEND ONLY)
 const DATABASE_MAP = {
-  [process.env.DB_OFFICERS || 'hicaddata']: { name: 'OFFICERS', code: '0' },
-  [process.env.DB_WOFFICERS || 'hicaddata1']: { name: 'W/OFFICERS', code: '1' },
-  [process.env.DB_RATINGS || 'hicaddata2']: { name: 'RATINGS', code: '2' },
-  [process.env.DB_RATINGS_A || 'hicaddata3']: { name: 'RATINGS A', code: '3' },
-  [process.env.DB_RATINGS_B || 'hicaddata4']: { name: 'RATINGS B', code: '4' },
-  [process.env.DB_JUNIOR_TRAINEE || 'hicaddata5']: { name: 'JUNIOR/TRAINEE', code: '5' }
+  [process.env.DB_OFFICERS || 'hicaddata']: { name: 'OFFICERS', code: '1' },
+  [process.env.DB_WOFFICERS || 'hicaddata1']: { name: 'W/OFFICERS', code: '2' },
+  [process.env.DB_RATINGS || 'hicaddata2']: { name: 'RATINGS', code: '3' },
+  [process.env.DB_RATINGS_A || 'hicaddata3']: { name: 'RATINGS A', code: '4' },
+  [process.env.DB_RATINGS_B || 'hicaddata4']: { name: 'RATINGS B', code: '5' },
+  [process.env.DB_JUNIOR_TRAINEE || 'hicaddata5']: { name: 'JUNIOR/TRAINEE', code: '6' }
 };
 
 // Payroll Class Code to Database Name Mapping
 const PAYROLL_CLASS_TO_DB_MAP = {
   // Numeric codes from table
-  '0': process.env.DB_OFFICERS || 'hicaddata',
-  '1': process.env.DB_WOFFICERS || 'hicaddata1',
-  '2': process.env.DB_RATINGS || 'hicaddata2',
-  '3': process.env.DB_RATINGS_A || 'hicaddata3',
-  '4': process.env.DB_RATINGS_B || 'hicaddata4',
-  '5': process.env.DB_JUNIOR_TRAINEE || 'hicaddata5',
+  '1': process.env.DB_OFFICERS || 'hicaddata',
+  '2': process.env.DB_WOFFICERS || 'hicaddata1',
+  '3': process.env.DB_RATINGS || 'hicaddata2',
+  '4': process.env.DB_RATINGS_A || 'hicaddata3',
+  '5': process.env.DB_RATINGS_B || 'hicaddata4',
+  '6': process.env.DB_JUNIOR_TRAINEE || 'hicaddata5',
   
   // Description names from table
   'OFFICERS': process.env.DB_OFFICERS || 'hicaddata',
   'W/OFFICERS': process.env.DB_WOFFICERS || 'hicaddata1',
-  'WOFFICERS': process.env.DB_WOFFICERS || 'hicaddata1',
+  'W.OFFICERS': process.env.DB_WOFFICERS || 'hicaddata1',
   'RATINGS': process.env.DB_RATINGS || 'hicaddata2',
   'RATINGS A': process.env.DB_RATINGS_A || 'hicaddata3',
   'RATINGA': process.env.DB_RATINGS_A || 'hicaddata3',

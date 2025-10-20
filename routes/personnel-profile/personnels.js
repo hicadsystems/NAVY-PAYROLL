@@ -128,6 +128,89 @@ router.get('/employees-current-pages', verifyToken, async (req, res) => {
   }
 });
 
+// GET current employees with SEARCH - queries whole table
+router.get('/employees-current/search', verifyToken, async (req, res) => {
+  try {
+    const currentDb = pool.getCurrentDatabase(req.user_id);
+    console.log('🔍 Search database:', currentDb);
+    console.log('🔍 User ID:', req.user_id);
+    
+    const searchTerm = req.query.q || req.query.search || '';
+    
+    console.log('🔎 Search term:', searchTerm);
+    
+    let query = `
+      SELECT * 
+      FROM hr_employees 
+      WHERE (DateLeft IS NULL OR DateLeft = '')
+        AND (exittype IS NULL OR exittype = '')
+    `;
+    
+    const params = [];
+    
+    // Add search conditions if search term provided
+    if (searchTerm) {
+      query += ` AND (
+        Empl_ID LIKE ? OR
+        Surname LIKE ? OR
+        OtherName LIKE ? OR
+        Title LIKE ? OR
+        email LIKE ? OR
+        gsm_number LIKE ? OR
+        CONCAT(Surname, ' ', OtherName) LIKE ?
+      )`;
+      
+      const searchPattern = `%${searchTerm}%`;
+      params.push(
+        searchPattern, // Empl_ID
+        searchPattern, // Surname
+        searchPattern, // OtherName
+        searchPattern, // Title
+        searchPattern, // email
+        searchPattern, // gsm_number
+        searchPattern  // Full name
+      );
+    }
+    
+    query += ' ORDER BY Empl_ID ASC';
+    
+    const [rows] = await pool.query(query, params);
+    
+    // Add counts to each employee
+    for (let employee of rows) {
+      const [children] = await pool.query(
+        'SELECT COUNT(*) as count FROM Children WHERE Empl_ID = ? AND chactive = 1',
+        [employee.Empl_ID]
+      );
+      const [nok] = await pool.query(
+        'SELECT COUNT(*) as count FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1',
+        [employee.Empl_ID]
+      );
+      const [spouse] = await pool.query(
+        'SELECT COUNT(*) as count FROM Spouse WHERE Empl_ID = ? AND spactive = 1',
+        [employee.Empl_ID]
+      );
+      
+      employee.children_count = children[0].count;
+      employee.nok_count = nok[0].count;
+      employee.spouse_count = spouse[0].count;
+    }
+    
+    console.log('🔍 Search returned:', rows.length, 'records');
+    
+    res.json({ 
+      success: true, 
+      data: rows,
+      searchTerm: searchTerm,
+      resultCount: rows.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Search error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 //Old Employees endpoint
 router.get('/employees-old', verifyToken, async (req, res) => {
   try {
@@ -170,6 +253,88 @@ router.get('/employees-old', verifyToken, async (req, res) => {
     res.json({ success: true, data: rows });
   } catch (error) {
     console.error('❌ Query error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET old employees with SEARCH - queries whole table
+router.get('/employees-old/search', verifyToken, async (req, res) => {
+  try {
+    const currentDb = pool.getCurrentDatabase(req.user_id);
+    console.log('🔍 Search database:', currentDb);
+    console.log('🔍 User ID:', req.user_id);
+    
+    const searchTerm = req.query.q || req.query.search || '';
+    
+    console.log('🔎 Search term:', searchTerm);
+    
+    let query = `
+      SELECT * 
+      FROM hr_employees 
+      WHERE (DateLeft IS NOT NULL OR exittype IS NOT NULL)
+    `;
+    
+    const params = [];
+    
+    // Add search conditions if search term provided
+    if (searchTerm) {
+      query += ` AND (
+        Empl_ID LIKE ? OR
+        Surname LIKE ? OR
+        OtherName LIKE ? OR
+        Title LIKE ? OR
+        email LIKE ? OR
+        gsm_number LIKE ? OR
+        CONCAT(Surname, ' ', OtherName) LIKE ?
+      )`;
+      
+      const searchPattern = `%${searchTerm}%`;
+      params.push(
+        searchPattern, // Empl_ID
+        searchPattern, // Surname
+        searchPattern, // OtherName
+        searchPattern, // Title
+        searchPattern, // email
+        searchPattern, // gsm_number
+        searchPattern  // Full name
+      );
+    }
+    
+    query += ' ORDER BY Empl_ID ASC';
+    
+    const [rows] = await pool.query(query, params);
+    
+    // Add counts to each employee
+    for (let employee of rows) {
+      const [children] = await pool.query(
+        'SELECT COUNT(*) as count FROM Children WHERE Empl_ID = ? AND chactive = 1',
+        [employee.Empl_ID]
+      );
+      const [nok] = await pool.query(
+        'SELECT COUNT(*) as count FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1',
+        [employee.Empl_ID]
+      );
+      const [spouse] = await pool.query(
+        'SELECT COUNT(*) as count FROM Spouse WHERE Empl_ID = ? AND spactive = 1',
+        [employee.Empl_ID]
+      );
+      
+      employee.children_count = children[0].count;
+      employee.nok_count = nok[0].count;
+      employee.spouse_count = spouse[0].count;
+    }
+    
+    console.log('🔍 Search returned:', rows.length, 'records');
+    
+    res.json({ 
+      success: true, 
+      data: rows,
+      searchTerm: searchTerm,
+      resultCount: rows.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Search error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

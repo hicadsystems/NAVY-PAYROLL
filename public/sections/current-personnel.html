@@ -41,7 +41,7 @@
     <table class="w-full border-collapse border border-gray-300">
       <thead class="bg-gray-50">
         <tr>
-          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Personnel No.</th>
+          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Service No.</th>
           <th class="border border-gray-300 px-4 py-3 text-left font-medium">Full Name</th>
           <th class="border border-gray-300 px-4 py-3 text-left font-medium">Rank</th>
           <th class="border border-gray-300 px-4 py-3 text-left font-medium">Status</th>
@@ -105,11 +105,27 @@ class PersonnelManager {
     this.filteredPersonnel = [];
     this.currentViewId = null;
     this.personnelType = 'current';
+    this.lookupMaps = {};
+    this.lookupsLoaded = false;
+    this.restoreFilterState();
     this.init();
   }
 
-  init() {
+  async  init() {
     this.setupEventListeners();
+    this.loadAllDropdowns();
+    this.setupSearchDebounce();
+    this.setupFilterListeners();
+    this.loadLookupData().then(() => {
+      this.lookupsLoaded = true;
+    });
+
+    const hasRestoredFilters = await this.restoreFilterState();
+  
+    // Only render table if no filters were restored
+    if (!hasRestoredFilters) {
+      this.renderTable();
+    }
   }
 
   async apiRequest(url, options = {}) {
@@ -133,7 +149,106 @@ class PersonnelManager {
     }
   }
 
+  async loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/reference/${endpoint}`, {   
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        }
+      });
+      const data = await response.json();
+      const dropdown = document.getElementById(elementId);
+      if (!dropdown) return;
+      dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+      data.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item[valueField];
+        option.textContent = item[textField];
+        dropdown.appendChild(option);
+      });
+      return data;
+    } catch (err) {
+      console.error(`Failed to load ${endpoint}:`, err);
+      return [];
+    }
+  }
+
+  async loadAllDropdowns() {
+    const promises = [
+      this.loadDropdown("title", "rank-filter", "Titlecode", "Description", "All Ranks"),
+    ];
+    await Promise.all(promises);
+  }
+
+  async loadLookupData() {
+    const endpoints = ['title'];
+    
+    const token = localStorage.getItem('token');
+    
+    await Promise.all(endpoints.map(async endpoint => {
+      try {
+        const res = await fetch(`/reference/${endpoint}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!res.ok) {
+          console.warn(`Failed to fetch ${endpoint}: ${res.status}`);
+          this.lookupMaps[endpoint] = {};
+          return;
+        }
+        
+        const result = await res.json();
+        
+        // Handle different response formats
+        let data = result;
+        if (result.data) {
+          data = result.data;
+        }
+        
+        // Ensure data is an array
+        if (!Array.isArray(data)) {
+          console.warn(`${endpoint} did not return an array:`, data);
+          this.lookupMaps[endpoint] = {};
+          return;
+        }
+        
+        // Build lookup map based on endpoint
+        const valueField = this.getValueField(endpoint);
+        const textField = this.getTextField(endpoint);
+        
+        this.lookupMaps[endpoint] = Object.fromEntries(
+          data.map(item => [item[valueField], item[textField]])
+        );
+      } catch (err) {
+        console.error(`Failed to load ${endpoint}:`, err);
+        this.lookupMaps[endpoint] = {};
+      }
+    }));
+  }
+
+  getValueField(endpoint) {
+    const fieldMap = {'title': 'Titlecode'};
+    return fieldMap[endpoint] || 'code';
+  }
+
+  getTextField(endpoint) {
+    const fieldMap = {'title': 'Description'};
+    return fieldMap[endpoint] || 'name';
+  }
+
+  resolveName(code, endpoint) {
+    if (!code) return 'N/A';
+    return this.lookupMaps[endpoint]?.[code] || code;
+  }
+
   async loadPersonnelData(type = 'current', page = 1) {
+    this.currentView = 'current';
     try {
       const result = await this.apiRequest(`${API_BASE}/employees-current-pages?page=${page}&limit=10`);
       const allPersonnel = result.data || [];
@@ -160,9 +275,15 @@ class PersonnelManager {
       }
 
       this.filteredPersonnel = [...this.personnel];
+      this.restoreFilterState(); // Restore any saved filter state
       this.personnelType = type;
       this.currentPage = page;
-      this.renderTable();
+      const hasRestoredFilters = await this.restoreFilterState();
+  
+      // Only render table if no filters were restored
+      if (!hasRestoredFilters) {
+        this.renderTable();
+      }
 
       console.log(`Loaded ${this.personnel.length} ${type} personnel records`);
 
@@ -171,7 +292,46 @@ class PersonnelManager {
       this.personnel = [];
       this.filteredPersonnel = [];
       this.personnelType = type;
-      this.renderTable();
+      const hasRestoredFilters = await this.restoreFilterState();
+  
+      // Only render table if no filters were restored
+      if (!hasRestoredFilters) {
+        this.renderTable();
+      }
+    }
+  }
+
+  nextPage() {
+    const isFiltering = this.isSearchActive() || this.isFilterActive();
+    
+    if (isFiltering) {
+      const limit = 10;
+      const totalPages = Math.ceil(this.filteredPersonnel.length / limit);
+      if (this.currentPage < totalPages) {
+        this.currentPage++;
+        this.renderTable();
+      }
+    } else {
+      // Backend pagination
+      if (this.paginationInfo.hasNextPage) {
+        this.loadPersonnelData(this.personnelType, this.currentPage + 1);
+      }
+    }
+  }
+
+  prevPage() {
+    const isFiltering = this.isSearchActive() || this.isFilterActive();
+    
+    if (isFiltering) {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+        this.renderTable();
+      }
+    } else {
+      // Backend pagination
+      if (this.paginationInfo.hasPreviousPage) {
+        this.loadPersonnelData(this.personnelType, this.currentPage - 1);
+      }
     }
   }
     
@@ -188,47 +348,266 @@ class PersonnelManager {
     const nextPageBtn = document.getElementById('next-page');
 
     prevPageBtn?.addEventListener('click', () => {
-      if (this.paginationInfo.hasPreviousPage) {
-        this.loadPersonnelData(this.personnelType, this.currentPage - 1);
-      }
+      this.prevPage();
     });
 
     nextPageBtn?.addEventListener('click', () => {
-      if (this.paginationInfo.hasNextPage) {
-        this.loadPersonnelData(this.personnelType, this.currentPage + 1);
-      }
+      this.nextPage();
     });
   }
 
-  filterPersonnel() {
-    const search = document.getElementById('personnel-search')?.value.toLowerCase() || '';
+
+  async filterPersonnel(forceView = null) {
+    const search = document.getElementById('personnel-search')?.value.trim() || '';
     const rank = document.getElementById('rank-filter')?.value || '';
     const status = document.getElementById('status-filter')?.value || '';
 
-    this.filteredPersonnel = this.personnel.filter(person => {
-      const matchesSearch = person.Surname?.toLowerCase().includes(search) || 
-                          person.OtherName?.toLowerCase().includes(search) ||
-                          person.Empl_ID?.toLowerCase().includes(search) ||
-                          person.Title?.toLowerCase().includes(search);
-      const matchesRank = !rank || person.Title === rank;
-      const matchesStatus = !status || person.Status === status;
+    // Save current filter state to localStorage
+    this.saveFilterState(search, rank, status);
 
-      return matchesSearch && matchesRank && matchesStatus;
-    });
+    try {
+      let apiData = [];
 
-    // Reset to page 1 when filtering
-    this.renderTable();
+      // Always use the search endpoint when search term is provided
+      if (search) {
+        let viewType = forceView || this.currentView;
+        
+        if (!viewType || (viewType !== 'current' && viewType !== 'old')) {
+          const sectionTitle = document.getElementById('section-title')?.textContent || '';
+          const urlHash = window.location.hash || '';
+          
+          console.log('Section title:', sectionTitle);
+          console.log('URL hash:', urlHash);
+          
+          if (sectionTitle.includes('Current') || urlHash.includes('current')) {
+            viewType = 'current';
+          } else if (sectionTitle.includes('Old') || urlHash.includes('old')) {
+            viewType = 'old';
+          } else {
+            viewType = 'current';
+          }
+        }
+        
+        const endpoint = viewType === 'current' 
+          ? '/personnel/employees-current/search'
+          : '/personnel/employees-old/search';
+
+        console.log('View Type:', viewType);
+        console.log('Calling search endpoint:', endpoint);
+
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${endpoint}?q=${encodeURIComponent(search)}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        console.log('Response status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Response error:', errorText);
+          throw new Error('Search failed');
+        }
+
+        const result = await response.json();
+        console.log('API Response:', result);
+        
+        apiData = result.data || [];
+        
+        console.log(`Search results: ${apiData.length} records found for term: "${search}"`);
+      } else {
+        // No search term - use current personnel data
+        apiData = [...this.personnel];
+        console.log(`Using cached data: ${apiData.length} records`);
+      }
+
+      // Apply client-side filters for rank and status
+      this.filteredPersonnel = apiData.filter(person => {
+        const matchesRank = !rank || person.Title === rank;
+        const matchesStatus = !status || person.Status === status;
+        return matchesRank && matchesStatus;
+      });
+
+      console.log(`After filters: ${this.filteredPersonnel.length} records (Rank: ${rank || 'All'}, Status: ${status || 'All'})`);
+
+      // Reset to page 1 when filtering
+      this.currentPage = 1;
+      
+      // Render the table (this will call updatePaginationInfo)
+      await this.renderTable();
+
+    } catch (error) {
+      console.error('❌ Filter error:', error);
+      const tableBody = document.getElementById('personnel-table-body');
+      if (tableBody) {
+        tableBody.innerHTML = '<tr><td colspan="10" class="text-center py-4 text-red-600">Search failed. Please try again.</td></tr>';
+      }
+      // Update pagination info even on error
+      this.updatePaginationInfo();
+    }
   }
+
+  // Clear search and filters
+  clearSearch() {
+    const searchInput = document.getElementById('personnel-search');
+    const rankFilter = document.getElementById('rank-filter');
+    const statusFilter = document.getElementById('status-filter');
     
-  renderTable() {
+    if (searchInput) searchInput.value = '';
+    if (rankFilter) rankFilter.value = '';
+    if (statusFilter) statusFilter.value = '';
+    
+    this.clearFilterState();
+    this.filterPersonnel();
+  }
+
+  // Save filter state to localStorage
+  saveFilterState(search, rank, status) {
+    const viewKey = this.currentView === 'current' ? 'current' : 'old';
+    const filterState = {
+      search: search || '',
+      rank: rank || '',
+      status: status || '',
+      timestamp: Date.now()
+    };
+    localStorage.setItem(`personnel_filter_${viewKey}`, JSON.stringify(filterState));
+    console.log(`💾 Saved filter state for ${viewKey}:`, filterState);
+  }
+
+  // Restore filter state from localStorage
+  restoreFilterState() {
+    const viewKey = this.currentView === 'current' ? 'current' : 'old';
+    const saved = localStorage.getItem(`personnel_filter_${viewKey}`);
+    
+    if (saved) {
+      try {
+        const filterState = JSON.parse(saved);
+        
+        // Only restore if saved within last 1 hour
+        const oneHour = 60 * 60 * 1000;
+        if (Date.now() - filterState.timestamp < oneHour) {
+          console.log(`📥 Restoring filter state for ${viewKey}:`, filterState);
+          
+          // Restore search input
+          const searchInput = document.getElementById('personnel-search');
+          if (searchInput && filterState.search) {
+            searchInput.value = filterState.search;
+          }
+          
+          // Restore rank filter
+          const rankFilter = document.getElementById('rank-filter');
+          if (rankFilter && filterState.rank) {
+            rankFilter.value = filterState.rank;
+          }
+          
+          // Restore status filter
+          const statusFilter = document.getElementById('status-filter');
+          if (statusFilter && filterState.status) {
+            statusFilter.value = filterState.status;
+          }
+          
+          // Trigger filter to apply restored state
+          setTimeout(() => {
+            this.filterPersonnel();
+          }, 100);
+          
+          return true;
+        } else {
+          console.log('⏰ Filter state expired, clearing...');
+          localStorage.removeItem(`personnel_filter_${viewKey}`);
+        }
+      } catch (error) {
+        console.error('Error restoring filter state:', error);
+      }
+    }
+    
+    return false;
+  }
+
+  // Clear filter state (call when explicitly clearing search)
+  clearFilterState() {
+    const viewKey = this.currentView === 'current' ? 'current' : 'old';
+    localStorage.removeItem(`personnel_filter_${viewKey}`);
+    console.log(`🗑️ Cleared filter state for ${viewKey}`);
+  }
+
+
+  //Add debounced search for better UX
+  setupSearchDebounce() {
+    let debounceTimer;
+    const searchInput = document.getElementById('personnel-search');
+    
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        
+        // If search is empty, filter immediately (no delay)
+        if (!e.target.value.trim()) {
+          this.filterPersonnel();
+          return;
+        }
+        
+        // Otherwise wait 500ms after user stops typing
+        debounceTimer = setTimeout(() => {
+          this.filterPersonnel();
+        }, 500);
+      });
+    }
+  }
+
+  // Make sure rank and status filters also trigger filterPersonnel
+  setupFilterListeners() {
+    const rankFilter = document.getElementById('rank-filter');
+    const statusFilter = document.getElementById('status-filter');
+    
+    if (rankFilter) {
+      rankFilter.addEventListener('change', () => {
+        this.filterPersonnel();
+      });
+    }
+    
+    if (statusFilter) {
+      statusFilter.addEventListener('change', () => {
+        this.filterPersonnel();
+      });
+    }
+  }  
+
+  async renderTable() {
     const tbody = document.getElementById('personnel-table-body');
     if (!tbody) return;
 
-    // Remove client-side pagination - show all filtered results
-    const pageData = this.filteredPersonnel;
+    // Check if we're filtering/searching
+    const isFiltering = this.isSearchActive() || this.isFilterActive();
+    
+    let pageData;
+    
+    if (isFiltering) {
+      // Apply client-side pagination to filtered results
+      const limit = 10;
+      const currentPage = this.currentPage || 1;
+      const startIndex = (currentPage - 1) * limit;
+      const endIndex = startIndex + limit;
+      pageData = this.filteredPersonnel.slice(startIndex, endIndex);
+    } else {
+      // Use all personnel data (already paginated by backend)
+      pageData = this.filteredPersonnel;
+    }
 
     if (pageData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">No personnel found</td></tr>';
+      // Show loading state immediately
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-400">...</td></tr>';
+      
+      // Wait a bit before showing "no results" to avoid flashing
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Check again if still no data (in case data loaded during delay)
+      if (this.filteredPersonnel.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">No personnel found</td></tr>';
+      }
       this.updatePaginationInfo();
       return;
     }
@@ -237,7 +616,7 @@ class PersonnelManager {
       <tr class="hover:bg-gray-50">
         <td class="border border-gray-300 px-4 py-2">${this.escapeHtml(person.Empl_ID || '')}</td>
         <td class="border border-gray-300 px-4 py-2 font-medium">${this.escapeHtml(person.Surname || '')} ${this.escapeHtml(person.OtherName || '')}</td>
-        <td class="border border-gray-300 px-4 py-2">${this.escapeHtml(person.Title || '')}</td>
+        <td class="border border-gray-300 px-4 py-2">${this.escapeHtml(this.resolveName(person.Title, 'title'))}</td>
         <td class="border border-gray-300 px-4 py-2">
           <span class="px-2 py-1 rounded-full text-xs ${this.getStatusClass(person.Status || 'ACTIVE')}">
             ${this.capitalizeFirst(person.Status || 'ACTIVE')}
@@ -267,10 +646,28 @@ class PersonnelManager {
   updatePaginationInfo() {
     const paginationInfo = this.paginationInfo || {};
     
-    // Use backend pagination info
-    const start = this.personnel.length > 0 ? ((paginationInfo.currentPage || 1) - 1) * (paginationInfo.limit || 10) + 1 : 0;
-    const end = start + this.personnel.length - 1;
-    const total = paginationInfo.totalRecords || this.personnel.length;
+    // Use filteredPersonnel for accurate counts during search/filter
+    const displayedData = this.filteredPersonnel || this.personnel || [];
+    const totalFiltered = displayedData.length;
+    
+    // Check if we're in search/filter mode
+    const isFiltering = this.isSearchActive() || this.isFilterActive();
+    
+    let start, end, total;
+    
+    if (isFiltering) {
+      // Calculate pagination for filtered results
+      const limit = 10;
+      const currentPage = this.currentPage || 1;
+      start = totalFiltered > 0 ? (currentPage - 1) * limit + 1 : 0;
+      end = Math.min(currentPage * limit, totalFiltered);
+      total = totalFiltered;
+    } else {
+      // Use backend pagination info
+      start = this.personnel.length > 0 ? ((paginationInfo.currentPage || 1) - 1) * (paginationInfo.limit || 10) + 1 : 0;
+      end = start + this.personnel.length - 1;
+      total = paginationInfo.totalRecords || this.personnel.length;
+    }
 
     const showingStart = document.getElementById('showing-start');
     const showingEnd = document.getElementById('showing-end');
@@ -283,17 +680,48 @@ class PersonnelManager {
     const prevBtn = document.getElementById('prev-page');
     const nextBtn = document.getElementById('next-page');
 
-    if (prevBtn) {
-      prevBtn.disabled = !paginationInfo.hasPreviousPage;
-      prevBtn.classList.toggle('opacity-50', !paginationInfo.hasPreviousPage);
-    }
+    if (isFiltering) {
+      // Enable/disable based on filtered data pagination
+      const limit = 10;
+      const currentPage = this.currentPage || 1;
+      const totalPages = Math.ceil(totalFiltered / limit);
+      
+      if (prevBtn) {
+        prevBtn.disabled = currentPage <= 1;
+        prevBtn.classList.toggle('opacity-50', prevBtn.disabled);
+      }
 
-    if (nextBtn) {
-      nextBtn.disabled = !paginationInfo.hasNextPage;
-      nextBtn.classList.toggle('opacity-50', !paginationInfo.hasNextPage);
+      if (nextBtn) {
+        nextBtn.disabled = currentPage >= totalPages;
+        nextBtn.classList.toggle('opacity-50', nextBtn.disabled);
+      }
+    } else {
+      // Use backend pagination info
+      if (prevBtn) {
+        prevBtn.disabled = !paginationInfo.hasPreviousPage;
+        prevBtn.classList.toggle('opacity-50', !paginationInfo.hasPreviousPage);
+      }
+
+      if (nextBtn) {
+        nextBtn.disabled = !paginationInfo.hasNextPage;
+        nextBtn.classList.toggle('opacity-50', !paginationInfo.hasNextPage);
+      }
     }
   }
 
+  // Helper method to check if search is active
+  isSearchActive() {
+    const searchInput = document.getElementById('personnel-search');
+    return searchInput && searchInput.value.trim().length > 0;
+  }
+
+  // Helper method to check if any filter is active
+  isFilterActive() {
+    const rankFilter = document.getElementById('rank-filter');
+    const statusFilter = document.getElementById('status-filter');
+    return (rankFilter && rankFilter.value) || (statusFilter && statusFilter.value);
+  }
+  
   showSuccess(message) {
     const popup = document.getElementById('actionPopup');
     const icon = document.getElementById('popupIcon');

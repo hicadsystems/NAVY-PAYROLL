@@ -13,6 +13,7 @@
   <div id="variationForm" class="my-8 hidden">
     <h3 id="formTitle" class="text-xl font-semibold text-grey-700 mb-4">Create New Variation</h3>
     <form id="variationFormElement" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Employee Search Dropdown -->
       <div class="relative col-span-1">
         <div class="relative">
           <input 
@@ -27,34 +28,22 @@
             </svg>
           </span>
         </div>
-        
+
         <div id="dropdownList" class="absolute z-10 w-full mt-1 bg-yellow-50 border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto hidden">
-          <div class="py-1">
-            <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" data-value="NN001">
-              <span class="font-semibold text-blue-600">NN001</span> - Lt. James 
-            </div>
-            <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" data-value="NN002">
-              <span class="font-semibold text-blue-600">NN002</span> - Mr. Johnson
-            </div>
-            <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" data-value="NN003">
-              <span class="font-semibold text-blue-600">NN003</span> - CPO Hicad
-            </div>
+          <div class="py-1" id="employeeDropdownItems">
+            <!-- Items will be loaded dynamically -->
           </div>
         </div>
       </div>
 
       <select id="variationType" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
         <option value="">Select Type</option>
-        <option>Bonus</option>
-        <option>Overtime</option>
-        <option>Loan</option>
-        <option>Pension</option>
       </select>
 
       <select id="variationDescription" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
-        <option value="">Select Action</option>
-        <option>Addition</option>
-        <option>Deduction</option>
+        <option value="N/A">Select Action</option>
+        <option value="Add">Addition</option>
+        <option value="Deduct">Deduction</option>
       </select>
 
       <input id="variationAmount" type="alphanumeric" placeholder="Amount" class="border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2" />
@@ -79,18 +68,33 @@
         </tr>
       </thead>
       <tbody id="variationTableBody" class="text-center text-sm">
-        <tr class="hover:bg-yellow-50">
-          <td class="py-2 px-4 border">NN001</td>
-          <td class="py-2 px-4 border">Bonus</td>
-          <td class="py-2 px-4 border">Addition</td>
-          <td class="py-2 px-4 border">₦50,000</td>
-          <td class="py-2 px-4 border">
-            <button onclick="editRow(this)" class="text-blue-600 hover:underline">Edit</button> |
-            <button onclick="deleteRow(this)" class="text-red-600 hover:underline">Delete</button>
-          </td>
-        </tr>
+        <!-- Dynamic rows will be inserted here -->
       </tbody>
     </table>
+  </div>
+
+  <!-- Pagination Controls -->
+  <div class="mt-4 flex items-center justify-between">
+    <div class="text-sm text-gray-600">
+      Showing <span id="startRecord">0</span> to <span id="endRecord">0</span> of <span id="totalRecords">0</span> records
+    </div>
+    <div class="flex items-center space-x-2">
+      <select id="recordsPerPage" class="border border-gray-300 rounded px-2 py-1 text-sm">
+        <option value="10">10 per page</option>
+        <option value="25">25 per page</option>
+        <option value="50">50 per page</option>
+        <option value="100">100 per page</option>
+      </select>
+      <button id="prevPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+        Previous
+      </button>
+      <span class="text-sm">
+        Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+      </span>
+      <button id="nextPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+        Next
+      </button>
+    </div>
   </div>
 </div>
 
@@ -119,79 +123,37 @@
               </svg>
           </div>
       </div>
+      <div id="errorIcon" class="hidden flex justify-center mb-4">
+          <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+          </div>
+      </div>
       <p id="successMessage" class="text-gray-700 font-medium">Processing...</p>
   </div>
 </div>
 
 <script>
-// searchable dropdown 
-const searchInput = document.getElementById('searchInput');
-const dropdownList = document.getElementById('dropdownList');
-const dropdownItems = document.querySelectorAll('.dropdown-item');
-
-// Add hidden input to store the selected employee ID
-const hiddenInput = document.createElement('input');
-hiddenInput.type = 'hidden';
-hiddenInput.name = 'variationName';
-hiddenInput.id = 'variationName';
-document.getElementById('variationForm').appendChild(hiddenInput);
-
-// Show dropdown when input is clicked or focused
-searchInput.addEventListener('focus', () => {
-  dropdownList.classList.remove('hidden');
-});
-
-// Filter items as user types
-searchInput.addEventListener('input', function() {
-  const searchText = this.value.toLowerCase();
-  
-  dropdownItems.forEach(item => {
-    const text = item.textContent.toLowerCase();
-    const shouldShow = text.includes(searchText);
-    item.style.display = shouldShow ? 'block' : 'none';
-  });
-  
-  dropdownList.classList.remove('hidden');
-});
-
-// Handle item selection
-dropdownItems.forEach(item => {
-  item.addEventListener('click', function() {
-    const value = this.getAttribute('data-value');
-    const text = this.textContent.trim();
-    
-    searchInput.value = text;
-    hiddenInput.value = value;
-    dropdownList.classList.add('hidden');
-  });
-});
-
-// Hide dropdown when clicking outside
-document.addEventListener('click', function(e) {
-  if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) {
-    dropdownList.classList.add('hidden');
-  }
-});
-
-// Basic keyboard support
-searchInput.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    dropdownList.classList.add('hidden');
-    this.blur();
-  }
-});
-
 (function () {
+  const API_BASE = '/payded';
+
+  function getAuthToken() {
+    return localStorage.getItem('token') || sessionStorage.getItem('token');
+  }
+
   const formWrapper = document.getElementById("variationForm");
   const form = document.getElementById("variationFormElement");
   const tableBody = document.getElementById("variationTableBody");
   const saveBtn = document.getElementById("saveBtn");
+  const formTitle = document.getElementById("formTitle");
 
-    // Modals
+  // Modals
   const confirmModal = document.getElementById("confirmModal");
   const successModal = document.getElementById("successModal");
   const loadingSpinner = document.getElementById("loadingSpinner");
   const successTick = document.getElementById("successTick");
+  const errorIcon = document.getElementById("errorIcon");
   const successMessage = document.getElementById("successMessage");
 
   // Buttons
@@ -202,15 +164,351 @@ searchInput.addEventListener('keydown', function(e) {
   const confirmDelete = document.getElementById("confirmDelete");
 
   // Inputs
-  const nameInput = document.getElementById("variationName");
   const typeInput = document.getElementById("variationType");
   const descInput = document.getElementById("variationDescription");
-  const actionInput = document.getElementById("variationAction");
   const amountInput = document.getElementById("variationAmount");
 
+  // Dropdown elements
+  const searchInput = document.getElementById('searchInput');
+  const dropdownList = document.getElementById('dropdownList');
+  const employeeDropdownItems = document.getElementById('employeeDropdownItems');
+
+  // Add hidden input to store the selected employee ID
+  const hiddenInput = document.createElement('input');
+  hiddenInput.type = 'hidden';
+  hiddenInput.name = 'emplId';
+  hiddenInput.id = 'emplId';
+  form.appendChild(hiddenInput);
+
   let isEditing = false;
-  let currentEditRow = null;
+  let currentEditEmplId = null;
+  let currentEditType = null;
   let rowToDelete = null;
+  let allEmployees = [];
+
+  // Pagination variables
+  let currentPage = 1;
+  let recordsPerPage = 10;
+  let totalRecords = 0;
+  let totalPages = 1;
+
+  // Pagination elements
+  const prevPageBtn = document.getElementById('prevPage');
+  const nextPageBtn = document.getElementById('nextPage');
+  const currentPageSpan = document.getElementById('currentPage');
+  const totalPagesSpan = document.getElementById('totalPages');
+  const recordsPerPageSelect = document.getElementById('recordsPerPage');
+  const startRecordSpan = document.getElementById('startRecord');
+  const endRecordSpan = document.getElementById('endRecord');
+  const totalRecordsSpan = document.getElementById('totalRecords');
+
+  // API functions
+  //load dropdown
+    async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/reference/${endpoint}`, {   
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        }
+      });
+      const data = await response.json();
+      const dropdown = document.getElementById(elementId);
+      if (!dropdown) return;
+      dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+      data.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item[valueField];
+        option.textContent = item[textField];
+        dropdown.appendChild(option);
+      });
+      return data;
+    } catch (err) {
+      console.error(`Failed to load ${endpoint}:`, err);
+      return [];
+    }
+  }
+
+  async function loadAllDropdowns() {
+    const promises = [
+      loadDropdown("elementtype","variationType", "PaymentType", "elmDesc", "Select Type"),
+      //loadDropdown("payindicator","payind", "ind", "inddesc", "Select Payment Indicator")
+    ];
+    await Promise.all(promises);
+  }
+
+  async function loadVariations() {
+    const token = getAuthToken();
+    if (!token) {
+      console.warn("No auth token found. Skipping data load.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/active/all-variations?page=${currentPage}&limit=${recordsPerPage}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to load variations');
+      }
+
+      if (result.success) {
+        renderTable(result.data);
+        totalRecords = result.pagination.totalRecords;
+        totalPages = result.pagination.totalPages;
+        currentPage = result.pagination.currentPage;
+        updatePaginationUI();
+      } else {
+        showError('Failed to load deductions');
+      }
+    } catch (error) {
+      console.error('Error fetching deductions:', error);
+      showError('Error loading deductions');
+    }
+  }
+
+  async function fetchEmployees() {
+    try {
+      const token = localStorage.getItem('token');
+
+      const response = await fetch('/personnel/employees-current',{
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        allEmployees = result.data;
+        renderEmployeeDropdown(allEmployees);
+      }
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+    }
+  }
+
+  async function createVariation(data) {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        showError("Authentication required. Please log in.");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/variation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showSuccessModal('Record added successfully!');
+        await loadVariations();
+        clearForm();
+        toggleForm();
+      } else {
+        showError(result.message || 'Failed to create deduction');
+      }
+    } catch (error) {
+      console.error('Error creating deduction:', error);
+      showError('Error creating deduction');
+    }
+  }
+
+  async function updateVariation(emplId, type, data) {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        showError("Authentication required. Please log in.");
+        return;
+      }
+
+      // Combine emplId and type into single path segment
+      const pathSegment = `${emplId}`;
+
+      const response = await fetch(`${API_BASE}/variation/${encodeURIComponent(pathSegment)}/${type}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showSuccessModal('Record updated successfully!');
+        await loadVariations();
+        clearForm();
+        toggleForm();
+      } else {
+        showError(result.message || 'Failed to update deduction');
+      }
+    } catch (error) {
+      console.error('Error updating deduction:', error);
+      showError('Error updating deduction');
+    }
+  }
+
+  async function deleteVariation(emplId, type) {
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        showError("Authentication required. Please log in.");
+        return;
+      }
+
+      // Combine emplId and type into single path segment
+      const pathSegment = `${emplId}`;
+
+      const response = await fetch(`${API_BASE}/${encodeURIComponent(pathSegment)}/${type}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showSuccessModal('Record deleted successfully!');
+        await loadVariations();
+      } else {
+        showError(result.message || 'Failed to delete deduction');
+      }
+    } catch (error) {
+      console.error('Error deleting deduction:', error);
+      showError('Error deleting deduction');
+    }
+  }
+
+  async function loadVariationForEdit(emplId, type) {
+    try {
+      const token = localStorage.getItem('token');
+
+      // Combine emplId and type into single path segment
+      const pathSegment = `${emplId}`;
+
+      const response = await fetch(`${API_BASE}/${encodeURIComponent(pathSegment)}/${type}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        const data = result.data;
+        
+        hiddenInput.value = data.Empl_id;
+        searchInput.value = data.Empl_id;
+        typeInput.value = data.type;
+        descInput.value = data.amount_already_deducted || '';
+        amountInput.value = data.amt || '';
+        
+        isEditing = true;
+        currentEditEmplId = data.Empl_id;
+        currentEditType = data.type;
+        formTitle.textContent = "Edit Payment/Deduction";
+        saveBtn.textContent = "Update";
+        
+        formWrapper.classList.remove("hidden");
+      } else {
+        showError('Failed to load deduction details');
+      }
+    } catch (error) {
+      console.error('Error loading deduction:', error);
+      showError('Error loading deduction details');
+    }
+  }
+
+  // UI functions
+  function renderTable(data) {
+    tableBody.innerHTML = '';
+
+    if (!data || data.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="5" class="py-4 text-gray-500">No records found</td>
+        </tr>
+      `;
+      return;
+    }
+
+    data.forEach(item => {
+      const row = document.createElement("tr");
+      row.className = "hover:bg-yellow-50";
+      row.innerHTML = `
+        <td class="py-2 px-4 border">${item.Empl_id}</td>
+        <td class="py-2 px-4 border">${item.type}</td>
+        <td class="py-2 px-4 border">${item.amount_already_deducted || 'N/A'}</td>
+        <td class="py-2 px-4 border">₦${Number(item.amt || 0).toLocaleString()}</td>
+        <td class="py-2 px-4 border">
+          <button onclick="editRow('${escapeQuotes(item.Empl_id)}', '${escapeQuotes(item.type)}')" class="text-blue-600 hover:underline">Edit</button> |
+          <button onclick="deleteRow('${escapeQuotes(item.Empl_id)}', '${escapeQuotes(item.type)}')" class="text-red-600 hover:underline">Delete</button>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+  } 
+
+  function escapeQuotes(str) {
+    if (!str) return '';
+    return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
+  }
+
+  function updatePaginationUI() {
+    currentPageSpan.textContent = currentPage;
+    totalPagesSpan.textContent = totalPages;
+    
+    const start = (currentPage - 1) * recordsPerPage + 1;
+    const end = Math.min(start + recordsPerPage - 1, totalRecords);
+    
+    startRecordSpan.textContent = totalRecords === 0 ? 0 : start;
+    endRecordSpan.textContent = end;
+    totalRecordsSpan.textContent = totalRecords;
+
+    prevPageBtn.disabled = currentPage <= 1;
+    nextPageBtn.disabled = currentPage >= totalPages;
+  }
+
+  function renderEmployeeDropdown(employees) {
+    employeeDropdownItems.innerHTML = '';
+    
+    employees.forEach(emp => {
+      const div = document.createElement('div');
+      div.className = 'dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100';
+      div.setAttribute('data-value', emp.Empl_ID);
+      div.innerHTML = `
+        <span class="font-semibold text-blue-600">${emp.Empl_ID}</span> - ${emp.Surname} ${emp.OtherName}
+      `;
+      
+      div.addEventListener('click', function() {
+        const value = this.getAttribute('data-value');
+        const text = this.textContent.trim();
+        
+        searchInput.value = text;
+        hiddenInput.value = value;
+        dropdownList.classList.add('hidden');
+      });
+      
+      employeeDropdownItems.appendChild(div);
+    });
+  }
 
   function toggleForm() {
     formWrapper.classList.toggle("hidden");
@@ -218,111 +516,81 @@ searchInput.addEventListener('keydown', function(e) {
 
   function clearForm() {
     form.reset();
+    searchInput.value = '';
+    hiddenInput.value = '';
     isEditing = false;
-    currentEditRow = null;
-    formTitle.textContent = "Create Variation";
+    currentEditEmplId = null;
+    currentEditType = null;
+    formTitle.textContent = "Create New Variation";
     saveBtn.textContent = "Save";
   }
 
-  function showSuccessModal(message) {
+  function showSuccessModal(message, isError = false) {
     successMessage.textContent = "Processing...";
     loadingSpinner.classList.remove("hidden");
     successTick.classList.add("hidden");
+    errorIcon.classList.add("hidden");
     successModal.classList.remove("hidden");
 
-    // Show spinner for 1 second
     setTimeout(() => {
-        loadingSpinner.classList.add("hidden");
+      loadingSpinner.classList.add("hidden");
+      
+      if (isError) {
+        errorIcon.classList.remove("hidden");
+      } else {
         successTick.classList.remove("hidden");
-        successMessage.textContent = message;
-        
-        // Hide modal after 2 seconds
-        setTimeout(() => {
-            successModal.classList.add("hidden");
-        }, 2000);
+      }
+      
+      successMessage.textContent = message;
+      
+      setTimeout(() => {
+        successModal.classList.add("hidden");
+      }, 2000);
     }, 1000);
+  }
+
+  function showError(message) {
+    showSuccessModal(message, true);
   }
 
   function saveVariation(e) {
     e.preventDefault();
 
-    const name = nameInput.value.trim();
-    const type = typeInput.value;
-    const desc = descInput.value;
-    const amount = amountInput.value;
+    const data = {
+      Empl_id: hiddenInput.value.trim(),
+      type: typeInput.value,
+      amtad: descInput.value,
+      amt: amountInput.value,
+    };
 
-    if (!name || !type || !desc || !amount) {
-      alert("Please fill all fields");
-      return;
+    let requiredFields = ['Empl_id', 'type', 'amtad', 'amt'];
+    for (let field of requiredFields) {
+      if (!data[field]) {
+        showError("Please fill all fields");
+        return;
+      }
     }
 
-    if (isEditing && currentEditRow) {
-      // Update existing row
-      const cells = currentEditRow.querySelectorAll('td');
-      cells[0].textContent = name;
-      cells[1].textContent = `${type}`;
-      cells[2].textContent = `${desc}`;
-      cells[3].textContent = `₦${Number(amount).toLocaleString()}`;
-
-      showSuccessModal("Record updated successfully!");
+    if (isEditing) {
+      updateVariation(currentEditEmplId, currentEditType, data);
     } else {
-      // Create new row
-      const row = document.createElement("tr");
-      row.className = "hover:bg-yellow-50";
-      row.innerHTML = `
-      <td class="py-2 px-4 border">${name}</td>
-      <td class="py-2 px-4 border">${type}</td>
-      <td class="py-2 px-4 border">${desc}</td>
-      <td class="py-2 px-4 border">₦${Number(amount).toLocaleString()}</td>
-      <td class="py-2 px-4 border">
-        <button onclick="editRow(this)" class="text-blue-600 hover:underline">Edit</button> |
-        <button onclick="deleteRow(this)" class="text-red-600 hover:underline">Delete</button>
-      </td>
-    `;
-
-    tableBody.appendChild(row);
-    showSuccessModal("Record created successfully!");
+      createVariation(data);
     }
-    
-    clearForm();
-    toggleForm();
   }
 
   function generateReport() {
     alert("Report generated (placeholder). Implement PDF/download here.");
   }
 
-  // Global functions for edit and delete
-  window.editRow = function(button) {
-    const row = button.closest('tr');
-    const cells = row.querySelectorAll('td');
-
-    // Map exactly to your table structure:
-    hiddenInput.value = cells[0].textContent.trim(); // Name
-    searchInput.value = cells[0].textContent.trim(); // Name
-    typeInput.value  = cells[1].textContent.trim(); // Type
-    descInput.value  = cells[2].textContent.trim(); // Description
-    amountInput.value = cells[3].textContent
-      .replace('₦', '')
-      .replace(/,/g, '')
-      .trim(); // Amount only (ignores action column)
-
-    // Set edit mode
-    isEditing = true;
-    currentEditRow = row;
-    formTitle.textContent = "Edit Variation";
-    saveBtn.textContent = "Update";
-
-    // Show form
-    formWrapper.classList.remove("hidden");
+  window.editRow = function(emplId, type) {
+    loadVariationForEdit(emplId, type);
   };
 
-  window.deleteRow = function(button) {
-    rowToDelete = button.closest('tr');
+  window.deleteRow = function(emplId, type) {
+    rowToDelete = { emplId, type };
     confirmModal.classList.remove("hidden");
   };
 
-  // Bind events
   createBtn.addEventListener("click", () => {
     clearForm();
     toggleForm();
@@ -343,14 +611,12 @@ searchInput.addEventListener('keydown', function(e) {
 
   confirmDelete.addEventListener("click", () => {
     if (rowToDelete) {
-      rowToDelete.remove();
-      showSuccessModal("Record deleted successfully!");
+      deleteVariation(rowToDelete.emplId, rowToDelete.type);    
     }
     confirmModal.classList.add("hidden");
     rowToDelete = null;
   });
-
-  // Close modals when clicking outside
+      
   confirmModal.addEventListener("click", (e) => {
     if (e.target === confirmModal) {
       confirmModal.classList.add("hidden");
@@ -363,5 +629,60 @@ searchInput.addEventListener('keydown', function(e) {
       successModal.classList.add("hidden");
     }
   });
+
+  prevPageBtn.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      loadVariations();
+    }
+  });
+
+  nextPageBtn.addEventListener('click', () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      loadVariations();
+    }
+  });
+
+  recordsPerPageSelect.addEventListener('change', (e) => {
+    recordsPerPage = parseInt(e.target.value);
+    currentPage = 1;
+    loadVariations();
+  });
+
+  // Dropdown listeners
+  searchInput.addEventListener('focus', () => {
+    dropdownList.classList.remove('hidden');
+  });
+
+  searchInput.addEventListener('input', function() {
+    const searchText = this.value.toLowerCase();
+    const items = employeeDropdownItems.querySelectorAll('.dropdown-item');
+    
+    items.forEach(item => {
+      const text = item.textContent.toLowerCase();
+      const shouldShow = text.includes(searchText);
+      item.style.display = shouldShow ? 'block' : 'none';
+    });
+    
+    dropdownList.classList.remove('hidden');
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) {
+      dropdownList.classList.add('hidden');
+    }
+  });
+
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      dropdownList.classList.add('hidden');
+      this.blur();
+    }
+  });
+
+  loadVariations();
+  fetchEmployees();
+  loadAllDropdowns();
 })();
 </script>

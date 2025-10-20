@@ -44,7 +44,6 @@
         <select id="type" class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
           <option value="">Select Type</option>
           <!-- Options will be loaded dynamically -->
-          <option value="BP302">BP302</option>
         </select>
       </div>
 
@@ -91,13 +90,7 @@
       <!-- Pay Indicator -->
       <div class="col-span-1">
         <select id="payind" class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2">
-          <option value="">Pay Indicator</option>
-          <option value="P">P - Permanent</option>
-          <option value="L">L - Loan</option>
-          <option value="T">T - Temporary</option>
-          <option value="F">F - Free Pay</option>
-          <option value="H">H - Hourly Paid</option>
-          <option value="X">X - Independent Input</option>
+
         </select>
       </div>
 
@@ -139,6 +132,30 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- Pagination Controls -->
+  <div class="mt-4 flex items-center justify-between">
+    <div class="text-sm text-gray-600">
+      Showing <span id="startRecord">0</span> to <span id="endRecord">0</span> of <span id="totalRecords">0</span> records
+    </div>
+    <div class="flex items-center space-x-2">
+      <select id="recordsPerPage" class="border border-gray-300 rounded px-2 py-1 text-sm">
+        <option value="10">10 per page</option>
+        <option value="25">25 per page</option>
+        <option value="50">50 per page</option>
+        <option value="100">100 per page</option>
+      </select>
+      <button id="prevPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+        Previous
+      </button>
+      <span class="text-sm">
+        Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+      </span>
+      <button id="nextPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+        Next
+      </button>
+    </div>
   </div>
 </div>
 
@@ -202,6 +219,29 @@
   const cancelDelete = document.getElementById("cancelDelete");
   const confirmDelete = document.getElementById("confirmDelete");
 
+  let isEditing = false;
+  let currentEditEmplId = null;
+  let currentEditType = null;
+  let rowToDelete = null;
+  let allEmployees = [];
+  let lookupMaps = {};
+
+  // Pagination variables
+  let currentPage = 1;
+  let recordsPerPage = 10;
+  let totalRecords = 0;
+  let totalPages = 1;
+
+  // Pagination elements
+  const prevPageBtn = document.getElementById('prevPage');
+  const nextPageBtn = document.getElementById('nextPage');
+  const currentPageSpan = document.getElementById('currentPage');
+  const totalPagesSpan = document.getElementById('totalPages');
+  const recordsPerPageSelect = document.getElementById('recordsPerPage');
+  const startRecordSpan = document.getElementById('startRecord');
+  const endRecordSpan = document.getElementById('endRecord');
+  const totalRecordsSpan = document.getElementById('totalRecords');
+
   // Dropdown elements
   const searchInput = document.getElementById('searchInput');
   const dropdownList = document.getElementById('dropdownList');
@@ -214,31 +254,89 @@
   hiddenInput.id = 'emplId';
   form.appendChild(hiddenInput);
 
-  let isEditing = false;
-  let currentEditEmplId = null;
-  let currentEditType = null;
-  let rowToDelete = null;
-  let allEmployees = [];
-
+  
   // ============================================
   // API FUNCTIONS
   // ============================================
+
+  //load dropdown
+    async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/reference/${endpoint}`, {   
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        }
+      });
+      const data = await response.json();
+      const dropdown = document.getElementById(elementId);
+      if (!dropdown) return;
+      dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+      data.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item[valueField];
+        option.textContent = item[textField];
+        dropdown.appendChild(option);
+
+        lookupMaps[endpoint] = Object.fromEntries(
+          data.map(item => [item[valueField], item[textField]])
+        )
+      });
+      return data;
+    } catch (err) {
+      console.error(`Failed to load ${endpoint}:`, err);
+      return [];
+    }
+  }
+
+  async function loadAllDropdowns() {
+    const promises = [
+      loadDropdown("elementtype","type", "PaymentType", "elmDesc", "Select Type"),
+      loadDropdown("payindicator","payind", "ind", "inddesc", "Select Payment Indicator")
+    ];
+    await Promise.all(promises);
+  }
+
+  function getValueField(endpoint) {
+    const fieldMap = {
+      'payindicator': 'ind'
+    };
+    return fieldMap[endpoint] || 'code';
+  }
+
+  function getTextField(endpoint) {
+    const fieldMap = {
+      'payindicator': 'inddesc'
+    }
+    return fieldMap[endpoint] || 'name';
+  }
+
+  function resolveName(code, endpoint) {
+    if (!code) return 'N/A';
+    return lookupMaps[endpoint]?.[code] || code;
+  }
 
   async function fetchAllDeductions() {
     try {
       const token = localStorage.getItem('token');
 
-      const response = await fetch(`${API_BASE}/active/all`, {
+      const response = await fetch(`${API_BASE}/active/all?page=${currentPage}&limit=${recordsPerPage}`, {
         method: 'GET',
         headers: {
           'content-type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       const result = await response.json();
       
       if (result.success) {
         renderTable(result.data);
+        totalRecords = result.pagination.totalRecords;
+        totalPages = result.pagination.totalPages;
+        currentPage = result.pagination.currentPage;
+        updatePaginationUI();
       } else {
         showError('Failed to load deductions');
       }
@@ -269,9 +367,11 @@
     }
   }
 
-  async function createDeduction(data) {
+  async function createDeduction(payloadData) {
     try {
       const token = localStorage.getItem('token');
+
+      console.log('Creating deduction with payload:', payloadData);
 
       const response = await fetch(`${API_BASE}`, {
         method: 'POST',
@@ -279,16 +379,7 @@
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          Empl_id: data.emplId,
-          type: data.type,
-          amtp: parseFloat(data.amtp),
-          mak1: data.mak1,
-          mak2: data.mak2,
-          amt: parseFloat(data.amt),
-          payind: data.payind,
-          nomth: parseInt(data.nomth) || 0,
-        })
+        body: JSON.stringify(payloadData)
       });
 
       const result = await response.json();
@@ -307,25 +398,20 @@
     }
   }
 
-  async function updateDeduction(emplId, type, data) {
+  async function updateDeduction(emplId, type, payloadData) {
     try {
       const token = localStorage.getItem('token');
 
-      const encodedType = encodeURIComponent(type);
-      const response = await fetch(`${API_BASE}/${emplId}/${encodedType}`, {
+      // Combine emplId and type into single path segment
+      const pathSegment = `${emplId}`;
+
+      const response = await fetch(`${API_BASE}/${encodeURIComponent(pathSegment)}/${type}`,{
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          amtp: parseFloat(data.amtp),
-          mak1: data.mak1,
-          mak2: data.mak2,
-          amt: parseFloat(data.amt),
-          payind: data.payind,
-          nomth: parseInt(data.nomth) || 0
-        })
+        body: JSON.stringify(payloadData)
       });
 
       const result = await response.json();
@@ -347,9 +433,10 @@
   async function deleteDeduction(emplId, type) {
     try {
       const token = localStorage.getItem('token');
+      // Combine emplId and type into single path segment
+      const pathSegment = `${emplId}`;
 
-      const encodedType = encodeURIComponent(type);
-      const response = await fetch(`${API_BASE}/${emplId}/${encodedType}`, {
+      const response = await fetch(`${API_BASE}/${encodeURIComponent(pathSegment)}/${type}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -367,6 +454,51 @@
     } catch (error) {
       console.error('Error deleting deduction:', error);
       showError('Error deleting deduction');
+    }
+  }
+
+  async function loadDeductionForEdit(emplId, type) {
+    try {
+      const token = localStorage.getItem('token');
+
+
+      // Combine emplId and type into single path segment
+      const pathSegment = `${emplId}`;
+
+      const response = await fetch(`${API_BASE}/${encodeURIComponent(pathSegment)}/${type}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        const deductionData = result.data;
+        
+        hiddenInput.value = deductionData.Empl_id;
+        searchInput.value = deductionData.Empl_id;
+        document.getElementById("type").value = deductionData.type;
+        document.getElementById("mak1").value = deductionData.delete_maker_annual || '';
+        document.getElementById("amtp").value = deductionData.amount_payable || 0;
+        document.getElementById("mak2").value = deductionData.delete_maker_cumulative || '';
+        document.getElementById("amt").value = deductionData.amt || 0;
+        document.getElementById("payind").value = deductionData.indicator || '';
+        document.getElementById("nomth").value = deductionData.number_of_months || 0;
+        
+        isEditing = true;
+        currentEditEmplId = emplId;
+        currentEditType = type;
+        formTitle.textContent = "Edit Payment/Deduction";
+        saveBtn.textContent = "Update";
+        
+        formWrapper.classList.remove("hidden");
+      } else {
+        showError('Failed to load deduction details');
+      }
+    } catch (error) {
+      console.error('Error loading deduction:', error);
+      showError('Error loading deduction details');
     }
   }
 
@@ -394,11 +526,11 @@
         <td class="py-2 px-4 border">${item.type}</td>
         <td class="py-2 px-4 border">₦${Number(item.amount_to_deduct || 0).toLocaleString()}</td>
         <td class="py-2 px-4 border">₦${Number(item.current_total || 0).toLocaleString()}</td>
-        <td class="py-2 px-4 border">${item.indicator || '-'}</td>
+        <td class="py-2 px-4 border">${resolveName(item.indicator, 'payindicator')}</td>
         <td class="py-2 px-4 border">${item.months_remaining || '-'}</td>
         <td class="py-2 px-4 border">
-          <button onclick="editRow('${item.Empl_id}', '${escapeQuotes(item.type)}')" class="text-blue-600 hover:underline">Edit</button> |
-          <button onclick="deleteRow('${item.Empl_id}', '${escapeQuotes(item.type)}')" class="text-red-600 hover:underline">Delete</button>
+          <button onclick="editRow('${escapeQuotes(item.Empl_id)}', '${escapeQuotes(item.type)}')" class="text-blue-600 hover:underline">Edit</button> |
+          <button onclick="deleteRow('${escapeQuotes(item.Empl_id)}', '${escapeQuotes(item.type)}')" class="text-red-600 hover:underline">Delete</button>
         </td>
       `;
       tableBody.appendChild(row);
@@ -406,7 +538,8 @@
   }
 
   function escapeQuotes(str) {
-    return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+    if (!str) return '';
+    return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
   }
 
   function renderEmployeeDropdown(employees) {
@@ -479,8 +612,8 @@
   function savePayDed(e) {
     e.preventDefault();
 
-    const data = {
-      emplId: hiddenInput.value.trim(),
+    const payloadData = {
+      Empl_id: hiddenInput.value.trim(),
       type: document.getElementById("type").value,
       mak1: document.getElementById("mak1").value,
       amtp: document.getElementById("amtp").value,
@@ -490,58 +623,37 @@
       nomth: document.getElementById("nomth").value,
     };
 
-    if (!data.emplId || !data.type || !data.amtp || !data.payind) {
-      showError("Please fill required fields: Employee ID, Type, Amount Payable, and Pay Indicator");
-      return;
+    const requiredFields = ["Empl_id", "type", "payind", "amtp"]
+
+    let missingFields = requiredFields.filter(field => !payloadData[field] && payloadData[field] !== 0);
+
+    if (missingFields.length > 0) {
+      showError(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      return;    
     }
 
+    console.log('Form data being sent:', payloadData);
+
     if (isEditing) {
-      updateDeduction(currentEditEmplId, currentEditType, data);
+      updateDeduction(currentEditEmplId, currentEditType, payloadData);
     } else {
-      createDeduction(data);
+      createDeduction(payloadData);
     }
   }
 
-  async function loadDeductionForEdit(emplId, type) {
-    try {
-      const token = localStorage.getItem('token');
+  function updatePaginationUI() {
+    currentPageSpan.textContent = currentPage;
+    totalPagesSpan.textContent = totalPages;
+    
+    const start = (currentPage - 1) * recordsPerPage + 1;
+    const end = Math.min(start + recordsPerPage - 1, totalRecords);
+    
+    startRecordSpan.textContent = totalRecords === 0 ? 0 : start;
+    endRecordSpan.textContent = end;
+    totalRecordsSpan.textContent = totalRecords;
 
-      const encodedType = encodeURIComponent(type);
-      const response = await fetch(`${API_BASE}/${emplId}/${encodedType}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const result = await response.json();
-      
-      if (result.success) {
-        const data = result.data;
-        
-        hiddenInput.value = data.Empl_id;
-        searchInput.value = data.Empl_id;
-        document.getElementById("type").value = data.type;
-        document.getElementById("mak1").value = data.delete_maker_annual || '';
-        document.getElementById("amtp").value = data.amount_payable || 0;
-        document.getElementById("mak2").value = data.delete_maker_cumulative || '';
-        document.getElementById("amt").value = data.amt || 0;
-        document.getElementById("payind").value = data.indicator || '';
-        document.getElementById("nomth").value = data.number_of_months || 0;
-        
-        isEditing = true;
-        currentEditEmplId = emplId;
-        currentEditType = type;
-        formTitle.textContent = "Edit Payment/Deduction";
-        saveBtn.textContent = "Update";
-        
-        formWrapper.classList.remove("hidden");
-      } else {
-        showError('Failed to load deduction details');
-      }
-    } catch (error) {
-      console.error('Error loading deduction:', error);
-      showError('Error loading deduction details');
-    }
+    prevPageBtn.disabled = currentPage <= 1;
+    nextPageBtn.disabled = currentPage >= totalPages;
   }
 
   function generateReport() {
@@ -638,11 +750,32 @@
     }
   });
 
+  prevPageBtn.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      fetchAllDeductions();
+    }
+  });
+
+  nextPageBtn.addEventListener('click', () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      fetchAllDeductions();
+    }
+  });
+
+  recordsPerPageSelect.addEventListener('change', (e) => {
+    recordsPerPage = parseInt(e.target.value);
+    currentPage = 1;
+    fetchAllDeductions();
+  });
+
   // ============================================
   // INITIALIZE
   // ============================================
 
   fetchAllDeductions();
   fetchEmployees();
+  loadAllDropdowns();
 })();
 </script>

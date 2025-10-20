@@ -140,7 +140,7 @@ const tablesToMigrate = [
   "dbo.py_webpayslip",
   "dbo.py_wkemployees_bad",
   "dbo.py_workpayslip"*/
-  "dbo.py_tblstates"
+  "dbo.py_payded"
 ];
 
 // Helper: Check if two strings match with at least 5 consecutive letters

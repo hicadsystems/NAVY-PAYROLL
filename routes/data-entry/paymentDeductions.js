@@ -4,33 +4,126 @@ const verifyToken = require('../../middware/authentication');
 const router = express.Router();
 
 
-// ============================================
 // GET ALL ACTIVE DEDUCTIONS (ALL EMPLOYEES)
-// GET /api/payded/active/all
-// ============================================
 router.get('/active/all', verifyToken, async (req, res) => {
   try {
+    // Get pagination parameters from query string
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // Get total count first
+    const [countResult] = await pool.query(
+      `SELECT COUNT(*) as total FROM py_payded p`
+    );
+    const totalRecords = countResult[0].total;
+    const totalPages = Math.ceil(totalRecords / limit);
+
+    // Modified query with pagination
     const query = `
       SELECT 
         p.Empl_id,
         p.type,
-        p.amtp AS amount_to_deduct,
-        p.amttd AS current_total,
+        p.mak1 AS delete_maker_annual,
+        p.amtp AS amount_payable,
+        p.mak2 AS delete_maker_cumulative,
+        p.amt,
+        p.amtad AS amount_already_deducted,
+        p.amttd AS amount_to_date,
         p.payind AS indicator,
+        pi.inddesc AS indicator_description,
         p.nomth AS months_remaining,
-        pi.inddesc AS indicator_description
+        p.createdby,
+        p.datecreated
       FROM py_payded p
       LEFT JOIN py_payind pi ON p.payind = pi.ind
-      WHERE p.mak1 = 'No'
       ORDER BY p.Empl_id, p.type
+      LIMIT ? OFFSET ?
     `;
 
-    const [rows] = await pool.query(query);
+    const [rows] = await pool.query(query, [limit, offset]);
 
     res.json({
       success: true,
-      count: rows.length,
-      data: rows
+      data: rows,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalRecords: totalRecords,
+        limit: limit,
+        hasPreviousPage: page > 1,
+        hasNextPage: page < totalPages
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching active deductions:', error);
+    res.status(500).json({
+      success: false, 
+      message: 'Error fetching active deductions',
+      error: error.message
+    });
+  }
+});
+
+//// GET ALL ACTIVE VARIATIONS (ALL EMPLOYEES)
+router.get('/active/all-variations', verifyToken, async (req, res) => {
+  try {
+    // Get pagination parameters from query string
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // Get total count (only records with valid amtad)
+    const [countResult] = await pool.query(
+      `
+      SELECT COUNT(*) as total 
+      FROM py_payded 
+      WHERE amtad IS NOT NULL 
+        AND amtad != '' 
+        AND amtad != 'N/A'
+      `
+    );
+    const totalRecords = countResult[0].total;
+    const totalPages = Math.ceil(totalRecords / limit);
+
+    // Get actual paginated results
+    const query = `
+      SELECT 
+        p.Empl_id,
+        p.type,
+        p.mak1 AS delete_maker_annual,
+        p.amtp AS amount_payable,
+        p.mak2 AS delete_maker_cumulative,
+        p.amt,
+        p.amtad AS amount_already_deducted,
+        p.amttd AS amount_to_date,
+        p.payind AS indicator,
+        pi.inddesc AS indicator_description,
+        p.nomth AS months_remaining,
+        p.createdby,
+        p.datecreated
+      FROM py_payded p
+      LEFT JOIN py_payind pi ON p.payind = pi.ind
+      WHERE p.amtad IS NOT NULL 
+        AND p.amtad != '' 
+        AND p.amtad != 'N/A'
+      ORDER BY p.Empl_id, p.type
+      LIMIT ? OFFSET ?
+    `;
+
+    const [rows] = await pool.query(query, [limit, offset]);
+
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalRecords: totalRecords,
+        limit: limit,
+        hasPreviousPage: page > 1,
+        hasNextPage: page < totalPages
+      }
     });
   } catch (error) {
     console.error('Error fetching active deductions:', error);
@@ -42,14 +135,18 @@ router.get('/active/all', verifyToken, async (req, res) => {
   }
 });
 
-// ============================================
 // GET ALL DEDUCTIONS FOR AN EMPLOYEE
-// GET /api/payded/:emplId
-// ============================================
 router.get('/:emplId', verifyToken, async (req, res) => {
   try {
     const { emplId } = req.params;
-    const { active } = req.query; // ?active=true for active only
+    const { active } = req.query; 
+
+    // Get pagination parameters from query string
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    
+    console.log('Pagination - Page:', page, 'Limit:', limit, 'Offset:', offset);
 
     let query = `
       SELECT 
@@ -71,18 +168,29 @@ router.get('/:emplId', verifyToken, async (req, res) => {
       WHERE p.Empl_id = ?
     `;
 
-    if (active === 'true') {
-      query += ` AND p.mak1 = 'No'`;
-    }
-
     query += ` ORDER BY p.mak1 ASC, p.datecreated DESC`;
+
+    const [countResult] = await pool.query(
+      `SELECT COUNT(*) AS total FROM py_payded WHERE Empl_id = ?`,
+      [emplId]
+    );
+    const totalRecords = countResult[0].total;
+    const totalPages = Math.ceil(totalRecords / limit);
 
     const [rows] = await pool.query(query, [emplId]);
 
     res.json({
       success: true,
       count: rows.length,
-      data: rows
+      data: rows,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalRecords: totalRecords,
+        limit: limit,
+        hasPreviousPage: page > 1,
+        hasNextPage: page < totalPages
+      }
     });
   } catch (error) {
     console.error('Error fetching deductions:', error);
@@ -94,10 +202,7 @@ router.get('/:emplId', verifyToken, async (req, res) => {
   }
 });
 
-// ============================================
 // GET SPECIFIC DEDUCTION
-// GET /api/payded/:emplId/:type
-// ============================================
 router.get('/:emplId/:type',  verifyToken, async (req, res) => {
   try {
     const { emplId, type } = req.params;
@@ -146,10 +251,7 @@ router.get('/:emplId/:type',  verifyToken, async (req, res) => {
   }
 });
 
-// ============================================
 // GET DEDUCTION SUMMARY BY EMPLOYEE
-// GET /api/payded/summary/:emplId
-// ============================================
 router.get('/summary/:emplId',  verifyToken, async (req, res) => {
   try {
     const { emplId } = req.params;
@@ -197,11 +299,8 @@ router.get('/summary/:emplId',  verifyToken, async (req, res) => {
   }
 });
 
-// ============================================
-// CREATE NEW DEDUCTION
-// POST /api/payded
-// Body: { Empl_id, type, amtp, payind, nomth, createdby }
-// ============================================
+
+//Create Payded
 router.post('/', verifyToken, async (req, res) => {
   try {
     const {
@@ -278,11 +377,80 @@ router.post('/', verifyToken, async (req, res) => {
   }
 });
 
-// ============================================
-// UPDATE DEDUCTION
-// PUT /api/payded/:emplId/:type
-// Body: { amtp, mak1, payind, nomth }
-// ============================================
+//Create Variations 
+router.post('/variation', verifyToken, async (req, res) => {
+  try {
+    const {
+      Empl_id,
+      type,
+      mak1,
+      amt,
+      amtad,
+    } = req.body;
+
+    const createdby = req.user_fullname;
+
+    // Validation
+    if (!Empl_id || !type || !amt || !amtad) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: Service No, type, amount, action'
+      });
+    }
+
+    // Check if deduction already exists
+    const checkQuery = `
+      SELECT * FROM py_payded 
+      WHERE Empl_id = ? AND type = ?
+    `;
+    const [existing] = await pool.query(checkQuery, [Empl_id, type]);
+
+    if (existing.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Deduction already exists for this employee and type'
+      });
+    }
+
+    const query = `
+      INSERT INTO py_payded (
+        Empl_id, type, amt, 
+        amtad, createdby, datecreated
+      ) VALUES (?, ?, ?, ?, ?, ?, 0.00, 0.00, ?, ?, ?, NOW())
+    `;
+
+    const [result] = await pool.query(query, [
+      Empl_id,
+      type,
+      mak1,
+      amt,
+      amtad,
+      createdby
+    ]);
+
+    // Fetch the created record
+    const [newRecord] = await pool.query(
+      'SELECT * FROM py_payded WHERE Empl_id = ? AND type = ?',
+      [Empl_id, type]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Deduction created successfully',
+      data: newRecord[0]
+    });
+  } catch (error) {
+    console.error('Error creating deduction:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating deduction',
+      error: error.message
+    });
+  }
+});
+
+
+//Update Payded
 router.put('/:emplId/:type',  verifyToken, async (req, res) => {
   try {
     const { emplId, type } = req.params;
@@ -373,10 +541,82 @@ router.put('/:emplId/:type',  verifyToken, async (req, res) => {
   }
 });
 
-// ============================================
+//Update Variations
+router.put('/variation/:emplId/:type',  verifyToken, async (req, res) => {
+  try {
+    const { emplId, type } = req.params;
+    const decodedType = decodeURIComponent(type);
+    const { amt, amtad } = req.body;
+
+    // Check if record exists
+    const checkQuery = `
+      SELECT * FROM py_payded 
+      WHERE Empl_id = ? AND type = ?
+    `;
+    const [existing] = await pool.query(checkQuery, [emplId, decodedType]);
+
+    if (existing.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Deduction not found'
+      });
+    }
+
+    // Build dynamic update query
+    const updates = [];
+    const values = [];
+
+    if (amtad !== undefined) {
+      updates.push('amtad = ?');
+      values.push(amtad);
+    }
+    if (amt !== undefined) {
+      updates.push('amt = ?');
+      values.push(amt);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No fields to update'
+      });
+    }
+
+    updates.push('datecreated = NOW()');
+    values.push(emplId, decodedType);
+
+    const query = `
+      UPDATE py_payded 
+      SET ${updates.join(', ')}
+      WHERE Empl_id = ? AND type = ?
+    `;
+
+    await pool.query(query, values);
+
+    // Fetch updated record
+    const [updated] = await pool.query(
+      'SELECT * FROM py_payded WHERE Empl_id = ? AND type = ?',
+      [emplId, decodedType]
+    );
+
+    res.json({
+      success: true,
+      message: 'Deduction updated successfully',
+      data: updated[0]
+    });
+  } catch (error) {
+    console.error('Error updating deduction:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating deduction',
+      error: error.message
+    });
+  }
+});
+
+
 // DEACTIVATE DEDUCTION (SOFT DELETE)
-// PATCH /api/payded/:emplId/:type/deactivate
-// ============================================
+
 router.patch('/:emplId/:type/deactivate', verifyToken, async (req, res) => {
   try {
     const { emplId, type } = req.params;
@@ -412,11 +652,7 @@ router.patch('/:emplId/:type/deactivate', verifyToken, async (req, res) => {
   }
 });
 
-// ============================================
 // REACTIVATE DEDUCTION
-// PATCH /api/payded/:emplId/:type/reactivate
-// Body: { amtp }
-// ============================================
 router.patch('/:emplId/:type/reactivate', verifyToken, async (req, res) => {
   try {
     const { emplId, type } = req.params;
@@ -460,10 +696,7 @@ router.patch('/:emplId/:type/reactivate', verifyToken, async (req, res) => {
   }
 });
 
-// ============================================
 // DELETE DEDUCTION (HARD DELETE)
-// DELETE /api/payded/:emplId/:type
-// ============================================
 router.delete('/:emplId/:type', verifyToken, async (req, res) => {
   try {
     const { emplId, type } = req.params;
@@ -498,10 +731,7 @@ router.delete('/:emplId/:type', verifyToken, async (req, res) => {
   }
 });
 
-// ============================================
 // PROCESS MONTHLY DEDUCTIONS FOR EMPLOYEE
-// POST /api/payded/:emplId/process-monthly
-// ============================================
 router.post('/:emplId/process-monthly', verifyToken, async (req, res) => {
   const connection = await pool.getConnection();
   
@@ -562,10 +792,7 @@ router.post('/:emplId/process-monthly', verifyToken, async (req, res) => {
   }
 });
 
-// ============================================
 // PROCESS MONTHLY DEDUCTIONS FOR ALL EMPLOYEES
-// POST /api/payded/process-monthly/all
-// ============================================
 router.post('/process-monthly/all', verifyToken, async (req, res) => {
   const connection = await pool.getConnection();
   
@@ -620,10 +847,7 @@ router.post('/process-monthly/all', verifyToken, async (req, res) => {
   }
 });
 
-// ============================================
 // GET COMPLETED DEDUCTIONS (nomth = 0)
-// GET /api/payded/completed/all
-// ============================================
 router.get('/completed/all', verifyToken, async (req, res) => {
   try {
     const query = `
@@ -656,10 +880,7 @@ router.get('/completed/all', verifyToken, async (req, res) => {
   }
 });
 
-// ============================================
 // CHECK FOR DUPLICATE ACTIVE DEDUCTIONS
-// GET /api/payded/validation/duplicates
-// ============================================
 router.get('/validation/duplicates', verifyToken, async (req, res) => {
   try {
     const query = `
@@ -691,11 +912,7 @@ router.get('/validation/duplicates', verifyToken, async (req, res) => {
   }
 });
 
-// ============================================
 // BULK CREATE DEDUCTIONS
-// POST /api/payded/bulk
-// Body: [{ Empl_id, type, amtp, payind, nomth, createdby }, ...]
-// ============================================
 router.post('/bulk', verifyToken, async (req, res) => {
   const connection = await pool.getConnection();
   

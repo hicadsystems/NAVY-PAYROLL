@@ -155,11 +155,11 @@ router.get('/database', verifyToken, (req, res) => {
     // Get friendly name for the database
     const dbToClassMap = {
       [process.env.DB_OFFICERS]: 'OFFICERS',
-      [process.env.DB_WOFFICERS]: 'W/OFFICERS', 
-      [process.env.DB_RATINGS]: 'RATINGS',
-      [process.env.DB_RATINGS_A]: 'RATINGS A',
-      [process.env.DB_RATINGS_B]: 'RATINGS B',
-      [process.env.DB_JUNIOR_TRAINEE]: 'JUNIOR/TRAINEE'
+      [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
+      [process.env.DB_RATINGS]: 'RATE A',
+      [process.env.DB_RATINGS_A]: 'RATE B',
+      [process.env.DB_RATINGS_B]: 'RATE C',
+      [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
     };
 
     const friendlyName = dbToClassMap[currentClass] || 'Unknown Class';
@@ -197,10 +197,10 @@ router.post('/backup/mysql', verifyToken, async (req, res) => {
     const dbToClassMap = {
       [process.env.DB_OFFICERS]: 'OFFICERS',
       [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
-      [process.env.DB_RATINGS]: 'RATINGS',
-      [process.env.DB_RATINGS_A]: 'RATINGS_A',
-      [process.env.DB_RATINGS_B]: 'RATINGS_B',
-      [process.env.DB_JUNIOR_TRAINEE]: 'JUNIOR_TRAINEE'
+      [process.env.DB_RATINGS]: 'RATE A',
+      [process.env.DB_RATINGS_A]: 'RATE B',
+      [process.env.DB_RATINGS_B]: 'RATE C',
+      [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
     };
 
     const friendlyName = dbToClassMap[dbName] || dbName;
@@ -238,10 +238,10 @@ router.post('/backup/schedule', verifyToken, (req, res) => {
     const dbToClassMap = {
       [process.env.DB_OFFICERS]: 'OFFICERS',
       [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
-      [process.env.DB_RATINGS]: 'RATINGS',
-      [process.env.DB_RATINGS_A]: 'RATINGS_A',
-      [process.env.DB_RATINGS_B]: 'RATINGS_B',
-      [process.env.DB_JUNIOR_TRAINEE]: 'JUNIOR_TRAINEE'
+      [process.env.DB_RATINGS]: 'RATE A',
+      [process.env.DB_RATINGS_A]: 'RATE B',
+      [process.env.DB_RATINGS_B]: 'RATE C',
+      [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
     };
 
     const friendlyName = dbToClassMap[dbName] || dbName;
@@ -289,12 +289,12 @@ router.get('/backups', verifyToken, (req, res) => {
   
   // Get friendly name for the database
   const dbToClassMap = {
-    [process.env.DB_OFFICERS]: 'OFFICERS',
-    [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
-    [process.env.DB_RATINGS]: 'RATINGS',
-    [process.env.DB_RATINGS_A]: 'RATINGS_A',
-    [process.env.DB_RATINGS_B]: 'RATINGS_B',
-    [process.env.DB_JUNIOR_TRAINEE]: 'JUNIOR_TRAINEE'
+      [process.env.DB_OFFICERS]: 'OFFICERS',
+      [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
+      [process.env.DB_RATINGS]: 'RATE A',
+      [process.env.DB_RATINGS_A]: 'RATE B',
+      [process.env.DB_RATINGS_B]: 'RATE C',
+      [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
   };
 
   const friendlyName = dbToClassMap[dbName] || dbName;
@@ -344,12 +344,12 @@ router.get('/backup/stats', verifyToken, (req, res) => {
   
   // Get friendly name for the database
   const dbToClassMap = {
-    [process.env.DB_OFFICERS]: 'OFFICERS',
-    [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
-    [process.env.DB_RATINGS]: 'RATINGS',
-    [process.env.DB_RATINGS_A]: 'RATINGS_A',
-    [process.env.DB_RATINGS_B]: 'RATINGS_B',
-    [process.env.DB_JUNIOR_TRAINEE]: 'JUNIOR_TRAINEE'
+      [process.env.DB_OFFICERS]: 'OFFICERS',
+      [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
+      [process.env.DB_RATINGS]: 'RATE A',
+      [process.env.DB_RATINGS_A]: 'RATE B',
+      [process.env.DB_RATINGS_B]: 'RATE C',
+      [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
   };
 
   const friendlyName = dbToClassMap[dbName] || dbName;

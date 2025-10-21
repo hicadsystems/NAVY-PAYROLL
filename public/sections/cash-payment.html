@@ -18,11 +18,12 @@
     <form class="space-y-4">
       <div>
         <label class="block text-sm font-medium mb-1">Basic Salary</label>
-        <input
-          type="text"
+        <select
           id="salaryInput"
           class="w-full border rounded px-3 py-2 text-sm"
-          placeholder="Enter Basic Salary"/>
+          placeholder="Enter Basic Salary">
+          <option value=""></option>
+        </select>
       </div>
       <div>
         <label class="block text-sm font-medium mb-1">Percentage</label>
@@ -101,11 +102,71 @@
 
 
 <script>
+(function () {
 const apiUrl = "/overpayment"; 
 let bt04 = null; // holds BT04 record
+let lookupMaps = {};
 
 // Storage key for the mapping
 const STORAGE_KEY = "overpayment_basicpay_map";
+
+//load dropdown
+async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`/reference/${endpoint}`, {   
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      }
+    });
+    const data = await response.json();
+    const dropdown = document.getElementById(elementId);
+    if (!dropdown) return;
+    dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+    data.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item[valueField];
+      option.textContent = item[textField];
+      dropdown.appendChild(option);
+
+      lookupMaps[endpoint] = Object.fromEntries(
+        data.map(item => [item[valueField], item[textField]])
+      )
+    });
+    return data;
+  } catch (err) {
+    console.error(`Failed to load ${endpoint}:`, err);
+    return [];
+  }
+}
+
+async function loadAllDropdowns() {
+  const promises = [
+    loadDropdown("elementtype","salaryInput", "PaymentType", "elmDesc", "Select Type")
+  ];
+  await Promise.all(promises);
+}
+
+function getValueField(endpoint) {
+  const fieldMap = {
+    'elementtype': 'PaymentType'
+  };
+  return fieldMap[endpoint] || 'code';
+}
+
+function getTextField(endpoint) {
+  const fieldMap = {
+    'elementtype': 'elmDesc'
+  }
+  return fieldMap[endpoint] || 'name';
+}
+
+function resolveName(code, endpoint) {
+  if (!code) return 'N/A';
+  return lookupMaps[endpoint]?.[code] || code;
+}
 
 // Load mapping from localStorage
 function loadMapping() {
@@ -320,4 +381,6 @@ cancelBtn.addEventListener("click", () => {
 
 // Init
 loadOverpayment();
+loadAllDropdowns();
+})();
 </script>

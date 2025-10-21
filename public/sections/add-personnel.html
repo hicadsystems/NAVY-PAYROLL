@@ -98,7 +98,9 @@
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700">Entry Mode</label>
-          <input type="text" name="entry_mode" id="entry_mode" placeholder="Entry Mode" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+          <select name="entry_mode" id="entry_mode" placeholder="Entry Mode" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option value=""></option>
+          </select>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700">Date Left</label>
@@ -703,6 +705,7 @@ async function loadAllDropdowns() {
     loadDropdown("branch", "branch", "busline", "busdesc", "Select Branch"),
     loadDropdown("location", "step3-ship", "unitcode", "unitdesc", "Select location"),
     loadDropdown("payrollclass", "payrollProcess", "classcode", "classname", "Select Payroll Process"),
+    loadDropdown("entrymode", "entry_mode", "entrymode", "entryname", "Select entrymode"),
 
     //spouse and child state/lga dropdowns would be populated dynamically based on selection
     loadDropdown("state", "spouseState", "Statecode", "Statename", "Select State"),

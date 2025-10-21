@@ -3,7 +3,7 @@ const pool = require('../../config/db'); // mysql2 pool
 const verifyToken = require('../../middware/authentication');
 const router = express.Router();
 
-// 📌 Create a new bank
+// Create a new bank
 router.post("/bankcreate", verifyToken, async (req, res) => {
   try {
     const {
@@ -30,18 +30,46 @@ router.post("/bankcreate", verifyToken, async (req, res) => {
   }
 });
 
-// 📌 Get all banks
+// Get all banks
 router.get("/bank", verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM py_bank ORDER BY bankname ASC");
-    res.json(rows);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // Get total count
+    const [countResult] = await pool.query("SELECT COUNT(*) AS total FROM py_bank");
+    const totalRecords = countResult[0].total;
+    const totalPages = Math.ceil(totalRecords / limit);
+
+    const [rows] = await pool.query(
+      "SELECT * FROM py_bank ORDER BY bankname ASC LIMIT ? OFFSET ?",
+      [limit, offset]
+    );
+
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalRecords,
+        limit,
+        hasPreviousPage: page > 1,
+        hasNextPage: page < totalPages,
+      },
+    });
   } catch (err) {
     console.error("❌ Error fetching banks:", err);
-    res.status(500).json({ error: "Database error" });
+    res.status(500).json({
+      success: false,
+      message: "Error fetching banks",
+      error: err.message,
+    });
   }
 });
 
-// 📌 Get single bank by composite key
+// Get single bank by composite key
 router.get("/:bankcode/:branchcode", verifyToken, async (req, res) => {
   try {
     const { bankcode, branchcode } = req.params;
@@ -60,7 +88,62 @@ router.get("/:bankcode/:branchcode", verifyToken, async (req, res) => {
   }
 });
 
-// 📌 Update bank
+// Search
+router.get('/employees-current/search', verifyToken, async (req, res) => {
+  try {
+    const currentDb = pool.getCurrentDatabase(req.user_id);
+    console.log('🔍 Search database:', currentDb);
+    console.log('🔍 User ID:', req.user_id);
+    
+    const searchTerm = req.query.q || req.query.search || '';
+    
+    console.log('🔎 Search term:', searchTerm);
+
+    let query = `
+      SELECT * FROM py_bank
+    `;
+
+    const params = [];
+
+    // Add search conditions if search term provided
+    if (searchTerm) {
+      query += ` AND (
+        bankcode LIKE ? OR
+        branchcode LIKE ? OR
+        branchname LIKE ? OR
+        bankname LIKE ? OR
+        CONCAT(branchcode, ' ', branchname) LIKE ?
+      )`;
+      
+      const searchPattern = `%${searchTerm}%`;
+      params.push(
+        searchPattern, // bankcode
+        searchPattern, // branchcode
+        searchPattern, // branchname
+        searchPattern, // bankname
+        searchPattern  // Full name
+      );
+    }
+
+    query += 'ORDER BY bankname ASC'
+
+    const [rows] = await pool.query(query, params);
+
+    console.log('🔍 Search returned:', rows.length, 'records');
+
+    res.json({ 
+      success: true, 
+      data: rows,
+      searchTerm: searchTerm,
+      resultCount: rows.length
+    });
+  } catch (err) {
+    console.error('❌ Search error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Update bank
 router.put("/:bankcode/:branchcode", verifyToken, async (req, res) => {
   try {
     const { bankcode, branchcode } = req.params;

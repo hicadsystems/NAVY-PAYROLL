@@ -1,8 +1,10 @@
 <div class="p-6">
   <div class="flex justify-end mb-4 gap-2">
+    <input type="text" id="searchElement" placeholder="Search type or description" class="border rounded px-3 py-2">
     <button id="showFormBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New</button>
-     <button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
-      <i class="fas fa-file-alt mr-2"></i>Generate Report</button>
+    <button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+      <i class="fas fa-file-alt mr-2"></i>Generate Report
+    </button>
   </div>
 
   <!-- Hidden Form -->
@@ -13,7 +15,7 @@
     </div>
 
     <div>
-      <label class="block text-sm font-medium text-gray-700">Description</label>
+      <label class="block text-sm font-medium text-gray-700">Description *</label>
       <input type="text" id="description" maxlength="35" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
     </div>
 
@@ -28,13 +30,15 @@
 
 
     <div>
-      <label class="block text-sm font-medium text-gray-700">Function Type</label>
-      <input type="text" id="percentage" maxlength="20" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+      <label class="block text-sm font-medium text-gray-700">Function Type *</label>
+      <select id="percentage" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+       <option value="">Select Function Type</option>
+      </select>
     </div>
 
     <div>
       <label class="block text-sm font-medium text-gray-700">Standard Amount</label>
-      <input type="number" step="0.01" id="standardAmount" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
+      <input type="number" step="1,000" id="standardAmount" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
     </div>
 
     <div>
@@ -47,8 +51,6 @@
       <select id="dependence" placeholder="Payment code" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
         <option value="">Select Dependance</option>
         <option value="None">None</option>
-        <option value="basic">Basic</option>
-        <option value="otime">Overtime</option>
       </select>
     </div>
 
@@ -56,10 +58,6 @@
       <label class="block text-sm font-medium text-gray-700">Payment Frequency</label>
       <select id="paymentFrequency" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
         <option value="">Select Payment Frequency</option>
-        <option value="M">Monthly</option>
-        <option value="Q">Quarterly</option>
-        <option value="A">Annually</option>
-        <option value="W">Weekly</option>
       </select>
     </div>
 
@@ -88,7 +86,7 @@
     </div>
 
     <div>
-      <label class="block text-sm font-medium text-gray-700">Required For All*</label>
+      <label class="block text-sm font-medium text-gray-700">Required For All</label>
       <select id="bPay" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent" required>
         <option value="">Select</option>
         <option value="YES">Yes</option>
@@ -98,7 +96,7 @@
 
 
     <div>
-      <label class="block text-sm font-medium text-gray-700">Year End Clearance *</label>
+      <label class="block text-sm font-medium text-gray-700">Year End Clearance </label>
       <select id="yearEndClearance" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent" required>
         <option value="">Select</option>
         <option value="YES">Yes</option>
@@ -110,8 +108,7 @@
       <label class="block text-sm font-medium text-gray-700">Ledger Code</label>
       <select id="accountLedger" maxlength="15" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
         <option value="">Select Ledger Code</option>
-        <option value="OFFICE FITTINGS">OFFICE FITTINGS</option>
-        <option value="MOTOR VEHICLE">MOTOR VEHICLE</option>
+
       </select>
     </div>
 
@@ -137,7 +134,7 @@
         <tr>
           <th class="border px-2 py-3 text-left">Payment Type</th>
           <th class="border px-2 py-3 text-left">Description</th>
-          <th class="border px-2 py-3 text-left">Percentage</th>
+          <th class="border px-2 py-3 text-left">Function Type</th>
           <th class="border px-2 py-3 text-left">Dependence</th>
           <th class="border px-2 py-3 text-left">Status</th>
           <th class="border px-2 py-3 text-center">Actions</th>
@@ -147,6 +144,30 @@
         <!-- Dynamic content will be inserted here -->
       </tbody>
     </table>
+  </div>
+
+  <!-- Pagination Controls -->
+  <div class="mt-4 flex items-center justify-between">
+    <div class="text-sm text-gray-600">
+      Showing <span id="startRecord">0</span> to <span id="endRecord">0</span> of <span id="totalRecords">0</span> records
+    </div>
+    <div class="flex items-center space-x-2">
+      <select id="recordsPerPage" class="border border-gray-300 rounded px-2 py-1 text-sm">
+        <option value="10">10 per page</option>
+        <option value="25">25 per page</option>
+        <option value="50">50 per page</option>
+        <option value="100">100 per page</option>
+      </select>
+      <button id="prevPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+        Previous
+      </button>
+      <span class="text-sm">
+        Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+      </span>
+      <button id="nextPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+        Next
+      </button>
+    </div>
   </div>
 </div>
 
@@ -196,10 +217,17 @@
 </div>
 
 <script>
+(function () {
   // Global variables
   let editingIndex = null;
   let data = [];
   let originalData = [];
+  let lookupMaps = {};
+
+  let currentPage = 1;
+  let recordsPerPage = 10;
+  let filteredData = []; // Store filtered results from search
+  let currentSearchTerm = ""; // Store current search term
 
   // DOM elements
   const form = document.getElementById("payElementsForm");
@@ -207,10 +235,87 @@
   const saveBtn = document.getElementById("saveBtn");
   const cancelBtn = document.getElementById("cancelBtn");
   const tableBody = document.getElementById("payElementsTable");
-  const searchInput = document.getElementById("searchPayElements");
+  const searchElement = document.getElementById("searchElement");
+
+  // Pagination elements
+  const prevPageBtn = document.getElementById('prevPage');
+  const nextPageBtn = document.getElementById('nextPage');
+  const currentPageSpan = document.getElementById('currentPage');
+  const totalPagesSpan = document.getElementById('totalPages');
+  const recordsPerPageSelect = document.getElementById('recordsPerPage');
+  const startRecordSpan = document.getElementById('startRecord');
+  const endRecordSpan = document.getElementById('endRecord');
+  const totalRecordsSpan = document.getElementById('totalRecords');
 
   // --- API Functions ---
-  async function fetchPayElements() {
+  //Load Dropdown
+  async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/reference/${endpoint}`, {   
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        }
+      });
+      const data = await response.json();
+      const dropdown = document.getElementById(elementId);
+      if (!dropdown) return;
+      dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+      data.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item[valueField];
+        option.textContent = item[textField];
+        dropdown.appendChild(option);
+
+        lookupMaps[endpoint] = Object.fromEntries(
+          data.map(item => [item[valueField], item[textField]])
+        )
+      });
+      return data;
+    } catch (err) {
+      console.error(`Failed to load ${endpoint}:`, err);
+      return [];
+    }
+  }
+
+  async function loadAllDropdowns() {
+    const promises = [
+      loadDropdown("functiontype","percentage", "funct", "functdesc", "Select Function Type"),
+      loadDropdown("ledger","accountLedger", "acctnumber", "description", "Select Ledger Code"),
+      loadDropdown("elementtype", "dependence", "PaymentType", "elmDesc", "Select Dependance"),
+      loadDropdown("payfrequency", "paymentFrequency", "paycode", "paydesc", "Select pay Frequency")      
+    ];
+    await Promise.all(promises);
+  }
+
+  function getValueField(endpoint) {
+    const fieldMap = {
+      'functiontype': 'funct',
+      'accchart': 'acctnumber',
+      'elementtype': 'PaymentType',
+      'payfrequency': 'paycode'
+    };
+    return fieldMap[endpoint] || 'code';
+  }
+
+  function getTextField(endpoint) {
+    const fieldMap = {
+      'functiontype': 'functdesc',
+      'accchart': 'description',
+      'elementtype': 'elmDesc',
+      'payfrequency': 'paydesc'      
+    }
+    return fieldMap[endpoint] || 'name';
+  }
+
+  function resolveName(code, endpoint) {
+    if (!code) return 'N/A';
+    return lookupMaps[endpoint]?.[code] || code;
+  }
+
+  async function fetchPayElements(preserveElements = false) {
     try {
       const token = localStorage.getItem("token");
 
@@ -223,8 +328,38 @@
     });
 
       if (!response.ok) throw new Error('Failed to fetch data');
-        data = await response.json();
-        renderTable();
+
+      const result = await response.json();
+ 
+      // Handle different response structures
+      if (result.success) {
+        data = result.data || [];
+      } else if (Array.isArray(result)) {
+        data = result;
+      } else if (result.data) {
+        data = result.data;
+      } else {
+        data = [];
+      }
+
+      if (preserveElements) {
+        // Reapply the current search filter
+        applySearch(currentSearchTerm);
+        
+        // Validate current page is still valid
+        const totalPages = Math.ceil(filteredData.length / recordsPerPage) || 1;
+        if (currentPage > totalPages) {
+          currentPage = totalPages;
+        }
+      } else {
+        // Fresh load - reset everything
+        filteredData = [...data];
+        currentPage = 1;
+        currentSearchTerm = "";
+      }
+      
+      renderWithPagination();
+
        } catch (error) {
       console.error('Error fetching pay elements:', error);
       showError('Failed to load payment elements');
@@ -356,12 +491,41 @@
   }
 
   // --- UI Functions ---
-  function renderTable(dataToRender = data) {
-    tableBody.innerHTML = dataToRender.map((item, index) => `
+
+  // Separate function to apply search filtering
+  function applySearch(term) {
+    currentSearchTerm = term;
+    if (term) {
+      filteredData = data.filter(p => 
+        p.PaymentType.toLowerCase().includes(term) ||
+        p.elmDesc.toLowerCase().includes(term)
+      );
+    } else {
+      filteredData = [...data];
+    }
+  }
+
+  // --- FRONTEND PAGINATION FUNCTIONS ---
+  function getPaginationData() {
+    const totalRecords = filteredData.length;
+    const totalPages = Math.ceil(totalRecords / recordsPerPage) || 1;
+    const startIndex = (currentPage - 1) * recordsPerPage;
+    const endIndex = startIndex + recordsPerPage;
+    const currentData = filteredData.slice(startIndex, endIndex);
+    const startRecord = totalRecords === 0 ? 0 : startIndex + 1;
+    const endRecord = Math.min(endIndex, totalRecords);
+
+    return { totalRecords, totalPages, currentData, startRecord, endRecord };
+  }
+
+  function renderTable() {
+    const { currentData } = getPaginationData();
+
+    tableBody.innerHTML = currentData.map((item, index) => `
       <tr class="hover:bg-gray-50">
         <td class="border px-2 py-2 text-left">${item.PaymentType}</td>
         <td class="border px-2 py-2 text-left">${item.elmDesc || '-'}</td>
-        <td class="border px-2 py-2 text-left">${item.perc || '-'}</td>
+        <td class="border px-2 py-2 text-left">${resolveName(item.perc, 'functiontype')}</td>
         <td class="border px-2 py-2 text-left">${item.dependence || 'None'}</td>
         <td class="border px-2 py-2 text-left">
           <span class="px-2 py-1 rounded text-xs ${item.Status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
@@ -375,6 +539,24 @@
         </td>
       </tr>
     `).join("");
+  }
+
+  function updatePaginationUI() {
+    const { totalRecords, totalPages, startRecord, endRecord } = getPaginationData();
+    
+    currentPageSpan.textContent = currentPage;
+    totalPagesSpan.textContent = totalPages;
+    startRecordSpan.textContent = startRecord;
+    endRecordSpan.textContent = endRecord;
+    totalRecordsSpan.textContent = totalRecords;
+
+    prevPageBtn.disabled = currentPage <= 1;
+    nextPageBtn.disabled = currentPage >= totalPages;
+  }
+
+  function renderWithPagination() {
+    renderTable();
+    updatePaginationUI();
   }
 
   function clearForm() {
@@ -448,14 +630,14 @@
       PaymentType: "Payment Type",
       elmDesc: "Description", 
       Status: "Status",
-      perc: "Percentage",
+      perc: "Function Type",
       std: "Standard Amount",
       maxi: "Maximum Amount",
       dependence: "Dependence",
       payfreq: "Payment Frequency",
       pmonth: "Starting Month",
       freetax: "Tax Free Amount",
-      bpay: "Bpay",
+      bpay: "Required For All",
       yearend: "Year End Clearance",
       Ledger: "Account Ledger",
       ipis: "Required By IPPIS",
@@ -513,7 +695,7 @@
       deletePayElement(paymentType)
         .then(() => {
           showSuccess("Payment element deleted successfully!");
-          fetchPayElements(); // Refresh data
+          fetchPayElements(true); // Refresh data
         })
         .catch(error => {
           showError(error.message);
@@ -535,7 +717,7 @@
   saveBtn.addEventListener("click", async () => {
     const formData = getFormData();
 
-    let requiredFields = ['PaymentType', 'bpay', 'yearend'];
+    let requiredFields = ['PaymentType', 'elmDesc', 'perc'];
     
     let missingFields = requiredFields.filter(field => !formData[field]);
 
@@ -581,7 +763,7 @@
       
       form.classList.add("hidden");
       clearForm();
-      await fetchPayElements();
+      await fetchPayElements(true);
       originalData = null;
 
     } catch (error) {
@@ -637,6 +819,35 @@
       };
     });
   }
+
+  searchElement.addEventListener("input", (e) => {
+    const term = e.target.value.toLowerCase();
+    applySearch(term);
+    currentPage = 1; // Reset to first page on new search
+    renderWithPagination();
+  });
+
+  // --- Pagination Event Listeners---
+  prevPageBtn.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderWithPagination();
+    }
+  });
+
+  nextPageBtn.addEventListener('click', () => {
+    const { totalPages } = getPaginationData();
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderWithPagination();
+    }
+  });
+
+  recordsPerPageSelect.addEventListener('change', (e) => {
+    recordsPerPage = parseInt(e.target.value);
+    currentPage = 1; // Reset to first page
+    renderWithPagination();
+  });
 
   // Force uppercase as user types 
   ["payElements", "description"].forEach(id => {
@@ -850,4 +1061,6 @@
 
   // Initialize the application
   fetchPayElements();
+  loadAllDropdowns();
+})();
 </script>

@@ -19,7 +19,7 @@
 
     <form id="groupForm" class="hidden grid grid-cols-2 gap-4">
       <label>Group Code</label>
-      <input type="text" maxlength="6" id="groupCode" class="border p-2 rounded">
+      <input type="text" maxlength="12" id="groupCode" class="border p-2 rounded">
       <label>Description</label>
       <input type="text" id="groupDesc" class="border p-2 rounded">
       <label>Effective Date</label>
@@ -150,7 +150,7 @@
 
 <!-- View Modal -->
 <div id="scaleViewModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-  <div class="bg-gradient-to-br from-blue-50 to-yellow-50 p-6 rounded-2xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto border border-blue-100">
+  <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto border border-blue-100">
 
     <!-- Header -->
     <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-3">
@@ -622,18 +622,18 @@ window.viewScale = async function(index) {
     const maxStep = progressionData.data.maxProgressionStep;
     
     let html = `
-      <div class="p-6 border rounded-2xl shadow-lg bg-gradient-to-br from-blue-50 to-white">
+      <div class="p-6 border rounded-2xl shadow-lg">
         <div class="flex items-center flex-wrap gap-6 mb-4">
-          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-[14px] font-semibold text-gray-800">
+          <p class="border rounded rounded-lg p-2 bg-grey-100 text-[14px] font-semibold text-gray-800">
             <span class="text-blue-800 font-bold">Salary Code:</span> ${s.salcode}
           </p>
-          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-[14px] font-semibold text-gray-800">
+          <p class="border rounded rounded-lg p-2 bg-grey-100 text-[14px] font-semibold text-gray-800">
             <span class="text-blue-800 font-bold">Salary Type:</span> ${s.saltype}
           </p>
-          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-[14px] font-semibold text-gray-800">
+          <p class="border rounded rounded-lg p-2 bg-grey-100 text-[14px] font-semibold text-gray-800">
             <span class="text-blue-800 font-bold">Grade:</span> ${s.grade}
           </p>
-          <p class="border rounded rounded-lg p-2 bg-green-50 text-[14px] font-semibold text-gray-800">
+          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-[14px] font-semibold text-gray-800">
             <span class="text-red-600 font-bold">Max Progression:</span> Step ${maxStep}
           </p>
         </div>

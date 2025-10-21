@@ -94,7 +94,6 @@
             <th class="border px-6 py-3 text-left">Bank Name</th>
             <th class="border px-6 py-3 text-left">Branch</th>
             <th class="border px-6 py-3 text-left">Account No</th>
-            <th class="border px-6 py-3 text-left">Contact Mgr</th>
             <th class="border px-6 py-3 text-left">Actions</th>
           </tr>
         </thead>
@@ -103,6 +102,30 @@
         </tbody>
       </table>
     </div>
+
+  <!-- Pagination Controls -->
+  <div class="mt-4 flex items-center justify-between">
+    <div class="text-sm text-gray-600">
+      Showing <span id="startRecord">0</span> to <span id="endRecord">0</span> of <span id="totalRecords">0</span> records
+    </div>
+    <div class="flex items-center space-x-2">
+      <select id="recordsPerPage" class="border border-gray-300 rounded px-2 py-1 text-sm">
+        <option value="10">10 per page</option>
+        <option value="25">25 per page</option>
+        <option value="50">50 per page</option>
+        <option value="100">100 per page</option>
+      </select>
+      <button id="prevPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+        Previous
+      </button>
+      <span class="text-sm">
+        Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+      </span>
+      <button id="nextPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+        Next
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- Success Modal -->
@@ -186,27 +209,60 @@
   let editingBankIndex = null;
   let pendingDeleteIndex = null;
 
+  // Pagination variables
+  let currentPage = 1;
+  let recordsPerPage = 10;
+  let totalRecords = 0;
+  let totalPages = 1;
+
   const bankForm = document.getElementById("bankForm");
   const addNewBankBtn = document.getElementById("addNewBankBtn");
   const saveBankBtn = document.getElementById("saveBankBtn");
   const cancelBankBtn = document.getElementById("cancelBankBtn");
   const bankTableBody = document.getElementById("bankTableBody");
 
-  // 🔹 Load banks from backend
+  // Pagination elements
+  const prevPageBtn = document.getElementById('prevPage');
+  const nextPageBtn = document.getElementById('nextPage');
+  const currentPageSpan = document.getElementById('currentPage');
+  const totalPagesSpan = document.getElementById('totalPages');
+  const recordsPerPageSelect = document.getElementById('recordsPerPage');
+  const startRecordSpan = document.getElementById('startRecord');
+  const endRecordSpan = document.getElementById('endRecord');
+  const totalRecordsSpan = document.getElementById('totalRecords');
+
+  // Load banks from backend
   async function loadBanks() {
     try {
       const token = localStorage.getItem('token');
-      
-      const res = await fetch("/api/bank",{   
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}` 
-      }
-    });
+      const res = await fetch(`/api/bank?page=${currentPage}&limit=${recordsPerPage}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
       if (!res.ok) throw new Error("Failed to fetch banks");
-      bankData = await res.json();
-      renderBankTable();
+
+      const result = await res.json();
+
+      if (result.success) {
+        // Save data for rendering
+        bankData = result.data;
+
+        // Update pagination variables
+        totalRecords = result.pagination.totalRecords;
+        totalPages = result.pagination.totalPages;
+        currentPage = result.pagination.currentPage;
+
+        // Now render table and pagination UI
+        renderBankTable();
+        updatePaginationUI();
+      } else {
+        showErrorModal("No records found.");
+      }
+
     } catch (err) {
       showErrorModal("Error loading bank records: " + err.message);
     }
@@ -223,7 +279,7 @@
 
   // Save bank record (Create / Update)
   saveBankBtn.addEventListener("click", async () => {
-    const requiredFields = ["bankCode", "bankName", "branchName", "branchCode", "companyAccountNo"];
+    const requiredFields = ["bankCode", "bankName", "branchName", "branchCode"];
     let missingFields = [];
 
     for (let field of requiredFields) {
@@ -313,7 +369,6 @@
         <td class="border px-2 py-3 text-sm text-gray-900">${item.bankname}</td>
         <td class="border px-2 py-3 text-sm text-gray-900">${item.branchname}</td>
         <td class="border px-2 py-3 text-sm text-gray-900">${item.CompanyAcctNo}</td>
-        <td class="border px-2 py-3 text-sm text-gray-900">${item.ContactMgrAccountant || "N/A"}</td>
         <td class="border px-2 py-3 text-sm font-medium">
           <button onclick="viewBankRecord(${index})" class="text-blue-600 hover:text-blue-900 px-2 py-1 rounded hover:bg-blue-50 mr-2">View</button>
           <button onclick="editBankRecord(${index})" class="text-green-600 hover:text-green-900 px-2 py-1 rounded hover:bg-green-50 mr-2">Edit</button>
@@ -321,6 +376,21 @@
         </td>
       </tr>
     `).join("");
+  }
+
+  function updatePaginationUI() {
+    currentPageSpan.textContent = currentPage;
+    totalPagesSpan.textContent = totalPages;
+    
+    const start = (currentPage - 1) * recordsPerPage + 1;
+    const end = Math.min(start + recordsPerPage - 1, totalRecords);
+    
+    startRecordSpan.textContent = totalRecords === 0 ? 0 : start;
+    endRecordSpan.textContent = end;
+    totalRecordsSpan.textContent = totalRecords;
+
+    prevPageBtn.disabled = currentPage <= 1;
+    nextPageBtn.disabled = currentPage >= totalPages;
   }
 
   // Global functions for table actions
@@ -474,6 +544,27 @@
     document.getElementById(modalId).addEventListener("click", (e) => {
       if (e.target === e.currentTarget) closeModal(modalId);
     });
+  });
+
+  //Pagination Listeners
+  prevPageBtn.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      loadBanks();
+    }
+  });
+
+  nextPageBtn.addEventListener('click', () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      loadBanks();
+    }
+  });
+
+  recordsPerPageSelect.addEventListener('change', (e) => {
+    recordsPerPage = parseInt(e.target.value);
+    currentPage = 1;
+    loadBanks();
   });
 
   // Capitalize first letter, keep the rest lower

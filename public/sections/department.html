@@ -28,8 +28,8 @@
       <input type="text" id="deptname" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter Department Name">
     </div>
     <div>
-      <label class="block text-sm font-medium text-gray-700">Coor code</label>
-      <input id="coordcode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter coor code">
+      <label class="block text-sm font-medium text-gray-700">Coordination code</label>
+      <input id="coordcode" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-white" placeholder="Enter Coordination code">
     </div>
     <div>
       <label class="block text-sm font-medium text-gray-700">Manager</label>
@@ -75,7 +75,6 @@
           <th class="border px-2 py-3 text-left">Factory Name</th>
           <th class="border px-2 py-3 text-left">Dept Code</th>
           <th class="border px-2 py-3 text-left">Dept Name</th>
-          <th class="border px-2 py-3 text-left">Manager</th>
           <th class="border px-2 py-3 text-left">Actions</th>
         </tr>
       </thead>
@@ -175,7 +174,6 @@ function renderDeptTable(data = deptData) {
       <td class="border px-2 py-3">${d.factname}</td>
       <td class="border px-2 py-3">${d.deptcode}</td>
       <td class="border px-2 py-3">${d.deptname || ""}</td>
-      <td class="border px-2 py-3">${d.manager || ""}</td>
       <td class="border px-2 py-3">
         <button onclick="viewDept(${i})" class="text-blue-600 mr-2">View</button>
         <button onclick="editDept(${i})" class="text-green-600 mr-2">Edit</button>
@@ -404,7 +402,7 @@ window.viewDept = function(index) {
       <dt class="font-medium">Dept Name:</dt><dd class="col-span-2">${item.deptname || ""}</dd>
     </div>
     <div class="grid grid-cols-3 gap-2 py-2 border-b">
-      <dt class="font-medium">Description:</dt><dd class="col-span-2">${item.coordcode || ""}</dd>
+      <dt class="font-medium">Coordination Code:</dt><dd class="col-span-2">${item.coordcode || ""}</dd>
     </div>
     <div class="grid grid-cols-3 gap-2 py-2 border-b">
       <dt class="font-medium">Manager:</dt><dd class="col-span-2">${item.manager || ""}</dd>

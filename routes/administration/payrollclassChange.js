@@ -89,10 +89,10 @@ router.get('/payroll-class-stats', verifyToken, async (req, res) => {
 const DATABASE_MAP = {
   [process.env.DB_OFFICERS || 'hicaddata']: { name: 'OFFICERS', code: '1' },
   [process.env.DB_WOFFICERS || 'hicaddata1']: { name: 'W/OFFICERS', code: '2' },
-  [process.env.DB_RATINGS || 'hicaddata2']: { name: 'RATINGS', code: '3' },
-  [process.env.DB_RATINGS_A || 'hicaddata3']: { name: 'RATINGS A', code: '4' },
-  [process.env.DB_RATINGS_B || 'hicaddata4']: { name: 'RATINGS B', code: '5' },
-  [process.env.DB_JUNIOR_TRAINEE || 'hicaddata5']: { name: 'JUNIOR/TRAINEE', code: '6' }
+  [process.env.DB_RATINGS || 'hicaddata2']: { name: 'RATE A', code: '3' },
+  [process.env.DB_RATINGS_A || 'hicaddata3']: { name: 'RATE B', code: '4' },
+  [process.env.DB_RATINGS_B || 'hicaddata4']: { name: 'RATE C', code: '5' },
+  [process.env.DB_JUNIOR_TRAINEE || 'hicaddata5']: { name: 'TRAINEE', code: '6' }
 };
 
 // Payroll Class Code to Database Name Mapping
@@ -109,11 +109,12 @@ const PAYROLL_CLASS_TO_DB_MAP = {
   'OFFICERS': process.env.DB_OFFICERS || 'hicaddata',
   'W/OFFICERS': process.env.DB_WOFFICERS || 'hicaddata1',
   'W.OFFICERS': process.env.DB_WOFFICERS || 'hicaddata1',
-  'RATINGS': process.env.DB_RATINGS || 'hicaddata2',
-  'RATINGS A': process.env.DB_RATINGS_A || 'hicaddata3',
-  'RATINGA': process.env.DB_RATINGS_A || 'hicaddata3',
-  'RATINGS B': process.env.DB_RATINGS_B || 'hicaddata4',
-  'RATINGB': process.env.DB_RATINGS_B || 'hicaddata4',
+  'RATE A': process.env.DB_RATINGS || 'hicaddata2',
+  'RATEA': process.env.DB_RATINGS || 'hicaddata2',
+  'RATE B': process.env.DB_RATINGS_A || 'hicaddata3',
+  'RATEB': process.env.DB_RATINGS_A || 'hicaddata3',
+  'RATE C': process.env.DB_RATINGS_B || 'hicaddata4',
+  'RATEC': process.env.DB_RATINGS_B || 'hicaddata4',
   'JUNIOR/TRAINEE': process.env.DB_JUNIOR_TRAINEE || 'hicaddata5',
   'JUNIORTRAINEE': process.env.DB_JUNIOR_TRAINEE || 'hicaddata5',
   

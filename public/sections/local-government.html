@@ -48,6 +48,30 @@
       <tbody id="lgaTableBody"></tbody>
     </table>
   </div>
+
+  <!-- Pagination Controls -->
+  <div class="mt-4 flex items-center justify-between">
+    <div class="text-sm text-gray-600">
+      Showing <span id="startRecord">0</span> to <span id="endRecord">0</span> of <span id="totalRecords">0</span> records
+    </div>
+    <div class="flex items-center space-x-2">
+      <select id="recordsPerPage" class="border border-gray-300 rounded px-2 py-1 text-sm">
+        <option value="10">10 per page</option>
+        <option value="25">25 per page</option>
+        <option value="50">50 per page</option>
+        <option value="100">100 per page</option>
+      </select>
+      <button id="prevPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+        Previous
+      </button>
+      <span class="text-sm">
+        Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+      </span>
+      <button id="nextPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+        Next
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- Success Modal -->
@@ -127,139 +151,213 @@
 </div>
 
 <script>
-  async function fetchStates(){
-    try{
-      const token = localStorage.getItem('token');
+let lgaData = [];
+let stateMap = {};
+let originalLgaData = null;
+let editingLgaIndex = null;
+let pendingDeleteLgaIndex = null;
 
-      const result = await fetch ("/dropdown-states", {
+let currentPage = 1;
+let recordsPerPage = 10;
+let filteredData = []; // Store filtered results from search
+let currentSearchTerm = ""; // Store current search term
+
+const lgaForm = document.getElementById("lgaForm");
+const addNewLgaBtn = document.getElementById("addNewLgaBtn");
+const saveLgaBtn = document.getElementById("saveLgaBtn");
+const cancelLgaBtn = document.getElementById("cancelLgaBtn");
+const lgaTableBody = document.getElementById("lgaTableBody");
+const searchLga = document.getElementById("searchLga");
+const lgaStateSelect = document.getElementById("lgaState");
+
+// Pagination elements
+const prevPageBtn = document.getElementById('prevPage');
+const nextPageBtn = document.getElementById('nextPage');
+const currentPageSpan = document.getElementById('currentPage');
+const totalPagesSpan = document.getElementById('totalPages');
+const recordsPerPageSelect = document.getElementById('recordsPerPage');
+const startRecordSpan = document.getElementById('startRecord');
+const endRecordSpan = document.getElementById('endRecord');
+const totalRecordsSpan = document.getElementById('totalRecords');
+
+
+// --- API Functions ---
+async function fetchStates(){
+  try{
+    const token = localStorage.getItem('token');
+
+    const result = await fetch ("/dropdown-states", {
+      method: "GET",
+      headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+      }                 
+    })
+
+    const states = await result.json();
+    const select = document.getElementById("lgaState");
+
+    if (!select) {
+      console.error("⚠️ Element with id 'stateCode' not found.");
+      return;
+    }
+
+    // Clear existing options
+    select.innerHTML = "";
+
+    // Add default option
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "Select a state";
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    select.appendChild(defaultOption);
+
+    // Populate with DB data
+    states.forEach(cls => {
+      const opt = document.createElement("option");
+      opt.value = cls.Statecode;            // backend value
+      opt.textContent = cls.Statename; // human-readable label
+      select.appendChild(opt);
+    });
+
+    // Build the stateMap for lookup
+    stateMap = states.reduce((acc, s) => {
+      acc[s.Statecode] = s.Statename;
+      return acc;
+    }, {});
+
+  } catch(err){
+    console.error("❌ Failed to load states:", err);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener("DOMContentLoaded", fetchStates);
+} else {
+  fetchStates();
+}
+
+async function prefillStates(selectedCode = null) {
+  try {
+    const token = localStorage.getItem('token');
+
+    const res = await fetch("/dropdown-states", {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}` 
         }                 
-      })
-
-      const states = await result.json();
-      const select = document.getElementById("lgaState");
-
-      if (!select) {
-        console.error("⚠️ Element with id 'stateCode' not found.");
-        return;
-      }
-
-      // Clear existing options
-      select.innerHTML = "";
-
-      // Add default option
-      const defaultOption = document.createElement("option");
-      defaultOption.value = "";
-      defaultOption.textContent = "Select a state";
-      defaultOption.disabled = true;
-      defaultOption.selected = true;
-      select.appendChild(defaultOption);
-
-      // Populate with DB data
-      states.forEach(cls => {
-        const opt = document.createElement("option");
-        opt.value = cls.Statecode;            // backend value
-        opt.textContent = cls.Statename; // human-readable label
-        select.appendChild(opt);
       });
+      
+    const states = await res.json();
 
-      // Build the stateMap for lookup
-      stateMap = states.reduce((acc, s) => {
-        acc[s.Statecode] = s.Statename;
-        return acc;
-      }, {});
+    lgaStateSelect.innerHTML = states.map(
+      s => `<option value="${s.Statecode}">${s.Statename}</option>`
+    ).join("");
 
-    } catch(err){
-      console.error("❌ Failed to load states:", err);
+    // If editing, set selected value
+    if (selectedCode) {
+      lgaStateSelect.value = selectedCode;
     }
+
+    // Build the stateMap for lookup
+    stateMap = states.reduce((acc, s) => {
+      acc[s.Statecode] = s.Statename;
+      return acc;
+    }, {});
+
+  } catch (err) {
+    console.error("Error fetching states:", err);
   }
+}
 
-  if (document.readyState === 'loading') {
-    document.addEventListener("DOMContentLoaded", fetchStates);
-  } else {
-    fetchStates();
-  }
+// Fetch LGAs from backend
+async function loadLGAs(preserveLga = false) {
+  try {
+    const token = localStorage.getItem('token');
 
-  async function prefillStates(selectedCode = null) {
-    try {
-      const token = localStorage.getItem('token');
-
-      const res = await fetch("/dropdown-states", {
-          method: "GET",
-          headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}` 
-          }                 
-        });
-        
-      const states = await res.json();
-
-      lgaStateSelect.innerHTML = states.map(
-        s => `<option value="${s.Statecode}">${s.Statename}</option>`
-      ).join("");
-
-      // If editing, set selected value
-      if (selectedCode) {
-        lgaStateSelect.value = selectedCode;
-      }
-
-      // Build the stateMap for lookup
-      stateMap = states.reduce((acc, s) => {
-        acc[s.Statecode] = s.Statename;
-        return acc;
-      }, {});
-
-    } catch (err) {
-      console.error("Error fetching states:", err);
-    }
-  }
-
-
-
-  let lgaData = [];
-  let stateMap = {};
-  let originalLgaData = null;
-  let editingLgaIndex = null;
-  let pendingDeleteLgaIndex = null;
-
-  const lgaForm = document.getElementById("lgaForm");
-  const addNewLgaBtn = document.getElementById("addNewLgaBtn");
-  const saveLgaBtn = document.getElementById("saveLgaBtn");
-  const cancelLgaBtn = document.getElementById("cancelLgaBtn");
-  const lgaTableBody = document.getElementById("lgaTableBody");
-  const searchLga = document.getElementById("searchLga");
-  const lgaStateSelect = document.getElementById("lgaState");
-
-  // Fetch LGAs from backend
-  async function loadLGAs() {
-    try {
-      const token = localStorage.getItem('token');
-
-      const res = await fetch("lg/lga", {
+    const res = await fetch("lg/lga", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       }
     });
-      lgaData = await res.json();
-      renderLgaTable();
-    } catch (err) {
-      console.error("Error loading LGAs:", err);
+
+    const result = await res.json();
+
+    // Handle different response structures
+    if (result.success) {
+      lgaData = result.data || [];
+    } else if (Array.isArray(result)) {
+      lgaData = result;
+    } else if (result.data) {
+      lgaData = result.data;
+    } else {
+      lgaData = [];
     }
+
+    if (preserveLga) {
+      // Reapply the current search filter
+      applySearch(currentSearchTerm);
+      
+      // Validate current page is still valid
+      const totalPages = Math.ceil(filteredData.length / recordsPerPage) || 1;
+      if (currentPage > totalPages) {
+        currentPage = totalPages;
+      }
+    } else {
+      // Fresh load - reset everything
+      filteredData = [...lgaData];
+      currentPage = 1;
+      currentSearchTerm = "";
+    }
+    
+    renderWithPagination();
+
+  } catch (err) {
+    console.error("Error loading LGAs:", err);
   }
+}
+
+// Separate function to apply search filtering
+function applySearch(term) {
+  currentSearchTerm = term;
+  if (term) {
+    filteredData = lgaData.filter(l => {
+      const stateName = stateMap[l.Statecode] || l.Statecode;
+      return stateName.toLowerCase().includes(term) || 
+             l.Lgname.toLowerCase().includes(term) ||
+             l.Lgname.toLowerCase().includes(term);
+    });
+  } else {
+    filteredData = [...lgaData];
+  }
+}
+
+// --- FRONTEND PAGINATION FUNCTIONS ---
+function getPaginationData() {
+  const totalRecords = filteredData.length;
+  const totalPages = Math.ceil(totalRecords / recordsPerPage) || 1;
+  const startIndex = (currentPage - 1) * recordsPerPage;
+  const endIndex = startIndex + recordsPerPage;
+  const currentData = filteredData.slice(startIndex, endIndex);
+  const startRecord = totalRecords === 0 ? 0 : startIndex + 1;
+  const endRecord = Math.min(endIndex, totalRecords);
+
+  return { totalRecords, totalPages, currentData, startRecord, endRecord };
+}
   
+// Render LGA table
+function renderLgaTable() {
+  const { currentData } = getPaginationData();
 
-  // Render LGA table
-  function renderLgaTable(data = lgaData, isFiltered = false) {
-    lgaTableBody.innerHTML = data.map((item, index) => {
+  lgaTableBody.innerHTML = currentData.map((item, index) => {
+    // Calculate the real index in the original lgaData array
+    const realIndex = lgaData.findIndex(l => l.Lgcode === item.Lgcode);
 
-      const realIndex = isFiltered ? item._originalIndex : index;
-
-      return `
+    return `
       <tr class="hover:bg-gray-50">
         <td class="border px-2 py-3">${item.Lgname}</td>
         <td class="border px-2 py-3">${item.Lgcode}</td>
@@ -271,318 +369,363 @@
         </td>
       </tr>
     `;
-    }).join("");
+  }).join("");
+
+  if (currentData.length === 0) {
+    lgaTableBody.innerHTML = `
+      <tr>
+        <td colspan="4" class="border px-2 py-8 text-center text-gray-500">No records found</td>
+      </tr>
+    `;
   }
+}
 
-  // Add new
-  addNewLgaBtn.addEventListener("click", () => {
-    lgaForm.classList.remove("hidden");
-    editingLgaIndex = null;
-    document.getElementById("lgaCode").disabled = false;
-    lgaForm.reset();
-    fetchStates();
-  });
+function updatePaginationUI() {
+  const { totalRecords, totalPages, startRecord, endRecord } = getPaginationData();
+  
+  currentPageSpan.textContent = currentPage;
+  totalPagesSpan.textContent = totalPages;
+  startRecordSpan.textContent = startRecord;
+  endRecordSpan.textContent = endRecord;
+  totalRecordsSpan.textContent = totalRecords;
 
-  // Save (Create or Update)
-  saveLgaBtn.addEventListener("click", async () => {
-    // Prevent multiple clicks during processing
-    if (saveLgaBtn.disabled) return;
+  prevPageBtn.disabled = currentPage <= 1;
+  nextPageBtn.disabled = currentPage >= totalPages;
+}
+
+function renderWithPagination() {
+  renderLgaTable();
+  updatePaginationUI();
+}
+
+// Add new
+addNewLgaBtn.addEventListener("click", () => {
+  lgaForm.classList.remove("hidden");
+  editingLgaIndex = null;
+  document.getElementById("lgaCode").disabled = false;
+  lgaForm.reset();
+  fetchStates();
+});
+
+// Save (Create or Update)
+saveLgaBtn.addEventListener("click", async () => {
+  // Prevent multiple clicks during processing
+  if (saveLgaBtn.disabled) return;
+  
+  saveLgaBtn.disabled = true;
+
+  try {
+    const item = {
+      Lgname: document.getElementById("lgaName").value.trim(),
+      Lgcode: document.getElementById("lgaCode").value.trim(),
+      Statecode: document.getElementById("lgaState").value,
+      Lghqs: document.getElementById("lghqs").value.trim(),
+    };
+
+    const requiredFields = ["Lgname", "Lgcode", "Statecode"];
     
-    saveLgaBtn.disabled = true;
+    const missingFields = requiredFields.filter(field => !item[field]);
 
-    try {
-      const item = {
-        Lgname: document.getElementById("lgaName").value.trim(),
-        Lgcode: document.getElementById("lgaCode").value.trim(),
-        Statecode: document.getElementById("lgaState").value,
-        Lghqs: document.getElementById("lghqs").value.trim(),
-      };
-
-      const requiredFields = ["Lgname", "Lgcode", "Statecode"];
-      
-      const missingFields = requiredFields.filter(field => !item[field]);
-
-      if (missingFields.length > 0) {
-        showErrorModal(`Please fill in all required fields: ${missingFields.join(", ")}`);
-        return;
-      }
-
-      // Check for duplicates before saving
-      const lgCodeInput = document.getElementById("lgaCode");
-      const lgNameInput = document.getElementById("lgaName");
-
-      // Get the current lgaCode for editing
-      const currentlgCode = editingLgaIndex !== null ? lgaData[editingLgaIndex].Lgcode : null;
-
-      // Perform duplicate checks only for changed fields
-      await checkDuplicate(lgCodeInput, 'Lgcode', currentlgCode);
-      await checkDuplicate(lgNameInput, 'Lgname', currentlgCode);
-
-      // Check if any validation errors exist
-      if (!lgCodeInput.checkValidity() || !lgNameInput.checkValidity()) {
-        showSectionError("Please fix the validation errors before saving.");
-        return;
-      }
-
-      if (editingLgaIndex !== null) {
-        const token = localStorage.getItem("token");
-
-        // Update existing
-        await fetch(`lg/${lgaData[editingLgaIndex].Lgcode}`, {
-          method: "PUT",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify(item),
-        });
-        showSuccessModal("LGA record updated successfully!");
-      } else {
-        const token = localStorage.getItem("token");
-
-        // Create new
-        await fetch('lg/postlga', {
-          method: "POST",
-          headers:{ 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify(item),
-        });
-        showSuccessModal("LGA record saved successfully!");
-      }
-
-      await loadLGAs();
-      lgaForm.classList.add("hidden");
-      lgaForm.reset();
-      editingLgaIndex = null;
-      originalLgaData = null;
-
-    } catch (err) {
-      showErrorModal("Error saving LGA:", err);
-    } finally{
-      saveLgaBtn.disabled = false;
-    }
-  });
-
-  //validation
-  async function checkDuplicate(input, field, excludeLgCode = null) {
-    const value = input.value.trim();
-    if (!value) {
-      input.setCustomValidity("");
-      input.reportValidity();
+    if (missingFields.length > 0) {
+      showErrorModal(`Please fill in all required fields: ${missingFields.join(", ")}`);
       return;
     }
 
-    // If editing, check if this field value has actually changed
-    if (originalLgaData && originalLgaData[field] === value) {
-      input.setCustomValidity(""); // Clear any existing validation message
-      input.reportValidity();
-      return; // Skip duplicate check if value hasn't changed
+    // Check for duplicates before saving
+    const lgCodeInput = document.getElementById("lgaCode");
+    const lgNameInput = document.getElementById("lgaName");
+
+    // Get the current lgaCode for editing
+    const currentlgCode = editingLgaIndex !== null ? lgaData[editingLgaIndex].Lgcode : null;
+
+    // Perform duplicate checks only for changed fields
+    await checkDuplicate(lgCodeInput, 'Lgcode', currentlgCode);
+    await checkDuplicate(lgNameInput, 'Lgname', currentlgCode);
+
+    // Check if any validation errors exist
+    if (!lgCodeInput.checkValidity() || !lgNameInput.checkValidity()) {
+      showErrorModal("Please fix the validation errors before saving.");
+      return;
     }
 
-    try {
+    if (editingLgaIndex !== null) {
       const token = localStorage.getItem("token");
-      
-      // Build URL with optional excludeLgaCode parameter
-      let url = `lg/postlga/check/${field}/${encodeURIComponent(value)}`;
-      if (excludeLgCode) {
-        url += `?exclude=${excludeLgCode}`;
-      }
-      
-      const res = await fetch(url, {
-        headers: { "Authorization": `Bearer ${token}` }
+
+      // Update existing
+      await fetch(`lg/${lgaData[editingLgaIndex].Lgcode}`, {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(item),
       });
+      showSuccessModal("LGA record updated successfully!");
+    } else {
+      const token = localStorage.getItem("token");
 
-      const data = await res.json();
-      if (data.exists) {
-        input.setCustomValidity(`⚠️ This ${field} already exists.`);
-      } else {
-        input.setCustomValidity("");
-      }
-      input.reportValidity();
-    } catch (err) {
-      console.error(`Error checking ${field}:`, err);
+      // Create new
+      await fetch('lg/postlga', {
+        method: "POST",
+        headers:{ 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(item),
+      });
+      showSuccessModal("LGA record saved successfully!");
     }
-  }
 
-  document.getElementById("lgaName")?.addEventListener("blur", function () {
-    const currentlgCode = editingLgaIndex !== null ? lgaData[editingLgaIndex].Lgcode : null;
-    checkDuplicate(this, "Lgname", currentlgCode);
-  });
-
-  document.getElementById("lgaCode")?.addEventListener("blur", function () {
-    const currentlgCode = editingLgaIndex !== null ? lgaData[editingLgaIndex].Lgcode : null;
-    checkDuplicate(this, "Lgcode", currentlgCode);
-  });
-
-  // Cancel
-  cancelLgaBtn.addEventListener("click", () => {
+    await loadLGAs(true); // Preserve search and pagination state
     lgaForm.classList.add("hidden");
     lgaForm.reset();
-  });
+    editingLgaIndex = null;
+    originalLgaData = null;
 
-  // View
-  window.viewLga = function(index) {
-    const item = lgaData[index];
-    let html = `
-      <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
-        <dt class="font-medium text-gray-600">LGA Name:</dt>
-        <dd class="col-span-2 text-gray-900">${item.Lgname}</dd>
-      </div>
-      <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
-        <dt class="font-medium text-gray-600">LGA Code:</dt>
-        <dd class="col-span-2 text-gray-900">${item.Lgcode}</dd>
-      </div>
-      <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
-        <dt class="font-medium text-gray-600">LGA Headquaters:</dt>
-        <dd class="col-span-2 text-gray-900">${item.Lghqs}</dd>
-      </div>
-      <div class="grid grid-cols-3 gap-2 py-2">
-        <dt class="font-medium text-gray-600">State:</dt>
-        <dd class="col-span-2 text-gray-900">${stateMap[item.Statecode] || item.Statecode}</dd>
-      </div>
-    `;
-    document.getElementById("viewContent").innerHTML = html;
-    showModal("viewModal");
-  };
+  } catch (err) {
+    showErrorModal("Error saving LGA.");
+    console.error(err);
+  } finally{
+    saveLgaBtn.disabled = false;
+  }
+});
 
-  // Edit
-  window.editLga = function(index) {
-    const item = lgaData[index];
+//validation
+async function checkDuplicate(input, field, excludeLgCode = null) {
+  const value = input.value.trim();
+  if (!value) {
+    input.setCustomValidity("");
+    input.reportValidity();
+    return;
+  }
 
-    // Store original values for comparison
-    originalLgaData = {
-      Lgname: item.Lgname,
-      Lgcode: item.Lgcode
-    };
+  // If editing, check if this field value has actually changed
+  if (originalLgaData && originalLgaData[field] === value) {
+    input.setCustomValidity(""); // Clear any existing validation message
+    input.reportValidity();
+    return; // Skip duplicate check if value hasn't changed
+  }
 
-    document.getElementById("lgaName").value = item.Lgname;
-    document.getElementById("lgaCode").value = item.Lgcode;
-    document.getElementById("lghqs").value = item.Lghqs;
-
-    prefillStates(item.Statecode);
-
-    // Clear any existing validation messages
-    document.getElementById("lgaName").setCustomValidity("");
-    document.getElementById("lgaCode").setCustomValidity("");
-
-    editingLgaIndex = index;
-    document.getElementById("lgaCode").disabled = true;
-    lgaForm.classList.remove("hidden");
-  };
-
-  // Delete
-  window.deleteLga = function(index) {
-    pendingDeleteLgaIndex = index;
-    showConfirmModal("Are you sure you want to delete this local government record? This action cannot be undone.");
-  };
-
-  document.getElementById("confirmAction").addEventListener("click", async () => {
-    if (pendingDeleteLgaIndex !== null) {
-      try {
-        const token = localStorage.getItem("token");
-
-        await fetch(`lg/${lgaData[pendingDeleteLgaIndex].Lgcode}`, {
-          method: "DELETE",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-        });
-        showSuccessModal("LGA record deleted successfully!");
-        await loadLGAs();
-      } catch (err) {
-        console.error("Error deleting LGA:", err);
-      }
-      pendingDeleteLgaIndex = null;
+  try {
+    const token = localStorage.getItem("token");
+    
+    // Build URL with optional excludeLgaCode parameter
+    let url = `lg/postlga/check/${field}/${encodeURIComponent(value)}`;
+    if (excludeLgCode) {
+      url += `?exclude=${excludeLgCode}`;
     }
-    closeModal("confirmModal");
-  });
-
-  // Search
-  searchLga.addEventListener("input", (e) => {
-    const term = e.target.value.toLowerCase();
-    const filtered = lgaData.
-    map((item, index) => ({ ...item, _originalIndex: index })) // attach original index.
-    .filter(item =>
-      item.Lgname.toLowerCase().includes(term) || 
-      item.Statecode.toLowerCase().includes(term)
-    );
-    renderLgaTable(filtered, true);
-  });
-
-
-    // Modal functions
-  function showModal(modalId) {
-    document.getElementById(modalId).classList.remove("hidden");
-  }
-
-  function closeModal(modalId) {
-    document.getElementById(modalId).classList.add("hidden");
-  }
-
-  function showSuccessModal(message) {
-    document.getElementById("successMessage").textContent = message;
-    showModal("successModal");
-  }
-
-  function showErrorModal(message) {
-    document.getElementById("errorMessage").textContent = message;
-    showModal("errorModal");
-  }
-
-  function showConfirmModal(message) {
-    document.getElementById("confirmMessage").textContent = message;
-    showModal("confirmModal");
-  }
-
-  // Modal event listeners
-  document.getElementById("closeSuccessModal").addEventListener("click", () => closeModal("successModal"));
-  document.getElementById("closeErrorModal").addEventListener("click", () => closeModal("errorModal"));
-  document.getElementById("closeViewModal").addEventListener("click", () => closeModal("viewModal"));
-
-  document.getElementById("cancelConfirm").addEventListener("click", () => {
-    closeModal("confirmModal");
-    pendingDeleteIndex = null;
-  });
-
-  // Close modals when clicking outside
-  const modals = ['successModal', 'errorModal', 'confirmModal', 'viewModal'];
-  modals.forEach(modalId => {
-    document.getElementById(modalId).addEventListener("click", (e) => {
-      if (e.target === e.currentTarget) closeModal(modalId);
+    
+    const res = await fetch(url, {
+      headers: { "Authorization": `Bearer ${token}` }
     });
-  });
 
-  // Capitalize first letter, keep the rest lower
-  function capitalizeWords(str) {
-    return str
-      ? str
-          .toLowerCase()
-          .split(" ")
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ")
-      : "";
+    const data = await res.json();
+    if (data.exists) {
+      input.setCustomValidity(`⚠️ This ${field} already exists.`);
+    } else {
+      input.setCustomValidity("");
+    }
+    input.reportValidity();
+  } catch (err) {
+    console.error(`Error checking ${field}:`, err);
   }
+}
 
-  ["lgaName", "lghqs"].forEach(id => {
-    const el = document.getElementById(id);
-    el.addEventListener("input", () => {
-      el.value = capitalizeWords(el.value);
-    });
+document.getElementById("lgaName")?.addEventListener("blur", function () {
+  const currentlgCode = editingLgaIndex !== null ? lgaData[editingLgaIndex].Lgcode : null;
+  checkDuplicate(this, "Lgname", currentlgCode);
+});
+
+document.getElementById("lgaCode")?.addEventListener("blur", function () {
+  const currentlgCode = editingLgaIndex !== null ? lgaData[editingLgaIndex].Lgcode : null;
+  checkDuplicate(this, "Lgcode", currentlgCode);
+});
+
+// Cancel
+cancelLgaBtn.addEventListener("click", () => {
+  lgaForm.classList.add("hidden");
+  lgaForm.reset();
+});
+
+// View
+window.viewLga = function(index) {
+  const item = lgaData[index];
+  let html = `
+    <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
+      <dt class="font-medium text-gray-600">LGA Name:</dt>
+      <dd class="col-span-2 text-gray-900">${item.Lgname}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
+      <dt class="font-medium text-gray-600">LGA Code:</dt>
+      <dd class="col-span-2 text-gray-900">${item.Lgcode}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
+      <dt class="font-medium text-gray-600">LGA Headquaters:</dt>
+      <dd class="col-span-2 text-gray-900">${item.Lghqs}</dd>
+    </div>
+    <div class="grid grid-cols-3 gap-2 py-2">
+      <dt class="font-medium text-gray-600">State:</dt>
+      <dd class="col-span-2 text-gray-900">${stateMap[item.Statecode] || item.Statecode}</dd>
+    </div>
+  `;
+  document.getElementById("viewContent").innerHTML = html;
+  showModal("viewModal");
+};
+
+// Edit
+window.editLga = function(index) {
+  const item = lgaData[index];
+
+  // Store original values for comparison
+  originalLgaData = {
+    Lgname: item.Lgname,
+    Lgcode: item.Lgcode
+  };
+
+  document.getElementById("lgaName").value = item.Lgname;
+  document.getElementById("lgaCode").value = item.Lgcode;
+  document.getElementById("lghqs").value = item.Lghqs;
+
+  prefillStates(item.Statecode);
+
+  // Clear any existing validation messages
+  document.getElementById("lgaName").setCustomValidity("");
+  document.getElementById("lgaCode").setCustomValidity("");
+
+  editingLgaIndex = index;
+  document.getElementById("lgaCode").disabled = true;
+  lgaForm.classList.remove("hidden");
+};
+
+// Delete
+window.deleteLga = function(index) {
+  pendingDeleteLgaIndex = index;
+  showConfirmModal("Are you sure you want to delete this local government record? This action cannot be undone.");
+};
+
+document.getElementById("confirmAction").addEventListener("click", async () => {
+  if (pendingDeleteLgaIndex !== null) {
+    try {
+      const token = localStorage.getItem("token");
+
+      await fetch(`lg/${lgaData[pendingDeleteLgaIndex].Lgcode}`, {
+        method: "DELETE",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+      });
+      showSuccessModal("LGA record deleted successfully!");
+      await loadLGAs(true); // Preserve search and pagination state
+    } catch (err) {
+      showErrorModal("Error deleting LGA.");
+      console.error(err);
+    }
+    pendingDeleteLgaIndex = null;
+  }
+  closeModal("confirmModal");
+});
+
+// Search
+searchLga.addEventListener("input", (e) => {
+  const term = e.target.value.toLowerCase();
+  applySearch(term);
+  currentPage = 1; // Reset to first page on new search
+  renderWithPagination();
+});
+
+// --- Pagination Event Listeners---
+prevPageBtn.addEventListener('click', () => {
+  if (currentPage > 1) {
+    currentPage--;
+    renderWithPagination();
+  }
+});
+
+nextPageBtn.addEventListener('click', () => {
+  const { totalPages } = getPaginationData();
+  if (currentPage < totalPages) {
+    currentPage++;
+    renderWithPagination();
+  }
+});
+
+recordsPerPageSelect.addEventListener('change', (e) => {
+  recordsPerPage = parseInt(e.target.value);
+  currentPage = 1; // Reset to first page
+  renderWithPagination();
+});
+
+  // Modal functions
+function showModal(modalId) {
+  document.getElementById(modalId).classList.remove("hidden");
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).classList.add("hidden");
+}
+
+function showSuccessModal(message) {
+  document.getElementById("successMessage").textContent = message;
+  showModal("successModal");
+}
+
+function showErrorModal(message) {
+  document.getElementById("errorMessage").textContent = message;
+  showModal("errorModal");
+}
+
+function showConfirmModal(message) {
+  document.getElementById("confirmMessage").textContent = message;
+  showModal("confirmModal");
+}
+
+// Modal event listeners
+document.getElementById("closeSuccessModal").addEventListener("click", () => closeModal("successModal"));
+document.getElementById("closeErrorModal").addEventListener("click", () => closeModal("errorModal"));
+document.getElementById("closeViewModal").addEventListener("click", () => closeModal("viewModal"));
+
+document.getElementById("cancelConfirm").addEventListener("click", () => {
+  closeModal("confirmModal");
+  pendingDeleteLgaIndex = null;
+});
+
+// Close modals when clicking outside
+const modals = ['successModal', 'errorModal', 'confirmModal', 'viewModal'];
+modals.forEach(modalId => {
+  document.getElementById(modalId).addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeModal(modalId);
   });
+});
 
-  // Force uppercase as user types
-  ["lgaCode"].forEach(id => {
-    const el = document.getElementById(id);
-    el.addEventListener("input", () => {
-      el.value = el.value.toUpperCase();
-    });
+// Capitalize first letter, keep the rest lower
+function capitalizeWords(str) {
+  return str
+    ? str
+        .toLowerCase()
+        .split(" ")
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ")
+    : "";
+}
+
+["lgaName", "lghqs"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", () => {
+    el.value = capitalizeWords(el.value);
   });
+});
 
-  //generate report functionality
-  function generateReport() {
+// Force uppercase as user types
+["lgaCode"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", () => {
+    el.value = el.value.toUpperCase();
+  });
+});
+
+//generate report functionality
+function generateReport() {
   const now = new Date();
   const day = String(now.getDate()).padStart(2, '0');
   const month = String(now.getMonth() + 1).padStart(2, '0');

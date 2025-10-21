@@ -5,8 +5,9 @@
     <div class="flex flex-wrap gap-2">
       <input type="text" id="searchState" placeholder="Search name or capital" class="border rounded px-3 py-2">
       <button id="addNewStateBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New State</button>
-       <button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
-        <i class="fas fa-file-alt mr-2"></i>Generate Report</button>
+      <button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+        <i class="fas fa-file-alt mr-2"></i>Generate Report
+      </button>
     </div>
   </div>
 
@@ -52,6 +53,30 @@
       </thead>
       <tbody id="stateTableBody"></tbody>
     </table>
+  </div>
+
+  <!-- Pagination Controls -->
+  <div class="mt-4 flex items-center justify-between">
+    <div class="text-sm text-gray-600">
+      Showing <span id="startRecord">0</span> to <span id="endRecord">0</span> of <span id="totalRecords">0</span> records
+    </div>
+    <div class="flex items-center space-x-2">
+      <select id="recordsPerPage" class="border border-gray-300 rounded px-2 py-1 text-sm">
+        <option value="10">10 per page</option>
+        <option value="25">25 per page</option>
+        <option value="50">50 per page</option>
+        <option value="100">100 per page</option>
+      </select>
+      <button id="prevPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+        Previous
+      </button>
+      <span class="text-sm">
+        Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+      </span>
+      <button id="nextPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+        Next
+      </button>
+    </div>
   </div>
 </div>
 
@@ -138,6 +163,11 @@ let originalStateData = null;
 let editingStateId = null;
 let pendingDeleteStateId = null;
 
+let currentPage = 1;
+let recordsPerPage = 10;
+let filteredData = []; // Store filtered results from search
+let currentSearchTerm = ""; // Store current search term
+
 const stateForm = document.getElementById("stateForm");
 const addNewStateBtn = document.getElementById("addNewStateBtn");
 const saveStateBtn = document.getElementById("saveStateBtn");
@@ -145,6 +175,16 @@ const cancelStateBtn = document.getElementById("cancelStateBtn");
 const stateTableBody = document.getElementById("stateTableBody");
 const searchState = document.getElementById("searchState");
 const errorMessage = document.getElementById("errorMessage");
+
+// Pagination elements
+const prevPageBtn = document.getElementById('prevPage');
+const nextPageBtn = document.getElementById('nextPage');
+const currentPageSpan = document.getElementById('currentPage');
+const totalPagesSpan = document.getElementById('totalPages');
+const recordsPerPageSelect = document.getElementById('recordsPerPage');
+const startRecordSpan = document.getElementById('startRecord');
+const endRecordSpan = document.getElementById('endRecord');
+const totalRecordsSpan = document.getElementById('totalRecords');
 
 async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
   try {
@@ -227,25 +267,70 @@ stateCode.addEventListener("input", () => {
 
 
 // --- API Helpers ---
-async function fetchStates() {
+async function fetchStates(preserveState = false) {
   try {
     const token = localStorage.getItem("token");
 
     // Load dropdowns first
     await loadAllDropdowns();
 
-    const res = await fetch("/states",{   
+    const res = await fetch("/states", {   
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}` 
       }
     });
-    stateData = await res.json();
-    renderStateTable();
+
+    const result = await res.json();
+
+    // Handle different response structures
+    if (result.success) {
+      stateData = result.data || [];
+    } else if (Array.isArray(result)) {
+      stateData = result;
+    } else if (result.data) {
+      stateData = result.data;
+    } else {
+      stateData = [];
+    }
+    
+    if (preserveState) {
+      // Reapply the current search filter
+      applySearch(currentSearchTerm);
+      
+      // Validate current page is still valid
+      const totalPages = Math.ceil(filteredData.length / recordsPerPage) || 1;
+      if (currentPage > totalPages) {
+        currentPage = totalPages;
+      }
+    } else {
+      // Fresh load - reset everything
+      filteredData = [...stateData];
+      currentPage = 1;
+      currentSearchTerm = "";
+    }
+    
+    // Render with frontend pagination
+    renderWithPagination();
+    
   } catch (err) {
     showErrorModal("Failed to load states.");
-    console.error(err);
+    console.error("Error in fetchStates:", err);
+  }
+}
+
+// Separate function to apply search filtering
+function applySearch(term) {
+  currentSearchTerm = term;
+  if (term) {
+    filteredData = stateData.filter(s =>
+      s.Statename.toLowerCase().includes(term) || 
+      s.Statecapital.toLowerCase().includes(term) ||
+      s.Statecode.toLowerCase().includes(term)
+    );
+  } else {
+    filteredData = [...stateData];
   }
 }
 
@@ -371,18 +456,31 @@ async function deleteStateApi(Statecode) {
   });
 }
 
-// --- Render Table ---
-function renderStateTable(data = stateData) {
+// --- FRONTEND PAGINATION FUNCTIONS ---
+function getPaginationData() {
+  const totalRecords = filteredData.length;
+  const totalPages = Math.ceil(totalRecords / recordsPerPage) || 1;
+  const startIndex = (currentPage - 1) * recordsPerPage;
+  const endIndex = startIndex + recordsPerPage;
+  const currentData = filteredData.slice(startIndex, endIndex);
+  const startRecord = totalRecords === 0 ? 0 : startIndex + 1;
+  const endRecord = Math.min(endIndex, totalRecords);
+
+  return { totalRecords, totalPages, currentData, startRecord, endRecord };
+}
+
+function renderStateTable() {
+  const { currentData } = getPaginationData();
+  
   // Check if geozoneData is loaded
   if (!geozoneData || geozoneData.length === 0) {
-    // Load the dropdown data if not available
     loadAllDropdowns().then(() => {
-      renderStateTable(data);
+      renderStateTable();
     });
     return;
   }
 
-  stateTableBody.innerHTML = data.map((item, index) => `
+  stateTableBody.innerHTML = currentData.map((item, index) => `
     <tr class="hover:bg-gray-50">
       <td class="border px-2 py-3">${item.Statename}</td>
       <td class="border px-2 py-3">${item.Statecode}</td>
@@ -394,7 +492,34 @@ function renderStateTable(data = stateData) {
       </td>
     </tr>
   `).join("");
+
+  if (currentData.length === 0) {
+    stateTableBody.innerHTML = `
+      <tr>
+        <td colspan="5" class="border px-2 py-8 text-center text-gray-500">No records found</td>
+      </tr>
+    `;
+  }
 }
+
+function updatePaginationUI() {
+  const { totalRecords, totalPages, startRecord, endRecord } = getPaginationData();
+  
+  currentPageSpan.textContent = currentPage;
+  totalPagesSpan.textContent = totalPages;
+  startRecordSpan.textContent = startRecord;
+  endRecordSpan.textContent = endRecord;
+  totalRecordsSpan.textContent = totalRecords;
+
+  prevPageBtn.disabled = currentPage <= 1;
+  nextPageBtn.disabled = currentPage >= totalPages;
+}
+
+function renderWithPagination() {
+  renderStateTable();
+  updatePaginationUI();
+}
+
 // --- Add New ---
 addNewStateBtn.addEventListener("click", () => {
   stateForm.classList.remove("hidden");
@@ -456,7 +581,7 @@ saveStateBtn.addEventListener("click", async (e) => {
       showSuccessModal("State record saved successfully!");
     }
 
-    await fetchStates();
+    await fetchStates(true); // Preserve search and pagination state
     stateForm.classList.add("hidden");
     stateForm.reset();
     editingStateId = null;
@@ -509,7 +634,7 @@ window.editState = async function(Statecode) {
   document.getElementById("geoZone").setCustomValidity("");
 
   editingStateId = Statecode; 
-  stateForm.stateCode.disabled =true;
+  stateForm.stateCode.disabled = true;
   stateForm.classList.remove("hidden");
 };
 
@@ -523,7 +648,7 @@ document.getElementById("confirmAction").addEventListener("click", async () => {
   if (pendingDeleteStateId) {
     try {
       await deleteStateApi(pendingDeleteStateId);
-      await fetchStates();
+      await fetchStates(true); // Preserve search and pagination state
       showSuccessModal("State record deleted successfully!");
     } catch (err) {
       showErrorModal("Error deleting state.");
@@ -575,14 +700,34 @@ modals.forEach(modalId => {
   });
 });
 
-// --- Search ---
+// --- Search with Frontend Pagination ---
 searchState.addEventListener("input", (e) => {
   const term = e.target.value.toLowerCase();
-  const filtered = stateData.filter(s =>
-    s.Statename.toLowerCase().includes(term) || 
-    s.Statecapital.toLowerCase().includes(term)
-  );
-  renderStateTable(filtered);
+  applySearch(term);
+  currentPage = 1; // Reset to first page on new search
+  renderWithPagination();
+});
+
+// --- Pagination Event Listeners---
+prevPageBtn.addEventListener('click', () => {
+  if (currentPage > 1) {
+    currentPage--;
+    renderWithPagination();
+  }
+});
+
+nextPageBtn.addEventListener('click', () => {
+  const { totalPages } = getPaginationData();
+  if (currentPage < totalPages) {
+    currentPage++;
+    renderWithPagination();
+  }
+});
+
+recordsPerPageSelect.addEventListener('change', (e) => {
+  recordsPerPage = parseInt(e.target.value);
+  currentPage = 1; // Reset to first page
+  renderWithPagination();
 });
 
 // Capitalize first letter, keep the rest lower

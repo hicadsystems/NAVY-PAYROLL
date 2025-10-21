@@ -161,6 +161,30 @@
                 <tbody id="rankAmountTable" class="text-center"></tbody>
             </table>
         </div>
+
+      <!-- Pagination Controls -->
+      <div class="mt-4 flex items-center justify-between">
+        <div class="text-sm text-gray-600">
+          Showing <span id="startRecord">0</span> to <span id="endRecord">0</span> of <span id="totalRecords">0</span> records
+        </div>
+        <div class="flex items-center space-x-2">
+          <select id="recordsPerPage" class="border border-gray-300 rounded px-2 py-1 text-sm">
+            <option value="10">10 per page</option>
+            <option value="25">25 per page</option>
+            <option value="50">50 per page</option>
+            <option value="100">100 per page</option>
+          </select>
+          <button id="prevPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+            Previous
+          </button>
+          <span class="text-sm">
+            Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+          </span>
+          <button id="nextPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+            Next
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -215,16 +239,33 @@
 
 
 <script>
+(function () {
 let editingIndex = null;
 let data = [];
 let elementTypeData = [];
 let originalData = null;
+
+let currentPage = 1;
+let recordsPerPage = 10;
+let filteredData = []; // Store filtered results from search
+let currentSearchTerm = ""; // Store current search term
+
 
 const form = document.getElementById("rankAmountForm");
 const showFormBtn = document.getElementById("showFormBtn");
 const saveBtn = document.getElementById("saveBtn");
 const cancelBtn = document.getElementById("cancelBtn");
 const tableBody = document.getElementById("rankAmountTable");
+
+// Pagination elements
+const prevPageBtn = document.getElementById('prevPage');
+const nextPageBtn = document.getElementById('nextPage');
+const currentPageSpan = document.getElementById('currentPage');
+const totalPagesSpan = document.getElementById('totalPages');
+const recordsPerPageSelect = document.getElementById('recordsPerPage');
+const startRecordSpan = document.getElementById('startRecord');
+const endRecordSpan = document.getElementById('endRecord');
+const totalRecordsSpan = document.getElementById('totalRecords');
 
 async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
   try {
@@ -445,7 +486,7 @@ function getToken() {
 }
 
 //  Load from API
-async function loadData() {
+async function loadData(preservePfa = false) {
   try {
     // Load dropdowns first
     await loadAllDropdowns();
@@ -453,9 +494,37 @@ async function loadData() {
     const res = await fetch("/rank", {
       headers: { "Authorization": `Bearer ${getToken()}`}
     });
-     const result = await res.json();
-     data = result.map(transformFromBackend);
-    renderTable();
+
+    const result = await res.json();
+
+    if (result.success && Array.isArray(result.data)) {
+      data = result.data.map(transformFromBackend);
+    } else if (Array.isArray(result)) {
+      data = result.map(transformFromBackend);
+    } else if (Array.isArray(result.data)) {
+      data = result.data.map(transformFromBackend);
+    } else {
+      data = [];
+    }
+
+    if (preservePfa) {
+      // Reapply the current search filter
+      applySearch(currentSearchTerm);
+      
+      // Validate current page is still valid
+      const totalPages = Math.ceil(filteredData.length / recordsPerPage) || 1;
+      if (currentPage > totalPages) {
+        currentPage = totalPages;
+      }
+    } else {
+      // Fresh load - reset everything
+      filteredData = [...data];
+      currentPage = 1;
+      currentSearchTerm = "";
+    }
+    
+    renderWithPagination();
+
   } catch (err) {
     console.error("Error loading:", err);
   }
@@ -524,7 +593,7 @@ window.deleteRow = async function(index) {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${getToken()}` }
       });
-      await loadData();
+      await loadData(true);
       openModal("Record deleted sucessfully", "successModal");
       renderTable();
     } catch (err) {
@@ -604,7 +673,7 @@ saveBtn.addEventListener("click", async () => {
     }
 
     renderTable();
-    await loadData();
+    await loadData(true);
     form.classList.add("hidden");
     clearForm();
     openModal("Record Saved Sucessfully");
@@ -617,9 +686,47 @@ saveBtn.addEventListener("click", async () => {
   }
 });
 
+// --- Pagination Event Listeners---
+
+// --- FRONTEND PAGINATION FUNCTIONS ---
+function getPaginationData() {
+  const totalRecords = filteredData.length;
+  const totalPages = Math.ceil(totalRecords / recordsPerPage) || 1;
+  const startIndex = (currentPage - 1) * recordsPerPage;
+  const endIndex = startIndex + recordsPerPage;
+  const currentData = filteredData.slice(startIndex, endIndex);
+  const startRecord = totalRecords === 0 ? 0 : startIndex + 1;
+  const endRecord = Math.min(endIndex, totalRecords);
+
+  return { totalRecords, totalPages, currentData, startRecord, endRecord };
+}
+
+prevPageBtn.addEventListener('click', () => {
+  if (currentPage > 1) {
+    currentPage--;
+    renderWithPagination();
+  }
+});
+
+nextPageBtn.addEventListener('click', () => {
+  const { totalPages } = getPaginationData();
+  if (currentPage < totalPages) {
+    currentPage++;
+    renderWithPagination();
+  }
+});
+
+recordsPerPageSelect.addEventListener('change', (e) => {
+  recordsPerPage = parseInt(e.target.value);
+  currentPage = 1; // Reset to first page
+  renderWithPagination();
+});
+
 // UI helpers
 function renderTable() {
-  tableBody.innerHTML = data.map((item, index) => `
+  const {currentData} = getPaginationData();
+
+  tableBody.innerHTML = currentData.map((item, index) => `
     <tr class="hover:bg-gray-50">
       <td class="border px-4 py-2 text-left">${getElmDesc(item.one_type)}</td>
       <td class="border px-4 py-2 text-center">
@@ -629,6 +736,24 @@ function renderTable() {
       </td>
     </tr>
   `).join("");
+}
+
+function updatePaginationUI() {
+  const { totalRecords, totalPages, startRecord, endRecord } = getPaginationData();
+  
+  currentPageSpan.textContent = currentPage;
+  totalPagesSpan.textContent = totalPages;
+  startRecordSpan.textContent = startRecord;
+  endRecordSpan.textContent = endRecord;
+  totalRecordsSpan.textContent = totalRecords;
+
+  prevPageBtn.disabled = currentPage <= 1;
+  nextPageBtn.disabled = currentPage >= totalPages;
+}
+
+function renderWithPagination() {
+  renderTable();
+  updatePaginationUI();
 }
 
 // cancel button
@@ -851,4 +976,5 @@ document.getElementById('generateReportBtn').addEventListener('click', generateR
 // load on page ready
 loadData();
 loadAllDropdowns();
+})();
 </script>

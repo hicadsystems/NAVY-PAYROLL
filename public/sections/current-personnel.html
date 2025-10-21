@@ -860,7 +860,9 @@ class PersonnelManager {
       // Add new event listener
       newBtn.addEventListener("click", async () => {
         try {
-          await this.apiRequest(`${API_BASE}/employees/${this.deleteId}`, {
+          const safeId = this.deleteId.replace(/\//g, '_SLASH_');
+
+          await this.apiRequest(`${API_BASE}/employees/${safeId}`, {
             method: 'DELETE'
           });
 

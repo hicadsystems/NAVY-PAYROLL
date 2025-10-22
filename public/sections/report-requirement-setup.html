@@ -51,9 +51,6 @@
     <div>
       <label class="block text-sm font-medium text-gray-700">Dependence</label>
       <select id="dependence" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
-        <option value="">Select Dependence</option>
-        <option value="YES">Yes</option>
-        <option value="NO">No</option>
       </select>
     </div>
 
@@ -141,10 +138,12 @@
 </div>
 
 <script>
+(function () {
   let data = [];
   let editingIndex = null;
   let dropdownData = [];
   let isLoading = false;
+  let lookupMaps = {};
 
   const form = document.getElementById("payElementsForm");
   const showFormBtn = document.getElementById("showFormBtn");
@@ -154,40 +153,64 @@
   const codeInput = document.getElementById("codeInput");
 
   async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/reference/${endpoint}`, {   
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` 
-        }
-      });
-      const data = await response.json();
-      const dropdown = document.getElementById(elementId);
-      if (!dropdown) return;
-      dropdown.innerHTML = `<option value="">${placeholder}</option>`;
-      data.forEach(item => {
-        const option = document.createElement("option");
-        option.value = item[valueField];
-        option.textContent = item[textField];
-        dropdown.appendChild(option);
-      });
-      return data;
-    } catch (err) {
-      console.error(`Failed to load ${endpoint}:`, err);
-      return [];
-    }
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`/reference/${endpoint}`, {   
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      }
+    });
+    const data = await response.json();
+    const dropdown = document.getElementById(elementId);
+    if (!dropdown) return;
+    dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+    data.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item[valueField];
+      option.textContent = item[textField];
+      dropdown.appendChild(option);
+
+      lookupMaps[endpoint] = Object.fromEntries(
+        data.map(item => [item[valueField], item[textField]])
+      )
+    });
+    return data;
+  } catch (err) {
+    console.error(`Failed to load ${endpoint}:`, err);
+    return [];
   }
+}
 
   async function loadAllDropdowns() {
     const promises = [
       loadDropdown('functiontype', 'function', 'funct', 'functdesc', 'Select Function Type'),
+      loadDropdown("elementtype","dependence", "PaymentType", "elmDesc", "Select Dependence"),
     ];
     await Promise.all(promises);
   }
 
-  loadAllDropdowns();
+  function getValueField(endpoint) {
+    const fieldMap = {
+      'elementtype': 'PaymentType',
+      'functiontype': 'funct'
+    };
+    return fieldMap[endpoint] || 'code';
+  }
+
+  function getTextField(endpoint) {
+    const fieldMap = {
+      'elementtype': 'elmDesc',
+      'functiontype': 'functdesc'
+    }
+    return fieldMap[endpoint] || 'name';
+  }
+
+  function resolveName(code, endpoint) {
+    if (!code) return 'N/A';
+    return lookupMaps[endpoint]?.[code] || code;
+  }
 
   const descriptionSearch = document.getElementById("descriptionSearch");
   const descriptionDropdown = document.getElementById("descriptionDropdown");
@@ -439,8 +462,8 @@
     tableBody.innerHTML = dataToRender.map((item) => `
       <tr class="hover:bg-gray-50">
         <td class="border px-2 py-2 text-left">${item.one_type}</td>
-        <td class="border px-2 py-2 text-left">${item.one_maxi || '-'}</td>
-        <td class="border px-2 py-2 text-left">${item.one_depend || '-'}</td>
+        <td class="border px-2 py-2 text-left">${resolveName(item.one_perc, "functiontype")} (${item.one_perc})</td>
+        <td class="border px-2 py-2 text-left">${resolveName(item.one_depend, "elementtype")} (${item.one_depend})</td>
         <td class="border px-2 py-2 text-center">
           <button onclick="viewRow('${item.one_type}')" class="text-blue-600 hover:text-blue-800 mr-2 px-2 py-1 rounded hover:bg-blue-50">View</button>
           <button onclick="editRow('${item.one_type}')" class="text-green-600 hover:text-green-800 mr-2 px-2 py-1 rounded hover:bg-green-50">Edit</button>
@@ -823,5 +846,9 @@ window.editRow = async function(oneType) {
   document.getElementById('generateReportBtn').addEventListener('click', generateReport);
 
   // Initialize
-  fetchOneOff();
+  (function () {
+    fetchOneOff();
+    loadAllDropdowns();
+  })();
+})();
 </script>

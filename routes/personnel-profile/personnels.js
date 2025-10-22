@@ -260,6 +260,82 @@ router.get('/employees-old', verifyToken, async (req, res) => {
   }
 });
 
+// GET all current employees with pagination
+router.get('/employees-old-pages', verifyToken, attachPayrollClass, async (req, res) => {
+  try {
+    const currentDb = pool.getCurrentDatabase(req.user_id);
+    console.log('🔍 Current database for query:', currentDb);
+    console.log('🔍 User ID:', req.user_id);
+    
+    // Get pagination parameters from query string
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    
+    console.log('Pagination - Page:', page, 'Limit:', limit, 'Offset:', offset);
+    
+    // Get total count first
+    const [countResult] = await pool.query(`
+      SELECT COUNT(*) as total
+      FROM hr_employees 
+      WHERE DateLeft IS NOT NULL
+        OR exittype IS NOT NULL
+      ORDER BY Empl_ID ASC;
+    `);
+    
+    const totalRecords = countResult[0].total;
+    const totalPages = Math.ceil(totalRecords / limit);
+    
+    // Get paginated employees
+    const [rows] = await pool.query(`
+      SELECT * 
+      FROM hr_employees 
+      WHERE DateLeft IS NOT NULL
+        OR exittype IS NOT NULL
+      ORDER BY Empl_ID ASC
+      LIMIT ? OFFSET ?
+    `, [limit, offset]);
+
+    // Add counts to each employee
+    for (let employee of rows) {
+      const [children] = await pool.query(
+        'SELECT COUNT(*) as count FROM Children WHERE Empl_ID = ? AND chactive = 1',
+        [employee.Empl_ID]
+      );
+      const [nok] = await pool.query(
+        'SELECT COUNT(*) as count FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1',
+        [employee.Empl_ID]
+      );
+      const [spouse] = await pool.query(
+        'SELECT COUNT(*) as count FROM Spouse WHERE Empl_ID = ? AND spactive = 1',
+        [employee.Empl_ID]
+      );
+      
+      employee.children_count = children[0].count;
+      employee.nok_count = nok[0].count;
+      employee.spouse_count = spouse[0].count;
+    }
+    
+    console.log('🔍 Query returned:', rows.length, 'records');
+    
+    res.json({ 
+      success: true, 
+      data: rows,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalRecords: totalRecords,
+        limit: limit,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1
+      }
+    });
+  } catch (error) {
+    console.error('❌ Query error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // GET old employees with SEARCH - queries whole table
 router.get('/employees-old/search', verifyToken, attachPayrollClass, async (req, res) => {
   try {

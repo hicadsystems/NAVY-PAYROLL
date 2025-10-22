@@ -2,7 +2,6 @@ const express = require('express');
 const pool = require('../../config/db'); // mysql2 pool
 const router = express.Router();
 
-
 // ==================== DATABASE CONFIGURATION ====================
 const DATABASE_MAP = {
   [process.env.DB_OFFICERS || 'hicaddata']: { name: 'OFFICERS', code: '1' },
@@ -110,7 +109,30 @@ async function autoAssignPayrollClass(dbName) {
     connection = await pool.getConnection();
     await connection.query(`USE \`${dbName}\``);
 
-    // Update employees with NULL or empty payrollclass
+    // Step 1: Check if payroll class exists in py_payrollclass
+    const [payrollClassCheck] = await connection.query(
+      `SELECT classcode, classname FROM py_payrollclass WHERE classcode = ?`,
+      [payrollCode]
+    );
+
+    let payrollClassName = getFriendlyDbName(dbName);
+
+    if (payrollClassCheck.length === 0) {
+      // Payroll class doesn't exist, create it
+      console.log(`⚠️ Payroll class ${payrollCode} not found in py_payrollclass, creating it...`);
+      
+      await connection.query(
+        `INSERT INTO py_payrollclass (classcode, classname) VALUES (?, ?)`,
+        [payrollCode, payrollClassName]
+      );
+      
+      console.log(`✅ Created payroll class: ${payrollCode} - ${payrollClassName}`);
+    } else {
+      payrollClassName = payrollClassCheck[0].classname;
+      console.log(`✓ Payroll class ${payrollCode} exists: ${payrollClassName}`);
+    }
+
+    // Step 2: Update employees with NULL or empty payrollclass
     const [result] = await connection.query(
       `UPDATE hr_employees 
        SET payrollclass = ?
@@ -121,14 +143,49 @@ async function autoAssignPayrollClass(dbName) {
     );
 
     if (result.affectedRows > 0) {
-      console.log(`✅ Auto-assigned ${result.affectedRows} employee(s) to payroll class "${payrollCode}" in ${getFriendlyDbName(dbName)}`);
+      console.log(`✅ Auto-assigned ${result.affectedRows} employee(s) to payroll class "${payrollCode}" (${payrollClassName})`);
+    }
+
+    // Step 3: Check for mismatched payroll classes (employees with wrong class for this DB)
+    const [mismatchedEmployees] = await connection.query(
+      `SELECT COUNT(*) as count 
+       FROM hr_employees 
+       WHERE payrollclass != ? 
+       AND payrollclass IS NOT NULL 
+       AND payrollclass != ''
+       AND (DateLeft IS NULL OR DateLeft = '')
+       AND (exittype IS NULL OR exittype = '')`,
+      [payrollCode]
+    );
+
+    let correctedMismatches = 0;
+    if (mismatchedEmployees[0].count > 0) {
+      console.log(`⚠️ Found ${mismatchedEmployees[0].count} employee(s) with incorrect payroll class in ${dbName}`);
+      console.log(`   Correcting to match database: ${payrollCode} (${payrollClassName})`);
+      
+      const [correctResult] = await connection.query(
+        `UPDATE hr_employees 
+         SET payrollclass = ?
+         WHERE payrollclass != ? 
+         AND payrollclass IS NOT NULL 
+         AND payrollclass != ''
+         AND (DateLeft IS NULL OR DateLeft = '')
+         AND (exittype IS NULL OR exittype = '')`,
+        [payrollCode, payrollCode]
+      );
+      
+      correctedMismatches = correctResult.affectedRows;
+      console.log(`✅ Corrected ${correctedMismatches} mismatched employee(s)`);
     }
 
     connection.release();
 
     return { 
-      updated: result.affectedRows, 
+      updated: result.affectedRows,
+      corrected: correctedMismatches,
+      total: result.affectedRows + correctedMismatches,
       payrollClass: payrollCode,
+      payrollClassName: payrollClassName,
       database: dbName,
       friendlyName: getFriendlyDbName(dbName)
     };
@@ -136,8 +193,17 @@ async function autoAssignPayrollClass(dbName) {
   } catch (error) {
     console.error(`❌ Error auto-assigning payroll class in ${dbName}:`, error.message);
     if (connection) connection.release();
-    return { updated: 0, error: error.message };
+    return { updated: 0, corrected: 0, total: 0, error: error.message };
   }
 }
 
-module.exports = {autoAssignPayrollClass};
+module.exports = { 
+  autoAssignPayrollClass,
+  getPayrollClassFromDb,
+  getDbNameFromPayrollClass,
+  getFriendlyDbName,
+  isValidDatabase,
+  checkDatabaseExists,
+  DATABASE_MAP,
+  PAYROLL_CLASS_TO_DB_MAP
+};

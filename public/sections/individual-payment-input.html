@@ -61,7 +61,7 @@
     <table class="min-w-full border border-gray-200 rounded-lg">
       <thead class="bg-blue-100 text-blue-900">
         <tr>
-          <th class="py-2 px-4 border">Personnel ID</th>
+          <th class="py-2 px-4 border">Service No</th>
           <th class="py-2 px-4 border">Type</th>
           <th class="py-2 px-4 border">Amount</th>
           <th class="py-2 px-4 border">Action</th>
@@ -120,6 +120,7 @@
   let isEditing = false;
   let editingRecord = null;
   let rowToDelete = null;
+  let lookupMaps = {};
 
   const formWrapper = document.getElementById('paymentFormWrapper');
   const form = document.getElementById("paymentForm");
@@ -233,78 +234,92 @@
   }
 
   // DROPDOWN FUNCTIONALITY
-    searchInput.addEventListener('focus', () => {
-      dropdownList.classList.remove('hidden');
-    });
+  searchInput.addEventListener('focus', () => {
+    dropdownList.classList.remove('hidden');
+  });
 
-    searchInput.addEventListener('input', function() {
-      const searchText = this.value.toLowerCase();
-      const items = employeeDropdownItems.querySelectorAll('.dropdown-item');
-      
-      items.forEach(item => {
-        const text = item.textContent.toLowerCase();
-        const shouldShow = text.includes(searchText);
-        item.style.display = shouldShow ? 'block' : 'none';
-      });
-      
-      dropdownList.classList.remove('hidden');
+  searchInput.addEventListener('input', function() {
+    const searchText = this.value.toLowerCase();
+    const items = employeeDropdownItems.querySelectorAll('.dropdown-item');
+    
+    items.forEach(item => {
+      const text = item.textContent.toLowerCase();
+      const shouldShow = text.includes(searchText);
+      item.style.display = shouldShow ? 'block' : 'none';
     });
+    
+    dropdownList.classList.remove('hidden');
+  });
 
-    document.addEventListener('click', function(e) {
-      if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) {
-        dropdownList.classList.add('hidden');
-      }
-    });
-
-    searchInput.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        dropdownList.classList.add('hidden');
-        this.blur();
-      }
-    });
-
-    // fetch pay elements 
-    async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/reference/${endpoint}`, {   
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` 
-        }
-      });
-      const data = await response.json();
-      const dropdown = document.getElementById(elementId);
-      if (!dropdown) return;
-      dropdown.innerHTML = `<option value="">${placeholder}</option>`;
-      data.forEach(item => {
-        const option = document.createElement("option");
-        option.value = item[valueField];
-        option.textContent = item[textField];
-        dropdown.appendChild(option);
-      });
-      return data;
-    } catch (err) {
-      console.error(`Failed to load ${endpoint}:`, err);
-      return [];
+  document.addEventListener('click', function(e) {
+    if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) {
+      dropdownList.classList.add('hidden');
     }
+  });
+
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      dropdownList.classList.add('hidden');
+      this.blur();
+    }
+  });
+
+  // fetch pay elements 
+  async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`/reference/${endpoint}`, {   
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      }
+    });
+    const data = await response.json();
+    const dropdown = document.getElementById(elementId);
+    if (!dropdown) return;
+    dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+    data.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item[valueField];
+      option.textContent = item[textField];
+      dropdown.appendChild(option);
+
+      lookupMaps[endpoint] = Object.fromEntries(
+        data.map(item => [item[valueField], item[textField]])
+      )
+    });
+    return data;
+  } catch (err) {
+    console.error(`Failed to load ${endpoint}:`, err);
+    return [];
   }
+}
 
   async function loadAllDropdowns() {
-    try {
-      console.log("Loading dropdowns...");
-      elementTypeData = await loadDropdown(
-        "elementType", 
-        "description", 
-        "PaymentType", 
-        "elmDesc", 
-        "Select Element Type"
-      );
-      console.log("Dropdown data loaded:", elementTypeData);
-    } catch (err) {
-      console.error("Error loading dropdowns:", err);
+    const promises = [
+      loadDropdown("elementtype","description", "PaymentType", "elmDesc", "Select Type"),
+    ];
+    await Promise.all(promises);
+  }
+
+  function getValueField(endpoint) {
+    const fieldMap = {
+      'elementtype': 'PaymentType'
+    };
+    return fieldMap[endpoint] || 'code';
+  }
+
+  function getTextField(endpoint) {
+    const fieldMap = {
+      'elementtype': 'elmDesc'
     }
+    return fieldMap[endpoint] || 'name';
+  }
+
+  function resolveName(code, endpoint) {
+    if (!code) return 'N/A';
+    return lookupMaps[endpoint]?.[code] || code;
   }
 
   //API calls
@@ -437,7 +452,7 @@
       row.className = 'hover:bg-yellow-50';
       row.innerHTML = `
         <td class="py-2 px-4 border">${item.his_empno}</td>
-        <td class="py-2 px-4 border">${item.his_type}</td>
+        <td class="py-2 px-4 border">${resolveName(item.his_type, "elementtype")} (${item.his_type})</td>
         <td class="py-2 px-4 border">₦${Number(item.amtthismth).toLocaleString()}</td>
         <td class="py-2 px-4 border">
           <button onclick="editRow('${item.his_empno}', '${escapeQuotes(item.his_type)}')" class="text-blue-600 hover:underline">Edit</button> |
@@ -618,8 +633,10 @@
   });
 
   //initialize
-  fetchEmployees();
-  loadAllDropdowns();
-  loadIndividualPayments();
+(async function init() {
+  await fetchEmployees();
+  await loadAllDropdowns();
+  await loadIndividualPayments();
+})();
 })();
 </script>

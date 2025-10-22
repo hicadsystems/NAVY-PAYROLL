@@ -20,7 +20,7 @@
   <!-- Search and Filter -->
   <div class="mb-6 flex flex-wrap justify-between">
     <div class="flex-1">
-      <input type="text" id="personnel-search" placeholder="Search by name, PersonnelNo. or Phone..." 
+      <input type="text" id="current-personnel-search" placeholder="Search by name, PersonnelNo. or Phone..." 
         class="w-2/3 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
     </div>
     <div class="flex flex-end gap-2">
@@ -90,7 +90,7 @@
 </div>
 
 <script>
-// Old Personnel Management Script with Integrated View
+// Current Personnel Management Script with Integrated View
 const API_BASE = '/personnel';
 const API_HEADERS = {
   'Content-Type': 'application/json',
@@ -336,7 +336,7 @@ class PersonnelManager {
   }
     
   setupEventListeners() {
-    const searchInput = document.getElementById('personnel-search');
+    const searchInput = document.getElementById('current-personnel-search');
     const rankFilter = document.getElementById('rank-filter');
     const statusFilter = document.getElementById('status-filter');
 
@@ -356,9 +356,8 @@ class PersonnelManager {
     });
   }
 
-
   async filterPersonnel(forceView = null) {
-    const search = document.getElementById('personnel-search')?.value.trim() || '';
+    const search = document.getElementById('current-personnel-search')?.value.trim() || '';
     const rank = document.getElementById('rank-filter')?.value || '';
     const status = document.getElementById('status-filter')?.value || '';
 
@@ -452,7 +451,7 @@ class PersonnelManager {
 
   // Clear search and filters
   clearSearch() {
-    const searchInput = document.getElementById('personnel-search');
+    const searchInput = document.getElementById('current-personnel-search');
     const rankFilter = document.getElementById('rank-filter');
     const statusFilter = document.getElementById('status-filter');
     
@@ -479,7 +478,7 @@ class PersonnelManager {
 
   // Restore filter state from localStorage
   restoreFilterState() {
-    const viewKey = this.currentView === 'current' ? 'current' : 'old';
+    const viewKey = this.currentView === 'current' ? 'current' : 'current';
     const saved = localStorage.getItem(`personnel_filter_${viewKey}`);
     
     if (saved) {
@@ -492,7 +491,7 @@ class PersonnelManager {
           console.log(`📥 Restoring filter state for ${viewKey}:`, filterState);
           
           // Restore search input
-          const searchInput = document.getElementById('personnel-search');
+          const searchInput = document.getElementById('current-personnel-search');
           if (searchInput && filterState.search) {
             searchInput.value = filterState.search;
           }
@@ -534,11 +533,10 @@ class PersonnelManager {
     console.log(`🗑️ Cleared filter state for ${viewKey}`);
   }
 
-
   //Add debounced search for better UX
   setupSearchDebounce() {
     let debounceTimer;
-    const searchInput = document.getElementById('personnel-search');
+    const searchInput = document.getElementById('current-personnel-search');
     
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
@@ -711,7 +709,7 @@ class PersonnelManager {
 
   // Helper method to check if search is active
   isSearchActive() {
-    const searchInput = document.getElementById('personnel-search');
+    const searchInput = document.getElementById('current-personnel-search');
     return searchInput && searchInput.value.trim().length > 0;
   }
 
@@ -755,16 +753,20 @@ class PersonnelManager {
 
     // Store current page and filter state before navigation
     console.log('🔵 Saving state - Page:', this.currentPage, 'Type:', this.personnelType);
-    sessionStorage.setItem('pendingEmployeeView', id);
-    sessionStorage.setItem('currentPersonnelPage', this.currentPage);
-    sessionStorage.setItem('currentPersonnelType', this.personnelType);
+
+    localStorage.setItem('pendingEmployeeView', id);
+    localStorage.setItem('currentPersonnelPage', this.currentPage);
+    localStorage.setItem('currentPersonnelType', this.personnelType);
     localStorage.setItem('navigatedFromCurrentPersonnel', 'true');
 
     console.log('🔵 Stored values:', {
-      page: sessionStorage.getItem('currentPersonnelPage'),
-      type: sessionStorage.getItem('currentPersonnelType'),
+      page: localStorage.getItem('currentPersonnelPage'),
+      type: localStorage.getItem('currentPersonnelType'),
       flag: localStorage.getItem('navigatedFromCurrentPersonnel')
     });
+
+    // 🟢 Allow a short delay for localStorage to persist before navigation
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     try {
       // Navigate to view-personnel section
@@ -789,7 +791,7 @@ class PersonnelManager {
         // Load employee
         if (window.ViewPersonnel?.loadEmployee) {
           await window.ViewPersonnel.loadEmployee(id);
-          sessionStorage.removeItem('pendingEmployeeView'); // Clear fallback
+          localStorage.removeItem('pendingEmployeeView'); // Clear fallback
         } else {
           console.warn('ViewPersonnel not ready, will use fallback on page load');
         }
@@ -920,9 +922,9 @@ async function initializePersonnelManager(sectionType = null) {
     }
 
     // Check if we're returning from navigation (Check sessionStorage now)
-    const isReturning = sessionStorage.getItem('navigatedFromCurrentPersonnel');
-    const savedPage = sessionStorage.getItem('currentPersonnelPage');
-    const savedType = sessionStorage.getItem('currentPersonnelType');
+    const isReturning = localStorage.getItem('navigatedFromCurrentPersonnel');
+    const savedPage = localStorage.getItem('currentPersonnelPage');
+    const savedType = localStorage.getItem('currentPersonnelType');
     
     console.log('🟢 Restoration check:', { isReturning, savedPage, savedType });
     
@@ -930,9 +932,9 @@ async function initializePersonnelManager(sectionType = null) {
       console.log(`🟢 Restoring to page ${savedPage} with type ${savedType}`);
       
       // Clear the flags first
-      sessionStorage.removeItem('navigatedFromCurrentPersonnel');
-      sessionStorage.removeItem('currentPersonnelPage');
-      sessionStorage.removeItem('currentPersonnelType');
+      localStorage.removeItem('navigatedFromCurrentPersonnel');
+      localStorage.removeItem('currentPersonnelPage');
+      localStorage.removeItem('currentPersonnelType');
       
       // Restore the saved page
       await personnelManager.loadPersonnelData(savedType, parseInt(savedPage));

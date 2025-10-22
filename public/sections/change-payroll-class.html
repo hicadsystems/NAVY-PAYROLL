@@ -1,12 +1,34 @@
 <div class="p-6 max-w-4xl mx-auto">
   <h2 class="text-gray-600 font-semibold mb-6 lg:text-lg">
-    Select personnel and assign them to a new payroll class.
+    Select migration type and assign personnel to a new payroll class.
   </h2>
 
   <div class="space-y-4">
+    <!-- Migration Type Selection -->
+    <div class="p-4">
+      <h3 class="font-semibold text-gray-700 mb-3">Migration Type</h3>
+      <div class="space-y-2">
+        <label class="flex items-center space-x-3 cursor-pointer">
+          <input type="radio" name="migrationType" value="individual" checked
+            class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+          <span class="text-gray-700">Individual Personnel</span>
+        </label>
+        <label class="flex items-center space-x-3 cursor-pointer">
+          <input type="radio" name="migrationType" value="all"
+            class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+          <span class="text-gray-700">All Personnel (Bulk Migration)</span>
+        </label>
+        <label class="flex items-center space-x-3 cursor-pointer">
+          <input type="radio" name="migrationType" value="range"
+            class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+          <span class="text-gray-700">Range of Personnel</span>
+        </label>
+      </div>
+    </div>
+
     <form id="changesForm" class="space-y-4">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Personnel select -->
+      <!-- Individual Form -->
+      <div id="individualForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="relative">
           <input 
             type="text" 
@@ -21,7 +43,6 @@
             </svg>
           </span>
           
-          <!-- Dropdown List -->
           <div id="dropdownList" class="absolute z-10 w-full mt-1 bg-yellow-50 border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto hidden">
             <div class="py-1">
               <div class="px-3 py-2 text-center text-gray-500">Click to load employees...</div>
@@ -29,37 +50,84 @@
           </div>
         </div>
 
-        <!-- New Class select -->
         <select name="newClass" id="newClass"
             class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
             <option value="">Select Payroll Class</option>
         </select>
 
-        <!-- Empty spacer for alignment -->
         <div></div>
+      </div>
 
-        <!-- Buttons row -->
-        <div class="col-span-1 md:col-span-3 flex flex-wrap gap-2 justify-end">
-            <button type="button" id="changeButton"
-            class="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-            Change Payroll Class
-            </button>
-            <button type="button" id="clearButton"
-            class="px-6 py-2 bg-gray-300 rounded-lg shadow hover:bg-gray-400 transition">
-            Clear
-            </button>
+      <!-- Bulk Migration Form -->
+      <div id="bulkForm" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+        <select name="bulkNewClass" id="bulkNewClass"
+            class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+            <option value="">Select Target Payroll Class</option>
+        </select>
+        <div class="text-sm text-gray-600 flex items-center">
+          <span>⚠️ This will migrate ALL personnel in current payroll class</span>
         </div>
+      </div>
+
+      <!-- Range Form -->
+      <div id="rangeForm" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="relative">
+          <input 
+            type="text" 
+            id="rangeSearchInputStart"
+            class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"
+            placeholder="From: Search personnel..."
+            autocomplete="off">
+          <input type="hidden" id="rangeHiddenInputStart">
+          <div id="rangeDropdownListStart" class="absolute z-10 w-full mt-1 bg-yellow-50 border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto hidden">
+            <div class="py-1">
+              <div class="px-3 py-2 text-center text-gray-500">Click to load employees...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative">
+          <input 
+            type="text" 
+            id="rangeSearchInputEnd"
+            class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"
+            placeholder="To: Search personnel..."
+            autocomplete="off">
+          <input type="hidden" id="rangeHiddenInputEnd">
+          <div id="rangeDropdownListEnd" class="absolute z-10 w-full mt-1 bg-yellow-50 border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto hidden">
+            <div class="py-1">
+              <div class="px-3 py-2 text-center text-gray-500">Click to load employees...</div>
+            </div>
+          </div>
+        </div>
+
+        <select name="rangeNewClass" id="rangeNewClass"
+            class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+            <option value="">Select Payroll Class</option>
+        </select>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-wrap gap-2 justify-end">
+        <button type="button" id="changeButton"
+          class="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          Migrate Personnel
+        </button>
+        <button type="button" id="clearButton"
+          class="px-6 py-2 bg-gray-300 rounded-lg shadow hover:bg-gray-400 transition">
+          Clear
+        </button>
       </div>
     </form>
   </div>
 
-  <!-- Current Selection Display -->
+  <!-- Selection Display -->
   <div id="selectionDisplay" class="mt-6 p-4 rounded-lg hidden">
     <h3 class="font-semibold text-gray-700 mb-2">Current Selection:</h3>
     <p id="selectionText" class="text-gray-600"></p>
   </div>
 
-  <!-- Payroll Classes Management -->
+  <!-- Payroll Class Statistics -->
   <div class="p-6 max-w-4xl mx-auto my-6">
     <h2 class="text-xl font-bold text-gray-800 mb-4">Payroll Class Statistics</h2>
     <div id="classCards" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -397,7 +465,6 @@
              data-name="${name}"
              data-class="${payrollClass}">
           <span class="font-semibold text-blue-600">${id}</span> - ${name}
-          ${rank ? `<span class="text-gray-500 text-sm ml-1">(${rank})</span>` : ''}
         </div>
       `;
     }).join('');

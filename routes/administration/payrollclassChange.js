@@ -485,6 +485,359 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
   }
 });
 
+// Bulk Migration - Migrate ALL employees in current class to target class
+router.post('/payroll-class/bulk', verifyToken, async (req, res) => {
+  const { TargetPayrollClass } = req.body;
+
+  if (!TargetPayrollClass || TargetPayrollClass.trim() === '') {
+    return res.status(400).json({ success: false, error: 'Target payroll class is required' });
+  }
+
+  const payrollClassInput = TargetPayrollClass.toString().trim();
+  const targetDb = getDbNameFromPayrollClass(payrollClassInput);
+  const sourceDb = req.current_class;
+
+  console.log(`📋 Bulk Migration Request:`);
+  console.log(`   From DB: ${sourceDb} (${getFriendlyDbName(sourceDb)})`);
+  console.log(`   To DB: ${targetDb} (${getFriendlyDbName(targetDb)})`);
+
+  if (!sourceDb) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Source payroll class context not found.' 
+    });
+  }
+
+  if (!isValidDatabase(sourceDb) || !isValidDatabase(targetDb)) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Invalid source or target payroll class' 
+    });
+  }
+
+  if (sourceDb === targetDb) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Source and target payroll classes are the same' 
+    });
+  }
+
+  const targetExists = await checkDatabaseExists(targetDb);
+  if (!targetExists) {
+    return res.status(400).json({
+      success: false,
+      error: `Target database "${targetDb}" does not exist.`
+    });
+  }
+
+  let sourceConnection = null;
+  let targetConnection = null;
+  let migratedCount = 0;
+  let totalRecords = 0;
+  const errors = [];
+
+  try {
+    sourceConnection = await pool.getConnection();
+    targetConnection = await pool.getConnection();
+
+    await sourceConnection.query(`USE \`${sourceDb}\``);
+    await targetConnection.query(`USE \`${targetDb}\``);
+
+    // Get all active employees
+    const [employees] = await sourceConnection.query(
+      `SELECT * FROM hr_employees 
+       WHERE (DateLeft IS NULL OR DateLeft = '') 
+       AND (exittype IS NULL OR exittype = '')`
+    );
+
+    console.log(`📦 Found ${employees.length} employees to migrate`);
+
+    for (const employee of employees) {
+      try {
+        await sourceConnection.beginTransaction();
+        await targetConnection.beginTransaction();
+
+        const employeeId = employee.Empl_ID;
+        employee.payrollclass = payrollClassInput;
+
+        // Delete existing in target
+        await targetConnection.query(`DELETE FROM hr_employees WHERE Empl_ID = ?`, [employeeId]);
+        
+        const relatedTables = ['Children', 'NextOfKin', 'Spouse'];
+        for (const table of relatedTables) {
+          try {
+            await targetConnection.query(`DELETE FROM ${table} WHERE Empl_ID = ?`, [employeeId]);
+          } catch (err) { /* Table may not exist */ }
+        }
+
+        // Copy to target
+        const columns = Object.keys(employee);
+        const placeholders = columns.map(() => '?').join(', ');
+        const values = Object.values(employee);
+
+        await targetConnection.query(
+          `INSERT INTO hr_employees (${columns.join(', ')}) VALUES (${placeholders})`,
+          values
+        );
+        totalRecords++;
+
+        // Copy related records
+        for (const table of relatedTables) {
+          try {
+            const [records] = await sourceConnection.query(
+              `SELECT * FROM ${table} WHERE Empl_ID = ?`,
+              [employeeId]
+            );
+
+            for (const record of records) {
+              const cols = Object.keys(record);
+              const vals = Object.values(record);
+              const ph = cols.map(() => '?').join(', ');
+
+              await targetConnection.query(
+                `INSERT INTO ${table} (${cols.join(', ')}) VALUES (${ph})`,
+                vals
+              );
+              totalRecords++;
+            }
+          } catch (err) { /* Table may not exist */ }
+        }
+
+        // Delete from source
+        for (const table of relatedTables) {
+          try {
+            await sourceConnection.query(`DELETE FROM ${table} WHERE Empl_ID = ?`, [employeeId]);
+          } catch (err) { /* Ignore */ }
+        }
+        await sourceConnection.query(`DELETE FROM hr_employees WHERE Empl_ID = ?`, [employeeId]);
+
+        await targetConnection.commit();
+        await sourceConnection.commit();
+        migratedCount++;
+
+      } catch (error) {
+        await sourceConnection.rollback();
+        await targetConnection.rollback();
+        errors.push({ employeeId: employee.Empl_ID, error: error.message });
+        console.error(`Failed to migrate ${employee.Empl_ID}:`, error.message);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Bulk migration completed`,
+      data: {
+        TotalEmployees: employees.length,
+        SuccessfulMigrations: migratedCount,
+        FailedMigrations: errors.length,
+        TotalRecordsMigrated: totalRecords,
+        SourceDatabase: sourceDb,
+        TargetDatabase: targetDb,
+        SourceDatabaseName: getFriendlyDbName(sourceDb),
+        TargetDatabaseName: getFriendlyDbName(targetDb),
+        Errors: errors,
+        Timestamp: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('Bulk migration failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Bulk migration failed',
+      message: error.message
+    });
+  } finally {
+    if (sourceConnection) sourceConnection.release();
+    if (targetConnection) targetConnection.release();
+  }
+});
+
+// Range Migration - Migrate employees within a range
+router.post('/payroll-class/range', verifyToken, async (req, res) => {
+  const { StartEmpl_ID, EndEmpl_ID, TargetPayrollClass } = req.body;
+
+  if (!StartEmpl_ID || !EndEmpl_ID || !TargetPayrollClass) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Start employee ID, end employee ID, and target payroll class are required' 
+    });
+  }
+
+  const startId = StartEmpl_ID.trim();
+  const endId = EndEmpl_ID.trim();
+  const payrollClassInput = TargetPayrollClass.toString().trim();
+  const targetDb = getDbNameFromPayrollClass(payrollClassInput);
+  const sourceDb = req.current_class;
+
+  console.log(`📋 Range Migration Request:`);
+  console.log(`   Range: ${startId} to ${endId}`);
+  console.log(`   From DB: ${sourceDb} (${getFriendlyDbName(sourceDb)})`);
+  console.log(`   To DB: ${targetDb} (${getFriendlyDbName(targetDb)})`);
+
+  if (!sourceDb) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Source payrollclass context not found.' 
+    });
+  }
+
+  if (!isValidDatabase(sourceDb) || !isValidDatabase(targetDb)) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Invalid source or target payrollclass' 
+    });
+  }
+
+  if (sourceDb === targetDb) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Source and target payroll classes are the same' 
+    });
+  }
+
+  const targetExists = await checkDatabaseExists(targetDb);
+  if (!targetExists) {
+    return res.status(400).json({
+      success: false,
+      error: `Target database "${targetDb}" does not exist.`
+    });
+  }
+
+  let sourceConnection = null;
+  let targetConnection = null;
+  let migratedCount = 0;
+  let totalRecords = 0;
+  const errors = [];
+
+  try {
+    sourceConnection = await pool.getConnection();
+    targetConnection = await pool.getConnection();
+
+    await sourceConnection.query(`USE \`${sourceDb}\``);
+    await targetConnection.query(`USE \`${targetDb}\``);
+
+    // Get employees in range
+    const [employees] = await sourceConnection.query(
+      `SELECT * FROM hr_employees 
+       WHERE Empl_ID BETWEEN ? AND ?
+       AND (DateLeft IS NULL OR DateLeft = '') 
+       AND (exittype IS NULL OR exittype = '')
+       ORDER BY Empl_ID ASC`,
+      [startId, endId]
+    );
+
+    if (employees.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: `No employees found in range ${startId} to ${endId}`
+      });
+    }
+
+    console.log(`📦 Found ${employees.length} employees in range`);
+
+    for (const employee of employees) {
+      try {
+        await sourceConnection.beginTransaction();
+        await targetConnection.beginTransaction();
+
+        const employeeId = employee.Empl_ID;
+        employee.payrollclass = payrollClassInput;
+
+        // Delete existing in target
+        await targetConnection.query(`DELETE FROM hr_employees WHERE Empl_ID = ?`, [employeeId]);
+        
+        const relatedTables = ['Children', 'NextOfKin', 'Spouse'];
+        for (const table of relatedTables) {
+          try {
+            await targetConnection.query(`DELETE FROM ${table} WHERE Empl_ID = ?`, [employeeId]);
+          } catch (err) { /* Table may not exist */ }
+        }
+
+        // Copy to target
+        const columns = Object.keys(employee);
+        const placeholders = columns.map(() => '?').join(', ');
+        const values = Object.values(employee);
+
+        await targetConnection.query(
+          `INSERT INTO hr_employees (${columns.join(', ')}) VALUES (${placeholders})`,
+          values
+        );
+        totalRecords++;
+
+        // Copy related records
+        for (const table of relatedTables) {
+          try {
+            const [records] = await sourceConnection.query(
+              `SELECT * FROM ${table} WHERE Empl_ID = ?`,
+              [employeeId]
+            );
+
+            for (const record of records) {
+              const cols = Object.keys(record);
+              const vals = Object.values(record);
+              const ph = cols.map(() => '?').join(', ');
+
+              await targetConnection.query(
+                `INSERT INTO ${table} (${cols.join(', ')}) VALUES (${ph})`,
+                vals
+              );
+              totalRecords++;
+            }
+          } catch (err) { /* Table may not exist */ }
+        }
+
+        // Delete from source
+        for (const table of relatedTables) {
+          try {
+            await sourceConnection.query(`DELETE FROM ${table} WHERE Empl_ID = ?`, [employeeId]);
+          } catch (err) { /* Ignore */ }
+        }
+        await sourceConnection.query(`DELETE FROM hr_employees WHERE Empl_ID = ?`, [employeeId]);
+
+        await targetConnection.commit();
+        await sourceConnection.commit();
+        migratedCount++;
+
+      } catch (error) {
+        await sourceConnection.rollback();
+        await targetConnection.rollback();
+        errors.push({ employeeId: employee.Empl_ID, error: error.message });
+        console.error(`Failed to migrate ${employee.Empl_ID}:`, error.message);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Range migration completed`,
+      data: {
+        Range: `${startId} to ${endId}`,
+        TotalEmployees: employees.length,
+        SuccessfulMigrations: migratedCount,
+        FailedMigrations: errors.length,
+        TotalRecordsMigrated: totalRecords,
+        SourceDatabase: sourceDb,
+        TargetDatabase: targetDb,
+        SourceDatabaseName: getFriendlyDbName(sourceDb),
+        TargetDatabaseName: getFriendlyDbName(targetDb),
+        Errors: errors,
+        Timestamp: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('Range migration failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Range migration failed',
+      message: error.message
+    });
+  } finally {
+    if (sourceConnection) sourceConnection.release();
+    if (targetConnection) targetConnection.release();
+  }
+});
+
 // ==================== HELPER ENDPOINT: Get migration preview ====================
 router.get('/payroll-class/preview/:Empl_ID', verifyToken, async (req, res) => {
   const { Empl_ID } = req.params;

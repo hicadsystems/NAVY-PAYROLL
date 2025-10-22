@@ -15,13 +15,20 @@ async function attachPayrollClass(req, res, next) {
 
     const result = await autoAssignPayrollClass(dbName);
 
-    if (result.updated > 0) {
-      console.log(`✅ Auto-assigned ${result.updated} employee(s) in ${dbName}.`);
+    if (result.total > 0) {
+      console.log(`✅ Processed ${result.total} employee(s) in ${dbName}:`);
+      if (result.updated > 0) {
+        console.log(`   - Auto-assigned: ${result.updated}`);
+      }
+      if (result.corrected > 0) {
+        console.log(`   - Corrected mismatches: ${result.corrected}`);
+      }
+      console.log(`   - Payroll Class: ${result.payrollClass} (${result.payrollClassName})`);
     } else {
-      console.log(`No unassigned employees found or mapping not needed in ${dbName}.`);
+      console.log(`✓ All employees properly assigned in ${dbName}.`);
     }
 
-    // Optionally attach result for later use
+    // Attach result for later use if needed
     req.autoAssignResult = result;
 
     next();
@@ -33,5 +40,3 @@ async function attachPayrollClass(req, res, next) {
 }
 
 module.exports = {attachPayrollClass};
-
-

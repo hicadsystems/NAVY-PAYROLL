@@ -103,284 +103,221 @@
 
 <script>
 (function () {
-const apiUrl = "/overpayment"; 
-let bt04 = null; // holds BT04 record
-let lookupMaps = {};
+  const apiUrl = "/overpayment"; 
+  let bt04 = null; // holds BT04 record
+  let lookupMaps = {};
 
-// Storage key for the mapping
-const STORAGE_KEY = "overpayment_basicpay_map";
+  // Load dropdown
+  async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/reference/${endpoint}`, {   
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        }
+      });
+      const data = await response.json();
+      const dropdown = document.getElementById(elementId);
+      if (!dropdown) return;
+      dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+      data.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item[valueField];
+        option.textContent = item[textField];
+        dropdown.appendChild(option);
 
-//load dropdown
-async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`/reference/${endpoint}`, {   
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}` 
-      }
+        lookupMaps[endpoint] = Object.fromEntries(
+          data.map(item => [item[valueField], item[textField]])
+        );
+      });
+      return data;
+    } catch (err) {
+      console.error(`Failed to load ${endpoint}:`, err);
+      return [];
+    }
+  }
+
+  async function loadAllDropdowns() {
+    const promises = [
+      await loadDropdown("elementtype", "salaryInput", "PaymentType", "elmDesc", "Select Type")
+    ]
+    await Promise.all(promises);
+  }
+
+  function getValueField(endpoint) {
+    const fieldMap = {
+      'elementtype': 'PaymentType'
+    };
+    return fieldMap[endpoint] || 'code';
+  }
+
+  function getTextField(endpoint) {
+    const fieldMap = {
+      'elementtype': 'elmDesc'
+    }
+    return fieldMap[endpoint] || 'name';
+  }
+
+  function resolveName(code, endpoint) {
+    if (!code) return 'N/A';
+    return lookupMaps[endpoint]?.[code] || code;
+  }
+
+  function showModal() { 
+    const modal = document.getElementById('successModal'); 
+    modal.classList.remove("hidden"); 
+    setTimeout(() => modal.classList.add("hidden"), 1000); 
+  }
+
+  function showAlert(message, title = "Alert") {
+    const modal = document.getElementById("alertModal");
+    const msg = document.getElementById("alertMessage");
+    const ttl = document.getElementById("alertTitle");
+    const okBtn = document.getElementById("alertOkBtn");
+
+    ttl.textContent = title;
+    msg.textContent = message;
+
+    modal.classList.remove("hidden");
+    okBtn.onclick = () => modal.classList.add("hidden");
+  }
+
+  function showConfirm(message, title = "Confirm", onConfirm) {
+    const modal = document.getElementById("confirmModal");
+    const msg = document.getElementById("confirmMessage");
+    const ttl = document.getElementById("confirmTitle");
+    const yesBtn = document.getElementById("confirmYesBtn");
+    const noBtn = document.getElementById("confirmNoBtn");
+
+    ttl.textContent = title;
+    msg.textContent = message;
+    modal.classList.remove("hidden");
+
+    yesBtn.onclick = () => {
+      modal.classList.add("hidden");
+      if (onConfirm) onConfirm();
+    };
+    noBtn.onclick = () => modal.classList.add("hidden");
+  }
+
+  async function loadOverpayment() {
+    const res = await fetch(apiUrl, { 
+      headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
     });
-    const data = await response.json();
-    const dropdown = document.getElementById(elementId);
-    if (!dropdown) return;
-    dropdown.innerHTML = `<option value="">${placeholder}</option>`;
-    data.forEach(item => {
-      const option = document.createElement("option");
-      option.value = item[valueField];
-      option.textContent = item[textField];
-      dropdown.appendChild(option);
-
-      lookupMaps[endpoint] = Object.fromEntries(
-        data.map(item => [item[valueField], item[textField]])
-      )
-    });
-    return data;
-  } catch (err) {
-    console.error(`Failed to load ${endpoint}:`, err);
-    return [];
-  }
-}
-
-async function loadAllDropdowns() {
-  const promises = [
-    loadDropdown("elementtype","salaryInput", "PaymentType", "elmDesc", "Select Type")
-  ];
-  await Promise.all(promises);
-}
-
-function getValueField(endpoint) {
-  const fieldMap = {
-    'elementtype': 'PaymentType'
-  };
-  return fieldMap[endpoint] || 'code';
-}
-
-function getTextField(endpoint) {
-  const fieldMap = {
-    'elementtype': 'elmDesc'
-  }
-  return fieldMap[endpoint] || 'name';
-}
-
-function resolveName(code, endpoint) {
-  if (!code) return 'N/A';
-  return lookupMaps[endpoint]?.[code] || code;
-}
-
-// Load mapping from localStorage
-function loadMapping() {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : {};
-}
-
-// Save mapping to localStorage
-function saveMapping(map) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
-}
-
-// Get original input from storage
-function getOriginalBasicPay(code) {
-  const map = loadMapping();
-  return map[code] || null;
-}
-
-// Set original input in storage
-function setOriginalBasicPay(code, value) {
-  const map = loadMapping();
-  map[code] = value;
-  saveMapping(map);
-}
-
-// Clear mapping for a specific code
-function clearOriginalBasicPay(code) {
-  const map = loadMapping();
-  delete map[code];
-  saveMapping(map);
-}
-
-function showModal() { 
-  const modal = document.getElementById('successModal'); 
-  modal.classList.remove("hidden"); 
-  setTimeout(() => 
-  modal.classList.add("hidden"), 1000); 
-}
-
-function showAlert(message, title = "Alert") {
-  const modal = document.getElementById("alertModal");
-  const msg = document.getElementById("alertMessage");
-  const ttl = document.getElementById("alertTitle");
-  const okBtn = document.getElementById("alertOkBtn");
-
-  ttl.textContent = title;
-  msg.textContent = message;
-
-  modal.classList.remove("hidden");
-
-  okBtn.onclick = () => {
-    modal.classList.add("hidden");
-  };
-}
-
-function showConfirm(message, title = "Confirm", onConfirm) {
-  const modal = document.getElementById("confirmModal");
-  const msg = document.getElementById("confirmMessage");
-  const ttl = document.getElementById("confirmTitle");
-  const yesBtn = document.getElementById("confirmYesBtn");
-  const noBtn = document.getElementById("confirmNoBtn");
-
-  ttl.textContent = title;
-  msg.textContent = message;
-
-  modal.classList.remove("hidden");
-
-  yesBtn.onclick = () => {
-    modal.classList.add("hidden");
-    if (onConfirm) onConfirm();
-  };
-
-  noBtn.onclick = () => {
-    modal.classList.add("hidden");
-  };
-}
-
-const salaryMap = {
-  1: "BASIC PAY",
-};
-
-async function loadOverpayment() {
-  const res = await fetch(apiUrl, { 
-    headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
-  });
-  bt04 = await res.json();
-
-  renderTable();
-}
-
-// Render table
-function renderTable() {
-  salaryTable.innerHTML = "";
-  if (bt04 && bt04.basicpay) {
-    const code = parseInt(bt04.basicpay);
-    // Display the original input from storage or fallback to mapped value
-    const label = getOriginalBasicPay(code) || salaryMap[code] || bt04.basicpay;
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td class="border px-3 py-2">${label}</td>
-      <td class="border px-3 py-2">${bt04.ord || 0}%</td>
-      <td class="border px-3 py-2 text-center">
-        <button class="text-blue-500 editBtn mr-2">Edit</button>
-        <button class="text-red-500 deleteBtn">Delete</button>
-      </td>
-    `;
-    salaryTable.appendChild(row);
-  }
-}
-
-// Show form
-addNewBtn.addEventListener("click", () => {
-  // Check if record already exists
-  if (bt04 && bt04.basicpay) {
-    showAlert("A record already exists. Please edit the existing record instead of adding a new one.", "Cannot Add New Record");
-    return;
-  }
-  
-  salaryInput.value = "";
-  percentageInput.value = ""; 
-  salaryForm.classList.remove("hidden");
-  document.getElementById("salaryInput").disabled = false;
-});
-
-// Save
-saveBtn.addEventListener("click", async () => {
-  const salary = salaryInput.value.trim();
-  const percentage = parseFloat(percentageInput.value);
-
-  if (!salary || isNaN(percentage)) {
-    showAlert("Please enter salary and percentage");
-    return;
+    bt04 = await res.json();
+    renderTable();
   }
 
-  // Store the original input in localStorage mapped to code 1
-  setOriginalBasicPay(1, salary);
-  
-  // Always map to 1 for storage
-  const body = JSON.stringify({ 
-    basicpay: "1", 
-    ord: percentage
-  });
-  
-  const headers = { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` };
-
-  if (bt04 && bt04.type === "BT04") {
-    // Update existing record
-    const res = await fetch(apiUrl, { method: "PUT", headers, body });
-    if (!res.ok) throw new Error("Failed to update");
-    showModal();
-  } else {
-    // Only create if no record exists
+  // Render table
+  function renderTable() {
+    salaryTable.innerHTML = "";
     if (bt04 && bt04.basicpay) {
-      showAlert("A record already exists. Cannot create a new one.", "Error");
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td class="border px-3 py-2">${resolveName(bt04.basicpay, "elementtype")} (${bt04.basicpay})</td>
+        <td class="border px-3 py-2">${bt04.ord || 0}%</td>
+        <td class="border px-3 py-2 text-center">
+          <button class="text-blue-500 editBtn mr-2">Edit</button>
+          <button class="text-red-500 deleteBtn">Delete</button>
+        </td>
+      `;
+      salaryTable.appendChild(row);
+    }
+  }
+
+  // Show form
+  addNewBtn.addEventListener("click", () => {
+    // Prevent multiple record creation
+    if (bt04 && bt04.basicpay) {
+      showAlert("A record already exists. Please edit the existing record instead of adding a new one.", "Cannot Add New Record");
       return;
     }
-    const res = await fetch(apiUrl, { method: "POST", headers, body });
-    if (!res.ok) throw new Error("Failed to create");
-    showModal();
-  }
-  
-  salaryForm.classList.add("hidden");
-  await loadOverpayment();
-});
-
-// Delete
-async function deleteRecord() {
-  try {
-    const headers = { "Authorization": `Bearer ${localStorage.getItem("token")}` };
-    const res = await fetch(apiUrl, { method: "DELETE", headers });
-    
-    if (!res.ok) throw new Error("Failed to delete");
-    
-    showAlert("Record deleted successfully");
-    
-    // Clear the mapping when deleted
-    if (bt04 && bt04.basicpay) {
-      clearOriginalBasicPay(parseInt(bt04.basicpay));
-    }
-    
-    bt04 = null;
-    renderTable();
-  } catch (error) {
-    showAlert("Failed to delete record. Please try again.", "Error");
-  }
-}
-
-// Edit and Delete handlers
-salaryTable.addEventListener("click", (e) => {
-  if (e.target.classList.contains("editBtn")) {
-    const code = parseInt(bt04.basicpay);
-    // Show the original input value from storage or fallback
-    salaryInput.value = getOriginalBasicPay(code) || salaryMap[code] || bt04.basicpay;
-    percentageInput.value = bt04.ord || 0;
-    document.getElementById("salaryInput").disabled = true;
+    salaryInput.value = "";
+    percentageInput.value = ""; 
     salaryForm.classList.remove("hidden");
-  }
-  
-  if (e.target.classList.contains("deleteBtn")) {
-    showConfirm(
-      "Are you sure you want to delete this record? This action cannot be undone.",
-      "Confirm Delete",
-      deleteRecord
-    );
-  }
-});
+    salaryInput.disabled = false; // allow editing
+  });
 
-// Cancel
-cancelBtn.addEventListener("click", () => {
-  salaryForm.classList.add("hidden");
-});
+  // Save
+  saveBtn.addEventListener("click", async () => {
+    const salary = salaryInput.value.trim();
+    const percentage = parseFloat(percentageInput.value);
 
-// Init
-loadOverpayment();
-loadAllDropdowns();
+    if (!salary || isNaN(percentage)) {
+      showAlert("Please enter salary and percentage");
+      return;
+    }
+
+    const body = JSON.stringify({ 
+      basicpay: salary,
+      ord: percentage
+    });
+    const headers = { 
+      "Content-Type": "application/json", 
+      "Authorization": `Bearer ${localStorage.getItem("token")}` 
+    };
+
+    try {
+      if (bt04 && bt04.basicpay) {
+        // Update existing record
+        const res = await fetch(apiUrl, { method: "PUT", headers, body });
+        if (!res.ok) throw new Error("Failed to update");
+        showModal();
+      } else {
+        // Create new record
+        const res = await fetch(apiUrl, { method: "POST", headers, body });
+        if (!res.ok) throw new Error("Failed to create");
+        showModal();
+      }
+
+      salaryForm.classList.add("hidden");
+      await loadOverpayment();
+    } catch (err) {
+      showAlert(err.message || "Error saving record");
+    }
+  });
+
+  // Delete
+  async function deleteRecord() {
+    try {
+      const headers = { "Authorization": `Bearer ${localStorage.getItem("token")}` };
+      const res = await fetch(apiUrl, { method: "DELETE", headers });
+      if (!res.ok) throw new Error("Failed to delete");
+      showAlert("Record deleted successfully");
+      bt04 = null;
+      renderTable();
+    } catch (error) {
+      showAlert("Failed to delete record. Please try again.", "Error");
+    }
+  }
+
+  // Edit and Delete handlers
+  salaryTable.addEventListener("click", (e) => {
+    if (e.target.classList.contains("editBtn")) {
+      salaryInput.value = bt04.basicpay;
+      percentageInput.value = bt04.ord || 0;
+      salaryInput.disabled = false; // allow editing both fields
+      salaryForm.classList.remove("hidden");
+    }
+
+    if (e.target.classList.contains("deleteBtn")) {
+      showConfirm(
+        "Are you sure you want to delete this record? This action cannot be undone.",
+        "Confirm Delete",
+        deleteRecord
+      );
+    }
+  });
+
+  cancelBtn.addEventListener("click", () => {
+    salaryForm.classList.add("hidden");
+  });
+
+(async function init() {
+  await loadAllDropdowns();
+  await loadOverpayment();
+})();
 })();
 </script>

@@ -1,15 +1,18 @@
 const express = require('express');
 const pool = require('../../config/db'); // mysql2 pool
 const verifyToken = require('../../middware/authentication');
+const { attachPayrollClass } = require('../../middware/attachPayrollClass');
 const router = express.Router();
+
 
 // =============================================================================
 // HR_EMPLOYEES CRUD OPERATIONS
 // =============================================================================
 
 // GET all current employees
-router.get('/employees-current', verifyToken, async (req, res) => {
+router.get('/employees-current', verifyToken, attachPayrollClass, async (req, res) => {
   try {
+
     const currentDb = pool.getCurrentDatabase(req.user_id);
     console.log('🔍 Current database for query:', currentDb);
     console.log('🔍 User ID:', req.user_id);
@@ -54,7 +57,7 @@ router.get('/employees-current', verifyToken, async (req, res) => {
 });
 
 // GET all current employees with pagination
-router.get('/employees-current-pages', verifyToken, async (req, res) => {
+router.get('/employees-current-pages', verifyToken, attachPayrollClass, async (req, res) => {
   try {
     const currentDb = pool.getCurrentDatabase(req.user_id);
     console.log('🔍 Current database for query:', currentDb);
@@ -258,7 +261,7 @@ router.get('/employees-old', verifyToken, async (req, res) => {
 });
 
 // GET old employees with SEARCH - queries whole table
-router.get('/employees-old/search', verifyToken, async (req, res) => {
+router.get('/employees-old/search', verifyToken, attachPayrollClass, async (req, res) => {
   try {
     const currentDb = pool.getCurrentDatabase(req.user_id);
     console.log('🔍 Search database:', currentDb);
@@ -413,7 +416,7 @@ router.get('/employees/check/:field/:value', verifyToken, async (req, res) => {
 });
 
 // POST create employee
-router.post('/employees', verifyToken, async (req, res) => {
+router.post('/employees', verifyToken, attachPayrollClass, async (req, res) => {
   try {
     console.log('=== CREATE EMPLOYEE ===');
     console.log('Received fields:', Object.keys(req.body));

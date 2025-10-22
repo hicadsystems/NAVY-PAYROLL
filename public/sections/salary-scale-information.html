@@ -1,19 +1,26 @@
 <div class="p-6">
 
-  <!-- Toggle Navigation -->
-  <div class="w-fit flex gap-4 p-2 mb-6 bg-white/50 rounded-xl border border-amber-50 shadow-sm">
-    <button id="btnGroups" class="px-4 py-2 rounded-md text-gray-900 hover:bg-blue-600">Salary Groups</button>
-    <button id="btnScales" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Salary Scale</button>
+  <div class="flex flex-wrap gap-2 justify-between mb-6">
+    <!-- Toggle Navigation -->
+    <div class="w-fit flex gap-4 p-2 bg-white/50 rounded-xl border border-amber-50 shadow-sm">
+      <button id="btnGroups" class="px-4 py-2 rounded-md text-gray-900 hover:bg-blue-600">Salary Groups</button>
+      <button id="btnScales" class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">Salary Scale</button>
+    </div>
+
+    <div class="flex gap-4 p-2">
+      <button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+        <i class="fas fa-file-alt mr-2"></i>Generate Report
+      </button>
+    </div>
   </div>
 
   <!-- Salary Groups -->
   <div id="groupSection">
-    <div class="flex justify-between mb-4">
+    <div class="flex flex-wrap justify-between mb-4">
       <h2 class="text-xl lg:text-2xl text-blue-600 font-bold">Salary Groups</h2>
       <div class="flex flex-wrap gap-2">
+        <input type="text" id="groupSearchInput" placeholder="Search code or desc ..." class="border rounded px-3 py-2">
         <button id="addNewGroupBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New Group</button>
-        <!--<button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
-        <i class="fas fa-file-alt mr-2"></i>Generate Report</button>      -->
       </div>
     </div>
 
@@ -48,14 +55,36 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Pagination Controls -->
+    <div class="mt-4 flex items-center justify-between">
+      <div class="text-sm text-gray-600">
+        Showing <span id="groupStartRecord">0</span> to <span id="groupEndRecord">0</span> of <span id="groupTotalRecords">0</span> records
+      </div>
+      <div class="flex items-center space-x-2">
+        <select id="groupRecordsPerPage" class="border border-gray-300 rounded px-2 py-1 text-sm">
+          <option value="10">10 per page</option>
+          <option value="25">25 per page</option>
+          <option value="50">50 per page</option>
+          <option value="100">100 per page</option>
+        </select>
+        <button id="groupPrevPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+          Previous
+        </button>
+        <span class="text-sm">
+          Page <span id="groupCurrentPage">1</span> of <span id="groupTotalPages">1</span>
+        </span>
+        <button id="groupNextPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+          Next
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Salary Scales -->
   <div id="scaleSection" class="hidden">
-    <div class="flex flex-wrap gap-4 justify-between mb-4">
-      <div>
+    <div class="flex flex-wrap justify-between mb-4">
         <h2 class="text-xl lg:text-2xl text-blue-600 font-bold">Salary Scale</h2>
-      </div>
       <div class="flex flex-wrap gap-2">
         <button id="addNewScaleBtn" type="button"
           class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
@@ -65,14 +94,12 @@
           class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
           Batch Upload
         </button>
-         <button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
-        <i class="fas fa-file-alt mr-2"></i>Generate Report</button>
       </div>
     </div>
 
     <!-- Add New Scale Form -->
     <form id="scaleForm"
-          class="hidden grid grid-cols-2 gap-4 p-4">
+          class="hidden grid grid-cols-2 gap-4">
       <label>Salary Group</label>
       <select id="scaleGroup" class="border p-2 rounded">
         <option value="">Select Group</option>
@@ -104,7 +131,7 @@
     <!-- Batch Upload Form -->
     <div class="flex justify-end">
       <form id="batchUploadForm"
-            class="hidden w-full max-w-lg rounded-2xl pt-6 p-2">
+            class="hidden w-full max-w-lg rounded-2xl pt-6">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
           <input type="file" id="batchFile"
@@ -132,7 +159,7 @@
     </div>
 
     <!-- Table -->
-    <div class="mt-6 overflow-x-auto">
+    <div class="mt-2 overflow-x-auto">
       <table class="min-w-full border border-gray-200 rounded-lg text-sm">
         <thead class="bg-blue-100 text-blue-900">
           <tr>
@@ -144,6 +171,30 @@
         </thead>
         <tbody id="scaleTable"></tbody>
       </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="mt-4 flex items-center justify-between">
+      <div class="text-sm text-gray-600">
+        Showing <span id="scaleStartRecord">0</span> to <span id="scaleEndRecord">0</span> of <span id="scaleTotalRecords">0</span> records
+      </div>
+      <div class="flex items-center space-x-2">
+        <select id="scaleRecordsPerPage" class="border border-gray-300 rounded px-2 py-1 text-sm">
+          <option value="10">10 per page</option>
+          <option value="25">25 per page</option>
+          <option value="50">50 per page</option>
+          <option value="100">100 per page</option>
+        </select>
+        <button id="scalePrevPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+          Previous
+        </button>
+        <span class="text-sm">
+          Page <span id="scaleCurrentPage">1</span> of <span id="scaleTotalPages">1</span>
+        </span>
+        <button id="scaleNextPage" class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+          Next
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -206,9 +257,8 @@
 // API Configuration
 const isLocal = window.location.hostname === "localhost";
 const API_BASE_URL = isLocal 
-  ? "http://localhost:5500/api/v1"   // local backend
-  : "https://hicad.ng/api/v1";       // prod backend
-
+  ? "http://localhost:5500/api/v1"
+  : "https://hicad.ng/api/v1";
 
 // Global variables
 let groups = [];
@@ -218,6 +268,38 @@ let scales = [];
 let editingScaleIndex = null;
 let editingGroupIndex = null;
 
+// Pagination state for groups
+let groupCurrentPage = 1;
+let groupRecordsPerPage = 10;
+let groupFilteredData = [];
+let groupCurrentSearchTerm = "";
+
+// Pagination state for scales
+let scaleCurrentPage = 1;
+let scaleRecordsPerPage = 10;
+let scaleFilteredData = [];
+let scaleCurrentSearchTerm = "";
+
+// Get pagination elements for groups
+const groupPrevBtn = document.getElementById('groupPrevPage');
+const groupNextBtn = document.getElementById('groupNextPage');
+const groupCurrentPageSpan = document.getElementById('groupCurrentPage');
+const groupTotalPagesSpan = document.getElementById('groupTotalPages');
+const groupRecordsSelect = document.getElementById('groupRecordsPerPage');
+const groupStartRecordSpan = document.getElementById('groupStartRecord');
+const groupEndRecordSpan = document.getElementById('groupEndRecord');
+const groupTotalRecordsSpan = document.getElementById('groupTotalRecords');
+
+// Get pagination elements for scales
+const scalePrevBtn = document.getElementById('scalePrevPage');
+const scaleNextBtn = document.getElementById('scaleNextPage');
+const scaleCurrentPageSpan = document.getElementById('scaleCurrentPage');
+const scaleTotalPagesSpan = document.getElementById('scaleTotalPages');
+const scaleRecordsSelect = document.getElementById('scaleRecordsPerPage');
+const scaleStartRecordSpan = document.getElementById('scaleStartRecord');
+const scaleEndRecordSpan = document.getElementById('scaleEndRecord');
+const scaleTotalRecordsSpan = document.getElementById('scaleTotalRecords');
+
 function showAlert(message, title = "Alert") {
   const modal = document.getElementById("alertModal");
   const msg = document.getElementById("alertMessage");
@@ -226,7 +308,6 @@ function showAlert(message, title = "Alert") {
 
   ttl.textContent = title;
   msg.textContent = message;
-
   modal.classList.remove("hidden");
 
   okBtn.onclick = () => {
@@ -237,10 +318,7 @@ function showAlert(message, title = "Alert") {
 function showSuccess(message = "Configuration saved successfully!") {
   const modal = document.getElementById("successModal");
   const msg = modal.querySelector("p");
-
-  // update message dynamically
   msg.textContent = message;
-
   modal.classList.remove("hidden");
 }
 
@@ -248,7 +326,6 @@ document.getElementById("closeModal").addEventListener("click", () => {
   document.getElementById("successModal").classList.add("hidden");
 });
 
-// Optional: close on clicking outside modal
 document.getElementById("successModal").addEventListener("click", (e) => {
   if (e.target.id === "successModal") {
     e.target.classList.add("hidden");
@@ -265,7 +342,6 @@ function showConfirmModal(message = "Are you sure?") {
     msg.textContent = message;
     modal.classList.remove("hidden");
 
-    // Remove old listeners
     cancelBtn.onclick = () => {
       modal.classList.add("hidden");
       resolve(false);
@@ -284,7 +360,6 @@ function showConfirmModal(message = "Are you sure?") {
     };
   });
 }
-  
 
 // API Helper Functions
 class ApiService {
@@ -315,7 +390,6 @@ class ApiService {
     }
   }
 
-  // Salary Scale API calls
   static async getAllScales(page = 1, limit = 100) {
     return await this.request(`/salary-scales?page=${page}&limit=${limit}`);
   }
@@ -353,14 +427,6 @@ class ApiService {
     return await this.request(`/salary-scales/${salcode}/${saltype}/${grade}/progression-steps`);
   }
 
-  static async validateProgression(progressionData) {
-    return await this.request('/salary-scales/validate-progression', {
-      method: 'POST',
-      body: JSON.stringify(progressionData),
-    });
-  }
-
-  // Salary Group API calls
   static async getAllGroups(page = 1, limit = 100) {
     return await this.request(`/salary-groups?page=${page}&limit=${limit}`);
   }
@@ -394,22 +460,14 @@ class ApiService {
     return await this.request(`/salary-groups/search?${params}`);
   }
 
-  static async getActiveGroups() {
-    return await this.request('/salary-groups/active/list');
-  }
-
-  // Element Types API call
   static async getElementTypes() {
     return await this.request('/elementtypes');
   }
 
-  // Grade Levels API call
   static async getGradeLevels() {
     return await this.request('/gradelevels');
   }
 
-  
-  // Batch upload API calls
   static async batchUpload(formData) {
     const url = `${API_BASE_URL}/salary-scales/batch-upload`;
     
@@ -418,12 +476,10 @@ class ApiService {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
-          // Don't set Content-Type for FormData - browser will set it automatically with boundary
         },
         body: formData,
       });
       
-      // Check content type before parsing
       const contentType = response.headers.get('content-type') || '';
       
       if (!response.ok) {
@@ -435,7 +491,6 @@ class ApiService {
             errorMessage = errorData.error || errorMessage;
           } else {
             const errorText = await response.text();
-            // Don't try to show multipart boundary data as error
             if (!errorText.startsWith('------') && errorText.length < 500) {
               errorMessage = errorText;
             }
@@ -447,12 +502,10 @@ class ApiService {
         throw new Error(errorMessage);
       }
       
-      // Only try to parse as JSON if content-type indicates JSON
       if (contentType.includes('application/json')) {
         const data = await response.json();
         return data;
       } else {
-        // If not JSON response, return a success indicator
         return { 
           success: true, 
           message: 'Upload completed',
@@ -480,8 +533,6 @@ class ApiService {
     }
     
     try {
-      console.log('Making download request with token:', token ? 'Token present' : 'No token');
-      
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -489,9 +540,6 @@ class ApiService {
           'Accept': 'application/octet-stream, text/csv, */*',
         },
       });
-      
-      console.log('Download response status:', response.status);
-      console.log('Download response headers:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -517,62 +565,126 @@ class ApiService {
   }
 }
 
+// GROUP PAGINATION FUNCTIONS
+function getGroupPaginationData() {
+  const totalRecords = groupFilteredData.length;
+  const totalPages = Math.ceil(totalRecords / groupRecordsPerPage) || 1;
+  const startIndex = (groupCurrentPage - 1) * groupRecordsPerPage;
+  const endIndex = startIndex + groupRecordsPerPage;
+  const currentData = groupFilteredData.slice(startIndex, endIndex);
+  const startRecord = totalRecords === 0 ? 0 : startIndex + 1;
+  const endRecord = Math.min(endIndex, totalRecords);
 
-// Initialize data from API
-async function initializeData() {
-  try {
-    // Load groups from API
-    await loadGroups();
-    
-    // Load element types from API
-    await loadElementTypes();
-    
-    // Load grade levels from API 
-    await loadGradeLevels();
-    
-    loadDropdowns();
-  } catch (error) {
-    console.error('Failed to initialize data:', error);
-  }
+  return { totalRecords, totalPages, currentData, startRecord, endRecord };
 }
 
-// Load groups from backend
-async function loadGroups() {
+function updateGroupPaginationUI() {
+  const { totalRecords, totalPages, startRecord, endRecord } = getGroupPaginationData();
+  
+  if (groupCurrentPageSpan) groupCurrentPageSpan.textContent = groupCurrentPage;
+  if (groupTotalPagesSpan) groupTotalPagesSpan.textContent = totalPages;
+  if (groupStartRecordSpan) groupStartRecordSpan.textContent = startRecord;
+  if (groupEndRecordSpan) groupEndRecordSpan.textContent = endRecord;
+  if (groupTotalRecordsSpan) groupTotalRecordsSpan.textContent = totalRecords;
+
+  if (groupPrevBtn) groupPrevBtn.disabled = groupCurrentPage <= 1;
+  if (groupNextBtn) groupNextBtn.disabled = groupCurrentPage >= totalPages;
+}
+
+function renderGroupWithPagination() {
+  renderGroupTable();
+  updateGroupPaginationUI();
+}
+
+// SCALE PAGINATION FUNCTIONS
+function getScalePaginationData() {
+  const totalRecords = scaleFilteredData.length;
+  const totalPages = Math.ceil(totalRecords / scaleRecordsPerPage) || 1;
+  const startIndex = (scaleCurrentPage - 1) * scaleRecordsPerPage;
+  const endIndex = startIndex + scaleRecordsPerPage;
+  const currentData = scaleFilteredData.slice(startIndex, endIndex);
+  const startRecord = totalRecords === 0 ? 0 : startIndex + 1;
+  const endRecord = Math.min(endIndex, totalRecords);
+
+  return { totalRecords, totalPages, currentData, startRecord, endRecord };
+}
+
+function updateScalePaginationUI() {
+  const { totalRecords, totalPages, startRecord, endRecord } = getScalePaginationData();
+  
+  if (scaleCurrentPageSpan) scaleCurrentPageSpan.textContent = scaleCurrentPage;
+  if (scaleTotalPagesSpan) scaleTotalPagesSpan.textContent = totalPages;
+  if (scaleStartRecordSpan) scaleStartRecordSpan.textContent = startRecord;
+  if (scaleEndRecordSpan) scaleEndRecordSpan.textContent = endRecord;
+  if (scaleTotalRecordsSpan) scaleTotalRecordsSpan.textContent = totalRecords;
+
+  if (scalePrevBtn) scalePrevBtn.disabled = scaleCurrentPage <= 1;
+  if (scaleNextBtn) scaleNextBtn.disabled = scaleCurrentPage >= totalPages;
+}
+
+function renderScaleWithPagination() {
+  renderScaleTable();
+  updateScalePaginationUI();
+}
+
+// Load groups from backend with pagination support
+async function loadGroups(preserveState = false) {
   try {
     const response = await ApiService.getAllGroups();
     groups = response.data || [];
-    renderGroupTable();
+    
+    if (preserveState) {
+      applyGroupSearch(groupCurrentSearchTerm);
+      const totalPages = Math.ceil(groupFilteredData.length / groupRecordsPerPage) || 1;
+      if (groupCurrentPage > totalPages) {
+        groupCurrentPage = totalPages;
+      }
+    } else {
+      groupFilteredData = [...groups];
+      groupCurrentPage = 1;
+      groupCurrentSearchTerm = "";
+    }
+    
+    renderGroupWithPagination();
   } catch (error) {
     console.error('Failed to load groups:', error);
     groups = [];
+    groupFilteredData = [];
   }
 }
 
-// Load element types from backend
+function applyGroupSearch(term) {
+  groupCurrentSearchTerm = term;
+  if (term) {
+    groupFilteredData = groups.filter(g =>
+      g.groupcode.toLowerCase().includes(term) || 
+      g.grpdesc.toLowerCase().includes(term)
+    );
+  } else {
+    groupFilteredData = [...groups];
+  }
+}
+
 async function loadElementTypes() {
   try {
     const response = await ApiService.getElementTypes();
-    elementTypes = response || [];   // no .data here
+    elementTypes = response || [];
   } catch (error) {
     console.error('Failed to load element types:', error);
     elementTypes = [];
   }
 }
 
-// Load element types from backend
 async function loadGradeLevels() {
   try {
     const response = await ApiService.getGradeLevels();
-    gradeLevels = response || [];   // no .data here
+    gradeLevels = response || [];
   } catch (error) {
     console.error('Failed to load grade levels:', error);
     gradeLevels = [];
   }
 }
 
-
-
-// Generate step fields dynamically
 function generateStepFields() {
   const stepFieldsContainer = document.getElementById("stepFields");
   let stepHTML = '';
@@ -588,16 +700,15 @@ function generateStepFields() {
   stepFieldsContainer.innerHTML = stepHTML;
 }
 
-// Load salary scales from backend
-async function loadScales() {
+async function loadScales(preserveState = false) {
   try {
     const response = await ApiService.getAllScales();
     scales = response.data.map(scale => ({
       salcode: scale.salcode,
       saltype: scale.saltype,
       grade: scale.grade,
-      group: scale.salcode, // Using salcode as group for compatibility
-      element: scale.saltype, // Using saltype as element for compatibility
+      group: scale.salcode,
+      element: scale.saltype,
       steps: [
         scale.step1, scale.step2, scale.step3, scale.step4, scale.step5,
         scale.step6, scale.step7, scale.step8, scale.step9, scale.step10,
@@ -606,18 +717,44 @@ async function loadScales() {
       ].map(step => step || ''),
       user: scale.user
     }));
-    renderScaleTable();
+    
+    if (preserveState) {
+      applyScaleSearch(scaleCurrentSearchTerm);
+      const totalPages = Math.ceil(scaleFilteredData.length / scaleRecordsPerPage) || 1;
+      if (scaleCurrentPage > totalPages) {
+        scaleCurrentPage = totalPages;
+      }
+    } else {
+      scaleFilteredData = [...scales];
+      scaleCurrentPage = 1;
+      scaleCurrentSearchTerm = "";
+    }
+    
+    renderScaleWithPagination();
   } catch (error) {
     console.error('Failed to load scales:', error);
+    scales = [];
+    scaleFilteredData = [];
   }
 }
 
-// Define all functions at the top level
+function applyScaleSearch(term) {
+  scaleCurrentSearchTerm = term;
+  if (term) {
+    scaleFilteredData = scales.filter(s =>
+      s.salcode.toLowerCase().includes(term) || 
+      s.saltype.toLowerCase().includes(term) ||
+      s.grade.toString().toLowerCase().includes(term)
+    );
+  } else {
+    scaleFilteredData = [...scales];
+  }
+}
+
 window.viewScale = async function(index) {
   const s = scales[index];
   
   try {
-    // Get progression steps for this scale
     const progressionData = await ApiService.getProgressionSteps(s.salcode, s.saltype, s.grade);
     const maxStep = progressionData.data.maxProgressionStep;
     
@@ -678,33 +815,6 @@ window.viewScale = async function(index) {
     document.getElementById("scaleViewModal").classList.remove("hidden");
   } catch (error) {
     console.error('Failed to get progression steps:', error);
-    // Fallback to simple view without progression info
-    let html = `
-      <div class="p-6 border rounded-2xl shadow-lg bg-gradient-to-br from-blue-50 to-white">
-        <div class="flex flex-wrap justify-between mb-4">
-          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-lg font-semibold text-gray-800">
-            <span class="text-blue-800 font-bold">Salary Code:</span> ${s.salcode}
-          </p>
-          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-lg font-semibold text-gray-800">
-            <span class="text-blue-800 font-bold">Salary Type:</span> ${s.saltype}
-          </p>
-          <p class="border rounded rounded-lg p-2 bg-yellow-50 text-lg font-semibold text-gray-800">
-            <span class="text-blue-800 font-bold">Grade:</span> ${s.grade}
-          </p>
-        </div>
-        <div class="grid grid-cols-5 gap-3 mt-6">`;
-
-    for (let i = 0; i < 20; i++) {
-      html += `
-        <div class="flex justify-between bg-white p-2 rounded border hover:shadow-md transition">
-          <span class="text-base font-medium text-gray-600">${i === 19 ? 'Max Step' : 'Step ' + (i+1)}:</span>
-          <span class="text-base font-semibold text-blue-600">${s.steps[i] || "-"}</span>
-        </div>`;
-    }
-
-    html += `</div></div>`;
-    document.getElementById("scaleViewContent").innerHTML = html;
-    document.getElementById("scaleViewModal").classList.remove("hidden");
   }
 };
 
@@ -714,12 +824,10 @@ window.editScale = function(index) {
   document.getElementById("scaleElement").value = s.saltype;
   document.getElementById("scaleGrade").value = s.grade;
   
-  // Populate step values
   for(let i = 0; i < 20; i++) {
     document.getElementById("step" + (i+1)).value = s.steps[i] || "";
   }
 
-  //disable edit for main fields
   document.getElementById("scaleGroup").disabled = true;
   document.getElementById("scaleElement").disabled = true;
   document.getElementById("scaleGrade").disabled = true;
@@ -737,7 +845,7 @@ window.deleteScale = async function(index) {
     const s = scales[index];
     try {
       await ApiService.deleteScale(s.salcode, s.saltype, s.grade);
-      await loadScales(); // Reload scales after deletion
+      await loadScales(true);
       showSuccess('Scale deleted successfully!');
     } catch (error) {
       console.error('Failed to delete scale:', error);
@@ -745,7 +853,6 @@ window.deleteScale = async function(index) {
     }
   }
 };
-
 
 window.editGroup = function(index) {
   const g = groups[index];
@@ -760,16 +867,14 @@ window.editGroup = function(index) {
 };
 
 window.deleteGroup = async function(index) {
-
   const confirmed = await showConfirmModal("Are you sure you want to delete this group?");
 
   if(confirmed) {
     const g = groups[index];
     try {
       await ApiService.deleteGroup(g.groupcode);
-      await loadGroups(); // Reload groups after deletion
-      loadDropdowns(); // Refresh dropdowns
-
+      await loadGroups(true);
+      loadDropdowns();
       showSuccess('Group deleted successfully!');
     } catch (error) {
       console.error('Failed to delete group:', error);
@@ -778,10 +883,8 @@ window.deleteGroup = async function(index) {
   }
 };
 
-// Initialize step fields on page load
 generateStepFields();
 
-// GROUP form show/hide
 document.getElementById("addNewGroupBtn").addEventListener("click", () => {
   document.getElementById("groupForm").classList.remove("hidden");
   editingGroupIndex = null;
@@ -798,7 +901,6 @@ document.getElementById("cancelGroupBtn").addEventListener("click", () => {
 const scaleForm = document.getElementById("scaleForm");
 const batchForm = document.getElementById("batchUploadForm");
 
-// Add New Scale toggle
 document.getElementById("addNewScaleBtn").addEventListener("click", () => {
   editingScaleIndex = null;
   document.getElementById("scaleForm").reset();
@@ -810,13 +912,11 @@ document.getElementById("addNewScaleBtn").addEventListener("click", () => {
   document.getElementById("stepFields").classList.add("hidden");
 });
 
-// Batch Upload toggle
 document.getElementById("tabBatchBtn").addEventListener("click", () => {
   scaleForm.classList.add("hidden");
   batchForm.classList.toggle("hidden");
 });
 
-// Cancel buttons
 document.getElementById("cancelScaleBtn").addEventListener("click", () => {
   scaleForm.classList.add("hidden");
   document.getElementById("stepFields").classList.add("hidden");
@@ -828,7 +928,6 @@ document.getElementById("cancelBatchBtn").addEventListener("click", () => {
   batchForm.classList.add("hidden");
 });
 
-// Toggle Section
 function showSection(sectionId, btnId) {
   ["groupSection","scaleSection"].forEach(id => {
     document.getElementById(id).classList.add("hidden");
@@ -841,37 +940,39 @@ function showSection(sectionId, btnId) {
   const btn = document.getElementById(btnId);
   btn.classList.remove("bg-yellow-400","text-gray-900");
   btn.classList.add("bg-blue-600","text-white");
+
+  // Change generate button text based on active section
+  const generateBtn = document.getElementById("generateReportBtn");
+  if (sectionId === "scaleSection") {
+    generateBtn.innerHTML = `<i class="fas fa-file-alt mr-2"></i>Generate Scale Report`;
+  } else {
+    generateBtn.innerHTML = `<i class="fas fa-file-alt mr-2"></i>Generate Group Report`;
+  }
 }
 
 document.getElementById("btnGroups").addEventListener("click", () => showSection("groupSection","btnGroups"));
 document.getElementById("btnScales").addEventListener("click", () => {
   showSection("scaleSection","btnScales");
-  loadScales(); // Load scales when switching to scales section
+  loadScales();
 });
 
-// Initialize with groups section visible
 showSection("groupSection","btnGroups");
 
-// Populate dropdowns
 function loadDropdowns() {
   const gSel = document.getElementById("scaleGroup");
   const eSel = document.getElementById("scaleElement");
   const grSel = document.getElementById("scaleGrade");
   
-  // Load groups (salary codes)
   gSel.innerHTML = '<option value="">Select Salary Group</option>' + 
     groups.map(g => `<option value="${g.groupcode}">${g.grpdesc}</option>`).join("");
   
-  // Load element types
   eSel.innerHTML = '<option value="">Select Element Type</option>' + 
     elementTypes.map(e => `<option value="${e.PaymentType}">${e.elmDesc}</option>`).join("");
   
-  // Load gradeLevels
   grSel.innerHTML = '<option value="">Select Grade</option>' + 
     gradeLevels.map(gr => `<option value="${gr.grade_no}">${gr.grade_desc}</option>`).join("");
 }
 
-// Show step fields when all 3 dropdowns selected
 function checkDropdownSelections() {
   const g = document.getElementById("scaleGroup").value;
   const e = document.getElementById("scaleElement").value;
@@ -888,9 +989,7 @@ function checkDropdownSelections() {
   document.getElementById(id).addEventListener("change", checkDropdownSelections);
 });
 
-// Save Group - Modified for backend integration
 document.getElementById("saveGroupBtn").addEventListener("click", async () => {
-
   const groupData = {
     groupcode: document.getElementById("groupCode").value,
     grpdesc: document.getElementById("groupDesc").value,
@@ -899,7 +998,6 @@ document.getElementById("saveGroupBtn").addEventListener("click", async () => {
   };
 
   const requiredFields = ['groupcode', 'grpdesc'];
-
   let missingFields = requiredFields.filter(field => !groupData[field]);
 
   if (missingFields.length > 0) {
@@ -909,28 +1007,21 @@ document.getElementById("saveGroupBtn").addEventListener("click", async () => {
 
   if(groupData.groupcode && groupData.grpdesc) {
     try {
-      
       if(editingGroupIndex !== null) {
-        // Update existing group
         await ApiService.updateGroup(groupData.groupcode, groupData);
         showSuccess('Group updated successfully!');
       } else {
-        // Create new group
         await ApiService.createGroup(groupData);
         showSuccess('Group created successfully!');
       }
       
-      // Reset form and reload data
       document.getElementById("groupForm").reset();
       document.getElementById("groupForm").classList.add("hidden");
       editingGroupIndex = null;
       
-      await loadGroups();
-      loadDropdowns(); // Refresh dropdowns
-
-      
+      await loadGroups(true);
+      loadDropdowns();
     } catch (error) {
-
       console.error('Failed to save group:', error);
     }
   } else {
@@ -938,7 +1029,6 @@ document.getElementById("saveGroupBtn").addEventListener("click", async () => {
   }
 });
 
-// Save Scale - Modified for backend integration
 document.getElementById("scaleForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   
@@ -946,20 +1036,17 @@ document.getElementById("scaleForm").addEventListener("submit", async (e) => {
   const saltype = document.getElementById("scaleElement").value;
   const grade = document.getElementById("scaleGrade").value;
   
-  // Collect step values
   const scaleData = {
     salcode: salcode,
     saltype: saltype,
     grade: grade
   };
   
-  // Add step values to scaleData
   for(let i = 1; i <= 20; i++) {
     const stepValue = document.getElementById("step" + i).value;
     scaleData["step" + i] = stepValue || null;
   }
   
-  // Validate step20 (max progression step)
   const maxStep = parseInt(scaleData.step20);
   if (maxStep && (maxStep < 1 || maxStep > 19)) {
     showAlert('Max progression step must be between 1 and 19');
@@ -967,9 +1054,7 @@ document.getElementById("scaleForm").addEventListener("submit", async (e) => {
   }
   
   try {
-
     const requiredFields = ['salcode', 'saltype', 'grade'];
-
     let missingFields = requiredFields.filter(field => !scaleData[field]);
 
     if (missingFields.length > 0) {
@@ -978,78 +1063,103 @@ document.getElementById("scaleForm").addEventListener("submit", async (e) => {
     }
 
     if(editingScaleIndex !== null) {
-      // Update existing scale
       await ApiService.updateScale(salcode, saltype, grade, scaleData);
       showSuccess('Scale updated successfully!');
     } else {
-      // Create new scale
       await ApiService.createScale(scaleData);
       showSuccess('Scale created successfully!');
     }
     
-    // Reset form and reload data
     document.getElementById("scaleForm").reset();
     document.getElementById("stepFields").classList.add("hidden");
     document.getElementById("scaleForm").classList.add("hidden");
     editingScaleIndex = null;
     
-    await loadScales();
-    
+    await loadScales(true);
   } catch (error) {
     console.error('Failed to save scale:', error);
   }
 });
 
 function renderScaleTable() {
+  const { currentData } = getScalePaginationData();
   const table = document.getElementById("scaleTable");
-  table.innerHTML = scales.map((s, i) => `
+  
+  table.innerHTML = currentData.map((s) => {
+    const realIndex = scales.findIndex(scale => 
+      scale.salcode === s.salcode && 
+      scale.saltype === s.saltype && 
+      scale.grade === s.grade
+    );
+    
+    return `
     <tr>
       <td class="border px-2 py-3 text-left">${s.salcode}</td>
       <td class="border px-2 py-3 text-left">${s.saltype}</td>
       <td class="border px-2 py-3 text-left">${s.grade}</td>
       <td class="border px-2 py-3 text-left">
-        <button class="text-blue-600 hover:underline mr-2" onclick="viewScale(${i})">View</button>
-        <button class="text-green-600 hover:underline mr-2" onclick="editScale(${i})">Edit</button>
-        <button class="text-red-600 hover:underline" onclick="deleteScale(${i})">Delete</button>
+        <button class="text-blue-600 hover:underline mr-2" onclick="viewScale(${realIndex})">View</button>
+        <button class="text-green-600 hover:underline mr-2" onclick="editScale(${realIndex})">Edit</button>
+        <button class="text-red-600 hover:underline" onclick="deleteScale(${realIndex})">Delete</button>
       </td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
+  
+  if (currentData.length === 0) {
+    table.innerHTML = `
+      <tr>
+        <td colspan="4" class="border px-2 py-8 text-center text-gray-500">No records found</td>
+      </tr>
+    `;
+  }
 }
 
 document.getElementById("closeScaleView").addEventListener("click", () => {
   document.getElementById("scaleViewModal").classList.add("hidden");
 });
 
-// Add group view modal close handler
 if (document.getElementById("closeGroupView")) {
   document.getElementById("closeGroupView").addEventListener("click", () => {
     document.getElementById("groupViewModal").classList.add("hidden");
   });
 }
 
-// Render group table with backend data
 function renderGroupTable() {
+  const { currentData } = getGroupPaginationData();
   const table = document.getElementById("groupTable");
-  table.innerHTML = groups.map((g, i) => `
+  
+  table.innerHTML = currentData.map((g) => {
+    const realIndex = groups.findIndex(group => group.groupcode === g.groupcode);
+    
+    return `
     <tr>
       <td class="border px-2 py-3 text-left">${g.groupcode}</td>
       <td class="border px-2 py-3 text-left">${g.grpdesc}</td>
       <td class="border px-2 py-3 text-left">${g.effdate || 'N/A'}</td>
       <td class="border px-2 py-3 text-left">${g.lastdate || 'N/A'}</td>
       <td class="border px-2 py-3 text-left">
-        <button class="text-green-600 hover:underline mr-2" onclick="editGroup(${i})">Edit</button>
-        <button class="text-red-600 hover:underline" onclick="deleteGroup(${i})">Delete</button>
+        <button class="text-green-600 hover:underline mr-2" onclick="editGroup(${realIndex})">Edit</button>
+        <button class="text-red-600 hover:underline" onclick="deleteGroup(${realIndex})">Delete</button>
       </td>
-    </tr>`).join("");
+    </tr>`;
+  }).join("");
+  
+  if (currentData.length === 0) {
+    table.innerHTML = `
+      <tr>
+        <td colspan="5" class="border px-2 py-8 text-center text-gray-500">No records found</td>
+      </tr>
+    `;
+  }
 }
 
-// Search functionality for scales
 async function searchScales() {
-  const searchTerm = document.getElementById('searchInput').value;
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
   const searchType = document.getElementById('searchType').value;
   
   if (!searchTerm.trim()) {
-    await loadScales(); // Load all scales if search is empty
+    await loadScales();
     return;
   }
   
@@ -1073,19 +1183,20 @@ async function searchScales() {
       user: scale.user
     }));
     
-    renderScaleTable();
+    applyScaleSearch(searchTerm);
+    scaleCurrentPage = 1;
+    renderScaleWithPagination();
   } catch (error) {
     console.error('Search failed:', error);
   }
 }
 
-// Search functionality for groups
 async function searchGroups() {
-  const searchTerm = document.getElementById('groupSearchInput').value;
+  const searchTerm = document.getElementById('groupSearchInput').value.toLowerCase();
   const searchType = document.getElementById('groupSearchType').value;
   
   if (!searchTerm.trim()) {
-    await loadGroups(); // Load all groups if search is empty
+    await loadGroups();
     return;
   }
   
@@ -1096,13 +1207,14 @@ async function searchGroups() {
     const response = await ApiService.searchGroups(filters);
     groups = response.data || [];
     
-    renderGroupTable();
+    applyGroupSearch(searchTerm);
+    groupCurrentPage = 1;
+    renderGroupWithPagination();
   } catch (error) {
     console.error('Group search failed:', error);
   }
 }
 
-// Add search event listeners for scales
 if (document.getElementById('searchBtn')) {
   document.getElementById('searchBtn').addEventListener('click', searchScales);
 }
@@ -1113,9 +1225,15 @@ if (document.getElementById('searchInput')) {
       searchScales();
     }
   });
+  
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase();
+    applyScaleSearch(term);
+    scaleCurrentPage = 1;
+    renderScaleWithPagination();
+  });
 }
 
-// Add search event listeners for groups
 if (document.getElementById('groupSearchBtn')) {
   document.getElementById('groupSearchBtn').addEventListener('click', searchGroups);
 }
@@ -1126,9 +1244,71 @@ if (document.getElementById('groupSearchInput')) {
       searchGroups();
     }
   });
+  
+  document.getElementById('groupSearchInput').addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase();
+    applyGroupSearch(term);
+    groupCurrentPage = 1;
+    renderGroupWithPagination();
+  });
 }
 
-// Batch upload functionality
+// GROUP PAGINATION EVENT LISTENERS
+if (groupPrevBtn) {
+  groupPrevBtn.addEventListener('click', () => {
+    if (groupCurrentPage > 1) {
+      groupCurrentPage--;
+      renderGroupWithPagination();
+    }
+  });
+}
+
+if (groupNextBtn) {
+  groupNextBtn.addEventListener('click', () => {
+    const { totalPages } = getGroupPaginationData();
+    if (groupCurrentPage < totalPages) {
+      groupCurrentPage++;
+      renderGroupWithPagination();
+    }
+  });
+}
+
+if (groupRecordsSelect) {
+  groupRecordsSelect.addEventListener('change', (e) => {
+    groupRecordsPerPage = parseInt(e.target.value);
+    groupCurrentPage = 1;
+    renderGroupWithPagination();
+  });
+}
+
+// SCALE PAGINATION EVENT LISTENERS
+if (scalePrevBtn) {
+  scalePrevBtn.addEventListener('click', () => {
+    if (scaleCurrentPage > 1) {
+      scaleCurrentPage--;
+      renderScaleWithPagination();
+    }
+  });
+}
+
+if (scaleNextBtn) {
+  scaleNextBtn.addEventListener('click', () => {
+    const { totalPages } = getScalePaginationData();
+    if (scaleCurrentPage < totalPages) {
+      scaleCurrentPage++;
+      renderScaleWithPagination();
+    }
+  });
+}
+
+if (scaleRecordsSelect) {
+  scaleRecordsSelect.addEventListener('change', (e) => {
+    scaleRecordsPerPage = parseInt(e.target.value);
+    scaleCurrentPage = 1;
+    renderScaleWithPagination();
+  });
+}
+
 document.getElementById("uploadBatchBtn").addEventListener("click", async () => {
   const fileInput = document.getElementById("batchFile");
   const file = fileInput.files[0];
@@ -1138,7 +1318,6 @@ document.getElementById("uploadBatchBtn").addEventListener("click", async () => 
     return;
   }
   
-  // Validate file type
   const allowedTypes = ['text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
   const fileExtension = file.name.toLowerCase();
   
@@ -1150,7 +1329,6 @@ document.getElementById("uploadBatchBtn").addEventListener("click", async () => 
     return;
   }
   
-  // Validate file size (5MB limit)
   if (file.size > 5 * 1024 * 1024) {
     showAlert('File size must be less than 5MB');
     return;
@@ -1166,7 +1344,6 @@ document.getElementById("uploadBatchBtn").addEventListener("click", async () => 
     
     console.log('Upload result:', result);
     
-    // Show results
     if (result.summary) {
       const summary = result.summary;
       let message = `Batch upload completed!\n\n`;
@@ -1187,17 +1364,16 @@ document.getElementById("uploadBatchBtn").addEventListener("click", async () => 
       
       showAlert(message);
       
-      // Reset form and reload data if there were successful uploads
       if (summary.successful > 0 || summary.successful === 'Processing') {
         document.getElementById("batchUploadForm").reset();
         document.getElementById("batchUploadForm").classList.add("hidden");
-        await loadScales();
+        await loadScales(true);
       }
     } else {
       showSuccess('Upload completed successfully!');
       document.getElementById("batchUploadForm").reset();
       document.getElementById("batchUploadForm").classList.add("hidden");
-      await loadScales();
+      await loadScales(true);
     }
     
   } catch (error) {
@@ -1205,14 +1381,12 @@ document.getElementById("uploadBatchBtn").addEventListener("click", async () => 
     showAlert(`Upload failed: ${error.message}`);
   }
 });
-  
 
 document.getElementById("downloadSampleBtn").addEventListener("click", (e) => {
   e.preventDefault();
   downloadSampleTemplate();
 });
 
-// Download sample template
 async function downloadSampleTemplate() {
   try {
     await ApiService.downloadSampleTemplate();
@@ -1222,9 +1396,7 @@ async function downloadSampleTemplate() {
   }
 }
 
-// Add event listener for download sample link
 document.addEventListener('DOMContentLoaded', () => {
-  // File input change handler to show file info
   const batchFileInput = document.getElementById("batchFile");
   if (batchFileInput) {
     batchFileInput.addEventListener("change", (e) => {
@@ -1234,7 +1406,6 @@ document.addEventListener('DOMContentLoaded', () => {
         fileInfo.className = 'mt-2 text-sm text-gray-600';
         fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
         
-        // Remove any existing file info
         const existingInfo = e.target.parentNode.querySelector('.file-info');
         if (existingInfo) {
           existingInfo.remove();
@@ -1247,7 +1418,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// File input change handler to show file info
 document.getElementById("batchFile").addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (file) {
@@ -1255,7 +1425,6 @@ document.getElementById("batchFile").addEventListener("change", (e) => {
     fileInfo.className = 'mt-2 text-sm text-gray-600';
     fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
     
-    // Remove any existing file info
     const existingInfo = e.target.parentNode.querySelector('.file-info');
     if (existingInfo) {
       existingInfo.remove();
@@ -1266,7 +1435,6 @@ document.getElementById("batchFile").addEventListener("change", (e) => {
   }
 });
 
-// Capitalize first letter, keep the rest lower
 function capitalizeWords(str) {
   return str
     ? str
@@ -1284,7 +1452,6 @@ function capitalizeWords(str) {
   });
 });
 
-// Force uppercase as user types
 ["groupCode"].forEach(id => {
   const el = document.getElementById(id);
   el.addEventListener("input", () => {
@@ -1318,11 +1485,6 @@ function generateReport() {
           margin-bottom: 30px;
           padding-bottom: 10px;
           border-bottom: 2px solid #1a56db;
-        }
-        .logo {
-          width: 100px;
-          height: auto;
-          margin-bottom: 10px;
         }
         .date-time {
           font-size: 14px;
@@ -1444,7 +1606,6 @@ function generateScaleReport() {
         <div style="page-break-inside: avoid; margin-bottom: 30px;">
           <h4 style="margin-bottom: 10px;">Grade: ${scale.grade} - Element: ${scale.saltype}</h4>
           
-          <!-- Steps 1-10 -->
           <table class="report-table" style="margin-bottom: 5px;">
             <tr>
               <th>Step</th>
@@ -1458,7 +1619,6 @@ function generateScaleReport() {
             </tr>
           </table>
 
-          <!-- Steps 11-20 -->
           <table class="report-table">
             <tr>
               <th>Step</th>
@@ -1477,43 +1637,7 @@ function generateScaleReport() {
     `;
   });
 
-  return `
-    <style>
-      @media print {
-        .group-info {
-          background-color: #f9fafb !important;
-          -webkit-print-color-adjust: exact;
-          padding: 15px;
-          margin: 20px 0;
-          border: 1px solid #e5e7eb;
-        }
-        .report-table {
-          font-size: 11px;
-          width: 100%;
-          border-collapse: collapse;
-        }
-        .report-table th,
-        .report-table td {
-          padding: 6px 4px;
-          border: 1px solid #e5e7eb;
-          text-align: center;
-        }
-        .report-table th {
-          background-color: #f3f4f6 !important;
-          -webkit-print-color-adjust: exact;
-        }
-        .step-value {
-          white-space: nowrap;
-          text-align: right;
-        }
-        h4 {
-          color: #1a56db;
-          margin: 15px 0 5px 0;
-        }
-      }
-    </style>
-    ${html}
-  `;
+  return html;
 }
 
 function generateGroupReport() {
@@ -1541,15 +1665,20 @@ function generateGroupReport() {
   `;
 }
 
-// Add event listener to generate report button
 document.getElementById('generateReportBtn').addEventListener('click', generateReport);
 
-// Initialize
+async function initializeData() {
+  try {
+    await loadGroups();
+    await loadElementTypes();
+    await loadGradeLevels();
+    loadDropdowns();
+  } catch (error) {
+    console.error('Failed to initialize data:', error);
+  }
+}
+
 initializeData();
-loadElementTypes();
-loadGradeLevels();
-loadGroups();
 loadScales();
 renderGroupTable();
-loadDropdowns();
 </script>

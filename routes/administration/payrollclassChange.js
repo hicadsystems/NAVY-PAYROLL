@@ -1,11 +1,97 @@
 const express = require('express');
 const router = express.Router();
 const verifyToken = require('../../middware/authentication');
+const { attachPayrollClass } = require('../../middware/attachPayrollClass');
 const pool  = require('../../config/db'); // mysql2 pool
 
+// ==================== DATABASE CONFIGURATION ====================
+const DATABASE_MAP = {
+  [process.env.DB_OFFICERS || 'hicaddata']: { name: 'OFFICERS', code: '1' },
+  [process.env.DB_WOFFICERS || 'hicaddata1']: { name: 'W/OFFICERS', code: '2' },
+  [process.env.DB_RATINGS || 'hicaddata2']: { name: 'RATE A', code: '3' },
+  [process.env.DB_RATINGS_A || 'hicaddata3']: { name: 'RATE B', code: '4' },
+  [process.env.DB_RATINGS_B || 'hicaddata4']: { name: 'RATE C', code: '5' },
+  [process.env.DB_JUNIOR_TRAINEE || 'hicaddata5']: { name: 'TRAINEE', code: '6' }
+};
+
+const PAYROLL_CLASS_TO_DB_MAP = {
+  '1': process.env.DB_OFFICERS || 'hicaddata',
+  '2': process.env.DB_WOFFICERS || 'hicaddata1',
+  '3': process.env.DB_RATINGS || 'hicaddata2',
+  '4': process.env.DB_RATINGS_A || 'hicaddata3',
+  '5': process.env.DB_RATINGS_B || 'hicaddata4',
+  '6': process.env.DB_JUNIOR_TRAINEE || 'hicaddata5',
+  'OFFICERS': process.env.DB_OFFICERS || 'hicaddata',
+  'W/OFFICERS': process.env.DB_WOFFICERS || 'hicaddata1',
+  'W.OFFICERS': process.env.DB_WOFFICERS || 'hicaddata1',
+  'RATE A': process.env.DB_RATINGS || 'hicaddata2',
+  'RATEA': process.env.DB_RATINGS || 'hicaddata2',
+  'RATE B': process.env.DB_RATINGS_A || 'hicaddata3',
+  'RATEB': process.env.DB_RATINGS_A || 'hicaddata3',
+  'RATE C': process.env.DB_RATINGS_B || 'hicaddata4',
+  'RATEC': process.env.DB_RATINGS_B || 'hicaddata4',
+  'JUNIOR/TRAINEE': process.env.DB_JUNIOR_TRAINEE || 'hicaddata5',
+  'JUNIORTRAINEE': process.env.DB_JUNIOR_TRAINEE || 'hicaddata5',
+  'hicaddata': process.env.DB_OFFICERS || 'hicaddata',
+  'hicaddata1': process.env.DB_WOFFICERS || 'hicaddata1',
+  'hicaddata2': process.env.DB_RATINGS || 'hicaddata2',
+  'hicaddata3': process.env.DB_RATINGS_A || 'hicaddata3',
+  'hicaddata4': process.env.DB_RATINGS_B || 'hicaddata4',
+  'hicaddata5': process.env.DB_JUNIOR_TRAINEE || 'hicaddata5',
+  [process.env.DB_OFFICERS || 'hicaddata']: process.env.DB_OFFICERS || 'hicaddata',
+  [process.env.DB_WOFFICERS || 'hicaddata1']: process.env.DB_WOFFICERS || 'hicaddata1',
+  [process.env.DB_RATINGS || 'hicaddata2']: process.env.DB_RATINGS || 'hicaddata2',
+  [process.env.DB_RATINGS_A || 'hicaddata3']: process.env.DB_RATINGS_A || 'hicaddata3',
+  [process.env.DB_RATINGS_B || 'hicaddata4']: process.env.DB_RATINGS_B || 'hicaddata4',
+  [process.env.DB_JUNIOR_TRAINEE || 'hicaddata5']: process.env.DB_JUNIOR_TRAINEE || 'hicaddata5'
+};
+
+// ==================== HELPER FUNCTIONS ====================
+function getDbNameFromPayrollClass(payrollClass) {
+  if (PAYROLL_CLASS_TO_DB_MAP[payrollClass]) {
+    return PAYROLL_CLASS_TO_DB_MAP[payrollClass];
+  }
+  
+  const upperClass = payrollClass.toString().toUpperCase();
+  for (const [key, value] of Object.entries(PAYROLL_CLASS_TO_DB_MAP)) {
+    if (key.toUpperCase() === upperClass) {
+      return value;
+    }
+  }
+  
+  const cleanClass = payrollClass.toString().replace(/[\s\/\-_]/g, '').toUpperCase();
+  for (const [key, value] of Object.entries(PAYROLL_CLASS_TO_DB_MAP)) {
+    if (key.replace(/[\s\/\-_]/g, '').toUpperCase() === cleanClass) {
+      return value;
+    }
+  }
+  
+  return payrollClass;
+}
+
+function getFriendlyDbName(dbId) {
+  return DATABASE_MAP[dbId]?.name || dbId;
+}
+
+function isValidDatabase(dbId) {
+  return Object.keys(DATABASE_MAP).includes(dbId);
+}
+
+async function checkDatabaseExists(dbName) {
+  let connection = null;
+  try {
+    connection = await pool.getConnection();
+    const [rows] = await connection.query(`SHOW DATABASES LIKE ?`, [dbName]);
+    connection.release();
+    return rows.length > 0;
+  } catch (error) {
+    if (connection) connection.release();
+    return false;
+  }
+}
+
 // ==================== GET ALL EMPLOYEES ====================
-// GET /api/personnel/employees - Get all active employees with payroll class
-router.get('/active-employees', verifyToken, async (req, res) => {
+router.get('/active-employees', verifyToken, attachPayrollClass, async (req, res) => {
   try {
     const query = `
       SELECT *
@@ -32,8 +118,7 @@ router.get('/active-employees', verifyToken, async (req, res) => {
 });
 
 // ==================== GET PAYROLL CLASS STATISTICS ====================
-// GET /api/personnel/payroll-class-stats - Get count of personnel per payroll class
-router.get('/payroll-class-stats', verifyToken, async (req, res) => {
+router.get('/payroll-class-stats', verifyToken, attachPayrollClass, async (req, res) => {
   try {
     const query = `
       SELECT 
@@ -42,10 +127,10 @@ router.get('/payroll-class-stats', verifyToken, async (req, res) => {
         COUNT(*) AS count
       FROM hr_employees e
       LEFT JOIN py_payrollclass pc 
-        ON e.payrollclass
+        ON e.payrollclass = pc.classcode
       WHERE 
         (e.DateLeft IS NULL OR e.DateLeft = '')
-        AND (exittype IS NULL OR exittype = '')
+        AND (e.exittype IS NULL OR e.exittype = '')
         AND e.payrollclass IS NOT NULL
         AND e.payrollclass != ''
       GROUP BY 
@@ -56,7 +141,6 @@ router.get('/payroll-class-stats', verifyToken, async (req, res) => {
 
     const [rows] = await pool.query(query);
 
-    // Handle no data
     if (!rows || rows.length === 0) {
       return res.status(200).json({
         message: 'No payroll class statistics found',
@@ -64,7 +148,6 @@ router.get('/payroll-class-stats', verifyToken, async (req, res) => {
       });
     }
 
-    // Transform to object format
     const stats = {};
     rows.forEach(row => {
       stats[row.payrollclass] = {
@@ -84,107 +167,65 @@ router.get('/payroll-class-stats', verifyToken, async (req, res) => {
   }
 });
 
-// ==================== UPDATE EMPLOYEE PAYROLL CLASS ====================
-// Database mapping configuration (BACKEND ONLY)
-const DATABASE_MAP = {
-  [process.env.DB_OFFICERS || 'hicaddata']: { name: 'OFFICERS', code: '1' },
-  [process.env.DB_WOFFICERS || 'hicaddata1']: { name: 'W/OFFICERS', code: '2' },
-  [process.env.DB_RATINGS || 'hicaddata2']: { name: 'RATE A', code: '3' },
-  [process.env.DB_RATINGS_A || 'hicaddata3']: { name: 'RATE B', code: '4' },
-  [process.env.DB_RATINGS_B || 'hicaddata4']: { name: 'RATE C', code: '5' },
-  [process.env.DB_JUNIOR_TRAINEE || 'hicaddata5']: { name: 'TRAINEE', code: '6' }
-};
-
-// Payroll Class Code to Database Name Mapping
-const PAYROLL_CLASS_TO_DB_MAP = {
-  // Numeric codes from table
-  '1': process.env.DB_OFFICERS || 'hicaddata',
-  '2': process.env.DB_WOFFICERS || 'hicaddata1',
-  '3': process.env.DB_RATINGS || 'hicaddata2',
-  '4': process.env.DB_RATINGS_A || 'hicaddata3',
-  '5': process.env.DB_RATINGS_B || 'hicaddata4',
-  '6': process.env.DB_JUNIOR_TRAINEE || 'hicaddata5',
-  
-  // Description names from table
-  'OFFICERS': process.env.DB_OFFICERS || 'hicaddata',
-  'W/OFFICERS': process.env.DB_WOFFICERS || 'hicaddata1',
-  'W.OFFICERS': process.env.DB_WOFFICERS || 'hicaddata1',
-  'RATE A': process.env.DB_RATINGS || 'hicaddata2',
-  'RATEA': process.env.DB_RATINGS || 'hicaddata2',
-  'RATE B': process.env.DB_RATINGS_A || 'hicaddata3',
-  'RATEB': process.env.DB_RATINGS_A || 'hicaddata3',
-  'RATE C': process.env.DB_RATINGS_B || 'hicaddata4',
-  'RATEC': process.env.DB_RATINGS_B || 'hicaddata4',
-  'JUNIOR/TRAINEE': process.env.DB_JUNIOR_TRAINEE || 'hicaddata5',
-  'JUNIORTRAINEE': process.env.DB_JUNIOR_TRAINEE || 'hicaddata5',
-  
-  // Also support database names directly
-  'hicaddata': process.env.DB_OFFICERS || 'hicaddata',
-  'hicaddata1': process.env.DB_WOFFICERS || 'hicaddata1',
-  'hicaddata2': process.env.DB_RATINGS || 'hicaddata2',
-  'hicaddata3': process.env.DB_RATINGS_A || 'hicaddata3',
-  'hicaddata4': process.env.DB_RATINGS_B || 'hicaddata4',
-  'hicaddata5': process.env.DB_JUNIOR_TRAINEE || 'hicaddata5',
-  
-  [process.env.DB_OFFICERS || 'hicaddata']: process.env.DB_OFFICERS || 'hicaddata',
-  [process.env.DB_WOFFICERS || 'hicaddata1']: process.env.DB_WOFFICERS || 'hicaddata1',
-  [process.env.DB_RATINGS || 'hicaddata2']: process.env.DB_RATINGS || 'hicaddata2',
-  [process.env.DB_RATINGS_A || 'hicaddata3']: process.env.DB_RATINGS_A || 'hicaddata3',
-  [process.env.DB_RATINGS_B || 'hicaddata4']: process.env.DB_RATINGS_B || 'hicaddata4',
-  [process.env.DB_JUNIOR_TRAINEE || 'hicaddata5']: process.env.DB_JUNIOR_TRAINEE || 'hicaddata5'
-};
-
-// Helper function to convert payroll class code to database name
-function getDbNameFromPayrollClass(payrollClass) {
-  // Try exact match first
-  if (PAYROLL_CLASS_TO_DB_MAP[payrollClass]) {
-    return PAYROLL_CLASS_TO_DB_MAP[payrollClass];
-  }
-  
-  // Try case-insensitive match
-  const upperClass = payrollClass.toString().toUpperCase();
-  for (const [key, value] of Object.entries(PAYROLL_CLASS_TO_DB_MAP)) {
-    if (key.toUpperCase() === upperClass) {
-      return value;
-    }
-  }
-  
-  // Try removing spaces and special characters
-  const cleanClass = payrollClass.toString().replace(/[\s\/\-_]/g, '').toUpperCase();
-  for (const [key, value] of Object.entries(PAYROLL_CLASS_TO_DB_MAP)) {
-    if (key.replace(/[\s\/\-_]/g, '').toUpperCase() === cleanClass) {
-      return value;
-    }
-  }
-  
-  // If no match found, return as-is (might already be a database name)
-  return payrollClass;
-}
-
-// Helper function to get friendly database name
-function getFriendlyDbName(dbId) {
-  return DATABASE_MAP[dbId]?.name || dbId;
-}
-
-// Helper function to validate database exists
-function isValidDatabase(dbId) {
-  return Object.keys(DATABASE_MAP).includes(dbId);
-}
-
-// ==================== CRITICAL: Check if database physically exists ====================
-async function checkDatabaseExists(dbName) {
-  let connection = null;
+// ==================== MANUAL TRIGGER: Fix all unassigned employees ====================
+router.post('/fix-unassigned-classes', verifyToken, async (req, res) => {
   try {
-    connection = await pool.getConnection();
-    await connection.query(`SHOW DATABASES LIKE '${dbName}'`);
-    const [rows] = await connection.query(`SHOW DATABASES LIKE '${dbName}'`);
-    connection.release();
-    return rows.length > 0;
+    const results = [];
+    let totalFixed = 0;
+
+    console.log('🔧 Starting manual fix for all unassigned employees...');
+
+    // Process each database
+    for (const [dbName, dbInfo] of Object.entries(DATABASE_MAP)) {
+      console.log(`\nProcessing database: ${dbName} (${dbInfo.name})...`);
+      
+      const exists = await checkDatabaseExists(dbName);
+      
+      if (!exists) {
+        console.log(`  ⚠️ Database ${dbName} does not exist, skipping...`);
+        results.push({
+          database: dbName,
+          friendlyName: dbInfo.name,
+          payrollClass: dbInfo.code,
+          employeesUpdated: 0,
+          skipped: true,
+          reason: 'Database does not exist'
+        });
+        continue;
+      }
+
+      const result = await autoAssignPayrollClass(dbName);
+      
+      results.push({
+        database: dbName,
+        friendlyName: dbInfo.name,
+        payrollClass: dbInfo.code,
+        employeesUpdated: result.updated,
+        error: result.error || null
+      });
+      
+      totalFixed += result.updated;
+    }
+
+    console.log(`\n✅ Manual fix completed. Total employees fixed: ${totalFixed}`);
+
+    res.status(200).json({
+      success: true,
+      message: `Fixed ${totalFixed} unassigned employee(s) across all databases`,
+      totalEmployeesFixed: totalFixed,
+      databaseResults: results,
+      timestamp: new Date().toISOString()
+    });
+
   } catch (error) {
-    if (connection) connection.release();
-    return false;
+    console.error('❌ Error fixing unassigned classes:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fix unassigned classes',
+      details: error.message
+    });
   }
-}
+});
 
 // ==================== UPDATE EMPLOYEE PAYROLL CLASS WITH DATABASE MIGRATION ====================
 router.post('/payroll-class', verifyToken, async (req, res) => {
@@ -200,8 +241,6 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
 
   const employeeId = Empl_ID.trim();
   const payrollClassInput = PayrollClass.toString().trim();
-
-  // Convert payroll class code to database name
   const targetDb = getDbNameFromPayrollClass(payrollClassInput);
   const sourceDb = req.current_class;
 
@@ -217,15 +256,11 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
     });
   }
 
-  // Validate both databases exist in our mapping
   if (!isValidDatabase(sourceDb)) {
     return res.status(400).json({ 
       success: false, 
       error: `Invalid source database: ${sourceDb}`,
-      debug: {
-        sourceDb,
-        validDatabases: Object.keys(DATABASE_MAP)
-      }
+      debug: { sourceDb, validDatabases: Object.keys(DATABASE_MAP) }
     });
   }
 
@@ -236,13 +271,12 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
       debug: {
         payrollClassInput,
         resolvedDb: targetDb,
-        availableMappings: Object.keys(PAYROLL_CLASS_TO_DB_MAP).slice(0, 20), // Show first 20 for debugging
+        availableMappings: Object.keys(PAYROLL_CLASS_TO_DB_MAP).slice(0, 20),
         hint: 'The payroll class code does not match any known database'
       }
     });
   }
 
-  // CRITICAL: Check if target database physically exists
   const targetExists = await checkDatabaseExists(targetDb);
   if (!targetExists) {
     return res.status(400).json({
@@ -279,7 +313,6 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
     sourceConnection = await pool.getConnection();
     targetConnection = await pool.getConnection();
 
-    // Try to switch to databases - this will fail if database doesn't exist
     try {
       await sourceConnection.query(`USE \`${sourceDb}\``);
     } catch (err) {
@@ -295,7 +328,6 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
     await sourceConnection.beginTransaction();
     await targetConnection.beginTransaction();
 
-    // STEP 1: Verify employee exists in source database
     const [employeeRows] = await sourceConnection.query(
       `SELECT * FROM hr_employees 
        WHERE Empl_ID = ? 
@@ -317,15 +349,12 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
     const employeeName = `${employee.Surname} ${employee.OtherName || ''}`.trim();
     console.log(`✓ Employee found: ${employeeName}`);
 
-    // STEP 2: Check and clear existing records in target database
     const [existingInTarget] = await targetConnection.query(
       `SELECT Empl_ID FROM hr_employees WHERE Empl_ID = ?`,
       [employeeId]
     );
 
-    const relatedTables = [
-      'Children', 'NextOfKin', 'Spouse'
-    ];
+    const relatedTables = ['Children', 'NextOfKin', 'Spouse'];
 
     if (existingInTarget.length > 0) {
       console.log(`⚠️ Employee exists in ${targetName}. Clearing old records...`);
@@ -348,7 +377,6 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
       console.log(`  ✓ Deleted employee record from ${targetName}`);
     }
 
-    // STEP 3: Copy employee record
     console.log(`📋 Copying employee record to ${targetName}...`);
     employee.payrollclass = payrollClassInput;
 
@@ -362,7 +390,6 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
     );
     console.log(`  ✓ Employee record copied successfully`);
 
-    // STEP 4: Copy related records
     console.log(`📦 Copying related records to ${targetName}...`);
     let copiedRecords = 1;
 
@@ -392,7 +419,6 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
       }
     }
 
-    // STEP 5: Delete from source
     console.log(`🗑️ Removing records from ${sourceName}...`);
 
     for (const table of relatedTables) {
@@ -412,7 +438,6 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
     await sourceConnection.query(`DELETE FROM hr_employees WHERE Empl_ID = ?`, [employeeId]);
     console.log(`  ✓ Deleted employee record from ${sourceName}`);
 
-    // STEP 6: Commit
     await targetConnection.commit();
     await sourceConnection.commit();
 
@@ -472,40 +497,35 @@ router.get('/payroll-class/preview/:Empl_ID', verifyToken, async (req, res) => {
   try {
     const employeeId = Empl_ID.trim();
     const sourceDb = req.current_class;
-    const targetDb = PayrollClass;
+    const targetDb = getDbNameFromPayrollClass(PayrollClass);
 
-    // Validate databases
     if (!isValidDatabase(sourceDb) || !isValidDatabase(targetDb)) {
       return res.status(400).json({ error: 'Invalid database selection' });
     }
 
-    // Get employee info
-    const [employeeRows] = await pool.query(
+    const connection = await pool.getConnection();
+    await connection.query(`USE \`${sourceDb}\``);
+
+    const [employeeRows] = await connection.query(
       `SELECT Empl_ID, Surname, OtherName, payrollclass FROM hr_employees WHERE Empl_ID = ?`,
-      [employeeId],
-      req.requestId
+      [employeeId]
     );
 
     if (employeeRows.length === 0) {
+      connection.release();
       return res.status(404).json({ error: 'Employee not found' });
     }
 
     const employee = employeeRows[0];
-
-    // Count related records
-    const relatedTables = [
-      'Children', 'NextOfKin', 'Spouse'
-    ];
-
+    const relatedTables = ['Children', 'NextOfKin', 'Spouse'];
     const recordCounts = {};
-    let totalRecords = 1; // Employee record
+    let totalRecords = 1;
 
     for (const table of relatedTables) {
       try {
-        const [result] = await pool.query(
+        const [result] = await connection.query(
           `SELECT COUNT(*) as count FROM ${table} WHERE Empl_ID = ?`,
-          [employeeId],
-          req.requestId
+          [employeeId]
         );
         const count = result[0].count;
         if (count > 0) {
@@ -517,12 +537,14 @@ router.get('/payroll-class/preview/:Empl_ID', verifyToken, async (req, res) => {
       }
     }
 
+    connection.release();
+
     res.json({
       employee: {
         id: employee.Empl_ID,
         name: `${employee.Surname} ${employee.OtherName || ''}`.trim(),
         currentClass: employee.payrollclass,
-        currentClassName: getFriendlyDbName(employee.payrollclass)
+        currentClassName: getFriendlyDbName(sourceDb)
       },
       migration: {
         targetClass: PayrollClass,
@@ -542,6 +564,5 @@ router.get('/payroll-class/preview/:Empl_ID', verifyToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to generate preview', details: error.message });
   }
 });
-
 
 module.exports = router;

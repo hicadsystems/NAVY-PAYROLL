@@ -81,6 +81,7 @@ router.get('/active/all-variations', verifyToken, async (req, res) => {
       WHERE amtad IS NOT NULL 
         AND amtad != '' 
         AND amtad != 'N/A'
+        AND amtad != '0'
       `
     );
     const totalRecords = countResult[0].total;
@@ -455,7 +456,7 @@ router.put('/:emplId/:type',  verifyToken, async (req, res) => {
   try {
     const { emplId, type } = req.params;
     const decodedType = decodeURIComponent(type);
-    const { amtp, mak1, payind, nomth, mak2 } = req.body;
+    const { amtp, amt, mak1, payind, nomth, mak2 } = req.body;
 
     // Check if record exists
     const checkQuery = `
@@ -478,8 +479,10 @@ router.put('/:emplId/:type',  verifyToken, async (req, res) => {
     if (amtp !== undefined) {
       updates.push('amtp = ?');
       values.push(amtp);
+    }
+    if (amt !== undefined) {
       updates.push('amt = ?');
-      values.push(amtp);
+      values.push(amt);
     }
     if (mak1 !== undefined) {
       updates.push('mak1 = ?');
@@ -492,6 +495,9 @@ router.put('/:emplId/:type',  verifyToken, async (req, res) => {
     if (mak2 !== undefined) {
       updates.push('mak2 = ?');
       values.push(mak2);
+      if (mak2 === 'Yes') {
+        updates.push('amtd = 0.00');
+      }
     }
     if (payind !== undefined) {
       updates.push('payind = ?');

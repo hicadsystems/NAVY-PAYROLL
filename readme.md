@@ -143,3 +143,215 @@ payment_status	PROCESSED
 The final amount received by an employee after month-end processing is stored in
 py_netpay_summary.net_this_month,
 which represents their net salary (take-home pay) for that month.
+
+// Payded workflow
+1. Select Employee Name (dropdown/search)
+   → Auto-populates Service No
+```
+
+### **Step 2: Payment/Deduction Setup**
+```
+2. Select Description (dropdown)
+   - Shows existing payment/deduction codes
+   - Example: "2ND WELFARE LOAN ../PL/322"
+   
+3. Select Indicator (dropdown)
+   - Options: F, H, L, P, T, X (from py_payind table)
+   - Determines payment type/behavior
+```
+
+### **Step 3: Annual Payable Configuration**
+```
+4. Delete Maker (dropdown: Yes/No)
+   - Default: "No" (active)
+   - "Yes" = mark for deletion/deactivation
+   
+5. Amount Payable (input field)
+   - IF Delete Maker = "No" → Enter deduction amount
+   - IF Delete Maker = "Yes" → Set to 0 (auto or manual)
+   - This amount deducts per pay period
+```
+
+### **Step 4: Cumulative Tracking (Usually Auto-calculated)**
+```
+6. Delete Maker (display/readonly?)
+   - Shows status: "Yes" or "No"
+   
+7. Amount To Date (calculated/readonly)
+   - Auto-calculates: SUM of all previous Amount Payable
+   - Preserved even when Delete Maker = "Yes"
+```
+
+### **Step 5: Action Buttons**
+```
+8. Click appropriate button:
+   - Add: Save new payment/deduction
+   - Modify: Edit existing record
+   - Update: Save changes
+   - Delete: Remove record (after approval?)
+   - Select: Query/view records
+   - Close: Exit form
+
+┌─────────────────────────────────────────────────────────┐
+│              MONTHLY PAYROLL CYCLE                      │
+└─────────────────────────────────────────────────────────┘
+
+STEP 1: DATA ENTRY (Throughout the Month)
+├─ Users add/modify deductions
+├─ mak1 = 'No' → Active deduction
+├─ mak1 = 'Yes' → Inactive/Stop deduction
+└─ All entries go directly into py_payded
+
+STEP 2: PAYROLL CALCULATION (Month End)
+├─ System reads ONLY records where mak1 = 'No'
+├─ Calculates total deductions per employee
+├─ Generates payslips
+└─ THIS IS THE "APPROVAL" STEP
+    (Running payroll = implicit approval)
+
+STEP 3: MONTH END PROCESSING (After Payroll Approval)
+├─ Updates py_payded:
+│   ├─ amttd = amttd + amtp (add monthly amount to total)
+│   ├─ amtad = amtad + amtp (track cumulative)
+│   ├─ nomth = nomth - 1 (decrease remaining months)
+│   └─ IF nomth = 0 THEN mak1 = 'Yes' (auto-stop)
+└─ This locks in the deductions for that month
+
+
+// There's NO separate approval workflow
+// The approval happens when you:
+1. Review payroll calculations
+2. Approve/Run payroll for the month
+3. Month-end processing updates py_payded
+
+// So the workflow is:
+Entry → Review in Payroll → Approve Payroll → Process Updates
+```
+
+## **What Does `mak2` Do?**
+
+Looking at the field names and VB pattern:
+```
+┌─────────────────────────────────────────────────────────┐
+│         UNDERSTANDING mak1 vs mak2                      |    
+└─────────────────────────────────────────────────────────┘
+
+mak1 (Delete Maker Annual) - Controls CURRENT MONTH
+├─ 'No' = Active, will be processed THIS month
+├─ 'Yes' = Inactive, SKIP this month
+└─ Controls: amtp (Amount Payable this period)
+
+mak2 (Delete Maker Cumulative) - Controls HISTORY/CUMULATIVE
+├─ 'No' = Keep cumulative history
+├─ 'Yes' = Stop tracking cumulative (rare)
+└─ Controls: amttd (Amount To Date cumulative)
+
+TYPICAL SCENARIOS:
+
+Scenario 1: Normal Active Deduction
+mak1 = 'No', mak2 = 'No'
+→ Deduct this month, track cumulative
+
+Scenario 2: Temporarily Stop (1 month)
+mak1 = 'Yes', mak2 = 'No'
+→ Skip this month, but keep history
+→ Can reactivate next month
+
+Scenario 3: Permanently Stop
+mak1 = 'Yes', mak2 = 'Yes'
+→ Stop processing, freeze history
+→ Mark as "completed" or "cancelled"
+
+Scenario 4: End of Loan
+nomth = 0 → mak1 = 'Yes', mak2 stays 'No'
+→ Loan completed, preserve history
+
+-- BEGINNING OF MONTH (Day 1-25: Data Entry Period)
+-- Users can add/edit/delete deductions
+INSERT INTO py_payded VALUES (..., mak1='No', amtp=5000, amttd=0, nomth=12);
+
+-- MONTH END (Day 26-30: Payroll Processing)
+
+-- STEP 1: Generate Payroll (READ ONLY)
+SELECT Empl_id, SUM(amtp) as total_deductions
+FROM py_payded
+WHERE mak1 = 'No'  -- Only active deductions
+GROUP BY Empl_id;
+
+-- STEP 2: Review & Approve Payroll
+-- (Human reviews the payroll report)
+-- If approved, proceed to Step 3
+
+-- STEP 3: Month-End Processing (UPDATE py_payded)
+UPDATE py_payded
+SET 
+    amttd = amttd + amtp,           -- Add to cumulative
+    amtad = amtad + amtp,           -- Add to already deducted
+    nomth = CASE 
+        WHEN nomth > 0 THEN nomth - 1 
+        ELSE 0 
+    END,
+    mak1 = CASE 
+        WHEN nomth <= 1 THEN 'Yes'  -- Auto-stop when done
+        ELSE mak1 
+    END
+WHERE mak1 = 'No'                   -- Only active records
+  AND mak2 = 'No';                  -- Only tracking cumulative
+
+-- Records with mak2 = 'Yes' are NOT updated (frozen)
+```
+
+## **Real-World Example:**
+```
+JANUARY:
+Employee NN/001 - Welfare Loan
+├─ amt = 60,000 (total loan)
+├─ amtp = 5,000 (monthly payment)
+├─ nomth = 12 (months remaining)
+├─ mak1 = 'No' (active)
+├─ mak2 = 'No' (tracking)
+├─ amttd = 0 (nothing paid yet)
+└─ amtad = 0
+
+MONTH-END JANUARY PROCESSING:
+├─ Payroll deducts 5,000
+└─ UPDATE: amttd = 5,000, nomth = 11, amtad = 5,000
+
+FEBRUARY:
+├─ Employee requests to pause loan (hardship)
+├─ Admin sets: mak1 = 'Yes'
+└─ Payroll skips this deduction (no update)
+
+MARCH:
+├─ Employee resumes loan
+├─ Admin sets: mak1 = 'No'
+├─ Payroll deducts 5,000 again
+└─ UPDATE: amttd = 10,000, nomth = 10, amtad = 10,000
+
+DECEMBER (12th payment):
+├─ Before: nomth = 1, amttd = 55,000
+├─ Payroll deducts final 5,000
+└─ UPDATE: nomth = 0, amttd = 60,000, mak1 = 'Yes' (AUTO)
+    (Loan completed!)
+
+LATER:
+├─ To hide completed loans from reports:
+└─ Admin sets: mak2 = 'Yes' (freeze/archive)
+
+// NO separate approval table needed!
+// The workflow:
+
+1. Data Entry (anytime)
+   └─ Add/Edit py_payded directly
+
+2. Payroll Calculation (month-end)
+   └─ Read py_payded WHERE mak1='No'
+   └─ Generate payroll report
+   └─ HUMAN REVIEWS THIS REPORT (This is the approval!)
+
+3. After Approval, Run Month-End Processing
+   └─ Update py_payded (add to cumulative, decrease months)
+   └─ This "locks in" the deductions for history
+
+4. Next Month
+   └─ Repeat cycle

@@ -63,8 +63,8 @@
       <label class="block text-sm font-medium text-gray-700">Required For All</label>
       <select id="requiredForAll" class="w-full border border-blue-500 rounded-md px-3 py-2 bg-transparent">
         <option value="">Select Option</option>
-        <option value="YES">YES</option>4
-        <option value="NO">NO</option>
+        <option value="Yes">YES</option>4
+        <option value="No">NO</option>
       </select>
     </div>
 
@@ -80,7 +80,7 @@
       <thead class="bg-blue-100 text-blue-900">
         <tr>
           <th class="border px-2 py-3 text-left">One-Off Type</th>
-          <th class="border px-2 py-3 text-left">One-Off Maximum Amount</th>
+          <th class="border px-2 py-3 text-left">Function Type</th>
           <th class="border px-2 py-3 text-left">One-Off Dependance</th>
           <th class="border px-2 py-3 text-center">Actions</th>
         </tr>
@@ -138,7 +138,6 @@
 </div>
 
 <script>
-(function () {
   let data = [];
   let editingIndex = null;
   let dropdownData = [];
@@ -172,9 +171,10 @@
       option.textContent = item[textField];
       dropdown.appendChild(option);
 
-      lookupMaps[endpoint] = Object.fromEntries(
+      const map = Object.fromEntries(
         data.map(item => [item[valueField], item[textField]])
-      )
+      );
+      lookupMaps[endpoint] = map;
     });
     return data;
   } catch (err) {
@@ -463,7 +463,7 @@
       <tr class="hover:bg-gray-50">
         <td class="border px-2 py-2 text-left">${item.one_type}</td>
         <td class="border px-2 py-2 text-left">${resolveName(item.one_perc, "functiontype")} (${item.one_perc})</td>
-        <td class="border px-2 py-2 text-left">${resolveName(item.one_depend, "elementtype")} (${item.one_depend})</td>
+        <td class="border px-2 py-2 text-left">${resolveName(item.one_depend, "elementtype")} (${item.one_depend || 'N/A'})</td>
         <td class="border px-2 py-2 text-center">
           <button onclick="viewRow('${item.one_type}')" class="text-blue-600 hover:text-blue-800 mr-2 px-2 py-1 rounded hover:bg-blue-50">View</button>
           <button onclick="editRow('${item.one_type}')" class="text-green-600 hover:text-green-800 mr-2 px-2 py-1 rounded hover:bg-green-50">Edit</button>
@@ -528,7 +528,7 @@
   }
 
   // --- Global Action Functions ---
-  window.viewRow = function(oneType) {
+  window.viewRow = function (oneType) {
     const item = data.find(d => d.one_type === oneType);
     if (!item) return;
 
@@ -547,14 +547,22 @@
     for (let key in item) {
       if (fieldLabels[key]) {
         let value = item[key];
-        if (key === 'datecreated' && value) {
+
+        // 🧠 Apply formatting and name resolution
+        if (key === "datecreated" && value) {
           value = new Date(value).toLocaleString();
+        } else if (key === "one_perc") {
+          value = `${resolveName(value, "functiontype")} (${value || "N/A"})`;
+        } else if (key === "one_depend") {
+          value = `${resolveName(value, "elementtype")} (${value || "N/A"})`;
         }
 
-        html += `<div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
-          <dt class="font-medium text-gray-600"><strong>${fieldLabels[key]}:</strong></dt>
-          <dd class="col-span-2 text-gray-900">${value || 'N/A'}</dd>
-        </div>`;
+        html += `
+          <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
+            <dt class="font-medium text-gray-600"><strong>${fieldLabels[key]}:</strong></dt>
+            <dd class="col-span-2 text-gray-900">${value || "N/A"}</dd>
+          </div>
+        `;
       }
     }
 
@@ -562,39 +570,40 @@
     openModal("viewModal");
   };
 
-window.editRow = async function(oneType) {
-  const item = data.find(d => d.one_type === oneType);
-  if (!item) return;
+  window.editRow = async function(oneType) {
+    const item = data.find(d => d.one_type === oneType);
+    if (!item) return;
 
-  // Ensure dropdown data is loaded first
-  if (dropdownData.length === 0) {
-    await loadElementTypes();
-  }
+    // Ensure dropdown data is loaded first
+    if (dropdownData.length === 0) {
+      await loadElementTypes();
+    }
 
-  editingIndex = oneType;
+    editingIndex = oneType;
+    
+    // Find the matching dropdown item to get elmDesc
+    const matchingDropdownItem = dropdownData.find(d => d.PaymentType === item.one_type);
+    
+    // Set the visible description field with elmDesc or fallback to one_type
+    descriptionSearch.value = matchingDropdownItem?.elmDesc || item.one_type;
+    
+    // Set the hidden field and code input
+    descriptionHidden.value = item.one_type;
+    codeInput.value = item.one_type;
+    
+    // Fill other form fields
+    document.getElementById("function").value = item.one_perc || "";
+    document.getElementById("standardAmount").value = item.one_std || "";
+    document.getElementById("maximumValue").value = item.one_maxi || "";
+    document.getElementById("requiredForAll").value = item.one_bpay || "";
+    document.getElementById("dependence").value = item.one_depend || "";
+    
+    // Show form and make fields readonly (not disabled, so values show)
+    form.classList.remove("hidden");
+    descriptionSearch.readOnly = true;
+    codeInput.readOnly = true;
+  };
   
-  // Find the matching dropdown item to get elmDesc
-  const matchingDropdownItem = dropdownData.find(d => d.PaymentType === item.one_type);
-  
-  // Set the visible description field with elmDesc or fallback to one_type
-  descriptionSearch.value = matchingDropdownItem?.elmDesc || item.one_type;
-  
-  // Set the hidden field and code input
-  descriptionHidden.value = item.one_type;
-  codeInput.value = item.one_type;
-  
-  // Fill other form fields
-  document.getElementById("function").value = item.one_perc || "";
-  document.getElementById("standardAmount").value = item.one_std || "";
-  document.getElementById("maximumValue").value = item.one_maxi || "";
-  document.getElementById("requiredForAll").value = item.one_bpay || "";
-  document.getElementById("dependence").value = item.one_depend || "";
-  
-  // Show form and make fields readonly (not disabled, so values show)
-  form.classList.remove("hidden");
-  descriptionSearch.readOnly = true;
-  codeInput.readOnly = true;
-};
   window.deleteRow = async function(oneType) {
     const confirmed = await showConfirmModal("Are you sure you want to delete this record?");
 
@@ -672,7 +681,7 @@ window.editRow = async function(oneType) {
     if (e.target === e.currentTarget) closeModal('viewModal');
   });
 
-    //generate reports functionality
+  //generate reports functionality
   function generateReport() {
     const now = new Date();
     const dateStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
@@ -811,10 +820,10 @@ window.editRow = async function(oneType) {
                   <tbody>
                     <tr>
                       <td>${item.one_type}</td>
-                      <td>${item.one_perc || '-'}</td>
+                      <td>${resolveName(item.one_perc, "functiontype")} (${item.one_perc})</td>
                       <td class="amount">${formatCurrency(item.one_std)}</td>
                       <td class="amount">${formatCurrency(item.one_maxi)}</td>
-                      <td>${item.one_depend}</td>                      
+                      <td>${resolveName(item.one_depend, "elementtype")} (${item.one_depend || 'N/A'})</td>                     
                       <td>${item.one_bpay}</td>
                     </tr>
                   </tbody>
@@ -846,9 +855,8 @@ window.editRow = async function(oneType) {
   document.getElementById('generateReportBtn').addEventListener('click', generateReport);
 
   // Initialize
-  (function () {
-    fetchOneOff();
-    loadAllDropdowns();
+  (async function () {
+  await loadAllDropdowns();
+  await fetchOneOff();       
   })();
-})();
 </script>

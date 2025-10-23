@@ -32,7 +32,7 @@ router.get('/check/:field/:value', verifyToken, async (req, res) => {
   const { exclude } = req.query;
 
   // Only allow specific fields to prevent SQL injection
-  const allowedFields = ["pfacode", "pfadesc", "pfapfcname", "pfapfc"];
+  const allowedFields = ["pfacode"];
   if (!allowedFields.includes(field)) {
     return res.status(400).json({ error: "Invalid field" });
   }

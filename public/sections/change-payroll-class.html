@@ -64,9 +64,6 @@
             class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
             <option value="">Select Target Payroll Class</option>
         </select>
-        <div class="text-sm text-gray-600 flex items-center">
-          <span>⚠️ This will migrate ALL personnel in current payroll class</span>
-        </div>
       </div>
 
       <!-- Range Form -->
@@ -142,11 +139,11 @@
 <!-- Confirm Modal -->
 <div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6">
-    <h2 class="text-lg font-semibold text-gray-800 mb-4">Confirm Database Migration</h2>
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Confirm Payroll Class Migration</h2>
     <p id="confirmMessage" class="text-gray-600 mb-4"></p>
     <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
       <p class="text-sm text-yellow-800">
-        <strong>⚠️ Warning:</strong> This will move all personnel data to the new database. This action cannot be undone.
+        <strong>⚠️ Warning:</strong> This will move all personnel data to the new Payroll Class. This action cannot be undone.
       </p>
     </div>
     <div class="flex justify-end gap-3">
@@ -810,10 +807,10 @@ async function handleBulkMigration() {
     showError('Please select target payroll class.');
     return;
   }
-
+  const fromName = getClassName(currentClass);
   const toName = getClassName(newClass);
   document.getElementById('confirmMessage').textContent =
-    `⚠️ WARNING: This will migrate ALL personnel in your current payroll class to ${toName}. This action cannot be undone. Continue?`;
+    `This will migrate ALL personnel in this payroll class to ${toName}. Continue?`;
   document.getElementById('confirmModal').classList.remove('hidden');
 }
 
@@ -828,7 +825,7 @@ async function handleRangeMigration() {
 
   const toName = getClassName(newClass);
   document.getElementById('confirmMessage').textContent =
-    `Migrate personnel from ${selectedStartEmployee.Empl_ID} to ${selectedEndEmployee.Empl_ID} to ${toName}?`;
+    `Migrate personnel between ${selectedStartEmployee.Empl_ID} and ${selectedEndEmployee.Empl_ID} to ${toName}?`;
   document.getElementById('confirmModal').classList.remove('hidden');
 }
 

@@ -71,6 +71,35 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination Controls -->
+        <div class="px-6 py-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <label for="recordsPerPage" class="text-sm text-gray-600">Records per page:</label>
+                <select id="recordsPerPage" class="border rounded px-2 py-1 text-sm">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+
+            <div class="text-sm text-gray-600">
+                Showing <span id="startRecord">0</span> to <span id="endRecord">0</span> of <span id="totalRecords">0</span> records
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button id="prevPage" class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Previous
+                </button>
+                <span class="text-sm text-gray-600">
+                    Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+                </span>
+                <button id="nextPage" class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Next
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -89,7 +118,15 @@
             this.token = localStorage.getItem('token');
             this.isEditing = false;
             this.editingCode = null;
-            this.validationTimers = {}; // Store debounce timers for validation
+            this.validationTimers = {};
+            
+            // Pagination state
+            this.currentPage = 1;
+            this.recordsPerPage = 10;
+            this.allPFAs = [];
+            this.filteredData = [];
+            this.currentSearchTerm = "";
+            
             this.initializeElements();
             this.bindEvents();
             this.loadPFAs();
@@ -97,7 +134,6 @@
             this.bindValidation();
         }
 
-        // Helper method to get headers with token
         getHeaders() {
             return {
                 'Content-Type': 'application/json',
@@ -113,6 +149,16 @@
             this.tableBody = document.getElementById('pfaTableBody');
             this.messageContainer = document.getElementById('messageContainer');
             this.searchInput = document.getElementById('searchPFA');
+            
+            // Pagination elements
+            this.prevPageBtn = document.getElementById('prevPage');
+            this.nextPageBtn = document.getElementById('nextPage');
+            this.currentPageSpan = document.getElementById('currentPage');
+            this.totalPagesSpan = document.getElementById('totalPages');
+            this.recordsPerPageSelect = document.getElementById('recordsPerPage');
+            this.startRecordSpan = document.getElementById('startRecord');
+            this.endRecordSpan = document.getElementById('endRecord');
+            this.totalRecordsSpan = document.getElementById('totalRecords');
         }
 
         bindEvents() {
@@ -120,20 +166,91 @@
             this.addNewBtn.addEventListener('click', () => this.showForm());
             this.cancelBtn.addEventListener('click', () => this.hideForm());
             this.searchInput.addEventListener('input', (e) => this.filterPFAs(e.target.value));
-             document.getElementById('generateReportBtn').addEventListener('click', () => this.generateReport());
+            document.getElementById('generateReportBtn').addEventListener('click', () => this.generateReport());
+            
+            // Pagination events
+            if (this.prevPageBtn) {
+                this.prevPageBtn.addEventListener('click', () => {
+                    if (this.currentPage > 1) {
+                        this.currentPage--;
+                        this.renderWithPagination();
+                    }
+                });
+            }
+            
+            if (this.nextPageBtn) {
+                this.nextPageBtn.addEventListener('click', () => {
+                    const { totalPages } = this.getPaginationData();
+                    if (this.currentPage < totalPages) {
+                        this.currentPage++;
+                        this.renderWithPagination();
+                    }
+                });
+            }
+            
+            if (this.recordsPerPageSelect) {
+                this.recordsPerPageSelect.addEventListener('change', (e) => {
+                    this.recordsPerPage = parseInt(e.target.value);
+                    this.currentPage = 1;
+                    this.renderWithPagination();
+                });
+            }
         }
 
-        // Validation methods
+        // Pagination functions
+        getPaginationData() {
+            const totalRecords = this.filteredData.length;
+            const totalPages = Math.ceil(totalRecords / this.recordsPerPage) || 1;
+            const startIndex = (this.currentPage - 1) * this.recordsPerPage;
+            const endIndex = startIndex + this.recordsPerPage;
+            const currentData = this.filteredData.slice(startIndex, endIndex);
+            const startRecord = totalRecords === 0 ? 0 : startIndex + 1;
+            const endRecord = Math.min(endIndex, totalRecords);
+
+            return { totalRecords, totalPages, currentData, startRecord, endRecord };
+        }
+
+        updatePaginationUI() {
+            const { totalRecords, totalPages, startRecord, endRecord } = this.getPaginationData();
+            
+            if (this.currentPageSpan) this.currentPageSpan.textContent = this.currentPage;
+            if (this.totalPagesSpan) this.totalPagesSpan.textContent = totalPages;
+            if (this.startRecordSpan) this.startRecordSpan.textContent = startRecord;
+            if (this.endRecordSpan) this.endRecordSpan.textContent = endRecord;
+            if (this.totalRecordsSpan) this.totalRecordsSpan.textContent = totalRecords;
+
+            if (this.prevPageBtn) this.prevPageBtn.disabled = this.currentPage <= 1;
+            if (this.nextPageBtn) this.nextPageBtn.disabled = this.currentPage >= totalPages;
+        }
+
+        renderWithPagination() {
+            this.renderTable();
+            this.updatePaginationUI();
+        }
+
+        applySearch(term) {
+            this.currentSearchTerm = term;
+            if (term) {
+                this.filteredData = this.allPFAs.filter(pfa => 
+                    pfa.pfacode.toLowerCase().includes(term) ||
+                    (pfa.pfadesc && pfa.pfadesc.toLowerCase().includes(term)) ||
+                    (pfa.pfapfcname && pfa.pfapfcname.toLowerCase().includes(term)) ||
+                    (pfa.pfapfc && pfa.pfapfc.toLowerCase().includes(term))
+                );
+            } else {
+                this.filteredData = [...this.allPFAs];
+            }
+        }
+
         async validateField(field, value) {
             if (!value || !value.trim()) {
                 this.clearValidationMessage(field);
-                return true; // Empty values are handled by required attribute
+                return true;
             }
 
             try {
                 let url = `${this.apiUrl}/check/${field}/${encodeURIComponent(value)}`;
                 
-                // If editing, exclude the current record from the check
                 if (this.isEditing && this.editingCode) {
                     url += `?exclude=${encodeURIComponent(this.editingCode)}`;
                 }
@@ -158,7 +275,7 @@
             } catch (error) {
                 console.error(`Validation error for ${field}:`, error);
                 this.clearValidationMessage(field);
-                return true; // Don't block submission on validation errors
+                return true;
             }
         }
 
@@ -166,10 +283,8 @@
             const inputElement = document.getElementById(field);
             if (!inputElement) return;
 
-            // Remove existing validation message
             this.clearValidationMessage(field);
 
-            // Create validation message element
             const messageElement = document.createElement('div');
             messageElement.className = `validation-message text-sm mt-1 ${
                 type === 'error' ? 'text-red-600' : 'text-green-600'
@@ -177,10 +292,8 @@
             messageElement.textContent = message;
             messageElement.id = `${field}-validation`;
 
-            // Insert after the input element
             inputElement.parentNode.insertBefore(messageElement, inputElement.nextSibling);
 
-            // Add visual indicator to input
             if (type === 'error') {
                 inputElement.classList.add('border-red-500');
                 inputElement.classList.remove('border-green-500');
@@ -203,8 +316,7 @@
         }
 
         bindValidation() {
-            // Fields that need validation
-            const validationFields = ['pfacode', 'pfadesc', 'pfapfcname', 'pfapfc'];
+            const validationFields = ['pfacode'];
 
             validationFields.forEach(field => {
                 const element = document.getElementById(field);
@@ -212,25 +324,22 @@
                     element.addEventListener('input', (e) => {
                         const value = e.target.value.trim();
                         
-                        // Clear existing timer
                         if (this.validationTimers[field]) {
                             clearTimeout(this.validationTimers[field]);
                         }
 
-                        // Set new timer for debounced validation
                         this.validationTimers[field] = setTimeout(() => {
                             if (value) {
                                 this.validateField(field, value);
                             } else {
                                 this.clearValidationMessage(field);
                             }
-                        }, 500); // 500ms delay
+                        }, 500);
                     });
 
                     element.addEventListener('blur', (e) => {
                         const value = e.target.value.trim();
                         if (value) {
-                            // Clear any pending timer and validate immediately on blur
                             if (this.validationTimers[field]) {
                                 clearTimeout(this.validationTimers[field]);
                             }
@@ -241,27 +350,37 @@
             });
         }
 
-        async loadPFAs() {
+        async loadPFAs(preserveState = false) {
             try {
                 const response = await fetch(this.apiUrl, {
                     headers: this.getHeaders()
                 });
                 const pfas = await response.json();
                 this.allPFAs = pfas;
-                this.renderTable(pfas);
+                
+                if (preserveState) {
+                    this.applySearch(this.currentSearchTerm);
+                    const totalPages = Math.ceil(this.filteredData.length / this.recordsPerPage) || 1;
+                    if (this.currentPage > totalPages) {
+                        this.currentPage = totalPages;
+                    }
+                } else {
+                    this.filteredData = [...this.allPFAs];
+                    this.currentPage = 1;
+                    this.currentSearchTerm = "";
+                }
+                
+                this.renderWithPagination();
             } catch (error) {
                 this.showMessage('Error loading PFAs', 'error');
             }
         }
 
         filterPFAs(searchTerm) {
-            if (!this.allPFAs) return;
-            
-            const filtered = this.allPFAs.filter(pfa => 
-                pfa.pfacode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (pfa.pfadesc && pfa.pfadesc.toLowerCase().includes(searchTerm.toLowerCase()))
-            );
-            this.renderTable(filtered);
+            const term = searchTerm.toLowerCase();
+            this.applySearch(term);
+            this.currentPage = 1;
+            this.renderWithPagination();
         }
 
         showForm() {
@@ -275,16 +394,29 @@
             this.resetForm();
         }
 
-        renderTable(pfas) {
+        renderTable() {
+            const { currentData } = this.getPaginationData();
+            
             this.tableBody.innerHTML = '';
-            pfas.forEach(pfa => {
+            
+            if (currentData.length === 0) {
+                this.tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="border px-2 py-8 text-center text-gray-500">No records found</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            currentData.forEach(pfa => {
                 const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
                 row.innerHTML = `
-                    <td class="border px-2 py-3 text-left">${pfa.pfacode}</td>
-                    <td class="border px-2 py-3 text-left">${pfa.pfadesc || ''}</td>
-                    <td class="border px-2 py-3 text-left">${pfa.pfapfcname || ''}</td>
-                    <td class="border px-2 py-3 text-left">${pfa.pfapfc || ''}</td>
-                    <td class="border px-2 py-3 text-left">
+                    <td class="border px-2 py-1 text-left">${pfa.pfacode}</td>
+                    <td class="border px-2 py-1 text-left">${pfa.pfadesc || ''}</td>
+                    <td class="border px-2 py-1 text-left">${pfa.pfapfcname || ''}</td>
+                    <td class="border px-2 py-1 text-left">${pfa.pfapfc || ''}</td>
+                    <td class="border px-2 py-1 text-left">
                         <button onclick="pfaManager.editPFA('${pfa.pfacode}')" 
                             class="text-blue-600 hover:text-blue-900 px-2 py-1 rounded hover:bg-blue-50">Edit</button>
                         <button onclick="pfaManager.deletePFA('${pfa.pfacode}')" 
@@ -298,11 +430,9 @@
         async handleSubmit(e) {
             e.preventDefault();
             
-            // Perform final validation before submission
             const formData = new FormData(this.form);
             const data = Object.fromEntries(formData);
             
-            // Validate all fields before submission
             const validationPromises = [];
             const validationFields = ['pfacode', 'pfadesc', 'pfapfcname', 'pfapfc'];
             
@@ -323,7 +453,6 @@
                     return;
                 }
 
-                // Proceed with submission
                 const url = this.isEditing ? `${this.apiUrl}/${this.editingCode}` : `${this.apiUrl}/post`;
                 const method = this.isEditing ? 'PUT' : 'POST';
                 
@@ -338,7 +467,7 @@
                 if (response.ok) {
                     this.showMessage(`PFA ${this.isEditing ? 'updated' : 'created'} successfully`, 'success');
                     this.hideForm();
-                    this.loadPFAs();
+                    await this.loadPFAs(true); // Preserve state
                 } else {
                     this.showMessage(result.error, 'error');
                 }
@@ -366,7 +495,6 @@
                 this.submitBtn.textContent = 'Update PFA';
                 this.showForm();
 
-                // Clear any existing validation messages when editing
                 ['pfacode', 'pfadesc', 'pfapfcname', 'pfapfc'].forEach(field => {
                     this.clearValidationMessage(field);
                 });
@@ -389,7 +517,7 @@
 
                 if (response.ok) {
                     this.showMessage('PFA deleted successfully', 'success');
-                    this.loadPFAs();
+                    await this.loadPFAs(true); // Preserve state
                 } else {
                     this.showMessage(result.error, 'error');
                 }
@@ -406,7 +534,6 @@
             
             this.submitBtn.textContent = 'Add PFA';
 
-            // Clear all validation messages and timers
             ['pfacode', 'pfadesc', 'pfapfcname', 'pfapfc'].forEach(field => {
                 this.clearValidationMessage(field);
                 if (this.validationTimers[field]) {
@@ -418,20 +545,20 @@
 
         showMessage(message, type) {
             const messageElement = document.createElement('div');
-            messageElement.className = `p-4 rounded-md mb-4 ${
+            messageElement.className = `p-4 rounded-md mb-4 pointer-events-auto ${
                 type === 'success' ? 'bg-green-100 text-green-700 border border-green-300' : 
                 'bg-red-100 text-red-700 border border-red-300'
             }`;
             messageElement.textContent = message;
 
-            this.messageContainer.appendChild(messageElement);
+            const messageInner = document.getElementById('messageInner');
+            messageInner.appendChild(messageElement);
 
             setTimeout(() => {
                 messageElement.remove();
             }, 5000);
         }
 
-        // helper: capitalize words
         capitalizeWords(str) {
             return str
             ? str
@@ -443,139 +570,134 @@
         }
 
         bindCapitalization() {
-            // Capitalize first letter of each word
             ["pfadesc", "pfapfcname"].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                el.addEventListener("input", () => {
-                el.value = this.capitalizeWords(el.value);
-                });
-            }
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener("input", () => {
+                        el.value = this.capitalizeWords(el.value);
+                    });
+                }
             });
 
-            // Force uppercase on all characters
             ["pfacode", "pfapfc"].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                el.addEventListener("input", () => {
-                el.value = el.value.toUpperCase();
-                });
-            }
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener("input", () => {
+                        el.value = el.value.toUpperCase();
+                    });
+                }
             });
         }
 
         generateReport() {
-        // Format current date
-        const now = new Date();
-        const day = String(now.getDate()).padStart(2, '0');
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const year = now.getFullYear();
-        const dateStr = `${day}-${month}-${year}`;
-        
-        // Create print window
-        const printWindow = window.open('', '_blank');
-        
-        const printContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>PFA Management Report</title>
-                <style>
-                    body { 
-                        font-family: Arial, sans-serif;
-                        margin: 40px;
-                        color: #333;
-                    }
-                    .report-header {
-                        text-align: center;
-                        margin-bottom: 30px;
-                        border-bottom: 2px solid #1a56db;
-                        padding-bottom: 10px;
-                    }
-                    .date-generated {
-                        color: #666;
-                        font-size: 14px;
-                        margin: 10px 0 20px;
-                    }
-                    .report-table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin: 20px 0;
-                    }
-                    .report-table th {
-                        background-color: #f3f4f6;
-                        color: #1f2937;
-                        padding: 12px;
-                        text-align: left;
-                        border: 1px solid #e5e7eb;
-                    }
-                    .report-table td {
-                        padding: 10px;
-                        border: 1px solid #e5e7eb;
-                    }
-                    .report-footer {
-                        margin-top: 30px;
-                        text-align: center;
-                        font-size: 12px;
-                        color: #666;
-                        border-top: 1px solid #e5e7eb;
-                        padding-top: 20px;
-                    }
-                    @media print {
-                        .report-table th {
-                            background-color: #f3f4f6 !important;
-                            -webkit-print-color-adjust: exact;
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            const dateStr = `${day}-${month}-${year}`;
+            
+            const printWindow = window.open('', '_blank');
+            
+            const printContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>PFA Management Report</title>
+                    <style>
+                        body { 
+                            font-family: Arial, sans-serif;
+                            margin: 40px;
+                            color: #333;
                         }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="report-header">
-                    <h1>PFA Management Report</h1>
-                    <p class="date-generated">Generated on: ${dateStr}</p>
-                </div>
-                
-                <table class="report-table">
-                    <thead>
-                        <tr>
-                            <th>No.</th>
-                            <th>PFA Code</th>
-                            <th>Description</th>
-                            <th>PFC Name</th>
-                            <th>PFC Code</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${this.allPFAs.map((pfa, index) => `
+                        .report-header {
+                            text-align: center;
+                            margin-bottom: 30px;
+                            border-bottom: 2px solid #1a56db;
+                            padding-bottom: 10px;
+                        }
+                        .date-generated {
+                            color: #666;
+                            font-size: 14px;
+                            margin: 10px 0 20px;
+                        }
+                        .report-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin: 20px 0;
+                        }
+                        .report-table th {
+                            background-color: #f3f4f6;
+                            color: #1f2937;
+                            padding: 12px;
+                            text-align: left;
+                            border: 1px solid #e5e7eb;
+                        }
+                        .report-table td {
+                            padding: 10px;
+                            border: 1px solid #e5e7eb;
+                        }
+                        .report-footer {
+                            margin-top: 30px;
+                            text-align: center;
+                            font-size: 12px;
+                            color: #666;
+                            border-top: 1px solid #e5e7eb;
+                            padding-top: 20px;
+                        }
+                        @media print {
+                            .report-table th {
+                                background-color: #f3f4f6 !important;
+                                -webkit-print-color-adjust: exact;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="report-header">
+                        <h1>PFA Management Report</h1>
+                        <p class="date-generated">Generated on: ${dateStr}</p>
+                    </div>
+                    
+                    <table class="report-table">
+                        <thead>
                             <tr>
-                                <td>${index + 1}</td>
-                                <td>${pfa.pfacode}</td>
-                                <td>${pfa.pfadesc || ''}</td>
-                                <td>${pfa.pfapfcname || ''}</td>
-                                <td>${pfa.pfapfc || ''}</td>
+                                <th>No.</th>
+                                <th>PFA Code</th>
+                                <th>Description</th>
+                                <th>PFC Name</th>
+                                <th>PFC Code</th>
                             </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-                
-                <div class="report-footer">
-                    <p>Total Records: ${this.allPFAs.length}</p>
-                    <p>Generated by: ${localStorage.getItem('full_name') || 'System User'}</p>
-                    <p>*** End of Report ***</p>
-                </div>
-            </body>
-            </html>
-        `;
-        
-        printWindow.document.write(printContent);
-        printWindow.document.close();
-        
-        printWindow.onload = function() {
-            printWindow.print();
-        };
+                        </thead>
+                        <tbody>
+                            ${this.allPFAs.map((pfa, index) => `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${pfa.pfacode}</td>
+                                    <td>${pfa.pfadesc || ''}</td>
+                                    <td>${pfa.pfapfcname || ''}</td>
+                                    <td>${pfa.pfapfc || ''}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <div class="report-footer">
+                        <p>Total Records: ${this.allPFAs.length}</p>
+                        <p>Generated by: ${localStorage.getItem('full_name') || 'System User'}</p>
+                        <p>*** End of Report ***</p>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            
+            printWindow.onload = function() {
+                printWindow.print();
+            };
+        }
     }
-}
 
-    // Initialize the PFA manager when the page loads
     window.pfaManager = new PFAManager();
 </script>

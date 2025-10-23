@@ -526,7 +526,7 @@
         <td class="border px-2 py-2 text-left">${item.PaymentType}</td>
         <td class="border px-2 py-2 text-left">${item.elmDesc || '-'}</td>
         <td class="border px-2 py-2 text-left">${resolveName(item.perc, 'functiontype')}</td>
-        <td class="border px-2 py-2 text-left">${item.dependence || 'None'}</td>
+        <td class="border px-2 py-2 text-left">${resolveName(item.dependence, 'elementtype')} (${item.dependence})</td>
         <td class="border px-2 py-2 text-left">
           <span class="px-2 py-1 rounded text-xs ${item.Status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
             ${item.Status || 'Active'}
@@ -650,8 +650,12 @@
         let value = item[key];
         if (key === 'datecreated' && value) {
           value = new Date(value).toLocaleString();
-        } else if ((key === 'std' || key === 'maxi' || key === 'freetax') && value) {
-          value = parseFloat(value).toLocaleString();
+        } else if (key === "perc") {
+          value = `${resolveName(value, "functiontype")} (${value || "N/A"})`;
+        } else if (key === "dependence") {
+          value = `${resolveName(value, "elementtype")} (${value || "N/A"})`;
+        } else if (key === "Ledger") {
+          value = `${resolveName(value, "accchart")} (${value || "N/A"})`;
         }
         
         html += `<div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
@@ -988,9 +992,10 @@
                       <th>Payment Type</th>
                       <th>Description</th>
                       <th>Status</th>
-                      <th>Percentage</th>
+                      <th>Function Type</th>
                       <th>Standard Amount</th>
                       <th>Maximum Amount</th>
+                      <th>Account Ledger</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -998,9 +1003,10 @@
                       <td>${item.PaymentType}</td>
                       <td>${item.elmDesc || '-'}</td>
                       <td class="status-${item.Status?.toLowerCase()}">${item.Status || 'Active'}</td>
-                      <td>${item.perc || '-'}</td>
+                      <td>${resolveName(item.perc, 'functiontype')}</td>
                       <td class="amount">${formatCurrency(item.std)}</td>
                       <td class="amount">${formatCurrency(item.maxi)}</td>
+                      <td>${resolveName(item.Ledger, 'accchart')}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1023,7 +1029,7 @@
                   </thead>
                   <tbody>
                     <tr>
-                      <td>${item.dependence || 'None'}</td>
+                      <td>${resolveName(item.dependence, 'elementtype')} (${item.dependence})</td>
                       <td>${item.payfreq || '-'}</td>
                       <td>${item.pmonth || '-'}</td>
                       <td class="amount">${formatCurrency(item.freetax)}</td>

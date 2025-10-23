@@ -29,7 +29,7 @@ router.post('/elementtypes', verifyToken, async (req, res) => {
   try {
     // Validate required fields
     if (!PaymentType || !bpay || !yearend) {
-      return res.status(400).json({ error: 'PaymentType, bpay, and yearend are required fields' });
+      return res.status(400).json({ error: 'PaymentType, Required For All, and Yearend are required fields' });
     }
 
     PaymentType = PaymentType.trim().toUpperCase();

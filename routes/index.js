@@ -127,7 +127,7 @@ module.exports = (app) => {
     //data entry
     app.use('/payded', paymentDeductionsRoutes);
     app.use('/arrears', arrearsCalculationsRoutes);
-    app.use('/cummulative', cummulativePayrollRoutes);
+    app.use('/cumulative', cummulativePayrollRoutes);
     app.use('/documentation', inputDocumentationRoutes);
 
 

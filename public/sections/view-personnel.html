@@ -35,7 +35,7 @@
    </div>
 
   <!-- Content Area -->
-  <div id="view-detail-content" class="p-6 min-h-[400px]">
+  <div id="view-detail-content" class="min-h-[400px]">
     <div class="flex items-center justify-center py-12">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       <span class="ml-3 text-gray-600 text-lg">Loading personnel details...</span>
@@ -392,254 +392,127 @@ class ViewPersonnelManager {
     }
   }
   
-  renderPersonnelDetails() {
+renderPersonnelDetails() {
     const emp = this.employeeData.employee;
     // Check if passport exists and format it properly for display
     const photoSrc = emp.passport 
         ? `data:image/jpeg;base64,${emp.passport}` 
         : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23e5e7eb"/%3E%3Cpath d="M100 60c-16.569 0-30 13.431-30 30 0 16.569 13.431 30 30 30s30-13.431 30-30c0-16.569-13.431-30-30-30zm0 80c-27.614 0-50 17.909-50 40h100c0-22.091-22.386-40-50-40z" fill="%239ca3af"/%3E%3C/svg%3E';
 
+    // Helper class for a detail item in a two-column grid
+    const detailItemClass = "flex justify-between items-start py-3 border-b border-gray-300";
+    const dtClass = "text-sm font-medium text-gray-600";
+    const ddClass = "text-sm font-medium text-gray-900 text-right ml-4";
+    const highlightDDClass = "text-sm font-semibold text-blue-600 text-right ml-4";
+    const sectionTitleClass = "text-xl font-bold text-blue-700 mb-4 pb-2 border-b border-blue-200";
+    const cardClass = "p-6 rounded-lg shadow-sm hover:shadow-lg transition duration-300";
+
     return `
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <!-- Photo & Banking Column -->
-        <div class="md:col-span-1 space-y-4">
-            <div class="flex justify-center">
-            <div class="w-40 h-40">
-                <img src="${photoSrc}" 
-                alt="Personnel Photo" 
-                class="w-full h-full rounded-full border-4 border-blue-300 object-cover shadow-xl"
-                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22 viewBox=%220 0 200 200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%23e5e7eb%22/%3E%3Cpath d=%22M100 60c-16.569 0-30 13.431-30 30 0 16.569 13.431 30 30 30s30-13.431 30-30c0-16.569-13.431-30-30-30zm0 80c-27.614 0-50 17.909-50 40h100c0-22.091-22.386-40-50-40z%22 fill=%22%239ca3af%22/%3E%3C/svg%3E'">
-            </div>
+        <div class="grid grid-cols-1 border-2 border-blue-200 rounded-lg shadow-md lg:grid-cols-4 gap-2">
+        
+        <div class="lg:col-span-1 space-y-2">
+            <div class="${cardClass} text-center">
+                <div class="flex justify-center mb-4">
+                    <div class="w-36 h-36">
+                        <img src="${photoSrc}" 
+                        alt="Personnel Photo" 
+                        class="w-full h-full rounded-full border-4 border-blue-500 object-cover shadow-lg"
+                        onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22 viewBox=%220 0 200 200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%23e5e7eb%22/%3E%3Cpath d=%22M100 60c-16.569 0-30 13.431-30 30 0 16.569 13.431 30 30 30s30-13.431 30-30c0-16.569-13.431-30-30-30zm0 80c-27.614 0-50 17.909-50 40h100c0-22.091-22.386-40-50-40z%22 fill=%22%239ca3af%22/%3E%3C/svg%3E'">
+                    </div>
+                </div>
+                <p class="text-xl font-bold text-gray-900">${this.escape(emp.Surname || '')}, ${this.escape(emp.OtherName || '')}</p>
+                <p class="text-md font-semibold text-blue-600">${this.escape(this.resolveName(emp.Title, 'title'))}</p>
             </div>
             
-            <!-- Banking Details -->
-            <div class="space-y-3">
-            <h4 class="text-lg font-semibold text-blue-700 border-b pb-2">Banking Details</h4>
-            <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                <dt class="font-medium text-sm">Bank:</dt>
-                <dd class="col-span-2 text-sm">${this.escape(emp.Bankcode || 'N/A')}</dd>
-            </div>
-            <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                <dt class="font-medium text-sm">Bank Branch:</dt>
-                <dd class="col-span-2 text-sm">${this.escape(emp.bankbranch || 'N/A')}</dd>
-            </div>
-            <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                <dt class="font-medium text-sm">Bank AC Number:</dt>
-                <dd class="col-span-2 text-sm">${this.escape(emp.BankACNumber || 'N/A')}</dd>
-            </div>
-            <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                <dt class="font-medium text-sm">Internal AC No:</dt>
-                <dd class="col-span-2 text-sm">${this.escape(emp.InternalACNo || 'N/A')}</dd>
-            </div>
+            <div class="${cardClass} space-y-2">
+                <h4 class="${sectionTitleClass.replace('text-xl font-bold', 'text-lg font-semibold')}">Banking Details</h4>
+                <dl>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Bank:</dt><dd class="${ddClass}">${this.escape(emp.Bankcode || 'N/A')}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Bank Branch:</dt><dd class="${ddClass}">${this.escape(emp.bankbranch || 'N/A')}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Bank AC Number:</dt><dd class="${ddClass}">${this.escape(emp.BankACNumber || 'N/A')}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Internal AC No:</dt><dd class="${ddClass}">${this.escape(emp.InternalACNo || 'N/A')}</dd></div>
+                </dl>
             </div>
 
-            <!-- Other Details -->
-            <div class="space-y-3">
-            <h4 class="text-lg font-semibold text-blue-700 border-b pb-2">Other Details</h4>
-            <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                <dt class="font-medium text-sm">Payroll Class:</dt>
-                <dd class="col-span-2 text-sm">${this.escape(this.resolveName(emp.payrollclass, 'payrollclass'))}</dd>
-            </div>
-            <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                <dt class="font-medium text-sm">Rent Subsidy:</dt>
-                <dd class="col-span-2 text-sm">${this.escape(emp.rent_subsidy || 'N/A')}</dd>
-            </div>
-            <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                <dt class="font-medium text-sm">Accomm Type:</dt>
-                <dd class="col-span-2 text-sm">${this.escape(emp.accomm_type || 'N/A')}</dd>
-            </div>
-            <!--<div class="grid grid-cols-3 gap-2 py-2 border-b">
-                <dt class="font-medium text-sm">Internal AC No:</dt>
-                <dd class="col-span-2 text-sm">${this.escape(emp.InternalACNo || 'N/A')}</dd>
-            </div>-->
+            <div class="${cardClass} space-y-2">
+                <h4 class="${sectionTitleClass.replace('text-xl font-bold', 'text-lg font-semibold')}">Other Details</h4>
+                <dl>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Payroll Class:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.payrollclass, 'payrollclass'))}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Job Title:</dt><dd class="${ddClass}">${this.escape(emp.Jobtitle || 'N/A')}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">PFA:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.pfacode, 'pfa'))}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">NHF Code:</dt><dd class="${ddClass}">${this.escape(emp.NHFcode || 'N/A')}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Award:</dt><dd class="${ddClass}">${this.escape(emp.award || 'N/A')}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Rent Subsidy:</dt><dd class="${ddClass}">${this.escape(emp.rent_subsidy || 'N/A')}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Accomm Type:</dt><dd class="${ddClass}">${this.escape(emp.accomm_type || 'N/A')}</dd></div>
+                </dl>
             </div>
         </div>
 
-        <!-- Details Columns -->
-        <div class="md:col-span-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Column 1 -->
-            <div class="space-y-4">
-                <h4 class="text-lg font-semibold text-blue-700 border-b pb-2">Basic Information</h4>
-                <div class="space-y-3">
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Service Number:</dt>
-                    <dd class="col-span-2">${this.escape(emp.Empl_ID || 'N/A')}</dd>
+        <div class="lg:col-span-3 space-y-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div class="${cardClass} space-y-2">
+                    <h4 class="${sectionTitleClass}">Basic Information</h4>
+                    <dl>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Service Number:</dt><dd class="${highlightDDClass}">${this.escape(emp.Empl_ID || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Surname:</dt><dd class="${ddClass}">${this.escape(emp.Surname || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Other Names:</dt><dd class="${ddClass}">${this.escape(emp.OtherName || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Rank:</dt><dd class="${highlightDDClass}">${this.escape(this.resolveName(emp.Title, 'title'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Sex:</dt><dd class="${ddClass}">${this.escape(emp.Sex || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Date of Birth:</dt><dd class="${ddClass}">${this.formatDateForDisplay(emp.Birthdate) || 'N/A'}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Marital Status:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.MaritalStatus, 'marital'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Religion:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.religion, 'religion'))}</dd></div>
+                    </dl>
                 </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Surname:</dt>
-                    <dd class="col-span-2">${this.escape(emp.Surname || 'N/A')}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Other Names:</dt>
-                    <dd class="col-span-2">${this.escape(emp.OtherName || 'N/A')}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Rank:</dt>
-                    <dd class="col-span-2 font-semibold text-blue-600">${this.escape(this.resolveName(emp.Title, 'title'))}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Sex:</dt>
-                    <dd class="col-span-2">${this.escape(emp.Sex || 'N/A')}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Date of Birth:</dt>
-                    <dd class="col-span-2">${this.formatDateForDisplay(emp.Birthdate) || 'N/A'}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Marital Status:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.MaritalStatus, 'marital'))}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Religion:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.religion, 'religion'))}</dd>
-                </div>
+
+                <div class="${cardClass} space-y-2">
+                    <h4 class="${sectionTitleClass}">Contact & Location</h4>
+                    <dl>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Email:</dt><dd class="${ddClass}"><a href="mailto:${this.escape(emp.email)}" class="text-blue-500 hover:text-blue-700">${this.escape(emp.email || 'N/A')}</a></dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Phone:</dt><dd class="${ddClass}">${this.escape(emp.gsm_number || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">State of Origin:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.StateofOrigin, 'state'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">LGA:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.LocalGovt, 'lga'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Town:</dt><dd class="${ddClass}">${this.escape(emp.town || 'N/A')}</dd></div>                        
+                        <h5 class="text-lg font-semibold text-gray-700 pt-4 mb-2 border-t border-gray-100">Residential Address</h5>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Address:</dt><dd class="col-span-2 text-sm text-gray-900 text-right ml-4">${this.escape(emp.HOMEADDR || 'N/A')}</dd></div>
+                    </dl>
                 </div>
             </div>
 
-            <!-- Column 2 -->
-            <div class="space-y-4">
-                <h4 class="text-lg font-semibold text-blue-700 border-b pb-2">Contact & Location</h4>
-                <div class="space-y-3">
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Email:</dt>
-                    <dd class="col-span-2">${this.escape(emp.email || 'N/A')}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Phone:</dt>
-                    <dd class="col-span-2">${this.escape(emp.gsm_number || 'N/A')}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">State of Origin:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.StateofOrigin, 'state'))}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">LGA:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.LocalGovt, 'lga'))}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Town:</dt>
-                    <dd class="col-span-2">${this.escape(emp.town || 'N/A')}</dd>
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div class="${cardClass} space-y-2">
+                    <h4 class="${sectionTitleClass}">Employment Information</h4>
+                    <dl>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Date Employed:</dt><dd class="${ddClass}">${this.formatDateForDisplay(emp.DateEmpl) || 'N/A'}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Date Confirmed:</dt><dd class="${ddClass}">${this.formatDateForDisplay(emp.dateconfirmed) || 'N/A'}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Entry Mode:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.entry_mode, 'entrymode'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Date Left:</dt><dd class="${ddClass}">${this.formatDateForDisplay(emp.DateLeft) || 'N/A'}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Exit Type:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.exittype, 'exittype'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Seniority Date:</dt><dd class="${ddClass}">${this.formatDateForDisplay(emp.datepmted) || 'N/A'}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Location:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.Location, 'location'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Command:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.command, 'command'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Specialisation:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.specialisation, 'specialisations'))}</dd></div>
+                    </dl>
                 </div>
 
-                <h4 class="text-lg font-semibold text-blue-700 border-b pb-2 pt-4">Residential Address</h4>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                <dt class="font-medium">Address:</dt>
-                <dd class="col-span-2">${this.escape(emp.HOMEADDR || 'N/A')}</dd>
+                <div class="${cardClass} space-y-2">
+                    <h4 class="${sectionTitleClass}">Tax & Financial Information</h4>
+                    <dl>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Taxed:</dt><dd class="${ddClass}">${this.escape(emp.taxed || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Tax Code:</dt><dd class="${ddClass}">${this.escape(emp.TaxCode || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Tax State:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.state, 'state'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">NSITF Code:</dt><dd class="${ddClass}">${this.escape(emp.NSITFcode || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Grade Level:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.gradelevel, 'salarygrade'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Grade Type:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.gradetype, 'salarygroup'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Branch:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.Factory, 'branch'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Emolument Form?</dt><dd class="${ddClass}">${this.escape(emp.emolumentform || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Country:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.Country, 'country'))}</dd></div>
+                    </dl>
                 </div>
-            </div>
-            </div>
-
-            <!-- Employment Details Section -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <!-- Column 1 -->
-            <div class="space-y-4">
-                <h4 class="text-lg font-semibold text-blue-700 border-b pb-2">Employment Information</h4>
-                <div class="space-y-3">
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Date Employed:</dt>
-                    <dd class="col-span-2">${this.formatDateForDisplay(emp.DateEmpl) || 'N/A'}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Date Confirmed:</dt>
-                    <dd class="col-span-2">${this.formatDateForDisplay(emp.dateconfirmed) || 'N/A'}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Entry Mode:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.entry_mode, 'entrymode'))}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Date Left:</dt>
-                    <dd class="col-span-2">${this.formatDateForDisplay(emp.DateLeft) || 'N/A'}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Exit Type:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.exittype, 'exittype'))}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Seniority Date:</dt>
-                    <dd class="col-span-2">${this.formatDateForDisplay(emp.datepmted) || 'N/A'}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Location:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.Location, 'location'))}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Command:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.command, 'command'))}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Specialisation:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.specialisation, 'specialisations'))}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Job Title:</dt>
-                    <dd class="col-span-2">${this.escape(emp.Jobtitle || 'N/A')}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Award:</dt>
-                    <dd class="col-span-2">${this.escape(emp.award || 'N/A')}</dd>
-                </div>
-                </div>
-            </div>
-
-            <!-- Column 2 -->
-            <div class="space-y-4">
-                <h4 class="text-lg font-semibold text-blue-700 border-b pb-2">Tax & Financial Information</h4>
-                <div class="space-y-3">
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Taxed:</dt>
-                    <dd class="col-span-2">${this.escape(emp.taxed || 'N/A')}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Tax Code:</dt>
-                    <dd class="col-span-2">${this.escape(emp.TaxCode || 'N/A')}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Tax State:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.state, 'state'))}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">NSITF Code:</dt>
-                    <dd class="col-span-2">${this.escape(emp.NSITFcode || 'N/A')}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">PFA:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.pfacode, 'pfa'))}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Grade Level:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.gradelevel, 'salarygrade'))}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Grade Type:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.gradetype, 'salarygroup'))}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">NHF Code:</dt>
-                    <dd class="col-span-2">${this.escape(emp.NHFcode || 'N/A')}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Branch:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.Factory, 'branch'))}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Emolument Form?</dt>
-                    <dd class="col-span-2">${this.escape(emp.emolumentform || 'N/A')}</dd>
-                </div>
-                <div class="grid grid-cols-3 gap-2 py-2 border-b">
-                    <dt class="font-medium">Country:</dt>
-                    <dd class="col-span-2">${this.escape(this.resolveName(emp.Country, 'country'))}</dd>
-                </div>
-                </div>
-            </div>
             </div>
         </div>
         </div>
     `;
-  }
-
+}
   renderNOKDetails() {
     const nokList = this.employeeData.nextOfKin || [];
     

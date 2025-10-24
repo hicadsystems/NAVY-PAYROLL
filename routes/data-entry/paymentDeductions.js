@@ -65,6 +65,57 @@ router.get('/active/all', verifyToken, async (req, res) => {
   }
 });
 
+// NEW: GET ALL ACTIVE DEDUCTIONS FOR REPORT (NO LIMITS)
+router.get('/report-all', verifyToken, async (req, res) => {
+  try {
+    // NOTE: We intentionally ignore page/limit/offset here to fetch ALL records.
+    
+    // 1. Get total count (Still useful for the frontend report footer)
+    const [countResult] = await pool.query(
+      `SELECT COUNT(*) as total FROM py_payded p`
+    );
+    const totalRecords = countResult[0].total;
+
+    // 2. Query to get ALL records (NO LIMIT/OFFSET)
+    const query = `
+      SELECT 
+        p.Empl_id,
+        p.type,
+        p.mak1 AS delete_maker_annual,
+        p.amtp AS amount_payable,
+        p.mak2 AS delete_maker_cumulative,
+        p.amt,
+        p.amtad AS amount_already_deducted,
+        p.amttd AS amount_to_date,
+        p.payind AS indicator,
+        pi.inddesc AS indicator_description,
+        p.nomth AS months_remaining,
+        p.createdby,
+        p.datecreated
+      FROM py_payded p
+      LEFT JOIN py_payind pi ON p.payind = pi.ind
+      ORDER BY p.Empl_id, p.type
+    `; // *** LIMIT ? OFFSET ? REMOVED HERE ***
+
+    const [rows] = await pool.query(query); // No array of parameters needed
+
+    res.json({
+        success: true,
+        data: rows,
+        pagination: {
+            totalRecords: totalRecords,
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching ALL report deductions:', error);
+      res.status(500).json({
+          success: false, 
+          message: 'Error fetching all report deductions',
+          error: error.message
+      });
+    }
+});
+
 //// GET ALL ACTIVE VARIATIONS (ALL EMPLOYEES)
 router.get('/active/all-variations', verifyToken, async (req, res) => {
   try {
@@ -79,9 +130,13 @@ router.get('/active/all-variations', verifyToken, async (req, res) => {
       SELECT COUNT(*) as total 
       FROM py_payded 
       WHERE amtad IS NOT NULL 
-        AND amtad != '' 
-        AND amtad != 'N/A'
-        AND amtad != '0'
+        AND TRIM(amtad) != ''
+        AND TRIM(amtad) NOT IN ('N/A', 'n/a', 'null', '0', '0.0', '0.00')
+        AND (
+          CAST(REPLACE(TRIM(amtad), ',', '') AS DECIMAL(15,2)) IS NULL
+          OR TRIM(amtad) LIKE '%[^0-9.,]%'
+          OR TRIM(amtad) IN ('Add', 'Deduct', 'String')
+        )
       `
     );
     const totalRecords = countResult[0].total;
@@ -105,9 +160,14 @@ router.get('/active/all-variations', verifyToken, async (req, res) => {
         p.datecreated
       FROM py_payded p
       LEFT JOIN py_payind pi ON p.payind = pi.ind
-      WHERE p.amtad IS NOT NULL 
-        AND p.amtad != '' 
-        AND p.amtad != 'N/A'
+      WHERE p.amtad IS NOT NULL
+        AND TRIM(p.amtad) != ''
+        AND TRIM(p.amtad) NOT IN ('N/A', 'n/a', 'null', '0', '0.0', '0.00')
+        AND (
+          CAST(REPLACE(TRIM(p.amtad), ',', '') AS DECIMAL(15,2)) IS NULL
+          OR TRIM(p.amtad) LIKE '%[^0-9.,]%'
+          OR TRIM(p.amtad) IN ('Add', 'Deduct', 'String')
+        )
       ORDER BY p.Empl_id, p.type
       LIMIT ? OFFSET ?
     `;

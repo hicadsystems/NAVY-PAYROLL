@@ -45,3 +45,107 @@
 <div class="flex, flex-col, justify-between, items-center">
 
 </div>
+
+ <!--function printSelected() {
+    if (!docNameId.value) {
+      alert("Please select an employee first");
+      return;
+    }
+    
+    const selectedEmployee = allEmployees.find(e => e.Empl_ID === docNameId.value);
+    if (!selectedEmployee) return;
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Documentation - ${selectedEmployee.Surname} ${selectedEmployee.OtherName}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h2 { color: #1e40af; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f3f4f6; }
+          </style>
+        </head>
+        <body>
+          <h2>Documentation Record</h2>
+          <table>
+            <tr><th>Service No</th><td>${docNameId.value}</td></tr>
+            <tr><th>Name</th><td>${selectedEmployee.Surname} ${selectedEmployee.OtherName}</td></tr>
+            <tr><th>Year</th><td>${docYear.value}</td></tr>
+            <tr><th>Month</th><td>${docMonth.value}</td></tr>
+            <tr><th>Reference No</th><td>${docRef.value}</td></tr>
+            <tr><th>Comments</th><td>${docComments.value}</td></tr>
+          </table>
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
+
+  function printAll() {
+    if (allDocumentation.length === 0) {
+      alert("No records to print");
+      return;
+    }
+    
+    const printWindow = window.open('', '_blank');
+    let tableRows = '';
+    
+    allDocumentation.forEach(doc => {
+      const employee = allEmployees.find(e => e.Empl_ID === doc.doc_numb);
+      const empName = employee ? `${employee.Surname} ${employee.OtherName}` : 'N/A';
+      
+      tableRows += `
+        <tr>
+          <td>${doc.doc_numb}</td>
+          <td>${empName}</td>
+          <td>${doc.doc_year || ''}</td>
+          <td>${doc.doc_month || ''}</td>
+          <td>${doc.doc_ref || ''}</td>
+          <td>${doc.doc_remark || ''}</td>
+        </tr>
+      `;
+    });
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>All Documentation Records</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h2 { color: #1e40af; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
+            th { background-color: #f3f4f6; }
+          </style>
+        </head>
+        <body>
+          <h2>All Documentation Records</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Service No</th>
+                <th>Name</th>
+                <th>Year</th>
+                <th>Month</th>
+                <th>Reference No</th>
+                <th>Comments</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }

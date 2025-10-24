@@ -102,6 +102,9 @@ const salaryscaleuploadRoutes = require('./file-upload-helper/salaryscaleupload'
 const personnelUploadRoutes = require('./file-upload-helper/personnelUpload');
 const paydedUploadRoutes = require('./file-upload-helper/paydedUpload');
 
+//Helpers
+const paydedReportRoutes = require('./helpers/puppeteer-gen-reports/paydedReport')
+
 
 
 module.exports = (app) => {
@@ -199,4 +202,9 @@ module.exports = (app) => {
     app.use("/api/v1", salaryscaleuploadRoutes);
     app.use('/batchpersonnel', personnelUploadRoutes);
     app.use('/batchpayded', paydedUploadRoutes);
+
+
+
+    //helpers
+    app.use("/puppeteer", paydedReportRoutes);
 };

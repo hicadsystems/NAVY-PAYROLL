@@ -1,7 +1,7 @@
 <!-- Cumulative Management -->
 <div class="p-6">
     <div class="flex justify-between items-center mb-6">
-        <!--<h2 class="text-2xl font-bold text-blue-800">Cumulative Management</h2>-->
+        <h2 class="text-xl font-semibold text-grey-800">Cumulative Management</h2>
         <div class="flex flex-wrap gap-2 justify-end">
             <!-- Search Bar -->
                 <div class="relative">
@@ -90,7 +90,7 @@
         <table class="min-w-full border border-gray-200 rounded-lg">
             <thead class="bg-blue-100 text-blue-900">
                 <tr>
-                    <th class="py-2 px-4 border">Personnel</th>
+                    <th class="py-2 px-4 border">Service No.</th>
                     <th class="py-2 px-4 border">Taxable To Date</th>
                     <th class="py-2 px-4 border">Tax To Date</th>
                     <th class="py-2 px-4 border">Gross To Date</th>
@@ -160,6 +160,22 @@
     </div>
 </div>
 
+<!-- Error Modal -->
+<div id="errorModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg p-8 max-w-sm w-full mx-4 text-center">
+    <!-- Red X Icon -->
+    <div class="flex justify-center mb-4">
+      <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </div>
+    </div>
+    <p id="errorMessage" class="text-gray-700 font-medium mb-4">An error occurred.</p>
+    <button id="closeErrorModal" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Close</button>
+  </div>
+</div>
+
 <script>
 (function () {
     // ============================================
@@ -177,11 +193,14 @@
     const loadingSpinner = document.getElementById("loadingSpinner");
     const successTick = document.getElementById("successTick");
     const successMessage = document.getElementById("successMessage");
+    const errorModal = document.getElementById("errorModal");
+    const errorMessage = document.getElementById("errorMessage");
+    const closeErrorModal = document.getElementById("closeErrorModal");
 
     // Buttons
     const createBtn = document.getElementById("createCumulativeBtn");
     const cancelBtn = document.getElementById("cancelCumulativeBtn");
-    const reportBtn = document.getElementById("generateReportBtn");
+    //const reportBtn = document.getElementById("generateReportBtn");
     const cancelDelete = document.getElementById("cancelDelete");
     const confirmDelete = document.getElementById("confirmDelete");
 
@@ -199,21 +218,24 @@
     // Add hidden input to store the selected employee ID
     const hiddenInput = document.createElement('input');
     hiddenInput.type = 'hidden';
-    hiddenInput.name = 'emplId';
-    hiddenInput.id = 'emplId';
+    hiddenInput.name = 'EmpL_ID';
+    hiddenInput.id = 'EmpL_ID';
     form.appendChild(hiddenInput);
 
     // ============================================
     // STATE VARIABLES
     // ============================================
+    let cumData = [];
     let isEditing = false;
-    let currentEditEmplId = null;
+    let currentEditEmpL_ID = null;
     let rowToDelete = null;
     let allEmployees = [];
     let allCumulatives = [];
+    let filteredCumulatives = [];
     let currentPage = 1;
     let recordsPerPage = 10;
     let totalRecords = 0;
+    let searchTimeout;
 
     // ============================================
     // API FUNCTIONS
@@ -252,17 +274,32 @@
     async function fetchCumulatives() {
         try {
             const response = await fetch(API_BASE, {
-                method: 'GET',
-                headers: getAuthHeaders()
+            method: 'GET',
+            headers: getAuthHeaders()
             });
-            
+
             const data = await response.json();
-            allCumulatives = Array.isArray(data) ? data : [];
-            totalRecords = allCumulatives.length;
+            console.log('Raw cumulative data:', data);
+
+            // Works with both API shapes
+            cumData = Array.isArray(data)
+            ? data
+            : Array.isArray(data.data)
+                ? data.data
+                : [];
+
+            allCumulatives = cumData;
+            filteredCumulatives = [...allCumulatives];
+            totalRecords = filteredCumulatives.length;
+
             renderTable();
         } catch (error) {
             console.error('Error fetching cumulatives:', error);
-            tableBody.innerHTML = '<tr><td colspan="6" class="py-4 text-red-500">Failed to load data</td></tr>';
+            tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="py-4 text-red-500">Failed to load data</td>
+            </tr>
+            `;
         }
     }
 
@@ -287,9 +324,13 @@
         }
     }
 
-    async function updateCumulative(emplId, data) {
+    async function updateCumulative(EmpL_ID, data) {
         try {
-            const response = await fetch(`${API_BASE}/${emplId}`, {
+            // Handle the slash in employee ID for URL
+            const pathSegment = `${EmpL_ID}`;
+            const encodedId = encodeURIComponent(pathSegment);
+            
+            const response = await fetch(`${API_BASE}/${encodedId}`, {
                 method: 'PUT',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(data)
@@ -308,9 +349,13 @@
         }
     }
 
-    async function deleteCumulative(emplId) {
+    async function deleteCumulative(EmpL_ID) {
         try {
-            const response = await fetch(`${API_BASE}/${emplId}`, {
+            // Handle the slash in employee ID for URL
+            const pathSegment = `${EmpL_ID}`;
+            const encodedId = encodeURIComponent(pathSegment);
+            
+            const response = await fetch(`${API_BASE}/${encodedId}`, {
                 method: 'DELETE',
                 headers: getAuthHeaders()
             });
@@ -364,28 +409,25 @@
         // Calculate pagination
         const startIndex = (currentPage - 1) * recordsPerPage;
         const endIndex = startIndex + recordsPerPage;
-        const paginatedData = allCumulatives.slice(startIndex, endIndex);
+        const paginatedData = filteredCumulatives.slice(startIndex, endIndex);
 
-        if (allCumulatives.length === 0) {
+        if (filteredCumulatives.length === 0) {
             tableBody.innerHTML = '<tr><td colspan="6" class="py-4 text-gray-500">No records found</td></tr>';
             updatePaginationInfo();
             return;
         }
 
         tableBody.innerHTML = paginatedData.map(item => {
-            const employee = allEmployees.find(emp => emp.Empl_ID === item.Empl_ID);
-            const displayName = employee ? `${item.Empl_ID} - ${employee.Surname} ${employee.OtherName || ''}` : item.Empl_ID;
-            
             return `
                 <tr class="hover:bg-yellow-50">
-                    <td class="py-2 px-4 border">${displayName}</td>
+                    <td class="py-2 px-4 border">${item.EmpL_ID}</td>
                     <td class="py-2 px-4 border">₦${Number(item.taxabletodate || 0).toLocaleString()}</td>
                     <td class="py-2 px-4 border">₦${Number(item.taxtodate || 0).toLocaleString()}</td>
                     <td class="py-2 px-4 border">₦${Number(item.grosstodate || 0).toLocaleString()}</td>
                     <td class="py-2 px-4 border">₦${Number(item.nettodate || 0).toLocaleString()}</td>
                     <td class="py-2 px-4 border">
-                        <button onclick="window.editCumulative('${item.Empl_ID}')" class="text-blue-600 hover:underline">Edit</button> |
-                        <button onclick="window.deleteCumulativeRow('${item.Empl_ID}')" class="text-red-600 hover:underline">Delete</button>
+                        <button onclick="window.editCumulative('${item.EmpL_ID}')" class="text-blue-600 hover:underline">Edit</button> |
+                        <button onclick="window.deleteCumulativeRow('${item.EmpL_ID}')" class="text-red-600 hover:underline">Delete</button>
                     </td>
                 </tr>
             `;
@@ -395,18 +437,24 @@
     }
 
     function updatePaginationInfo() {
-        const start = allCumulatives.length > 0 ? (currentPage - 1) * recordsPerPage + 1 : 0;
+        const start = filteredCumulatives.length > 0 ? (currentPage - 1) * recordsPerPage + 1 : 0;
         const end = Math.min(currentPage * recordsPerPage, totalRecords);
-        
+            
         document.getElementById('showing-start').textContent = start;
         document.getElementById('showing-end').textContent = end;
         document.getElementById('total-records').textContent = totalRecords;
 
+        //  Update page numbers
+        document.getElementById('currentPage').textContent = currentPage;
+        document.getElementById('totalPages').textContent = Math.max(1, Math.ceil(totalRecords / recordsPerPage));
+
+        // Existing enable/disable logic
         const prevBtn = document.getElementById('prev-page');
         const nextBtn = document.getElementById('next-page');
-        
-        prevBtn.disabled = currentPage === 1;
-        nextBtn.disabled = currentPage >= Math.ceil(totalRecords / recordsPerPage);
+        const isFirstPage = currentPage === 1;
+        const isLastPage = currentPage >= Math.ceil(totalRecords / recordsPerPage);
+        prevBtn.disabled = isFirstPage;
+        nextBtn.disabled = isLastPage;
     }
 
     function nextPage() {
@@ -425,6 +473,40 @@
     }
 
     // ============================================
+    // SEARCH FUNCTIONALITY
+    // ============================================
+    function performSearch() {
+        const searchTerm = document.getElementById('cumulativeSearchInput').value.toLowerCase().trim();
+        
+        if (!searchTerm) {
+            filteredCumulatives = [...allCumulatives];
+        } else {
+            filteredCumulatives = allCumulatives.filter(item => {
+                const EmpL_ID = (item.EmpL_ID || item.Empl_ID || '').toLowerCase();
+                return EmpL_ID.includes(searchTerm);
+            });
+        }
+        
+        totalRecords = filteredCumulatives.length;
+        currentPage = 1; // Reset to first page on search
+        renderTable();
+    }
+
+    // Records per page change handler
+    function changeRecordsPerPage() {
+        const selectElement = document.getElementById('recordsPerPage');
+        recordsPerPage = parseInt(selectElement.value);
+        currentPage = 1; // Reset to first page
+        renderTable();
+    }
+    
+    // Debounce search
+    function debounceSearch() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(performSearch, 300);
+    }
+
+    // ============================================
     // UI HELPER FUNCTIONS
     // ============================================
     function toggleForm() {
@@ -436,7 +518,7 @@
         searchInput.value = '';
         hiddenInput.value = '';
         isEditing = false;
-        currentEditEmplId = null;
+        currentEditEmpL_ID = null;
         formTitle.textContent = "Create Cumulative";
         saveBtn.textContent = "Save";
     }
@@ -459,7 +541,15 @@
     }
 
     function showErrorAlert(message) {
-        alert('Error: ' + message);
+        errorMessage.textContent = message || "An unexpected error occurred.";
+        errorModal.classList.remove("hidden");
+
+        // Auto-close after 3 seconds (optional)
+        setTimeout(() => {
+            if (!errorModal.classList.contains("hidden")) {
+                errorModal.classList.add("hidden");
+            }
+        }, 5000);
     }
 
     // ============================================
@@ -501,19 +591,19 @@
     async function saveCumulative(e) {
         e.preventDefault();
 
-        const emplId = hiddenInput.value.trim();
+        const EmpL_ID = hiddenInput.value.trim();
         const taxabletodate = taxableInput.value;
         const taxtodate = taxInput.value;
         const grosstodate = grossInput.value;
         const nettodate = netInput.value;
 
-        if (!emplId || !taxabletodate || !taxtodate || !grosstodate || !nettodate) {
+        if (!EmpL_ID || !taxabletodate || !taxtodate || !grosstodate || !nettodate) {
             showErrorAlert("Please fill all fields");
             return;
         }
 
         const data = {
-            Empl_ID: emplId,
+            EmpL_ID: EmpL_ID,
             taxabletodate: parseFloat(taxabletodate),
             taxtodate: parseFloat(taxtodate),
             grosstodate: parseFloat(grosstodate),
@@ -522,7 +612,7 @@
 
         try {
             if (isEditing) {
-                await updateCumulative(currentEditEmplId, data);
+                await updateCumulative(currentEditEmpL_ID, data);
                 showSuccessModal("Record updated successfully!");
             } else {
                 await createCumulative(data);
@@ -532,6 +622,15 @@
             clearForm();
             toggleForm();
             await fetchCumulatives();
+            await fetchCumulatives();
+
+            // Reapply active search filter if any
+            const activeSearch = document.getElementById('cumulativeSearchInput').value.trim();
+            if (activeSearch) {
+                performSearch(); // keeps filtered results visible
+            } else {
+                renderTable();   // fallback to full table
+            }
             currentPage = 1; // Reset to first page after save
         } catch (error) {
             showErrorAlert(error.message);
@@ -541,16 +640,16 @@
     // ============================================
     // GLOBAL FUNCTIONS FOR EDIT & DELETE
     // ============================================
-    window.editCumulative = function(emplId) {
-        const cumulative = allCumulatives.find(c => c.Empl_ID === emplId);
-        if (!cumulative) return;
+    window.editCumulative = function(EmpL_ID) {
+        const cumulative = allCumulatives.find(c => (c.EmpL_ID || c.Empl_ID) === EmpL_ID);
+        if (!cumulative) {
+            console.error('Cumulative not found for:', EmpL_ID);
+            return;
+        }
 
-        const employee = allEmployees.find(emp => emp.Empl_ID === emplId);
-        const displayName = employee ? `${emplId} - ${employee.Surname} ${employee.OtherName || ''}` : emplId;
-        
-        // Populate form
-        searchInput.value = displayName;
-        hiddenInput.value = emplId;
+        // Populate form with just the ID
+        searchInput.value = EmpL_ID;
+        hiddenInput.value = EmpL_ID;
         taxableInput.value = cumulative.taxabletodate || 0;
         taxInput.value = cumulative.taxtodate || 0;
         grossInput.value = cumulative.grosstodate || 0;
@@ -558,7 +657,7 @@
         
         // Set edit mode
         isEditing = true;
-        currentEditEmplId = emplId;
+        currentEditEmpL_ID = EmpL_ID;
         formTitle.textContent = "Edit Cumulative";
         saveBtn.textContent = "Update";
         
@@ -566,8 +665,8 @@
         formWrapper.classList.remove("hidden");
     };
 
-    window.deleteCumulativeRow = function(emplId) {
-        rowToDelete = emplId;
+    window.deleteCumulativeRow = function(EmpL_ID) {
+        rowToDelete = EmpL_ID;
         confirmModal.classList.remove("hidden");
     };
 
@@ -585,10 +684,6 @@
     });
     
     form.addEventListener("submit", saveCumulative);
-    
-    reportBtn.addEventListener("click", () => {
-        showSuccessModal("Report generation feature coming soon!");
-    });
     
     cancelDelete.addEventListener("click", () => {
         confirmModal.classList.add("hidden");
@@ -608,6 +703,15 @@
                 }
                 
                 await fetchCumulatives();
+                await fetchCumulatives();
+
+                // Reapply active search filter if any
+                const activeSearch = document.getElementById('cumulativeSearchInput').value.trim();
+                if (activeSearch) {
+                    performSearch(); // keeps filtered results visible
+                } else {
+                    renderTable();   // fallback to full table
+                }
             } catch (error) {
                 showErrorAlert(error.message);
             }
@@ -619,6 +723,20 @@
     // Pagination button listeners
     document.getElementById('prev-page').addEventListener('click', prevPage);
     document.getElementById('next-page').addEventListener('click', nextPage);
+
+    // Records per page listener
+    document.getElementById('recordsPerPage').addEventListener('change', changeRecordsPerPage);
+
+    // Search input listener
+    document.getElementById('cumulativeSearchInput').addEventListener('input', debounceSearch);
+    
+    const prevBtnMobile = document.getElementById('prev-page-mobile');
+    const nextBtnMobile = document.getElementById('next-page-mobile');
+    if (prevBtnMobile) prevBtnMobile.addEventListener('click', prevPage);
+    if (nextBtnMobile) nextBtnMobile.addEventListener('click', nextPage);
+
+    // Search input listener
+    document.getElementById('cumulativeSearchInput').addEventListener('input', debounceSearch);
 
     // Close modals when clicking outside
     confirmModal.addEventListener("click", (e) => {
@@ -633,6 +751,189 @@
             successModal.classList.add("hidden");
         }
     });
+
+    closeErrorModal.addEventListener("click", () => {
+        errorModal.classList.add("hidden");
+    });
+
+
+    errorModal.addEventListener("click", (e) => {
+        if (e.target === errorModal) {
+            errorModal.classList.add("hidden");
+        }
+    });
+
+
+    //generate reports functionality
+    function generateReport() {
+        const now = new Date();
+        const dateStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        
+        const printWindow = window.open('', '_blank');
+        
+        const formatCurrency = (amount) => {
+        if (!amount) return '-';
+        return new Intl.NumberFormat('en-NG', {
+            style: 'currency',
+            currency: 'NGN'
+        }).format(amount);
+        };
+
+        const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Cumulative Payroll Report</title>
+            <style>
+            body { 
+                font-family: Arial, sans-serif;
+                margin: 20px;
+                color: #333;
+            }
+            .report-header {
+                text-align: center;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #1a56db;
+            }
+            .report-title {
+                font-size: 24px;
+                color: #1a56db;
+                margin: 10px 0;
+            }
+            .date-time {
+                font-size: 14px;
+                color: #666;
+                margin: 10px 0;
+            }
+            .element-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 15px;
+                font-size: 11px;
+            }
+            .element-table th {
+                background-color: #f3f4f6;
+                padding: 6px;
+                text-align: left;
+                border: 1px solid #e5e7eb;
+            }
+            .element-table td {
+                padding: 6px;
+                border: 1px solid #e5e7eb;
+            }
+            .amount {
+                text-align: right;
+            }
+            .report-footer {
+                margin-top: 20px;
+                text-align: center;
+                font-size: 12px;
+                color: #666;
+                border-top: 1px solid #e5e7eb;
+                padding-top: 15px;
+            }
+            .status-active {
+                color: green;
+                font-weight: bold;
+            }
+            .status-inactive {
+                color: red;
+                font-weight: bold;
+            }
+            @media print {
+                .element-table th {
+                background-color: #f3f4f6 !important;
+                -webkit-print-color-adjust: exact;
+                }
+                .sn-column {
+                width: 40px;
+                text-align: center;
+                font-weight: bold;
+                background-color: #f3f4f6;
+                vertical-align: middle;
+                border-right: 2px solid #1a56db;
+                }
+                .element-section {
+                margin-bottom: 30px;
+                padding-bottom: 10px;
+                border-bottom: 1px dashed #e5e7eb;
+                }
+                .combined-tables {
+                border: 1px solid #e5e7eb;
+                margin-bottom: 20px;
+                }
+                .element-table {
+                margin-bottom: 0;
+                border: none;
+                }
+                .element-table:first-child {
+                border-bottom: 2px solid #e5e7eb;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="report-header">
+            <div class="report-title">Cumulative Payroll Report</div>
+            <div class="date-time">Generated on: ${dateStr} at ${timeStr}</div>
+            </div>
+
+
+        ${cumData.map((item, index) => `
+            <div class="combined-tables">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                <td class="sn-column" rowspan="4" style="width: 40px;">
+                    ${index + 1}
+                </td>
+                <td style="padding: 0;">
+                    <!-- First table -->
+                    <table class="element-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                        <th>Service No</th>
+                        <th>Taxable To Date</th>
+                        <th>Tax To Date</th>
+                        <th>Gross To Date</th>
+                        <th>Net To Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="py-2 px-4 border">${item.EmpL_ID}</td>
+                            <td class="py-2 px-4 border">₦${Number(item.taxabletodate || 0).toLocaleString()}</td>
+                            <td class="py-2 px-4 border">₦${Number(item.taxtodate || 0).toLocaleString()}</td>
+                            <td class="py-2 px-4 border">₦${Number(item.grosstodate || 0).toLocaleString()}</td>
+                            <td class="py-2 px-4 border">₦${Number(item.nettodate || 0).toLocaleString()}</td>
+                        </tr>
+                    </tbody>
+                    </table>
+                </td>
+                </tr>
+            </table>
+            </div>
+        `).join('')}
+
+        <div class="report-footer">
+            <p>Total Records: ${cumData.length}</p>
+            <p>Generated by: ${localStorage.getItem('full_name') || 'System User'}</p>
+            <p>*** End of Report ***</p>
+        </div>
+        </body>
+        </html>
+    `;
+
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+
+        printWindow.onload = function() {
+        printWindow.print();
+        };
+    }
+
+    // Add event listener to generate report button
+    document.getElementById('generateReportBtn').addEventListener('click', generateReport);
 
     // ============================================
     // INITIALIZATION

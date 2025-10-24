@@ -16,20 +16,20 @@ router.get('/', verifyToken, async(req, res) => {
   }
 });
 
-//GET SINGLE DOCUMENTATION
-router.get('/:doc_numb', verifyToken, async(req, res) => {
+// GET SINGLE DOCUMENTATION
+router.get('/:doc_numb', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM py_documentation WHERE doc_numb = ?", [req.params.doc_numb]);
-    if (rows.length === 0) 
-        return 
-        res.status(404).json({ 
-            error: "Not found" 
-        });
-    res.json(rows[0]);
+    const [rows] = await pool.query(
+      "SELECT * FROM py_documentation WHERE doc_numb = ?",
+      [req.params.doc_numb]
+    );
+
+    if (rows.length === 0)
+      return res.status(404).json({ error: "Not found" }); 
+    return res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ 
-        error: err.message 
-    });
+    console.error("Error fetching documentation:", err);
+    return res.status(500).json({ error: err.message });
   }
 });
 

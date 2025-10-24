@@ -4,7 +4,9 @@
     <h2 class="text-2xl font-bold text-blue-800"></h2>
     <div class="flex flex-wrap gap-2">
       <button id="createVariationBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Create New</button>
-      <button id="generateReportBtn" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">Generate Report</button>
+      <button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+        <i class="fas fa-file-alt mr-2"></i>Generate Report
+      </button>
       <button onclick="window.navigation.navigateToSection('payments-deductions', 'Payments/Deductions')"  class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">View Payments/Deductions</button>
     </div>
   </div>
@@ -60,7 +62,7 @@
     <table class="min-w-full  border border-gray-200 rounded-lg">
       <thead class="bg-blue-100 text-blue-900">
         <tr>
-          <th class="py-2 px-4 border">Person</th>
+          <th class="py-2 px-4 border">Service No.</th>
           <th class="py-2 px-4 border">Type</th>
           <th class="py-2 px-4 border">Action Type</th>          
           <th class="py-2 px-4 border">Amount</th>

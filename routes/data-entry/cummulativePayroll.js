@@ -17,9 +17,9 @@ router.get('/', verifyToken, async(req, res) => {
 });
 
 //GET SINGLE CUMMULATIVE
-router.get('/:Empl_ID', verifyToken, async(req, res) => {
+router.get('/:EmpL_ID', verifyToken, async(req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM py_cumulated WHERE Empl_ID = ?", [req.params.Empl_ID]);
+    const [rows] = await pool.query("SELECT * FROM py_cumulated WHERE EmpL_ID = ?", [req.params.EmpL_ID]);
     if (rows.length === 0) 
         return 
         res.status(404).json({ 
@@ -36,7 +36,7 @@ router.get('/:Empl_ID', verifyToken, async(req, res) => {
 //POST
 router.post('/create', verifyToken, async(req, res) => {
   let {
-    Empl_ID,
+    EmpL_ID,
     taxabletodate,
     taxtodate,
     nettodate,
@@ -51,13 +51,13 @@ router.post('/create', verifyToken, async(req, res) => {
 
   try{
     // Validate required fields
-    if (!Empl_ID) {
+    if (!EmpL_ID) {
       return res.status(400).json({ error: 'Service No is required' });
     }
 
     const [result] = await pool.query(`
       INSERT INTO py_cumulated
-        (Empl_ID,
+        (EmpL_ID,
         procmth,
         taxabletodate,
         taxtodate,
@@ -68,12 +68,12 @@ router.post('/create', verifyToken, async(req, res) => {
         VALUES
         (?, ?, ?, ?, ?, ?, ?, ?)`
         ,
-      [Empl_ID, procmth, taxabletodate, taxtodate, nettodate, grosstodate, createdby, datecreated]
+      [EmpL_ID, procmth, taxabletodate, taxtodate, nettodate, grosstodate, createdby, datecreated]
     );
 
     res.status(201).json({
         message: 'Cummulative created sucessfully',
-        Empl_ID
+        EmpL_ID
     });
   } catch (err) {
     console.error('Error creating cummulative:', err);
@@ -82,8 +82,8 @@ router.post('/create', verifyToken, async(req, res) => {
 });
 
 //UPDATE
-router.put('/:Empl_ID', verifyToken, async(req, res) => {
-    const {Empl_ID} = req.params;
+router.put('/:EmpL_ID', verifyToken, async(req, res) => {
+    const {EmpL_ID} = req.params;
     const {
     taxabletodate,
     taxtodate,
@@ -93,7 +93,7 @@ router.put('/:Empl_ID', verifyToken, async(req, res) => {
 
   try{
     // Check if SErvice No. exists
-    const [existingRows] = await pool.query('SELECT Empl_ID FROM py_cummulative WHERE Empl_ID = ?', [Empl_ID]);
+    const [existingRows] = await pool.query('SELECT EmpL_ID FROM py_cumulated WHERE EmpL_ID = ?', [EmpL_ID]);
     if (existingRows.length === 0) {
       return res.status(404).json({ error: 'Service No. not found' });
     }
@@ -102,8 +102,8 @@ router.put('/:Empl_ID', verifyToken, async(req, res) => {
     const params = [];
     const sets = [];
 
-    if (typeof Empl_ID !== 'undefined' && Empl_ID !== null) {
-      sets.push('Empl_ID = ?'); params.push(Empl_ID);
+    if (typeof EmpL_ID !== 'undefined' && EmpL_ID !== null) {
+      sets.push('EmpL_ID = ?'); params.push(EmpL_ID);
     }
     if (typeof taxabletodate !== 'undefined' && taxabletodate !== null) {
       sets.push('taxabletodate = ?'); params.push(taxabletodate);
@@ -123,13 +123,13 @@ router.put('/:Empl_ID', verifyToken, async(req, res) => {
     }
 
     // Add PaymentType for WHERE clause
-    params.push(Empl_ID);
+    params.push(EmpL_ID);
 
-    const sql = `UPDATE py_cumulated SET ${sets.join(', ')} WHERE Empl_ID = ?`;
+    const sql = `UPDATE py_cumulated SET ${sets.join(', ')} WHERE EmpL_ID = ?`;
     const [result] = await pool.query(sql, params);
 
     // Get updated record
-    const [updatedRows] = await pool.query('SELECT * FROM py_cumulated WHERE Empl_ID = ?', [Empl_ID]);
+    const [updatedRows] = await pool.query('SELECT * FROM py_cumulated WHERE EmpL_ID = ?', [EmpL_ID]);
     res.json({
       message: 'Cummulative updated successfully',
       cummulative: updatedRows[0]
@@ -142,11 +142,11 @@ router.put('/:Empl_ID', verifyToken, async(req, res) => {
 });
 
 //DELETE
-router.delete('/:Empl_ID', verifyToken, async(req, res) => {
-  const { Empl_ID } = req.params;
+router.delete('/:EmpL_ID', verifyToken, async(req, res) => {
+  const { EmpL_ID } = req.params;
   
   try {
-    const [result] = await pool.query('DELETE FROM py_cumulated WHERE Empl_ID = ?', [Empl_ID]);
+    const [result] = await pool.query('DELETE FROM py_cumulated WHERE EmpL_ID = ?', [EmpL_ID]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'SErvice No. not found' });
@@ -154,7 +154,7 @@ router.delete('/:Empl_ID', verifyToken, async(req, res) => {
 
     res.json({ 
       message: 'Cummulative deleted successfully',
-      Empl_ID: Empl_ID 
+      EmpL_ID: EmpL_ID 
     });
     
   } catch{

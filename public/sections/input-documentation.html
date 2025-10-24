@@ -415,7 +415,16 @@
   function renderEmployeeDropdown(employees, containerElement) {
     containerElement.innerHTML = '';
     
-    employees.forEach(emp => {
+    // Filter employees based on which dropdown this is
+    let filteredEmployees = employees;
+    if (containerElement === docNameDropdownItems) {
+      // Main dropdown: only show employees with documentation records
+      filteredEmployees = employees.filter(emp => 
+        allDocumentation.some(doc => doc.doc_numb === emp.Empl_ID)
+      );
+    }
+    
+    filteredEmployees.forEach(emp => {
       const div = document.createElement('div');
       div.className = 'dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100';
       div.setAttribute('data-value', emp.Empl_ID);
@@ -436,11 +445,29 @@
           newNameInput.value = text;
           newNameId.value = value;
           newNameDropdown.classList.add('hidden');
+          prefillNewFormIfExists(value);
         }
       });
       
       containerElement.appendChild(div);
     });
+  }
+  
+  function prefillNewFormIfExists(emplId) {
+    const existingDoc = allDocumentation.find(doc => doc.doc_numb === emplId);
+    
+    if (existingDoc) {
+      document.getElementById("newYear").value = existingDoc.doc_year || '';
+      document.getElementById("newMonth").value = existingDoc.doc_month || '';
+      document.getElementById("newRef").value = existingDoc.doc_ref || '';
+      document.getElementById("newComments").value = existingDoc.doc_remark || '';
+    } else {
+      // Clear fields if no existing record
+      document.getElementById("newYear").value = '';
+      document.getElementById("newMonth").value = '';
+      document.getElementById("newRef").value = '';
+      document.getElementById("newComments").value = '';
+    }
   }
 
   function filterDropdown(searchText, dropdownItems) {

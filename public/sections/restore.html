@@ -67,11 +67,49 @@
   closeBtn.addEventListener("click", closeModal);
   cancelBtn.addEventListener("click", closeModal);
 
+  // Frontend: /public/js/payroll-calculations.js
+  async function runRestore() {
+    // Confirmation dialog
+    if (!confirm('⚠️ Are you SURE you want to restore from backup?\n\nThis will undo all calculations!')) {
+      return;
+    }
+
+    try {
+      showNotification('Restoring from backup...', 'info');
+      
+      const response = await fetch('/restore', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          year: 2025,
+          month: 10
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        showNotification('✅ Backup restored. You can now re-run calculations.', 'success');
+      } else {
+        showNotification('❌ Restore failed: ' + result.message, 'error');
+      }
+    } catch (error) {
+      showNotification('❌ Error: ' + error.message, 'error');
+    }
+  }
+
+  //document.getElementById('btnRestore').addEventListener('click', runRestore);
+
   // Confirm recall (simulate)
   confirmBtn.addEventListener("click", () => {
     statusEl.classList.remove("hidden");
     statusEl.textContent = "Restoring payroll files...";
     confirmBtn.disabled = true;
+
+    runRestore();
 
     setTimeout(() => {
       statusEl.textContent = "✅ Payroll files successfully restored.";

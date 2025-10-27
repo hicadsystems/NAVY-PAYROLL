@@ -1,7 +1,29 @@
 <!-- BATCH UPLOAD SECTION -->
 <div id="section-batch" class="p-6">
-  <div class="flex flex-wrap justify-end">
+  <div class="flex flex-wrap gap-2 justify-end">
+    <!-- Search Bar -->
+    <div class="relative">
+      <input 
+        type="text" 
+        id="tableSearchInput"
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 pl-10"
+        placeholder="Search by Service No, Type, or Pay Indicator..."
+        autocomplete="off">
+      <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </span>
+      <button id="clearSearchBtn" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 hidden">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
     <button id="addBatch" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Upload New</button>
+    <button id="generateReportBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+      <i class="fas fa-file-alt mr-2"></i>Generate Report
+    </button>
   </div>
 
   <div class="flex flex-col items-center">
@@ -142,6 +164,7 @@
 </div>
 
 <script>
+(function () {
   // Configuration
   const API_BASE_URL = 'batchpayded';
   let uploadedData = [];
@@ -177,6 +200,7 @@
   let recordsPerPage = 10;
   let totalRecords = 0;
   let totalPages = 1;
+  let currentSearchQuery = '';
 
   // Pagination elements
   const prevPageBtn = document.getElementById('prevPage');
@@ -187,16 +211,96 @@
   const startRecordSpan = document.getElementById('startRecord');
   const endRecordSpan = document.getElementById('endRecord');
   const totalRecordsSpan = document.getElementById('totalRecords');
+
+  // Table search elements
+  const tableSearchInput = document.getElementById('tableSearchInput');
+  const clearSearchBtn = document.getElementById('clearSearchBtn');
   
   let pendingAction = null;
   let targetRow = null;
+  let lookupMaps = {};
+
+  //load dropdown
+  async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/reference/${endpoint}`, {   
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        }
+      });
+      const data = await response.json();
+      
+      // BUILD THE LOOKUP MAP FIRST
+      lookupMaps[endpoint] = Object.fromEntries(
+        data.map(item => [item[valueField], item[textField]])
+      );
+      
+      //console.log(`Loaded ${endpoint}:`, lookupMaps[endpoint]); // Debug log
+      
+      // THEN POPULATE THE DROPDOWN IF IT EXISTS
+      const dropdown = document.getElementById(elementId);
+      if (dropdown) {
+        dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+        data.forEach(item => {
+          const option = document.createElement("option");
+          option.value = item[valueField];
+          option.textContent = item[textField];
+          dropdown.appendChild(option);
+        });
+      }
+      
+      return data;
+    } catch (err) {
+      console.error(`Failed to load ${endpoint}:`, err);
+      return [];
+    }
+  }
+
+  async function loadAllDropdowns() {
+    try {
+      await loadDropdown("elementtype","type", "PaymentType", "elmDesc", "Select Type");
+      await loadDropdown("payindicator","payind", "ind", "inddesc", "Select Payment Indicator");
+      
+      //console.log('All dropdowns loaded. Final lookupMaps:', lookupMaps);
+    } catch (error) {
+      console.error('Error loading dropdowns:', error);
+    }
+  }
+
+  function getValueField(endpoint) {
+    const fieldMap = {
+      'payindicator': 'ind'
+    };
+    return fieldMap[endpoint] || 'code';
+  }
+
+  function getTextField(endpoint) {
+    const fieldMap = {
+      'payindicator': 'inddesc'
+    }
+    return fieldMap[endpoint] || 'name';
+  }
+
+  function resolveName(code, endpoint) {
+    if (!code) return 'N/A';
+    return lookupMaps[endpoint]?.[code] || code;
+  }
 
   //fetch payded
   async function fetchAllDeductions() {
     try {
       const token = localStorage.getItem('token');
 
-      const response = await fetch(`payded/active/all?page=${currentPage}&limit=${recordsPerPage}`, {
+      let url = `payded/active/all?page=${currentPage}&limit=${recordsPerPage}`;
+
+      if (currentSearchQuery) {
+        url += `&search=${encodeURIComponent(currentSearchQuery)}`;
+      }
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'content-type': 'application/json',
@@ -422,9 +526,9 @@
       row.innerHTML = `
         <td class="py-2 px-4 border">${item.Empl_id}</td>
         <td class="py-2 px-4 border">${item.type}</td>
-        <td class="py-2 px-4 border">₦${Number(item.amount_to_deduct || 0).toLocaleString()}</td>
-        <td class="py-2 px-4 border">₦${Number(item.current_total || 0).toLocaleString()}</td>
-        <td class="py-2 px-4 border">${item.indicator || 'payindicator'}</td>
+        <td class="py-2 px-4 border">₦${Number(item.amount_payable || 0).toLocaleString()}</td>
+        <td class="py-2 px-4 border">₦${Number(item.amount_to_date || 0).toLocaleString()}</td>
+        <td class="py-2 px-4 border">${resolveName(item.indicator, 'payindicator')}</td>
         <td class="py-2 px-4 border">${item.months_remaining || '-'}</td>
       `;
       tableBody.appendChild(row);
@@ -444,6 +548,26 @@
 
     prevPageBtn.disabled = currentPage <= 1;
     nextPageBtn.disabled = currentPage >= totalPages;
+
+    // Show/hide clear button based on search query
+    if (currentSearchQuery) {
+      clearSearchBtn.classList.remove('hidden');
+    } else {
+      clearSearchBtn.classList.add('hidden');
+    }
+  }
+
+  function performSearch() {
+    currentPage = 1; // Reset to first page when searching
+    fetchAllDeductions();
+  }
+
+  function clearSearch() {
+    currentSearchQuery = '';
+    tableSearchInput.value = '';
+    clearSearchBtn.classList.add('hidden');
+    currentPage = 1;
+    fetchAllDeductions();
   }
 
   prevPageBtn.addEventListener('click', () => {
@@ -471,6 +595,31 @@
     batchForm.reset();
   });
 
+  // TABLE SEARCH FUNCTIONALITY
+  let searchTimeout;
+  tableSearchInput.addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    const query = e.target.value.trim();
+    
+    // Debounce search by 500ms
+    searchTimeout = setTimeout(() => {
+      currentSearchQuery = query;
+      performSearch();
+    }, 500);
+  });
+
+  // Clear search button
+  clearSearchBtn.addEventListener('click', clearSearch);
+
+  // Allow Enter key to trigger immediate search
+  tableSearchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      clearTimeout(searchTimeout);
+      currentSearchQuery = e.target.value.trim();
+      performSearch();
+    }
+  });
+
   // Confirm modal helper
   function showConfirm(title, message) {
     document.getElementById("confirmTitle").textContent = title;
@@ -486,5 +635,231 @@
     batchDiv.classList.add("hidden");
   });
 
-  fetchAllDeductions();
+  //generate reports functionality
+  async function generateReport() {
+    const REPORT_API_URL = `/payded/report-all`; 
+
+    let fullData;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(REPORT_API_URL, {   
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        }
+      });
+      const result = await response.json();
+
+      if (!result.success) {
+        showErrors('Failed to load report data: ' + result.message);
+        return;
+      }
+      
+      fullData = result.data; 
+
+    } catch (error) {
+      console.error('Error fetching report data:', error);
+      showErrors('An error occurred while fetching report data.');
+      return;
+    }
+    
+    if (!fullData || fullData.length === 0) {
+      showErrors('No records found for the report.');
+      return;
+    }
+
+    // PRE-RESOLVE all indicator names BEFORE creating the print window
+    const data = fullData.map(item => ({
+      ...item,
+      indicatorName: resolveName(item.indicator, 'payindicator') // Store resolved name
+    }));
+
+    const now = new Date();
+    const dateStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    const printWindow = window.open('', '_blank');
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Payments/Deductions Report</title>
+        <style>
+          body { 
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #333;
+          }
+          .report-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #1a56db;
+          }
+          .report-title {
+            font-size: 24px;
+            color: #1a56db;
+            margin: 10px 0;
+          }
+          .date-time {
+            font-size: 14px;
+            color: #666;
+            margin: 10px 0;
+          }
+          .element-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 11px;
+          }
+          .element-table th {
+            background-color: #f3f4f6;
+            padding: 6px;
+            text-align: left;
+            border: 1px solid #e5e7eb;
+          }
+          .element-table td {
+            padding: 6px;
+            border: 1px solid #e5e7eb;
+          }
+          .amount {
+            text-align: right;
+          }
+          .report-footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 15px;
+          }
+          .status-active {
+            color: green;
+            font-weight: bold;
+          }
+          .status-inactive {
+            color: red;
+            font-weight: bold;
+          }
+          @media print {
+            .element-table th {
+              background-color: #f3f4f6 !important;
+              -webkit-print-color-adjust: exact;
+            }
+            .sn-column {
+              width: 40px;
+              text-align: center;
+              font-weight: bold;
+              background-color: #f3f4f6;
+              vertical-align: middle;
+              border-right: 2px solid #1a56db;
+            }
+            .element-section {
+              margin-bottom: 30px;
+              padding-bottom: 10px;
+              border-bottom: 1px dashed #e5e7eb;
+            }
+            .combined-tables {
+              border: 1px solid #e5e7eb;
+              margin-bottom: 20px;
+            }
+            .element-table {
+              margin-bottom: 0;
+              border: none;
+            }
+            .element-table:first-child {
+              border-bottom: 2px solid #e5e7eb;
+            }
+        </style>
+      </head>
+      <body>
+        <div class="report-header">
+          <div class="report-title">Payments/Deductions Report</div>
+          <div class="date-time">Generated on: ${dateStr} at ${timeStr}</div>
+        </div>
+
+      ${data.map((item, index) => `
+        <div class="combined-tables">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td class="sn-column" rowspan="4" style="width: 40px;">
+                ${index + 1}
+              </td>
+              <td style="padding: 0;">
+                <!-- First table -->
+                <table class="element-table" style="width: 100%;">
+                  <thead>
+                    <tr>
+                      <th>Service No</th>
+                      <th>Type</th>
+                      <th>Amount Payable</th>
+                      <th>Amount To Date</th>
+                      <th>Amount</th>
+                      <th>Pay Indicator</th>
+                      <th>Months R</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="py-2 px-4 border">${item.Empl_id}</td>
+                      <td class="py-2 px-4 border">${item.type}</td>
+                      <td class="py-2 px-4 border">₦${Number(item.amount_payable || 0).toLocaleString()}</td>
+                      <td class="py-2 px-4 border">₦${Number(item.amount_to_date || 0).toLocaleString()}</td>
+                      <td class="py-2 px-4 border">₦${Number(item.amt || 0).toLocaleString()}</td>
+                      <td class="py-2 px-4 border">${item.indicatorName}</td>
+                      <td class="py-2 px-4 border">${item.months_remaining || '-'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </div>
+      `).join('')}
+
+      <div class="report-footer">
+        <p>Total Records: ${data.length}</p>
+        <p>Generated by: ${localStorage.getItem('full_name') || 'System User'}</p>
+        <p>*** End of Report ***</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+
+    printWindow.onload = function() {
+      printWindow.print();
+    };
+  }
+  
+  /*function generateReport() {
+    const token = localStorage.getItem('token');
+    // Opens a new tab which triggers the file download automatically
+    window.open(`/puppeteer/report/pdf?token=${token}`, '_blank');
+  }*/
+
+  // Add event listener to generate report button
+  document.getElementById('generateReportBtn').addEventListener('click', generateReport);
+
+  (async function init() {
+    try {
+      //console.log('Starting initialization...');
+      
+      // Load dropdowns FIRST and WAIT for them
+      await loadAllDropdowns();
+      //console.log('Dropdowns loaded, lookupMaps:', lookupMaps);
+      
+      // Then load deductions
+      await fetchAllDeductions();
+      
+      //console.log('Initialization complete');
+    } catch (error) {
+      //console.error('Initialization error:', error);
+    }
+  })();
+})();
 </script>

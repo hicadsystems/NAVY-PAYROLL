@@ -1,3 +1,8 @@
+//Dashboard
+const statsRoutes = require('./dashboard/stats');
+
+
+
 //administration
 const usersRoutes = require('./administration/users');
 const rolesRoutes = require('./administration/roles');
@@ -108,6 +113,9 @@ const paydedReportRoutes = require('./helpers/puppeteer-gen-reports/paydedReport
 
 
 module.exports = (app) => {
+    //dashboard
+    app.use('/stats', statsRoutes);
+
     //administration
     app.use('/api/users', usersRoutes);
     app.use('/', rolesRoutes);

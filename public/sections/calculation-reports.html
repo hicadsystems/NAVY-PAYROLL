@@ -1,0 +1,62 @@
+<script>
+async function showCalculationReports() {
+  try {
+    const response = await fetch(`/payrollcalculation/2025/10/1`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    const result = await response.json();
+    
+    if (result.success && result.anomalies.length > 0) {
+      // Show in modal/table
+      displayAnomaliesModal(result.anomalies);
+    } else {
+      showModal('No anomalies found. Payroll looks good!', 'success');
+    }
+  } catch (error) {
+    showModal('❌ Error: ' + error.message, 'error');
+  }
+}
+
+function displayAnomaliesModal(anomalies) {
+  // Create table
+  let html = `
+    <div class="modal">
+      <h2>⚠️ Issues Found (${anomalies.length})</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Severity</th>
+            <th>Issue</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  anomalies.forEach(anomaly => {
+    html += `
+      <tr>
+        <td>${anomaly.empl_id} - ${anomaly.employee_name}</td>
+        <td class="${anomaly.severity}">${anomaly.severity}</td>
+        <td>${anomaly.comment_text}</td>
+        <td><button onclick="resolveAnomaly(${anomaly.comment_id})">Resolve</button></td>
+      </tr>
+    `;
+  });
+  
+  html += `
+        </tbody>
+      </table>
+      <button onclick="closeModal()">Close</button>
+    </div>
+  `;
+  
+  document.getElementById('modalContainer').innerHTML = html;
+  document.getElementById('modalContainer').style.display = 'block';
+}
+</script>

@@ -1165,6 +1165,70 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = NavigationSystem;
 }
 
+// Dashboard stats update
+async function updateDashboardStats() {
+  try {
+    // Get payroll status
+    const response = await fetch('stats/2025/10', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    const result = await response.json();
+    
+    if (result.success) {
+      // Update stats cards
+      document.getElementById('pendingApproval').textContent = result.data.total_employees || '0';
+      document.getElementById('nominalProcessed').textContent = result.data.total_employees || '0';
+      
+      // Update notifications based on status
+      updateNotifications(result.data);
+    }
+  } catch (error) {
+    console.error('Error updating dashboard:', error);
+  }
+}
+
+function updateNotifications(data) {
+  const notificationsList = document.getElementById('notificationsList');
+  
+  let html = '';
+  
+  // Check for anomalies
+  if (data.unresolved_issues > 0) {
+    html += `
+      <div class="notification warning" onclick="showCalculationReports()">
+        <i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i> ${data.unresolved_issues} issues need review
+      </div>
+    `;
+  }
+  
+  // Check approval status
+  if (data.stage === 'CALCULATED') {
+    html += `
+      <div class="notification info">
+        <i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i> Payroll ready for approval
+      </div>
+    `;
+  }
+  
+  // Check if approved
+  if (data.stage === 'APPROVED') {
+    html += `
+      <div class="notification success">
+        <i class="fas fa-check-circle text-success" style="font-size: 20px"></i> Payroll approved by ${data.approved_by}
+      </div>
+    `;
+  }
+  
+  notificationsList.innerHTML = html;
+}
+
+// Auto-refresh every 30 seconds
+//setInterval(updateDashboardStats, 30000);
+
 function logout() {
   // Clear user session data
   sessionStorage.clear();

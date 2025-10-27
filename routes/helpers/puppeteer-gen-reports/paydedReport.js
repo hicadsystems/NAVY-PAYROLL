@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../../../config/db'); // mysql2 pool
 const verifyToken = require('../../../middware/authentication');
-const puppeteer = require('puppeteer'); 
+//const puppeteer = require('puppeteer'); 
 
 // Utility to format currency (copied from your frontend)
 const formatCurrency = (amount) => {

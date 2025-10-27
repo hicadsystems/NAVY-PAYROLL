@@ -62,21 +62,70 @@
 
 <script>
   // Autofill current month and year
-    const processingMonthInput = document.getElementById("processingMonth");
-    const processingYearInput = document.getElementById("processingYear");
+  const processingMonthInput = document.getElementById("processingMonth");
+  const processingYearInput = document.getElementById("processingYear");
 
-    const now = new Date();
-    const month = now.toLocaleString("default", { month: "long" });
-    const year = now.getFullYear();
+  const now = new Date();
+  const month = now.toLocaleString("default", { month: "long" });
+  const year = now.getFullYear();
 
-    // Fill into two separate readonly inputs
-    processingMonthInput.value = month;
-    processingYearInput.value = year;
+  // Fill into two separate readonly inputs
+  processingMonthInput.value = month;
+  processingYearInput.value = year;
 
   const calcModal = document.getElementById("calcModal");
   const successModal = document.getElementById("calcSuccessModal");
   const progressBar = document.getElementById("progressBar");
   const progressText = document.getElementById("progressText");
+
+  async function runPayrollCalculation() {
+    try {
+      // Show progress modal
+      showProgressModal('Calculating payroll...');
+      
+      const response = await fetch('/calculate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          year: 2025,
+          month: 10,
+          payrollclass: '1',
+          globalcoy: 'NAVY',
+          salscale: 'Yes'
+        })
+      });
+
+      const result = await response.json();
+      
+      hideProgressModal();
+      
+      if (result.success) {
+        // Update dashboard stats
+        document.getElementById('pendingApproval').textContent = result.data.employees_processed;
+        
+        // Show success with time taken
+        showNotification(
+          `✅ Payroll calculated successfully!\n` +
+          `Employees: ${result.data.employees_processed}\n` +
+          `Time: ${result.data.time_seconds} seconds`, 
+          'success'
+        );
+        
+        // Show anomalies if any
+        await checkForAnomalies();
+      } else {
+        showNotification('❌ Calculation failed: ' + result.message, 'error');
+      }
+    } catch (error) {
+      hideProgressModal();
+      showNotification('❌ Error: ' + error.message, 'error');
+    }
+  }
+
+  //document.getElementById('btnCalculate').addEventListener('click', runPayrollCalculation);
 
   // Handle calculate button
   document.getElementById("calculateBtn").addEventListener("click", () => {
@@ -85,6 +134,8 @@
     let progress = 0;
     progressBar.style.width = "0%";
     progressText.textContent = "Starting calculation...";
+
+    runPayrollCalculation();
 
     const interval = setInterval(() => {
       progress += 10;
@@ -96,7 +147,7 @@
         calcModal.classList.add("hidden");
         successModal.classList.remove("hidden");
       }
-    }, 300); // speed (300ms per step = 3s total)
+    }, 300); 
   });
   
   const monthNames = [

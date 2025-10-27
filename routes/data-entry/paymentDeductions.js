@@ -11,15 +11,34 @@ router.get('/active/all', verifyToken, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
+    const searchQuery = req.query.search || '';
 
-    // Get total count first
-    const [countResult] = await pool.query(
-      `SELECT COUNT(*) as total FROM py_payded p`
-    );
+    // Build WHERE clause for search
+    let whereClause = '';
+    let queryParams = [];
+    
+    if (searchQuery) {
+      whereClause = `WHERE (
+        p.Empl_id LIKE ? OR 
+        p.type LIKE ? OR 
+        pi.inddesc LIKE ?
+      )`;
+      const searchPattern = `%${searchQuery}%`;
+      queryParams = [searchPattern, searchPattern, searchPattern];
+    }
+
+    // Get total count with search filter
+    const countQuery = `
+      SELECT COUNT(*) as total 
+      FROM py_payded p
+      LEFT JOIN py_payind pi ON p.payind = pi.ind
+      ${whereClause}
+    `;
+    const [countResult] = await pool.query(countQuery, queryParams);
     const totalRecords = countResult[0].total;
     const totalPages = Math.ceil(totalRecords / limit);
 
-    // Modified query with pagination
+    // Modified query with search and pagination
     const query = `
       SELECT 
         p.Empl_id,
@@ -37,11 +56,14 @@ router.get('/active/all', verifyToken, async (req, res) => {
         p.datecreated
       FROM py_payded p
       LEFT JOIN py_payind pi ON p.payind = pi.ind
+      ${whereClause}
       ORDER BY p.Empl_id, p.type
       LIMIT ? OFFSET ?
     `;
 
-    const [rows] = await pool.query(query, [limit, offset]);
+    // Add limit and offset to query params
+    const finalParams = [...queryParams, limit, offset];
+    const [rows] = await pool.query(query, finalParams);
 
     res.json({
       success: true,
@@ -68,15 +90,11 @@ router.get('/active/all', verifyToken, async (req, res) => {
 // NEW: GET ALL ACTIVE DEDUCTIONS FOR REPORT (NO LIMITS)
 router.get('/report-all', verifyToken, async (req, res) => {
   try {
-    // NOTE: We intentionally ignore page/limit/offset here to fetch ALL records.
-    
-    // 1. Get total count (Still useful for the frontend report footer)
     const [countResult] = await pool.query(
       `SELECT COUNT(*) as total FROM py_payded p`
     );
     const totalRecords = countResult[0].total;
 
-    // 2. Query to get ALL records (NO LIMIT/OFFSET)
     const query = `
       SELECT 
         p.Empl_id,
@@ -95,15 +113,15 @@ router.get('/report-all', verifyToken, async (req, res) => {
       FROM py_payded p
       LEFT JOIN py_payind pi ON p.payind = pi.ind
       ORDER BY p.Empl_id, p.type
-    `; // *** LIMIT ? OFFSET ? REMOVED HERE ***
+    `;
 
-    const [rows] = await pool.query(query); // No array of parameters needed
+    const [rows] = await pool.query(query);
 
     res.json({
         success: true,
         data: rows,
         pagination: {
-            totalRecords: totalRecords,
+          totalRecords: totalRecords,
         }
       });
     } catch (error) {
@@ -123,22 +141,38 @@ router.get('/active/all-variations', verifyToken, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
+    const searchQuery = req.query.search || '';
 
-    // Get total count (only records with valid amtad)
-    const [countResult] = await pool.query(
-      `
+    // Build WHERE clause for search
+    let searchClause = '';
+    let queryParams = [];
+
+    if (searchQuery) {
+      searchClause = `AND (
+        p.Empl_id LIKE ? OR 
+        p.type LIKE ?
+      )`;
+      const searchPattern = `%${searchQuery}%`;
+      queryParams = [searchPattern, searchPattern];
+    }
+
+    // Base WHERE clause - filter only variation records (non-numeric amtad)
+    const baseWhere = `
+      WHERE p.amtad IS NOT NULL 
+        AND TRIM(p.amtad) != ''
+        AND TRIM(p.amtad) NOT IN ('N/A', 'n/a', 'null', '0', '0.0', '0.00')
+        AND TRIM(p.amtad) REGEXP '[^0-9.,]'
+    `;
+
+    // Get total count with search filter
+    const countQuery = `
       SELECT COUNT(*) as total 
-      FROM py_payded 
-      WHERE amtad IS NOT NULL 
-        AND TRIM(amtad) != ''
-        AND TRIM(amtad) NOT IN ('N/A', 'n/a', 'null', '0', '0.0', '0.00')
-        AND (
-          CAST(REPLACE(TRIM(amtad), ',', '') AS DECIMAL(15,2)) IS NULL
-          OR TRIM(amtad) LIKE '%[^0-9.,]%'
-          OR TRIM(amtad) IN ('Add', 'Deduct', 'String')
-        )
-      `
-    );
+      FROM py_payded p
+      ${baseWhere}
+      ${searchClause}
+    `;
+
+    const [countResult] = await pool.query(countQuery, queryParams);
     const totalRecords = countResult[0].total;
     const totalPages = Math.ceil(totalRecords / limit);
 
@@ -160,19 +194,14 @@ router.get('/active/all-variations', verifyToken, async (req, res) => {
         p.datecreated
       FROM py_payded p
       LEFT JOIN py_payind pi ON p.payind = pi.ind
-      WHERE p.amtad IS NOT NULL
-        AND TRIM(p.amtad) != ''
-        AND TRIM(p.amtad) NOT IN ('N/A', 'n/a', 'null', '0', '0.0', '0.00')
-        AND (
-          CAST(REPLACE(TRIM(p.amtad), ',', '') AS DECIMAL(15,2)) IS NULL
-          OR TRIM(p.amtad) LIKE '%[^0-9.,]%'
-          OR TRIM(p.amtad) IN ('Add', 'Deduct', 'String')
-        )
+      ${baseWhere}
+      ${searchClause}
       ORDER BY p.Empl_id, p.type
       LIMIT ? OFFSET ?
     `;
 
-    const [rows] = await pool.query(query, [limit, offset]);
+    const finalParams = [...queryParams, limit, offset];
+    const [rows] = await pool.query(query, finalParams);
 
     res.json({
       success: true,
@@ -187,10 +216,72 @@ router.get('/active/all-variations', verifyToken, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching active deductions:', error);
+    console.error('Error fetching active variations:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching active deductions',
+      message: 'Error fetching active variations',
+      error: error.message
+    });
+  }
+});
+
+//// GET ALL ACTIVE VARIATIONS REPORTS
+router.get('/report-all-variations', verifyToken, async (req, res) => {
+  try {
+    // Base WHERE clause - filter only variation records (non-numeric amtad)
+    const baseWhere = `
+      WHERE p.amtad IS NOT NULL 
+        AND TRIM(p.amtad) != ''
+        AND TRIM(p.amtad) NOT IN ('N/A', 'n/a', 'null', '0', '0.0', '0.00')
+        AND TRIM(p.amtad) REGEXP '[^0-9.,]'
+    `;
+
+    // Get total count
+    const countQuery = `
+      SELECT COUNT(*) as total 
+      FROM py_payded p
+      ${baseWhere}
+    `;
+
+    const [countResult] = await pool.query(countQuery);
+    const totalRecords = countResult[0].total;
+
+    // Get all results for report
+    const query = `
+      SELECT 
+        p.Empl_id,
+        p.type,
+        p.mak1 AS delete_maker_annual,
+        p.amtp AS amount_payable,
+        p.mak2 AS delete_maker_cumulative,
+        p.amt,
+        p.amtad AS amount_already_deducted,
+        p.amttd AS amount_to_date,
+        p.payind AS indicator,
+        pi.inddesc AS indicator_description,
+        p.nomth AS months_remaining,
+        p.createdby,
+        p.datecreated
+      FROM py_payded p
+      LEFT JOIN py_payind pi ON p.payind = pi.ind
+      ${baseWhere}
+      ORDER BY p.Empl_id, p.type
+    `;
+
+    const [rows] = await pool.query(query);
+
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        totalRecords: totalRecords,
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching active variations:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching active variations',
       error: error.message
     });
   }
@@ -444,7 +535,6 @@ router.post('/variation', verifyToken, async (req, res) => {
     const {
       Empl_id,
       type,
-      mak1,
       amt,
       amtad,
     } = req.body;
@@ -459,7 +549,7 @@ router.post('/variation', verifyToken, async (req, res) => {
       });
     }
 
-    // Check if deduction already exists
+    // Check if variation already exists
     const checkQuery = `
       SELECT * FROM py_payded 
       WHERE Empl_id = ? AND type = ?
@@ -469,7 +559,7 @@ router.post('/variation', verifyToken, async (req, res) => {
     if (existing.length > 0) {
       return res.status(409).json({
         success: false,
-        message: 'Deduction already exists for this employee and type'
+        message: 'Variation already exists for this employee and type'
       });
     }
 
@@ -477,13 +567,12 @@ router.post('/variation', verifyToken, async (req, res) => {
       INSERT INTO py_payded (
         Empl_id, type, amt, 
         amtad, createdby, datecreated
-      ) VALUES (?, ?, ?, ?, ?, ?, 0.00, 0.00, ?, ?, ?, NOW())
+      ) VALUES (?, ?, ?, ?, ?, NOW())
     `;
 
     const [result] = await pool.query(query, [
       Empl_id,
       type,
-      mak1,
       amt,
       amtad,
       createdby
@@ -497,7 +586,7 @@ router.post('/variation', verifyToken, async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Deduction created successfully',
+      message: 'Variation created successfully',
       data: newRecord[0]
     });
   } catch (error) {
@@ -667,14 +756,14 @@ router.put('/variation/:emplId/:type',  verifyToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Deduction updated successfully',
+      message: 'Variation updated successfully',
       data: updated[0]
     });
   } catch (error) {
-    console.error('Error updating deduction:', error);
+    console.error('Error updating Variation:', error);
     res.status(500).json({
       success: false,
-      message: 'Error updating deduction',
+      message: 'Error updating Variation',
       error: error.message
     });
   }

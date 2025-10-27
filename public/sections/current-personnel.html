@@ -903,6 +903,7 @@ class PersonnelManager {
   reinitialize() {
     this.setupEventListeners();
     this.renderTable();
+    this.loadAllDropdowns();
   }
 }
 
@@ -921,8 +922,8 @@ async function initializePersonnelManager(sectionType = null) {
       personnelManager = window.personnelManager;
     }
 
-    // Check if we're returning from navigation (Check sessionStorage now)
-    const isReturning = localStorage.getItem('navigatedFromCurrentPersonnel');
+    // Check if we're returning from navigation
+    const isReturning = localStorage.getItem('navigatedFromCurrentPersonnel') === 'true';
     const savedPage = localStorage.getItem('currentPersonnelPage');
     const savedType = localStorage.getItem('currentPersonnelType');
     
@@ -931,14 +932,16 @@ async function initializePersonnelManager(sectionType = null) {
     if (isReturning === 'true' && savedPage && savedType) {
       console.log(`🟢 Restoring to page ${savedPage} with type ${savedType}`);
       
-      // Clear the flags first
+      // Restore the saved page FIRST
+      await personnelManager.loadPersonnelData(savedType, parseInt(savedPage));
+      personnelManager.setupEventListeners();
+
+      console.log('✅ State restored successfully');
+      
+      // NOW clear the flags after restoration is complete
       localStorage.removeItem('navigatedFromCurrentPersonnel');
       localStorage.removeItem('currentPersonnelPage');
       localStorage.removeItem('currentPersonnelType');
-      
-      // Restore the saved page
-      await personnelManager.loadPersonnelData(savedType, parseInt(savedPage));
-      personnelManager.setupEventListeners();
       
       console.log('✅ State restored successfully');
       return;
@@ -949,6 +952,7 @@ async function initializePersonnelManager(sectionType = null) {
     
     let type = sectionType;
     
+    // Auto-detect personnel type from DOM
     if (!type) {
       const currentSection = document.querySelector('[data-personnel-type]');
       if (currentSection) {
@@ -967,6 +971,7 @@ async function initializePersonnelManager(sectionType = null) {
       }
     }
     
+    // Fallback detection
     if (!type) {
       const pageTitle = document.title.toLowerCase();
       const hash = window.location.hash.toLowerCase();

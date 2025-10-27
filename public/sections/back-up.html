@@ -79,11 +79,44 @@
   closeBtn.addEventListener("click", closeModal);
   cancelBtn.addEventListener("click", closeModal);
 
+  async function runBackup() {
+    try {
+      // Show loading
+      showNotification('Processing backup...', 'info');
+      
+      const response = await fetch('/backup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        showNotification('Backup completed successfully!', 'success');
+        updateDashboardStats(); // Refresh dashboard
+      } else {
+        showNotification('❌ Backup failed: ' + result.message, 'error');
+      }
+    } catch (error) {
+      showNotification('❌ Error: ' + error.message, 'error');
+    }
+  }
+
+  // Wire up button
+  //document.getElementById('btnBackup').addEventListener('click', runBackup);
+
   // Confirm backup (simulate)
   confirmBtn.addEventListener("click", () => {
     statusEl.classList.remove("hidden");
     statusEl.textContent = "Backing up payroll files...";
     confirmBtn.disabled = true;
+
+    runBackup();
 
     setTimeout(() => {
       statusEl.textContent = "✅ Payroll files successfully backed up.";

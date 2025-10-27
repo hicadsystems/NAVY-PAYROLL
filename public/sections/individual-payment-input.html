@@ -2,6 +2,20 @@
 
   <div class="flex flex-wrap gap-2 items-center justify-between mb-4">
     <div>
+      <!-- Search Input -->
+      <div class="relative">
+        <input 
+          type="text" 
+          id="tableSearchInput" 
+          placeholder="Search by Service No or Type..." 
+          class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 w-64"
+        />
+        <button id="clearSearchBtn" class="hidden absolute right-2 top-2 text-gray-400 hover:text-gray-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
     </div>
 
     <div class="flex flex-wrap gap-2">
@@ -64,15 +78,43 @@
           <th class="py-2 px-4 border text-left">Service No</th>
           <th class="py-2 px-4 border text-left">Type</th>
           <th class="py-2 px-4 border text-left">Amount</th>
-          <th class="py-2 px-4 border text-left">Action</th>
         </tr>
       </thead>
       <tbody id="paymentTableBody" class="text-left text-[14px]">
         <tr>
-          <td colspan="9" class="py-4 text-gray-500">Loading...</td>
+          <td colspan="4" class="py-4 text-gray-500">Loading...</td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- Pagination Controls -->
+  <div class="flex flex-col sm:flex-row justify-between items-center mt-4 gap-4">
+    <div class="flex items-center gap-2">
+      <label for="recordsPerPage" class="text-sm text-gray-600">Records per page:</label>
+      <select id="recordsPerPage" class="border border-gray-300 rounded px-2 py-1 text-sm">
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+    </div>
+
+    <div class="text-sm text-gray-600">
+      Showing <span id="startRecord">0</span> to <span id="endRecord">0</span> of <span id="totalRecords">0</span> records
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button id="prevPage" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+        Previous
+      </button>
+      <span class="text-sm text-gray-600">
+        Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+      </span>
+      <button id="nextPage" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+        Next
+      </button>
+    </div>
   </div>
 </div>
 
@@ -115,7 +157,8 @@
 
 <script>
 (function () {
-  let data = [];
+  let allData = []; // Store all data for client-side filtering
+  let filteredData = []; // Store filtered results
   let allEmployees = [];
   let elementTypeData = [];
   let isEditing = false;
@@ -145,6 +188,25 @@
   const dropdownList = document.getElementById('dropdownList');
   const employeeDropdownItems = document.getElementById('employeeDropdownItems');
 
+  // Pagination variables
+  let currentPage = 1;
+  let recordsPerPage = 10;
+  let currentSearchQuery = '';
+
+  // Pagination elements
+  const prevPageBtn = document.getElementById('prevPage');
+  const nextPageBtn = document.getElementById('nextPage');
+  const currentPageSpan = document.getElementById('currentPage');
+  const totalPagesSpan = document.getElementById('totalPages');
+  const recordsPerPageSelect = document.getElementById('recordsPerPage');
+  const startRecordSpan = document.getElementById('startRecord');
+  const endRecordSpan = document.getElementById('endRecord');
+  const totalRecordsSpan = document.getElementById('totalRecords');
+
+  // Table search elements
+  const tableSearchInput = document.getElementById('tableSearchInput');
+  const clearSearchBtn = document.getElementById('clearSearchBtn');
+
   // Add hidden input to store the selected employee ID
   const hiddenInput = document.createElement('input');
   hiddenInput.type = 'hidden';
@@ -153,7 +215,6 @@
   document.getElementById('paymentForm').appendChild(hiddenInput);
 
   async function fetchEmployees() {
-      // Skip if already loaded
     if (allEmployees.length > 0) return;
 
     employeeDropdownItems.innerHTML = `
@@ -221,19 +282,6 @@
     });
   }
 
-  // Separate click handler function
-  function handleEmployeeClick(e) {
-    const item = e.target.closest('.dropdown-item');
-    if (!item) return;
-    
-    const value = item.getAttribute('data-value');
-    const text = item.textContent.trim();
-    
-    searchInput.value = text;
-    hiddenInput.value = value;
-    dropdownList.classList.add('hidden');
-  }
-
   // DROPDOWN FUNCTIONALITY
   searchInput.addEventListener('focus', () => {
     dropdownList.classList.remove('hidden');
@@ -267,55 +315,43 @@
 
   // fetch pay elements 
   async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`/reference/${endpoint}`, {   
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}` 
-      }
-    });
-    const data = await response.json();
-    const dropdown = document.getElementById(elementId);
-    if (!dropdown) return;
-    dropdown.innerHTML = `<option value="">${placeholder}</option>`;
-    data.forEach(item => {
-      const option = document.createElement("option");
-      option.value = item[valueField];
-      option.textContent = item[textField];
-      dropdown.appendChild(option);
-
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/reference/${endpoint}`, {   
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        }
+      });
+      const data = await response.json();
+      
+      // BUILD THE LOOKUP MAP FIRST
       lookupMaps[endpoint] = Object.fromEntries(
         data.map(item => [item[valueField], item[textField]])
-      )
-    });
-    return data;
-  } catch (err) {
-    console.error(`Failed to load ${endpoint}:`, err);
-    return [];
+      );
+      
+      // THEN POPULATE THE DROPDOWN IF IT EXISTS
+      const dropdown = document.getElementById(elementId);
+      if (dropdown) {
+        dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+        data.forEach(item => {
+          const option = document.createElement("option");
+          option.value = item[valueField];
+          option.textContent = item[textField];
+          dropdown.appendChild(option);
+        });
+      }
+      
+      return data;
+    } catch (err) {
+      console.error(`Failed to load ${endpoint}:`, err);
+      return [];
+    }
   }
-}
 
   async function loadAllDropdowns() {
-    const promises = [
-      loadDropdown("elementtype","description", "PaymentType", "elmDesc", "Select Type"),
-    ];
-    await Promise.all(promises);
-  }
-
-  function getValueField(endpoint) {
-    const fieldMap = {
-      'elementtype': 'PaymentType'
-    };
-    return fieldMap[endpoint] || 'code';
-  }
-
-  function getTextField(endpoint) {
-    const fieldMap = {
-      'elementtype': 'elmDesc'
-    }
-    return fieldMap[endpoint] || 'name';
+    await loadDropdown("elementtype","description", "PaymentType", "elmDesc", "Select Type");
   }
 
   function resolveName(code, endpoint) {
@@ -336,17 +372,31 @@
 
       const result = await response.json();
 
-      data = result.data || [];
-
-      if (result.success) {
-        renderTable(data);
-      } else {
-        showError('Failed to load individual payments');
-      } 
+      allData = result.data || [];
+      applyFilters();
     } catch (error) {
       console.error('Error loading individual payments:', error);
       showError('Error loading individual payments');
     }
+  }
+
+  function applyFilters() {
+    // Filter data based on search query
+    if (currentSearchQuery) {
+      const query = currentSearchQuery.toLowerCase();
+      filteredData = allData.filter(item => 
+        item.his_empno.toLowerCase().includes(query) ||
+        item.his_type.toLowerCase().includes(query) ||
+        resolveName(item.his_type, "elementtype").toLowerCase().includes(query)
+      );
+    } else {
+      filteredData = [...allData];
+    }
+
+    // Reset to first page when filters change
+    currentPage = 1;
+    renderTable();
+    updatePaginationUI();
   }
 
   async function submitPayment(data) {
@@ -368,7 +418,7 @@
         showSuccessModal('Payment submitted successfully');
         clearForm();
         formWrapper.classList.add('hidden');
-        loadIndividualPayments();
+        await loadIndividualPayments();
       } else {
         showError(result.message || 'Failed to submit payment');
       }
@@ -399,7 +449,7 @@
         showSuccessModal('Payment updated successfully');
         clearForm();
         formWrapper.classList.add('hidden');
-        loadIndividualPayments();
+        await loadIndividualPayments();
       } else {
         showError(result.message || 'Failed to update payment');
       }
@@ -437,19 +487,27 @@
   }
 
   // render table
-  function renderTable(data) {
+  function renderTable() {
     tableBody.innerHTML = '';
     
-    if (!data || data.length === 0) {
+    const totalRecords = filteredData.length;
+    const totalPages = Math.ceil(totalRecords / recordsPerPage);
+    
+    if (totalRecords === 0) {
       tableBody.innerHTML = `
         <tr>
-          <td colspan="4" class="py-4 text-gray-500">No records found</td>
+          <td colspan="4" class="py-4 text-gray-500">${currentSearchQuery ? 'No records found matching your search' : 'No records found'}</td>
         </tr>
       `;
       return;
     }
 
-    data.forEach(item => {
+    // Calculate pagination
+    const startIndex = (currentPage - 1) * recordsPerPage;
+    const endIndex = Math.min(startIndex + recordsPerPage, totalRecords);
+    const pageData = filteredData.slice(startIndex, endIndex);
+
+    pageData.forEach(item => {
       const row = document.createElement('tr');
       row.className = 'hover:bg-yellow-50';
       row.innerHTML = `
@@ -467,6 +525,42 @@
 
   function escapeQuotes(str) {
     return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+  }
+
+  function updatePaginationUI() {
+    const totalRecords = filteredData.length;
+    const totalPages = Math.ceil(totalRecords / recordsPerPage) || 1;
+    
+    currentPageSpan.textContent = currentPage;
+    totalPagesSpan.textContent = totalPages;
+    
+    const start = totalRecords === 0 ? 0 : (currentPage - 1) * recordsPerPage + 1;
+    const end = Math.min(start + recordsPerPage - 1, totalRecords);
+    
+    startRecordSpan.textContent = start;
+    endRecordSpan.textContent = end;
+    totalRecordsSpan.textContent = totalRecords;
+
+    prevPageBtn.disabled = currentPage <= 1;
+    nextPageBtn.disabled = currentPage >= totalPages;
+
+    // Show/hide clear button based on search query
+    if (currentSearchQuery) {
+      clearSearchBtn.classList.remove('hidden');
+    } else {
+      clearSearchBtn.classList.add('hidden');
+    }
+  }
+
+  function performSearch() {
+    applyFilters();
+  }
+
+  function clearSearch() {
+    currentSearchQuery = '';
+    tableSearchInput.value = '';
+    clearSearchBtn.classList.add('hidden');
+    applyFilters();
   }
 
   function toggleForm() {
@@ -497,10 +591,8 @@
     try {
       const token = localStorage.getItem('token');
 
-      // Encode only slashes, not all underscores
       const safeEmpno = his_empno.replace(/\//g, '_SLASH_');
 
-      // Fetch employees if not already loaded
       if (allEmployees.length === 0) {
         await fetchEmployees();
       }
@@ -546,12 +638,10 @@
   }
 
   window.editRow = function(his_empno, his_type) {
-    // Decode properly
     const unescapedType = his_type.replace(/_SLASH_/g, '/');
     const unescapedEmpno = his_empno.replace(/_SLASH_/g, '/');
     loadPaymentForEdit(unescapedEmpno, unescapedType);
   };
-
 
   window.deleteRow = function(his_empno, his_type) {
     rowToDelete = { his_empno, his_type };
@@ -590,13 +680,14 @@
   function clearForm() {
     document.getElementById('paymentForm').reset();
     hiddenInput.value = '';
+    searchInput.value = '';
     formWrapper.classList.add('hidden');
     isEditing = false;
+    editingRecord = null;
   }
 
   clearBtn.addEventListener('click', clearForm);
 
-  // Add new payment button click
   createPaymentBtn.addEventListener('click', () => {
     isEditing = false;
     editingRecord = null;
@@ -634,22 +725,101 @@
     }
   });
 
+  // Pagination event listeners
+  prevPageBtn.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderTable();
+      updatePaginationUI();
+    }
+  });
+
+  nextPageBtn.addEventListener('click', () => {
+    const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderTable();
+      updatePaginationUI();
+    }
+  });
+
+  recordsPerPageSelect.addEventListener('change', (e) => {
+    recordsPerPage = parseInt(e.target.value);
+    currentPage = 1;
+    renderTable();
+    updatePaginationUI();
+  });
+
+  // TABLE SEARCH FUNCTIONALITY
+  let searchTimeout;
+  tableSearchInput.addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    const query = e.target.value.trim();
+    
+    // Debounce search by 500ms
+    searchTimeout = setTimeout(() => {
+      currentSearchQuery = query;
+      performSearch();
+    }, 500);
+  });
+
+  // Clear search button
+  clearSearchBtn.addEventListener('click', clearSearch);
+
+  // Allow Enter key to trigger immediate search
+  tableSearchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      clearTimeout(searchTimeout);
+      currentSearchQuery = e.target.value.trim();
+      performSearch();
+    }
+  });
 
   //generate reports functionality
-  function generateReport() {
+  async function generateReport() {
+    const REPORT_API_URL = '/individual';
+
+    let fullData;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(REPORT_API_URL, {   
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        }
+      });
+      const result = await response.json();
+
+      if (!result.success) {
+        showError('Failed to load report data: ' + result.message);
+        return;
+      }
+      
+      fullData = result.data; 
+
+    } catch (error) {
+      console.error('Error fetching report data:', error);
+      showError('An error occurred while fetching report data.');
+      return;
+    }
+    
+    if (!fullData || fullData.length === 0) {
+      showError('No records found for the report.');
+      return;
+    }
+
+    // Pre-resolve all type names before creating print window
+    const data = fullData.map(item => ({
+      ...item,
+      typeName: resolveName(item.his_type, "elementtype")
+    }));
+
     const now = new Date();
     const dateStr = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
     const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     
     const printWindow = window.open('', '_blank');
-    
-    const formatCurrency = (amount) => {
-      if (!amount) return '-';
-      return new Intl.NumberFormat('en-NG', {
-        style: 'currency',
-        currency: 'NGN'
-      }).format(amount);
-    };
 
     const printContent = `
       <!DOCTYPE html>
@@ -705,14 +875,6 @@
             border-top: 1px solid #e5e7eb;
             padding-top: 15px;
           }
-          .status-active {
-            color: green;
-            font-weight: bold;
-          }
-          .status-inactive {
-            color: red;
-            font-weight: bold;
-          }
           @media print {
             .element-table th {
               background-color: #f3f4f6 !important;
@@ -726,11 +888,6 @@
               vertical-align: middle;
               border-right: 2px solid #1a56db;
             }
-            .element-section {
-              margin-bottom: 30px;
-              padding-bottom: 10px;
-              border-bottom: 1px dashed #e5e7eb;
-            }
             .combined-tables {
               border: 1px solid #e5e7eb;
               margin-bottom: 20px;
@@ -739,9 +896,7 @@
               margin-bottom: 0;
               border: none;
             }
-            .element-table:first-child {
-              border-bottom: 2px solid #e5e7eb;
-            }
+          }
         </style>
       </head>
       <body>
@@ -749,7 +904,6 @@
           <div class="report-title">Individual Payment Input Report</div>
           <div class="date-time">Generated on: ${dateStr} at ${timeStr}</div>
         </div>
-
 
       ${data.map((item, index) => `
         <div class="combined-tables">
@@ -759,19 +913,18 @@
                 ${index + 1}
               </td>
               <td style="padding: 0;">
-                <!-- First table -->
                 <table class="element-table" style="width: 100%;">
                   <thead>
                     <tr>
                       <th>Service No</th>
-                      <th> Type</th>
+                      <th>Type</th>
                       <th>Amount</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
                       <td class="py-2 px-4 border">${item.his_empno}</td>
-                      <td class="py-2 px-4 border">${resolveName(item.his_type, "elementtype")} (${item.his_type})</td>
+                      <td class="py-2 px-4 border">${item.typeName} (${item.his_type})</td>
                       <td class="py-2 px-4 border">₦${Number(item.amtthismth).toLocaleString()}</td>
                     </tr>
                   </tbody>
@@ -803,10 +956,22 @@
   document.getElementById('generateReportBtn').addEventListener('click', generateReport);
 
   //initialize
-(async function init() {
-  await fetchEmployees();
-  await loadAllDropdowns();
-  await loadIndividualPayments();
-})();
+  (async function init() {
+    try {
+      console.log('Starting initialization...');
+      
+      // Load dropdowns FIRST and WAIT for them
+      await loadAllDropdowns();
+      console.log('Dropdowns loaded, lookupMaps:', lookupMaps);
+      
+      // Then load employees and payments
+      await fetchEmployees();
+      await loadIndividualPayments();
+      
+      console.log('Initialization complete');
+    } catch (error) {
+      console.error('Initialization error:', error);
+    }
+  })();
 })();
 </script>

@@ -388,8 +388,8 @@ class PersonnelManager {
         }
         
         const endpoint = viewType === 'old' 
-          ? '/personnel/employees-current/search'
-          : '/personnel/employees-old/search';
+          ? '/personnel/employees-old/search'
+          : '/personnel/employees-current/search';
 
         console.log('View Type:', viewType);
         console.log('Calling search endpoint:', endpoint);
@@ -903,6 +903,7 @@ class PersonnelManager {
   reinitialize() {
     this.setupEventListeners();
     this.renderTable();
+    this.loadAllDropdowns();
   }
 }
 
@@ -921,7 +922,7 @@ async function initializePersonnelManager(sectionType = null) {
       personnelManager = window.personnelManager;
     }
 
-    // 🔵 Retrieve saved navigation state
+    // Check if we're returning from navigation
     const isReturning = localStorage.getItem('navigatedFromOldPersonnel');
     const savedPage = localStorage.getItem('oldPersonnelPage');
     const savedType = localStorage.getItem('oldPersonnelType');
@@ -941,6 +942,8 @@ async function initializePersonnelManager(sectionType = null) {
       localStorage.removeItem('navigatedFromOldPersonnel');
       localStorage.removeItem('oldPersonnelPage');
       localStorage.removeItem('oldPersonnelType');
+
+      console.log('✅ State restored successfully');
       return;
     }
 

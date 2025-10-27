@@ -1087,19 +1087,14 @@ function cancelPersonnelForm() {
     const navigatedFromCurrent = localStorage.getItem('navigatedFromCurrentPersonnel') === 'true';
     const navigatedFromOld = localStorage.getItem('navigatedFromOldPersonnel') === 'true';
     if (navigatedFromOld) {
-      localStorage.removeItem('navigatedFromOldPersonnel');
       if (window.navigation?.navigateToSection) {
         window.navigation.navigateToSection('old-personnel', 'Old Personnel');
       }
     } else if (navigatedFromCurrent) {
-      localStorage.removeItem('navigatedFromCurrentPersonnel');
       if (window.navigation?.navigateToSection) {
         window.navigation.navigateToSection('current-personnel', 'Current Personnel');
       }
     }
-
-    // 10. Remove Validation Blur
-    //checkDuplicate();
 
   } catch (error) {
     console.error('Error in cancelPersonnelForm:', error);
@@ -1121,7 +1116,6 @@ function clearAllFamilyTables() {
     }
   });
 }
-
 
 // Tab functionality
 const tabs = ['personnel', 'nok', 'spouse', 'children', 'batch'];

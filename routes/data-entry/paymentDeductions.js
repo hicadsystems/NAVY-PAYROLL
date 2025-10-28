@@ -461,6 +461,7 @@ router.post('/', verifyToken, async (req, res) => {
       mak1,
       amtp,
       mak2,
+      amttd,
       payind,
       nomth,
     } = req.body;
@@ -491,8 +492,8 @@ router.post('/', verifyToken, async (req, res) => {
 
     const query = `
       INSERT INTO py_payded (
-        Empl_id, type, mak1, amtp, mak2, amt, 
-        amtad, amttd, payind, nomth, createdby, datecreated
+        Empl_id, type, mak1, amtp, mak2, amttd, 
+        amtad, amt, payind, nomth, createdby, datecreated
       ) VALUES (?, ?, ?, ?, ?, ?, 0.00, 0.00, ?, ?, ?, NOW())
     `;
 
@@ -502,7 +503,7 @@ router.post('/', verifyToken, async (req, res) => {
       mak1,
       amtp,
       mak2,
-      amtp,
+      amttd,
       payind,
       nomth || 0,
       createdby
@@ -605,7 +606,7 @@ router.put('/:emplId/:type',  verifyToken, async (req, res) => {
   try {
     const { emplId, type } = req.params;
     const decodedType = decodeURIComponent(type);
-    const { amtp, amt, mak1, payind, nomth, mak2 } = req.body;
+    const { amtp, amttd, mak1, payind, nomth, mak2 } = req.body;
 
     // Check if record exists
     const checkQuery = `
@@ -629,9 +630,9 @@ router.put('/:emplId/:type',  verifyToken, async (req, res) => {
       updates.push('amtp = ?');
       values.push(amtp);
     }
-    if (amt !== undefined) {
-      updates.push('amt = ?');
-      values.push(amt);
+    if (amttd !== undefined) {
+      updates.push('amttd = ?');
+      values.push(amttd);
     }
     if (mak1 !== undefined) {
       updates.push('mak1 = ?');
@@ -644,9 +645,9 @@ router.put('/:emplId/:type',  verifyToken, async (req, res) => {
     if (mak2 !== undefined) {
       updates.push('mak2 = ?');
       values.push(mak2);
-      if (mak2 === 'Yes') {
-        updates.push('amtd = 0.00');
-      }
+      /*if (mak2 === 'Yes') {
+        updates.push('amttd = 0.00');
+      }*/
     }
     if (payind !== undefined) {
       updates.push('payind = ?');

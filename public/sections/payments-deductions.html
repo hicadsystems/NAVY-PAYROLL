@@ -83,7 +83,7 @@
           id="amtp" 
           type="number" 
           step="0.01"
-          placeholder="Payment Amount (amtp)" 
+          placeholder="Payment Amount" 
           class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"
         />
       </div>
@@ -100,10 +100,10 @@
       <!-- Amount -->
       <div class="col-span-1">
         <input 
-          id="amt" 
+          id="amttd" 
           type="number" 
           step="0.01"
-          placeholder="Amount (amt)" 
+          placeholder="Amount to date" 
           class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"
         />
       </div>
@@ -120,7 +120,7 @@
         <input 
           id="nomth" 
           type="number" 
-          placeholder="Number of Months (nomth)" 
+          placeholder="Number of Months" 
           class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"
         />
       </div>
@@ -511,7 +511,7 @@
         document.getElementById("mak1").value = deductionData.delete_maker_annual || '';
         document.getElementById("amtp").value = deductionData.amount_payable || 0;
         document.getElementById("mak2").value = deductionData.delete_maker_cumulative || '';
-        document.getElementById("amt").value = deductionData.amt || 0;
+        document.getElementById("amttd").value = deductionData.amount_to_date || 0;
         document.getElementById("payind").value = deductionData.indicator || '';
         document.getElementById("nomth").value = deductionData.number_of_months || 0;
         
@@ -645,7 +645,7 @@
       mak1: document.getElementById("mak1").value,
       amtp: document.getElementById("amtp").value,
       mak2: document.getElementById("mak2").value,
-      amt: document.getElementById("amt").value,
+      amttd: document.getElementById("amttd").value,
       payind: document.getElementById("payind").value,
       nomth: document.getElementById("nomth").value,
     };

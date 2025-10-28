@@ -2460,8 +2460,8 @@ async function submitPersonnelForm() {
 
       showPopup("Personnel updated successfully", () => {
         localStorage.removeItem('editing_employee_id');
-        localStorage.removeItem('navigatedFromCurrentPersonnel');
-        localStorage.removeItem('navigatedFromOldPersonnel');
+        //localStorage.removeItem('navigatedFromCurrentPersonnel');
+        //localStorage.removeItem('navigatedFromOldPersonnel');
         localStorage.removeItem('isEditMode');
 
         if (window.navigation?.navigateToSection) {

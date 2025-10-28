@@ -465,7 +465,7 @@ class PersonnelManager {
 
   // Save filter state to localStorage
   saveFilterState(search, rank, status) {
-    const viewKey = this.currentView === 'current' ? 'current' : 'old';
+    const viewKey = this.currentView === 'current';
     const filterState = {
       search: search || '',
       rank: rank || '',
@@ -478,7 +478,7 @@ class PersonnelManager {
 
   // Restore filter state from localStorage
   restoreFilterState() {
-    const viewKey = this.currentView === 'current' ? 'current' : 'current';
+    const viewKey = this.currentView === 'current';
     const saved = localStorage.getItem(`personnel_filter_${viewKey}`);
     
     if (saved) {
@@ -528,7 +528,7 @@ class PersonnelManager {
 
   // Clear filter state (call when explicitly clearing search)
   clearFilterState() {
-    const viewKey = this.currentView === 'current' ? 'current' : 'old';
+    const viewKey = this.currentView === 'current';
     localStorage.removeItem(`personnel_filter_${viewKey}`);
     console.log(`🗑️ Cleared filter state for ${viewKey}`);
   }
@@ -805,11 +805,19 @@ class PersonnelManager {
   async editEmployee(id) {
     try {
       // Store current page and filter state before navigation
-      sessionStorage.setItem('currentPersonnelPage', this.currentPage);
-      sessionStorage.setItem('currentPersonnelType', this.personnelType);
+      console.log('🔵 Saving state - Page:', this.currentPage, 'Type:', this.personnelType);
+
+      localStorage.setItem('currentPersonnelPage', this.currentPage);
+      localStorage.setItem('currentPersonnelType', this.personnelType);
       localStorage.setItem('navigatedFromCurrentPersonnel', 'true');
       localStorage.setItem('editingEmployeeId', id);
       localStorage.setItem('isEditMode', 'true');
+
+      console.log('🔵 Stored values:', {
+        page: localStorage.getItem('currentPersonnelPage'),
+        type: localStorage.getItem('currentPersonnelType'),
+        flag: localStorage.getItem('navigatedFromCurrentPersonnel')
+      });
 
       // Navigate to add-personnel section with edit mode state
       if (window.navigation?.navigateToSection) {
@@ -830,20 +838,20 @@ class PersonnelManager {
 
   // Add this method to restore page state when returning to current-personnel
   async restorePageState() {
-    const savedPage = sessionStorage.getItem('currentPersonnelPage');
-    const savedType = sessionStorage.getItem('currentPersonnelType');
+    const savedPage = localStorage.getItem('currentPersonnelPage');
+    const savedType = localStorage.getItem('currentPersonnelType');
     
     if (savedPage) {
       const page = parseInt(savedPage);
-      const type = savedType || 'current';
+      const type = savedType;
       
       console.log(`Restoring to page ${page} with type ${type}`);
       
       await this.loadPersonnelData(type, page);
       
       // Clear the saved state after restoring
-      sessionStorage.removeItem('currentPersonnelPage');
-      sessionStorage.removeItem('currentPersonnelType');
+      localStorage.removeItem('currentPersonnelPage');
+      localStorage.removeItem('currentPersonnelType');
     }
   }
     
@@ -923,7 +931,7 @@ async function initializePersonnelManager(sectionType = null) {
     }
 
     // Check if we're returning from navigation
-    const isReturning = localStorage.getItem('navigatedFromCurrentPersonnel') === 'true';
+    const isReturning = localStorage.getItem('navigatedFromCurrentPersonnel');
     const savedPage = localStorage.getItem('currentPersonnelPage');
     const savedType = localStorage.getItem('currentPersonnelType');
     
@@ -932,16 +940,14 @@ async function initializePersonnelManager(sectionType = null) {
     if (isReturning === 'true' && savedPage && savedType) {
       console.log(`🟢 Restoring to page ${savedPage} with type ${savedType}`);
       
-      // Restore the saved page FIRST
-      await personnelManager.loadPersonnelData(savedType, parseInt(savedPage));
-      personnelManager.setupEventListeners();
-
-      console.log('✅ State restored successfully');
-      
-      // NOW clear the flags after restoration is complete
+      // Clear the flags FIRST to prevent loops
       localStorage.removeItem('navigatedFromCurrentPersonnel');
       localStorage.removeItem('currentPersonnelPage');
       localStorage.removeItem('currentPersonnelType');
+      
+      // Restore the saved page
+      await personnelManager.loadPersonnelData(savedType, parseInt(savedPage));
+      personnelManager.setupEventListeners();
       
       console.log('✅ State restored successfully');
       return;

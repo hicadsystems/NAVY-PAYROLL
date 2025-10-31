@@ -21,8 +21,9 @@ exports.masterFileUpdate = async (req, res) => {
       status: 'SUCCESS',
       stage: 4,
       progress: 'Master file updates completed',
-      nextStage: 'Backup and Calculation',
-      result,
+      nextStage: 'Calculation',
+      logId: result.logId || result.insertId || null,
+      result
     });
   } catch (err) {
     console.error('Error running master file update:', err);

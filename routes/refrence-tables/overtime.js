@@ -154,7 +154,7 @@ router.post('/status', verifyToken, async (req, res) => {
 });
 
 // Get BT05
-router.get('/status', verifyToken, async (req, res) => {
+router.get('/status-payroll', verifyToken, async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT * FROM py_stdrate WHERE type = 'BT05' LIMIT 1");
     res.json(rows[0] || {});

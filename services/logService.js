@@ -1,4 +1,4 @@
-const pool = require('../../config/db');
+const pool = require('../config/db');
 
 exports.startLog = async (module, action, year, month, username) => {
   const [result] = await pool.query(
@@ -14,3 +14,5 @@ exports.updateLog = async (logId, status, message) => {
     [status, message, logId]
   );
 };
+
+//module.exports = { startLog, updateLog };

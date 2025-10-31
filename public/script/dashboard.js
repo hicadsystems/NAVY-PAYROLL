@@ -807,18 +807,15 @@ class NavigationSystem {
       mainContent.style.transition = 'none';
       
       mainContent.innerHTML = `
-        <div class="mt-6 min-h-screen">
+        <div class="mt-6">
           <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
-          <div class="bg-transparent rounded-xl p-6 shadow-sm border border-gray-100 min-h-[500px]">
-            <div class="flex items-center justify-center py-12">
+          <div class="bg-transparent rounded-xl shadow-sm border border-gray-100"> 
+            <div class="flex items-center justify-center p-6"> 
               <div class="relative w-10 h-10 mr-3">
-                <!-- Left bar (bottom-up) -->
                 <div class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"></div>
 
-                <!-- Right bar (top-down) -->
                 <div class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down [animation-delay:0.3s]"></div>
 
-                <!-- Middle bar -->
                 <div class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand [animation-delay:0.6s] -translate-y-1/2"></div>
               </div>
               <span class="text-gray-600">Loading...</span>
@@ -826,7 +823,7 @@ class NavigationSystem {
           </div>
         </div>
       `;
-      
+            
       window.scrollTo({ top: 0, behavior: 'instant' });
       
       // Fade in the loading state
@@ -933,13 +930,12 @@ class NavigationSystem {
 
       // Update content while hidden
       mainContent.innerHTML = `
-        <div class="mt-6 min-h-screen">
+        <div class="mt-6">
           <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
-          <div class="bg-white/10 rounded-xl shadow-lg border border-gray-100 min-h-[500px]">
+          <div class="bg-white/10 rounded-xl shadow-lg border border-gray-100"> 
             ${content}
           </div>
 
-          <!-- Return to Dashboard Button -->
           <div class="my-6">
             <button 
               onclick="window.navigation.returnToDashboard()" 

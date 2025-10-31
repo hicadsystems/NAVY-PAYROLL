@@ -108,7 +108,8 @@ const personnelUploadRoutes = require('./file-upload-helper/personnelUpload');
 const paydedUploadRoutes = require('./file-upload-helper/paydedUpload');
 
 //Helpers
-const paydedReportRoutes = require('./helpers/puppeteer-gen-reports/paydedReport')
+const paydedReportRoutes = require('./helpers/puppeteer-gen-reports/paydedReport');
+const logServiceRoutes = require('./helpers/logRoutes');
 
 
 
@@ -215,4 +216,5 @@ module.exports = (app) => {
 
     //helpers
     app.use("/puppeteer", paydedReportRoutes);
+    app.use("/logs", logServiceRoutes);
 };

@@ -1,135 +1,1222 @@
-<!-- Input Variable Reports Section -->
-<div class=" p-6">
+<style>
+  @media print {
+    .no-print { display: none !important; }
+    #changesTable { box-shadow: none !important; }
+  }
+  .hidden { display: none !important; }
+</style>
 
-    <div class="mb-12 w-full lg:w-2/3 flex justify-between border-b-2">
-        <h2 class=" text-blue-600 font-semibold lg:text-lg"> First ensure you have printed changes in personnel data</h2>
-        <button onclick="window.navigation.navigateToSection('changes-personnel-data', 'Changes in Personnel Data')" class="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">
-        Go
-        </button>
-    </div>
-
-  <div class="flex items-center justify-between mb-4">
-    <div class="flex items-center space-x-3">
-      <!-- Icon -->
-      <div class="bg-yellow-500 text-white p-3 rounded-full shadow">
-        🖨
-      </div>
-      <h2 class="text-2xl font-bold text-grey-900">Print Input Variable Reports</h2>
-    </div>
-  </div>
-
-  <!-- Description -->
-  <p class="text-gray-600 font-semibold mb-6 lg:text-lg">Preview payroll input variables and generate printable reports.</p>
-
-  <!-- Action Buttons -->
-  <div class="flex justify-center space-x-4">
-    <button id="openPreviewBtn" class="px-8 py-3 bg-yellow-600 text-white rounded-lg shadow hover:bg-yellow-700 transition">
-      Preview & Print
+<div class="p-6">
+  <!-- Top Action Bar -->
+  <div id="topActionBar" class="hidden mb-6 w-full flex justify-between items-center border-b-2 pb-4 no-print">
+    <h2 class="text-blue-600 font-semibold lg:text-lg">
+      <i class="fas fa-info-circle mr-2"></i>First ensure you have printed changes in personnel data
+    </h2>
+    <button onclick="window.navigation && window.navigation.navigateToSection && window.navigation.navigateToSection('changes-personnel-data', 'Changes in Personnel Data')" 
+            class="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">
+      <i class="fas fa-undo mr-2"></i>Personnel Changes
     </button>
   </div>
 
-    <!-- Modal -->
-    <div id="reportModal" class="fixed inset-0 bg-black bg-opacity-40 hidden flex items-center justify-center z-50">
-    <div class="bg-white w-11/12 md:w-2/3 lg:w-1/2 rounded-xl shadow-lg overflow-hidden">
-        <!-- Header -->
-        <div class="flex justify-between items-center bg-yellow-400 text-white px-4 py-3">
-        <h3 class="text-lg font-semibold text-blue-700">Input Variable Report</h3>
-        <button id="closeModalBtn" class="text-red-400 hover:text-red-500">✖</button>
-        </div>
+  <!-- Filter Tabs -->
+  <div id="filterTabs" class="hidden bg-yellow-50/25 border-2 border-amber-100 flex flex-wrap gap-2 p-2 mb-4 rounded-lg no-print">
+    <button id="allToggle" class="flex-1 px-2 py-2 text-sm lg:text-lg font-medium rounded-lg bg-blue-50 text-gray-900 shadow transition-colors duration-200">
+      <i class="fas fa-list mr-2"></i>All Changes
+    </button>
+    <button id="personnelToggle" class="flex-1 px-2 py-2 text-sm lg:text-lg font-medium rounded-lg text-gray-500 hover:text-gray-900 transition-colors duration-200">
+      <i class="fas fa-user mr-2"></i>By Personnel
+    </button>
+    <button id="highRiskToggle" class="flex-1 px-2 py-2 text-sm lg:text-lg font-medium rounded-lg text-gray-500 hover:text-gray-900 transition-colors duration-200">
+      <i class="fas fa-exclamation-triangle mr-2"></i>High Risk
+    </button>
+    <button id="loanToggle" class="flex-1 px-2 py-2 text-sm lg:text-lg font-medium rounded-lg text-gray-500 hover:text-gray-900 transition-colors duration-200">
+      <i class="fas fa-money-bill-wave mr-2"></i>Loans
+    </button>
+    <button id="byDateToggle" class="flex-1 px-2 py-2 text-sm lg:text-lg font-medium rounded-lg text-gray-500 hover:text-gray-900 transition-colors duration-200">
+      <i class="fas fa-calendar mr-2"></i>By Date Range
+    </button>
+  </div>
 
-        <!-- Content -->
-        <div class="p-6 max-h-96 overflow-y-auto">
-        <table class="min-w-full border border-gray-300 text-sm">
-            <thead class="bg-yellow-100 text-yellow-900">
-            <tr>
-                <th class="border px-3 py-2"> ID</th>
-                <th class="border px-3 py-2">Type</th>
-                <th class="border px-3 py-2">Amount</th>
-                <th class="border px-3 py-2">Period</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr class="hover:bg-yellow-50">
-                <td class="border px-3 py-2">NN001</td>
-                <td class="border px-3 py-2">Bonus</td>
-                <td class="border px-3 py-2">₦50,000</td>
-                <td class="border px-3 py-2">Aug 2025</td>
-            </tr>
-            <tr class="hover:bg-yellow-50">
-                <td class="border px-3 py-2">NN002</td>
-                <td class="border px-3 py-2">Deduction</td>
-                <td class="border px-3 py-2">₦10,000</td>
-                <td class="border px-3 py-2">Aug 2025</td>
-            </tr>
-            </tbody>
-        </table>
+  <!-- Filter Form Container -->
+  <div id="filterFormContainer" class="hidden p-2 rounded-lg mb-4 no-print">
+    <div id="filterFormContent" class="flex flex-col md:flex-row md:items-end md:gap-6">            
+      <div id="personnelSelectWrapperFilter" class="hidden flex-1">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2 lg:text-lg">
+            <i class="fas fa-search mr-2"></i>Select Personnel
+          </label>              
+          <div class="md:flex md:items-start md:space-x-4">                   
+            <div class="relative col-span-1 flex-1 mb-3 md:mb-0">
+              <div class="relative">
+                <input 
+                  type="text" 
+                  id="searchInputFilter"
+                  class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2 pr-10"
+                  placeholder="Search Name or Number..."
+                  autocomplete="off">
+                <i class="fas fa-chevron-down absolute right-3 top-4 text-gray-400"></i>
+              </div>
+              <div id="dropdownListFilter" class="absolute z-10 w-full mt-1 bg-yellow-50 border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto hidden">
+                <div class="py-1" id="employeeDropdownItemsFilter"></div>
+              </div>
+            </div>
+              
+            <button 
+              type="button" 
+              id="applyFilterBtn" 
+              class="px-3 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all shadow-lg whitespace-nowrap w-full md:w-auto">
+              Apply Filter
+            </button>
+          </div>
         </div>
+      </div>
 
-        <!-- Footer -->
-        <div class="flex justify-end space-x-3 bg-gray-100 px-4 py-3">
-        <button id="cancelPreviewBtn" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg">Cancel</button>
-        <button id="printReportBtn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">🖨 Print</button>
+      <div id="dateRangeWrapperFilter" class="hidden flex-1">          
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">              
+          <div>
+            <label for="startPeriodFilter" class="block text-sm font-medium text-gray-700 mb-2 lg:text-lg">
+              Start Date
+            </label>
+            <input id="startPeriodFilter" type="date" class="w-full border-2 border-gray-300 rounded-lg shadow-sm px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"/>
+          </div>
+          
+          <div>
+            <label for="endPeriodFilter" class="block text-sm font-medium text-gray-700 mb-2 lg:text-lg">
+              End Date
+            </label>
+            <input id="endPeriodFilter" type="date" class="w-full border-2 border-gray-300 rounded-lg shadow-sm px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"/>
+          </div>
+          
+          <div class="md:self-end mt-4 md:mt-0 flex md:justify-end">
+            <button 
+              type="button" 
+              id="applyFilterBtn2" 
+              class="px-3 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all shadow-lg w-full md:w-auto">
+              Apply Filter
+            </button>
+          </div>
         </div>
+      </div>
     </div>
-    </div>
+  </div>
 
-    <div id="saveStatus" class="mt-6 hidden text-center">
-    <div class="flex justify-center mb-3">
-        <div class="w-6 h-6 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+  <!-- Main Form -->
+  <form id="inputVarForm" class="space-y-6 p-6 no-print">
+    <div class="p-6">
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="bg-yellow-500 text-white p-3 rounded-full shadow">
+          <i class="fas fa-file-invoice text-2xl"></i>
         </div>
-        <p class="text-gray-700">Printing Data, please wait...</p>
+        <h2 class="text-2xl font-bold text-gray-900">Input Variable Report</h2>
+      </div>
+      <p class="text-gray-600 font-semibold lg:text-lg">
+        Preview payroll input variables and generate printable reports.
+      </p>
     </div>
 
-    <!-- Confirmation (hidden initially) -->
-    <div id="saveConfirm" class="mt-6 hidden text-center">
-     <div class="flex justify-center mb-3">
-        <div class="bg-green-500 text-white p-3 rounded-full shadow">✔</div>
-     </div>
-     <p class="text-green-700 font-semibold mb-4">Variable Report Printed successfully! Proceed to Master File Update</p>
-        
-        <!-- Download Backup Button -->
-     <button onclick="window.navigation.navigateToSection('master-file-update', 'Master File Update')" class="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">
-        Master File Update
-     </button>
+    <div class="flex justify-end space-x-4 pt-4">
+      <button type="button" id="loadInputVarBtn" class="px-8 py-3 bg-yellow-600 text-white font-medium rounded-lg hover:bg-yellow-700 transition-all shadow-lg">
+        <i class="fas fa-sync-alt mr-2"></i>Preview & Print
+      </button>
     </div>
+  </form>
+
+  <!-- Progress Modal -->
+  <div id="progressModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6">
+      <div class="text-center">
+        <div class="flex justify-center mb-4">
+          <div class="w-16 h-16 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">Processing...</h3>
+        <p id="progressMessage" class="text-gray-600 mb-4">Processing input variables...</p>
+        <div id="logContainer" class="bg-gray-50 rounded-lg p-3 max-h-48 overflow-y-auto text-left text-sm">
+          <!-- Backend logs will appear here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Modal -->
+  <div id="alertModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6">
+      <div class="text-center">
+        <div id="alertIcon" class="flex justify-center mb-4">
+          <i class="fas fa-exclamation-circle text-red-500 text-6xl"></i>
+        </div>
+        <h3 id="alertTitle" class="text-xl font-semibold text-gray-900 mb-2">Error</h3>
+        <p id="alertMessage" class="text-gray-600 mb-6">An error occurred</p>
+        <button id="alertCloseBtn" class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all shadow-lg">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Changes Table -->
+  <div id="changesTable" class="hidden mb-4 rounded-lg overflow-hidden">
+    <div class="pb-4 flex justify-between items-center no-print">
+      <h3 class="text-xl text-yellow-700 font-bold">Input Variable Report Results</h3>
+      <div class="flex gap-2">
+        <button id="exportExcelBtn" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition shadow">
+          <i class="fas fa-file-excel mr-2"></i>Excel
+        </button>
+        <button id="exportPdfBtn" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition shadow">
+          <i class="fas fa-file-pdf mr-2"></i>PDF
+        </button>
+        <button id="printBtn" class="px-4 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 transition shadow">
+          <i class="fas fa-print mr-2"></i>Print
+        </button>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+        <thead class="bg-yellow-100/25 text-yellow-900">
+          <tr>
+            <th class="border px-2 py-3 text-left"><i class="fas fa-id-badge mr-1"></i>Service No</th>
+            <th class="border px-2 py-3 text-left"><i class="fas fa-user mr-1"></i>Full Name</th>
+            <th class="border px-2 py-3 text-left"><i class="fas fa-coins mr-1"></i>Pay Type</th>
+            <th class="border px-2 py-3 text-left"><i class="fas fa-shield-alt mr-1"></i>Risk</th>
+            <th class="border px-2 py-3 text-left no-print"><i class="fas fa-cog mr-1"></i>Action</th>
+          </tr>
+        </thead>
+        <tbody id="changesTableBody" class="divide-y divide-gray-200">
+          <!-- Rows populated dynamically -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div id="paginationControls" class="flex justify-between items-center mt-4 no-print">
+      <div class="text-sm text-gray-600">
+        Showing <span id="showingStart">0</span> to <span id="showingEnd">0</span> of <span id="totalRecords">0</span> records
+      </div>
+      <div class="flex gap-2">
+        <button id="firstPageBtn" class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          <i class="fas fa-angle-double-left"></i>
+        </button>
+        <button id="prevPageBtn" class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          <i class="fas fa-angle-left"></i> Prev
+        </button>
+        <span id="pageInfo" class="px-4 py-2 bg-yellow-50/25 text-yellow-900 rounded-lg font-medium">Page 1 of 1</span>
+        <button id="nextPageBtn" class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          Next <i class="fas fa-angle-right"></i>
+        </button>
+        <button id="lastPageBtn" class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          <i class="fas fa-angle-double-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cancel Filter Button -->
+  <div id="cancelFilterContainer" class="hidden mb-4 flex justify-end no-print">
+    <button id="cancelFilterBtn" class="px-3 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-all shadow-lg">
+      Cancel Filter
+    </button>
+  </div>
+
+  <!-- Summary Cards -->
+  <div id="summaryCards" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+    <div class="p-4 rounded-lg border-2 transform hover:scale-105 transition">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-gray-600 text-sm font-medium">Total Changes</div>
+          <div id="totalChanges" class="text-3xl font-bold text-gray-900">0</div>
+        </div>
+        <i class="fas fa-exchange-alt text-yellow-500 text-3xl"></i>
+      </div>
+    </div>
+    <div class="p-4 rounded-lg border-2 hover:scale-105 transition">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-gray-600 text-sm font-medium">High Risk</div>
+          <div id="highRiskCount" class="text-3xl font-bold text-red-600">0</div>
+        </div>
+        <i class="fas fa-exclamation-circle text-red-500 text-3xl"></i>
+      </div>
+    </div>
+    <div class="p-4 rounded-lg border-2 transform hover:scale-105 transition">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-gray-600 text-sm font-medium">Loan Changes</div>
+          <div id="loanCount" class="text-3xl font-bold text-green-600">0</div>
+        </div>
+        <i class="fas fa-money-bill-wave text-green-500 text-3xl"></i>
+      </div>
+    </div>
+    <div class="p-4 rounded-lg border-2 transform hover:scale-105 transition">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-gray-600 text-sm font-medium">By Indicator</div>
+          <div id="indicatorCount" class="text-3xl font-bold text-blue-600">0</div>
+        </div>
+        <i class="fas fa-chart-line text-blue-500 text-3xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Details Modal -->
+  <div id="detailsModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-gray-100 rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="p-6 sticky top-0 z-20 bg-yellow-500 text-white">
+        <div class="flex justify-between items-center">
+          <h3 class="text-2xl font-bold"><i class="fas fa-info-circle mr-2"></i>Input Variable Details</h3>
+          <button id="closeModal" class="text-white hover:text-gray-200 transition"><i class="fas fa-times text-2xl"></i></button>
+        </div>
+      </div>
+      <div id="modalContent" class="p-6"></div>
+    </div>
+  </div>
+
+  <!-- Success Banner -->
+  <div id="nextStepBanner" class="hidden mt-6 p-6 no-print">
+    <div class="flex items-start">
+      <i class="fas fa-check-circle text-green-500 text-3xl mr-4"></i>
+      <div class="flex-1">
+        <h4 class="text-green-800 font-bold text-lg mb-2">Input Variables Loaded Successfully!</h4>
+        <p class="text-green-700 mb-4">Review the input variable changes above, filter as needed, and export reports. Ready to proceed?</p>
+        <button onclick="window.navigation && window.navigation.navigateToSection && window.navigation.navigateToSection('master-file-update', 'Master File Update')" 
+                class="px-6 py-3 bg-green-600 text-white rounded-lg shadow-lg hover:bg-green-700 transition font-medium">
+          <i class="fas fa-arrow-right mr-2"></i>Master File Update
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
-
-
 
 <script>
 (function () {
-  const modal = document.getElementById("reportModal");
-  const openBtn = document.getElementById("openPreviewBtn");
-  const closeBtn = document.getElementById("closeModalBtn");
-  const cancelBtn = document.getElementById("cancelPreviewBtn");
-  const printBtn = document.getElementById("printReportBtn");
-  const status = document.getElementById("saveStatus");
-  const confirm = document.getElementById("saveConfirm");
+  const API_BASE = '/inputvariable';  // Fixed: No hyphen
 
-  // Open modal
-  openBtn.addEventListener("click", () => {
-    modal.classList.remove("hidden");
-  });
+  // Stage constants
+  const STAGE_CHANGES_READY = 775;
+  const STAGE_INPUT_VAR_READY = 777;
+  const STAGE_UPDATE_COMPLETED = 888;
 
-  // Close modal
-  function closeModal() {
-    modal.classList.add("hidden");
+  // Pagination
+  const RECORDS_PER_PAGE = 10;
+  let currentPage = 1;
+  let filteredData = [];
+
+  // State
+  let currentPayrollStage = 0;
+  let allChangesData = null;
+  let allEmployees = [];
+  let hasLoadedOnce = false;
+  let currentMode = 'all';
+  let selectedEmployee = null;
+  let filterApplied = false;
+
+  // DOM Elements
+  const topActionBar = document.getElementById('topActionBar');
+  const filterTabs = document.getElementById('filterTabs');
+  const allToggle = document.getElementById('allToggle');
+  const personnelToggle = document.getElementById('personnelToggle');
+  const highRiskToggle = document.getElementById('highRiskToggle');
+  const loanToggle = document.getElementById('loanToggle');
+  const byDateToggle = document.getElementById('byDateToggle');
+  const filterFormContainer = document.getElementById('filterFormContainer');
+  const personnelSelectWrapperFilter = document.getElementById('personnelSelectWrapperFilter');
+  const dateRangeWrapperFilter = document.getElementById('dateRangeWrapperFilter');
+  const searchInputFilter = document.getElementById('searchInputFilter');
+  const dropdownListFilter = document.getElementById('dropdownListFilter');
+  const employeeDropdownItemsFilter = document.getElementById('employeeDropdownItemsFilter');
+  const startPeriodFilter = document.getElementById('startPeriodFilter');
+  const endPeriodFilter = document.getElementById('endPeriodFilter');
+  const applyFilterBtn = document.getElementById('applyFilterBtn');
+  const applyFilterBtn2 = document.getElementById('applyFilterBtn2');
+  const cancelFilterContainer = document.getElementById('cancelFilterContainer');
+  const cancelFilterBtn = document.getElementById('cancelFilterBtn');
+  const loadBtn = document.getElementById('loadInputVarBtn');
+  const progressModal = document.getElementById('progressModal');
+  const alertModal = document.getElementById('alertModal');
+  const alertTitle = document.getElementById('alertTitle');
+  const alertMessage = document.getElementById('alertMessage');
+  const alertIcon = document.getElementById('alertIcon');
+  const alertCloseBtn = document.getElementById('alertCloseBtn');
+  const progressMessage = document.getElementById('progressMessage');
+  const logContainer = document.getElementById('logContainer');
+  const inputVarForm = document.getElementById('inputVarForm');
+  const changesTable = document.getElementById('changesTable');
+  const changesTableBody = document.getElementById('changesTableBody');
+  const summaryCards = document.getElementById('summaryCards');
+  const nextStepBanner = document.getElementById('nextStepBanner');
+  const detailsModal = document.getElementById('detailsModal');
+  const modalContent = document.getElementById('modalContent');
+  const closeModal = document.getElementById('closeModal');
+  const exportExcelBtn = document.getElementById('exportExcelBtn');
+  const exportPdfBtn = document.getElementById('exportPdfBtn');
+  const printBtn = document.getElementById('printBtn');
+
+  // Pagination DOM
+  const firstPageBtn = document.getElementById('firstPageBtn');
+  const prevPageBtn = document.getElementById('prevPageBtn');
+  const nextPageBtn = document.getElementById('nextPageBtn');
+  const lastPageBtn = document.getElementById('lastPageBtn');
+  const pageInfo = document.getElementById('pageInfo');
+  const showingStart = document.getElementById('showingStart');
+  const showingEnd = document.getElementById('showingEnd');
+  const totalRecords = document.getElementById('totalRecords');
+
+  // Helper functions
+  function addLog(message, type = 'info') {
+    const log = document.createElement('div');
+    log.className = `py-1 text-xs ${type === 'success' ? 'text-green-600' : type === 'error' ? 'text-red-600' : 'text-gray-600'}`;
+    log.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : 'circle'} mr-2"></i>${message}`;
+    logContainer.appendChild(log);
+    logContainer.scrollTop = logContainer.scrollHeight;
   }
-  closeBtn.addEventListener("click", closeModal);
-  cancelBtn.addEventListener("click", closeModal);
 
-  // Print action
-    printBtn.addEventListener("click", () => {
-    // Hide confirm, show status
-    confirm.classList.add("hidden");
-    status.classList.remove("hidden");
-    closeModal();
+  function showAlert(title, message, type = 'error') {
+    alertTitle.textContent = title;
+    alertMessage.textContent = message;
+    const iconClass = type === 'success' ? 'fa-check-circle text-green-500' : type === 'warning' ? 'fa-exclamation-triangle text-yellow-500' : 'fa-exclamation-circle text-red-500';
+    alertIcon.innerHTML = `<i class="fas ${iconClass} text-6xl"></i>`;
+    alertModal.classList.remove('hidden');
+  }
 
-    // Simulate save process
-    setTimeout(() => {
-      status.classList.add("hidden");
-      confirm.classList.remove("hidden");
-    }, 2000);
+  function formatCurrency(amount) {
+    if (!amount && amount !== 0) return 'N/A';
+    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(amount);
+  }
+
+  // Update UI visibility
+  function updateUIVisibility() {
+    const isStageReady = currentPayrollStage >= STAGE_INPUT_VAR_READY;
+
+    if (hasLoadedOnce || (isStageReady && allChangesData)) {
+      topActionBar.classList.add('hidden');
+      inputVarForm.classList.add('hidden');
+      filterTabs.classList.remove('hidden');
+      summaryCards.classList.remove('hidden');
+      changesTable.classList.remove('hidden');
+      nextStepBanner.classList.remove('hidden');
+      
+      if (currentMode === 'personnel' || currentMode === 'byDate') {
+        if (filterApplied) {
+          filterFormContainer.classList.add('hidden');
+          cancelFilterContainer.classList.remove('hidden');
+          summaryCards.classList.add('hidden');
+          nextStepBanner.classList.add('hidden');
+        } else {
+          filterFormContainer.classList.remove('hidden');
+          cancelFilterContainer.classList.add('hidden');
+        }
+      } else {
+        filterFormContainer.classList.add('hidden');
+        cancelFilterContainer.classList.add('hidden');
+      }
+      return;
+    }
+
+    if (currentPayrollStage < STAGE_CHANGES_READY) {
+      topActionBar.classList.remove('hidden');
+      inputVarForm.classList.remove('hidden');
+      filterTabs.classList.add('hidden');
+      filterFormContainer.classList.add('hidden');
+      cancelFilterContainer.classList.add('hidden');
+      summaryCards.classList.add('hidden');
+      changesTable.classList.add('hidden');
+      nextStepBanner.classList.add('hidden');
+      return;
+    }
+
+    if (currentPayrollStage === STAGE_CHANGES_READY) {
+      topActionBar.classList.add('hidden');
+      inputVarForm.classList.remove('hidden');
+      loadBtn.textContent = 'Process & Load Input Variables';
+      loadBtn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Process & Load Input Variables';
+      loadBtn.classList.remove('bg-yellow-600','hover:bg-yellow-700');
+      loadBtn.classList.add('bg-green-600','hover:bg-green-700');
+      filterTabs.classList.add('hidden');
+      filterFormContainer.classList.add('hidden');
+      cancelFilterContainer.classList.add('hidden');
+      summaryCards.classList.add('hidden');
+      changesTable.classList.add('hidden');
+      nextStepBanner.classList.add('hidden');
+      return;
+    }
+
+    if (currentPayrollStage > STAGE_CHANGES_READY && currentPayrollStage < STAGE_INPUT_VAR_READY) {
+      topActionBar.classList.add('hidden');
+      inputVarForm.classList.remove('hidden');
+      loadBtn.textContent = 'View (waiting for processing)';
+      loadBtn.innerHTML = '<i class="fas fa-hourglass-half mr-2"></i>View (waiting for processing)';
+      filterTabs.classList.add('hidden');
+      filterFormContainer.classList.add('hidden');
+      cancelFilterContainer.classList.add('hidden');
+      summaryCards.classList.add('hidden');
+      changesTable.classList.add('hidden');
+      nextStepBanner.classList.add('hidden');
+      return;
+    }
+
+    topActionBar.classList.remove('hidden');
+    inputVarForm.classList.remove('hidden');
+    filterTabs.classList.add('hidden');
+    filterFormContainer.classList.add('hidden');
+    cancelFilterContainer.classList.add('hidden');
+    summaryCards.classList.add('hidden');
+    changesTable.classList.add('hidden');
+    nextStepBanner.classList.add('hidden');
+  }
+
+  // Switch filter mode
+  function switchMode(mode) {
+    currentMode = mode;
+    currentPage = 1;
+    filterApplied = false;
+    
+    [allToggle, personnelToggle, highRiskToggle, loanToggle, byDateToggle].forEach(btn => {
+      btn.classList.remove('bg-blue-50','text-gray-900','shadow');
+      btn.classList.add('text-gray-500');
+    });
+    
+    const activeBtn = mode === 'all' ? allToggle : mode === 'personnel' ? personnelToggle : mode === 'highRisk' ? highRiskToggle : mode === 'loan' ? loanToggle : byDateToggle;
+    if (activeBtn) {
+      activeBtn.classList.add('bg-blue-50','text-gray-900','shadow');
+      activeBtn.classList.remove('text-gray-500');
+    }
+
+    if (mode === 'all') {
+      filterFormContainer.classList.add('hidden');
+      cancelFilterContainer.classList.add('hidden');
+      summaryCards.classList.remove('hidden');
+      nextStepBanner.classList.remove('hidden');
+      if (allChangesData) filterAndRenderData();
+    } else if (mode === 'highRisk' || mode === 'loan') {
+      filterFormContainer.classList.add('hidden');
+      cancelFilterContainer.classList.add('hidden');
+      summaryCards.classList.add('hidden');
+      nextStepBanner.classList.add('hidden');
+      if (allChangesData) filterAndRenderData();
+    } else if (mode === 'personnel' || mode === 'byDate') {
+      filterFormContainer.classList.remove('hidden');
+      cancelFilterContainer.classList.add('hidden');
+      summaryCards.classList.add('hidden');
+      nextStepBanner.classList.add('hidden');
+      
+      personnelSelectWrapperFilter.classList.toggle('hidden', mode !== 'personnel');
+      dateRangeWrapperFilter.classList.toggle('hidden', mode !== 'byDate');
+      
+      if (!allChangesData) return;
+      changesTableBody.innerHTML = `
+        <tr>
+          <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+            <span class="text-lg font-medium">Please apply filter to view results</span>
+          </td>
+        </tr>`;
+    }
+  }
+
+  // Populate employee dropdown
+  function populateEmployeeDropdown() {
+    if (!allChangesData || !Array.isArray(allChangesData.changes)) return;
+    const unique = new Map();
+    allChangesData.changes.forEach(c => {
+      const id = String(c.Empl_id || '').trim();
+      const name = c.full_name || '';
+      if (!id) return;
+      if (!unique.has(id)) unique.set(id, { id, name });
+    });
+    allEmployees = Array.from(unique.values());
+    
+    employeeDropdownItemsFilter.innerHTML = allEmployees.map(emp => `
+      <div class="px-3 py-2 hover:bg-blue-50 cursor-pointer transition border-b border-gray-100" data-id="${emp.id}">
+        <span class="font-semibold text-blue-600">${emp.name}</span>
+        (<span class="text-xs font-semibold text-gray-500">${emp.id}</span>)
+      </div>`).join('');
+    dropdownListFilter.classList.remove('hidden');
+    
+    employeeDropdownItemsFilter.querySelectorAll('div[data-id]').forEach(item => {
+      item.addEventListener('click', () => {
+        selectedEmployee = item.getAttribute('data-id');
+        searchInputFilter.value = item.querySelector('.font-semibold').textContent;
+        dropdownListFilter.classList.add('hidden');
+      });
+    });
+  }
+
+  // Search handler
+  searchInputFilter.addEventListener('input', () => {
+    const q = searchInputFilter.value.trim().toLowerCase();
+    if (!q) { 
+      dropdownListFilter.classList.add('hidden'); 
+      selectedEmployee = null; 
+      return; 
+    }
+    const filtered = allEmployees.filter(emp => (emp.name||'').toLowerCase().includes(q) || (emp.id||'').toLowerCase().includes(q));
+    employeeDropdownItemsFilter.innerHTML = filtered.map(emp => `
+      <div class="px-3 py-2 hover:bg-blue-50 cursor-pointer transition border-b border-gray-100" data-id="${emp.id}">
+        <span class="font-semibold text-blue-600">${emp.name}</span>
+        (<span class="text-xs font-semibold text-gray-500">${emp.id}</span>)
+      </div>`).join('');
+    dropdownListFilter.classList.remove('hidden');
+
+    employeeDropdownItemsFilter.querySelectorAll('div[data-id]').forEach(item => {
+      item.addEventListener('click', () => {
+        selectedEmployee = item.getAttribute('data-id');
+        searchInputFilter.value = item.querySelector('.font-semibold').textContent;
+        dropdownListFilter.classList.add('hidden');
+      });
+    });
   });
+
+  // Apply filter buttons
+  applyFilterBtn.addEventListener('click', () => {
+    if (currentMode === 'personnel' && !selectedEmployee) {
+      return showAlert('Validation Error', 'Please select a personnel', 'warning');
+    }
+    filterApplied = true;
+    filterAndRenderData();
+    updateUIVisibility();
+  });
+
+  applyFilterBtn2.addEventListener('click', () => {
+    if (currentMode === 'byDate' && !startPeriodFilter.value && !endPeriodFilter.value) {
+      return showAlert('Validation Error', 'Please select at least one date', 'warning');
+    }
+    filterApplied = true;
+    filterAndRenderData();
+    updateUIVisibility();
+  });
+
+  // Cancel filter
+  cancelFilterBtn.addEventListener('click', () => {
+    filterApplied = false;
+    selectedEmployee = null;
+    searchInputFilter.value = '';
+    startPeriodFilter.value = '';
+    endPeriodFilter.value = '';
+    dropdownListFilter.classList.add('hidden');
+    
+    filterFormContainer.classList.remove('hidden');
+    cancelFilterContainer.classList.add('hidden');
+    
+    changesTableBody.innerHTML = `
+      <tr>
+        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+          <span class="text-lg font-medium">Please apply filter to view results</span>
+        </td>
+      </tr>`;
+  });
+
+  // Pagination functions
+  function updatePaginationControls() {
+    const totalPages = Math.ceil(filteredData.length / RECORDS_PER_PAGE);
+    const start = (currentPage - 1) * RECORDS_PER_PAGE + 1;
+    const end = Math.min(currentPage * RECORDS_PER_PAGE, filteredData.length);
+
+    showingStart.textContent = filteredData.length > 0 ? start : 0;
+    showingEnd.textContent = end;
+    totalRecords.textContent = filteredData.length;
+    pageInfo.textContent = `Page ${currentPage} of ${totalPages || 1}`;
+
+    firstPageBtn.disabled = currentPage === 1;
+    prevPageBtn.disabled = currentPage === 1;
+    nextPageBtn.disabled = currentPage >= totalPages;
+    lastPageBtn.disabled = currentPage >= totalPages;
+  }
+
+  function goToPage(page) {
+    const totalPages = Math.ceil(filteredData.length / RECORDS_PER_PAGE);
+    if (page < 1) page = 1;
+    if (page > totalPages) page = totalPages;
+    currentPage = page;
+    renderTable(getPaginatedData());
+    updatePaginationControls();
+  }
+
+  function getPaginatedData() {
+    const start = (currentPage - 1) * RECORDS_PER_PAGE;
+    const end = start + RECORDS_PER_PAGE;
+    return filteredData.slice(start, end);
+  }
+
+  // Pagination event listeners
+  firstPageBtn.addEventListener('click', () => goToPage(1));
+  prevPageBtn.addEventListener('click', () => goToPage(currentPage - 1));
+  nextPageBtn.addEventListener('click', () => goToPage(currentPage + 1));
+  lastPageBtn.addEventListener('click', () => {
+    const totalPages = Math.ceil(filteredData.length / RECORDS_PER_PAGE);
+    goToPage(totalPages);
+  });
+
+  // Render table
+  function renderTable(changes) {
+    changesTableBody.innerHTML = '';
+    if (!changes || changes.length === 0) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+          <i class="fas fa-inbox text-4xl mb-2"></i>
+          <br>No input variable changes found for the selected filter
+        </td>`;
+      changesTableBody.appendChild(row);
+      return;
+    }
+
+    changes.forEach(change => {
+      const row = document.createElement('tr');
+      row.className = 'hover:bg-yellow-50/25 transition';
+      const risk = (change.risk_level || '').toUpperCase();
+      const riskColor = risk === 'HIGH' ? 'red' : risk === 'MEDIUM' ? 'yellow' : 'green';
+      const riskIcon = risk === 'HIGH' ? 'exclamation-triangle' : risk === 'MEDIUM' ? 'exclamation-circle' : 'check-circle';
+      
+      row.innerHTML = `
+        <td class="border px-2 py-3 text-left">${change.Empl_id}</td>
+        <td class="border px-2 py-3 text-left">${change.full_name || 'N/A'}</td>
+        <td class="border px-2 py-3 text-left">
+          <span class="inline-flex items-center px-2 py-1 text-xs font-bold rounded bg-yellow-50/25 text-yellow-900">
+            ${change.pay_type || 'N/A'}
+          </span>
+        </td>
+        <td class="border px-2 py-3 text-left">
+          <span class="inline-flex items-center px-3 py-1 text-xs font-bold rounded-full bg-${riskColor}-100 text-${riskColor}-800">
+            <i class="fas fa-${riskIcon} mr-1"></i>${risk || 'N/A'}
+          </span>
+        </td>
+        <td class="border px-2 py-3 text-left text-sm no-print">
+          <button class="text-yellow-700 hover:text-yellow-800 font-semibold transition" 
+                  data-id="${change.Empl_id}" 
+                  data-paytype="${change.pay_type}">
+            <i class="fas fa-eye mr-1"></i>View
+          </button>
+        </td>`;
+      changesTableBody.appendChild(row);
+      
+      const btn = row.querySelector('button[data-id]');
+      if (btn) {
+        btn.addEventListener('click', () => {
+          showDetails(String(change.Empl_id), btn.getAttribute('data-paytype'));
+        });
+      }
+    });
+    
+    updatePaginationControls();
+  }
+
+  // Filter and render data
+  function filterAndRenderData() {
+    if (!allChangesData) return;
+    let filtered = (allChangesData.changes || []).slice();
+
+    if (currentMode === 'highRisk') {
+      filtered = filtered.filter(c => (c.risk_level || c.RiskLevel || '').toUpperCase() === 'HIGH');
+    } else if (currentMode === 'loan') {
+      filtered = filtered.filter(c => (c.pay_indicator_desc || '').toUpperCase().includes('LOAN'));
+    } else if (currentMode === 'personnel' && selectedEmployee) {
+      filtered = filtered.filter(c => String(c.Empl_id) === String(selectedEmployee));
+    } else if (currentMode === 'byDate') {
+      const start = startPeriodFilter.value ? new Date(startPeriodFilter.value) : null;
+      const end = endPeriodFilter.value ? new Date(endPeriodFilter.value) : null;
+      if (start || end) {
+        filtered = filtered.filter(c => {
+          const d = c.detected_at ? new Date(c.detected_at) : null;
+          if (!d) return false;
+          if (start && end) return d >= start && d <= end;
+          if (start) return d >= start;
+          if (end) return d <= end;
+          return true;
+        });
+      }
+    }
+
+    filteredData = filtered;
+    currentPage = 1;
+    renderTable(getPaginatedData());
+  }
+
+  // Show details modal
+  function showDetails(emplId, payType) {
+    const change = allChangesData?.changes?.find(c => 
+      String(c.Empl_id) === String(emplId) && c.pay_type === payType
+    );
+    if (!change) return;
+
+    const current = change.current_values || {};
+    const previous = change.previous_values || {};
+
+    modalContent.innerHTML = `
+      <div class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b-2">
+          <div class="bg-blue-50 p-5 rounded-lg shadow">
+            <h4 class="font-bold text-lg text-blue-900 mb-3 flex items-center">
+              <i class="fas fa-user-circle mr-2"></i>Employee Information
+            </h4>
+            <div class="space-y-2 text-sm">
+              <p><span class="font-semibold">ID:</span> ${change.Empl_id}</p>
+              <p><span class="font-semibold">Name:</span> ${change.full_name}</p>
+              <p><span class="font-semibold">Location:</span> ${change.Location || 'N/A'}</p>
+            </div>
+          </div>
+
+          <div class="bg-yellow-50 p-5 rounded-lg shadow">
+            <h4 class="font-bold text-lg text-yellow-900 mb-3 flex items-center">
+              <i class="fas fa-info-circle mr-2"></i>Element Details
+            </h4>
+            <div class="space-y-2 text-sm">
+              <p><span class="font-semibold">Element:</span> ${change.element_name}</p>
+              <p><span class="font-semibold">Code:</span> ${change.pay_type}</p>
+              <p><span class="font-semibold">Category:</span> ${change.element_category}</p>
+              <p><span class="font-semibold">Function Type:</span> ${change.function_type_desc || change.function_type_code || 'N/A'}</p>
+              <p><span class="font-semibold">Pay Indicator:</span> ${change.pay_indicator_desc || change.pay_indicator_code || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-red-50 to-green-50 p-5 rounded-lg shadow">
+          <h4 class="font-bold text-lg text-gray-800 mb-3 flex items-center">
+            <i class="fas fa-coins mr-2"></i>Amount Comparison
+          </h4>
+          <div class="grid grid-cols-3 gap-4 text-center">
+            <div class="bg-white p-4 rounded-lg shadow">
+              <div class="text-xs text-gray-600 mb-1">Previous Amount</div>
+              <div class="text-xl font-bold text-red-600">${formatCurrency(previous.amt || 0)}</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow flex items-center justify-center">
+              <i class="fas fa-arrow-right text-3xl text-gray-400"></i>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <div class="text-xs text-gray-600 mb-1">Current Amount</div>
+              <div class="text-xl font-bold text-green-600">${formatCurrency(current.amt || 0)}</div>
+            </div>
+          </div>
+          <div class="mt-4 text-center">
+            <span class="inline-flex items-center px-4 py-2 bg-white rounded-lg shadow font-bold text-lg ${
+              (current.amt - previous.amt) > 0 ? 'text-green-600' : 
+              (current.amt - previous.amt) < 0 ? 'text-red-600' : 'text-gray-600'
+            }">
+              Difference: ${formatCurrency(Math.abs(current.amt - previous.amt))}
+              ${(current.amt - previous.amt) > 0 ? ' ↑ Increase' : 
+                (current.amt - previous.amt) < 0 ? ' ↓ Decrease' : ' No Change'}
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-blue-50 p-4 rounded-lg shadow">
+            <h5 class="font-bold text-sm text-blue-900 mb-3 flex items-center">
+              <i class="fas fa-chart-line mr-2"></i>Other Amount Fields
+            </h5>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between">
+                <span class="font-semibold">MAK1:</span>
+                <span>${previous.mak1 || 0} → ${current.mak1 || 0}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="font-semibold">Amount Payable:</span>
+                <span>${formatCurrency(previous.amtp || 0)} → ${formatCurrency(current.amtp || 0)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="font-semibold">MAK2:</span>
+                <span>${previous.mak2 || 0} → ${current.mak2 || 0}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="font-semibold">Amount To Date:</span>
+                <span>${formatCurrency(previous.amttd || 0)} → ${formatCurrency(current.amttd || 0)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-purple-50 p-4 rounded-lg shadow">
+            <h5 class="font-bold text-sm text-purple-900 mb-3 flex items-center">
+              <i class="fas fa-info mr-2"></i>Other Details
+            </h5>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between">
+                <span class="font-semibold">Direction:</span>
+                <span>${previous.amtad || 'N/A'} → ${current.amtad || 'N/A'}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="font-semibold">Pay Indicator:</span>
+                <span>${previous.payind || 'N/A'} → ${current.payind || 'N/A'}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="font-semibold">No. of Months:</span>
+                <span>${previous.nomth || 0} → ${current.nomth || 0}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-lg text-gray-800 mb-3 flex items-center border-b pb-2">
+            <i class="fas fa-list mr-2"></i>All Field Changes
+          </h4>
+          <div class="space-y-2">
+            ${Object.keys(current).map(key => {
+              const currVal = current[key];
+              const prevVal = previous[key];
+              
+              // Handle numeric comparisons properly
+              const isChanged = typeof currVal === 'number' && typeof prevVal === 'number'
+                ? currVal !== prevVal
+                : String(currVal) !== String(prevVal);
+              
+              if (isChanged) {
+                return `
+                  <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition">
+                    <span class="font-semibold text-gray-700 uppercase text-sm">${key.replace(/_/g, ' ')}:</span>
+                    <div class="flex items-center gap-3">
+                      <span class="text-red-600 line-through">${typeof prevVal === 'number' ? formatCurrency(prevVal) : (prevVal || 'N/A')}</span>
+                      <i class="fas fa-arrow-right text-gray-400"></i>
+                      <span class="text-green-600 font-bold">${typeof currVal === 'number' ? formatCurrency(currVal) : (currVal || 'N/A')}</span>
+                    </div>
+                  </div>`;
+              }
+              return '';
+            }).join('') || '<p class="text-gray-500 text-center py-4">No other field changes detected</p>'}
+          </div>
+        </div>
+
+        <div class="bg-gray-50 p-5 rounded-md border-l-4 ${
+          change.risk_level === 'HIGH' ? 'border-red-500' : 
+          change.risk_level === 'MEDIUM' ? 'border-yellow-500' : 'border-green-500'
+        }">
+          <h4 class="font-bold text-gray-800 mb-2 flex items-center">
+            <i class="fas fa-shield-alt mr-2"></i>Risk Assessment
+          </h4>
+          <p class="text-sm"><span class="font-semibold">Risk Level:</span> 
+            <span class="px-3 py-1 rounded-full text-xs font-bold ${
+              change.risk_level === 'HIGH' ? 'bg-red-100 text-red-800' : 
+              change.risk_level === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+            }">${change.risk_level || 'LOW'}</span>
+          </p>
+          <p class="text-sm mt-2"><span class="font-semibold">Change Summary:</span> ${change.change_summary || 'N/A'}</p>
+          <p class="text-sm mt-2"><span class="font-semibold">Category:</span> 
+            <span class="px-2 py-1 bg-white rounded text-xs font-semibold">${change.change_category || 'N/A'}</span>
+          </p>
+        </div>
+      </div>`;
+
+    detailsModal.classList.remove('hidden');
+  }
+
+  // Export handlers
+  exportExcelBtn.addEventListener('click', async () => {
+    if (!allChangesData) return showAlert('Export Failed', 'No data to export', 'error');
+    try {
+      const token = localStorage.getItem('token');
+      const dataToExport = currentMode === 'all' ? allChangesData : { ...allChangesData, changes: filteredData };
+      const res = await fetch(`${API_BASE}/excel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(dataToExport)
+      });
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a'); 
+      a.href = url; 
+      a.download = `input_variables_${currentMode}_${new Date().toISOString().split('T')[0]}.xlsx`; 
+      a.click();
+      showAlert('Success!', 'Excel file downloaded successfully', 'success');
+    } catch (err) {
+      showAlert('Export Failed', 'Excel export failed: ' + err.message, 'error');
+    }
+  });
+
+  exportPdfBtn.addEventListener('click', async () => {
+    if (!allChangesData) return showAlert('Export Failed', 'No data to export', 'error');
+    try {
+      const token = localStorage.getItem('token');
+      const dataToExport = currentMode === 'all' ? allChangesData : { ...allChangesData, changes: filteredData };
+      const res = await fetch(`${API_BASE}/pdf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(dataToExport)
+      });
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a'); 
+      a.href = url; 
+      a.download = `input_variables_${currentMode}_${new Date().toISOString().split('T')[0]}.pdf`; 
+      a.click();
+      showAlert('Success!', 'PDF file downloaded successfully', 'success');
+    } catch (err) {
+      showAlert('Export Failed', 'PDF export failed: ' + err.message, 'error');
+    }
+  });
+
+  function generateReport(reportData = []) {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    const dateStr = `${day}-${month}-${year}`;
+
+    const allChangesData = Array.isArray(reportData) ? reportData : [];
+    
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    
+    // Generate HTML content
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>States Report</title>
+        <style>
+          body { 
+            font-family: Arial, sans-serif;
+            margin: 40px; 
+          }
+          .print-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 20px; 
+          }
+          .print-table th { 
+            background-color: #f3f4f6; 
+            color: #1f2937;
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #e5e7eb;
+          }
+          .print-table td { 
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+          }
+          .print-header { 
+            text-align: center; 
+            margin-bottom: 20px; 
+          }
+          .date-generated {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 30px;
+          }
+          .print-footer { 
+            text-align: center; 
+            margin-top: 20px; 
+            font-size: 12px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-header">
+          <h1>States Report</h1>
+          <p class="date-generated">Generated on: ${dateStr}</p>
+        </div>
+        
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>State Name</th>
+              <th>State Code</th>
+              <th>State Capital</th>
+              <th>Geo Zone</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${allChangesData.map((changes, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${changes.Empl_id}</td>
+                <td>${changes.full_name}</td>
+                <td>${changes.pay_type}</td>
+                <td>${changes.element_category}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="print-footer">
+          <p>Total Records: ${allChangesData.length}</p>
+          <p>Generated by: ${localStorage.getItem('full_name') || 'System User'}</p>
+          <p>*** End of Report ***</p>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    // Write content to new window
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    
+    // Wait for content to load then print
+    printWindow.onload = function() {
+      printWindow.print();
+    };
+  }
+
+  printBtn.addEventListener('click', generateReport);
+
+  // Load input variables
+  async function loadInputVariables(isAutoLoad = false, isManualProcess = false) {
+    let endpoint = `${API_BASE}/view`;
+    let method = 'GET';
+    let showProgress = false;
+    let progressLabel = 'Fetching input variables...';
+
+    // Determine if we need to POST (process) or GET (view)
+    if (currentPayrollStage === STAGE_CHANGES_READY && isManualProcess) {
+      // POST to process the data for the first time
+      endpoint = `${API_BASE}/changes`;
+      method = 'POST';
+      showProgress = true;
+      progressLabel = 'Processing input variables...';
+    } else if (currentPayrollStage >= STAGE_INPUT_VAR_READY) {
+      // GET to view already processed data
+      endpoint = `${API_BASE}/view`;
+      method = 'GET';
+      showProgress = false;
+      progressLabel = 'Loading processed input variables...';
+    }
+
+    // Don't allow loading if stage is too early
+    if (!isAutoLoad && !showProgress && currentPayrollStage < STAGE_CHANGES_READY) {
+      return showAlert('Not Ready', 'Please ensure personnel changes are processed first.', 'warning');
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+
+      if (showProgress) {
+        progressModal.classList.remove('hidden');
+        logContainer.innerHTML = '';
+        progressMessage.textContent = progressLabel;
+        addLog('Starting processing (POST)...');
+      }
+
+      const res = await fetch(endpoint, {
+        method,
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` 
+        }
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        const msg = errJson.error || `HTTP ${res.status}`;
+        if (showProgress) addLog(msg, 'error');
+        throw new Error(msg);
+      }
+
+      const data = await res.json();
+
+      if (showProgress && Array.isArray(data.logs)) {
+        data.logs.forEach(l => addLog(l));
+      }
+
+      if (data.status === 'SUCCESS' || data.success === true) {
+        allChangesData = data || [];
+        hasLoadedOnce = true;
+
+        updateSummaryCards(data.summary || {});
+        populateEmployeeDropdown();
+        
+        filteredData = (data.changes || []).slice();
+        currentPage = 1;
+        renderTable(getPaginatedData());
+
+        if (method === 'POST') {
+          setTimeout(() => {
+            progressModal.classList.add('hidden');
+            showAlert('Success', 'Input variables processed and loaded.', 'success');
+            updateUIVisibility();
+          }, 800);
+        } else {
+          if (showProgress) progressModal.classList.add('hidden');
+          updateUIVisibility();
+        }
+      } else {
+        const message = data.error || data.message || 'Failed to load/process input variables';
+        if (showProgress) addLog(message, 'error');
+        throw new Error(message);
+      }
+    } catch (err) {
+      if (showProgress) addLog(err.message || 'Unknown error', 'error');
+      setTimeout(() => {
+        progressModal.classList.add('hidden');
+        showAlert('Error', err.message || 'Unknown error', 'error');
+      }, 400);
+    }
+  }
+
+  // Update summary cards
+  function updateSummaryCards(summary) {
+    document.getElementById('totalChanges').textContent = summary.totalChanges || 0;
+    document.getElementById('highRiskCount').textContent = summary.highRisk || 0;
+    document.getElementById('loanCount').textContent = summary.loanChanges || 0;
+    document.getElementById('indicatorCount').textContent = summary.byIndicator ? Object.keys(summary.byIndicator).length : 0;
+  }
+
+  // Event listeners
+  loadBtn.addEventListener('click', () => {
+    if (currentPayrollStage === STAGE_CHANGES_READY) {
+      loadInputVariables(false, true);
+    } else {
+      loadInputVariables(false, false);
+    }
+  });
+  allToggle.addEventListener('click', () => switchMode('all'));
+  personnelToggle.addEventListener('click', () => switchMode('personnel'));
+  highRiskToggle.addEventListener('click', () => switchMode('highRisk'));
+  loanToggle.addEventListener('click', () => switchMode('loan'));
+  byDateToggle.addEventListener('click', () => switchMode('byDate'));
+  closeModal.addEventListener('click', () => detailsModal.classList.add('hidden'));
+  alertCloseBtn.addEventListener('click', () => alertModal.classList.add('hidden'));
+
+  // Payroll status checking
+  async function checkPayrollStatus(attemptAutoLoad = false) {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/status-payroll', { 
+        headers: { 'Authorization': `Bearer ${token}` } 
+      });
+      const data = await res.json();
+      currentPayrollStage = Number(data?.sun || 0);
+      updateUIVisibility();
+
+      if (attemptAutoLoad && currentPayrollStage >= STAGE_INPUT_VAR_READY && !hasLoadedOnce) {
+        await loadInputVariables(true);
+      }
+
+      return data;
+    } catch (err) {
+      console.error('Error checking payroll status:', err);
+      return null;
+    }
+  }
+
+  window.addEventListener('payrollStatusChanged', function (event) {
+    if (event.detail && typeof event.detail.stage === 'number') {
+      currentPayrollStage = event.detail.stage;
+      if (currentPayrollStage < STAGE_CHANGES_READY) {
+        hasLoadedOnce = false;
+        allChangesData = null;
+        allEmployees = [];
+        selectedEmployee = null;
+        filteredData = [];
+        currentPage = 1;
+        filterApplied = false;
+      }
+      updateUIVisibility();
+      if (currentPayrollStage >= STAGE_INPUT_VAR_READY && !hasLoadedOnce) {
+        loadInputVariables(true);
+      }
+    } else {
+      checkPayrollStatus(true);
+    }
+  });
+
+  window.refreshInputVariableUI = function () { 
+    checkPayrollStatus(true); 
+  };
+
+  function initialize() {
+    switchMode('all');
+    checkPayrollStatus(true);
+  }
+
+  document.addEventListener('DOMContentLoaded', initialize);
+  if (document.readyState !== 'loading') initialize();
 })();
 </script>

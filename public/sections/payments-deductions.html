@@ -1044,8 +1044,8 @@
   // INITIALIZE
   async function initialize() {
     await loadAllDropdowns();  // Wait for lookup maps to load FIRST
-    await fetchEmployees();
     await fetchAllDeductions(); // Now this will have access to lookupMaps
+    await fetchEmployees();
   }
 
   initialize();

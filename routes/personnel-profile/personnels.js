@@ -225,8 +225,8 @@ router.get('/employees-old', verifyToken, async (req, res) => {
     const [rows] = await pool.query(`
       SELECT * 
       FROM hr_employees 
-      WHERE DateLeft IS NOT NULL
-        OR exittype IS NOT NULL
+      WHERE (DateLeft IS NOT NULL AND DateLeft <> '')
+        OR (exittype IS NOT NULL AND TRIM(exittype) <> '')
       ORDER BY Empl_ID ASC;
     `);
 
@@ -278,9 +278,8 @@ router.get('/employees-old-pages', verifyToken, attachPayrollClass, async (req, 
     const [countResult] = await pool.query(`
       SELECT COUNT(*) as total
       FROM hr_employees 
-      WHERE DateLeft IS NOT NULL
-        OR exittype IS NOT NULL
-      ORDER BY Empl_ID ASC;
+      WHERE (DateLeft IS NOT NULL AND DateLeft <> '')
+        OR (exittype IS NOT NULL AND TRIM(exittype) <> '')
     `);
     
     const totalRecords = countResult[0].total;
@@ -290,8 +289,8 @@ router.get('/employees-old-pages', verifyToken, attachPayrollClass, async (req, 
     const [rows] = await pool.query(`
       SELECT * 
       FROM hr_employees 
-      WHERE DateLeft IS NOT NULL
-        OR exittype IS NOT NULL
+      WHERE (DateLeft IS NOT NULL AND DateLeft <> '0000-00-00')
+         OR (exittype IS NOT NULL AND TRIM(exittype) <> '')
       ORDER BY Empl_ID ASC
       LIMIT ? OFFSET ?
     `, [limit, offset]);
@@ -350,7 +349,8 @@ router.get('/employees-old/search', verifyToken, attachPayrollClass, async (req,
     let query = `
       SELECT * 
       FROM hr_employees 
-      WHERE (DateLeft IS NOT NULL OR exittype IS NOT NULL)
+        WHERE (DateLeft IS NOT NULL AND DateLeft <> '')
+        OR (exittype IS NOT NULL AND TRIM(exittype) <> '')
     `;
     
     const params = [];

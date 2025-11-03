@@ -1,38 +1,30 @@
 const pool = require('../../config/db');
-const { startLog, updateLog } = require('../../services/logService');
+const { startLog, updateLog } = require('../helpers/logService');
+const getDatabaseForIndicator = require('../helpers/mapdbclasses');
 
-exports.runUpdates = async (year, month, user) => {
+exports.runUpdates = async (year, month, indicator, user) => {
   const logId = await startLog('FileUpdate', 'MasterFileUpdates', year, month, user);
-
-  // Ordered procedure flow
-  const updates = [
-    'py_updatepayroll_00_optimized',
-    'py_updatepayroll_01_optimized',
-    'py_updatepayroll_02_optimized',
-    'py_updatepayroll_03_optimized',
-    'py_updatepayroll_04_optimized',
-    'py_updatepayroll_05_optimized',
-    'py_updatepayroll_06_optimized',
-  ];
+  const dbName = getDatabaseForIndicator(indicator);
 
   try {
-    // Run all payroll update phases sequentially
-    for (const proc of updates) {
-      console.log(`🚀 Running ${proc} for ${year}-${month}`);
-      const [rows] = await pool.query(`CALL ${proc}(?, ?)`, [year, month]);
-    }
+    // Switch to target database
+    await pool.query(`USE \`${dbName}\``);
+    console.log(`Switched to database: ${dbName}`);
 
-    // Now run extract step — note different parameters
-    console.log('📤 Running sp_extractrec_optimized');
-    const [rows] = await pool.query(`CALL sp_extractrec_optimized(?, ?, ?, ?)`, ['NAVY', 'O', 'Yes', user]);
+    // Step 1: Run extraction
+    console.log('Running sp_extractrec_optimized...');
+    await pool.query(`CALL sp_extractrec_optimized(?, ?, ?, ?)`, ['NAVY', indicator, 'Yes', user]);
 
-    await updateLog(logId, 'SUCCESS', 'Master file updates completed');
-    return { 
-      logId,
-      status: 'OK', 
-      message: 'All master updates and extraction completed successfully', 
-      rows: rows[0] || []
+    // Step 2: Run update
+    console.log('Running py_update_payrollfiles...');
+    await pool.query(`CALL py_update_payrollfiles(?, ?)`, [year, month]);
+
+    await updateLog(logId, 'SUCCESS', `Extraction + Updates completed for ${dbName}`);
+    return {
+      status: 'OK',
+      message: `Extraction + Updates completed successfully for ${dbName}`,
     };
+
   } catch (err) {
     console.error('❌ Error in runUpdates:', err);
     await updateLog(logId, 'FAILED', err.message);

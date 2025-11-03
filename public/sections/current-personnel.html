@@ -151,6 +151,49 @@ class PersonnelManager {
     }
   }
 
+  async loadPersonnelData(type = 'current', page = 1) {
+    // FIXED: Set view type immediately to prevent race conditions
+    this.currentView = type;
+    this.personnelType = type;
+    
+    try {
+      const result = await this.apiRequest(`${API_BASE}/employees-current-pages?page=${page}&limit=10`);
+      const allPersonnel = result.data || [];
+      this.paginationInfo = result.pagination || {};
+
+      // Normalize statuses
+      const normalized = allPersonnel.map(p => {
+        if (p.DateLeft || p.exittype) {
+          return { ...p, Status: 'INACTIVE' };
+        }
+        return { ...p, Status: p.Status || 'ACTIVE' };
+      });
+
+      // Filter based on type - FIXED: Only show current personnel (no exit data)
+      this.personnel = normalized.filter(p => !p.DateLeft && !p.exittype);
+      this.filteredPersonnel = [...this.personnel];
+      this.currentPage = page;
+
+      // FIXED: Only restore filters if we're on page 1
+      if (page === 1) {
+        const hasFilters = await this.restoreFilterState();
+        if (!hasFilters) {
+          this.renderTable();
+        }
+      } else {
+        this.renderTable();
+      }
+
+      console.log(`Loaded ${this.personnel.length} ${type} personnel on page ${page}`);
+
+    } catch (error) {
+      console.error('Failed to load personnel:', error);
+      this.personnel = [];
+      this.filteredPersonnel = [];
+      this.renderTable();
+    }
+  }
+
   async loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
     try {
       const token = localStorage.getItem('token');
@@ -239,49 +282,6 @@ class PersonnelManager {
   resolveName(code, endpoint) {
     if (!code) return 'N/A';
     return this.lookupMaps[endpoint]?.[code] || code;
-  }
-
-  async loadPersonnelData(type = 'current', page = 1) {
-    // FIXED: Set view type immediately to prevent race conditions
-    this.currentView = type;
-    this.personnelType = type;
-    
-    try {
-      const result = await this.apiRequest(`${API_BASE}/employees-current-pages?page=${page}&limit=10`);
-      const allPersonnel = result.data || [];
-      this.paginationInfo = result.pagination || {};
-
-      // Normalize statuses
-      const normalized = allPersonnel.map(p => {
-        if (p.DateLeft || p.exittype) {
-          return { ...p, Status: 'INACTIVE' };
-        }
-        return { ...p, Status: p.Status || 'ACTIVE' };
-      });
-
-      // Filter based on type - FIXED: Only show current personnel (no exit data)
-      this.personnel = normalized.filter(p => !p.DateLeft && !p.exittype);
-      this.filteredPersonnel = [...this.personnel];
-      this.currentPage = page;
-
-      // FIXED: Only restore filters if we're on page 1
-      if (page === 1) {
-        const hasFilters = await this.restoreFilterState();
-        if (!hasFilters) {
-          this.renderTable();
-        }
-      } else {
-        this.renderTable();
-      }
-
-      console.log(`Loaded ${this.personnel.length} ${type} personnel on page ${page}`);
-
-    } catch (error) {
-      console.error('Failed to load personnel:', error);
-      this.personnel = [];
-      this.filteredPersonnel = [];
-      this.renderTable();
-    }
   }
 
   nextPage() {

@@ -1,5 +1,5 @@
 const pool = require('../../config/db');
-const { startLog, updateLog } = require('../../services/logService');
+const { startLog, updateLog } = require('../helpers/logService');
 
 exports.saveFiles = async (year, month, user) => {
   const logId = await startLog('FileUpdate', 'SavePayrollFiles', year, month, user);

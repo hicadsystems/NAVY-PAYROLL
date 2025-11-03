@@ -5,6 +5,28 @@
   <meta charset="utf-8" />
   <title>HICAD Payroll</title>
 
+  <!-- CRITICAL: Prevent ALL flickering -->
+  <style>
+    /* Hide everything until fully initialized */
+    html {
+      visibility: hidden;
+    }
+    
+    html.ready {
+      visibility: visible;
+    }
+    
+    /* Smooth reveal after init */
+    body {
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    
+    body.initialized {
+      opacity: 1;
+    }
+  </style>
+
   <!-- Tailwind CDN + config -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="styles/dashboard.css">

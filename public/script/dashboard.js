@@ -29,6 +29,39 @@ tailwind.config = {
   }
 };
 
+(function() {
+  // Prevent any rendering until state is ready
+  const width = window.innerWidth;
+  
+  window.addEventListener('DOMContentLoaded', function() {
+    const body = document.body;
+    const sidebar = document.getElementById('sidebar');
+    
+    // Set sidebar state immediately
+    if (width <= 1200 && width >= 1024) {
+      sidebar?.classList.add('desktop-hidden');
+      body.classList.add('sidebar-closed');
+    } else if (width > 1200) {
+      body.classList.add('sidebar-open');
+    }
+    
+    // Hide dashboard content if we have a hash (navigating to section)
+    const hash = window.location.hash;
+    if (hash && hash.length > 1) {
+      const mainContent = document.querySelector('main');
+      if (mainContent) {
+        mainContent.style.display = 'none'; // Hide dashboard immediately
+      }
+    }
+    
+    // Make visible with single animation
+    requestAnimationFrame(() => {
+      document.documentElement.classList.add('ready');
+      body.classList.add('initialized');
+    });
+  });
+})();
+
 // keep sidebar toggle for small screens (does not change layout structure on lg)
 const btn = document.getElementById('menu-toggle');
 const sidebarEl = document.getElementById('sidebar');
@@ -94,17 +127,48 @@ function toggleSidebar() {
 
 btn?.addEventListener('click', toggleSidebar);
 
-// Handle window resize
+// Handle window resize with debouncing
+let resizeTimeout;
 window.addEventListener('resize', () => {
-  removeSidebarOverlay();
-  document.body.classList.remove('no-scroll');
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    removeSidebarOverlay();
+    document.body.classList.remove('no-scroll');
+    
+    if (window.innerWidth >= 1024) {
+      sidebarEl.classList.remove('sidebar-visible');
+      
+      // Auto-collapse sidebar to icons for screens 1200px and below
+      if (window.innerWidth <= 1200) {
+        sidebarEl.classList.add('desktop-hidden');
+        document.body.classList.add('sidebar-closed');
+        document.body.classList.remove('sidebar-open');
+      } else {
+        // Above 1200px - show full sidebar
+        sidebarEl.classList.remove('desktop-hidden');
+        document.body.classList.add('sidebar-open');
+        document.body.classList.remove('sidebar-closed');
+      }
+      
+      mainContainer?.classList.add('sidebar-open');
+      mainContainer?.classList.remove('sidebar-closed');
+    }
+  }, 150);
+});
+
+// Initialize sidebar state on page load
+document.addEventListener('DOMContentLoaded', () => {
+  const width = window.innerWidth;
   
-  if (window.innerWidth >= 1024) {
-    sidebarEl.classList.remove('sidebar-visible');
-    // Reset to default desktop state
-    sidebarEl.classList.remove('desktop-hidden');
-    mainContainer?.classList.add('sidebar-open');
-    mainContainer?.classList.remove('sidebar-closed');
+  // Set sidebar state
+  if (width <= 1200 && width >= 1024) {
+    sidebarEl?.classList.add('desktop-hidden');
+    document.body.classList.add('sidebar-closed');
+    document.body.classList.remove('sidebar-open');
+  } else if (width > 1200) {
+    sidebarEl?.classList.remove('desktop-hidden');
+    document.body.classList.add('sidebar-open');
+    document.body.classList.remove('sidebar-closed');
   }
 });
 
@@ -154,17 +218,25 @@ function positionSubmenu(btn, submenu){
 
   const rect = btn.getBoundingClientRect();
   
-if (window.innerWidth < 600) {
-  submenu.style.left = '80px';
-  submenu.style.top = (rect.bottom - 5) + 'px';
-  submenu.style.maxWidth = (window.innerWidth - 90) + 'px'; // More room for scroll
-  submenu.style.maxHeight = '35vh'; // Limit height
-  submenu.style.overflowY = 'auto'; // Enable scrolling
-  submenu.style.overflowX = 'hidden';
-  submenu.style.whiteSpace = 'normal';
-  submenu.style.background = 'white'; // Ensure background for scrolling
-  return;
-}
+  if (window.innerWidth < 768) {
+    // Mobile: scrollable submenu
+    submenu.style.left = '80px';
+    submenu.style.top = (rect.bottom - 5) + 'px';
+    submenu.style.maxWidth = (window.innerWidth - 90) + 'px';
+    submenu.style.maxHeight = '35vh';
+    submenu.style.overflowY = 'auto';
+    submenu.style.overflowX = 'hidden';
+    submenu.style.whiteSpace = 'normal';
+    submenu.style.background = 'white';
+    return;
+  }
+
+  // Desktop/tablet: clean up mobile styles
+  submenu.style.maxHeight = '';
+  submenu.style.overflowY = '';
+  submenu.style.overflowX = '';
+  submenu.style.whiteSpace = 'nowrap';
+  submenu.style.background = '';
 
   // Desktop/tablet positioning (to the side)
   let left = calcBaseLeft();
@@ -299,7 +371,23 @@ function repositionOpen(){
     if (s) positionSubmenu(b, s);
   });
 }
-window.addEventListener('resize', ()=>{ clearTimeout(t); t = setTimeout(repositionOpen, 120); });
+window.addEventListener('resize', ()=>{ 
+  clearTimeout(t); 
+  t = setTimeout(() => {
+    repositionOpen();
+    
+    // Clean up mobile-specific submenu styles on larger screens
+    if (window.innerWidth >= 768) {
+      document.querySelectorAll('.submenu').forEach(submenu => {
+        submenu.style.maxHeight = '';
+        submenu.style.overflowY = '';
+        submenu.style.overflowX = '';
+        submenu.style.whiteSpace = '';
+        submenu.style.background = '';
+      });
+    }
+  }, 150); 
+});
 window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
 
   // Figure out the current time of day
@@ -359,7 +447,7 @@ window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
     const user = getLoggedInUser();
     const timeOfDay = getTimeOfDay();
 
-    // Use current payroll class (session override) or fallback to user’s primary
+    // Use current payroll class (session override) or fallback to user's primary
     const effectiveClass = selectedPayrollClass || user.primary_class;
     const userClass = classMapping[effectiveClass] || effectiveClass || 'OFFICERS';
 
@@ -692,6 +780,7 @@ class NavigationSystem {
     this.currentSection = null;
     this.cache = new Map(); // Cache loaded content
     this.state = {}; // State for section navigation
+    this.isNavigating = false; // Prevent race conditions
     this.init();
   }
 
@@ -802,7 +891,11 @@ class NavigationSystem {
   showLoadingState(sectionName) {
     const mainContent = document.querySelector('main');
     if (mainContent) {
-      // Hide immediately like renderSection does
+      // Prevent flicker by checking if already showing loading
+      const isAlreadyLoading = mainContent.querySelector('.animate-grow-up');
+      if (isAlreadyLoading) return;
+      
+      // Hide immediately
       mainContent.style.opacity = '0';
       mainContent.style.transition = 'none';
       
@@ -829,7 +922,7 @@ class NavigationSystem {
       // Fade in the loading state
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          mainContent.style.transition = 'opacity 0.3s ease';
+          mainContent.style.transition = 'opacity 0.2s ease';
           mainContent.style.opacity = '1';
         });
       });
@@ -837,7 +930,15 @@ class NavigationSystem {
   }
 
   async navigateToSection(sectionId, sectionName, state = {}) {
+    // Prevent duplicate navigation
+    if (this.isNavigating) {
+      console.log('Navigation already in progress');
+      return;
+    }
+
     try {
+      this.isNavigating = true;
+
       // Check if content exists on current page
       const existingElement = document.querySelector(`#${sectionId}`);
       if (existingElement) {
@@ -866,6 +967,8 @@ class NavigationSystem {
 
     } catch (error) {
       this.showErrorState(sectionName, error);
+    } finally {
+      this.isNavigating = false;
     }
   }
 
@@ -924,11 +1027,10 @@ class NavigationSystem {
   renderSection(sectionName, content) {
     const mainContent = document.querySelector('main');
     if (mainContent) {
-      // Instantly hide content to prevent flicker
+      // Show main if it was hidden
+      mainContent.style.display = 'block';
       mainContent.style.opacity = '0';
-      mainContent.style.transition = 'none';
-
-      // Update content while hidden
+      
       mainContent.innerHTML = `
         <div class="mt-6">
           <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
@@ -951,10 +1053,10 @@ class NavigationSystem {
         </div>
       `;
 
-      // Scroll to top before revealing
       window.scrollTo({ top: 0, behavior: 'instant' });
+      this.initializeLoadedScripts();
 
-      // Fade in smoothly
+      // Smooth fade-in with animation
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           mainContent.style.transition = 'opacity 0.3s ease';
@@ -975,9 +1077,6 @@ class NavigationSystem {
           }
         });
       });
-
-      // Initialize any scripts in loaded content
-      this.initializeLoadedScripts();
     }
   }
 
@@ -1102,21 +1201,27 @@ class NavigationSystem {
     if (hash && hash.length > 1) {
       const sectionId = hash.substring(1);
       
-      // Try to get section name from existing history state first
+      // Hide dashboard content IMMEDIATELY before any rendering
+      const mainContent = document.querySelector('main');
+      if (mainContent) {
+        mainContent.style.opacity = '0';
+        mainContent.style.display = 'none';
+      }
+      
+      // Get section name
       let sectionName = null;
       if (window.history.state && window.history.state.section) {
         sectionName = window.history.state.section;
       } else {
-        // Fallback: try to find the section name from DOM
         const linkElement = document.querySelector(`a[data-section="${sectionId}"]`);
         if (linkElement) {
           sectionName = linkElement.textContent.trim();
         } else {
-          // Last resort: convert from ID
           sectionName = this.getSectionNameFromId(sectionId);
         }
       }
       
+      // Load section immediately
       this.navigateToSection(sectionId, sectionName);
     }
   }

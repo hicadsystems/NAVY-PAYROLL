@@ -13,19 +13,16 @@
   <!-- Filter Tabs -->
   <div id="filterTabs" class="hidden bg-yellow-50/25 border-2 border-amber-100 flex flex-wrap gap-2 p-2 mb-4 rounded-lg no-print">
     <button id="allToggle" class="flex-1 px-2 py-2 text-sm lg:text-lg font-medium rounded-lg bg-blue-50 text-gray-900 shadow transition-colors duration-200">
-      <i class="fas fa-list mr-2"></i>All Changes
+      <i class="fas fa-list mr-2"></i>All Variables
     </button>
     <button id="personnelToggle" class="flex-1 px-2 py-2 text-sm lg:text-lg font-medium rounded-lg text-gray-500 hover:text-gray-900 transition-colors duration-200">
       <i class="fas fa-user mr-2"></i>By Personnel
     </button>
-    <button id="highRiskToggle" class="flex-1 px-2 py-2 text-sm lg:text-lg font-medium rounded-lg text-gray-500 hover:text-gray-900 transition-colors duration-200">
-      <i class="fas fa-exclamation-triangle mr-2"></i>High Risk
+    <button id="categoryToggle" class="flex-1 px-2 py-2 text-sm lg:text-lg font-medium rounded-lg text-gray-500 hover:text-gray-900 transition-colors duration-200">
+      <i class="fas fa-tags mr-2"></i>By Category
     </button>
     <button id="loanToggle" class="flex-1 px-2 py-2 text-sm lg:text-lg font-medium rounded-lg text-gray-500 hover:text-gray-900 transition-colors duration-200">
       <i class="fas fa-money-bill-wave mr-2"></i>Loans
-    </button>
-    <button id="byDateToggle" class="flex-1 px-2 py-2 text-sm lg:text-lg font-medium rounded-lg text-gray-500 hover:text-gray-900 transition-colors duration-200">
-      <i class="fas fa-calendar mr-2"></i>By Date Range
     </button>
   </div>
 
@@ -63,27 +60,24 @@
         </div>
       </div>
 
-      <div id="dateRangeWrapperFilter" class="hidden flex-1">          
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">              
-          <div>
-            <label for="startPeriodFilter" class="block text-sm font-medium text-gray-700 mb-2 lg:text-lg">
-              Start Date
-            </label>
-            <input id="startPeriodFilter" type="date" class="w-full border-2 border-gray-300 rounded-lg shadow-sm px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"/>
-          </div>
-          
-          <div>
-            <label for="endPeriodFilter" class="block text-sm font-medium text-gray-700 mb-2 lg:text-lg">
-              End Date
-            </label>
-            <input id="endPeriodFilter" type="date" class="w-full border-2 border-gray-300 rounded-lg shadow-sm px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"/>
-          </div>
-          
-          <div class="md:self-end mt-4 md:mt-0 flex md:justify-end">
+      <div id="categorySelectWrapperFilter" class="hidden flex-1">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2 lg:text-lg">
+            <i class="fas fa-filter mr-2"></i>Select Category
+          </label>
+          <div class="md:flex md:items-start md:space-x-4">
+            <select id="categorySelect" class="flex-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2 mb-3 md:mb-0">
+              <option value="">-- Select Category --</option>
+              <option value="REQUIRED_FOR_ALL">Required for All</option>
+              <option value="NOT_REQUIRED_FOR_ALL">Not Required for All</option>
+              <option value="ALLOWANCE">Allowance</option>
+              <option value="DEDUCTION">Deduction</option>
+              <option value="OTHER">Other</option>
+            </select>
             <button 
               type="button" 
-              id="applyFilterBtn2" 
-              class="px-3 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all shadow-lg w-full md:w-auto">
+              id="applyCategoryFilterBtn" 
+              class="px-3 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all shadow-lg whitespace-nowrap w-full md:w-auto">
               Apply Filter
             </button>
           </div>
@@ -99,7 +93,7 @@
         <div class="bg-yellow-500 text-white p-3 rounded-full shadow">
           <i class="fas fa-file-invoice text-2xl"></i>
         </div>
-        <h2 class="text-2xl font-bold text-gray-900">Input Variable Report</h2>
+        <h2 class="text-2xl font-bold text-gray-900">Input Variables Report</h2>
       </div>
       <p class="text-gray-600 font-semibold lg:text-lg">
         Preview payroll input variables and generate printable reports.
@@ -145,10 +139,10 @@
     </div>
   </div>
 
-  <!-- Changes Table -->
+  <!-- Variables Table -->
   <div id="changesTable" class="hidden mb-4 rounded-lg overflow-hidden">
     <div class="pb-4 flex justify-between items-center no-print">
-      <h3 class="text-xl text-yellow-700 font-bold">Input Variable Report Results</h3>
+      <h3 class="text-xl text-yellow-700 font-bold">Input Variables Report Results</h3>
       <div class="flex gap-2">
         <button id="exportExcelBtn" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition shadow">
           <i class="fas fa-file-excel mr-2"></i>Excel
@@ -169,7 +163,8 @@
             <th class="border px-2 py-3 text-left"><i class="fas fa-id-badge mr-1"></i>Service No</th>
             <th class="border px-2 py-3 text-left"><i class="fas fa-user mr-1"></i>Full Name</th>
             <th class="border px-2 py-3 text-left"><i class="fas fa-coins mr-1"></i>Pay Type</th>
-            <th class="border px-2 py-3 text-left"><i class="fas fa-shield-alt mr-1"></i>Risk</th>
+            <!--<th class="border px-2 py-3 text-left"><i class="fas fa-tag mr-1"></i>Category</th>
+            <th class="border px-2 py-3 text-right"><i class="fas fa-money-bill mr-1"></i>Amount</th>-->
             <th class="border px-2 py-3 text-left no-print"><i class="fas fa-cog mr-1"></i>Action</th>
           </tr>
         </thead>
@@ -210,49 +205,47 @@
   </div>
 
   <!-- Summary Cards -->
-  <div id="summaryCards" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+  <!--<div id="summaryCards" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
     <div class="p-4 rounded-lg border-2 transform hover:scale-105 transition">
       <div class="flex items-center justify-between">
         <div>
-          <div class="text-gray-600 text-sm font-medium">Total Changes</div>
-          <div id="totalChanges" class="text-3xl font-bold text-gray-900">0</div>
+          <div class="text-gray-600 text-sm font-medium">Total Records</div>
+          <div id="totalRecordsCard" class="text-3xl font-bold text-yellow-900">0</div>
         </div>
-        <i class="fas fa-exchange-alt text-yellow-500 text-3xl"></i>
       </div>
     </div>
     <div class="p-4 rounded-lg border-2 hover:scale-105 transition">
       <div class="flex items-center justify-between">
         <div>
-          <div class="text-gray-600 text-sm font-medium">High Risk</div>
-          <div id="highRiskCount" class="text-3xl font-bold text-red-600">0</div>
+          <div class="text-gray-600 text-sm font-medium">Allowances</div>
+          <div id="allowancesCount" class="text-3xl font-bold text-green-600">0</div>
         </div>
-        <i class="fas fa-exclamation-circle text-red-500 text-3xl"></i>
+        <i class="fas fa-plus-circle text-green-500 text-3xl"></i>
       </div>
     </div>
     <div class="p-4 rounded-lg border-2 transform hover:scale-105 transition">
       <div class="flex items-center justify-between">
         <div>
-          <div class="text-gray-600 text-sm font-medium">Loan Changes</div>
-          <div id="loanCount" class="text-3xl font-bold text-green-600">0</div>
+          <div class="text-gray-600 text-sm font-medium">Deductions</div>
+          <div id="deductionsCount" class="text-3xl font-bold text-red-600">0</div>
         </div>
-        <i class="fas fa-money-bill-wave text-green-500 text-3xl"></i>
+        <i class="fas fa-minus-circle text-red-500 text-3xl"></i>
       </div>
     </div>
     <div class="p-4 rounded-lg border-2 transform hover:scale-105 transition">
       <div class="flex items-center justify-between">
         <div>
-          <div class="text-gray-600 text-sm font-medium">By Indicator</div>
-          <div id="indicatorCount" class="text-3xl font-bold text-blue-600">0</div>
+          <div class="text-gray-600 text-sm font-medium">Total Amount</div>
+          <div id="totalAmount" class="text-3xl font-bold text-yellow-900">₦0</div>
         </div>
-        <i class="fas fa-chart-line text-blue-500 text-3xl"></i>
       </div>
     </div>
-  </div>
+  </div>-->
 
-  <!-- Change Details Modal -->
+  <!-- Details Modal -->
   <div id="detailsModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
     <div class="bg-gray-100 rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-      <div class="p-6 sticky top-0 z-20 bg-yellow-500 text-white">
+      <div class="p-6 sticky top-0 z-20 bg-yellow-600 text-white">
         <div class="flex justify-between items-center">
           <h3 class="text-2xl font-bold"><i class="fas fa-info-circle mr-2"></i>Input Variable Details</h3>
           <button id="closeModal" class="text-white hover:text-gray-200 transition"><i class="fas fa-times text-2xl"></i></button>
@@ -268,7 +261,7 @@
       <i class="fas fa-check-circle text-green-500 text-3xl mr-4"></i>
       <div class="flex-1">
         <h4 class="text-green-800 font-bold text-lg mb-2">Input Variables Loaded Successfully!</h4>
-        <p class="text-green-700 mb-4">Review the input variable changes above, filter as needed, and export reports. Ready to proceed?</p>
+        <p class="text-green-700 mb-4">Review the input variables above, filter as needed, and export reports. Ready to proceed?</p>
         <button onclick="window.navigation && window.navigation.navigateToSection && window.navigation.navigateToSection('master-file-update', 'Master File Update')" 
                 class="px-6 py-3 bg-green-600 text-white rounded-lg shadow-lg hover:bg-green-700 transition font-medium">
           <i class="fas fa-arrow-right mr-2"></i>Master File Update
@@ -280,25 +273,25 @@
 
 <script>
 (function () {
-  const API_BASE = '/inputvariable';  // Fixed: No hyphen
+  const API_BASE = '/inputvariable';
 
   // Stage constants
   const STAGE_CHANGES_READY = 775;
   const STAGE_INPUT_VAR_READY = 777;
-  const STAGE_UPDATE_COMPLETED = 888;
 
   // Pagination
-  const RECORDS_PER_PAGE = 10;
+  const RECORDS_PER_PAGE = 5;
   let currentPage = 1;
   let filteredData = [];
 
   // State
   let currentPayrollStage = 0;
-  let allChangesData = null;
+  let allVariablesData = null;
   let allEmployees = [];
   let hasLoadedOnce = false;
   let currentMode = 'all';
   let selectedEmployee = null;
+  let selectedCategory = '';
   let filterApplied = false;
 
   // DOM Elements
@@ -306,19 +299,17 @@
   const filterTabs = document.getElementById('filterTabs');
   const allToggle = document.getElementById('allToggle');
   const personnelToggle = document.getElementById('personnelToggle');
-  const highRiskToggle = document.getElementById('highRiskToggle');
+  const categoryToggle = document.getElementById('categoryToggle');
   const loanToggle = document.getElementById('loanToggle');
-  const byDateToggle = document.getElementById('byDateToggle');
   const filterFormContainer = document.getElementById('filterFormContainer');
   const personnelSelectWrapperFilter = document.getElementById('personnelSelectWrapperFilter');
-  const dateRangeWrapperFilter = document.getElementById('dateRangeWrapperFilter');
+  const categorySelectWrapperFilter = document.getElementById('categorySelectWrapperFilter');
   const searchInputFilter = document.getElementById('searchInputFilter');
   const dropdownListFilter = document.getElementById('dropdownListFilter');
   const employeeDropdownItemsFilter = document.getElementById('employeeDropdownItemsFilter');
-  const startPeriodFilter = document.getElementById('startPeriodFilter');
-  const endPeriodFilter = document.getElementById('endPeriodFilter');
+  const categorySelect = document.getElementById('categorySelect');
   const applyFilterBtn = document.getElementById('applyFilterBtn');
-  const applyFilterBtn2 = document.getElementById('applyFilterBtn2');
+  const applyCategoryFilterBtn = document.getElementById('applyCategoryFilterBtn');
   const cancelFilterContainer = document.getElementById('cancelFilterContainer');
   const cancelFilterBtn = document.getElementById('cancelFilterBtn');
   const loadBtn = document.getElementById('loadInputVarBtn');
@@ -333,7 +324,7 @@
   const inputVarForm = document.getElementById('inputVarForm');
   const changesTable = document.getElementById('changesTable');
   const changesTableBody = document.getElementById('changesTableBody');
-  const summaryCards = document.getElementById('summaryCards');
+  //const summaryCards = document.getElementById('summaryCards');
   const nextStepBanner = document.getElementById('nextStepBanner');
   const detailsModal = document.getElementById('detailsModal');
   const modalContent = document.getElementById('modalContent');
@@ -378,19 +369,19 @@
   function updateUIVisibility() {
     const isStageReady = currentPayrollStage >= STAGE_INPUT_VAR_READY;
 
-    if (hasLoadedOnce || (isStageReady && allChangesData)) {
+    if (hasLoadedOnce || (isStageReady && allVariablesData)) {
       topActionBar.classList.add('hidden');
       inputVarForm.classList.add('hidden');
       filterTabs.classList.remove('hidden');
-      summaryCards.classList.remove('hidden');
+      //summaryCards.classList.remove('hidden');
       changesTable.classList.remove('hidden');
       nextStepBanner.classList.remove('hidden');
       
-      if (currentMode === 'personnel' || currentMode === 'byDate') {
+      if (currentMode === 'personnel' || currentMode === 'category') {
         if (filterApplied) {
           filterFormContainer.classList.add('hidden');
           cancelFilterContainer.classList.remove('hidden');
-          summaryCards.classList.add('hidden');
+          //summaryCards.classList.add('hidden');
           nextStepBanner.classList.add('hidden');
         } else {
           filterFormContainer.classList.remove('hidden');
@@ -409,7 +400,7 @@
       filterTabs.classList.add('hidden');
       filterFormContainer.classList.add('hidden');
       cancelFilterContainer.classList.add('hidden');
-      summaryCards.classList.add('hidden');
+      //summaryCards.classList.add('hidden');
       changesTable.classList.add('hidden');
       nextStepBanner.classList.add('hidden');
       return;
@@ -418,28 +409,13 @@
     if (currentPayrollStage === STAGE_CHANGES_READY) {
       topActionBar.classList.add('hidden');
       inputVarForm.classList.remove('hidden');
-      loadBtn.textContent = 'Process & Load Input Variables';
       loadBtn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Process & Load Input Variables';
       loadBtn.classList.remove('bg-yellow-600','hover:bg-yellow-700');
       loadBtn.classList.add('bg-green-600','hover:bg-green-700');
       filterTabs.classList.add('hidden');
       filterFormContainer.classList.add('hidden');
       cancelFilterContainer.classList.add('hidden');
-      summaryCards.classList.add('hidden');
-      changesTable.classList.add('hidden');
-      nextStepBanner.classList.add('hidden');
-      return;
-    }
-
-    if (currentPayrollStage > STAGE_CHANGES_READY && currentPayrollStage < STAGE_INPUT_VAR_READY) {
-      topActionBar.classList.add('hidden');
-      inputVarForm.classList.remove('hidden');
-      loadBtn.textContent = 'View (waiting for processing)';
-      loadBtn.innerHTML = '<i class="fas fa-hourglass-half mr-2"></i>View (waiting for processing)';
-      filterTabs.classList.add('hidden');
-      filterFormContainer.classList.add('hidden');
-      cancelFilterContainer.classList.add('hidden');
-      summaryCards.classList.add('hidden');
+      //summaryCards.classList.add('hidden');
       changesTable.classList.add('hidden');
       nextStepBanner.classList.add('hidden');
       return;
@@ -450,7 +426,7 @@
     filterTabs.classList.add('hidden');
     filterFormContainer.classList.add('hidden');
     cancelFilterContainer.classList.add('hidden');
-    summaryCards.classList.add('hidden');
+    //summaryCards.classList.add('hidden');
     changesTable.classList.add('hidden');
     nextStepBanner.classList.add('hidden');
   }
@@ -461,42 +437,36 @@
     currentPage = 1;
     filterApplied = false;
     
-    [allToggle, personnelToggle, highRiskToggle, loanToggle, byDateToggle].forEach(btn => {
+    [allToggle, personnelToggle, categoryToggle, loanToggle].forEach(btn => {
       btn.classList.remove('bg-blue-50','text-gray-900','shadow');
       btn.classList.add('text-gray-500');
     });
     
-    const activeBtn = mode === 'all' ? allToggle : mode === 'personnel' ? personnelToggle : mode === 'highRisk' ? highRiskToggle : mode === 'loan' ? loanToggle : byDateToggle;
+    const activeBtn = mode === 'all' ? allToggle : mode === 'personnel' ? personnelToggle : mode === 'category' ? categoryToggle : loanToggle;
     if (activeBtn) {
       activeBtn.classList.add('bg-blue-50','text-gray-900','shadow');
       activeBtn.classList.remove('text-gray-500');
     }
 
-    if (mode === 'all') {
+    if (mode === 'all' || mode === 'loan') {
       filterFormContainer.classList.add('hidden');
       cancelFilterContainer.classList.add('hidden');
-      summaryCards.classList.remove('hidden');
+      //summaryCards.classList.remove('hidden');
       nextStepBanner.classList.remove('hidden');
-      if (allChangesData) filterAndRenderData();
-    } else if (mode === 'highRisk' || mode === 'loan') {
-      filterFormContainer.classList.add('hidden');
-      cancelFilterContainer.classList.add('hidden');
-      summaryCards.classList.add('hidden');
-      nextStepBanner.classList.add('hidden');
-      if (allChangesData) filterAndRenderData();
-    } else if (mode === 'personnel' || mode === 'byDate') {
+      if (allVariablesData) filterAndRenderData();
+    } else if (mode === 'personnel' || mode === 'category') {
       filterFormContainer.classList.remove('hidden');
       cancelFilterContainer.classList.add('hidden');
-      summaryCards.classList.add('hidden');
+      //summaryCards.classList.add('hidden');
       nextStepBanner.classList.add('hidden');
       
       personnelSelectWrapperFilter.classList.toggle('hidden', mode !== 'personnel');
-      dateRangeWrapperFilter.classList.toggle('hidden', mode !== 'byDate');
+      categorySelectWrapperFilter.classList.toggle('hidden', mode !== 'category');
       
-      if (!allChangesData) return;
+      if (!allVariablesData) return;
       changesTableBody.innerHTML = `
         <tr>
-          <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+          <td colspan="6" class="px-6 py-12 text-center text-gray-500">
             <span class="text-lg font-medium">Please apply filter to view results</span>
           </td>
         </tr>`;
@@ -505,11 +475,11 @@
 
   // Populate employee dropdown
   function populateEmployeeDropdown() {
-    if (!allChangesData || !Array.isArray(allChangesData.changes)) return;
+    if (!allVariablesData || !Array.isArray(allVariablesData.records)) return;
     const unique = new Map();
-    allChangesData.changes.forEach(c => {
-      const id = String(c.Empl_id || '').trim();
-      const name = c.full_name || '';
+    allVariablesData.records.forEach(r => {
+      const id = String(r.Empl_id || '').trim();
+      const name = r.full_name || '';
       if (!id) return;
       if (!unique.has(id)) unique.set(id, { id, name });
     });
@@ -566,10 +536,11 @@
     updateUIVisibility();
   });
 
-  applyFilterBtn2.addEventListener('click', () => {
-    if (currentMode === 'byDate' && !startPeriodFilter.value && !endPeriodFilter.value) {
-      return showAlert('Validation Error', 'Please select at least one date', 'warning');
+  applyCategoryFilterBtn.addEventListener('click', () => {
+    if (currentMode === 'category' && !categorySelect.value) {
+      return showAlert('Validation Error', 'Please select a category', 'warning');
     }
+    selectedCategory = categorySelect.value;
     filterApplied = true;
     filterAndRenderData();
     updateUIVisibility();
@@ -579,9 +550,9 @@
   cancelFilterBtn.addEventListener('click', () => {
     filterApplied = false;
     selectedEmployee = null;
+    selectedCategory = '';
     searchInputFilter.value = '';
-    startPeriodFilter.value = '';
-    endPeriodFilter.value = '';
+    categorySelect.value = '';
     dropdownListFilter.classList.add('hidden');
     
     filterFormContainer.classList.remove('hidden');
@@ -589,7 +560,7 @@
     
     changesTableBody.innerHTML = `
       <tr>
-        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
           <span class="text-lg font-medium">Please apply filter to view results</span>
         </td>
       </tr>`;
@@ -637,43 +608,49 @@
   });
 
   // Render table
-  function renderTable(changes) {
+  function renderTable(variables) {
     changesTableBody.innerHTML = '';
-    if (!changes || changes.length === 0) {
+    if (!variables || variables.length === 0) {
       const row = document.createElement('tr');
       row.innerHTML = `
-        <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
           <i class="fas fa-inbox text-4xl mb-2"></i>
-          <br>No input variable changes found for the selected filter
+          <br>No input variables found for the selected filter
         </td>`;
       changesTableBody.appendChild(row);
       return;
     }
 
-    changes.forEach(change => {
+    variables.forEach(variable => {
       const row = document.createElement('tr');
       row.className = 'hover:bg-yellow-50/25 transition';
-      const risk = (change.risk_level || '').toUpperCase();
-      const riskColor = risk === 'HIGH' ? 'red' : risk === 'MEDIUM' ? 'yellow' : 'green';
-      const riskIcon = risk === 'HIGH' ? 'exclamation-triangle' : risk === 'MEDIUM' ? 'exclamation-circle' : 'check-circle';
+      
+      const categoryColor = 
+        variable.element_category === 'ALLOWANCE' ? 'green' :
+        variable.element_category === 'DEDUCTION' ? 'red' :
+        variable.element_category === 'REQUIRED_FOR_ALL' ? 'blue' : 'gray';
       
       row.innerHTML = `
-        <td class="border px-2 py-3 text-left">${change.Empl_id}</td>
-        <td class="border px-2 py-3 text-left">${change.full_name || 'N/A'}</td>
+        <td class="border px-2 py-3 text-left">${variable.Empl_id}</td>
+        <td class="border px-2 py-3 text-left">${variable.full_name || 'N/A'}</td>
         <td class="border px-2 py-3 text-left">
           <span class="inline-flex items-center px-2 py-1 text-xs font-bold rounded bg-yellow-50/25 text-yellow-900">
-            ${change.pay_type || 'N/A'}
+            ${variable.pay_type || 'N/A'}
           </span>
         </td>
-        <td class="border px-2 py-3 text-left">
-          <span class="inline-flex items-center px-3 py-1 text-xs font-bold rounded-full bg-${riskColor}-100 text-${riskColor}-800">
-            <i class="fas fa-${riskIcon} mr-1"></i>${risk || 'N/A'}
+        <!--<td class="border px-2 py-3 text-left">
+          <span class="inline-flex items-center px-2 py-1 text-xs font-bold rounded bg-${categoryColor}-100 text-${categoryColor}-800">
+            ${variable.element_category || 'N/A'}
           </span>
         </td>
+        <td class="border px-2 py-3 text-right font-semibold ${variable.amtad === 'Deduct' ? 'text-red-600' : 'text-green-600'}">
+          ${formatCurrency(variable.amt || 0)}
+          ${variable.amtad === 'Deduct' ? '<i class="fas fa-arrow-down ml-1"></i>' : variable.amtad === 'Add' ? '<i class="fas fa-arrow-up ml-1"></i>' : ''}
+        </td>-->
         <td class="border px-2 py-3 text-left text-sm no-print">
           <button class="text-yellow-700 hover:text-yellow-800 font-semibold transition" 
-                  data-id="${change.Empl_id}" 
-                  data-paytype="${change.pay_type}">
+                  data-id="${variable.Empl_id}" 
+                  data-paytype="${variable.pay_type}">
             <i class="fas fa-eye mr-1"></i>View
           </button>
         </td>`;
@@ -682,7 +659,7 @@
       const btn = row.querySelector('button[data-id]');
       if (btn) {
         btn.addEventListener('click', () => {
-          showDetails(String(change.Empl_id), btn.getAttribute('data-paytype'));
+          showDetails(String(variable.Empl_id), btn.getAttribute('data-paytype'));
         });
       }
     });
@@ -692,28 +669,15 @@
 
   // Filter and render data
   function filterAndRenderData() {
-    if (!allChangesData) return;
-    let filtered = (allChangesData.changes || []).slice();
+    if (!allVariablesData) return;
+    let filtered = (allVariablesData.records || []).slice();
 
-    if (currentMode === 'highRisk') {
-      filtered = filtered.filter(c => (c.risk_level || c.RiskLevel || '').toUpperCase() === 'HIGH');
-    } else if (currentMode === 'loan') {
-      filtered = filtered.filter(c => (c.pay_indicator_desc || '').toUpperCase().includes('LOAN'));
+    if (currentMode === 'loan') {
+      filtered = filtered.filter(v => (v.pay_indicator_code || '').toUpperCase().includes('LOAN') || (v.pay_indicator_desc || '').toUpperCase().includes('LOAN'));
     } else if (currentMode === 'personnel' && selectedEmployee) {
-      filtered = filtered.filter(c => String(c.Empl_id) === String(selectedEmployee));
-    } else if (currentMode === 'byDate') {
-      const start = startPeriodFilter.value ? new Date(startPeriodFilter.value) : null;
-      const end = endPeriodFilter.value ? new Date(endPeriodFilter.value) : null;
-      if (start || end) {
-        filtered = filtered.filter(c => {
-          const d = c.detected_at ? new Date(c.detected_at) : null;
-          if (!d) return false;
-          if (start && end) return d >= start && d <= end;
-          if (start) return d >= start;
-          if (end) return d <= end;
-          return true;
-        });
-      }
+      filtered = filtered.filter(v => String(v.Empl_id) === String(selectedEmployee));
+    } else if (currentMode === 'category' && selectedCategory) {
+      filtered = filtered.filter(v => v.element_category === selectedCategory);
     }
 
     filteredData = filtered;
@@ -723,186 +687,110 @@
 
   // Show details modal
   function showDetails(emplId, payType) {
-    const change = allChangesData?.changes?.find(c => 
-      String(c.Empl_id) === String(emplId) && c.pay_type === payType
+    const variable = allVariablesData?.records?.find(v => 
+      String(v.Empl_id) === String(emplId) && v.pay_type === payType
     );
-    if (!change) return;
+    if (!variable) return;
 
-    const current = change.current_values || {};
-    const previous = change.previous_values || {};
+    // Helper function to format currency (assuming it's defined elsewhere)
+    const formatCurrency = window.formatCurrency || ((val) => `₦${Number(val).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`);
 
-    modalContent.innerHTML = `
-      <div class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b-2">
-          <div class="bg-blue-50 p-5 rounded-lg shadow">
-            <h4 class="font-bold text-lg text-blue-900 mb-3 flex items-center">
-              <i class="fas fa-user-circle mr-2"></i>Employee Information
-            </h4>
-            <div class="space-y-2 text-sm">
-              <p><span class="font-semibold">ID:</span> ${change.Empl_id}</p>
-              <p><span class="font-semibold">Name:</span> ${change.full_name}</p>
-              <p><span class="font-semibold">Location:</span> ${change.Location || 'N/A'}</p>
-            </div>
-          </div>
+    // Define ALL fields and their labels in the desired display order
+    const fields = {
+      // Employee Information
+      Empl_id: 'Employee ID',
+      full_name: 'Employee Name',
+      Location: 'Location',
+      // Element Details
+      element_name: 'Pay Description',
+      pay_type: 'Pay Code',
+      function_type_desc: 'Function Type',
+      pay_indicator_desc: 'Pay Indicator',
+      // Amount & Financial Details
+      mak1: 'MAK1',
+      amtp: 'Amount Payable (AMTP)',
+      mak2: 'MAK2',
+      amttd: 'Amount To Date (AMTTD)',
+      amt: 'Amount (AMT)',
+      amtad: 'Action (AMTAD)',
+      nomth: 'Number of Months',
+    };
 
-          <div class="bg-yellow-50 p-5 rounded-lg shadow">
-            <h4 class="font-bold text-lg text-yellow-900 mb-3 flex items-center">
-              <i class="fas fa-info-circle mr-2"></i>Element Details
-            </h4>
-            <div class="space-y-2 text-sm">
-              <p><span class="font-semibold">Element:</span> ${change.element_name}</p>
-              <p><span class="font-semibold">Code:</span> ${change.pay_type}</p>
-              <p><span class="font-semibold">Category:</span> ${change.element_category}</p>
-              <p><span class="font-semibold">Function Type:</span> ${change.function_type_desc || change.function_type_code || 'N/A'}</p>
-              <p><span class="font-semibold">Pay Indicator:</span> ${change.pay_indicator_desc || change.pay_indicator_code || 'N/A'}</p>
-            </div>
-          </div>
-        </div>
+    // Map data keys to their display values
+    const dataMap = {
+      Empl_id: variable.Empl_id,
+      full_name: variable.full_name,
+      Location: variable.Location,
+      element_name: variable.element_name,
+      pay_type: variable.pay_type,
+      function_type_desc: variable.function_type_desc || variable.function_type_code,
+      pay_indicator_desc: variable.pay_indicator_desc || variable.pay_indicator_code,
+      mak1: variable.mak1,
+      amtp: formatCurrency(variable.amtp || 0),
+      mak2: variable.mak2,
+      amttd: formatCurrency(variable.amttd || 0),
+      amt: formatCurrency(variable.amt || 0),
+      amtad: variable.amtad || '',
+      nomth: variable.nomth,
+    };
 
-        <div class="bg-gradient-to-r from-red-50 to-green-50 p-5 rounded-lg shadow">
-          <h4 class="font-bold text-lg text-gray-800 mb-3 flex items-center">
-            <i class="fas fa-coins mr-2"></i>Amount Comparison
-          </h4>
-          <div class="grid grid-cols-3 gap-4 text-center">
-            <div class="bg-white p-4 rounded-lg shadow">
-              <div class="text-xs text-gray-600 mb-1">Previous Amount</div>
-              <div class="text-xl font-bold text-red-600">${formatCurrency(previous.amt || 0)}</div>
-            </div>
-            <div class="bg-white p-4 rounded-lg shadow flex items-center justify-center">
-              <i class="fas fa-arrow-right text-3xl text-gray-400"></i>
-            </div>
-            <div class="bg-white p-4 rounded-lg shadow">
-              <div class="text-xs text-gray-600 mb-1">Current Amount</div>
-              <div class="text-xl font-bold text-green-600">${formatCurrency(current.amt || 0)}</div>
-            </div>
-          </div>
-          <div class="mt-4 text-center">
-            <span class="inline-flex items-center px-4 py-2 bg-white rounded-lg shadow font-bold text-lg ${
-              (current.amt - previous.amt) > 0 ? 'text-green-600' : 
-              (current.amt - previous.amt) < 0 ? 'text-red-600' : 'text-gray-600'
-            }">
-              Difference: ${formatCurrency(Math.abs(current.amt - previous.amt))}
-              ${(current.amt - previous.amt) > 0 ? ' ↑ Increase' : 
-                (current.amt - previous.amt) < 0 ? ' ↓ Decrease' : ' No Change'}
-            </span>
-          </div>
-        </div>
+    // --- HTML Generation ---
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="bg-blue-50 p-4 rounded-lg shadow">
-            <h5 class="font-bold text-sm text-blue-900 mb-3 flex items-center">
-              <i class="fas fa-chart-line mr-2"></i>Other Amount Fields
-            </h5>
-            <div class="space-y-2 text-xs">
-              <div class="flex justify-between">
-                <span class="font-semibold">MAK1:</span>
-                <span>${previous.mak1 || 0} → ${current.mak1 || 0}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="font-semibold">Amount Payable:</span>
-                <span>${formatCurrency(previous.amtp || 0)} → ${formatCurrency(current.amtp || 0)}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="font-semibold">MAK2:</span>
-                <span>${previous.mak2 || 0} → ${current.mak2 || 0}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="font-semibold">Amount To Date:</span>
-                <span>${formatCurrency(previous.amttd || 0)} → ${formatCurrency(current.amttd || 0)}</span>
-              </div>
-            </div>
-          </div>
+    let html = `
+      <!--<h3 class="text-2xl font-extrabold text-gray-800 mb-6 border-b pb-2">
+        <i class="fas fa-file-invoice mr-3 text-indigo-500"></i>Input Variable Details
+      </h3>-->`;
 
-          <div class="bg-purple-50 p-4 rounded-lg shadow">
-            <h5 class="font-bold text-sm text-purple-900 mb-3 flex items-center">
-              <i class="fas fa-info mr-2"></i>Other Details
-            </h5>
-            <div class="space-y-2 text-xs">
-              <div class="flex justify-between">
-                <span class="font-semibold">Direction:</span>
-                <span>${previous.amtad || 'N/A'} → ${current.amtad || 'N/A'}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="font-semibold">Pay Indicator:</span>
-                <span>${previous.payind || 'N/A'} → ${current.payind || 'N/A'}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="font-semibold">No. of Months:</span>
-                <span>${previous.nomth || 0} → ${current.nomth || 0}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+    // Loop through all fields and apply the consistent grid structure
+    Object.keys(fields).forEach(key => {
+      let value = dataMap[key];
+      
+      // Special styling for Element Category
+      if (key === 'element_category') {
+        value = `
+          <span class="px-3 py-1 rounded-full text-xs font-bold ${
+            value === 'REQUIRED_FOR_ALL' ? 'bg-blue-100 text-blue-800' :
+            value === 'ALLOWANCE' ? 'bg-green-100 text-green-800' :
+            value === 'DEDUCTION' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+          }">${value || 'N/A'}</span>`;
+      } 
+      // Special styling for Amount (AMT) and Action (AMTAD)
+      else if (key === 'amt') {
+          value = `<span class="font-bold text-lg ${variable.amtad === 'Deduct' ? 'text-red-600' : 'text-green-600'}">${value}</span>`;
+      } else if (key === 'amtad') {
+          value = `<span class="font-bold ${value === 'Deduct' ? 'text-red-600' : 'text-green-600'}">${value || 'N/A'}</span>`;
+      } else {
+          value = value || 'N/A'; // Default value if key exists but data is null/undefined
+      }
 
-        <div>
-          <h4 class="font-bold text-lg text-gray-800 mb-3 flex items-center border-b pb-2">
-            <i class="fas fa-list mr-2"></i>All Field Changes
-          </h4>
-          <div class="space-y-2">
-            ${Object.keys(current).map(key => {
-              const currVal = current[key];
-              const prevVal = previous[key];
-              
-              // Handle numeric comparisons properly
-              const isChanged = typeof currVal === 'number' && typeof prevVal === 'number'
-                ? currVal !== prevVal
-                : String(currVal) !== String(prevVal);
-              
-              if (isChanged) {
-                return `
-                  <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition">
-                    <span class="font-semibold text-gray-700 uppercase text-sm">${key.replace(/_/g, ' ')}:</span>
-                    <div class="flex items-center gap-3">
-                      <span class="text-red-600 line-through">${typeof prevVal === 'number' ? formatCurrency(prevVal) : (prevVal || 'N/A')}</span>
-                      <i class="fas fa-arrow-right text-gray-400"></i>
-                      <span class="text-green-600 font-bold">${typeof currVal === 'number' ? formatCurrency(currVal) : (currVal || 'N/A')}</span>
-                    </div>
-                  </div>`;
-              }
-              return '';
-            }).join('') || '<p class="text-gray-500 text-center py-4">No other field changes detected</p>'}
-          </div>
-        </div>
+      // Apply the desired grid layout for every field
+      html += `
+        <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
+          <dt class="font-medium text-gray-600">${fields[key]}:</dt>
+          <dd class="col-span-2 font-bold text-gray-900">${value}</dd>
+        </div>`;
+    });
 
-        <div class="bg-gray-50 p-5 rounded-md border-l-2 ${
-          change.risk_level === 'HIGH' ? 'border-red-500' : 
-          change.risk_level === 'MEDIUM' ? 'border-yellow-500' : 'border-green-500'
-        }">
-          <h4 class="font-bold text-gray-800 mb-2 flex items-center">
-            <i class="fas fa-shield-alt mr-2"></i>Risk Assessment
-          </h4>
-          <p class="text-sm"><span class="font-semibold">Risk Level:</span> 
-            <span class="px-3 py-1 rounded-full text-xs font-bold ${
-              change.risk_level === 'HIGH' ? 'bg-red-100 text-red-800' : 
-              change.risk_level === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
-            }">${change.risk_level || 'LOW'}</span>
-          </p>
-          <p class="text-sm mt-2"><span class="font-semibold">Change Summary:</span> ${change.change_summary || 'N/A'}</p>
-          <p class="text-sm mt-2"><span class="font-semibold">Category:</span> 
-            <span class="px-2 py-1 bg-white rounded text-xs font-semibold">${change.change_category || 'N/A'}</span>
-          </p>
-        </div>
-      </div>`;
-
+    // Update the modal content and show
+    modalContent.innerHTML = `<div class="p-6">${html}</div>`;
     detailsModal.classList.remove('hidden');
   }
-
+    
   // Export handlers
   exportExcelBtn.addEventListener('click', async () => {
-    if (!allChangesData) return showAlert('Export Failed', 'No data to export', 'error');
+    if (!allVariablesData) return showAlert('Export Failed', 'No data to export', 'error');
     try {
       const token = localStorage.getItem('token');
-      const dataToExport = currentMode === 'all' ? allChangesData : { ...allChangesData, changes: filteredData };
-      const res = await fetch(`${API_BASE}/excel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(dataToExport)
+      const res = await fetch(`${API_BASE}/export/excel`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (!res.ok) throw new Error('Export failed');
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a'); 
       a.href = url; 
-      a.download = `input_variables_${currentMode}_${new Date().toISOString().split('T')[0]}.xlsx`; 
+      a.download = `input_variables_${new Date().toISOString().split('T')[0]}.xlsx`; 
       a.click();
       showAlert('Success!', 'Excel file downloaded successfully', 'success');
     } catch (err) {
@@ -911,20 +799,19 @@
   });
 
   exportPdfBtn.addEventListener('click', async () => {
-    if (!allChangesData) return showAlert('Export Failed', 'No data to export', 'error');
+    if (!allVariablesData) return showAlert('Export Failed', 'No data to export', 'error');
     try {
       const token = localStorage.getItem('token');
-      const dataToExport = currentMode === 'all' ? allChangesData : { ...allChangesData, changes: filteredData };
-      const res = await fetch(`${API_BASE}/pdf`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(dataToExport)
+      const res = await fetch(`${API_BASE}/export/pdf`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (!res.ok) throw new Error('Export failed');
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a'); 
       a.href = url; 
-      a.download = `input_variables_${currentMode}_${new Date().toISOString().split('T')[0]}.pdf`; 
+      a.download = `input_variables_${new Date().toISOString().split('T')[0]}.pdf`; 
       a.click();
       showAlert('Success!', 'PDF file downloaded successfully', 'success');
     } catch (err) {
@@ -932,66 +819,39 @@
     }
   });
 
-  function generateReport(reportData = []) {
-    const now = new Date();
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
-    const dateStr = `${day}-${month}-${year}`;
-
-    const allChangesData = Array.isArray(reportData) ? reportData : [];
+  printBtn.addEventListener('click', () => {
+    if (!filteredData || filteredData.length === 0) {
+      return showAlert('Print Failed', 'No data to print', 'warning');
+    }
     
-    // Create a new window for printing
     const printWindow = window.open('', '_blank');
-    
-    // Generate HTML content
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-NG', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+
     const printContent = `
       <!DOCTYPE html>
       <html>
       <head>
-        <title>States Report</title>
+        <title>Input Variables Report</title>
         <style>
-          body { 
-            font-family: Arial, sans-serif;
-            margin: 40px; 
-          }
-          .print-table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-bottom: 20px; 
-          }
-          .print-table th { 
-            background-color: #f3f4f6; 
-            color: #1f2937;
-            padding: 12px;
-            text-align: left;
-            border: 1px solid #e5e7eb;
-          }
-          .print-table td { 
-            padding: 12px;
-            border: 1px solid #e5e7eb;
-          }
-          .print-header { 
-            text-align: center; 
-            margin-bottom: 20px; 
-          }
-          .date-generated {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 30px;
-          }
-          .print-footer { 
-            text-align: center; 
-            margin-top: 20px; 
-            font-size: 12px;
-            border-top: 1px solid #eee;
-            padding-top: 20px;
-          }
+          body { font-family: Arial, sans-serif; margin: 40px; }
+          .print-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          .print-table th { background-color: #fef3c7; color: #92400e; padding: 12px; text-align: left; border: 1px solid #e5e7eb; }
+          .print-table td { padding: 12px; border: 1px solid #e5e7eb; }
+          .print-header { text-align: center; margin-bottom: 20px; }
+          .date-generated { font-size: 14px; color: #666; margin-bottom: 30px; }
+          .print-footer { text-align: center; margin-top: 20px; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px; }
+          .deduction { color: #dc2626; font-weight: bold; }
+          .allowance { color: #16a34a; font-weight: bold; }
         </style>
       </head>
       <body>
         <div class="print-header">
-          <h1>States Report</h1>
+          <h1>Input Variables Report</h1>
           <p class="date-generated">Generated on: ${dateStr}</p>
         </div>
         
@@ -999,27 +859,45 @@
           <thead>
             <tr>
               <th>No.</th>
-              <th>State Name</th>
-              <th>State Code</th>
-              <th>State Capital</th>
-              <th>Geo Zone</th>
+              <th>Employee ID</th>
+              <th>Full Name</th>
+              <th>Pay Type</th>
+              <th>Pay Description</th>
+              <th>Function Type</th>
+              <th>Pay Indicator</th>
+              <th>Mak1</th>
+              <th>Amount Payable (₦)</th>
+              <th>Mak2</th>
+              <th>Amtto Date</th>
+              <th>Amount</th>              
+              <th>Amt ad</th>
             </tr>
           </thead>
           <tbody>
-            ${allChangesData.map((changes, index) => `
+            ${filteredData.map((v, index) => `
               <tr>
                 <td>${index + 1}</td>
-                <td>${changes.Empl_id}</td>
-                <td>${changes.full_name}</td>
-                <td>${changes.pay_type}</td>
-                <td>${changes.element_category}</td>
+                <td>${v.Empl_id}</td>
+                <td>${v.full_name}</td>
+                <td>${v.pay_type}</td>
+                <td>${v.element_name || 'N/A'}</td>
+                <td>${v.function_type_desc || 'N/A'}</td>
+                <td>${v.pay_indicator_desc || 'N/A'}</td>
+                <td>${v.mak1 || 'N/A'}</td>
+                <td>${formatCurrency(v.amtp || 0)}</td>
+                <td>${v.mak2 || 'N/A'}</td>
+                <td>${formatCurrency(v.amttd || 0)}</td>
+                <td class="${v.amtad === 'Deduct' ? 'deduction' : 'allowance'}">
+                  ${formatCurrency(v.amt || 0)}
+                </td>
+                <td>${v.amtad || 'N/A'}</td>
               </tr>
             `).join('')}
           </tbody>
         </table>
         
         <div class="print-footer">
-          <p>Total Records: ${allChangesData.length}</p>
+          <p>Total Records: ${filteredData.length}</p>
           <p>Generated by: ${localStorage.getItem('full_name') || 'System User'}</p>
           <p>*** End of Report ***</p>
         </div>
@@ -1027,17 +905,12 @@
       </html>
     `;
     
-    // Write content to new window
     printWindow.document.write(printContent);
     printWindow.document.close();
-    
-    // Wait for content to load then print
     printWindow.onload = function() {
       printWindow.print();
     };
-  }
-
-  printBtn.addEventListener('click', generateReport);
+  });
 
   // Load input variables
   async function loadInputVariables(isAutoLoad = false, isManualProcess = false) {
@@ -1046,22 +919,18 @@
     let showProgress = false;
     let progressLabel = 'Fetching input variables...';
 
-    // Determine if we need to POST (process) or GET (view)
     if (currentPayrollStage === STAGE_CHANGES_READY && isManualProcess) {
-      // POST to process the data for the first time
-      endpoint = `${API_BASE}/changes`;
+      endpoint = `${API_BASE}`;
       method = 'POST';
       showProgress = true;
       progressLabel = 'Processing input variables...';
     } else if (currentPayrollStage >= STAGE_INPUT_VAR_READY) {
-      // GET to view already processed data
       endpoint = `${API_BASE}/view`;
       method = 'GET';
       showProgress = false;
       progressLabel = 'Loading processed input variables...';
     }
 
-    // Don't allow loading if stage is too early
     if (!isAutoLoad && !showProgress && currentPayrollStage < STAGE_CHANGES_READY) {
       return showAlert('Not Ready', 'Please ensure personnel changes are processed first.', 'warning');
     }
@@ -1073,7 +942,7 @@
         progressModal.classList.remove('hidden');
         logContainer.innerHTML = '';
         progressMessage.textContent = progressLabel;
-        addLog('Starting processing (POST)...');
+        addLog('Starting processing...', 'info');
       }
 
       const res = await fetch(endpoint, {
@@ -1093,18 +962,18 @@
 
       const data = await res.json();
 
-      if (showProgress && Array.isArray(data.logs)) {
-        data.logs.forEach(l => addLog(l));
+      if (showProgress && data.message) {
+        addLog(data.message, 'success');
       }
 
       if (data.status === 'SUCCESS' || data.success === true) {
-        allChangesData = data || [];
+        allVariablesData = data || {};
         hasLoadedOnce = true;
 
-        updateSummaryCards(data.summary || {});
+        //updateSummaryCards(data.summary || {});
         populateEmployeeDropdown();
         
-        filteredData = (data.changes || []).slice();
+        filteredData = (data.records || []).slice();
         currentPage = 1;
         renderTable(getPaginatedData());
 
@@ -1119,7 +988,7 @@
           updateUIVisibility();
         }
       } else {
-        const message = data.error || data.message || 'Failed to load/process input variables';
+        const message = data.error || data.message || 'Failed to load input variables';
         if (showProgress) addLog(message, 'error');
         throw new Error(message);
       }
@@ -1133,12 +1002,14 @@
   }
 
   // Update summary cards
-  function updateSummaryCards(summary) {
-    document.getElementById('totalChanges').textContent = summary.totalChanges || 0;
-    document.getElementById('highRiskCount').textContent = summary.highRisk || 0;
-    document.getElementById('loanCount').textContent = summary.byFunctionType.loans || 0;
-    document.getElementById('indicatorCount').textContent = summary.byIndicator ? Object.keys(summary.byIndicator).length : 0;
-  }
+  /*function updateSummaryCards(summary) {
+    document.getElementById('totalRecordsCard').textContent = summary.totalRecords || 0;
+    document.getElementById('allowancesCount').textContent = summary.byElementType?.allowances || 0;
+    document.getElementById('deductionsCount').textContent = summary.byElementType?.deductions || 0;
+    
+    const totalAmt = summary.financialTotals?.totalAmt || 0;
+    document.getElementById('totalAmount').textContent = formatCurrency(totalAmt);
+  }*/
 
   // Event listeners
   loadBtn.addEventListener('click', () => {
@@ -1148,11 +1019,11 @@
       loadInputVariables(false, false);
     }
   });
+  
   allToggle.addEventListener('click', () => switchMode('all'));
   personnelToggle.addEventListener('click', () => switchMode('personnel'));
-  highRiskToggle.addEventListener('click', () => switchMode('highRisk'));
+  categoryToggle.addEventListener('click', () => switchMode('category'));
   loanToggle.addEventListener('click', () => switchMode('loan'));
-  byDateToggle.addEventListener('click', () => switchMode('byDate'));
   closeModal.addEventListener('click', () => detailsModal.classList.add('hidden'));
   alertCloseBtn.addEventListener('click', () => alertModal.classList.add('hidden'));
 
@@ -1183,9 +1054,10 @@
       currentPayrollStage = event.detail.stage;
       if (currentPayrollStage < STAGE_CHANGES_READY) {
         hasLoadedOnce = false;
-        allChangesData = null;
+        allVariablesData = null;
         allEmployees = [];
         selectedEmployee = null;
+        selectedCategory = '';
         filteredData = [];
         currentPage = 1;
         filterApplied = false;

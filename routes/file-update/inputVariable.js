@@ -3,22 +3,19 @@ const router = express.Router();
 //const pool = require('../../config/db'); // mysql2 pool
 const verifyToken = require('../../middware/authentication');
 
-const { inputVariableChanges } = require('../../controllers/file-update/inputVariable');
-router.post('/changes', verifyToken, inputVariableChanges);
+const { inputVariables } = require('../../controllers/file-update/inputVariable');
+router.post('/', verifyToken, inputVariables);
 
-const { getInputVariableChangesView } = require('../../controllers/file-update/inputVariable');
-router.get('/view', verifyToken, getInputVariableChangesView);
+const { getInputVariablesView} = require('../../controllers/file-update/inputVariable');
+router.get('/view', verifyToken, getInputVariablesView);
 
-const { getHighRiskInputChanges } = require('../../controllers/file-update/inputVariable');
-router.get('/high-risk', getHighRiskInputChanges);
-
-const { getLoanChanges } = require('../../controllers/file-update/inputVariable');
-router.get('/loans', getLoanChanges);
+const { getLoanRecords } = require('../../controllers/file-update/inputVariable');
+router.get('/loans', getLoanRecords);
 
 const { exportInputVariablesPdf } = require('../../controllers/file-update/inputVariable');
-router.post('/pdf', verifyToken, exportInputVariablesPdf);
+router.get('/export/pdf', verifyToken, exportInputVariablesPdf);
 
 const { exportInputVariablesExcel } = require('../../controllers/file-update/inputVariable');
-router.post('/excel', verifyToken, exportInputVariablesExcel);
+router.get('/export/excel', verifyToken, exportInputVariablesExcel);
 
 module.exports = router;

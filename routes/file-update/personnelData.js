@@ -3,26 +3,32 @@ const router = express.Router();
 //const pool = require('../../config/db'); // mysql2 pool
 const verifyToken = require('../../middware/authentication');
 
-const { personnelChanges } = require('../../controllers/file-update/personnelData');
-router.post('/process', verifyToken, personnelChanges);
+const { getAvailablePeriods } = require('../../controllers/file-update/personnelData');
+router.get('/periods', verifyToken, getAvailablePeriods);
 
-const { getPersonnelChangesView } = require('../../controllers/file-update/personnelData');
-router.get('/', verifyToken, getPersonnelChangesView);
+const { getEmployeesList } = require('../../controllers/file-update/personnelData');
+router.get('/employees', verifyToken, getEmployeesList);
 
-// Filtered view endpoints
-const { getHighRiskPersonnelChanges } = require('../../controllers/file-update/personnelData');
-router.get('/high-risk', verifyToken, getHighRiskPersonnelChanges);
 
-const {getTerminatedEmployees } = require('../../controllers/file-update/personnelData');
-router.get('/terminated', verifyToken, getTerminatedEmployees);
+const { getPreviousPersonnelDetails } = require('../../controllers/file-update/personnelData');
+router.get('/previous', verifyToken, getPreviousPersonnelDetails);
 
-const { getNewEmployees } = require('../../controllers/file-update/personnelData');
-router.get('/new', verifyToken, getNewEmployees);
+const {getCurrentPersonnelDetails  } = require('../../controllers/file-update/personnelData');
+router.get('/current', verifyToken, getCurrentPersonnelDetails );
 
-const { exportPersonnelChangesExcel  } = require('../../controllers/file-update/personnelData');
-router.post('/excel', verifyToken, exportPersonnelChangesExcel );
+const { getPersonnelDetailsComparison } = require('../../controllers/file-update/personnelData');
+router.get('/compare', verifyToken, getPersonnelDetailsComparison);
 
-const { exportPersonnelChangesPDF } = require('../../controllers/file-update/personnelData');
-router.post('/pdf', verifyToken, exportPersonnelChangesPDF);
+const { exportPreviousDetailsExcel  } = require('../../controllers/file-update/personnelData');
+router.get('/export/excel-prev', verifyToken, exportPreviousDetailsExcel);
+
+const { exportCurrentDetailsExcel } = require('../../controllers/file-update/personnelData');
+router.get('/export/excel-cur', verifyToken, exportCurrentDetailsExcel);
+
+const { exportPreviousDetailsPDF } = require('../../controllers/file-update/personnelData');
+router.get('/export/pdf-prev', verifyToken, exportPreviousDetailsPDF);
+
+const { exportCurrentDetailsPDF } = require('../../controllers/file-update/personnelData');
+router.get('/export/pdf-cur', verifyToken, exportCurrentDetailsPDF);
 
 module.exports = router;

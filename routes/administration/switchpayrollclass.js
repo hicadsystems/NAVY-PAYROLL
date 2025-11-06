@@ -8,12 +8,12 @@ const SECRET = process.env.JWT_SECRET;
 
 // Reverse mapping for display
 const DISPLAY_MAPPING = {
-  'hicaddata': 'OFFICER',
-  'hicaddata1': 'W/OFFICER', 
-  'hicaddata2': 'RATINGS',
-  'hicaddata3': 'RATINGS A',
-  'hicaddata4': 'RATINGS B',
-  'hicaddata5': 'JUNIOR TRAINEE'
+  [process.env.DB_OFFICERS]: 'OFFICER',
+  [process.env.DB_WOFFICERS]: 'W/OFFICER', 
+  [process.env.DB_RATINGS]: 'RATE A',
+  [process.env.DB_RATINGS_A]: 'RATE B',
+  [process.env.DB_RATINGS_B]: 'RATE C',
+  [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
 };
 
 // Get all available database classes (for populating the table)
@@ -52,7 +52,12 @@ router.post('/switch-class', verifyToken, async (req, res) => {
     const { targetClass } = req.body; // could be display_name OR db_name
     const userId = req.user_id;
 
-    // First try lookup by display_name
+    console.log(`\n🔄 User ${userId} attempting to switch to: ${targetClass}`);
+
+    // First, resolve targetClass to db_name
+    let targetDbName = targetClass;
+    
+    // Try lookup by display_name first
     let [classRows] = await pool.query(
       'SELECT id, display_name, db_name FROM db_classes WHERE display_name = ? AND is_active = 1',
       [targetClass]
@@ -71,39 +76,40 @@ router.post('/switch-class', verifyToken, async (req, res) => {
     }
 
     const selectedClass = classRows[0];
+    targetDbName = selectedClass.db_name;
 
-    // validate user exists + get primary_class
-    const [userRows] = await pool.query(
-      'SELECT primary_class FROM users WHERE user_id = ?',
-      [userId]
-    );
+    console.log(`✅ Resolved target class: ${selectedClass.display_name} (${targetDbName})`);
 
-    if (userRows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    // Simply switch to the target database
+    // User can work in ANY database, not restricted to their primary_class
+    pool.useDatabase(targetDbName);
 
-    const primaryClass = userRows[0].primary_class;
-
-    // generate new token with updated current_class
+    // Generate new token with updated current_class
+    // Keep primary_class and other user info from current token
     const newPayload = {
       user_id: req.user_id,
       full_name: req.user_fullname,
       role: req.user_role,
-      primary_class: primaryClass,
-      current_class: selectedClass.db_name
+      primary_class: req.primary_class, // Keep their home database
+      current_class: targetDbName, // Update to new working database
+      created_in: req.created_in || req.primary_class // Track where user record exists
     };
 
     const newToken = jwt.sign(newPayload, SECRET, { expiresIn: '6h' });
+
+    console.log(`\n✅ Successfully switched user ${userId} to ${targetDbName}`);
+    console.log(`   Primary class (home): ${req.primary_class}`);
+    console.log(`   Current class (working): ${targetDbName}`);
 
     res.json({
       success: true,
       message: `Switched to ${selectedClass.display_name}`,
       token: newToken,
       newClass: {
-        id: selectedClass.db_name,       // internal name
-        display: selectedClass.display_name // friendly name
+        id: selectedClass.db_name,
+        display: selectedClass.display_name
       },
-      isPrimary: selectedClass.db_name === primaryClass,
+      isPrimary: selectedClass.db_name === req.primary_class,
       switchedAt: new Date().toISOString()
     });
 

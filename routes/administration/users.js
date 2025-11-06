@@ -9,71 +9,161 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
 const verifyToken = require('../../middware/authentication');
 
-// User login
+
+
+// User login - searches across all databases
 router.post("/login", async (req, res) => {
   const { user_id, password, payroll_class } = req.body;
   // payroll_class comes from frontend as: 'hicaddata', 'hicaddata1'
 
   try {
-    // Always authenticate from officers database first
-    pool.useDatabase(process.env.DB_OFFICERS);
+    const userCandidates = []; // Store all found user instances
+
+    // Get list of all available databases to search
+    let databasesToSearch = [];
     
-    const [rows] = await pool.query(
-      "SELECT * FROM users WHERE user_id = ?",
-      [user_id]
-    );
+    try {
+      // Try to get all db_classes from officers database
+      pool.useDatabase(process.env.DB_OFFICERS);
+      const [dbClasses] = await pool.query("SELECT db_name FROM db_classes");
+      
+      // Build list: officers first, then all other databases
+      const otherDatabases = dbClasses.map(row => row.db_name).filter(db => db !== process.env.DB_OFFICERS);
+      databasesToSearch = [process.env.DB_OFFICERS, ...otherDatabases];
+      
+      console.log("📋 Databases to search:", databasesToSearch);
+    } catch (err) {
+      // If db_classes table doesn't exist, fallback to searching common databases
+      console.log("⚠️ Could not fetch db_classes, using fallback list");
+      databasesToSearch = [
+        process.env.DB_OFFICERS,
+        process.env.DB_WOFFICERS,
+        process.env.DB_RATINGS,
+        process.env.DB_RATINGS_A,
+        process.env.DB_RATINGS_B,
+        process.env.DB_JUNIOR_TRAINEE
+      ];
+    }
 
-    if (rows.length === 0) {
+    // Search for user in ALL databases and collect all instances
+    for (const dbName of databasesToSearch) {
+      if (!dbName) continue; // Skip null/undefined entries
+      
+      try {
+        console.log(`🔍 Searching for user ${user_id} in database: ${dbName}`);
+        pool.useDatabase(dbName);
+        
+        const [rows] = await pool.query(
+          "SELECT * FROM users WHERE user_id = ?",
+          [user_id]
+        );
+        
+        if (rows.length > 0) {
+          const foundUser = rows[0];
+          userCandidates.push({
+            user: foundUser,
+            database: dbName
+          });
+          console.log(`✅ User found in database: ${dbName}`);
+          console.log(`   👤 Name: ${foundUser.full_name}, Primary Class: ${foundUser.primary_class}`);
+          console.log(`   🔐 Password: "${foundUser.password}" (type: ${typeof foundUser.password})`);
+        }
+      } catch (err) {
+        // If database doesn't exist or has no users table, continue to next
+        console.log(`❌ Error searching database ${dbName}:`, err.message);
+        continue;
+      }
+    }
+
+    // If user not found in ANY database
+    if (userCandidates.length === 0) {
+      console.log(`❌ User ${user_id} not found in any database`);
       return res.status(401).json({ error: "Invalid User ID or password" });
     }
 
-    const user = rows[0];
+    console.log(`\n📊 Found ${userCandidates.length} instance(s) of user ${user_id}`);
 
-    // Check account status
-    if (user.status !== "active") {
-      return res.status(403).json({ error: "Account is inactive or suspended" });
+    // Now validate password and find matching user
+    let authenticatedUser = null;
+    let authenticatedDatabase = null;
+
+    for (const candidate of userCandidates) {
+      const { user, database } = candidate;
+      
+      console.log(`\n🔐 Checking credentials for user in ${database}:`);
+      console.log(`   Stored password: "${user.password}" (${typeof user.password})`);
+      console.log(`   Provided password: "${password}" (${typeof password})`);
+      console.log(`   Match: ${user.password === password}`);
+      console.log(`   Status: ${user.status}`);
+      console.log(`   Primary class: ${user.primary_class}`);
+      console.log(`   Requested class: ${payroll_class}`);
+
+      // Check if password matches, status is active, and primary_class matches
+      if (user.password === password && 
+          user.status === "active" && 
+          user.primary_class === payroll_class) {
+        authenticatedUser = user;
+        authenticatedDatabase = database;
+        console.log(`✅ Valid credentials found in ${database}!`);
+        break; // Found valid match, stop searching
+      } else {
+        console.log(`❌ Invalid credentials in ${database}:`);
+        if (user.password !== password) console.log(`   - Password mismatch`);
+        if (user.status !== "active") console.log(`   - Account status: ${user.status}`);
+        if (user.primary_class !== payroll_class) console.log(`   - Class mismatch (has: ${user.primary_class}, wants: ${payroll_class})`);
+      }
     }
 
-    // Password validation
-    if (user.password !== password) {
-      return res.status(401).json({ error: "Invalid User ID or password" });
+    // If no valid match found after checking all instances
+    if (!authenticatedUser) {
+      console.log(`\n❌ No valid credentials found for user ${user_id} across all databases`);
+      
+      // Provide specific error message
+      const hasPasswordMatch = userCandidates.some(c => c.user.password === password);
+      const hasInactiveAccount = userCandidates.some(c => c.user.status !== "active");
+      const hasClassMismatch = userCandidates.some(c => c.user.primary_class !== payroll_class);
+      
+      if (hasInactiveAccount && hasPasswordMatch) {
+        return res.status(403).json({ error: "Account is inactive or suspended" });
+      } else if (hasClassMismatch && hasPasswordMatch) {
+        return res.status(403).json({ 
+          error: "Unauthorized payroll class selection. You can only login to your assigned class." 
+        });
+      } else {
+        return res.status(401).json({ error: "Invalid User ID or password" });
+      }
     }
 
-    // IMPORTANT: Verify user can access the selected payroll class
-    // user.primary_class contains the database name they're assigned to (e.g., 'hicaddata', 'hicaddata2')
-    if (user.primary_class !== payroll_class) {
-      return res.status(403).json({ 
-        error: "Unauthorized payroll class selection. You can only login to your assigned class." 
-      });
-    }
-
-    // Switch to user's selected database (which matches their primary_class)
+    // Switch to user's assigned database (their primary_class)
     pool.useDatabase(payroll_class);
 
     // Generate JWT token
     const token = jwt.sign(
       {
-        user_id: user.user_id,
-        full_name: user.full_name,
-        role: user.user_role,
-        primary_class: user.primary_class, // e.g., 'hicaddata', 'hicaddata1'
-        current_class: payroll_class // Same as primary_class on login
+        user_id: authenticatedUser.user_id,
+        full_name: authenticatedUser.full_name,
+        role: authenticatedUser.user_role,
+        primary_class: authenticatedUser.primary_class,
+        current_class: payroll_class,
+        created_in: authenticatedDatabase
       },
       JWT_SECRET,
       { expiresIn: "8h" }
     );
 
+    console.log(`\n✅ Login successful for user ${user_id} from ${authenticatedDatabase}`);
+
     res.json({
       message: "✅ Login successful",
       token,
       user: {
-        user_id: user.user_id,
-        full_name: user.full_name,
-        email: user.email,
-        role: user.user_role,
-        status: user.status,
-        primary_class: user.primary_class, // Their assigned database
-        current_class: payroll_class // Database they're currently working in
+        user_id: authenticatedUser.user_id,
+        full_name: authenticatedUser.full_name,
+        email: authenticatedUser.email,
+        role: authenticatedUser.user_role,
+        status: authenticatedUser.status,
+        primary_class: authenticatedUser.primary_class,
+        current_class: payroll_class
       }
     });
 

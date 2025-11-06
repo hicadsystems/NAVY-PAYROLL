@@ -1,16 +1,74 @@
 const pool = require('../../config/db');
-const personnelData = require('../../services/file-update/personnelData');
+const personnelDetailsService = require('../../services/file-update/personnelData');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 
-
-exports.personnelChanges = async (req, res) => {
+/**
+ * GET: Get available periods for filtering
+ */
+exports.getAvailablePeriods = async (req, res) => {
   try {
-    // Get BT05 processing period
-    const [bt05Rows] = await pool.query(
-      "SELECT ord AS year, mth AS month, sun FROM py_stdrate WHERE type='BT05' LIMIT 1"
-    );
+    const periods = await personnelDetailsService.getAvailablePeriods();
     
+    res.json({
+      status: 'SUCCESS',
+      periods
+    });
+  } catch (err) {
+    console.error('Error getting available periods:', err);
+    res.status(500).json({ 
+      status: 'FAILED', 
+      message: err.message 
+    });
+  }
+};
+
+/**
+ * GET: Get list of all employees for selection
+ */
+exports.getEmployeesList = async (req, res) => {
+  try {
+    const employees = await personnelDetailsService.getEmployeesList();
+    
+    res.json({
+      status: 'SUCCESS',
+      totalEmployees: employees.length,
+      employees
+    });
+  } catch (err) {
+    console.error('Error getting employees list:', err);
+    res.status(500).json({ 
+      status: 'FAILED', 
+      message: err.message 
+    });
+  }
+};
+
+/**
+ * GET: Previous personnel details from py_emplhistory
+ */
+exports.getPreviousPersonnelDetails = async (req, res) => {
+  try {
+    const { 
+      startPeriod, 
+      endPeriod, 
+      employeeId,
+      page = 1,
+      limit = 50
+    } = req.query;
+
+    // Validate required filters
+    if (!startPeriod && !endPeriod) {
+      return res.status(400).json({
+        status: 'FAILED',
+        error: 'At least one period (startPeriod or endPeriod) is required'
+      });
+    }
+
+    const [bt05Rows] = await pool.query(
+      "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
+    );
+
     if (!bt05Rows.length) {
       return res.status(404).json({ 
         status: 'FAILED',
@@ -18,292 +76,227 @@ exports.personnelChanges = async (req, res) => {
       });
     }
 
-    const { year, month, sun } = bt05Rows[0];
-    
-    // Validation: Ensure previous stage completed
-    if (sun < 666) {
-      return res.status(400).json({ 
-        status: 'FAILED',
-        error: 'Save payroll files first.',
-        currentStage: sun,
-        requiredStage: 666
-      });
-    }
-    
-    // Validation: Prevent re-processing
-    if (sun > 666) {
-      return res.status(400).json({ 
-        status: 'FAILED',
-        error: 'Personnel changes already processed.',
-        currentStage: sun
-      });
-    }
-
+    const { year, month } = bt05Rows[0];
     const user = req.user_fullname || 'System Auto';
-    
-    // Call the updated service (now returns summary + records)
-    const result = await personnelData.getPersonnelChanges(year, month, user);
 
-    // Update BT05 stage marker
-    await pool.query(
-      "UPDATE py_stdrate SET sun = 775, createdby = ? WHERE type = 'BT05'", 
-      [user]
+    const result = await personnelDetailsService.getPreviousPersonnelDetails(
+      year, 
+      month, 
+      user, 
+      {
+        startPeriod,
+        endPeriod,
+        employeeId,
+        page: parseInt(page),
+        limit: parseInt(limit)
+      }
     );
 
     res.json({
       status: 'SUCCESS',
-      stage: 888,
-      progress: 'Personnel changes processed',
-      nextStage: 'Input Variable Comparison',
-      processedAt: new Date().toISOString(),
-      summary: result.summary,
-      changes: result.records,
-      result: {
-        totalChanges: result.summary.totalChanges,
-        records: result.records
-      }
+      reportType: 'PREVIOUS_DETAILS',
+      filters: { startPeriod, endPeriod, employeeId },
+      retrievedAt: new Date().toISOString(),
+      records: result.records,
+      pagination: result.pagination
     });
   } catch (err) {
-    console.error('Error getting personnel changes:', err);
+    console.error('Error getting previous personnel details:', err);
     res.status(500).json({ 
       status: 'FAILED', 
-      message: err.message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      message: err.message 
     });
   }
 };
 
-// Get high-risk personnel changes only (bank/account changes)
-exports.getHighRiskPersonnelChanges = async (req, res) => {
+/**
+ * GET: Current personnel details from hr_employees
+ */
+exports.getCurrentPersonnelDetails = async (req, res) => {
   try {
-    const { startDate, endDate, period } = req.query;
-    
+    const { 
+      employeeId,
+      page = 1,
+      limit = 50
+    } = req.query;
+
     const [bt05Rows] = await pool.query(
       "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
     );
-    if (!bt05Rows.length) {
-      return res.status(404).json({ error: 'BT05 not found' });
-    }
-
-    const { year, month } = bt05Rows[0];
-    const user = req.user?.fullname || req.user_fullname || 'System Auto';
-    
-    const result = await personnelData.getHighRiskPersonnelChanges(
-      year, 
-      month, 
-      user, 
-      { startDate, endDate, period }
-    );
-
-    res.json({
-      status: 'SUCCESS',
-      riskLevel: 'HIGH',
-      totalChanges: result.totalChanges,
-      changes: result.records,
-      filters: { startDate, endDate, period }
-    });
-  } catch (err) {
-    console.error('Error getting high-risk personnel changes:', err);
-    res.status(500).json({ status: 'FAILED', message: err.message });
-  }
-};
-
-// Get terminated employees
-exports.getTerminatedEmployees = async (req, res) => {
-  try {
-    const { startDate, endDate, period } = req.query;
-    
-    const [bt05Rows] = await pool.query(
-      "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
-    );
-    if (!bt05Rows.length) {
-      return res.status(404).json({ error: 'BT05 not found' });
-    }
-
-    const { year, month } = bt05Rows[0];
-    const user = req.user?.fullname || req.user_fullname || 'System Auto';
-    
-    const result = await personnelData.getPersonnelChangesByCategory(
-      'TERMINATED', 
-      year, 
-      month, 
-      user, 
-      { startDate, endDate, period }
-    );
-
-    res.json({
-      status: 'SUCCESS',
-      category: 'TERMINATED',
-      totalChanges: result.totalChanges,
-      changes: result.records,
-      filters: { startDate, endDate, period }
-    });
-  } catch (err) {
-    console.error('Error getting terminated employees:', err);
-    res.status(500).json({ status: 'FAILED', message: err.message });
-  }
-};
-
-// Get new employees
-exports.getNewEmployees = async (req, res) => {
-  try {
-    const { startDate, endDate, period } = req.query;
-    
-    const [bt05Rows] = await pool.query(
-      "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
-    );
-    if (!bt05Rows.length) {
-      return res.status(404).json({ error: 'BT05 not found' });
-    }
-
-    const { year, month } = bt05Rows[0];
-    const user = req.user?.fullname || req.user_fullname || 'System Auto';
-    
-    const result = await personnelData.getPersonnelChangesByCategory(
-      'NEW_EMPLOYEE', 
-      year, 
-      month, 
-      user, 
-      { startDate, endDate, period }
-    );
-
-    res.json({
-      status: 'SUCCESS',
-      category: 'NEW_EMPLOYEE',
-      totalChanges: result.totalChanges,
-      changes: result.records,
-      filters: { startDate, endDate, period }
-    });
-  } catch (err) {
-    console.error('Error getting new employees:', err);
-    res.status(500).json({ status: 'FAILED', message: err.message });
-  }
-};
-
-//View 
-exports.getPersonnelChangesView = async (req, res) => {
-  try {
-    const [bt05Rows] = await pool.query(
-      "SELECT ord AS year, mth AS month, sun FROM py_stdrate WHERE type='BT05' LIMIT 1"
-    );
 
     if (!bt05Rows.length) {
-      return res.status(404).json({ status: 'FAILED', error: 'BT05 not found' });
-    }
-
-    const { year, month, sun } = bt05Rows[0];
-
-    // THE KEY CHANGE: Only fail if the process hasn't started (sun < 775)
-    if (sun < 775) { 
-      // 666 means it's processed, but 775 is the 'changes ready' status.
-      return res.status(400).json({ 
-      status: 'FAILED',
-      error: 'Personnel changes are not ready for viewing (must be stage 775 or higher).',
-      currentStage: sun
+      return res.status(404).json({ 
+        status: 'FAILED',
+        error: 'BT05 not found - processing period not set' 
       });
     }
 
-    // Retrieve the data—since the data was processed and saved at stage 666, 
-    // we only need to read the saved results here.
+    const { year, month } = bt05Rows[0];
     const user = req.user_fullname || 'System Auto';
-    const result = await personnelData.getPersonnelChanges(year, month, user, true); // Use a flag for 'view mode' if necessary
+
+    const result = await personnelDetailsService.getCurrentPersonnelDetails(
+      year, 
+      month, 
+      user, 
+      {
+        employeeId,
+        page: parseInt(page),
+        limit: parseInt(limit)
+      }
+    );
 
     res.json({
       status: 'SUCCESS',
-      stage: sun, // Return the actual current stage
-      progress: 'Personnel changes retrieved for viewing',
-      processedAt: new Date().toISOString(),
-      summary: result.summary,
-      changes: result.records,
+      reportType: 'CURRENT_DETAILS',
+      filters: { employeeId },
+      retrievedAt: new Date().toISOString(),
+      records: result.records,
+      pagination: result.pagination
     });
   } catch (err) {
-    console.error('Error fetching personnel changes for view:', err);
-    res.status(500).json({ status: 'FAILED', message: err.message });
+    console.error('Error getting current personnel details:', err);
+    res.status(500).json({ 
+      status: 'FAILED', 
+      message: err.message 
+    });
   }
 };
 
-exports.exportPersonnelChangesExcel = async (req, res) => {
+/**
+ * GET: Comparison between previous and current details
+ */
+exports.getPersonnelDetailsComparison = async (req, res) => {
   try {
+    const { 
+      startPeriod, 
+      endPeriod, 
+      employeeId,
+      page = 1,
+      limit = 20
+    } = req.query;
+
+    // Validate required filters
+    if (!startPeriod && !endPeriod) {
+      return res.status(400).json({
+        status: 'FAILED',
+        error: 'At least one period (startPeriod or endPeriod) is required'
+      });
+    }
+
     const [bt05Rows] = await pool.query(
       "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
     );
+
+    if (!bt05Rows.length) {
+      return res.status(404).json({ 
+        status: 'FAILED',
+        error: 'BT05 not found - processing period not set' 
+      });
+    }
+
+    const { year, month } = bt05Rows[0];
+    const user = req.user_fullname || 'System Auto';
+
+    const result = await personnelDetailsService.getPersonnelDetailsComparison(
+      year, 
+      month, 
+      user, 
+      {
+        startPeriod,
+        endPeriod,
+        employeeId,
+        page: parseInt(page),
+        limit: parseInt(limit)
+      }
+    );
+
+    res.json({
+      status: 'SUCCESS',
+      reportType: 'COMPARISON',
+      filters: { startPeriod, endPeriod, employeeId },
+      retrievedAt: new Date().toISOString(),
+      records: result.records,
+      pagination: result.pagination
+    });
+  } catch (err) {
+    console.error('Error getting personnel details comparison:', err);
+    res.status(500).json({ 
+      status: 'FAILED', 
+      message: err.message 
+    });
+  }
+};
+
+/**
+ * GET: Export previous personnel details to Excel
+ */
+exports.exportPreviousDetailsExcel = async (req, res) => {
+  try {
+    const { startPeriod, endPeriod, employeeId } = req.query;
+
+    const [bt05Rows] = await pool.query(
+      "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
+    );
+
     if (!bt05Rows.length) {
       return res.status(404).json({ error: 'BT05 not found' });
     }
 
     const { year, month } = bt05Rows[0];
 
-    // Build dynamic WHERE clause for filters
-    let whereConditions = [];
-    let queryParams = [];
-
-    if (startDate && endDate) {
-      whereConditions.push('detected_at BETWEEN ? AND ?');
-      queryParams.push(startDate, endDate);
-    } else if (startDate) {
-      whereConditions.push('detected_at >= ?');
-      queryParams.push(startDate);
-    } else if (endDate) {
-      whereConditions.push('detected_at <= ?');
-      queryParams.push(endDate);
-    }
-
-    if (period) {
-      whereConditions.push('JSON_EXTRACT(previous_values, "$.period") = ?');
-      queryParams.push(period);
-    }
-
-    if (riskLevel) {
-      whereConditions.push('risk_level = ?');
-      queryParams.push(riskLevel);
-    }
-
-    if (changeCategory) {
-      whereConditions.push('change_category = ?');
-      queryParams.push(changeCategory);
-    }
-
-    const whereClause = whereConditions.length > 0 
-      ? 'WHERE ' + whereConditions.join(' AND ') 
-      : '';
-
-    // Get ALL columns from view
-    const query = `
-      SELECT * FROM vw_personnel_changes
-      ${whereClause}
-      ORDER BY FIELD(risk_level, 'HIGH', 'MEDIUM', 'LOW'), full_name
-    `;
-
-    const [rows] = await pool.query(query, queryParams);
+    // Get all records for export
+    const records = await personnelDetailsService.getAllPreviousDetailsForExport({
+      startPeriod,
+      endPeriod,
+      employeeId
+    });
 
     // Create workbook
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Personnel Changes');
+    const worksheet = workbook.addWorksheet('Previous Personnel Details');
 
     // Add header
-    worksheet.addRow(['PERSONNEL CHANGES REPORT']);
+    worksheet.addRow(['PREVIOUS PERSONNEL DETAILS REPORT']);
     worksheet.addRow([`Period: ${month}/${year}`]);
     worksheet.addRow([`Generated: ${new Date().toLocaleString()}`]);
-    if (startDate || endDate || period || riskLevel || changeCategory) {
-      worksheet.addRow([`Filters: ${JSON.stringify({ startDate, endDate, period, riskLevel, changeCategory })}`]);
-    }
+    worksheet.addRow([`Filters: Period ${startPeriod || 'N/A'} to ${endPeriod || 'N/A'}${employeeId && employeeId !== 'ALL' ? `, Employee: ${employeeId}` : ', All Employees'}`]);
     worksheet.addRow([]);
 
-    // Summary sheet with ALL columns
-    worksheet.columns = [
-      { header: 'Employee ID', key: 'empl_id', width: 15 },
-      { header: 'Full Name', key: 'full_name', width: 30 },
-      { header: 'Location', key: 'location', width: 15 },
-      { header: 'Factory', key: 'factory', width: 15 },
-      { header: 'Change Summary', key: 'change_summary', width: 50 },
-      { header: 'Category', key: 'category', width: 25 },
-      { header: 'Risk Level', key: 'risk', width: 12 },
-      { header: 'Detected At', key: 'detected_at', width: 20 },
+    // Define all columns from py_emplhistory
+    const columns = [
+      { header: 'Period', key: 'period', width: 15 },
+      { header: 'Employee ID', key: 'Empl_ID', width: 15 },
+      { header: 'Surname', key: 'Surname', width: 20 },
+      { header: 'Other Name', key: 'OtherName', width: 25 },
+      { header: 'Title', key: 'Title', width: 10 },
+      { header: 'Sex', key: 'Sex', width: 8 },
+      { header: 'Job Title', key: 'Jobtitle', width: 30 },
+      { header: 'Marital Status', key: 'MaritalStatus', width: 15 },
+      { header: 'Factory', key: 'Factory', width: 12 },
+      { header: 'Location', key: 'Location', width: 15 },
+      { header: 'Birth Date', key: 'Birthdate', width: 15 },
+      { header: 'Date Employed', key: 'DateEmpl', width: 15 },
+      { header: 'Date Left', key: 'DateLeft', width: 15 },
+      { header: 'Telephone', key: 'TELEPHONE', width: 15 },
+      { header: 'Home Address', key: 'HOMEADDR', width: 40 },
+      { header: 'NOK Name', key: 'nok_name', width: 30 },
+      { header: 'Bank Code', key: 'Bankcode', width: 12 },
+      { header: 'Bank Branch', key: 'bankbranch', width: 15 },
+      { header: 'Bank Account', key: 'BankACNumber', width: 20 },
+      { header: 'State of Origin', key: 'StateofOrigin', width: 15 },
+      { header: 'Local Govt', key: 'LocalGovt', width: 15 },
+      { header: 'Status', key: 'Status', width: 12 },
+      { header: 'Grade Level', key: 'gradelevel', width: 12 },
+      { header: 'Email', key: 'email', width: 30 },
+      { header: 'PFA Code', key: 'pfacode', width: 15 },
+      { header: 'Command', key: 'command', width: 15 },
+      { header: 'Specialisation', key: 'specialisation', width: 20 }
     ];
 
+    worksheet.columns = columns;
+
     // Style header row
-    const headerRowIndex = (startDate || endDate || period || riskLevel || changeCategory) ? 6 : 5;
-    const headerRow = worksheet.getRow(headerRowIndex);
+    const headerRow = worksheet.getRow(6);
     headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     headerRow.fill = {
       type: 'pattern',
@@ -312,162 +305,13 @@ exports.exportPersonnelChangesExcel = async (req, res) => {
     };
 
     // Add data rows
-    rows.forEach(row => {
-      const newRow = worksheet.addRow({
-        empl_id: row.Empl_ID,
-        full_name: row.full_name,
-        location: row.Location,
-        factory: row.Factory,
-        change_summary: row.change_summary,
-        category: row.change_category,
-        risk: row.risk_level,
-        detected_at: new Date(row.detected_at).toLocaleString()
-      });
-
-      // Color code by risk level
-      if (row.risk_level === 'HIGH') {
-        newRow.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFFFC7CE' }
-        };
-      } else if (row.risk_level === 'MEDIUM') {
-        newRow.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFFFFF00' }
-        };
-      }
+    records.forEach(record => {
+      worksheet.addRow(record);
     });
 
-    // Add detailed changes sheet with ALL FIELDS
-    const detailsSheet = workbook.addWorksheet('Detailed Changes');
-    detailsSheet.columns = [
-      { header: 'Employee ID', key: 'empl_id', width: 15 },
-      { header: 'Full Name', key: 'full_name', width: 30 },
-      { header: 'Field', key: 'field', width: 25 },
-      { header: 'Previous Value', key: 'prev', width: 30 },
-      { header: 'Current Value', key: 'curr', width: 30 },
-      { header: 'Previous Period', key: 'period', width: 15 },
-    ];
-
-    detailsSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    detailsSheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF0070C0' }
-    };
-
-    // Process ALL fields from JSON
-    rows.forEach(row => {
-      const current = typeof row.current_values === 'string' 
-        ? JSON.parse(row.current_values) 
-        : row.current_values;
-      
-      const previous = typeof row.previous_values === 'string' 
-        ? JSON.parse(row.previous_values) 
-        : row.previous_values;
-
-      const previousPeriod = previous.period || 'N/A';
-
-      // Loop through ALL fields in current_values
-      Object.keys(current).forEach(key => {
-        // Convert values to strings for comparison
-        const currentVal = String(current[key] || '');
-        const previousVal = String(previous[key] || '');
-        
-        if (currentVal !== previousVal) {
-          detailsSheet.addRow({
-            empl_id: row.Empl_ID,
-            full_name: row.full_name,
-            field: key,
-            prev: previousVal || 'N/A',
-            curr: currentVal || 'N/A',
-            period: previousPeriod
-          });
-        }
-      });
-    });
-
-    // Add a third sheet with complete current and previous values side-by-side
-    const fullDataSheet = workbook.addWorksheet('Complete Data Comparison');
+    // Generate filename
+    const filename = `previous_personnel_details_${year}_${month}${startPeriod ? '_' + startPeriod : ''}${endPeriod ? '_to_' + endPeriod : ''}${employeeId && employeeId !== 'ALL' ? '_' + employeeId : ''}.xlsx`;
     
-    // Define all columns from hr_employees
-    const allColumns = [
-      'Empl_ID', 'Surname', 'OtherName', 'Title', 'TITLEDESC', 'Sex', 'JobClass', 'Jobtitle',
-      'MaritalStatus', 'Factory', 'Location', 'Birthdate', 'DateEmpl', 'DateLeft', 'TELEPHONE',
-      'HOMEADDR', 'nok_name', 'Bankcode', 'bankbranch', 'BankACNumber', 'InternalACNo',
-      'StateofOrigin', 'LocalGovt', 'TaxCode', 'NSITFcode', 'NHFcode', 'seniorno', 'command',
-      'nok_addr', 'Language1', 'Fluency1', 'Language2', 'Fluency2', 'Language3', 'Fluency3',
-      'Country', 'Height', 'Weight', 'BloodGroup', 'Genotype', 'entry_mode', 'Status',
-      'datepmted', 'dateconfirmed', 'taxed', 'gradelevel', 'gradetype', 'entitlement', 'town',
-      'createdby', 'datecreated', 'nok_relation', 'specialisation', 'accomm_type', 'qual_allow',
-      'sp_qual_allow', 'rent_subsidy', 'instruction_allow', 'command_allow', 'award',
-      'payrollclass', 'email', 'pfacode', 'state', 'emolumentform', 'dateadded', 'exittype',
-      'gsm_number', 'nokphone', 'religion'
-    ];
-
-    // Create headers for full data sheet
-    const fullDataHeaders = ['Employee ID', 'Full Name', 'Field', 'Previous Value', 'Current Value', 'Changed'];
-    fullDataSheet.addRow(fullDataHeaders);
-    
-    const fullDataHeaderRow = fullDataSheet.getRow(1);
-    fullDataHeaderRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    fullDataHeaderRow.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF0070C0' }
-    };
-
-    fullDataSheet.columns = [
-      { header: 'Employee ID', key: 'empl_id', width: 15 },
-      { header: 'Full Name', key: 'full_name', width: 30 },
-      { header: 'Field', key: 'field', width: 25 },
-      { header: 'Previous Value', key: 'prev', width: 30 },
-      { header: 'Current Value', key: 'curr', width: 30 },
-      { header: 'Changed', key: 'changed', width: 10 },
-    ];
-
-    rows.forEach(row => {
-      const current = typeof row.current_values === 'string' 
-        ? JSON.parse(row.current_values) 
-        : row.current_values;
-      
-      const previous = typeof row.previous_values === 'string' 
-        ? JSON.parse(row.previous_values) 
-        : row.previous_values;
-
-      // Add ALL columns
-      allColumns.forEach(col => {
-        const currentVal = String(current[col] || '');
-        const previousVal = String(previous[col] || '');
-        const isChanged = currentVal !== previousVal;
-
-        const dataRow = fullDataSheet.addRow({
-          empl_id: row.Empl_ID,
-          full_name: row.full_name,
-          field: col,
-          prev: previousVal || 'N/A',
-          curr: currentVal || 'N/A',
-          changed: isChanged ? 'YES' : 'NO'
-        });
-
-        // Highlight changed rows
-        if (isChanged) {
-          dataRow.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFFFEB9C' }
-          };
-        }
-      });
-
-      // Add separator row between employees
-      fullDataSheet.addRow([]);
-    });
-
-    // Generate file
-    const filename = `personnel_changes_${year}_${month}${period ? '_' + period : ''}${startDate ? '_from_' + startDate.replace(/:/g, '-') : ''}${endDate ? '_to_' + endDate.replace(/:/g, '-') : ''}.xlsx`;
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
 
@@ -479,152 +323,167 @@ exports.exportPersonnelChangesExcel = async (req, res) => {
   }
 };
 
-exports.exportPersonnelChangesPDF = async (req, res) => {
+/**
+ * GET: Export current personnel details to Excel
+ */
+exports.exportCurrentDetailsExcel = async (req, res) => {
   try {
-    const { startDate, endDate, period, riskLevel, changeCategory } = req.query;
-    
+    const { employeeId } = req.query;
+
     const [bt05Rows] = await pool.query(
       "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
     );
+
     if (!bt05Rows.length) {
       return res.status(404).json({ error: 'BT05 not found' });
     }
 
     const { year, month } = bt05Rows[0];
 
-    // Build dynamic WHERE clause for filters
-    let whereConditions = [];
-    let queryParams = [];
+    // Get all records for export
+    const records = await personnelDetailsService.getAllCurrentDetailsForExport({
+      employeeId
+    });
 
-    if (startDate && endDate) {
-      whereConditions.push('detected_at BETWEEN ? AND ?');
-      queryParams.push(startDate, endDate);
-    } else if (startDate) {
-      whereConditions.push('detected_at >= ?');
-      queryParams.push(startDate);
-    } else if (endDate) {
-      whereConditions.push('detected_at <= ?');
-      queryParams.push(endDate);
+    // Create workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Current Personnel Details');
+
+    // Add header
+    worksheet.addRow(['CURRENT PERSONNEL DETAILS REPORT']);
+    worksheet.addRow([`Period: ${month}/${year}`]);
+    worksheet.addRow([`Generated: ${new Date().toLocaleString()}`]);
+    worksheet.addRow([`Filters: ${employeeId && employeeId !== 'ALL' ? `Employee: ${employeeId}` : 'All Employees'}`]);
+    worksheet.addRow([]);
+
+    // Define all columns from hr_employees (extended with additional fields)
+    const columns = [
+      { header: 'Employee ID', key: 'Empl_ID', width: 15 },
+      { header: 'Surname', key: 'Surname', width: 20 },
+      { header: 'Other Name', key: 'OtherName', width: 25 },
+      { header: 'Title', key: 'Title', width: 10 },
+      { header: 'Sex', key: 'Sex', width: 8 },
+      { header: 'Job Title', key: 'Jobtitle', width: 30 },
+      { header: 'Marital Status', key: 'MaritalStatus', width: 15 },
+      { header: 'Factory', key: 'Factory', width: 12 },
+      { header: 'Location', key: 'Location', width: 15 },
+      { header: 'Birth Date', key: 'Birthdate', width: 15 },
+      { header: 'Date Employed', key: 'DateEmpl', width: 15 },
+      { header: 'Date Left', key: 'DateLeft', width: 15 },
+      { header: 'Telephone', key: 'TELEPHONE', width: 15 },
+      { header: 'Home Address', key: 'HOMEADDR', width: 40 },
+      { header: 'NOK Name', key: 'nok_name', width: 30 },
+      { header: 'Bank Code', key: 'Bankcode', width: 12 },
+      { header: 'Bank Branch', key: 'bankbranch', width: 15 },
+      { header: 'Bank Account', key: 'BankACNumber', width: 20 },
+      { header: 'State of Origin', key: 'StateofOrigin', width: 15 },
+      { header: 'Local Govt', key: 'LocalGovt', width: 15 },
+      { header: 'Status', key: 'Status', width: 12 },
+      { header: 'Grade Level', key: 'gradelevel', width: 12 },
+      { header: 'Email', key: 'email', width: 30 },
+      { header: 'GSM Number', key: 'gsm_number', width: 15 },
+      { header: 'NOK Phone', key: 'nokphone', width: 15 },
+      { header: 'Religion', key: 'religion', width: 15 },
+      { header: 'PFA Code', key: 'pfacode', width: 15 },
+      { header: 'Command', key: 'command', width: 15 },
+      { header: 'Specialisation', key: 'specialisation', width: 20 }
+    ];
+
+    worksheet.columns = columns;
+
+    // Style header row
+    const headerRow = worksheet.getRow(6);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF0070C0' }
+    };
+
+    // Add data rows
+    records.forEach(record => {
+      worksheet.addRow(record);
+    });
+
+    // Generate filename
+    const filename = `current_personnel_details_${year}_${month}${employeeId && employeeId !== 'ALL' ? '_' + employeeId : ''}.xlsx`;
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error('Excel export error:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * GET: Export previous personnel details to PDF
+ */
+exports.exportPreviousDetailsPDF = async (req, res) => {
+  try {
+    const { startPeriod, endPeriod, employeeId } = req.query;
+
+    const [bt05Rows] = await pool.query(
+      "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
+    );
+
+    if (!bt05Rows.length) {
+      return res.status(404).json({ error: 'BT05 not found' });
     }
 
-    if (period) {
-      whereConditions.push('JSON_EXTRACT(previous_values, "$.period") = ?');
-      queryParams.push(period);
-    }
+    const { year, month } = bt05Rows[0];
 
-    if (riskLevel) {
-      whereConditions.push('risk_level = ?');
-      queryParams.push(riskLevel);
-    }
-
-    if (changeCategory) {
-      whereConditions.push('change_category = ?');
-      queryParams.push(changeCategory);
-    }
-
-    const whereClause = whereConditions.length > 0 
-      ? 'WHERE ' + whereConditions.join(' AND ') 
-      : '';
-
-    // Get ALL columns from view
-    const query = `
-      SELECT * FROM vw_personnel_changes
-      ${whereClause}
-      ORDER BY FIELD(risk_level, 'HIGH', 'MEDIUM', 'LOW'), full_name
-    `;
-
-    const [rows] = await pool.query(query, queryParams);
+    // Get all records for export
+    const records = await personnelDetailsService.getAllPreviousDetailsForExport({
+      startPeriod,
+      endPeriod,
+      employeeId
+    });
 
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     
-    const filename = `personnel_changes_${year}_${month}${period ? '_' + period : ''}${startDate ? '_from_' + startDate.replace(/:/g, '-') : ''}${endDate ? '_to_' + endDate.replace(/:/g, '-') : ''}.pdf`;
+    const filename = `previous_personnel_details_${year}_${month}${startPeriod ? '_' + startPeriod : ''}${endPeriod ? '_to_' + endPeriod : ''}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
     
     doc.pipe(res);
 
     // Header
-    doc.fontSize(18).font('Helvetica-Bold').text('PERSONNEL CHANGES REPORT', { align: 'center' });
+    doc.fontSize(18).font('Helvetica-Bold').text('PREVIOUS PERSONNEL DETAILS REPORT', { align: 'center' });
     doc.fontSize(12).font('Helvetica').text(`Period: ${month}/${year}`, { align: 'center' });
     doc.text(`Generated: ${new Date().toLocaleString()}`, { align: 'center' });
-    
-    // Display applied filters
-    if (startDate || endDate || period || riskLevel || changeCategory) {
-      doc.moveDown(0.5);
-      doc.fontSize(10).text('Filters Applied:', { align: 'center' });
-      if (startDate) doc.text(`Start Date: ${startDate}`, { align: 'center' });
-      if (endDate) doc.text(`End Date: ${endDate}`, { align: 'center' });
-      if (period) doc.text(`Period: ${period}`, { align: 'center' });
-      if (riskLevel) doc.text(`Risk Level: ${riskLevel}`, { align: 'center' });
-      if (changeCategory) doc.text(`Category: ${changeCategory}`, { align: 'center' });
-    }
-    
+    doc.text(`Period Range: ${startPeriod || 'N/A'} to ${endPeriod || 'N/A'}`, { align: 'center' });
     doc.moveDown(2);
 
-    // Summary section
-    const highRisk = rows.filter(r => r.risk_level === 'HIGH').length;
-    const mediumRisk = rows.filter(r => r.risk_level === 'MEDIUM').length;
-    const lowRisk = rows.filter(r => r.risk_level === 'LOW').length;
-
+    // Summary
     doc.fontSize(14).font('Helvetica-Bold').text('Summary');
-    doc.fontSize(10).font('Helvetica')
-      .text(`Total Changes: ${rows.length}`)
-      .text(`High Risk: ${highRisk}`, { continued: true }).fillColor('red').text(` ⚠️`).fillColor('black')
-      .text(`Medium Risk: ${mediumRisk}`)
-      .text(`Low Risk: ${lowRisk}`);
-    doc.moveDown(2);
+    doc.fontSize(10).font('Helvetica').text(`Total Records: ${records.length}`);
+    doc.moveDown(1);
 
-    // Table header
-    doc.fontSize(12).font('Helvetica-Bold').text('Changes List');
+    // Records list
+    doc.fontSize(12).font('Helvetica-Bold').text('Personnel Details');
     doc.moveDown(0.5);
 
-    // Table rows with detailed changes
-    rows.forEach((row, index) => {
-      if (doc.y > 650) {
+    records.forEach((record, index) => {
+      if (doc.y > 700) {
         doc.addPage();
       }
 
-      const riskColor = row.risk_level === 'HIGH' ? 'red' : 
-                        row.risk_level === 'MEDIUM' ? 'orange' : 'green';
-
       doc.fontSize(10).font('Helvetica-Bold')
-        .text(`${index + 1}. ${row.full_name} (${row.Empl_ID})`, { continued: true })
-        .fillColor(riskColor).text(` [${row.risk_level}]`).fillColor('black');
+        .text(`${index + 1}. ${record.Surname} ${record.OtherName || ''} (${record.Empl_ID})`, { underline: true });
       
       doc.fontSize(9).font('Helvetica')
-        .text(`   Location: ${row.Location || 'N/A'}`)
-        .text(`   Factory: ${row.Factory || 'N/A'}`)
-        .text(`   Changes: ${row.change_summary}`)
-        .text(`   Category: ${row.change_category}`)
-        .text(`   Detected: ${new Date(row.detected_at).toLocaleString()}`);
+        .text(`   Period: ${record.period}`)
+        .text(`   Location: ${record.Location || 'N/A'} | Factory: ${record.Factory || 'N/A'}`)
+        .text(`   Job Title: ${record.Jobtitle || 'N/A'}`)
+        .text(`   Grade Level: ${record.gradelevel || 'N/A'} | Status: ${record.Status || 'N/A'}`)
+        .text(`   Bank: ${record.Bankcode || 'N/A'} | Account: ${record.BankACNumber || 'N/A'}`)
+        .text(`   Email: ${record.email || 'N/A'} | Date Employed: ${record.DateEmpl || 'N/A'}`);
       
-      // Parse and display detailed changes
-      const current = typeof row.current_values === 'string' 
-        ? JSON.parse(row.current_values) 
-        : row.current_values;
-      
-      const previous = typeof row.previous_values === 'string' 
-        ? JSON.parse(row.previous_values) 
-        : row.previous_values;
-
-      doc.fontSize(8).font('Helvetica').text('   Detailed Changes:', { underline: true });
-      
-      let changeCount = 0;
-      Object.keys(current).forEach(key => {
-        const currentVal = String(current[key] || '');
-        const previousVal = String(previous[key] || '');
-        
-        if (currentVal !== previousVal && changeCount < 10) { // Limit to 10 changes per employee for PDF
-          doc.fontSize(7).text(`      ${key}: "${previousVal}" → "${currentVal}"`);
-          changeCount++;
-        }
-      });
-
-      if (changeCount === 10) {
-        doc.fontSize(7).text('      ... (see Excel export for complete details)');
-      }
-      
-      doc.moveDown(0.7);
+      doc.moveDown(0.5);
     });
 
     doc.end();
@@ -634,23 +493,73 @@ exports.exportPersonnelChangesPDF = async (req, res) => {
   }
 };
 
-// Get available periods from py_emplhistory for filter dropdown
-exports.getAvailablePeriods = async (req, res) => {
+/**
+ * GET: Export current personnel details to PDF
+ */
+exports.exportCurrentDetailsPDF = async (req, res) => {
   try {
-    const [periods] = await pool.query(`
-      SELECT DISTINCT period 
-      FROM py_emplhistory 
-      WHERE period IS NOT NULL AND period != ''
-      ORDER BY period DESC
-      LIMIT 50
-    `);
+    const { employeeId } = req.query;
 
-    res.json({
-      status: 'SUCCESS',
-      periods: periods.map(p => p.period)
+    const [bt05Rows] = await pool.query(
+      "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
+    );
+
+    if (!bt05Rows.length) {
+      return res.status(404).json({ error: 'BT05 not found' });
+    }
+
+    const { year, month } = bt05Rows[0];
+
+    // Get all records for export
+    const records = await personnelDetailsService.getAllCurrentDetailsForExport({
+      employeeId
     });
+
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    
+    const filename = `current_personnel_details_${year}_${month}${employeeId && employeeId !== 'ALL' ? '_' + employeeId : ''}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+    
+    doc.pipe(res);
+
+    // Header
+    doc.fontSize(18).font('Helvetica-Bold').text('CURRENT PERSONNEL DETAILS REPORT', { align: 'center' });
+    doc.fontSize(12).font('Helvetica').text(`Period: ${month}/${year}`, { align: 'center' });
+    doc.text(`Generated: ${new Date().toLocaleString()}`, { align: 'center' });
+    doc.moveDown(2);
+
+    // Summary
+    doc.fontSize(14).font('Helvetica-Bold').text('Summary');
+    doc.fontSize(10).font('Helvetica').text(`Total Records: ${records.length}`);
+    doc.moveDown(1);
+
+    // Records list
+    doc.fontSize(12).font('Helvetica-Bold').text('Personnel Details');
+    doc.moveDown(0.5);
+
+    records.forEach((record, index) => {
+      if (doc.y > 700) {
+        doc.addPage();
+      }
+
+      doc.fontSize(10).font('Helvetica-Bold')
+        .text(`${index + 1}. ${record.Surname} ${record.OtherName || ''} (${record.Empl_ID})`, { underline: true });
+      
+      doc.fontSize(9).font('Helvetica')
+        .text(`   Location: ${record.Location || 'N/A'} | Factory: ${record.Factory || 'N/A'}`)
+        .text(`   Job Title: ${record.Jobtitle || 'N/A'}`)
+        .text(`   Grade Level: ${record.gradelevel || 'N/A'} | Status: ${record.Status || 'N/A'}`)
+        .text(`   Bank: ${record.Bankcode || 'N/A'} | Account: ${record.BankACNumber || 'N/A'}`)
+        .text(`   Email: ${record.email || 'N/A'} | GSM: ${record.gsm_number || 'N/A'}`)
+        .text(`   Date Employed: ${record.DateEmpl || 'N/A'} | Date Left: ${record.DateLeft || 'N/A'}`);
+      
+      doc.moveDown(0.5);
+    });
+
+    doc.end();
   } catch (err) {
-    console.error('Error getting available periods:', err);
-    res.status(500).json({ status: 'FAILED', message: err.message });
+    console.error('PDF export error:', err);
+    res.status(500).json({ error: err.message });
   }
 };

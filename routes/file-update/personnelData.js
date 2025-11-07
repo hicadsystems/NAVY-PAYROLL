@@ -9,6 +9,8 @@ router.get('/periods', verifyToken, getAvailablePeriods);
 const { getEmployeesList } = require('../../controllers/file-update/personnelData');
 router.get('/employees', verifyToken, getEmployeesList);
 
+const {checkEmployeesInPrevious} = require('../../controllers/file-update/personnelData');
+router.get('/check-previous', verifyToken, checkEmployeesInPrevious);
 
 const { getPreviousPersonnelDetails } = require('../../controllers/file-update/personnelData');
 router.get('/previous', verifyToken, getPreviousPersonnelDetails);

@@ -45,6 +45,73 @@ exports.getEmployeesList = async (req, res) => {
 };
 
 /**
+ * GET: Check which employees exist in previous report
+ */
+exports.checkEmployeesInPrevious = async (req, res) => {
+  try {
+    const { 
+      startPeriod,
+      endPeriod,
+      employeeIds
+    } = req.query;
+
+    // Validate required parameters
+    if (!startPeriod || !endPeriod) {
+      return res.status(400).json({
+        status: 'FAILED',
+        error: 'Start and end periods are required'
+      });
+    }
+
+    if (!employeeIds) {
+      return res.status(400).json({
+        status: 'FAILED',
+        error: 'employeeIds parameter is required'
+      });
+    }
+
+    // Parse comma-separated employee IDs
+    const emplIdArray = employeeIds.split(',').map(id => id.trim()).filter(Boolean);
+
+    if (emplIdArray.length === 0) {
+      return res.json({
+        status: 'SUCCESS',
+        employeeIds: []
+      });
+    }
+
+    // Build query with MySQL placeholders
+    const placeholders = emplIdArray.map(() => '?').join(',');
+    
+    const query = `
+      SELECT DISTINCT Empl_ID 
+      FROM py_emplhistory 
+      WHERE period >= ? 
+        AND period <= ? 
+        AND Empl_ID IN (${placeholders})
+    `;
+
+    const params = [startPeriod, endPeriod, ...emplIdArray];
+    const [rows] = await pool.query(query, params);
+
+    const existingEmployeeIds = rows.map(row => row.Empl_ID);
+
+    res.json({
+      status: 'SUCCESS',
+      employeeIds: existingEmployeeIds,
+      checkedCount: emplIdArray.length,
+      foundCount: existingEmployeeIds.length
+    });
+  } catch (err) {
+    console.error('Error checking employees in previous:', err);
+    res.status(500).json({ 
+      status: 'FAILED', 
+      message: err.message 
+    });
+  }
+};
+
+/**
  * GET: Previous personnel details from py_emplhistory
  */
 exports.getPreviousPersonnelDetails = async (req, res) => {
@@ -303,19 +370,13 @@ exports.getPersonnelDetailsView = async (req, res) => {
 
     const user = req.user?.fullname || req.user_fullname || 'System Auto';
 
-    // Calculate period filter: Previous 2 months from current BT05 period
+    // Calculate period filter: Previous 2 YEARS from current BT05 period
     const currentPeriod = `${year}${String(month).padStart(2, '0')}`;
     const endPeriod = currentPeriod;
     
-    // Calculate start period (2 months back)
-    let startYear = parseInt(year);
-    let startMonth = parseInt(month) - 1; // Go back 1 month for 2-month range
-    
-    if (startMonth < 1) {
-      startMonth = 12 + startMonth;
-      startYear -= 1;
-    }
-    
+    // Calculate start period (2 years back)
+    const startYear = parseInt(year) - 1;
+    const startMonth = parseInt(month);
     const startPeriod = `${startYear}${String(startMonth).padStart(2, '0')}`;
 
     let result;
@@ -335,17 +396,34 @@ exports.getPersonnelDetailsView = async (req, res) => {
         }
       );
     } else {
-      result = await personnelDetailsService.getCurrentPersonnelDetails(
-        year, 
-        month, 
-        user, 
-        {
-          employeeId: null,
-          page: parseInt(page),
-          limit: parseInt(limit)
-        }
-      );
-      filters = {}; // Current doesn't use period filters
+      // For current: Get employee IDs from previous report first
+      const prevEmployeeIdsQuery = `
+        SELECT DISTINCT Empl_ID 
+        FROM py_emplhistory 
+        WHERE period >= ? AND period <= ?
+      `;
+      const [prevEmployeeIds] = await pool.query(prevEmployeeIdsQuery, [startPeriod, endPeriod]);
+      
+      if (prevEmployeeIds.length === 0) {
+        result = {
+          records: [],
+          pagination: { page: 1, limit, totalPages: 0, totalRecords: 0 }
+        };
+      } else {
+        const emplIds = prevEmployeeIds.map(row => row.Empl_ID);
+        
+        // Get current details filtered by those employee IDs
+        result = await personnelDetailsService.getCurrentPersonnelDetailsFiltered(
+          year, 
+          month, 
+          user, 
+          {
+            employeeIds: emplIds,
+            page: parseInt(page),
+            limit: parseInt(limit)
+          }
+        );
+      }
     }
 
     res.json({

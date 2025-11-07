@@ -378,7 +378,8 @@
   let prevPage = 1;
   let prevTotalPages = 1;
   let prevSearchQuery = '';
-  let prevAllData = []; 
+  let prevAllData = [];
+  let fullPrevData = {}; // Store all previous records by Empl_ID
   
   // Current Report State  
   let currData = [];
@@ -386,6 +387,8 @@
   let currTotalPages = 1;
   let currSearchQuery = '';
   let currAllData = [];
+  let fullCurrData = {}; // Store all current records by Empl_ID
+
   
   // Active tab
   let activeTab = 'previous';
@@ -544,7 +547,39 @@
       });
     });
   }
-  
+
+  // Fetch employee for comparison
+  async function fetchEmployeeData(emplId) {
+    try {
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams(currentFilters);
+      
+      const [prevRes, currRes] = await Promise.all([
+        fetch(`${API_BASE}/previous?${params.toString()}&employeeId=${emplId}&page=1&limit=1`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_BASE}/current?${params.toString()}&employeeId=${emplId}&page=1&limit=1`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ]);
+      
+      if (prevRes.ok && currRes.ok) {
+        const prevDataRes = await prevRes.json();
+        const currDataRes = await currRes.json();
+        
+        if (prevDataRes.status === 'SUCCESS' && prevDataRes.records.length > 0) {
+          fullPrevData[emplId] = prevDataRes.records[0];
+        }
+        
+        if (currDataRes.status === 'SUCCESS' && currDataRes.records.length > 0) {
+          fullCurrData[emplId] = currDataRes.records[0];
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching employee data:', err);
+    }
+  }
+
   // Search handler
   searchInput.addEventListener('input', () => {
     const q = searchInput.value.trim().toLowerCase();
@@ -847,10 +882,14 @@
     }
     
     prevData.forEach(record => {
+      // Store in full data cache
+      fullPrevData[record.Empl_ID] = record;
+      
       const row = document.createElement('tr');
       row.className = 'hover:bg-blue-50 transition';
       
-      const existsInCurrent = currData.find(r => r.Empl_ID === record.Empl_ID);
+      // Check if exists in full current data cache
+      const existsInCurrent = fullCurrData[record.Empl_ID] !== undefined;
       const isCompared = comparisonSet.has(record.Empl_ID);
       
       row.innerHTML = `
@@ -888,8 +927,9 @@
     });
     
     tbody.querySelectorAll('.add-compare').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        addToComparison(e.currentTarget.getAttribute('data-id'));
+      btn.addEventListener('click', async (e) => {
+        const emplId = e.currentTarget.getAttribute('data-id');
+        await addToComparison(emplId);
       });
     });
     
@@ -897,12 +937,16 @@
   }
 
   // Render Current Table
-  function renderCurrTable() {
+  async function renderCurrTable() {
     const tbody = document.getElementById('currTableBody');
-    tbody.innerHTML = '';
+    // 1. Create a Document Fragment for performance
+    const fragment = document.createDocumentFragment(); 
     
+    // Clear the actual DOM element once
+    tbody.innerHTML = ''; 
+
     document.getElementById('currRecordCount').textContent = `(Page ${currPage} of ${currTotalPages})`;
-    
+
     if (currData.length === 0) {
       tbody.innerHTML = `
         <tr>
@@ -915,14 +959,42 @@
       updateCurrPagination();
       return;
     }
-    
+
+    // Check which employees exist in previous report (Async operation remains the same)
+    const token = localStorage.getItem('token');
+    const params = new URLSearchParams(currentFilters);
+    const emplIds = currData.map(r => r.Empl_ID).filter(Boolean);
+
+    let employeesInPrevious = new Set();
+
+    if (emplIds.length > 0) {
+      try {
+        const res = await fetch(`${API_BASE}/check-previous?${params.toString()}&employeeIds=${emplIds.join(',')}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.status === 'SUCCESS' && data.employeeIds) {
+            employeesInPrevious = new Set(data.employeeIds);
+          }
+        }
+      } catch (err) {
+        console.error('Error checking previous employees:', err);
+      }
+    }
+
     currData.forEach(record => {
+      // Store in full data cache
+      fullCurrData[record.Empl_ID] = record;
+
       const row = document.createElement('tr');
       row.className = 'hover:bg-green-50 transition';
-      
-      const existsInPrevious = prevData.find(r => r.Empl_ID === record.Empl_ID);
+
+      // Check if exists in previous report
+      const existsInPrevious = employeesInPrevious.has(record.Empl_ID);
       const isCompared = comparisonSet.has(record.Empl_ID);
-      
+
       row.innerHTML = `
         <td class="border px-3 py-3 font-semibold">${record.Empl_ID || 'N/A'}</td>
         <td class="border px-3 py-3">${record.Surname || ''} ${record.OtherName || ''}</td>
@@ -937,7 +1009,7 @@
         </td>
         <td class="border px-3 py-3 text-xs">${record.email || 'N/A'}</td>
         <td class="border px-3 py-3 no-print">
-          <button class="text-green-600 hover:text-green-800 font-semibold transition mr-2 view-details" data-type="current" data-record='${JSON.stringify(record).replace(/'/g, "&apos;")}'>
+          <button class="text-green-600 hover:text-green-800 font-semibold transition mr-2 view-details" data-type="current" data-id="${record.Empl_ID}">
             <i class="fas fa-eye mr-1"></i>View
           </button>
           ${existsInPrevious ? 
@@ -950,28 +1022,36 @@
           }
         </td>
       `;
-      tbody.appendChild(row);
+      
+      // 2. Append row to the Fragment (off-DOM operation)
+      fragment.appendChild(row); 
     });
+    
+    // 3. Single Append: This is where the smooth rendering happens
+    tbody.appendChild(fragment);
 
-    // Add event listeners
+    // Add event listeners (updated to use data-id)
     tbody.querySelectorAll('.view-details').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const record = JSON.parse(e.currentTarget.getAttribute('data-record').replace(/&apos;/g, "'"));
+        // Retrieve data from the cache using the ID
+        const emplId = e.currentTarget.getAttribute('data-id');
+        const record = fullCurrData[emplId]; 
         showDetailsModal(record, 'current');
       });
     });
-    
+
     tbody.querySelectorAll('.add-compare').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        addToComparison(e.currentTarget.getAttribute('data-id'));
+      btn.addEventListener('click', async (e) => {
+        const emplId = e.currentTarget.getAttribute('data-id');
+        await addToComparison(emplId);
       });
     });
-    
+
     updateCurrPagination();
   }
-
+  
   // Add to comparison
-  function addToComparison(emplId) {
+  async function addToComparison(emplId) {
     // Check if already compared
     if (comparisonSet.has(emplId)) {
       showAlert(
@@ -984,6 +1064,13 @@
     
     if (comparisonSet.size >= MAX_COMPARISON) {
       return showAlert('Comparison Limit', `You can only compare up to ${MAX_COMPARISON} personnel at a time`, 'warning');
+    }
+    
+    // Fetch employee data if not already cached
+    if (!fullPrevData[emplId] || !fullCurrData[emplId]) {
+      showLoading('Loading employee data...');
+      await fetchEmployeeData(emplId);
+      hideLoading();
     }
     
     comparisonSet.add(emplId);
@@ -1017,13 +1104,13 @@
     content.innerHTML = '';
     
     Array.from(comparisonSet).forEach(emplId => {
-      const prevRecord = prevData.find(r => r.Empl_ID === emplId);
-      const currRecord = currData.find(r => r.Empl_ID === emplId);
+      const prevRecord = fullPrevData[emplId];
+      const currRecord = fullCurrData[emplId];
       
       if (!prevRecord && !currRecord) return;
       
       const compCard = document.createElement('div');
-      compCard.className = 'border-2 border-gray-200 rounded-lg p-6';
+      compCard.className = 'border-2 border-gray-200 rounded-lg p-6 mb-4';
       
       const allFields = [
         { label: 'Service No', prevKey: 'Empl_ID', currKey: 'Empl_ID' },
@@ -1073,7 +1160,7 @@
             ${currRecord?.Surname || prevRecord?.Surname || ''} ${currRecord?.OtherName || prevRecord?.OtherName || ''} (${emplId})
           </h4>
           <div class="flex gap-2">
-            <button class="text-blue-600 hover:text-blue-800 border-r-2 pr-2 font-semibold  transition view-comparison" data-id="${emplId}">
+            <button class="text-blue-600 hover:text-blue-800 border-r-2 pr-2 font-semibold transition view-comparison" data-id="${emplId}">
               <i class="fas fa-eye text-xl"></i> View Full
             </button>
             <button class="text-red-600 hover:text-red-800 transition remove-compare" data-id="${emplId}">
@@ -1116,7 +1203,7 @@
         comparisonSet.delete(emplId);
         renderComparisonSection();
         
-        // Re-render tables to reset button states back to "Compare"
+        // Re-render tables to reset button states
         renderPrevTable();
         renderCurrTable();
       });
@@ -1134,13 +1221,16 @@
       });
     });
   }
-
+    
   // New function: Show only changed fields table in modal
   function showChangesTableModal(emplId) {
-    const prevRecord = prevData.find(r => r.Empl_ID === emplId);
-    const currRecord = currData.find(r => r.Empl_ID === emplId);
+    const prevRecord = fullPrevData[emplId];
+    const currRecord = fullCurrData[emplId];
     
-    if (!prevRecord && !currRecord) return;
+    if (!prevRecord && !currRecord) {
+      showAlert('Error', 'Employee data not found', 'error');
+      return;
+    }
     
     const allFields = [
       { label: 'Service No', prevKey: 'Empl_ID', currKey: 'Empl_ID' },
@@ -1227,10 +1317,13 @@
 
   // Show comparison modal with all fields
   function showComparisonModal(emplId) {
-    const prevRecord = prevData.find(r => r.Empl_ID === emplId);
-    const currRecord = currData.find(r => r.Empl_ID === emplId);
+    const prevRecord = fullPrevData[emplId];
+    const currRecord = fullCurrData[emplId];
     
-    if (!prevRecord && !currRecord) return;
+    if (!prevRecord && !currRecord) {
+      showAlert('Error', 'Employee data not found', 'error');
+      return;
+    }
     
     const allFields = [
       { label: 'Service No.', prevKey: 'Empl_ID', currKey: 'Empl_ID' },
@@ -1560,8 +1653,8 @@
   regenerateBtn.addEventListener('click', () => {
     // Don't reset hasGenerated, keep reports permanent
     // Just show the form to regenerate with new filters
-    startPeriod.value = '';
-    endPeriod.value = '';
+    startDate.value = '';
+    endDate.value = '';
     filterByPersonnel.checked = false;
     personnelWrapper.classList.add('hidden');
     selectedEmployeeId = null;

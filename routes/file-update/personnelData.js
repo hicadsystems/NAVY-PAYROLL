@@ -6,8 +6,8 @@ const verifyToken = require('../../middware/authentication');
 const { getAvailablePeriods } = require('../../controllers/file-update/personnelData');
 router.get('/periods', verifyToken, getAvailablePeriods);
 
-const { getEmployeesList } = require('../../controllers/file-update/personnelData');
-router.get('/employees', verifyToken, getEmployeesList);
+const { getEmployeesListPaginated } = require('../../controllers/file-update/personnelData');
+router.get('/employees', verifyToken, getEmployeesListPaginated);
 
 const {checkEmployeesInPrevious} = require('../../controllers/file-update/personnelData');
 router.get('/check-previous', verifyToken, checkEmployeesInPrevious);
@@ -23,6 +23,12 @@ router.get('/view', verifyToken, getPersonnelDetailsView );
 
 const { getPersonnelDetailsComparison } = require('../../controllers/file-update/personnelData');
 router.get('/compare', verifyToken, getPersonnelDetailsComparison);
+
+const { searchPreviousPersonnelDetails } = require('../../controllers/file-update/personnelData');
+router.get('/previous/search', verifyToken, searchPreviousPersonnelDetails);
+
+const { searchCurrentPersonnelDetails } = require('../../controllers/file-update/personnelData');
+router.get('/current/search', verifyToken, searchCurrentPersonnelDetails);
 
 const { exportPreviousDetailsExcel  } = require('../../controllers/file-update/personnelData');
 router.get('/export/excel-prev', verifyToken, exportPreviousDetailsExcel);

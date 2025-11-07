@@ -601,33 +601,30 @@ exports.searchPreviousPersonnelDetails = async (year, month, user, filters = {})
   const { startPeriod, endPeriod, employeeId, searchQuery, page = 1, limit = 5 } = filters;
   const offset = (page - 1) * limit;
 
-  let whereClause = 'WHERE period >= $1 AND period <= $2';
+  let whereClause = 'WHERE period >= ? AND period <= ?';
   const params = [startPeriod, endPeriod];
-  let paramCount = 3;
 
   if (employeeId) {
-    whereClause += ` AND "Empl_ID" = $${paramCount}`;
+    whereClause += ' AND Empl_ID = ?';
     params.push(employeeId);
-    paramCount++;
   }
 
   // Add search conditions
   const searchLower = `%${searchQuery.toLowerCase()}%`;
   whereClause += ` AND (
-    LOWER("Empl_ID"::text) LIKE $${paramCount} OR
-    LOWER("Surname") LIKE $${paramCount} OR
-    LOWER("OtherName") LIKE $${paramCount} OR
-    LOWER(CONCAT("Surname", ' ', "OtherName")) LIKE $${paramCount} OR
-    LOWER("Location") LIKE $${paramCount} OR
-    LOWER("gradelevel") LIKE $${paramCount}
+    LOWER(Empl_ID) LIKE ? OR
+    LOWER(Surname) LIKE ? OR
+    LOWER(OtherName) LIKE ? OR
+    LOWER(CONCAT(Surname, ' ', OtherName)) LIKE ? OR
+    LOWER(Location) LIKE ? OR
+    LOWER(gradelevel) LIKE ?
   )`;
-  params.push(searchLower);
-  paramCount++;
+  params.push(searchLower, searchLower, searchLower, searchLower, searchLower, searchLower);
 
   // Get total count
   const countQuery = `
-    SELECT COUNT(*) as total 
-    FROM py_emplhistory 
+    SELECT COUNT(*) AS total
+    FROM py_emplhistory
     ${whereClause}
   `;
   const [countResult] = await pool.query(countQuery, params);
@@ -636,15 +633,15 @@ exports.searchPreviousPersonnelDetails = async (year, month, user, filters = {})
 
   // Get paginated records
   const dataQuery = `
-    SELECT * 
-    FROM py_emplhistory 
+    SELECT *
+    FROM py_emplhistory
     ${whereClause}
-    ORDER BY period DESC, "Empl_ID"
-    LIMIT $${paramCount} OFFSET $${paramCount + 1}
+    ORDER BY period DESC, Empl_ID
+    LIMIT ? OFFSET ?
   `;
-  params.push(limit, offset);
 
-  const [dataResult] = await pool.query(dataQuery, params);
+  const finalParams = [...params, limit, offset];
+  const [dataResult] = await pool.query(dataQuery, finalParams);
 
   return {
     records: dataResult,
@@ -655,27 +652,27 @@ exports.searchPreviousPersonnelDetails = async (year, month, user, filters = {})
       totalRecords
     }
   };
-}
+};
 
 exports.searchCurrentPersonnelDetails = async (year, month, user, filters = {}) => {
   const { startPeriod, endPeriod, employeeId, searchQuery, page = 1, limit = 5 } = filters;
   const offset = (page - 1) * limit;
 
-  // First get employee IDs from previous
+  // Get employee IDs from previous history
   let prevQuery = `
-    SELECT DISTINCT "Empl_ID" 
-    FROM py_emplhistory 
-    WHERE period >= $1 AND period <= $2
+    SELECT DISTINCT Empl_ID
+    FROM py_emplhistory
+    WHERE period >= ? AND period <= ?
   `;
   const prevParams = [startPeriod, endPeriod];
-  
+
   if (employeeId) {
-    prevQuery += ` AND "Empl_ID" = $3`;
+    prevQuery += ' AND Empl_ID = ?';
     prevParams.push(employeeId);
   }
 
   const [prevEmployeeIds] = await pool.query(prevQuery, prevParams);
-  
+
   if (prevEmployeeIds.length === 0) {
     return {
       records: [],
@@ -683,45 +680,47 @@ exports.searchCurrentPersonnelDetails = async (year, month, user, filters = {}) 
     };
   }
 
+  // Extract IDs into array
   const emplIds = prevEmployeeIds.map(row => row.Empl_ID);
-  const placeholders = emplIds.map((_, idx) => `$${idx + 1}`).join(',');
 
-  // Add search conditions
+  // Build IN clause
+  const inPlaceholders = emplIds.map(() => '?').join(',');
+
   const searchLower = `%${searchQuery.toLowerCase()}%`;
-  const searchParamIdx = emplIds.length + 1;
-  
+
+  const params = [...emplIds, searchLower, searchLower, searchLower, searchLower, searchLower, searchLower];
+
   const whereClause = `
-    WHERE "Empl_ID" IN (${placeholders})
+    WHERE Empl_ID IN (${inPlaceholders})
     AND (
-      LOWER("Empl_ID"::text) LIKE $${searchParamIdx} OR
-      LOWER("Surname") LIKE $${searchParamIdx} OR
-      LOWER("OtherName") LIKE $${searchParamIdx} OR
-      LOWER(CONCAT("Surname", ' ', "OtherName")) LIKE $${searchParamIdx} OR
-      LOWER("Location") LIKE $${searchParamIdx} OR
-      LOWER("gradelevel") LIKE $${searchParamIdx}
+      LOWER(Empl_ID) LIKE ? OR
+      LOWER(Surname) LIKE ? OR
+      LOWER(OtherName) LIKE ? OR
+      LOWER(CONCAT(Surname, ' ', OtherName)) LIKE ? OR
+      LOWER(Location) LIKE ? OR
+      LOWER(gradelevel) LIKE ?
     )
   `;
 
-  // Get total count
+  // Count query
   const countQuery = `
-    SELECT COUNT(*) as total 
-    FROM hr_employees 
+    SELECT COUNT(*) AS total
+    FROM hr_employees
     ${whereClause}
   `;
-  const countParams = [...emplIds, searchLower];
-  const [countResult] = await pool.query(countQuery, countParams);
+  const [countResult] = await pool.query(countQuery, params);
   const totalRecords = parseInt(countResult[0].total);
   const totalPages = Math.ceil(totalRecords / limit);
 
-  // Get paginated records
+  // Data query
   const dataQuery = `
-    SELECT * 
-    FROM hr_employees 
+    SELECT *
+    FROM hr_employees
     ${whereClause}
-    ORDER BY "Empl_ID"
-    LIMIT $${searchParamIdx + 1} OFFSET $${searchParamIdx + 2}
+    ORDER BY Empl_ID
+    LIMIT ? OFFSET ?
   `;
-  const dataParams = [...emplIds, searchLower, limit, offset];
+  const dataParams = [...params, limit, offset];
   const [dataResult] = await pool.query(dataQuery, dataParams);
 
   return {
@@ -733,7 +732,7 @@ exports.searchCurrentPersonnelDetails = async (year, month, user, filters = {}) 
       totalRecords
     }
   };
-}
+};
 
 /**
  * Get all previous personnel details for export (no pagination)

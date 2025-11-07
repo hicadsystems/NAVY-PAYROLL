@@ -366,12 +366,21 @@
   let currentStage = 0;
   let hasGenerated = false;
   let selectedEmployeeId = null;
-  let allEmployees = [];
   let comparisonSet = new Set();
+
+  // Employee dropdown state
+  let employeePage = 1;
+  let employeeHasMore = true;
+  let isLoadingEmployees = false;
+  let allEmployees = [];
+
 
   // Search State
   let searchQuery = '';
   let isSearchActive = false;
+  let prevSearchTimeout = null;
+  let currSearchTimeout = null;
+
   
   // Previous Report State
   let prevData = [];
@@ -509,11 +518,15 @@
   }
   */
 
-  // Fetch employees list
-  async function fetchEmployeesList() {
+  // Fetch employees list with pagination
+  async function fetchEmployeesList(page = 1, append = false) {
+    if (isLoadingEmployees) return;
+    
     try {
+      isLoadingEmployees = true;
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/employees`, {
+      
+      const res = await fetch(`${API_BASE}/employees?page=${page}&limit=50`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -522,14 +535,129 @@
       const data = await res.json();
       
       if (data.status === 'SUCCESS' && data.employees) {
-        allEmployees = data.employees;
-        populateEmployeeDropdown();
+        if (append) {
+          allEmployees = [...allEmployees, ...data.employees];
+        } else {
+          allEmployees = data.employees;
+        }
+        
+        employeeHasMore = data.hasMore || false;
+        populateEmployeeDropdown(append);
       }
+      
+      isLoadingEmployees = false;
     } catch (err) {
       console.error('Error fetching employees:', err);
+      isLoadingEmployees = false;
     }
   }
-  
+
+  // Populate employee dropdown
+  function populateEmployeeDropdown(append = false) {
+    if (!append) {
+      employeeDropdown.innerHTML = '';
+    }
+    
+    const newItems = allEmployees.slice(append ? allEmployees.length - 50 : 0);
+    
+    newItems.forEach(emp => {
+      const div = document.createElement('div');
+      div.className = 'px-4 py-2 hover:bg-blue-50 cursor-pointer transition border-b border-gray-100';
+      div.setAttribute('data-id', emp.Empl_ID);
+      div.innerHTML = `
+        <span class="font-semibold text-blue-600">${emp.full_name}</span>
+        <span class="text-xs text-gray-500 ml-2">(${emp.Empl_ID})</span>
+      `;
+      
+      div.addEventListener('click', () => {
+        selectedEmployeeId = emp.Empl_ID;
+        searchInput.value = emp.full_name;
+        dropdownList.classList.add('hidden');
+      });
+      
+      employeeDropdown.appendChild(div);
+    });
+    
+    // Add loading indicator if more data available
+    if (employeeHasMore && !append) {
+      const loader = document.createElement('div');
+      loader.id = 'employeeLoader';
+      loader.className = 'px-4 py-3 text-center text-gray-500 text-sm';
+      loader.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Scroll for more...';
+      employeeDropdown.appendChild(loader);
+    }
+  }
+
+  // Infinite scroll for employee dropdown
+  employeeDropdown.addEventListener('scroll', () => {
+    if (isLoadingEmployees || !employeeHasMore) return;
+    
+    const scrollTop = employeeDropdown.scrollTop;
+    const scrollHeight = employeeDropdown.scrollHeight;
+    const clientHeight = employeeDropdown.clientHeight;
+    
+    // Load more when user scrolls to bottom 100px
+    if (scrollTop + clientHeight >= scrollHeight - 100) {
+      employeePage++;
+      fetchEmployeesList(employeePage, true);
+    }
+  });
+
+  // Update search to work with paginated data
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim().toLowerCase();
+    
+    if (!q) { 
+      dropdownList.classList.add('hidden'); 
+      selectedEmployeeId = null; 
+      return; 
+    }
+    
+    // Filter from loaded employees
+    const filtered = allEmployees.filter(emp => 
+      (emp.full_name || '').toLowerCase().includes(q) || 
+      (emp.Empl_ID || '').toLowerCase().includes(q)
+    );
+    
+    employeeDropdown.innerHTML = '';
+    
+    if (filtered.length === 0) {
+      employeeDropdown.innerHTML = `
+        <div class="px-4 py-3 text-center text-gray-500 text-sm">
+          No employees found
+        </div>
+      `;
+    } else {
+      filtered.forEach(emp => {
+        const div = document.createElement('div');
+        div.className = 'px-4 py-2 hover:bg-blue-50 cursor-pointer transition border-b border-gray-100';
+        div.setAttribute('data-id', emp.Empl_ID);
+        div.innerHTML = `
+          <span class="font-semibold text-blue-600">${emp.full_name}</span>
+          <span class="text-xs text-gray-500 ml-2">(${emp.Empl_ID})</span>
+        `;
+        
+        div.addEventListener('click', () => {
+          selectedEmployeeId = emp.Empl_ID;
+          searchInput.value = emp.full_name;
+          dropdownList.classList.add('hidden');
+        });
+        
+        employeeDropdown.appendChild(div);
+      });
+    }
+    
+    dropdownList.classList.remove('hidden');
+  });
+
+  // Show dropdown on focus
+  searchInput.addEventListener('focus', () => {
+    if (allEmployees.length === 0) {
+      fetchEmployeesList(1);
+    }
+    dropdownList.classList.remove('hidden');
+  });
+
   // Populate employee dropdown
   function populateEmployeeDropdown() {
     employeeDropdown.innerHTML = allEmployees.map(emp => `
@@ -1643,6 +1771,66 @@
   document.getElementById('currLastPage').addEventListener('click', () => { 
     fetchCurrPage(currTotalPages); 
   });
+
+  // Search Event listeners
+  prevSearchInput.addEventListener('input', (e) => {
+    prevSearchQuery = e.target.value.toLowerCase().trim();
+    
+    // Clear existing timeout
+    if (prevSearchTimeout) {
+      clearTimeout(prevSearchTimeout);
+    }
+    
+    if (prevSearchQuery) {
+      prevClearSearch.classList.remove('hidden');
+      
+      // Debounce search - wait 500ms after user stops typing
+      prevSearchTimeout = setTimeout(async () => {
+        await searchPreviousData(prevSearchQuery);
+      }, 500);
+    } else {
+      prevClearSearch.classList.add('hidden');
+      // Reset to normal pagination view
+      fetchPrevPage(1);
+    }
+  });
+
+  prevClearSearch.addEventListener('click', () => {
+    prevSearchInput.value = '';
+    prevSearchQuery = '';
+    prevClearSearch.classList.add('hidden');
+    fetchPrevPage(1);
+  });
+
+  // Current table search with backend
+  currSearchInput.addEventListener('input', (e) => {
+    currSearchQuery = e.target.value.toLowerCase().trim();
+    
+    // Clear existing timeout
+    if (currSearchTimeout) {
+      clearTimeout(currSearchTimeout);
+    }
+    
+    if (currSearchQuery) {
+      currClearSearch.classList.remove('hidden');
+      
+      // Debounce search - wait 500ms after user stops typing
+      currSearchTimeout = setTimeout(async () => {
+        await searchCurrentData(currSearchQuery);
+      }, 500);
+    } else {
+      currClearSearch.classList.add('hidden');
+      // Reset to normal pagination view
+      fetchCurrPage(1);
+    }
+  });
+
+  currClearSearch.addEventListener('click', () => {
+    currSearchInput.value = '';
+    currSearchQuery = '';
+    currClearSearch.classList.add('hidden');
+    fetchCurrPage(1);
+  });
     
   // Tab switching
   previousReportTab.addEventListener('click', () => switchTab('previous'));
@@ -1728,7 +1916,169 @@
       console.error('Error loading last report:', err);
     }
   }
+
+  // Search previous data via backend
+  async function searchPreviousData(query) {
+    try {
+      showLoading('Searching...');
+      const token = localStorage.getItem('token');
+      
+      const params = new URLSearchParams({
+        ...currentFilters,
+        searchQuery: query,
+        page: 1,
+        limit: RECORDS_PER_PAGE
+      });
+      
+      const res = await fetch(`${API_BASE}/previous/search?${params.toString()}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      hideLoading();
+      
+      if (!res.ok) throw new Error('Search failed');
+      
+      const data = await res.json();
+      
+      if (data.status === 'SUCCESS') {
+        prevData = data.records || [];
+        prevPage = 1;
+        prevTotalPages = data.pagination?.totalPages || 1;
+        renderPrevTable();
+      }
+    } catch (err) {
+      hideLoading();
+      console.error('Error searching previous data:', err);
+      showAlert('Search Failed', err.message, 'error');
+    }
+  }
+
+  // Search current data via backend
+  async function searchCurrentData(query) {
+    try {
+      showLoading('Searching...');
+      const token = localStorage.getItem('token');
+      
+      const params = new URLSearchParams({
+        ...currentFilters,
+        searchQuery: query,
+        page: 1,
+        limit: RECORDS_PER_PAGE
+      });
+      
+      const res = await fetch(`${API_BASE}/current/search?${params.toString()}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      hideLoading();
+      
+      if (!res.ok) throw new Error('Search failed');
+      
+      const data = await res.json();
+      
+      if (data.status === 'SUCCESS') {
+        currData = data.records || [];
+        currPage = 1;
+        currTotalPages = data.pagination?.totalPages || 1;
+        renderCurrTable();
+      }
+    } catch (err) {
+      hideLoading();
+      console.error('Error searching current data:', err);
+      showAlert('Search Failed', err.message, 'error');
+    }
+  }
+
+  // Update pagination for search results
+  async function fetchPrevPageSearch(page) {
+    if (!prevSearchQuery) {
+      return fetchPrevPage(page);
+    }
     
+    try {
+      showLoading('Loading page...');
+      const token = localStorage.getItem('token');
+      
+      const params = new URLSearchParams({
+        ...currentFilters,
+        searchQuery: prevSearchQuery,
+        page: page,
+        limit: RECORDS_PER_PAGE
+      });
+      
+      const res = await fetch(`${API_BASE}/previous/search?${params.toString()}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      hideLoading();
+      
+      if (!res.ok) throw new Error('Failed to fetch page');
+      
+      const data = await res.json();
+      
+      if (data.status === 'SUCCESS') {
+        prevData = data.records || [];
+        prevPage = page;
+        prevTotalPages = data.pagination?.totalPages || 1;
+        renderPrevTable();
+      }
+    } catch (err) {
+      hideLoading();
+      console.error('Error fetching previous page:', err);
+      showAlert('Error', 'Failed to load page', 'error');
+    }
+  }
+
+  async function fetchCurrPageSearch(page) {
+    if (!currSearchQuery) {
+      return fetchCurrPage(page);
+    }
+    
+    try {
+      showLoading('Loading page...');
+      const token = localStorage.getItem('token');
+      
+      const params = new URLSearchParams({
+        ...currentFilters,
+        searchQuery: currSearchQuery,
+        page: page,
+        limit: RECORDS_PER_PAGE
+      });
+      
+      const res = await fetch(`${API_BASE}/current/search?${params.toString()}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      hideLoading();
+      
+      if (!res.ok) throw new Error('Failed to fetch page');
+      
+      const data = await res.json();
+      
+      if (data.status === 'SUCCESS') {
+        currData = data.records || [];
+        currPage = page;
+        currTotalPages = data.pagination?.totalPages || 1;
+        renderCurrTable();
+      }
+    } catch (err) {
+      hideLoading();
+      console.error('Error fetching current page:', err);
+      showAlert('Error', 'Failed to load page', 'error');
+    }
+  }
+
+  // Update pagination event listeners to support search
+  document.getElementById('prevFirstPage').addEventListener('click', () => fetchPrevPageSearch(1));
+  document.getElementById('prevPrevPage').addEventListener('click', () => fetchPrevPageSearch(prevPage - 1));
+  document.getElementById('prevNextPage').addEventListener('click', () => fetchPrevPageSearch(prevPage + 1));
+  document.getElementById('prevLastPage').addEventListener('click', () => fetchPrevPageSearch(prevTotalPages));
+
+  document.getElementById('currFirstPage').addEventListener('click', () => fetchCurrPageSearch(1));
+  document.getElementById('currPrevPage').addEventListener('click', () => fetchCurrPageSearch(currPage - 1));
+  document.getElementById('currNextPage').addEventListener('click', () => fetchCurrPageSearch(currPage + 1));
+  document.getElementById('currLastPage').addEventListener('click', () => fetchCurrPageSearch(currTotalPages));
+      
   // Check payroll status
   async function checkPayrollStatus() {
     try {
@@ -1751,7 +2101,7 @@
   // Initialize
   function initialize() {
     //fetchAvailablePeriods();
-    fetchEmployeesList();
+    //fetchEmployeesList();
     checkPayrollStatus();
   }
   

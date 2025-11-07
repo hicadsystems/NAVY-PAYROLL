@@ -45,6 +45,50 @@ exports.getEmployeesList = async (req, res) => {
 };
 
 /**
+ * GET: Get employees list with pagination (MySQL version)
+ */
+exports.getEmployeesListPaginated = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = (page - 1) * limit;
+
+    // Get total count
+    const [countResult] = await pool.query(
+      'SELECT COUNT(DISTINCT Empl_ID) AS total FROM hr_employees'
+    );
+    const totalRecords = parseInt(countResult.total);
+    const totalPages = Math.ceil(totalRecords / limit);
+
+    // Get paginated employees
+    const [employees] = await pool.query(
+      `SELECT DISTINCT Empl_ID,
+        CONCAT(Surname, ' ', OtherName) AS full_name
+       FROM hr_employees
+       ORDER BY Empl_ID
+       LIMIT ? OFFSET ?`,
+      [limit, offset]
+    );
+
+    res.json({
+      status: 'SUCCESS',
+      totalEmployees: totalRecords,
+      currentPage: page,
+      totalPages,
+      hasMore: page < totalPages,
+      employees
+    });
+
+  } catch (err) {
+    console.error('Error getting employees list:', err);
+    res.status(500).json({
+      status: 'FAILED',
+      message: err.message
+    });
+  }
+};
+
+/**
  * GET: Check which employees exist in previous report
  */
 exports.checkEmployeesInPrevious = async (req, res) => {
@@ -445,7 +489,7 @@ exports.getPersonnelDetailsView = async (req, res) => {
 };
 
 /**
- * GET: Search previous personnel details
+ * GET: Search previous personnel details (MySQL version)
  */
 exports.searchPreviousPersonnelDetails = async (req, res) => {
   try {
@@ -473,7 +517,7 @@ exports.searchPreviousPersonnelDetails = async (req, res) => {
     }
 
     const [bt05Rows] = await pool.query(
-      "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
+      "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type = 'BT05' LIMIT 1"
     );
 
     if (!bt05Rows.length) {
@@ -508,6 +552,7 @@ exports.searchPreviousPersonnelDetails = async (req, res) => {
       records: result.records,
       pagination: result.pagination
     });
+
   } catch (err) {
     console.error('Error searching previous personnel details:', err);
     res.status(500).json({ 
@@ -518,7 +563,7 @@ exports.searchPreviousPersonnelDetails = async (req, res) => {
 };
 
 /**
- * GET: Search current personnel details
+ * GET: Search current personnel details (MySQL version)
  */
 exports.searchCurrentPersonnelDetails = async (req, res) => {
   try {
@@ -546,7 +591,7 @@ exports.searchCurrentPersonnelDetails = async (req, res) => {
     }
 
     const [bt05Rows] = await pool.query(
-      "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
+      "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type = 'BT05' LIMIT 1"
     );
 
     if (!bt05Rows.length) {
@@ -581,6 +626,7 @@ exports.searchCurrentPersonnelDetails = async (req, res) => {
       records: result.records,
       pagination: result.pagination
     });
+
   } catch (err) {
     console.error('Error searching current personnel details:', err);
     res.status(500).json({ 

@@ -291,27 +291,28 @@
     }).format(amount);
   }
 
-  function updateUIVisibility() {
-    // Show top action bar only if stage < 888 and not updated
-    if (currentPayrollStage < STAGE_UPDATE_COMPLETED && !hasUpdatedOnce) {
-      topActionBarUpdate.classList.remove('hidden');
-    } else {
-      topActionBarUpdate.classList.add('hidden');
-    }
 
-    // Show main content and action button if not yet updated
-    if (!hasUpdatedOnce && currentPayrollStage >= STAGE_INPUT_VAR_READY) {
+  function updateUIVisibility() {
+    // Determine what to show based on stage and update status
+    if (hasUpdatedOnce || currentPayrollStage >= STAGE_UPDATE_COMPLETED) {
+      // Update completed: hide top bar and button, show success
+      topActionBarUpdate.classList.add('hidden');
+      updateActionContainer.classList.add('hidden');
+      saveConfirm.classList.remove('hidden');
+      performanceLog.classList.remove('hidden');
+    } else if (currentPayrollStage >= STAGE_INPUT_VAR_READY) {
+      // Ready to update: hide top bar, show button enabled
+      topActionBarUpdate.classList.add('hidden');
       updateMainContent.classList.remove('hidden');
       updateActionContainer.classList.remove('hidden');
       saveConfirm.classList.add('hidden');
       performanceLog.classList.add('hidden');
-    } else if (hasUpdatedOnce || currentPayrollStage >= STAGE_UPDATE_COMPLETED) {
-      // Hide action button, show success
-      updateActionContainer.classList.add('hidden');
-      saveConfirm.classList.remove('hidden');
-      performanceLog.classList.remove('hidden');
+      openBtn.disabled = false;
+      openBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      openBtn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update Master File';
     } else {
-      // Not ready yet
+      // Not ready yet: show top bar, disable button
+      topActionBarUpdate.classList.remove('hidden');
       updateMainContent.classList.remove('hidden');
       updateActionContainer.classList.remove('hidden');
       saveConfirm.classList.add('hidden');

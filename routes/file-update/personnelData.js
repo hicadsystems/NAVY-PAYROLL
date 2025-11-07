@@ -16,6 +16,9 @@ router.get('/previous', verifyToken, getPreviousPersonnelDetails);
 const {getCurrentPersonnelDetails  } = require('../../controllers/file-update/personnelData');
 router.get('/current', verifyToken, getCurrentPersonnelDetails );
 
+const {getPersonnelDetailsView  } = require('../../controllers/file-update/personnelData');
+router.get('/view', verifyToken, getPersonnelDetailsView );
+
 const { getPersonnelDetailsComparison } = require('../../controllers/file-update/personnelData');
 router.get('/compare', verifyToken, getPersonnelDetailsComparison);
 

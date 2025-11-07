@@ -228,6 +228,105 @@ exports.getPersonnelDetailsComparison = async (req, res) => {
 };
 
 /**
+ * GET: View last generated personnel reports (stage must be >= 775)
+ */
+exports.getPersonnelDetailsView = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 5,
+      reportType = 'previous' // 'previous' or 'current'
+    } = req.query;
+
+    const [bt05Rows] = await pool.query(
+      "SELECT ord AS year, mth AS month, sun FROM py_stdrate WHERE type='BT05' LIMIT 1"
+    );
+
+    if (!bt05Rows.length) {
+      return res.status(404).json({ 
+        status: 'FAILED',
+        error: 'BT05 not found - processing period not set' 
+      });
+    }
+
+    const { year, month, sun } = bt05Rows[0];
+
+    // Check if stage is ready (must be >= 775)
+    if (sun < 775) {
+      return res.status(400).json({ 
+        status: 'FAILED',
+        error: 'Personnel details reports are not ready for viewing (must be stage 775 or higher).',
+        currentStage: sun,
+        requiredStage: 775
+      });
+    }
+
+    const user = req.user?.fullname || req.user_fullname || 'System Auto';
+
+    // Calculate period filter: Previous 2 months from current BT05 period
+    const currentPeriod = `${year}${String(month).padStart(2, '0')}`;
+    const endPeriod = currentPeriod;
+    
+    // Calculate start period (2 months back)
+    let startYear = parseInt(year);
+    let startMonth = parseInt(month) - 1; // Go back 1 month for 2-month range
+    
+    if (startMonth < 1) {
+      startMonth = 12 + startMonth;
+      startYear -= 1;
+    }
+    
+    const startPeriod = `${startYear}${String(startMonth).padStart(2, '0')}`;
+
+    let result;
+    let filters = { startPeriod, endPeriod };
+
+    if (reportType === 'previous') {
+      result = await personnelDetailsService.getPreviousPersonnelDetails(
+        year, 
+        month, 
+        user, 
+        {
+          startPeriod,
+          endPeriod,
+          employeeId: null,
+          page: parseInt(page),
+          limit: parseInt(limit)
+        }
+      );
+    } else {
+      result = await personnelDetailsService.getCurrentPersonnelDetails(
+        year, 
+        month, 
+        user, 
+        {
+          employeeId: null,
+          page: parseInt(page),
+          limit: parseInt(limit)
+        }
+      );
+      filters = {}; // Current doesn't use period filters
+    }
+
+    res.json({
+      status: 'SUCCESS',
+      stage: sun,
+      reportType: reportType.toUpperCase(),
+      filters,
+      retrievedAt: new Date().toISOString(),
+      records: result.records,
+      pagination: result.pagination
+    });
+  } catch (err) {
+    console.error('Error fetching personnel details for view:', err);
+    res.status(500).json({ 
+      status: 'FAILED', 
+      message: err.message 
+    });
+  }
+};
+
+/**
  * GET: Export previous personnel details to Excel
  */
 exports.exportPreviousDetailsExcel = async (req, res) => {

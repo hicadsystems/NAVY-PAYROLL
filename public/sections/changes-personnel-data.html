@@ -1023,8 +1023,8 @@
         <td class="border px-3 py-3">${formatPeriod(record.period || '')}</td>
         <td class="border px-3 py-3 font-semibold">${record.Empl_ID || 'N/A'}</td>
         <td class="border px-3 py-3">${record.Surname || ''} ${record.OtherName || ''}</td>
-        <td class="border px-3 py-3">${record.Location || 'N/A'}</td>
         <td class="border px-3 py-3">${record.Title || 'N/A'}</td>
+        <td class="border px-3 py-3">${record.Location || 'N/A'}</td>       
         <td class="border px-3 py-3">${record.gradelevel || 'N/A'}</td>
         <td class="border px-3 py-3 no-print">
           <button class="text-blue-600 hover:text-blue-800 font-semibold transition mr-2 view-details" data-type="previous" data-record='${JSON.stringify(record).replace(/'/g, "&apos;")}'>

@@ -153,9 +153,9 @@
             <button id="prevExportPdf" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition">
               <i class="fas fa-file-pdf mr-2"></i>PDF
             </button>
-            <button id="prevPrint" class="px-4 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 transition">
+            <!--<button id="prevPrint" class="px-4 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 transition">
               <i class="fas fa-print mr-2"></i>Print
-            </button>
+            </button>-->
           </div>
         </div>
 
@@ -166,9 +166,9 @@
                 <th class="border px-3 py-2 text-left">Period</th>
                 <th class="border px-3 py-2 text-left">Service No.</th>
                 <th class="border px-3 py-2 text-left">Full Name</th>
+                <th class="border px-3 py-2 text-left">Rank</th>
                 <th class="border px-3 py-2 text-left">Location</th>
-                <th class="border px-3 py-2 text-left">Grade Level</th>
-                <th class="border px-3 py-2 text-left">Status</th>
+                <th class="border px-3 py-2 text-left">Grade Level</th>               
                 <th class="border px-3 py-2 text-left no-print">Action</th>
               </tr>
             </thead>
@@ -227,9 +227,9 @@
             <button id="currExportPdf" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition">
               <i class="fas fa-file-pdf mr-2"></i>PDF
             </button>
-            <button id="currPrint" class="px-4 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 transition">
+            <!--<button id="currPrint" class="px-4 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 transition">
               <i class="fas fa-print mr-2"></i>Print
-            </button>
+            </button>-->
           </div>
         </div>
 
@@ -239,10 +239,9 @@
               <tr>
                 <th class="border px-3 py-2 text-left">Service No.</th>
                 <th class="border px-3 py-2 text-left">Full Name</th>
+                <th class="border px-3 py-2 text-left">Rank</th>
                 <th class="border px-3 py-2 text-left">Location</th>
                 <th class="border px-3 py-2 text-left">Grade Level</th>
-                <th class="border px-3 py-2 text-left">Status</th>
-                <th class="border px-3 py-2 text-left">Email</th>
                 <th class="border px-3 py-2 text-left no-print">Action</th>
               </tr>
             </thead>
@@ -282,9 +281,9 @@
             <i class="fas fa-exchange-alt mr-2"></i>Personnel Comparison Analysis
             <span id="compSelectedCount" class="text-sm text-gray-600"></span>
           </h3>
-          <button id="compPrint" class="px-4 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 transition no-print">
+          <!--<button id="compPrint" class="px-4 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 transition no-print">
             <i class="fas fa-print mr-2"></i>Print
-          </button>
+          </button>-->
         </div>
         <div id="comparisonContent"></div>
       </div>
@@ -1025,21 +1024,15 @@
         <td class="border px-3 py-3 font-semibold">${record.Empl_ID || 'N/A'}</td>
         <td class="border px-3 py-3">${record.Surname || ''} ${record.OtherName || ''}</td>
         <td class="border px-3 py-3">${record.Location || 'N/A'}</td>
+        <td class="border px-3 py-3">${record.Title || 'N/A'}</td>
         <td class="border px-3 py-3">${record.gradelevel || 'N/A'}</td>
-        <td class="border px-3 py-3">
-          <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
-            record.Status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-          }">
-            ${record.Status || 'N/A'}
-          </span>
-        </td>
         <td class="border px-3 py-3 no-print">
           <button class="text-blue-600 hover:text-blue-800 font-semibold transition mr-2 view-details" data-type="previous" data-record='${JSON.stringify(record).replace(/'/g, "&apos;")}'>
             <i class="fas fa-eye mr-1"></i>View
           </button>
-          <button class="text-${isCompared ? 'green' : 'yellow'}-600 hover:text-${isCompared ? 'green' : 'yellow'}-800 font-semibold transition add-compare" data-id="${record.Empl_ID}">
+          <!--<button class="text-${isCompared ? 'green' : 'yellow'}-600 hover:text-${isCompared ? 'green' : 'yellow'}-800 font-semibold transition add-compare" data-id="${record.Empl_ID}">
             <i class="fas fa-${isCompared ? 'check' : 'exchange-alt'} mr-1"></i>${isCompared ? 'Compared' : 'Compare'}
-          </button>
+          </button>-->
         </td>
       `;
       
@@ -1067,14 +1060,10 @@
   // Render Current Table
   async function renderCurrTable() {
     const tbody = document.getElementById('currTableBody');
-    // 1. Create a Document Fragment for performance
-    const fragment = document.createDocumentFragment(); 
+    tbody.innerHTML = '';
     
-    // Clear the actual DOM element once
-    tbody.innerHTML = ''; 
-
     document.getElementById('currRecordCount').textContent = `(Page ${currPage} of ${currTotalPages})`;
-
+    
     if (currData.length === 0) {
       tbody.innerHTML = `
         <tr>
@@ -1087,20 +1076,60 @@
       updateCurrPagination();
       return;
     }
-
-    // Check which employees exist in previous report (Async operation remains the same)
+    
+    // First, render table immediately with loading state for action buttons
+    currData.forEach(record => {
+      fullCurrData[record.Empl_ID] = record;
+      
+      const row = document.createElement('tr');
+      row.className = 'hover:bg-green-50 transition';
+      row.setAttribute('data-empl-id', record.Empl_ID);
+      
+      const isCompared = comparisonSet.has(record.Empl_ID);
+      
+      row.innerHTML = `
+        <td class="border px-3 py-3 font-semibold">${record.Empl_ID || 'N/A'}</td>
+        <td class="border px-3 py-3">${record.Surname || ''} ${record.OtherName || ''}</td>
+        <td class="border px-3 py-3">${record.Title || 'N/A'}</td>
+        <td class="border px-3 py-3">${record.Location || 'N/A'}</td>
+        <td class="border px-3 py-3">${record.gradelevel || 'N/A'}</td>
+        <td class="border px-3 py-3 no-print">
+          <div class="flex items-center gap-2">
+            <button class="text-green-600 hover:text-green-800 font-semibold transition view-details" data-type="current" data-record='${JSON.stringify(record).replace(/'/g, "&apos;")}'>
+              <i class="fas fa-eye mr-1"></i>View
+            </button>
+            <span class="action-placeholder-${record.Empl_ID} inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600 min-w-[90px] justify-center">
+              <i class="fas fa-spinner fa-spin mr-1"></i>Loading
+            </span>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+    
+    // Add event listeners for view buttons
+    tbody.querySelectorAll('.view-details').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const record = JSON.parse(e.currentTarget.getAttribute('data-record').replace(/&apos;/g, "'"));
+        showDetailsModal(record, 'current');
+      });
+    });
+    
+    updateCurrPagination();
+    
+    // Now check which employees exist in previous report (async)
     const token = localStorage.getItem('token');
     const params = new URLSearchParams(currentFilters);
     const emplIds = currData.map(r => r.Empl_ID).filter(Boolean);
-
+    
     let employeesInPrevious = new Set();
-
+    
     if (emplIds.length > 0) {
       try {
         const res = await fetch(`${API_BASE}/check-previous?${params.toString()}&employeeIds=${emplIds.join(',')}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-
+        
         if (res.ok) {
           const data = await res.json();
           if (data.status === 'SUCCESS' && data.employeeIds) {
@@ -1111,73 +1140,35 @@
         console.error('Error checking previous employees:', err);
       }
     }
-
+    
+    // Update action buttons based on API response
     currData.forEach(record => {
-      // Store in full data cache
-      fullCurrData[record.Empl_ID] = record;
-
-      const row = document.createElement('tr');
-      row.className = 'hover:bg-green-50 transition';
-
-      // Check if exists in previous report
+      const placeholder = tbody.querySelector(`.action-placeholder-${record.Empl_ID}`);
+      if (!placeholder) return;
+      
       const existsInPrevious = employeesInPrevious.has(record.Empl_ID);
       const isCompared = comparisonSet.has(record.Empl_ID);
-
-      row.innerHTML = `
-        <td class="border px-3 py-3 font-semibold">${record.Empl_ID || 'N/A'}</td>
-        <td class="border px-3 py-3">${record.Surname || ''} ${record.OtherName || ''}</td>
-        <td class="border px-3 py-3">${record.Location || 'N/A'}</td>
-        <td class="border px-3 py-3">${record.gradelevel || 'N/A'}</td>
-        <td class="border px-3 py-3">
-          <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
-            record.Status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-          }">
-            ${record.Status || 'N/A'}
-          </span>
-        </td>
-        <td class="border px-3 py-3 text-xs">${record.email || 'N/A'}</td>
-        <td class="border px-3 py-3 no-print">
-          <button class="text-green-600 hover:text-green-800 font-semibold transition mr-2 view-details" data-type="current" data-id="${record.Empl_ID}">
-            <i class="fas fa-eye mr-1"></i>View
-          </button>
-          ${existsInPrevious ? 
-            `<button class="text-${isCompared ? 'green' : 'yellow'}-600 hover:text-${isCompared ? 'green' : 'yellow'}-800 font-semibold transition add-compare" data-id="${record.Empl_ID}">
-              <i class="fas fa-${isCompared ? 'check' : 'exchange-alt'} mr-1"></i>${isCompared ? 'Compared' : 'Compare'}
-            </button>` :
-            `<span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-              <i class="fas fa-plus-circle mr-1"></i>New
-            </span>`
-          }
-        </td>
-      `;
       
-      // 2. Append row to the Fragment (off-DOM operation)
-      fragment.appendChild(row); 
+      if (existsInPrevious) {
+        const compareBtn = document.createElement('button');
+        compareBtn.className = `text-${isCompared ? 'green' : 'yellow'}-600 hover:text-${isCompared ? 'green' : 'yellow'}-800 font-semibold transition add-compare min-w-[90px]`;
+        compareBtn.setAttribute('data-id', record.Empl_ID);
+        compareBtn.innerHTML = `<i class="fas fa-${isCompared ? 'check' : 'exchange-alt'} mr-1"></i>${isCompared ? 'Compared' : 'Compare'}`;
+        
+        compareBtn.addEventListener('click', async () => {
+          await addToComparison(record.Empl_ID);
+        });
+        
+        placeholder.replaceWith(compareBtn);
+      } else {
+        const newBadge = document.createElement('span');
+        newBadge.className = 'inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 min-w-[90px] justify-center';
+        newBadge.innerHTML = '<i class="fas fa-plus-circle mr-1"></i>New';
+        placeholder.replaceWith(newBadge);
+      }
     });
+  } 
     
-    // 3. Single Append: This is where the smooth rendering happens
-    tbody.appendChild(fragment);
-
-    // Add event listeners (updated to use data-id)
-    tbody.querySelectorAll('.view-details').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        // Retrieve data from the cache using the ID
-        const emplId = e.currentTarget.getAttribute('data-id');
-        const record = fullCurrData[emplId]; 
-        showDetailsModal(record, 'current');
-      });
-    });
-
-    tbody.querySelectorAll('.add-compare').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const emplId = e.currentTarget.getAttribute('data-id');
-        await addToComparison(emplId);
-      });
-    });
-
-    updateCurrPagination();
-  }
-  
   // Add to comparison
   async function addToComparison(emplId) {
     // Check if already compared
@@ -1256,7 +1247,8 @@
         { label: 'Factory', prevKey: 'Factory', currKey: 'Factory' },
         { label: 'Birth Date', prevKey: 'Birthdate', currKey: 'Birthdate' },
         { label: 'Date Employed', prevKey: 'DateEmpl', currKey: 'DateEmpl' },
-        { label: 'Date Left', prevKey: 'DateLeft', currKey: 'DateLeft' },
+        { label: 'Date Left', prevKey: 'DateLeft', currKey: 'DateLeft', showOldTag: true },
+        { label: 'Exit Type', prevKey: 'exittype', currKey: 'exittype', showOldTag: true },
         { label: 'Telephone', prevKey: 'TELEPHONE', currKey: 'TELEPHONE' },
         { label: 'Home Address', prevKey: 'HOMEADDR', currKey: 'HOMEADDR' },
         { label: 'NOK Name', prevKey: 'nok_name', currKey: 'nok_name' },
@@ -1264,8 +1256,8 @@
         { label: 'State of Origin', prevKey: 'StateofOrigin', currKey: 'StateofOrigin' },
         { label: 'Local Govt', prevKey: 'LocalGovt', currKey: 'LocalGovt' },
         { label: 'PFA Code', prevKey: 'pfacode', currKey: 'pfacode' },
-        { label: 'GSM Number', prevKey: 'gsm_number', currKey: 'gsm_number' },
-        { label: 'Religion', prevKey: 'religion', currKey: 'religion' }
+        //{ label: 'GSM Number', prevKey: 'gsm_number', currKey: 'gsm_number' },
+        //{ label: 'Religion', prevKey: 'religion', currKey: 'religion' }
       ];
       
       // Filter to show only changed fields
@@ -1376,8 +1368,8 @@
       { label: 'Factory', prevKey: 'Factory', currKey: 'Factory' },
       { label: 'Birth Date', prevKey: 'Birthdate', currKey: 'Birthdate' },
       { label: 'Date Employed', prevKey: 'DateEmpl', currKey: 'DateEmpl' },
-      { label: 'Date Left', key: 'DateLeft', showOldTag: true },
-      { label: 'Exit Type', key: 'exittype', showOldTag: true },
+      { label: 'Date Left', prevKey: 'DateLeft', currKey: 'DateLeft', showOldTag: true },
+      { label: 'Exit Type', prevKey: 'exittype', currKey: 'exittype', showOldTag: true },
       { label: 'Telephone', prevKey: 'TELEPHONE', currKey: 'TELEPHONE' },
       { label: 'Home Address', prevKey: 'HOMEADDR', currKey: 'HOMEADDR' },
       { label: 'NOK Name', prevKey: 'nok_name', currKey: 'nok_name' },
@@ -1385,8 +1377,8 @@
       { label: 'State of Origin', prevKey: 'StateofOrigin', currKey: 'StateofOrigin' },
       { label: 'Local Govt', prevKey: 'LocalGovt', currKey: 'LocalGovt' },
       { label: 'PFA Code', prevKey: 'pfacode', currKey: 'pfacode' },
-      { label: 'GSM Number', prevKey: 'gsm_number', currKey: 'gsm_number' },
-      { label: 'Religion', prevKey: 'religion', currKey: 'religion' }
+      //{ label: 'GSM Number', prevKey: 'gsm_number', currKey: 'gsm_number' },
+      //{ label: 'Religion', prevKey: 'religion', currKey: 'religion' }
     ];
     
     // Filter to show only changed fields
@@ -1464,8 +1456,8 @@
       { label: 'Location', prevKey: 'Location', currKey: 'Location' },
       { label: 'Birth Date', prevKey: 'Birthdate', currKey: 'Birthdate' },
       { label: 'Date Employed', prevKey: 'DateEmpl', currKey: 'DateEmpl' },
-      { label: 'Date Left', key: 'DateLeft', showOldTag: true },
-      { label: 'Exit Type', key: 'exittype', showOldTag: true },
+      { label: 'Date Left', prevKey: 'DateLeft', currKey: 'DateLeft', showOldTag: true },
+      { label: 'Exit Type', prevKey: 'exittype', currKey: 'exittype', showOldTag: true },
       { label: 'Telephone', prevKey: 'TELEPHONE', currKey: 'TELEPHONE' },
       { label: 'Home Address', prevKey: 'HOMEADDR', currKey: 'HOMEADDR' },
       { label: 'NOK Name', prevKey: 'nok_name', currKey: 'nok_name' },
@@ -1478,8 +1470,8 @@
       { label: 'Grade Level', prevKey: 'gradelevel', currKey: 'gradelevel' },
       { label: 'Email', prevKey: 'email', currKey: 'email' },
       { label: 'PFA Code', prevKey: 'pfacode', currKey: 'pfacode' },
-      { label: 'GSM Number', prevKey: 'gsm_number', currKey: 'gsm_number' },
-      { label: 'Religion', prevKey: 'religion', currKey: 'religion' }
+      //{ label: 'GSM Number', prevKey: 'gsm_number', currKey: 'gsm_number' },
+      //{ label: 'Religion', prevKey: 'religion', currKey: 'religion' }
     ];
     
     let html = `
@@ -1559,8 +1551,8 @@
       { label: 'Location', key: 'Location' },
       { label: 'Birth Date', key: 'Birthdate' },
       { label: 'Date Employed', key: 'DateEmpl' },
-      { label: 'Date Left', key: 'DateLeft' },
-      { label: 'Exit Type', key: 'exittype' },
+      { label: 'Date Left', key: 'DateLeft', showOldTag: true },
+      { label: 'Exit Type', key: 'exittype', showOldTag: true },
       { label: 'Telephone', key: 'TELEPHONE' },
       { label: 'Home Address', key: 'HOMEADDR' },
       { label: 'NOK Name', key: 'nok_name' },
@@ -1732,9 +1724,9 @@
   });
   
   // Print handlers
-  document.getElementById('prevPrint').addEventListener('click', () => window.print());
-  document.getElementById('currPrint').addEventListener('click', () => window.print());
-  document.getElementById('compPrint').addEventListener('click', () => window.print());
+  //document.getElementById('prevPrint').addEventListener('click', () => window.print());
+  //document.getElementById('currPrint').addEventListener('click', () => window.print());
+  //document.getElementById('compPrint').addEventListener('click', () => window.print());
   
   // Pagination event listeners (Previous)
   document.getElementById('prevFirstPage').addEventListener('click', () => { 
@@ -1920,7 +1912,7 @@
   // Search previous data via backend
   async function searchPreviousData(query) {
     try {
-      showLoading('Searching...');
+      //showLoading('Searching...');
       const token = localStorage.getItem('token');
       
       const params = new URLSearchParams({
@@ -1956,7 +1948,7 @@
   // Search current data via backend
   async function searchCurrentData(query) {
     try {
-      showLoading('Searching...');
+      //showLoading('Searching...');
       const token = localStorage.getItem('token');
       
       const params = new URLSearchParams({
@@ -1996,7 +1988,7 @@
     }
     
     try {
-      showLoading('Loading page...');
+      //showLoading('Loading page...');
       const token = localStorage.getItem('token');
       
       const params = new URLSearchParams({
@@ -2035,7 +2027,7 @@
     }
     
     try {
-      showLoading('Loading page...');
+      //showLoading('Loading page...');
       const token = localStorage.getItem('token');
       
       const params = new URLSearchParams({

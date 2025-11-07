@@ -194,142 +194,137 @@ exports.getPreviousPersonnelDetails = async (year, month, user, filters = {}) =>
 };
 
 /**
- * Get current personnel details from hr_employees
+ * Get current personnel details from hr_employees (MySQL version)
  */
-exports.getCurrentPersonnelDetails = async (year, month, user, filters = {}) => {
-  const logId = await startLog('PersonnelDetailsReport', 'GetCurrentDetails', year, month, user);
+exports.getCurrentPersonnelDetailsFiltered = async (year, month, user, filters = {}) => {
+  const { employeeIds, page = 1, limit = 5 } = filters;
+  const offset = (page - 1) * limit;
+
+  // Build WHERE clause for employee IDs using MySQL placeholders
+  const placeholders = employeeIds.map(() => '?').join(',');
   
+  // Get total count
+  const countQuery = `
+    SELECT COUNT(*) as total 
+    FROM hr_employees 
+    WHERE Empl_ID IN (${placeholders})
+  `;
+  const [countResult] = await pool.query(countQuery, employeeIds);
+  const totalRecords = parseInt(countResult[0].total);
+  const totalPages = Math.ceil(totalRecords / limit);
+
+  // Get paginated records
+  const dataQuery = `
+    SELECT * 
+    FROM hr_employees 
+    WHERE Empl_ID IN (${placeholders})
+    ORDER BY Empl_ID
+    LIMIT ? OFFSET ?
+  `;
+  const params = [...employeeIds, limit, offset];
+  const [dataResult] = await pool.query(dataQuery, params);
+
+  return {
+    records: dataResult,
+    pagination: {
+      page,
+      limit,
+      totalPages,
+      totalRecords
+    }
+  };
+};
+
+/**
+ * GET: Current personnel details - filtered by employees in previous report
+ */
+exports.getCurrentPersonnelDetails = async (req, res) => {
   try {
     const { 
+      startPeriod,
+      endPeriod,
       employeeId,
       page = 1,
-      limit = 50
-    } = filters;
+      limit = 5
+    } = req.query;
 
-    const offset = (page - 1) * limit;
-
-    // Build WHERE clause
-    let whereConditions = [];
-    let queryParams = [];
-
-    if (employeeId && employeeId !== 'ALL') {
-      whereConditions.push('Empl_ID = ?');
-      queryParams.push(employeeId);
+    // Validate required filters
+    if (!startPeriod || !endPeriod) {
+      return res.status(400).json({
+        status: 'FAILED',
+        error: 'Start and end periods are required to match with previous report'
+      });
     }
 
-    const whereClause = whereConditions.length > 0 
-      ? 'WHERE ' + whereConditions.join(' AND ') 
-      : '';
+    const [bt05Rows] = await pool.query(
+      "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
+    );
 
-    // Get total count
-    const countQuery = `
-      SELECT COUNT(*) as total
-      FROM hr_employees
-      ${whereClause}
+    if (!bt05Rows.length) {
+      return res.status(404).json({ 
+        status: 'FAILED',
+        error: 'BT05 not found - processing period not set' 
+      });
+    }
+
+    const { year, month } = bt05Rows[0];
+    const user = req.user_fullname || 'System Auto';
+
+    // First, get the list of employee IDs from previous report
+    // FIXED: Changed from PostgreSQL ($1, $2) to MySQL (?) placeholders
+    let prevEmployeeIdsQuery = `
+      SELECT DISTINCT Empl_ID 
+      FROM py_emplhistory 
+      WHERE period >= ? AND period <= ?
     `;
-    const [countResult] = await pool.query(countQuery, queryParams);
-    const totalRecords = countResult[0].total;
-    const totalPages = Math.ceil(totalRecords / limit);
+    const prevParams = [startPeriod, endPeriod];
+    
+    if (employeeId) {
+      prevEmployeeIdsQuery += ` AND Empl_ID = ?`;
+      prevParams.push(employeeId);
+    }
 
-    // Get paginated data with all fields
-    const dataQuery = `
-      SELECT 
-        Empl_ID,
-        Surname,
-        OtherName,
-        Title,
-        TITLEDESC,
-        Sex,
-        JobClass,
-        Jobtitle,
-        MaritalStatus,
-        Factory,
-        Location,
-        Birthdate,
-        DateEmpl,
-        DateLeft,
-        TELEPHONE,
-        HOMEADDR,
-        nok_name,
-        Bankcode,
-        bankbranch,
-        BankACNumber,
-        InternalACNo,
-        StateofOrigin,
-        LocalGovt,
-        TaxCode,
-        NSITFcode,
-        NHFcode,
-        seniorno,
-        command,
-        nok_addr,
-        Language1,
-        Fluency1,
-        Language2,
-        Fluency2,
-        Language3,
-        Fluency3,
-        Country,
-        Height,
-        Weight,
-        BloodGroup,
-        Genotype,
-        entry_mode,
-        Status,
-        datepmted,
-        dateconfirmed,
-        taxed,
-        gradelevel,
-        gradetype,
-        entitlement,
-        town,
-        createdby,
-        datecreated,
-        nok_relation,
-        specialisation,
-        accomm_type,
-        qual_allow,
-        sp_qual_allow,
-        rent_subsidy,
-        instruction_allow,
-        command_allow,
-        award,
-        payrollclass,
-        email,
-        pfacode,
-        state,
-        emolumentform,
-        dateadded,
-        exittype,
-        gsm_number,
-        nokphone,
-        religion,
-        passport,
-        CONCAT(Surname, ' ', IFNULL(OtherName, '')) as full_name
-      FROM hr_employees
-      ${whereClause}
-      ORDER BY Surname, OtherName
-      LIMIT ? OFFSET ?
-    `;
+    const [prevEmployeeIds] = await pool.query(prevEmployeeIdsQuery, prevParams);
+    
+    if (prevEmployeeIds.length === 0) {
+      return res.json({
+        status: 'SUCCESS',
+        reportType: 'CURRENT_DETAILS',
+        filters: { startPeriod, endPeriod, employeeId },
+        retrievedAt: new Date().toISOString(),
+        records: [],
+        pagination: { page: 1, limit, totalPages: 0, totalRecords: 0 }
+      });
+    }
 
-    const [rows] = await pool.query(dataQuery, [...queryParams, limit, offset]);
+    const emplIds = prevEmployeeIds.map(row => row.Empl_ID);
 
-    await updateLog(logId, 'SUCCESS', `Retrieved ${rows.length} of ${totalRecords} current personnel records.`);
-
-    return {
-      records: rows,
-      pagination: {
-        currentPage: page,
-        totalPages,
-        totalRecords,
-        recordsPerPage: limit,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1
+    // Now get current data only for those employee IDs
+    const result = await personnelDetailsService.getCurrentPersonnelDetailsFiltered(
+      year, 
+      month, 
+      user, 
+      {
+        employeeIds: emplIds,
+        page: parseInt(page),
+        limit: parseInt(limit)
       }
-    };
+    );
+
+    res.json({
+      status: 'SUCCESS',
+      reportType: 'CURRENT_DETAILS',
+      filters: { startPeriod, endPeriod, employeeId },
+      retrievedAt: new Date().toISOString(),
+      records: result.records,
+      pagination: result.pagination
+    });
   } catch (err) {
-    await updateLog(logId, 'FAILED', err.message);
-    throw err;
+    console.error('Error getting current personnel details:', err);
+    res.status(500).json({ 
+      status: 'FAILED', 
+      message: err.message 
+    });
   }
 };
 
@@ -601,6 +596,144 @@ exports.getPersonnelDetailsComparison = async (year, month, user, filters = {}) 
     throw err;
   }
 };
+
+exports.searchPreviousPersonnelDetails = async (year, month, user, filters = {}) => {
+  const { startPeriod, endPeriod, employeeId, searchQuery, page = 1, limit = 5 } = filters;
+  const offset = (page - 1) * limit;
+
+  let whereClause = 'WHERE period >= $1 AND period <= $2';
+  const params = [startPeriod, endPeriod];
+  let paramCount = 3;
+
+  if (employeeId) {
+    whereClause += ` AND "Empl_ID" = $${paramCount}`;
+    params.push(employeeId);
+    paramCount++;
+  }
+
+  // Add search conditions
+  const searchLower = `%${searchQuery.toLowerCase()}%`;
+  whereClause += ` AND (
+    LOWER("Empl_ID"::text) LIKE $${paramCount} OR
+    LOWER("Surname") LIKE $${paramCount} OR
+    LOWER("OtherName") LIKE $${paramCount} OR
+    LOWER(CONCAT("Surname", ' ', "OtherName")) LIKE $${paramCount} OR
+    LOWER("Location") LIKE $${paramCount} OR
+    LOWER("gradelevel") LIKE $${paramCount}
+  )`;
+  params.push(searchLower);
+  paramCount++;
+
+  // Get total count
+  const countQuery = `
+    SELECT COUNT(*) as total 
+    FROM py_emplhistory 
+    ${whereClause}
+  `;
+  const [countResult] = await pool.query(countQuery, params);
+  const totalRecords = parseInt(countResult[0].total);
+  const totalPages = Math.ceil(totalRecords / limit);
+
+  // Get paginated records
+  const dataQuery = `
+    SELECT * 
+    FROM py_emplhistory 
+    ${whereClause}
+    ORDER BY period DESC, "Empl_ID"
+    LIMIT $${paramCount} OFFSET $${paramCount + 1}
+  `;
+  params.push(limit, offset);
+
+  const [dataResult] = await pool.query(dataQuery, params);
+
+  return {
+    records: dataResult,
+    pagination: {
+      page,
+      limit,
+      totalPages,
+      totalRecords
+    }
+  };
+}
+
+exports.searchCurrentPersonnelDetails = async (year, month, user, filters = {}) => {
+  const { startPeriod, endPeriod, employeeId, searchQuery, page = 1, limit = 5 } = filters;
+  const offset = (page - 1) * limit;
+
+  // First get employee IDs from previous
+  let prevQuery = `
+    SELECT DISTINCT "Empl_ID" 
+    FROM py_emplhistory 
+    WHERE period >= $1 AND period <= $2
+  `;
+  const prevParams = [startPeriod, endPeriod];
+  
+  if (employeeId) {
+    prevQuery += ` AND "Empl_ID" = $3`;
+    prevParams.push(employeeId);
+  }
+
+  const [prevEmployeeIds] = await pool.query(prevQuery, prevParams);
+  
+  if (prevEmployeeIds.length === 0) {
+    return {
+      records: [],
+      pagination: { page: 1, limit, totalPages: 0, totalRecords: 0 }
+    };
+  }
+
+  const emplIds = prevEmployeeIds.map(row => row.Empl_ID);
+  const placeholders = emplIds.map((_, idx) => `$${idx + 1}`).join(',');
+
+  // Add search conditions
+  const searchLower = `%${searchQuery.toLowerCase()}%`;
+  const searchParamIdx = emplIds.length + 1;
+  
+  const whereClause = `
+    WHERE "Empl_ID" IN (${placeholders})
+    AND (
+      LOWER("Empl_ID"::text) LIKE $${searchParamIdx} OR
+      LOWER("Surname") LIKE $${searchParamIdx} OR
+      LOWER("OtherName") LIKE $${searchParamIdx} OR
+      LOWER(CONCAT("Surname", ' ', "OtherName")) LIKE $${searchParamIdx} OR
+      LOWER("Location") LIKE $${searchParamIdx} OR
+      LOWER("gradelevel") LIKE $${searchParamIdx}
+    )
+  `;
+
+  // Get total count
+  const countQuery = `
+    SELECT COUNT(*) as total 
+    FROM hr_employees 
+    ${whereClause}
+  `;
+  const countParams = [...emplIds, searchLower];
+  const [countResult] = await pool.query(countQuery, countParams);
+  const totalRecords = parseInt(countResult[0].total);
+  const totalPages = Math.ceil(totalRecords / limit);
+
+  // Get paginated records
+  const dataQuery = `
+    SELECT * 
+    FROM hr_employees 
+    ${whereClause}
+    ORDER BY "Empl_ID"
+    LIMIT $${searchParamIdx + 1} OFFSET $${searchParamIdx + 2}
+  `;
+  const dataParams = [...emplIds, searchLower, limit, offset];
+  const [dataResult] = await pool.query(dataQuery, dataParams);
+
+  return {
+    records: dataResult,
+    pagination: {
+      page,
+      limit,
+      totalPages,
+      totalRecords
+    }
+  };
+}
 
 /**
  * Get all previous personnel details for export (no pagination)

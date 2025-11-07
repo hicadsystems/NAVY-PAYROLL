@@ -110,15 +110,25 @@ exports.getPreviousPersonnelDetails = async (req, res) => {
 };
 
 /**
- * GET: Current personnel details from hr_employees
+ * GET: Current personnel details - filtered by employees in previous report
  */
 exports.getCurrentPersonnelDetails = async (req, res) => {
   try {
     const { 
+      startPeriod,
+      endPeriod,
       employeeId,
       page = 1,
-      limit = 50
+      limit = 5
     } = req.query;
+
+    // Validate required filters
+    if (!startPeriod || !endPeriod) {
+      return res.status(400).json({
+        status: 'FAILED',
+        error: 'Start and end periods are required to match with previous report'
+      });
+    }
 
     const [bt05Rows] = await pool.query(
       "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
@@ -134,12 +144,42 @@ exports.getCurrentPersonnelDetails = async (req, res) => {
     const { year, month } = bt05Rows[0];
     const user = req.user_fullname || 'System Auto';
 
-    const result = await personnelDetailsService.getCurrentPersonnelDetails(
+    // First, get the list of employee IDs from previous report
+    // FIXED: Changed from PostgreSQL ($1, $2) to MySQL (?) placeholders
+    let prevEmployeeIdsQuery = `
+      SELECT DISTINCT Empl_ID 
+      FROM py_emplhistory 
+      WHERE period >= ? AND period <= ?
+    `;
+    const prevParams = [startPeriod, endPeriod];
+    
+    if (employeeId) {
+      prevEmployeeIdsQuery += ` AND Empl_ID = ?`;
+      prevParams.push(employeeId);
+    }
+
+    const [prevEmployeeIds] = await pool.query(prevEmployeeIdsQuery, prevParams);
+    
+    if (prevEmployeeIds.length === 0) {
+      return res.json({
+        status: 'SUCCESS',
+        reportType: 'CURRENT_DETAILS',
+        filters: { startPeriod, endPeriod, employeeId },
+        retrievedAt: new Date().toISOString(),
+        records: [],
+        pagination: { page: 1, limit, totalPages: 0, totalRecords: 0 }
+      });
+    }
+
+    const emplIds = prevEmployeeIds.map(row => row.Empl_ID);
+
+    // Now get current data only for those employee IDs
+    const result = await personnelDetailsService.getCurrentPersonnelDetailsFiltered(
       year, 
       month, 
       user, 
       {
-        employeeId,
+        employeeIds: emplIds,
         page: parseInt(page),
         limit: parseInt(limit)
       }
@@ -148,7 +188,7 @@ exports.getCurrentPersonnelDetails = async (req, res) => {
     res.json({
       status: 'SUCCESS',
       reportType: 'CURRENT_DETAILS',
-      filters: { employeeId },
+      filters: { startPeriod, endPeriod, employeeId },
       retrievedAt: new Date().toISOString(),
       records: result.records,
       pagination: result.pagination
@@ -319,6 +359,152 @@ exports.getPersonnelDetailsView = async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching personnel details for view:', err);
+    res.status(500).json({ 
+      status: 'FAILED', 
+      message: err.message 
+    });
+  }
+};
+
+/**
+ * GET: Search previous personnel details
+ */
+exports.searchPreviousPersonnelDetails = async (req, res) => {
+  try {
+    const { 
+      startPeriod, 
+      endPeriod, 
+      employeeId,
+      searchQuery,
+      page = 1,
+      limit = 5
+    } = req.query;
+
+    if (!startPeriod || !endPeriod) {
+      return res.status(400).json({
+        status: 'FAILED',
+        error: 'Start and end periods are required'
+      });
+    }
+
+    if (!searchQuery) {
+      return res.status(400).json({
+        status: 'FAILED',
+        error: 'Search query is required'
+      });
+    }
+
+    const [bt05Rows] = await pool.query(
+      "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
+    );
+
+    if (!bt05Rows.length) {
+      return res.status(404).json({ 
+        status: 'FAILED',
+        error: 'BT05 not found' 
+      });
+    }
+
+    const { year, month } = bt05Rows[0];
+    const user = req.user_fullname || 'System Auto';
+
+    const result = await personnelDetailsService.searchPreviousPersonnelDetails(
+      year, 
+      month, 
+      user, 
+      {
+        startPeriod,
+        endPeriod,
+        employeeId,
+        searchQuery,
+        page: parseInt(page),
+        limit: parseInt(limit)
+      }
+    );
+
+    res.json({
+      status: 'SUCCESS',
+      reportType: 'PREVIOUS_DETAILS_SEARCH',
+      filters: { startPeriod, endPeriod, employeeId, searchQuery },
+      retrievedAt: new Date().toISOString(),
+      records: result.records,
+      pagination: result.pagination
+    });
+  } catch (err) {
+    console.error('Error searching previous personnel details:', err);
+    res.status(500).json({ 
+      status: 'FAILED', 
+      message: err.message 
+    });
+  }
+};
+
+/**
+ * GET: Search current personnel details
+ */
+exports.searchCurrentPersonnelDetails = async (req, res) => {
+  try {
+    const { 
+      startPeriod,
+      endPeriod,
+      employeeId,
+      searchQuery,
+      page = 1,
+      limit = 5
+    } = req.query;
+
+    if (!startPeriod || !endPeriod) {
+      return res.status(400).json({
+        status: 'FAILED',
+        error: 'Start and end periods are required'
+      });
+    }
+
+    if (!searchQuery) {
+      return res.status(400).json({
+        status: 'FAILED',
+        error: 'Search query is required'
+      });
+    }
+
+    const [bt05Rows] = await pool.query(
+      "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
+    );
+
+    if (!bt05Rows.length) {
+      return res.status(404).json({ 
+        status: 'FAILED',
+        error: 'BT05 not found' 
+      });
+    }
+
+    const { year, month } = bt05Rows[0];
+    const user = req.user_fullname || 'System Auto';
+
+    const result = await personnelDetailsService.searchCurrentPersonnelDetails(
+      year, 
+      month, 
+      user, 
+      {
+        startPeriod,
+        endPeriod,
+        employeeId,
+        searchQuery,
+        page: parseInt(page),
+        limit: parseInt(limit)
+      }
+    );
+
+    res.json({
+      status: 'SUCCESS',
+      reportType: 'CURRENT_DETAILS_SEARCH',
+      filters: { startPeriod, endPeriod, employeeId, searchQuery },
+      retrievedAt: new Date().toISOString(),
+      records: result.records,
+      pagination: result.pagination
+    });
+  } catch (err) {
+    console.error('Error searching current personnel details:', err);
     res.status(500).json({ 
       status: 'FAILED', 
       message: err.message 

@@ -62,21 +62,25 @@
     <!-- Period Range -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
       <div>
-        <label for="startPeriod" class="block text-sm font-medium text-gray-700 mb-2">
-          <i class="fas fa-calendar-alt mr-1"></i>Start Period <span class="text-red-500">*</span>
+        <label for="startDate" class="block text-sm font-medium text-gray-700 mb-2">
+          <i class="fas fa-calendar-alt mr-1"></i>Start Date <span class="text-red-500">*</span>
         </label>
-        <select id="startPeriod" class="w-full border-2 border-gray-300 rounded-lg shadow-sm px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-          <option value="">Select Start Period</option>
-        </select>
+        <input 
+          type="month" 
+          id="startDate" 
+          class="w-full border-2 border-gray-300 rounded-lg shadow-sm px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
       </div>
       
       <div>
-        <label for="endPeriod" class="block text-sm font-medium text-gray-700 mb-2">
-          <i class="fas fa-calendar-check mr-1"></i>End Period <span class="text-red-500">*</span>
+        <label for="endDate" class="block text-sm font-medium text-gray-700 mb-2">
+          <i class="fas fa-calendar-check mr-1"></i>End Date <span class="text-red-500">*</span>
         </label>
-        <select id="endPeriod" class="w-full border-2 border-gray-300 rounded-lg shadow-sm px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-          <option value="">Select End Period</option>
-        </select>
+        <input 
+          type="month" 
+          id="endDate" 
+          class="w-full border-2 border-gray-300 rounded-lg shadow-sm px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
       </div>
     </div>
 
@@ -130,6 +134,18 @@
             <i class="fas fa-history mr-2"></i>Previous Period Personnel Data
             <span id="prevRecordCount" class="text-sm text-gray-600"></span>
           </h3>
+          <div class="relative">
+            <input 
+              type="text" 
+              id="prevSearchInput"
+              class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 pl-10"
+              placeholder="Search by Service No, Name, Location..."
+            />
+            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+            <button id="prevClearSearch" class="hidden absolute right-3 top-2 text-gray-500 hover:text-gray-700">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
           <div class="flex gap-2 no-print">
             <button id="prevExportExcel" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition">
               <i class="fas fa-file-excel mr-2"></i>Excel
@@ -192,6 +208,18 @@
             <i class="fas fa-calendar-day mr-2"></i>Current Period Personnel Data
             <span id="currRecordCount" class="text-sm text-gray-600"></span>
           </h3>
+          <div class="relative">
+            <input 
+              type="text" 
+              id="currSearchInput"
+              class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 pl-10"
+              placeholder="Search by Service No, Name, Location..."
+            />
+            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+            <button id="currClearSearch" class="hidden absolute right-3 top-2 text-gray-500 hover:text-gray-700">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>         
           <div class="flex gap-2 no-print">
             <button id="currExportExcel" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition">
               <i class="fas fa-file-excel mr-2"></i>Excel
@@ -340,28 +368,43 @@
   let selectedEmployeeId = null;
   let allEmployees = [];
   let comparisonSet = new Set();
+
+  // Search State
+  let searchQuery = '';
+  let isSearchActive = false;
   
   // Previous Report State
   let prevData = [];
   let prevPage = 1;
   let prevTotalPages = 1;
+  let prevSearchQuery = '';
+  let prevAllData = []; 
   
   // Current Report State  
   let currData = [];
   let currPage = 1;
   let currTotalPages = 1;
+  let currSearchQuery = '';
+  let currAllData = [];
   
   // Active tab
   let activeTab = 'previous';
   
   // Current filters
   let currentFilters = {};
+
+  // DOM Search
+  const prevSearchInput = document.getElementById('prevSearchInput');
+  const prevClearSearch = document.getElementById('prevClearSearch');
+  const currSearchInput = document.getElementById('currSearchInput');
+  const currClearSearch = document.getElementById('currClearSearch');
+
   
   // DOM - Main Form
   const topActionBar = document.getElementById('topActionBar');
   const mainForm = document.getElementById('mainForm');
-  const startPeriod = document.getElementById('startPeriod');
-  const endPeriod = document.getElementById('endPeriod');
+  const startDate = document.getElementById('startDate');
+  const endDate = document.getElementById('endDate');
   const filterByPersonnel = document.getElementById('filterByPersonnel');
   const personnelWrapper = document.getElementById('personnelWrapper');
   const searchInput = document.getElementById('searchInput');
@@ -422,6 +465,12 @@
   }
   
   // Format period to readable date
+  function convertDateToPeriod(dateInput) {
+    // Input format: "2024-09" -> Output format: "202409"
+    if (!dateInput) return '';
+    return dateInput.replace('-', '');
+  }
+
   function formatPeriod(period) {
     if (!period || period.length < 6) return period;
     const year = period.substring(0, 4);
@@ -431,7 +480,7 @@
   }
   
   // Fetch available periods (last 2 months from latest)
-  async function fetchAvailablePeriods() {
+  /*async function fetchAvailablePeriods() {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE}/periods`, {
@@ -455,7 +504,8 @@
       console.error('Error fetching periods:', err);
     }
   }
-  
+  */
+
   // Fetch employees list
   async function fetchEmployeesList() {
     try {
@@ -541,8 +591,8 @@
   
   // Clear button
   clearBtn.addEventListener('click', () => {
-    startPeriod.value = '';
-    endPeriod.value = '';
+    startDate.value = '';
+    endDate.value = '';
     filterByPersonnel.checked = false;
     personnelWrapper.classList.add('hidden');
     selectedEmployeeId = null;
@@ -553,8 +603,8 @@
   // Generate Reports
   generateBtn.addEventListener('click', async () => {
     // Validation
-    if (!startPeriod.value || !endPeriod.value) {
-      return showAlert('Validation Error', 'Please select both start and end periods', 'warning');
+    if (!startDate.value || !endDate.value) {
+      return showAlert('Validation Error', 'Please select both start and end dates', 'warning');
     }
     
     if (filterByPersonnel.checked && !selectedEmployeeId) {
@@ -563,7 +613,7 @@
     
     await generateReports();
   });
-  
+    
   // Main function to generate reports
   async function generateReports() {
     try {
@@ -573,8 +623,8 @@
       
       // Build filters
       currentFilters = {
-        startPeriod: startPeriod.value,
-        endPeriod: endPeriod.value
+        startPeriod: convertDateToPeriod(startDate.value),
+        endPeriod: convertDateToPeriod(endDate.value)
       };
       
       if (filterByPersonnel.checked && selectedEmployeeId) {
@@ -976,7 +1026,7 @@
       compCard.className = 'border-2 border-gray-200 rounded-lg p-6';
       
       const allFields = [
-        { label: 'Employee ID', prevKey: 'Empl_ID', currKey: 'Empl_ID' },
+        { label: 'Service No', prevKey: 'Empl_ID', currKey: 'Empl_ID' },
         { label: 'Name', prevKey: 'Surname', currKey: 'Surname', concat: true },
         { label: 'Location', prevKey: 'Location', currKey: 'Location' },
         { label: 'Grade Level', prevKey: 'gradelevel', currKey: 'gradelevel' },
@@ -1093,7 +1143,7 @@
     if (!prevRecord && !currRecord) return;
     
     const allFields = [
-      { label: 'Employee ID', prevKey: 'Empl_ID', currKey: 'Empl_ID' },
+      { label: 'Service No', prevKey: 'Empl_ID', currKey: 'Empl_ID' },
       { label: 'Name', prevKey: 'Surname', currKey: 'Surname', concat: true },
       { label: 'Location', prevKey: 'Location', currKey: 'Location' },
       { label: 'Grade Level', prevKey: 'gradelevel', currKey: 'gradelevel' },
@@ -1108,7 +1158,8 @@
       { label: 'Factory', prevKey: 'Factory', currKey: 'Factory' },
       { label: 'Birth Date', prevKey: 'Birthdate', currKey: 'Birthdate' },
       { label: 'Date Employed', prevKey: 'DateEmpl', currKey: 'DateEmpl' },
-      { label: 'Date Left', prevKey: 'DateLeft', currKey: 'DateLeft' },
+      { label: 'Date Left', key: 'DateLeft', showOldTag: true },
+      { label: 'Exit Type', key: 'exittype', showOldTag: true },
       { label: 'Telephone', prevKey: 'TELEPHONE', currKey: 'TELEPHONE' },
       { label: 'Home Address', prevKey: 'HOMEADDR', currKey: 'HOMEADDR' },
       { label: 'NOK Name', prevKey: 'nok_name', currKey: 'nok_name' },
@@ -1192,7 +1243,8 @@
       { label: 'Location', prevKey: 'Location', currKey: 'Location' },
       { label: 'Birth Date', prevKey: 'Birthdate', currKey: 'Birthdate' },
       { label: 'Date Employed', prevKey: 'DateEmpl', currKey: 'DateEmpl' },
-      { label: 'Date Left', prevKey: 'DateLeft', currKey: 'DateLeft' },
+      { label: 'Date Left', key: 'DateLeft', showOldTag: true },
+      { label: 'Exit Type', key: 'exittype', showOldTag: true },
       { label: 'Telephone', prevKey: 'TELEPHONE', currKey: 'TELEPHONE' },
       { label: 'Home Address', prevKey: 'HOMEADDR', currKey: 'HOMEADDR' },
       { label: 'NOK Name', prevKey: 'nok_name', currKey: 'nok_name' },
@@ -1237,6 +1289,16 @@
         prevVal = `${prevRecord?.Surname || ''} ${prevRecord?.OtherName || ''}`.trim() || 'N/A';
         currVal = `${currRecord?.Surname || ''} ${currRecord?.OtherName || ''}`.trim() || 'N/A';
       }
+
+      // Add (Old Employee) tag
+      if (field.showOldTag) {
+        if (prevVal && prevVal !== 'N/A' && String(prevVal).trim() !== '') {
+          prevVal = `${prevVal} <span class="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded">(Old Employee)</span>`;
+        }
+        if (currVal && currVal !== 'N/A' && String(currVal).trim() !== '') {
+          currVal = `${currVal} <span class="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded">(Old Employee)</span>`;
+        }
+      }
       
       const changed = String(prevVal) !== String(currVal);
       
@@ -1277,6 +1339,7 @@
       { label: 'Birth Date', key: 'Birthdate' },
       { label: 'Date Employed', key: 'DateEmpl' },
       { label: 'Date Left', key: 'DateLeft' },
+      { label: 'Exit Type', key: 'exittype' },
       { label: 'Telephone', key: 'TELEPHONE' },
       { label: 'Home Address', key: 'HOMEADDR' },
       { label: 'NOK Name', key: 'nok_name' },
@@ -1300,12 +1363,22 @@
     
     modalContent.innerHTML = `
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        ${fields.map(field => `
-          <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
-            <div class="text-xs font-semibold text-gray-500 uppercase mb-1">${field.label}</div>
-            <div class="text-sm font-medium text-gray-900">${field.key === 'period' ? formatPeriod(record[field.key] || '') : (record[field.key] || 'N/A')}</div>
-          </div>
-        `).join('')}
+        ${fields.map(field => {
+          let value = field.key === 'period' ? formatPeriod(record[field.key] || '') : (record[field.key] || 'N/A');
+          let displayValue = value;
+          
+          // Add (Old Employee) tag if field has value and showOldTag is true
+          if (field.showOldTag && value && value !== 'N/A' && value.trim() !== '') {
+            displayValue = `${value} <span class="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded">(Old Employee)</span>`;
+          }
+          
+          return `
+            <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <div class="text-xs font-semibold text-gray-500 uppercase mb-1">${field.label}</div>
+              <div class="text-sm font-medium text-gray-900">${displayValue}</div>
+            </div>
+          `;
+        }).join('')}
       </div>
     `;
     
@@ -1584,7 +1657,7 @@
   
   // Initialize
   function initialize() {
-    fetchAvailablePeriods();
+    //fetchAvailablePeriods();
     fetchEmployeesList();
     checkPayrollStatus();
   }

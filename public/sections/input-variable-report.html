@@ -448,7 +448,7 @@
       activeBtn.classList.remove('text-gray-500');
     }
 
-    if (mode === 'all' || mode === 'loan') {
+    if (mode === 'all') {
       filterFormContainer.classList.add('hidden');
       cancelFilterContainer.classList.add('hidden');
       //summaryCards.classList.remove('hidden');
@@ -470,7 +470,13 @@
             <span class="text-lg font-medium">Please apply filter to view results</span>
           </td>
         </tr>`;
-    }
+    } else if (mode === 'loan') {
+      filterFormContainer.classList.add('hidden');
+      cancelFilterContainer.classList.add('hidden');
+      //summaryCards.classList.add('hidden');
+      nextStepBanner.classList.add('hidden');
+      if (allVariablesData) filterAndRenderData();
+    } 
   }
 
   // Populate employee dropdown

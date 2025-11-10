@@ -1182,8 +1182,8 @@
         <td class="border px-3 py-3">${formatPeriod(record.period || '')}</td>
         <td class="border px-3 py-3 font-semibold">${record.Empl_ID || 'N/A'}</td>
         <td class="border px-3 py-3">${record.Surname || ''} ${record.OtherName || ''}</td>
-        <td class="border px-3 py-3">${record.Title || 'N/A'}</td>
-        <td class="border px-3 py-3">${record.Location || 'N/A'}</td>       
+        <td class="border px-3 py-3">${record.TITLEDESC || record.Title || 'N/A'}</td>
+        <td class="border px-3 py-3 text-[13px] font-semibold">${record.Location_desc || record.Location || 'N/A'}</td>       
         <td class="border px-3 py-3">${record.gradelevel || 'N/A'}</td>
         <td class="border px-3 py-3 no-print">
           <button class="text-blue-600 hover:text-blue-800 font-semibold transition mr-2 view-details" data-type="previous" data-record='${JSON.stringify(record).replace(/'/g, "&apos;")}'>
@@ -1249,9 +1249,9 @@
       row.innerHTML = `
         <td class="border px-3 py-3 font-semibold">${record.Empl_ID || 'N/A'}</td>
         <td class="border px-3 py-3">${record.Surname || ''} ${record.OtherName || ''}</td>
-        <td class="border px-3 py-3">${record.Title || 'N/A'}</td>
-        <td class="border px-3 py-3">${record.Location || 'N/A'}</td>
-        <td class="border px-3 py-3">${record.gradelevel || 'N/A'}</td>
+        <td class="border px-3 py-3">${record.TITLEDESC || record.Title || 'N/A'}</td>
+        <td class="border px-3 py-3 text-[13px] font-semibold">${record.Location_desc || record.Location || 'N/A'}</td>
+        <td class="border px-3 py-3">${record.grpdesc || record.gradelevel || 'N/A'}</td>
         <td class="border px-3 py-3 no-print">
           <div class="flex items-center gap-2">
             <button class="text-green-600 hover:text-green-800 font-semibold transition view-details" data-type="current" data-record='${JSON.stringify(record).replace(/'/g, "&apos;")}'>
@@ -1514,40 +1514,40 @@
     const allFields = [
       { label: 'Service No', prevKey: 'Empl_ID', currKey: 'Empl_ID' },
       { label: 'Name', prevKey: 'Surname', currKey: 'Surname', concat: true },
-      { label: 'Location', prevKey: 'Location', currKey: 'Location' },
-      { label: 'Grade Level', prevKey: 'gradelevel', currKey: 'gradelevel' },
+      { label: 'Title', prevKey: 'Title', currKey: 'Title', prevDescKey: 'TITLEDESC', currDescKey: 'TITLEDESC' },
+      { label: 'Location', prevKey: 'Location', currKey: 'Location', prevDescKey: 'Location_desc', currDescKey: 'Location_desc' },
+      { label: 'Grade Level', prevKey: 'gradelevel', currKey: 'gradelevel'},
       { label: 'Status', prevKey: 'Status', currKey: 'Status' },
       { label: 'Bank Code', prevKey: 'Bankcode', currKey: 'Bankcode' },
       { label: 'Bank Account', prevKey: 'BankACNumber', currKey: 'BankACNumber' },
       { label: 'Email', prevKey: 'email', currKey: 'email' },
       { label: 'Job Title', prevKey: 'Jobtitle', currKey: 'Jobtitle' },
-      { label: 'Title', prevKey: 'Title', currKey: 'Title' },
-      { label: 'Sex', prevKey: 'Sex', currKey: 'Sex' },
+      { label: 'Sex', prevKey: 'Sex', currKey: 'Sex', prevDescKey: 'sex_desc', currDescKey: 'sex_desc' },
       { label: 'Marital Status', prevKey: 'MaritalStatus', currKey: 'MaritalStatus' },
-      { label: 'Factory', prevKey: 'Factory', currKey: 'Factory' },
+      { label: 'Factory', prevKey: 'Factory', currKey: 'Factory', prevDescKey: 'Factory_desc', currDescKey: 'Factory_desc' },
       { label: 'Birth Date', prevKey: 'Birthdate', currKey: 'Birthdate' },
       { label: 'Date Employed', prevKey: 'DateEmpl', currKey: 'DateEmpl' },
       { label: 'Date Left', prevKey: 'DateLeft', currKey: 'DateLeft', showOldTag: true },
-      { label: 'Exit Type', prevKey: 'exittype', currKey: 'exittype', showOldTag: true },
+      { label: 'Exit Type', prevKey: 'exittype', currKey: 'exittype', prevDescKey: 'exittype_desc', currDescKey: 'exittype_desc', showOldTag: true },
       { label: 'Telephone', prevKey: 'TELEPHONE', currKey: 'TELEPHONE' },
       { label: 'Home Address', prevKey: 'HOMEADDR', currKey: 'HOMEADDR' },
       { label: 'NOK Name', prevKey: 'nok_name', currKey: 'nok_name' },
       { label: 'Bank Branch', prevKey: 'bankbranch', currKey: 'bankbranch' },
-      { label: 'State of Origin', prevKey: 'StateofOrigin', currKey: 'StateofOrigin' },
-      { label: 'Local Govt', prevKey: 'LocalGovt', currKey: 'LocalGovt' },
-      { label: 'PFA Code', prevKey: 'pfacode', currKey: 'pfacode' },
-      //{ label: 'GSM Number', prevKey: 'gsm_number', currKey: 'gsm_number' },
-      //{ label: 'Religion', prevKey: 'religion', currKey: 'religion' }
+      { label: 'State of Origin', prevKey: 'StateofOrigin', currKey: 'StateofOrigin', prevDescKey: 'Statename', currDescKey: 'Statename' },
+      { label: 'Local Govt', prevKey: 'LocalGovt', currKey: 'LocalGovt', prevDescKey: 'Lgname', currDescKey: 'Lgname' },
+      { label: 'PFA Code', prevKey: 'pfacode', currKey: 'pfacode', prevDescKey: 'pfadesc', currDescKey: 'pfadesc' }
     ];
     
     // Filter to show only changed fields
     const changedFields = allFields.filter(field => {
-      let prevVal = prevRecord?.[field.prevKey] || '';
-      let currVal = currRecord?.[field.currKey] || '';
+      let prevVal, currVal;
       
       if (field.concat) {
         prevVal = `${prevRecord?.Surname || ''} ${prevRecord?.OtherName || ''}`.trim();
         currVal = `${currRecord?.Surname || ''} ${currRecord?.OtherName || ''}`.trim();
+      } else {
+        prevVal = prevRecord?.[field.prevKey] || '';
+        currVal = currRecord?.[field.currKey] || '';
       }
       
       return String(prevVal) !== String(currVal);
@@ -1567,12 +1567,28 @@
     `;
     
     changedFields.forEach(field => {
-      let prevVal = prevRecord?.[field.prevKey] || 'N/A';
-      let currVal = currRecord?.[field.currKey] || 'N/A';
+      let prevVal, currVal;
       
       if (field.concat) {
         prevVal = `${prevRecord?.Surname || ''} ${prevRecord?.OtherName || ''}`.trim() || 'N/A';
         currVal = `${currRecord?.Surname || ''} ${currRecord?.OtherName || ''}`.trim() || 'N/A';
+      } else {
+        // Use description if available
+        if (field.prevDescKey && prevRecord?.[field.prevDescKey]) {
+          const code = prevRecord?.[field.prevKey] || '';
+          const desc = prevRecord?.[field.prevDescKey] || '';
+          prevVal = desc ? `${desc} (${code})` : (code || 'N/A');
+        } else {
+          prevVal = prevRecord?.[field.prevKey] || 'N/A';
+        }
+        
+        if (field.currDescKey && currRecord?.[field.currDescKey]) {
+          const code = currRecord?.[field.currKey] || '';
+          const desc = currRecord?.[field.currDescKey] || '';
+          currVal = desc ? `${desc} (${code})` : (code || 'N/A');
+        } else {
+          currVal = currRecord?.[field.currKey] || 'N/A';
+        }
       }
       
       html += `
@@ -1593,7 +1609,7 @@
     comparisonModalContent.innerHTML = html;
     comparisonModal.classList.remove('hidden');
   }
-
+    
   // Show comparison modal with all fields
   function showComparisonModal(emplId) {
     const prevRecord = fullPrevData[emplId];
@@ -1607,30 +1623,28 @@
     const allFields = [
       { label: 'Service No.', prevKey: 'Empl_ID', currKey: 'Empl_ID' },
       { label: 'Name', prevKey: 'Surname', currKey: 'Surname', concat: true },
-      { label: 'Title', prevKey: 'Title', currKey: 'Title' },
-      { label: 'Sex', prevKey: 'Sex', currKey: 'Sex' },
+      { label: 'Title', prevKey: 'Title', currKey: 'Title', prevDescKey: 'TITLEDESC', currDescKey: 'TITLEDESC' },
+      { label: 'Sex', prevKey: 'Sex', currKey: 'Sex', prevDescKey: 'sex_desc', currDescKey: 'sex_desc' },
       { label: 'Job Title', prevKey: 'Jobtitle', currKey: 'Jobtitle' },
       { label: 'Marital Status', prevKey: 'MaritalStatus', currKey: 'MaritalStatus' },
-      { label: 'Factory', prevKey: 'Factory', currKey: 'Factory' },
-      { label: 'Location', prevKey: 'Location', currKey: 'Location' },
+      { label: 'Factory', prevKey: 'Factory', currKey: 'Factory', prevDescKey: 'Factory_desc', currDescKey: 'Factory_desc' },
+      { label: 'Location', prevKey: 'Location', currKey: 'Location', prevDescKey: 'Location_desc', currDescKey: 'Location_desc' },
       { label: 'Birth Date', prevKey: 'Birthdate', currKey: 'Birthdate' },
       { label: 'Date Employed', prevKey: 'DateEmpl', currKey: 'DateEmpl' },
       { label: 'Date Left', prevKey: 'DateLeft', currKey: 'DateLeft', showOldTag: true },
-      { label: 'Exit Type', prevKey: 'exittype', currKey: 'exittype', showOldTag: true },
+      { label: 'Exit Type', prevKey: 'exittype', currKey: 'exittype', prevDescKey: 'exittype_desc', currDescKey: 'exittype_desc', showOldTag: true },
       { label: 'Telephone', prevKey: 'TELEPHONE', currKey: 'TELEPHONE' },
       { label: 'Home Address', prevKey: 'HOMEADDR', currKey: 'HOMEADDR' },
       { label: 'NOK Name', prevKey: 'nok_name', currKey: 'nok_name' },
       { label: 'Bank Code', prevKey: 'Bankcode', currKey: 'Bankcode' },
       { label: 'Bank Branch', prevKey: 'bankbranch', currKey: 'bankbranch' },
       { label: 'Bank Account', prevKey: 'BankACNumber', currKey: 'BankACNumber' },
-      { label: 'State of Origin', prevKey: 'StateofOrigin', currKey: 'StateofOrigin' },
-      { label: 'Local Govt', prevKey: 'LocalGovt', currKey: 'LocalGovt' },
+      { label: 'State of Origin', prevKey: 'StateofOrigin', currKey: 'StateofOrigin', prevDescKey: 'Statename', currDescKey: 'Statename' },
+      { label: 'Local Govt', prevKey: 'LocalGovt', currKey: 'LocalGovt', prevDescKey: 'Lgname', currDescKey: 'Lgname' },
       { label: 'Status', prevKey: 'Status', currKey: 'Status' },
-      { label: 'Grade Level', prevKey: 'gradelevel', currKey: 'gradelevel' },
+      { label: 'Grade Level', prevKey: 'gradelevel', currKey: 'gradelevel'},
       { label: 'Email', prevKey: 'email', currKey: 'email' },
-      { label: 'PFA Code', prevKey: 'pfacode', currKey: 'pfacode' },
-      //{ label: 'GSM Number', prevKey: 'gsm_number', currKey: 'gsm_number' },
-      //{ label: 'Religion', prevKey: 'religion', currKey: 'religion' }
+      { label: 'PFA Code', prevKey: 'pfacode', currKey: 'pfacode', prevDescKey: 'pfadesc', currDescKey: 'pfadesc' }
     ];
     
     let html = `
@@ -1654,12 +1668,28 @@
     `;
     
     allFields.forEach(field => {
-      let prevVal = prevRecord?.[field.prevKey] || 'N/A';
-      let currVal = currRecord?.[field.currKey] || 'N/A';
+      let prevVal, currVal;
       
       if (field.concat) {
         prevVal = `${prevRecord?.Surname || ''} ${prevRecord?.OtherName || ''}`.trim() || 'N/A';
         currVal = `${currRecord?.Surname || ''} ${currRecord?.OtherName || ''}`.trim() || 'N/A';
+      } else {
+        // Use description if available
+        if (field.prevDescKey && prevRecord?.[field.prevDescKey]) {
+          const code = prevRecord?.[field.prevKey] || '';
+          const desc = prevRecord?.[field.prevDescKey] || '';
+          prevVal = desc ? `${desc} (${code})` : (code || 'N/A');
+        } else {
+          prevVal = prevRecord?.[field.prevKey] || 'N/A';
+        }
+        
+        if (field.currDescKey && currRecord?.[field.currDescKey]) {
+          const code = currRecord?.[field.currKey] || '';
+          const desc = currRecord?.[field.currDescKey] || '';
+          currVal = desc ? `${desc} (${code})` : (code || 'N/A');
+        } else {
+          currVal = currRecord?.[field.currKey] || 'N/A';
+        }
       }
 
       // Add (Old Employee) tag
@@ -1678,7 +1708,7 @@
         <tr class="${changed ? 'bg-yellow-50' : ''}">
           <td class="border px-3 py-2 font-medium">${field.label}</td>
           <td class="border px-3 py-2 text-blue-700 font-semibold">${prevVal}</td>
-          <td class="border px-3 py-2 text-green-700 font-semibold text-green-700 ${changed ? 'font-semibold text-green-700' : ''}">${currVal}</td>
+          <td class="border px-3 py-2 text-green-700 font-semibold ${changed ? 'font-semibold text-green-700' : ''}">${currVal}</td>
           <td class="border px-3 py-2 text-center">
             ${changed ? '<i class="fas fa-check-circle text-orange-600"></i>' : '<i class="fas fa-minus-circle text-gray-400"></i>'}
           </td>
@@ -1694,36 +1724,36 @@
     
     comparisonModalContent.innerHTML = html;
     comparisonModal.classList.remove('hidden');
-  }
-  
+  }  
+    
   // Show details modal
   function showDetailsModal(record, type) {
     const fields = [
       { label: 'Service No.', key: 'Empl_ID' },
       { label: 'Surname', key: 'Surname' },
       { label: 'Other Name', key: 'OtherName' },
-      { label: 'Title', key: 'Title' },
-      { label: 'Sex', key: 'Sex' },
+      { label: 'Title', key: 'Title', descKey: 'TITLEDESC' },
+      { label: 'Sex', key: 'Sex', descKey: 'sex_desc' },
       { label: 'Job Title', key: 'Jobtitle' },
       { label: 'Marital Status', key: 'MaritalStatus' },
-      { label: 'Factory', key: 'Factory' },
-      { label: 'Location', key: 'Location' },
+      { label: 'Factory', key: 'Factory', descKey: 'Factory_desc' },
+      { label: 'Location', key: 'Location', descKey: 'Location_desc' },
       { label: 'Birth Date', key: 'Birthdate' },
       { label: 'Date Employed', key: 'DateEmpl' },
       { label: 'Date Left', key: 'DateLeft', showOldTag: true },
-      { label: 'Exit Type', key: 'exittype', showOldTag: true },
+      { label: 'Exit Type', key: 'exittype', descKey: 'exittype_desc', showOldTag: true },
       { label: 'Telephone', key: 'TELEPHONE' },
       { label: 'Home Address', key: 'HOMEADDR' },
       { label: 'NOK Name', key: 'nok_name' },
       { label: 'Bank Code', key: 'Bankcode' },
       { label: 'Bank Branch', key: 'bankbranch' },
       { label: 'Bank Account', key: 'BankACNumber' },
-      { label: 'State of Origin', key: 'StateofOrigin' },
-      { label: 'Local Govt', key: 'LocalGovt' },
+      { label: 'State of Origin', key: 'StateofOrigin', descKey: 'Statename' },
+      { label: 'Local Govt', key: 'LocalGovt', descKey: 'Lgname' },
       { label: 'Status', key: 'Status' },
       { label: 'Grade Level', key: 'gradelevel' },
       { label: 'Email', key: 'email' },
-      { label: 'PFA Code', key: 'pfacode' }
+      { label: 'PFA Code', key: 'pfacode', descKey: 'pfadesc' }
     ];
     
     if (type === 'previous') {
@@ -1736,7 +1766,18 @@
     modalContent.innerHTML = `
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         ${fields.map(field => {
-          let value = field.key === 'period' ? formatPeriod(record[field.key] || '') : (record[field.key] || 'N/A');
+          let value;
+          if (field.key === 'period') {
+            value = formatPeriod(record[field.key] || '');
+          } else if (field.descKey && record[field.descKey]) {
+            // Use description if available, show code in parentheses
+            const code = record[field.key] || '';
+            const desc = record[field.descKey] || '';
+            value = desc ? `${desc} (${code})` : (code || 'N/A');
+          } else {
+            value = record[field.key] || 'N/A';
+          }
+          
           let displayValue = value;
           
           // Add (Old Employee) tag if field has value and showOldTag is true
@@ -1755,7 +1796,7 @@
     `;
     
     detailsModal.classList.remove('hidden');
-  }
+  } 
   
   // Update pagination
   function updatePrevPagination() {
@@ -2003,6 +2044,7 @@
     
     reportTypeTabs.classList.add('hidden');
     reportsContainer.classList.add('hidden');
+    analysisReportSection.classList.add('hidden');
     mainForm.classList.remove('hidden');
   });
   
@@ -2422,9 +2464,9 @@
       row.innerHTML = `
         <td class="border px-3 py-3 font-semibold">${record.Empl_ID || 'N/A'}</td>
         <td class="border px-3 py-3">${record.Surname || ''} ${record.OtherName || ''}</td>
-        <td class="border px-3 py-3">${record.Title || 'N/A'}</td>
-        <td class="border px-3 py-3">${record.Location || 'N/A'}</td>
-        <td class="border px-3 py-3">${record.gradelevel || 'N/A'}</td>
+        <td class="border px-3 py-3">${record.TITLEDESC || record.Title || 'N/A'}</td>
+        <td class="border px-3 py-3 text-[13px] font-semibold">${record.Location_desc || record.Location || 'N/A'}</td>
+        <td class="border px-3 py-3">${record.grpdesc || record.gradelevel || 'N/A'}</td>
         <td class="border px-3 py-3">${categoryBadge}</td>
         <td class="border px-3 py-3 analysis-changes-column ${!shouldShowChanges ? 'hidden' : ''}">
           ${shouldShowChanges && record.changesCount > 0 ? 
@@ -2438,7 +2480,6 @@
           </button>
         </td>
       `;
-      
       tbody.appendChild(row);
     });
     
@@ -2447,57 +2488,51 @@
       btn.addEventListener('click', async (e) => {
         const emplId = e.currentTarget.getAttribute('data-id');
         const record = analysisData.find(r => r.Empl_ID === emplId);
-        
+
         if (!record) return;
-        
-        // If it's a new employee, show details modal instead of comparison
+
+        // NEW employee → only current details, no comparison
         if (record.category === 'new') {
           showDetailsModal(record, 'current');
           return;
         }
-        
-        // For old employees, existing employees, and changed employees - try to fetch and compare
+
         try {
           showLoading('Loading employee data...');
           await fetchEmployeeData(emplId);
           hideLoading();
-          
-          // Check if comparison data was successfully fetched
-          const hasPrevData = fullPrevData[emplId] && Object.keys(fullPrevData[emplId]).length > 0;
-          const hasCurrData = fullCurrData[emplId] && Object.keys(fullCurrData[emplId]).length > 0;
-          
-          if (!hasPrevData && !hasCurrData) {
-            // No data at all - show error
+
+          const prev = fullPrevData[emplId] || null;
+          const curr = fullCurrData[emplId] || null;
+
+          // If both missing
+          if (!prev && !curr) {
             showAlert('Error', 'Employee data not found', 'error');
             return;
           }
-          
-          if (hasPrevData && !hasCurrData) {
-            // Only previous data exists (old employee who left before current period)
-            // Show their previous details
-            showDetailsModal(fullPrevData[emplId], 'previous');
+
+          // If only previous exists → OLD employee that has left before current period
+          if (prev && !curr) {
+            showDetailsModal(prev, 'previous');
             return;
           }
-          
-          if (!hasPrevData && hasCurrData) {
-            // Only current data exists (shouldn't happen for old, but handle it)
-            showDetailsModal(record, 'current');
+
+          // If only current exists → fallback to show current
+          if (!prev && curr) {
+            showDetailsModal(curr, 'current');
             return;
           }
-          
-          // Has both previous and current data - show comparison
+
+          // At this point, BOTH prev & curr exist
           showComparisonModal(emplId);
-          
+
         } catch (error) {
           hideLoading();
           console.error('Error fetching employee data:', error);
-          
-          // On error, try to show current details as fallback
-          if (record && Object.keys(record).length > 0) {
-            showDetailsModal(record, 'current');
-          } else {
-            showAlert('Error', 'Unable to load employee data', 'error');
-          }
+
+          // Fallback
+          if (record) showDetailsModal(record, 'current');
+          else showAlert('Error', 'Unable to load employee data', 'error');
         }
       });
     });

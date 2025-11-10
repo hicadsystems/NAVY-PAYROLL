@@ -484,7 +484,7 @@ exports.getPersonnelDetailsView = async (req, res) => {
     const endPeriod = currentPeriod;
     
     // Calculate start period (2 years back)
-    const startYear = parseInt(year) - 1;
+    const startYear = parseInt(year) - 2;
     const startMonth = parseInt(month);
     const startPeriod = `${startYear}${String(startMonth).padStart(2, '0')}`;
 

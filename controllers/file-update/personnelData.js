@@ -314,6 +314,71 @@ exports.getCurrentPersonnelDetails = async (req, res) => {
 };
 
 /**
+ * GET: Analysis - categorize personnel by new, changes, old
+ */
+exports.getPersonnelAnalysis = async (req, res) => {
+  try {
+    const { 
+      startPeriod, 
+      endPeriod, 
+      filter = 'all',
+      searchQuery,
+      page = 1,
+      limit = 5
+    } = req.query;
+
+    if (!startPeriod || !endPeriod) {
+      return res.status(400).json({
+        status: 'FAILED',
+        error: 'Start and end periods are required'
+      });
+    }
+
+    const [bt05Rows] = await pool.query(
+      "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
+    );
+
+    if (!bt05Rows.length) {
+      return res.status(404).json({ 
+        status: 'FAILED',
+        error: 'BT05 not found' 
+      });
+    }
+
+    const { year, month } = bt05Rows[0];
+    
+    const result = await personnelDetailsService.getPersonnelAnalysis(
+      year, 
+      month, 
+      {
+        startPeriod,
+        endPeriod,
+        filter,
+        searchQuery,
+        page: parseInt(page),
+        limit: parseInt(limit)
+      }
+    );
+
+    res.json({
+      status: 'SUCCESS',
+      reportType: 'ANALYSIS',
+      filters: { startPeriod, endPeriod, filter, searchQuery },
+      retrievedAt: new Date().toISOString(),
+      records: result.records,
+      stats: result.stats,
+      pagination: result.pagination
+    });
+  } catch (err) {
+    console.error('Error getting personnel analysis:', err);
+    res.status(500).json({ 
+      status: 'FAILED', 
+      message: err.message 
+    });
+  }
+};
+
+/**
  * GET: Comparison between previous and current details
  */
 exports.getPersonnelDetailsComparison = async (req, res) => {
@@ -816,6 +881,87 @@ exports.exportCurrentDetailsExcel = async (req, res) => {
 
     // Generate filename
     const filename = `current_personnel_details_${year}_${month}${employeeId && employeeId !== 'ALL' ? '_' + employeeId : ''}.xlsx`;
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error('Excel export error:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * GET: Export analysis to Excel
+ */
+exports.exportAnalysisExcel = async (req, res) => {
+  try {
+    const { startPeriod, endPeriod, filter = 'all' } = req.query;
+    
+    const [bt05Rows] = await pool.query(
+      "SELECT ord AS year, mth AS month FROM py_stdrate WHERE type='BT05' LIMIT 1"
+    );
+
+    if (!bt05Rows.length) {
+      return res.status(404).json({ error: 'BT05 not found' });
+    }
+
+    const { year, month } = bt05Rows[0];
+
+    // Get all records for export
+    const records = await personnelDetailsService.exportAnalysisExcel({
+      startPeriod,
+      endPeriod,
+      filter
+    });
+
+    // Create workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Personnel Analysis');
+
+    // Add header
+    worksheet.addRow(['PERSONNEL ANALYSIS REPORT']);
+    worksheet.addRow([`Period: ${month}/${year}`]);
+    worksheet.addRow([`Generated: ${new Date().toLocaleString()}`]);
+    worksheet.addRow([`Filter: ${filter.toUpperCase()}`]);
+    worksheet.addRow([]);
+
+    // Define columns
+    const columns = [
+      { header: 'Employee ID', key: 'Empl_ID', width: 15 },
+      { header: 'Surname', key: 'Surname', width: 20 },
+      { header: 'Other Name', key: 'OtherName', width: 25 },
+      { header: 'Location', key: 'Location', width: 15 },
+      { header: 'Grade Level', key: 'gradelevel', width: 12 },
+      { header: 'Status', key: 'Status', width: 12 },
+      { header: 'Category', key: 'category', width: 15 },
+      { header: 'Changes Count', key: 'changesCount', width: 15 },
+      { header: 'Email', key: 'email', width: 30 }
+    ];
+
+    worksheet.columns = columns;
+
+    // Style header row
+    const headerRow = worksheet.getRow(6);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF9333EA' }
+    };
+
+    // Add data rows
+    records.forEach(record => {
+      worksheet.addRow({
+        ...record,
+        category: record.category.toUpperCase()
+      });
+    });
+
+    // Generate filename
+    const filename = `personnel_analysis_${filter}_${year}_${month}.xlsx`;
     
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);

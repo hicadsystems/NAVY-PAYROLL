@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-//const pool = require('../../config/db'); // mysql2 pool
+const pool = require('../../config/db'); // mysql2 pool
 const verifyToken = require('../../middware/authentication');
 
 const { getAvailablePeriods } = require('../../controllers/file-update/personnelData');
@@ -21,6 +21,9 @@ router.get('/current', verifyToken, getCurrentPersonnelDetails );
 const {getPersonnelDetailsView  } = require('../../controllers/file-update/personnelData');
 router.get('/view', verifyToken, getPersonnelDetailsView );
 
+const { getPersonnelAnalysis } = require('../../controllers/file-update/personnelData');
+router.get('/analysis', verifyToken, getPersonnelAnalysis);
+
 const { getPersonnelDetailsComparison } = require('../../controllers/file-update/personnelData');
 router.get('/compare', verifyToken, getPersonnelDetailsComparison);
 
@@ -36,10 +39,24 @@ router.get('/export/excel-prev', verifyToken, exportPreviousDetailsExcel);
 const { exportCurrentDetailsExcel } = require('../../controllers/file-update/personnelData');
 router.get('/export/excel-cur', verifyToken, exportCurrentDetailsExcel);
 
+const { exportAnalysisExcel } = require('../../controllers/file-update/personnelData');
+router.get('/analysis/export/excel', verifyToken, exportAnalysisExcel);
+
 const { exportPreviousDetailsPDF } = require('../../controllers/file-update/personnelData');
 router.get('/export/pdf-prev', verifyToken, exportPreviousDetailsPDF);
 
 const { exportCurrentDetailsPDF } = require('../../controllers/file-update/personnelData');
 router.get('/export/pdf-cur', verifyToken, exportCurrentDetailsPDF);
+
+// Update BT05 to 775
+router.put('/update-stage', verifyToken, async (req, res) => {
+  const user = req.user?.fullname || req.user_fullname || 'System Auto';
+
+  await pool.query(
+    "UPDATE py_stdrate SET sun = 775, createdby = ? WHERE type = 'BT05'", 
+    [user]
+  );
+  res.json({ message: 'BT05 marked as ready (775).' });
+});
 
 module.exports = router;

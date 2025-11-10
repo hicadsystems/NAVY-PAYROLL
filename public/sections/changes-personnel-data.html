@@ -37,8 +37,11 @@
     <button id="comparisonReportTab" class="flex-1 px-4 py-3 text-sm lg:text-base font-semibold rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200">
       <i class="fas fa-exchange-alt mr-2"></i>Compare (Max 5)
     </button>
+    <button id="analysisReportTab" class="flex-1 px-4 py-3 text-sm lg:text-base font-semibold rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200">
+      <i class="fas fa-chart-line mr-2"></i>Analysis
+    </button>
     <button id="regenerateBtn" class="px-6 py-3 text-sm lg:text-base font-semibold rounded-lg text-gray-600 hover:text-gray-900 hover:bg-green-500 transition-all duration-200">
-      <i class="fas fa-redo mr-2"></i>Generate New Report
+      <i class="fas fa-plus-circle mr-2"></i> New Report
     </button>
   </div>
 
@@ -197,6 +200,21 @@
             </button>
           </div>
         </div>
+
+        <!-- Success Banner -->
+        <div id="nextStepBanner" class="mt-6 no-print">
+          <div class="flex items-start">
+            <i class="fas fa-check-circle text-green-500 text-3xl mr-4"></i>
+            <div class="flex-1">
+              <h4 class="text-green-800 font-bold text-lg mb-2">Personnel Changes Loaded Successfully!</h4>
+              <p class="text-green-700 mb-4">Review the Results above, filter as needed, and export reports. Ready to proceed?</p>
+              <button onclick="window.navigation && window.navigation.navigateToSection && window.navigation.navigateToSection('input-variable-report', 'Input Variable Report')" 
+                      class="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">
+                <i class="fas fa-file-alt mr-2"></i>Input Variable Report
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -286,6 +304,110 @@
           </button>-->
         </div>
         <div id="comparisonContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analysis Section -->
+  <div id="analysisReportSection" class="hidden">
+    <div class="rounded-lg mb-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold text-purple-900">
+          <i class="fas fa-chart-line mr-2"></i>Personnel Analysis
+          <span id="analysisRecordCount" class="text-sm text-gray-600"></span>
+        </h3>
+        
+        <!-- Filter Dropdown -->
+        <div class="flex gap-2 items-center no-print">
+          <div class="relative">
+            <input 
+              type="text" 
+              id="analysisSearchInput"
+              class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 pl-10 pr-10"
+              placeholder="Search by Service No, Name..."
+            />
+            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+            <button id="analysisClearSearch" class="hidden absolute right-3 top-2 text-gray-500 hover:text-gray-700">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <label class="text-sm font-medium text-gray-700">Filter by:</label>
+          <select id="analysisFilter" class="border-2 border-purple-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500">
+            <option value="all">All Personnel</option>
+            <option value="new">New Employees</option>
+            <option value="changes">Personnel with Changes</option>
+            <option value="old">Old Employees (Left)</option>
+          </select>
+          
+          <button id="analysisExportExcel" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition">
+            <i class="fas fa-file-excel mr-2"></i>Excel
+          </button>
+          <!--<button id="analysisPrint" class="px-4 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 transition">
+            <i class="fas fa-print mr-2"></i>Print
+          </button>-->
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full border border-gray-200 text-sm">
+          <thead class="bg-purple-100 text-purple-900">
+            <tr>
+              <th class="border px-3 py-2 text-left">Service No.</th>
+              <th class="border px-3 py-2 text-left">Full Name</th>
+              <th class="border px-3 py-2 text-left">Rank</th>
+              <th class="border px-3 py-2 text-left">Location</th>
+              <th class="border px-3 py-2 text-left">Grade Level</th>            
+              <th class="border px-3 py-2 text-left">Category</th>
+              <th class="border px-3 py-2 text-left" id="analysisChangesHeader">Changes</th>
+              <th class="border px-3 py-2 text-left no-print">Action</th>
+            </tr>
+          </thead>
+          <tbody id="analysisTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex justify-between items-center mt-4 no-print">
+        <div class="text-sm text-gray-600">
+          Showing <span id="analysisShowingStart">0</span> to <span id="analysisShowingEnd">0</span> of <span id="analysisTotalRecords">0</span> records
+        </div>
+        <div class="flex gap-2">
+          <button id="analysisFirstPage" class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition disabled:opacity-50">
+            <i class="fas fa-angle-double-left"></i>
+          </button>
+          <button id="analysisPrevPage" class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition disabled:opacity-50">
+            <i class="fas fa-angle-left"></i>
+          </button>
+          <span id="analysisPageInfo" class="px-4 py-2 bg-purple-50 text-purple-900 rounded-lg font-medium">Page 1 of 1</span>
+          <button id="analysisNextPage" class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition disabled:opacity-50">
+            <i class="fas fa-angle-right"></i>
+          </button>
+          <button id="analysisLastPage" class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition disabled:opacity-50">
+            <i class="fas fa-angle-double-right"></i>
+          </button>
+        </div>
+      </div>
+
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+        <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+          <div class="text-blue-600 text-sm font-semibold mb-1">Total Personnel</div>
+          <div id="statTotal" class="text-2xl font-bold text-blue-900">0</div>
+        </div>
+        <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+          <div class="text-green-600 text-sm font-semibold mb-1">New Employees</div>
+          <div id="statNew" class="text-2xl font-bold text-green-900">0</div>
+        </div>
+        <div class="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
+          <div class="text-yellow-600 text-sm font-semibold mb-1">With Changes</div>
+          <div id="statChanges" class="text-2xl font-bold text-yellow-900">0</div>
+        </div>
+        <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+          <div class="text-red-600 text-sm font-semibold mb-1">Old Employees</div>
+          <div id="statOld" class="text-2xl font-bold text-red-900">0</div>
+        </div>
       </div>
     </div>
   </div>
@@ -385,6 +507,7 @@
   let prevData = [];
   let prevPage = 1;
   let prevTotalPages = 1;
+  let prevTotalRecords = 0;
   let prevSearchQuery = '';
   let prevAllData = [];
   let fullPrevData = {}; // Store all previous records by Empl_ID
@@ -393,9 +516,20 @@
   let currData = [];
   let currPage = 1;
   let currTotalPages = 1;
+  let currTotalRecords = 0;
   let currSearchQuery = '';
   let currAllData = [];
   let fullCurrData = {}; // Store all current records by Empl_ID
+
+  // Analysis Report State
+  let analysisData = [];
+  let analysisPage = 1;
+  let analysisTotalPages = 1;
+  let analysisTotalRecords = 0;
+  let analysisFilter = 'all';
+  let analysisSearchQuery = '';
+  let analysisSearchTimeout = null;
+  let analysisStats = { total: 0, new: 0, changes: 0, old: 0 };
 
   
   // Active tab
@@ -409,6 +543,8 @@
   const prevClearSearch = document.getElementById('prevClearSearch');
   const currSearchInput = document.getElementById('currSearchInput');
   const currClearSearch = document.getElementById('currClearSearch');
+  const analysisSearchInput = document.getElementById('analysisSearchInput');
+  const analysisClearSearch = document.getElementById('analysisClearSearch');
 
   
   // DOM - Main Form
@@ -424,18 +560,21 @@
   const clearBtn = document.getElementById('clearBtn');
   const generateBtn = document.getElementById('generateBtn');
   const notReadyMessage = document.getElementById('notReadyMessage');
+  const nextStepBanner = document.getElementById('nextStepBanner');
   
   // DOM - Report Tabs
   const reportTypeTabs = document.getElementById('reportTypeTabs');
   const previousReportTab = document.getElementById('previousReportTab');
   const currentReportTab = document.getElementById('currentReportTab');
   const comparisonReportTab = document.getElementById('comparisonReportTab');
+  const analysisReportTab = document.getElementById('analysisReportTab');
   
   // DOM - Reports Container
   const reportsContainer = document.getElementById('reportsContainer');
   const previousReportSection = document.getElementById('previousReportSection');
   const currentReportSection = document.getElementById('currentReportSection');
   const comparisonReportSection = document.getElementById('comparisonReportSection');
+  const analysisReportSection = document.getElementById('analysisReportSection');
   const regenerateBtn = document.getElementById('regenerateBtn');
   
   // DOM - Modals
@@ -452,6 +591,7 @@
   const alertCloseBtn = document.getElementById('alertCloseBtn');
   const loadingModal = document.getElementById('loadingModal');
   const loadingMessage = document.getElementById('loadingMessage');
+  const analysisFilterSelect = document.getElementById('analysisFilter');
   
   // Helpers
   function showAlert(title, message, type = 'error') {
@@ -828,10 +968,12 @@
       prevData = prevDataRes.records || [];
       prevPage = 1;
       prevTotalPages = prevDataRes.pagination?.totalPages || 1;
+      prevTotalRecords = prevDataRes.pagination?.totalRecords || 0;
       
       currData = currDataRes.records || [];
       currPage = 1;
       currTotalPages = currDataRes.pagination?.totalPages || 1;
+      currTotalRecords = currDataRes.pagination?.totalRecords || 0;
       
       // Reset comparison set on new generation
       comparisonSet.clear();
@@ -871,6 +1013,7 @@
         prevData = data.records || [];
         prevPage = page;
         prevTotalPages = data.pagination?.totalPages || 1;
+        prevTotalRecords = data.pagination?.totalRecords || 0;
         renderPrevTable();
       }
     } catch (err) {
@@ -900,6 +1043,7 @@
         currData = data.records || [];
         currPage = page;
         currTotalPages = data.pagination?.totalPages || 1;
+        currTotalRecords = data.pagination?.totalRecords || 0;
         renderCurrTable();
       }
     } catch (err) {
@@ -913,8 +1057,8 @@
   async function updateStage(stage) {
     try {
       const token = localStorage.getItem('token');
-      await fetch('/update-stage', {
-        method: 'POST',
+      await fetch(`${API_BASE}/update-stage`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -962,8 +1106,8 @@
     activeTab = tab;
     
     // Update tab buttons
-    [previousReportTab, currentReportTab, comparisonReportTab].forEach(btn => {
-      btn.classList.remove('bg-yellow-50/25', 'text-blue-900', 'shadow-md', 'border-2', 'border-blue-500', 'border-green-500', 'border-yellow-500');
+    [previousReportTab, currentReportTab, analysisReportTab, comparisonReportTab].forEach(btn => {
+      btn.classList.remove('bg-yellow-50/25', 'text-blue-900', 'shadow-md', 'border-2', 'border-blue-500', 'border-green-500', 'border-purple-500', 'border-yellow-500');
       btn.classList.add('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-50');
     });
     
@@ -973,18 +1117,33 @@
       previousReportSection.classList.remove('hidden');
       currentReportSection.classList.add('hidden');
       comparisonReportSection.classList.add('hidden');
+      analysisReportSection.classList.add('hidden');
     } else if (tab === 'current') {
       currentReportTab.classList.add('bg-yellow-50/25', 'text-blue-900', 'shadow-md', 'border-2', 'border-green-500');
       currentReportTab.classList.remove('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-50');
       previousReportSection.classList.add('hidden');
       currentReportSection.classList.remove('hidden');
       comparisonReportSection.classList.add('hidden');
+      analysisReportSection.classList.add('hidden');
+    } else if (tab === 'analysis') {
+      analysisReportTab.classList.add('bg-yellow-50/25', 'text-blue-900', 'shadow-md', 'border-2', 'border-purple-500');
+      analysisReportTab.classList.remove('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-50');
+      previousReportSection.classList.add('hidden');
+      currentReportSection.classList.add('hidden');
+      comparisonReportSection.classList.add('hidden');
+      analysisReportSection.classList.remove('hidden');
+      
+      // Fetch analysis data if not already loaded
+      if (analysisData.length === 0) {
+        fetchAnalysisData();
+      }
     } else {
       comparisonReportTab.classList.add('bg-yellow-50/25', 'text-blue-900', 'shadow-md', 'border-2', 'border-yellow-500');
       comparisonReportTab.classList.remove('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-50');
       previousReportSection.classList.add('hidden');
       currentReportSection.classList.add('hidden');
       comparisonReportSection.classList.remove('hidden');
+      analysisReportSection.classList.add('hidden');
     }
   }
 
@@ -993,7 +1152,7 @@
     const tbody = document.getElementById('prevTableBody');
     tbody.innerHTML = '';
     
-    document.getElementById('prevRecordCount').textContent = `(Page ${prevPage} of ${prevTotalPages})`;
+    document.getElementById('prevRecordCount').textContent = `(${prevTotalRecords} record${prevTotalRecords !== 1 ? 's' : ''})`;
     
     if (prevData.length === 0) {
       tbody.innerHTML = `
@@ -1062,7 +1221,7 @@
     const tbody = document.getElementById('currTableBody');
     tbody.innerHTML = '';
     
-    document.getElementById('currRecordCount').textContent = `(Page ${currPage} of ${currTotalPages})`;
+    document.getElementById('currRecordCount').textContent = `(${currTotalRecords} record${currTotalRecords !== 1 ? 's' : ''})`;
     
     if (currData.length === 0) {
       tbody.innerHTML = `
@@ -1143,7 +1302,7 @@
     
     // Update action buttons based on API response
     currData.forEach(record => {
-      const placeholder = tbody.querySelector(`.action-placeholder-${record.Empl_ID}`);
+      const placeholder = tbody.querySelector(`.action-placeholder-${CSS.escape(record.Empl_ID)}`);
       if (!placeholder) return;
       
       const existsInPrevious = employeesInPrevious.has(record.Empl_ID);
@@ -1214,7 +1373,7 @@
         <div class="text-center py-12 text-gray-500">
           <i class="fas fa-users text-4xl mb-3"></i>
           <p class="text-lg">No personnel selected for comparison</p>
-          <p class="text-sm mt-2">Click "Compare" button on any record in Previous or Current tabs</p>
+          <p class="text-sm mt-2">Click "Compare" button on any record in Current Details tab</p>
         </div>
       `;
       return;
@@ -1601,11 +1760,11 @@
   // Update pagination
   function updatePrevPagination() {
     const start = prevData.length > 0 ? (prevPage - 1) * RECORDS_PER_PAGE + 1 : 0;
-    const end = Math.min((prevPage - 1) * RECORDS_PER_PAGE + prevData.length, prevPage * RECORDS_PER_PAGE);
+    const end = Math.min((prevPage - 1) * RECORDS_PER_PAGE + prevData.length, prevTotalRecords);
     
     document.getElementById('prevShowingStart').textContent = start;
     document.getElementById('prevShowingEnd').textContent = end;
-    document.getElementById('prevTotalRecords').textContent = prevTotalPages * RECORDS_PER_PAGE; // Approximate total
+    document.getElementById('prevTotalRecords').textContent = prevTotalRecords; // Use actual total
     document.getElementById('prevPageInfo').textContent = `Page ${prevPage} of ${prevTotalPages}`;
     
     document.getElementById('prevFirstPage').disabled = prevPage === 1;
@@ -1616,18 +1775,18 @@
 
   function updateCurrPagination() {
     const start = currData.length > 0 ? (currPage - 1) * RECORDS_PER_PAGE + 1 : 0;
-    const end = Math.min((currPage - 1) * RECORDS_PER_PAGE + currData.length, currPage * RECORDS_PER_PAGE);
+    const end = Math.min((currPage - 1) * RECORDS_PER_PAGE + currData.length, currTotalRecords);
     
     document.getElementById('currShowingStart').textContent = start;
     document.getElementById('currShowingEnd').textContent = end;
-    document.getElementById('currTotalRecords').textContent = currTotalPages * RECORDS_PER_PAGE; // Approximate total
+    document.getElementById('currTotalRecords').textContent = currTotalRecords; // Use actual total
     document.getElementById('currPageInfo').textContent = `Page ${currPage} of ${currTotalPages}`;
     
     document.getElementById('currFirstPage').disabled = currPage === 1;
     document.getElementById('currPrevPage').disabled = currPage === 1;
     document.getElementById('currNextPage').disabled = currPage >= currTotalPages;
     document.getElementById('currLastPage').disabled = currPage >= currTotalPages;
-  }  
+  }
   
   // Export handlers (Previous)
   document.getElementById('prevExportExcel').addEventListener('click', async () => {
@@ -1828,6 +1987,7 @@
   previousReportTab.addEventListener('click', () => switchTab('previous'));
   currentReportTab.addEventListener('click', () => switchTab('current'));
   comparisonReportTab.addEventListener('click', () => switchTab('comparison'));
+  analysisReportTab.addEventListener('click', () => switchTab('analysis'));
   
   // Regenerate button
   regenerateBtn.addEventListener('click', () => {
@@ -1857,7 +2017,6 @@
       showLoading('Loading last report...');
       const token = localStorage.getItem('token');
       
-      // Fetch both reports with auto-calculated periods
       const [prevRes, currRes] = await Promise.all([
         fetch(`${API_BASE}/view?reportType=previous&page=1&limit=${RECORDS_PER_PAGE}`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -1878,25 +2037,21 @@
       const currDataRes = await currRes.json();
       
       if (prevDataRes.status === 'SUCCESS' && currDataRes.status === 'SUCCESS') {
-        // Store the filters returned from backend
         currentFilters = prevDataRes.filters || {};
         
-        // Store data
         prevData = prevDataRes.records || [];
         prevPage = 1;
         prevTotalPages = prevDataRes.pagination?.totalPages || 1;
+        prevTotalRecords = prevDataRes.pagination?.totalRecords || 0; // Store actual total
         
         currData = currDataRes.records || [];
         currPage = 1;
         currTotalPages = currDataRes.pagination?.totalPages || 1;
+        currTotalRecords = currDataRes.pagination?.totalRecords || 0; // Store actual total
         
-        // Reset comparison set
         comparisonSet.clear();
-        
-        // Mark as generated
         hasGenerated = true;
         
-        // Update UI
         updateUIVisibility();
         renderPrevTable();
         renderCurrTable();
@@ -1936,6 +2091,7 @@
         prevData = data.records || [];
         prevPage = 1;
         prevTotalPages = data.pagination?.totalPages || 1;
+        prevTotalRecords = data.pagination?.totalRecords || 0;
         renderPrevTable();
       }
     } catch (err) {
@@ -1972,6 +2128,7 @@
         currData = data.records || [];
         currPage = 1;
         currTotalPages = data.pagination?.totalPages || 1;
+        currTotalRecords = data.pagination?.totalRecords || 0;
         renderCurrTable();
       }
     } catch (err) {
@@ -2090,6 +2247,335 @@
     }
   }
   
+  //------ Analssis Section Full --------//
+  // Filter change handler
+  analysisFilterSelect.addEventListener('change', (e) => {
+    analysisFilter = e.target.value;
+    analysisPage = 1;
+    fetchAnalysisData();
+
+    // Show/hide changes column based on filter
+    toggleAnalysisChangesColumn();
+  });
+
+  // Search handlers
+  analysisSearchInput.addEventListener('input', (e) => {
+    analysisSearchQuery = e.target.value.toLowerCase().trim();
+    
+    // Clear existing timeout
+    if (analysisSearchTimeout) {
+      clearTimeout(analysisSearchTimeout);
+    }
+    
+    if (analysisSearchQuery) {
+      analysisClearSearch.classList.remove('hidden');
+      
+      // Debounce search - wait 500ms after user stops typing
+      analysisSearchTimeout = setTimeout(() => {
+        analysisPage = 1;
+        fetchAnalysisData();
+      }, 500);
+    } else {
+      analysisClearSearch.classList.add('hidden');
+      analysisPage = 1;
+      fetchAnalysisData();
+    }
+  });
+
+  analysisClearSearch.addEventListener('click', () => {
+    analysisSearchInput.value = '';
+    analysisSearchQuery = '';
+    analysisClearSearch.classList.add('hidden');
+    analysisPage = 1;
+    fetchAnalysisData();
+  });
+
+  // Toggle changes column visibility
+  function toggleAnalysisChangesColumn() {
+    const changesHeader = document.getElementById('analysisChangesHeader');
+    const changesColumns = document.querySelectorAll('.analysis-changes-column');
+    
+    if (analysisFilter === 'new') {
+      changesHeader.classList.add('hidden');
+      changesColumns.forEach(col => col.classList.add('hidden'));
+    } else {
+      changesHeader.classList.remove('hidden');
+      changesColumns.forEach(col => col.classList.remove('hidden'));
+    }
+  }
+
+  // Fetch analysis data
+  async function fetchAnalysisData() {
+    try {
+      showLoading('Loading analysis...');
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams({
+        ...currentFilters,
+        filter: analysisFilter,
+        page: analysisPage,
+        limit: RECORDS_PER_PAGE
+      });
+      
+      // Add search query if present
+      if (analysisSearchQuery) {
+        params.append('searchQuery', analysisSearchQuery);
+      }
+      
+      const res = await fetch(`${API_BASE}/analysis?${params.toString()}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      hideLoading();
+      
+      if (!res.ok) throw new Error('Failed to fetch analysis data');
+      
+      const data = await res.json();
+      
+      if (data.status === 'SUCCESS') {
+        analysisData = data.records || [];
+        analysisPage = data.pagination?.page || 1;
+        analysisTotalPages = data.pagination?.totalPages || 1;
+        analysisTotalRecords = data.pagination?.totalRecords || 0;
+        analysisStats = data.stats || { total: 0, new: 0, changes: 0, old: 0 };
+        
+        renderAnalysisTable();
+        updateAnalysisStats();
+        updateAnalysisPagination();
+        toggleAnalysisChangesColumn();
+      }
+    } catch (err) {
+      hideLoading();
+      console.error('Error fetching analysis data:', err);
+      showAlert('Error', err.message, 'error');
+    }
+  }
+
+  // Render analysis table
+  function renderAnalysisTable() {
+    const tbody = document.getElementById('analysisTableBody');
+    tbody.innerHTML = '';
+    
+    // Update h3 text based on filter
+    const filterTexts = {
+      'all': 'All Personnel',
+      'new': 'New Employees',
+      'changes': 'Personnel with Changes',
+      'old': 'Old Employees'
+    };
+    
+    const analysisHeader = document.querySelector('#analysisReportSection h3');
+    if (analysisHeader) {
+      analysisHeader.innerHTML = `
+        <i class="fas fa-chart-line mr-2"></i>${filterTexts[analysisFilter] || 'Personnel Analysis'}
+        <span id="analysisRecordCount" class="text-sm text-gray-600">(${analysisTotalRecords} record${analysisTotalRecords !== 1 ? 's' : ''})</span>
+      `;
+    }
+    
+    if (analysisData.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+            <i class="fas fa-inbox text-4xl mb-2"></i>
+            <br><span class="text-lg font-medium">No records found</span>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    analysisData.forEach(record => {
+      const row = document.createElement('tr');
+      row.className = 'hover:bg-purple-50 transition';
+      
+      // Determine category badge
+      let categoryBadge = '';
+      let category = record.category;
+      
+      // Override category if employee has left (use the oldEmployees array from stats)
+      // This ensures consistency with backend categorization
+      if (category === 'old') {
+        categoryBadge = '<span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800"><i class="fas fa-user-times mr-1"></i>Left</span>';
+      } else if (category === 'new') {
+        categoryBadge = '<span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800"><i class="fas fa-plus-circle mr-1"></i>New</span>';
+      } else if (category === 'changed' || record.changesCount > 0) {
+        categoryBadge = '<span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800"><i class="fas fa-exclamation-triangle mr-1"></i>Changed</span>';
+      } else {
+        categoryBadge = '<span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800"><i class="fas fa-check-circle mr-1"></i>No Change</span>';
+      }
+      
+      // Update the stored category for the click handler
+      record.category = category;
+      
+      // Show/hide changes column based on filter
+      const shouldShowChanges = analysisFilter !== 'new';
+
+      // For old employees, show changes count if they have any
+      let changesDisplay = '';
+      if (shouldShowChanges) {
+        if (record.changesCount > 0) {
+          changesDisplay = `<span class="text-yellow-600 font-semibold">${record.changesCount} field${record.changesCount > 1 ? 's' : ''}</span>`;
+        } else {
+          changesDisplay = '<span class="text-gray-400">-</span>';
+        }
+      }
+      
+      row.innerHTML = `
+        <td class="border px-3 py-3 font-semibold">${record.Empl_ID || 'N/A'}</td>
+        <td class="border px-3 py-3">${record.Surname || ''} ${record.OtherName || ''}</td>
+        <td class="border px-3 py-3">${record.Title || 'N/A'}</td>
+        <td class="border px-3 py-3">${record.Location || 'N/A'}</td>
+        <td class="border px-3 py-3">${record.gradelevel || 'N/A'}</td>
+        <td class="border px-3 py-3">${categoryBadge}</td>
+        <td class="border px-3 py-3 analysis-changes-column ${!shouldShowChanges ? 'hidden' : ''}">
+          ${shouldShowChanges && record.changesCount > 0 ? 
+            `<span class="text-yellow-600 font-semibold">${record.changesCount} field${record.changesCount > 1 ? 's' : ''}</span>` : 
+            shouldShowChanges ? '<span class="text-gray-400">-</span>' : ''
+          }
+        </td>
+        <td class="border px-3 py-3 no-print">
+          <button class="text-purple-600 hover:text-purple-800 font-semibold transition view-analysis-details" data-id="${record.Empl_ID}">
+            <i class="fas fa-eye mr-1"></i>View
+          </button>
+        </td>
+      `;
+      
+      tbody.appendChild(row);
+    });
+    
+    // Add event listeners
+    tbody.querySelectorAll('.view-analysis-details').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const emplId = e.currentTarget.getAttribute('data-id');
+        const record = analysisData.find(r => r.Empl_ID === emplId);
+        
+        if (!record) return;
+        
+        // If it's a new employee, show details modal instead of comparison
+        if (record.category === 'new') {
+          showDetailsModal(record, 'current');
+          return;
+        }
+        
+        // For old employees, existing employees, and changed employees - try to fetch and compare
+        try {
+          showLoading('Loading employee data...');
+          await fetchEmployeeData(emplId);
+          hideLoading();
+          
+          // Check if comparison data was successfully fetched
+          const hasPrevData = fullPrevData[emplId] && Object.keys(fullPrevData[emplId]).length > 0;
+          const hasCurrData = fullCurrData[emplId] && Object.keys(fullCurrData[emplId]).length > 0;
+          
+          if (!hasPrevData && !hasCurrData) {
+            // No data at all - show error
+            showAlert('Error', 'Employee data not found', 'error');
+            return;
+          }
+          
+          if (hasPrevData && !hasCurrData) {
+            // Only previous data exists (old employee who left before current period)
+            // Show their previous details
+            showDetailsModal(fullPrevData[emplId], 'previous');
+            return;
+          }
+          
+          if (!hasPrevData && hasCurrData) {
+            // Only current data exists (shouldn't happen for old, but handle it)
+            showDetailsModal(record, 'current');
+            return;
+          }
+          
+          // Has both previous and current data - show comparison
+          showComparisonModal(emplId);
+          
+        } catch (error) {
+          hideLoading();
+          console.error('Error fetching employee data:', error);
+          
+          // On error, try to show current details as fallback
+          if (record && Object.keys(record).length > 0) {
+            showDetailsModal(record, 'current');
+          } else {
+            showAlert('Error', 'Unable to load employee data', 'error');
+          }
+        }
+      });
+    });
+  }
+
+  // Update stats
+  function updateAnalysisStats() {
+    document.getElementById('statTotal').textContent = analysisStats.total || 0;
+    document.getElementById('statNew').textContent = analysisStats.new || 0;
+    document.getElementById('statChanges').textContent = analysisStats.changes || 0;
+    document.getElementById('statOld').textContent = analysisStats.old || 0;
+  }
+
+  // Update pagination
+  function updateAnalysisPagination() {
+    const start = analysisData.length > 0 ? (analysisPage - 1) * RECORDS_PER_PAGE + 1 : 0;
+    const end = Math.min((analysisPage - 1) * RECORDS_PER_PAGE + analysisData.length, analysisTotalRecords);
+    
+    document.getElementById('analysisShowingStart').textContent = start;
+    document.getElementById('analysisShowingEnd').textContent = end;
+    document.getElementById('analysisTotalRecords').textContent = analysisTotalRecords; // Use actual total
+    document.getElementById('analysisPageInfo').textContent = `Page ${analysisPage} of ${analysisTotalPages}`;
+    
+    document.getElementById('analysisFirstPage').disabled = analysisPage === 1;
+    document.getElementById('analysisPrevPage').disabled = analysisPage === 1;
+    document.getElementById('analysisNextPage').disabled = analysisPage >= analysisTotalPages;
+    document.getElementById('analysisLastPage').disabled = analysisPage >= analysisTotalPages;
+  }
+
+  // Pagination event listeners
+  document.getElementById('analysisFirstPage').addEventListener('click', () => {
+    analysisPage = 1;
+    fetchAnalysisData();
+  });
+  document.getElementById('analysisPrevPage').addEventListener('click', () => {
+    if (analysisPage > 1) {
+      analysisPage--;
+      fetchAnalysisData();
+    }
+  });
+  document.getElementById('analysisNextPage').addEventListener('click', () => {
+    if (analysisPage < analysisTotalPages) {
+      analysisPage++;
+      fetchAnalysisData();
+    }
+  });
+  document.getElementById('analysisLastPage').addEventListener('click', () => {
+    analysisPage = analysisTotalPages;
+    fetchAnalysisData();
+  });
+
+  // Export handlers
+  document.getElementById('analysisExportExcel').addEventListener('click', async () => {
+    try {
+      showLoading('Generating Excel...');
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams({
+        ...currentFilters,
+        filter: analysisFilter
+      });
+      const res = await fetch(`${API_BASE}/analysis/export/excel?${params.toString()}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      hideLoading();
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `personnel_analysis_${analysisFilter}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.click();
+      showAlert('Success', 'Excel exported successfully', 'success');
+    } catch (err) {
+      hideLoading();
+      showAlert('Export Failed', err.message, 'error');
+    }
+  });
+
   // Initialize
   function initialize() {
     //fetchAvailablePeriods();

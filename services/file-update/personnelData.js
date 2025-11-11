@@ -170,18 +170,18 @@ exports.getPreviousPersonnelDetails = async (year, month, user, filters = {}) =>
     let queryParams = [];
 
     if (startPeriod && endPeriod) {
-      whereConditions.push('h.period BETWEEN ? AND ?');
+      whereConditions.push('period BETWEEN ? AND ?');
       queryParams.push(startPeriod, endPeriod);
     } else if (startPeriod) {
-      whereConditions.push('h.period >= ?');
+      whereConditions.push('period >= ?');
       queryParams.push(startPeriod);
     } else if (endPeriod) {
-      whereConditions.push('h.period <= ?');
+      whereConditions.push('period <= ?');
       queryParams.push(endPeriod);
     }
 
     if (employeeId && employeeId !== 'ALL') {
-      whereConditions.push('h.Empl_ID = ?');
+      whereConditions.push('Empl_ID = ?');
       queryParams.push(employeeId);
     }
 
@@ -189,38 +189,91 @@ exports.getPreviousPersonnelDetails = async (year, month, user, filters = {}) =>
       ? 'WHERE ' + whereConditions.join(' AND ') 
       : '';
 
-    // Get total count
+    // Count only distinct employees
     const countQuery = `
-      SELECT COUNT(*) as total
-      FROM py_emplhistory h
+      SELECT COUNT(DISTINCT Empl_ID) as total
+      FROM py_emplhistory
       ${whereClause}
     `;
     const [countResult] = await pool.query(countQuery, queryParams);
     const totalRecords = countResult[0].total;
     const totalPages = Math.ceil(totalRecords / limit);
 
-    // Get paginated data with joins
+    // Get paginated list of unique employees with their max period
+    const employeeListQuery = `
+      SELECT 
+        Empl_ID, 
+        MAX(period) as max_period
+      FROM py_emplhistory
+      ${whereClause}
+      GROUP BY Empl_ID
+      ORDER BY Empl_ID
+      LIMIT ? OFFSET ?
+    `;
+    
+    const [employeeList] = await pool.query(employeeListQuery, [...queryParams, limit, offset]);
+    
+    if (employeeList.length === 0) {
+      await updateLog(logId, 'SUCCESS', 'No records found.');
+      return {
+        records: [],
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalRecords,
+          recordsPerPage: limit,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1
+        }
+      };
+    }
+
+    // Fetch ONE record per employee with consistent tie-breaker
     const descFields = await getDescriptionFields('h');
     const joins = (await getDescriptionJoins()).replace(/{table}/g, 'h');
     
-    const dataQuery = `
-      SELECT 
-        h.period,
-        ${descFields},
-        CONCAT(h.Surname, ' ', IFNULL(h.OtherName, '')) as full_name
-      FROM py_emplhistory h
-      ${joins}
-      ${whereClause}
-      ORDER BY h.period DESC, h.Surname, h.OtherName
-      LIMIT ? OFFSET ?
-    `;
+    const records = [];
+    
+    for (const emp of employeeList) {
+      // FIXED: Use multiple tie-breakers for authentic consistency
+      // Priority: Latest period → Latest date created → Latest date employed → Alphabetically first surname
+      const dataQuery = `
+        SELECT 
+          h.period,
+          ${descFields},
+          CONCAT(h.Surname, ' ', IFNULL(h.OtherName, '')) as full_name
+        FROM py_emplhistory h
+        ${joins}
+        WHERE h.Empl_ID = ? AND h.period = ?
+        ORDER BY 
+          h.datecreated DESC,
+          h.DateEmpl DESC,
+          h.Surname ASC,
+          h.OtherName ASC
+        LIMIT 1
+      `;
+      
+      const [rows] = await pool.query(dataQuery, [emp.Empl_ID, emp.max_period]);
+      if (rows.length > 0) {
+        records.push(rows[0]);
+      }
+    }
 
-    const [rows] = await pool.query(dataQuery, [...queryParams, limit, offset]);
+    // Sort final results
+    records.sort((a, b) => {
+      // Sort by period descending
+      if (b.period !== a.period) {
+        return String(b.period).localeCompare(String(a.period), undefined, { numeric: true });
+      }
+      const nameA = `${a.Surname || ''} ${a.OtherName || ''}`;
+      const nameB = `${b.Surname || ''} ${b.OtherName || ''}`;
+      return nameA.localeCompare(nameB);
+    });
 
-    await updateLog(logId, 'SUCCESS', `Retrieved ${rows.length} of ${totalRecords} previous personnel records.`);
+    await updateLog(logId, 'SUCCESS', `Retrieved ${records.length} of ${totalRecords} unique personnel records.`);
 
     return {
-      records: rows,
+      records,
       pagination: {
         currentPage: page,
         totalPages,

@@ -291,7 +291,7 @@ router.post("/restore", verifyToken, async (req, res) => {
                     if (originalFilename.endsWith('.gz')) {
                         command = `gunzip < "${restoreFile}" | mysql ${mysqlOptions} ${database}`;
                     } else {
-                        command = `mysql ${mysqlOptions} ${database} < "${restoreFile}"`;
+                         command = `sed 's/DEFINER=\`[^\\\`]*\`@\`[^\\\`]*\`//g' "${restoreFile}" | mysql ${mysqlOptions} ${database}`;
                     }
                     break;
                     

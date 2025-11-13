@@ -42,10 +42,10 @@
       </div>
     </div>
     <h3 class="text-green-700 font-bold text-xl mb-2">Master File Updated Successfully!</h3>
-    <p class="text-green-600 font-semibold mb-4">All payroll master files have been updated. You can now proceed to backup.</p>
+    <p class="text-green-600 font-semibold mb-4">All payroll master files have been updated. You can now proceed to Payroll Calculations.</p>
     
     <!-- Summary Stats -->
-    <div id="updateSummary" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 max-w-3xl mx-auto">
+    <!--<div id="updateSummary" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 max-w-3xl mx-auto">
       <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
         <div class="text-blue-600 text-sm font-medium">Employees Processed</div>
         <div id="summaryEmployees" class="text-3xl font-bold text-blue-900">0</div>
@@ -58,7 +58,7 @@
         <div class="text-purple-600 text-sm font-medium">Total Amount</div>
         <div id="summaryAmount" class="text-3xl font-bold text-purple-900">₦0.00</div>
       </div>
-    </div>
+    </div>-->
         
     <button onclick="window.navigation && window.navigation.navigateToSection && window.navigation.navigateToSection('payroll-calculations', 'Payroll Calculations')" 
             class="px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">
@@ -67,12 +67,12 @@
   </div>
 
   <!-- Performance Log (Hidden until update is run) -->
-  <div id="performanceLog" class="hidden mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+  <!--<div id="performanceLog" class="hidden mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
     <h4 class="font-bold text-gray-800 mb-3 flex items-center">
       <i class="fas fa-chart-line mr-2 text-blue-600"></i>Performance Details
     </h4>
     <div id="performanceLogContent" class="space-y-2 text-sm text-gray-700"></div>
-  </div>
+  </div>-->
 </div>
 
 <!-- Confirmation Modal -->
@@ -215,12 +215,12 @@
   const updateMainContent = document.getElementById('updateMainContent');
   const updateActionContainer = document.getElementById('updateActionContainer');
   const saveConfirm = document.getElementById('saveConfirm');
-  const performanceLog = document.getElementById('performanceLog');
-  const performanceLogContent = document.getElementById('performanceLogContent');
-  const updateSummary = document.getElementById('updateSummary');
-  const summaryEmployees = document.getElementById('summaryEmployees');
-  const summaryRecords = document.getElementById('summaryRecords');
-  const summaryAmount = document.getElementById('summaryAmount');
+  //const performanceLog = document.getElementById('performanceLog');
+  //const performanceLogContent = document.getElementById('performanceLogContent');
+  //const updateSummary = document.getElementById('updateSummary');
+  //const summaryEmployees = document.getElementById('summaryEmployees');
+  //const summaryRecords = document.getElementById('summaryRecords');
+  //const summaryAmount = document.getElementById('summaryAmount');
 
   // Modal Elements
   const modal = document.getElementById('updateModal');
@@ -299,14 +299,14 @@
       topActionBarUpdate.classList.add('hidden');
       updateActionContainer.classList.add('hidden');
       saveConfirm.classList.remove('hidden');
-      performanceLog.classList.remove('hidden');
+      //performanceLog.classList.remove('hidden');
     } else if (currentPayrollStage >= STAGE_INPUT_VAR_READY) {
       // Ready to update: hide top bar, show button enabled
       topActionBarUpdate.classList.add('hidden');
       updateMainContent.classList.remove('hidden');
       updateActionContainer.classList.remove('hidden');
       saveConfirm.classList.add('hidden');
-      performanceLog.classList.add('hidden');
+      //performanceLog.classList.add('hidden');
       openBtn.disabled = false;
       openBtn.classList.remove('opacity-50', 'cursor-not-allowed');
       openBtn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update Master File';
@@ -316,7 +316,7 @@
       updateMainContent.classList.remove('hidden');
       updateActionContainer.classList.remove('hidden');
       saveConfirm.classList.add('hidden');
-      performanceLog.classList.add('hidden');
+      //performanceLog.classList.add('hidden');
       openBtn.disabled = true;
       openBtn.classList.add('opacity-50', 'cursor-not-allowed');
       openBtn.innerHTML = '<i class="fas fa-lock mr-2"></i>Waiting for Input Variable Report';
@@ -345,7 +345,7 @@
   // Main Update Function
   confirmBtn.addEventListener('click', async () => {
     saveConfirm.classList.add('hidden');
-    performanceLog.classList.add('hidden');
+    //performanceLog.classList.add('hidden');
     statusEl.classList.remove('hidden');
     statusEl.className = 'mt-4 p-3 rounded-lg bg-blue-50 text-blue-700';
     statusEl.textContent = 'Starting master file update...';
@@ -408,30 +408,6 @@
       }
 
       addLog('Master file update completed successfully', 'success');
-
-      // Update summary
-      if (data.data) {
-        summaryEmployees.textContent = data.data.employeesProcessed || 0;
-        summaryRecords.textContent = data.data.totalRecords || 0;
-        summaryAmount.textContent = formatCurrency(data.data.totalAmount || 0);
-      }
-
-      // Show performance log if available
-      if (data.performanceLog && Array.isArray(data.performanceLog)) {
-        performanceLogContent.innerHTML = data.performanceLog.map(log => `
-          <div class="flex items-center justify-between py-2 border-b border-gray-200">
-            <span class="font-medium">${log.procedure_name}</span>
-            <div class="flex items-center space-x-4">
-              <span class="text-xs text-gray-500">${log.records_processed} records</span>
-              <span class="text-xs text-gray-500">${log.execution_time_ms}ms</span>
-              <span class="text-xs ${log.status === 'SUCCESS' ? 'text-green-600' : 'text-red-600'}">
-                <i class="fas fa-${log.status === 'SUCCESS' ? 'check' : 'times'}-circle mr-1"></i>
-                ${log.status}
-              </span>
-            </div>
-          </div>
-        `).join('');
-      }
 
       hasUpdatedOnce = true;
       currentPayrollStage = STAGE_UPDATE_COMPLETED;
@@ -497,10 +473,10 @@
       // Reset if new payroll period
       if (currentPayrollStage === STAGE_DATA_ENTRY_OPEN) {
         hasUpdatedOnce = false;
-        summaryEmployees.textContent = '0';
-        summaryRecords.textContent = '0';
-        summaryAmount.textContent = '₦0.00';
-        performanceLogContent.innerHTML = '';
+        //summaryEmployees.textContent = '0';
+        //summaryRecords.textContent = '0';
+        //summaryAmount.textContent = '₦0.00';
+        //performanceLogContent.innerHTML = '';
       }
       
       updateUIVisibility();

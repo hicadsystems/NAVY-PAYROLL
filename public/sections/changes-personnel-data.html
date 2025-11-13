@@ -1183,7 +1183,7 @@
         <td class="border px-3 py-3 font-semibold">${record.Empl_ID || 'N/A'}</td>
         <td class="border px-3 py-3">${record.Surname || ''} ${record.OtherName || ''}</td>
         <td class="border px-3 py-3">${record.TITLEDESC || record.Title || 'N/A'}</td>
-        <td class="border px-3 py-3 text-[13px] font-semibold">${record.Location_desc || record.Location || 'N/A'}</td>       
+        <td class="border px-3 py-3 text-[11px] font-bold">${record.Location_desc || record.Location || 'N/A'}</td>       
         <td class="border px-3 py-3">${record.gradelevel || 'N/A'}</td>
         <td class="border px-3 py-3 no-print">
           <button class="text-blue-600 hover:text-blue-800 font-semibold transition mr-2 view-details" data-type="previous" data-record='${JSON.stringify(record).replace(/'/g, "&apos;")}'>
@@ -1250,7 +1250,7 @@
         <td class="border px-3 py-3 font-semibold">${record.Empl_ID || 'N/A'}</td>
         <td class="border px-3 py-3">${record.Surname || ''} ${record.OtherName || ''}</td>
         <td class="border px-3 py-3">${record.TITLEDESC || record.Title || 'N/A'}</td>
-        <td class="border px-3 py-3 text-[13px] font-semibold">${record.Location_desc || record.Location || 'N/A'}</td>
+        <td class="border px-3 py-3 text-[11px] font-bold">${record.Location_desc || record.Location || 'N/A'}</td>
         <td class="border px-3 py-3">${record.grpdesc || record.gradelevel || 'N/A'}</td>
         <td class="border px-3 py-3 no-print">
           <div class="flex items-center gap-2">
@@ -1927,42 +1927,6 @@
   //document.getElementById('prevPrint').addEventListener('click', () => window.print());
   //document.getElementById('currPrint').addEventListener('click', () => window.print());
   //document.getElementById('compPrint').addEventListener('click', () => window.print());
-  
-  // Pagination event listeners (Previous)
-  document.getElementById('prevFirstPage').addEventListener('click', () => { 
-    fetchPrevPage(1); 
-  });
-  document.getElementById('prevPrevPage').addEventListener('click', () => { 
-    if (prevPage > 1) { 
-      fetchPrevPage(prevPage - 1); 
-    } 
-  });
-  document.getElementById('prevNextPage').addEventListener('click', () => { 
-    if (prevPage < prevTotalPages) { 
-      fetchPrevPage(prevPage + 1); 
-    } 
-  });
-  document.getElementById('prevLastPage').addEventListener('click', () => { 
-    fetchPrevPage(prevTotalPages); 
-  });
-
-  // Pagination event listeners (Current)
-  document.getElementById('currFirstPage').addEventListener('click', () => { 
-    fetchCurrPage(1); 
-  });
-  document.getElementById('currPrevPage').addEventListener('click', () => { 
-    if (currPage > 1) { 
-      fetchCurrPage(currPage - 1); 
-    } 
-  });
-  document.getElementById('currNextPage').addEventListener('click', () => { 
-    if (currPage < currTotalPages) { 
-      fetchCurrPage(currPage + 1); 
-    } 
-  });
-  document.getElementById('currLastPage').addEventListener('click', () => { 
-    fetchCurrPage(currTotalPages); 
-  });
 
   // Search Event listeners
   prevSearchInput.addEventListener('input', (e) => {
@@ -2109,8 +2073,10 @@
   // Search previous data via backend
   async function searchPreviousData(query) {
     try {
-      //showLoading('Searching...');
+      showLoading('Searching...');
       const token = localStorage.getItem('token');
+
+      prevSearchQuery = query;
       
       const params = new URLSearchParams({
         ...currentFilters,
@@ -2146,8 +2112,10 @@
   // Search current data via backend
   async function searchCurrentData(query) {
     try {
-      //showLoading('Searching...');
+      showLoading('Searching...');
       const token = localStorage.getItem('token');
+
+      currSearchQuery = query;
       
       const params = new URLSearchParams({
         ...currentFilters,
@@ -2187,7 +2155,7 @@
     }
     
     try {
-      //showLoading('Loading page...');
+      showLoading('Loading page...');
       const token = localStorage.getItem('token');
       
       const params = new URLSearchParams({
@@ -2226,7 +2194,7 @@
     }
     
     try {
-      //showLoading('Loading page...');
+      showLoading('Loading page...');
       const token = localStorage.getItem('token');
       
       const params = new URLSearchParams({
@@ -2465,7 +2433,7 @@
         <td class="border px-3 py-3 font-semibold">${record.Empl_ID || 'N/A'}</td>
         <td class="border px-3 py-3">${record.Surname || ''} ${record.OtherName || ''}</td>
         <td class="border px-3 py-3">${record.TITLEDESC || record.Title || 'N/A'}</td>
-        <td class="border px-3 py-3 text-[13px] font-semibold">${record.Location_desc || record.Location || 'N/A'}</td>
+        <td class="border px-3 py-3 text-[11px] font-bold">${record.Location_desc || record.Location || 'N/A'}</td>
         <td class="border px-3 py-3">${record.grpdesc || record.gradelevel || 'N/A'}</td>
         <td class="border px-3 py-3">${categoryBadge}</td>
         <td class="border px-3 py-3 analysis-changes-column ${!shouldShowChanges ? 'hidden' : ''}">

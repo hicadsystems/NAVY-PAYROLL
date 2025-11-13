@@ -42,7 +42,7 @@ exports.runUpdates = async (year, month, indicator, user) => {
     // Step 3: Run master file updates (calls all 6 sub-procedures)
     console.log('Running py_update_payrollfiles...');
     const [updateResult] = await connection.query(
-      `CALL py_update_payrollfiles(?, ?)`, 
+      `CALL py_update_payrollfiles_optimized(?, ?)`, 
       ['NAVY', 'Yes']
     );
     console.log(`Master file updates completed`);

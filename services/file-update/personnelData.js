@@ -877,21 +877,227 @@ function countFieldChanges(prevRecord, currRecord) {
 }
 
 /**
- * Export analysis to Excel
+ * Export analysis to Excel with Previous vs Current comparison
  */
 exports.exportAnalysisExcel = async (filters = {}) => {
   const { startPeriod, endPeriod, filter = 'all' } = filters;
   
-  // Get all records without pagination
-  const result = await exports.getPersonnelAnalysis(0, 0, {
-    startPeriod,
-    endPeriod,
-    filter,
-    page: 1,
-    limit: 999999 // Get all records
+  // Get all employee IDs based on filter
+  const [allHistoricalEmployees] = await pool.query(`
+    SELECT DISTINCT Empl_ID 
+    FROM py_emplhistory
+    WHERE period >= ? AND period <= ?
+  `, [startPeriod, endPeriod]);
+  const historicalEmployeeIds = new Set(allHistoricalEmployees.map(e => e.Empl_ID));
+
+  const [oldEmployeesList] = await pool.query(`
+    SELECT Empl_ID 
+    FROM hr_employees 
+    WHERE (DateLeft IS NOT NULL AND TRIM(DateLeft) != '') 
+       OR (exittype IS NOT NULL AND TRIM(exittype) != '')
+  `);
+  const oldEmployees = oldEmployeesList.map(e => e.Empl_ID);
+  const oldEmployeeIds = new Set(oldEmployees);
+
+  const [currEmployees] = await pool.query('SELECT Empl_ID FROM hr_employees');
+  const allCurrentEmployeeIds = new Set(currEmployees.map(e => e.Empl_ID));
+
+  // Categorize employees
+  const newEmployees = [...allCurrentEmployeeIds].filter(id => 
+    !historicalEmployeeIds.has(id) && !oldEmployeeIds.has(id)
+  );
+  
+  const existingEmployees = [...allCurrentEmployeeIds].filter(id => 
+    historicalEmployeeIds.has(id) && !oldEmployeeIds.has(id)
+  );
+
+  let targetEmployees = [];
+  
+  if (filter === 'new') {
+    targetEmployees = newEmployees;
+  } else if (filter === 'old') {
+    targetEmployees = oldEmployees;
+  } else if (filter === 'changes') {
+    targetEmployees = existingEmployees;
+  } else {
+    // 'all' - get everyone
+    targetEmployees = [...allCurrentEmployeeIds];
+  }
+
+  if (targetEmployees.length === 0) {
+    return [];
+  }
+
+  // For NEW employees, only return current data
+  if (filter === 'new') {
+    const placeholders = targetEmployees.map(() => '?').join(',');
+    const query = `
+      SELECT 
+        Empl_ID,
+        Surname as Current_Surname,
+        OtherName as Current_OtherName,
+        Title as Current_Title,
+        Sex as Current_Sex,
+        Jobtitle as Current_Jobtitle,
+        MaritalStatus as Current_MaritalStatus,
+        Factory as Current_Factory,
+        Location as Current_Location,
+        Birthdate as Current_Birthdate,
+        DateEmpl as Current_DateEmpl,
+        DateLeft as Current_DateLeft,
+        TELEPHONE as Current_TELEPHONE,
+        HOMEADDR as Current_HOMEADDR,
+        nok_name as Current_nok_name,
+        Bankcode as Current_Bankcode,
+        bankbranch as Current_bankbranch,
+        BankACNumber as Current_BankACNumber,
+        StateofOrigin as Current_StateofOrigin,
+        LocalGovt as Current_LocalGovt,
+        Status as Current_Status,
+        gradelevel as Current_gradelevel,
+        email as Current_email,
+        pfacode as Current_pfacode,
+        command as Current_command,
+        specialisation as Current_specialisation
+      FROM hr_employees
+      WHERE Empl_ID IN (${placeholders})
+      ORDER BY Surname, OtherName
+    `;
+    
+    const [records] = await pool.query(query, targetEmployees);
+    return records;
+  }
+
+  // For OLD and CHANGED employees, get both previous and current data
+  const placeholders = targetEmployees.map(() => '?').join(',');
+  
+  // Get current data
+  const currentQuery = `
+    SELECT *
+    FROM hr_employees
+    WHERE Empl_ID IN (${placeholders})
+  `;
+  const [currentRecords] = await pool.query(currentQuery, targetEmployees);
+  
+  // Get previous data (most recent in period range)
+  const previousQuery = `
+    SELECT h1.*
+    FROM py_emplhistory h1
+    INNER JOIN (
+      SELECT Empl_ID, MAX(period) as max_period
+      FROM py_emplhistory
+      WHERE Empl_ID IN (${placeholders})
+        AND period >= ? AND period <= ?
+      GROUP BY Empl_ID
+    ) h2 ON h1.Empl_ID = h2.Empl_ID AND h1.period = h2.max_period
+  `;
+  const [previousRecords] = await pool.query(previousQuery, [...targetEmployees, startPeriod, endPeriod]);
+  
+  // Create maps for easy lookup
+  const currentMap = {};
+  currentRecords.forEach(rec => {
+    currentMap[rec.Empl_ID] = rec;
   });
   
-  return result.records;
+  const previousMap = {};
+  previousRecords.forEach(rec => {
+    previousMap[rec.Empl_ID] = rec;
+  });
+  
+  // Build comparison records
+  const comparisonRecords = [];
+  
+  for (const emplId of targetEmployees) {
+    const curr = currentMap[emplId];
+    const prev = previousMap[emplId];
+    
+    if (!curr) continue;
+    
+    // Calculate changes if both exist
+    let changesCount = 0;
+    if (prev) {
+      changesCount = countFieldChanges(prev, curr);
+    }
+    
+    // For 'changes' filter, only include if there are actual changes
+    if (filter === 'changes' && changesCount === 0) {
+      continue;
+    }
+    
+    // Build comparison record with Prev_ and Current_ prefixes
+    const record = {
+      Empl_ID: emplId,
+      
+      // Previous values
+      Prev_period: prev?.period || '',
+      Prev_Surname: prev?.Surname || '',
+      Prev_OtherName: prev?.OtherName || '',
+      Prev_Title: prev?.Title || '',
+      Prev_Sex: prev?.Sex || '',
+      Prev_Jobtitle: prev?.Jobtitle || '',
+      Prev_MaritalStatus: prev?.MaritalStatus || '',
+      Prev_Factory: prev?.Factory || '',
+      Prev_Location: prev?.Location || '',
+      Prev_Birthdate: prev?.Birthdate || '',
+      Prev_DateEmpl: prev?.DateEmpl || '',
+      Prev_DateLeft: prev?.DateLeft || '',
+      Prev_TELEPHONE: prev?.TELEPHONE || '',
+      Prev_HOMEADDR: prev?.HOMEADDR || '',
+      Prev_nok_name: prev?.nok_name || '',
+      Prev_Bankcode: prev?.Bankcode || '',
+      Prev_bankbranch: prev?.bankbranch || '',
+      Prev_BankACNumber: prev?.BankACNumber || '',
+      Prev_StateofOrigin: prev?.StateofOrigin || '',
+      Prev_LocalGovt: prev?.LocalGovt || '',
+      Prev_Status: prev?.Status || '',
+      Prev_gradelevel: prev?.gradelevel || '',
+      Prev_email: prev?.email || '',
+      Prev_pfacode: prev?.pfacode || '',
+      Prev_command: prev?.command || '',
+      Prev_specialisation: prev?.specialisation || '',
+      
+      // Current values
+      Current_Surname: curr.Surname || '',
+      Current_OtherName: curr.OtherName || '',
+      Current_Title: curr.Title || '',
+      Current_Sex: curr.Sex || '',
+      Current_Jobtitle: curr.Jobtitle || '',
+      Current_MaritalStatus: curr.MaritalStatus || '',
+      Current_Factory: curr.Factory || '',
+      Current_Location: curr.Location || '',
+      Current_Birthdate: curr.Birthdate || '',
+      Current_DateEmpl: curr.DateEmpl || '',
+      Current_DateLeft: curr.DateLeft || '',
+      Current_TELEPHONE: curr.TELEPHONE || '',
+      Current_HOMEADDR: curr.HOMEADDR || '',
+      Current_nok_name: curr.nok_name || '',
+      Current_Bankcode: curr.Bankcode || '',
+      Current_bankbranch: curr.bankbranch || '',
+      Current_BankACNumber: curr.BankACNumber || '',
+      Current_StateofOrigin: curr.StateofOrigin || '',
+      Current_LocalGovt: curr.LocalGovt || '',
+      Current_Status: curr.Status || '',
+      Current_gradelevel: curr.gradelevel || '',
+      Current_email: curr.email || '',
+      Current_pfacode: curr.pfacode || '',
+      Current_command: curr.command || '',
+      Current_specialisation: curr.specialisation || '',
+      
+      // Metadata
+      changesCount: changesCount
+    };
+    
+    comparisonRecords.push(record);
+  }
+  
+  // Sort by surname
+  comparisonRecords.sort((a, b) => {
+    const nameA = `${a.Current_Surname || ''} ${a.Current_OtherName || ''}`;
+    const nameB = `${b.Current_Surname || ''} ${b.Current_OtherName || ''}`;
+    return nameA.localeCompare(nameB);
+  });
+  
+  return comparisonRecords;
 };
 
 /**
@@ -1188,56 +1394,107 @@ exports.searchPreviousPersonnelDetails = async (year, month, user, filters = {})
   const { startPeriod, endPeriod, employeeId, searchQuery, page = 1, limit = 5 } = filters;
   const offset = (page - 1) * limit;
 
-  let whereClause = 'WHERE period >= ? AND period <= ?';
-  const params = [startPeriod, endPeriod];
-
-  if (employeeId) {
-    whereClause += ' AND Empl_ID = ?';
-    params.push(employeeId);
+  if (!searchQuery || searchQuery.trim() === '') {
+    return {
+      records: [],
+      pagination: { page, limit, totalPages: 0, totalRecords: 0 }
+    };
   }
 
-  // Add search conditions
+  let whereConditions = [];
+  let queryParams = [];
+
+  if (startPeriod && endPeriod) {
+    whereConditions.push('h.period BETWEEN ? AND ?');
+    queryParams.push(startPeriod, endPeriod);
+  } else if (startPeriod) {
+    whereConditions.push('h.period >= ?');
+    queryParams.push(startPeriod);
+  } else if (endPeriod) {
+    whereConditions.push('h.period <= ?');
+    queryParams.push(endPeriod);
+  }
+
+  if (employeeId && employeeId !== 'ALL') {
+    whereConditions.push('h.Empl_ID = ?');
+    queryParams.push(employeeId);
+  }
+
+  const whereClause = whereConditions.length > 0 
+    ? 'WHERE ' + whereConditions.join(' AND ') 
+    : '';
+
   const searchLower = `%${searchQuery.toLowerCase()}%`;
-  whereClause += ` AND (
-    LOWER(Empl_ID) LIKE ? OR
-    LOWER(Surname) LIKE ? OR
-    LOWER(OtherName) LIKE ? OR
-    LOWER(CONCAT(Surname, ' ', OtherName)) LIKE ? OR
-    LOWER(Location) LIKE ? OR
-    LOWER(gradelevel) LIKE ?
+  const searchConditions = `AND (
+    LOWER(h.Empl_ID) LIKE ? OR
+    LOWER(h.Surname) LIKE ? OR
+    LOWER(h.OtherName) LIKE ? OR
+    LOWER(CONCAT(h.Surname, ' ', h.OtherName)) LIKE ?
   )`;
-  params.push(searchLower, searchLower, searchLower, searchLower, searchLower, searchLower);
+  
+  const searchParams = [searchLower, searchLower, searchLower, searchLower];
 
-  // Get total count
-  const countQuery = `
-    SELECT COUNT(*) AS total
-    FROM py_emplhistory
+  // CRITICAL OPTIMIZATION: Use indexed subquery for MAX period lookup
+  // This avoids the expensive GROUP BY with joins
+  const employeeListQuery = `
+    SELECT DISTINCT
+      h.Empl_ID,
+      (SELECT MAX(period) 
+       FROM py_emplhistory 
+       WHERE Empl_ID = h.Empl_ID 
+         AND period >= ? 
+         AND period <= ?) as max_period
+    FROM py_emplhistory h
     ${whereClause}
+    ${searchConditions}
+    LIMIT 1000
   `;
-  const [countResult] = await pool.query(countQuery, params);
-  const totalRecords = parseInt(countResult[0].total);
+  
+  const [allEmployees] = await pool.query(
+    employeeListQuery, 
+    [...queryParams, startPeriod, endPeriod, ...searchParams]
+  );
+  
+  const totalRecords = allEmployees.length;
   const totalPages = Math.ceil(totalRecords / limit);
+  
+  if (totalRecords === 0) {
+    return {
+      records: [],
+      pagination: { page, limit, totalPages: 0, totalRecords: 0 }
+    };
+  }
 
-  // Get paginated records
-  const dataQuery = `
-    SELECT *
-    FROM py_emplhistory
-    ${whereClause}
-    ORDER BY period DESC, Empl_ID
-    LIMIT ? OFFSET ?
+  // Get only the paginated slice
+  const employeeList = allEmployees.slice(offset, offset + limit);
+
+  // OPTIMIZATION: Batch fetch with optimized join order
+  const descFields = await getDescriptionFields('h');
+  const joins = (await getDescriptionJoins()).replace(/{table}/g, 'h');
+  
+  // Build efficient WHERE IN clause
+  const conditions = employeeList.map(() => '(h.Empl_ID = ? AND h.period = ?)').join(' OR ');
+  const conditionParams = [];
+  employeeList.forEach(emp => {
+    conditionParams.push(emp.Empl_ID, emp.max_period);
+  });
+
+  const batchQuery = `
+    SELECT 
+      h.period,
+      ${descFields},
+      CONCAT(h.Surname, ' ', IFNULL(h.OtherName, '')) as full_name
+    FROM py_emplhistory h
+    ${joins}
+    WHERE ${conditions}
+    ORDER BY h.period DESC, h.Surname, h.OtherName
   `;
-
-  const finalParams = [...params, limit, offset];
-  const [dataResult] = await pool.query(dataQuery, finalParams);
+  
+  const [records] = await pool.query(batchQuery, conditionParams);
 
   return {
-    records: dataResult,
-    pagination: {
-      page,
-      limit,
-      totalPages,
-      totalRecords
-    }
+    records,
+    pagination: { page, limit, totalPages, totalRecords }
   };
 };
 
@@ -1245,7 +1502,9 @@ exports.searchCurrentPersonnelDetails = async (year, month, user, filters = {}) 
   const { startPeriod, endPeriod, employeeId, searchQuery, page = 1, limit = 5 } = filters;
   const offset = (page - 1) * limit;
 
-  // Get employee IDs from previous history
+  const searchLower = `%${searchQuery.toLowerCase()}%`;
+
+  // OPTIMIZATION: Lightweight query without joins for employee IDs
   let prevQuery = `
     SELECT DISTINCT Empl_ID
     FROM py_emplhistory
@@ -1267,17 +1526,13 @@ exports.searchCurrentPersonnelDetails = async (year, month, user, filters = {}) 
     };
   }
 
-  // Extract IDs into array
   const emplIds = prevEmployeeIds.map(row => row.Empl_ID);
-
-  // Build IN clause
   const inPlaceholders = emplIds.map(() => '?').join(',');
 
-  const searchLower = `%${searchQuery.toLowerCase()}%`;
-
-  const params = [...emplIds, searchLower, searchLower, searchLower, searchLower, searchLower, searchLower];
-
-  const whereClause = `
+  // CRITICAL: Search WITHOUT joins first (much faster)
+  const lightSearchQuery = `
+    SELECT Empl_ID
+    FROM hr_employees
     WHERE Empl_ID IN (${inPlaceholders})
     AND (
       LOWER(Empl_ID) LIKE ? OR
@@ -1287,28 +1542,39 @@ exports.searchCurrentPersonnelDetails = async (year, month, user, filters = {}) 
       LOWER(Location) LIKE ? OR
       LOWER(gradelevel) LIKE ?
     )
+    ORDER BY Empl_ID
   `;
-
-  // Count query
-  const countQuery = `
-    SELECT COUNT(*) AS total
-    FROM hr_employees
-    ${whereClause}
-  `;
-  const [countResult] = await pool.query(countQuery, params);
-  const totalRecords = parseInt(countResult[0].total);
+  
+  const searchParams = [searchLower, searchLower, searchLower, searchLower, searchLower, searchLower];
+  const [matchingIds] = await pool.query(lightSearchQuery, [...emplIds, ...searchParams]);
+  
+  const totalRecords = matchingIds.length;
   const totalPages = Math.ceil(totalRecords / limit);
 
-  // Data query
+  if (totalRecords === 0) {
+    return {
+      records: [],
+      pagination: { page, limit, totalPages: 0, totalRecords: 0 }
+    };
+  }
+
+  // Get paginated slice
+  const paginatedIds = matchingIds.slice(offset, offset + limit).map(row => row.Empl_ID);
+  const paginatedPlaceholders = paginatedIds.map(() => '?').join(',');
+
+  // NOW apply joins only to paginated results
+  const descFields = await getDescriptionFields('curr');
+  const joins = (await getDescriptionJoins()).replace(/{table}/g, 'curr');
+
   const dataQuery = `
-    SELECT *
-    FROM hr_employees
-    ${whereClause}
-    ORDER BY Empl_ID
-    LIMIT ? OFFSET ?
+    SELECT ${descFields}
+    FROM hr_employees curr
+    ${joins}
+    WHERE curr.Empl_ID IN (${paginatedPlaceholders})
+    ORDER BY curr.Empl_ID
   `;
-  const dataParams = [...params, limit, offset];
-  const [dataResult] = await pool.query(dataQuery, dataParams);
+  
+  const [dataResult] = await pool.query(dataQuery, paginatedIds);
 
   return {
     records: dataResult,
@@ -1332,18 +1598,18 @@ exports.getAllPreviousDetailsForExport = async (filters = {}) => {
     let queryParams = [];
 
     if (startPeriod && endPeriod) {
-      whereConditions.push('h.period BETWEEN ? AND ?');
+      whereConditions.push('period BETWEEN ? AND ?');
       queryParams.push(startPeriod, endPeriod);
     } else if (startPeriod) {
-      whereConditions.push('h.period >= ?');
+      whereConditions.push('period >= ?');
       queryParams.push(startPeriod);
     } else if (endPeriod) {
-      whereConditions.push('h.period <= ?');
+      whereConditions.push('period <= ?');
       queryParams.push(endPeriod);
     }
 
     if (employeeId && employeeId !== 'ALL') {
-      whereConditions.push('h.Empl_ID = ?');
+      whereConditions.push('Empl_ID = ?');
       queryParams.push(employeeId);
     }
 
@@ -1351,19 +1617,29 @@ exports.getAllPreviousDetailsForExport = async (filters = {}) => {
       ? 'WHERE ' + whereConditions.join(' AND ') 
       : '';
 
-    const descFields = await getDescriptionFields('h');
-    const joins = (await getDescriptionJoins()).replace(/{table}/g, 'h');
+    const descFields = await getDescriptionFields('h1');
+    const joins = (await getDescriptionJoins()).replace(/{table}/g, 'h1');
 
+    // FIXED: Remove table alias from subquery WHERE clause
     const query = `
-      SELECT ${descFields}
-      FROM py_emplhistory h
+      SELECT 
+        h1.period,
+        ${descFields},
+        CONCAT(h1.Surname, ' ', IFNULL(h1.OtherName, '')) as full_name
+      FROM py_emplhistory h1
+      INNER JOIN (
+        SELECT Empl_ID, MAX(period) as max_period
+        FROM py_emplhistory
+        ${whereClause}
+        GROUP BY Empl_ID
+      ) h2 ON h1.Empl_ID = h2.Empl_ID AND h1.period = h2.max_period
       ${joins}
-      ${whereClause} 
-      ORDER BY h.period DESC, h.Surname, h.OtherName
+      ORDER BY h1.period DESC, h1.Surname, h1.OtherName
     `;
-    const [rows] = await pool.query(query, queryParams);
+    
+    const [records] = await pool.query(query, queryParams);
 
-    return rows;
+    return records;
   } catch (err) {
     throw err;
   }

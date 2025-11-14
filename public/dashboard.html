@@ -78,7 +78,7 @@
       <img src="photos/logo.png" alt="logo" class="hidden sm:block lg:w-[40px] h-[50px] object-contain" />
     </header>
 
-    <div class="main-content-wrapper pt-20 lg:pl-[250px] h-dvh overflow-y-auto">
+    <div class="main-content-wrapper pt-0 sm:pt-0 md:pt-2 lg:pt-2 xl:pt-20 lg:pl-[250px] h-dvh overflow-y-auto transition-all duration-300">
 
       <!-- Sidebar -->
       <aside id="sidebar" 
@@ -90,13 +90,23 @@
         <nav class="px-4 pb-6">
           <ul class="flex flex-col gap-4">
             <li class="relative">
-                <a class="nav-item flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25" href="dashboard.html">Dashboard</a>
+                <a class="nav-item flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25" 
+                  href="dashboard.html" 
+                  title="Dashboard">
+                  <span class="flex items-center gap-2">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                  </span>
+                </a>
             </li>
 
             <li class="relative" data-menu="administration">
               <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
-                href="#" aria-expanded="false" role="button" tabindex="0">
-                <span>Administration</span>
+                href="#" aria-expanded="false" role="button" tabindex="0" title="Administration">
+                <span class="flex items-center gap-2">
+                  <i class="fas fa-cog"></i>
+                  <span>Administration</span>
+                </span>
                 <img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5 ml-2 self-center transform transition-transform duration-200" />
               </a>
 
@@ -166,7 +176,11 @@
 
             <li class="relative" data-menu="personel-profile">
               <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
-                href="#" aria-expanded="false" role="button" tabindex="0"><span>Personnel Profile</span>
+                href="#" aria-expanded="false" role="button" tabindex="0">
+                <span class="flex items-center gap-2">
+                  <i class="fas fa-user"></i>
+                  <span>Personnel Profile</span>
+                </span>
                 <img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
               </a>
 
@@ -183,7 +197,12 @@
 
             <li class="relative" data-menu="data-entry">
               <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
-                href="#" aria-expanded="false" role="button" tabindex="0"><span>Data Input</span><img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
+                href="#" aria-expanded="false" role="button" tabindex="0">
+                <span class="flex items-center gap-2">
+                  <i class="fas fa-keyboard"></i>
+                  <span>Data Input</span>
+                </span>
+                <img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
               </a>
 
               <!-- submenu: positioned absolutely inside the li -->
@@ -202,7 +221,12 @@
 
             <li class="relative" data-menu="file-update">
               <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
-                href="#" aria-expanded="false" role="button" tabindex="0"><span>File Update</span><img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
+                href="#" aria-expanded="false" role="button" tabindex="0">
+                <span class="flex items-center gap-2">
+                  <i class="fas fa-sync-alt"></i>
+                  <span>File Update</span>
+                </span>
+                <img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
               </a>
 
               <!-- submenu: positioned absolutely inside the li -->
@@ -220,7 +244,13 @@
 
             <li class="relative" data-menu="payroll-calculations">
               <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
-                href="#" aria-expanded="false" role="button" tabindex="0"><span>Payroll Calculations</span><img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" /></a>
+                href="#" aria-expanded="false" role="button" tabindex="0">
+                <span class="flex items-center gap-2">
+                  <i class="fas fa-calculator"></i>
+                  <span>Payroll Calculations</span>
+                </span>
+                <img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
+              </a>
 
               <!-- submenu: positioned absolutely inside the li -->
               <div class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
@@ -236,7 +266,12 @@
 
             <li class="relative" data-menu="reference-tables">
               <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
-                href="#" aria-expanded="false" role="button" tabindex="0"><span>Reference Tables</span><img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
+                href="#" aria-expanded="false" role="button" tabindex="0">
+                <span class="flex items-center gap-2">
+                  <i class="fas fa-table"></i>
+                  <span>Reference Tables</span>
+                </span>
+                <img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
               </a>
 
               <!-- submenu: positioned absolutely inside the li -->
@@ -261,9 +296,14 @@
             </li>
 
             <li class="relative" data-menu="utilities">
-             <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
-                href="#" aria-expanded="false" role="button" tabindex="0"><span>Utilities</span><img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
-              </a>
+              <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
+                  href="#" aria-expanded="false" role="button" tabindex="0">
+                  <span class="flex items-center gap-2">
+                    <i class="fas fa-tools"></i>
+                    <span>Utilities</span>
+                  </span>
+                  <img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
+                </a>
 
               <!-- submenu: positioned absolutely inside the li -->
               <div class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
@@ -278,7 +318,12 @@
 
             <li class="relative" data-menu="reports">
               <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
-                href="#" aria-expanded="false" role="button" tabindex="0"><span>Reports</span><img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
+                href="#" aria-expanded="false" role="button" tabindex="0">
+                <span class="flex items-center gap-2">
+                  <i class="fas fa-file-alt"></i>
+                  <span>Reports</span>
+                </span>
+                <img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
               </a>
 
               <!-- submenu: positioned absolutely inside the li -->
@@ -306,7 +351,12 @@
 
             <li class="relative" data-menu="audit-trail">
               <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
-                href="#" aria-expanded="false" role="button" tabindex="0"><span>Audit Trail</span><img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
+                href="#" aria-expanded="false" role="button" tabindex="0">
+                <span class="flex items-center gap-2">
+                  <i class="fas fa-clipboard-check"></i>
+                  <span>Audit Trail</span>
+                </span>
+                <img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
               </a>
 
               <!-- submenu: positioned absolutely inside the li -->

@@ -16,6 +16,12 @@ body.no-scroll {
   transition: transform 0.3s ease-in-out;
 }
 
+/* ==================== SIDEBAR STYLES ==================== */
+
+#sidebar {
+  transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
 /* Mobile and medium sidebar */
 @media (max-width: 1023px) {
   #sidebar {
@@ -24,7 +30,7 @@ body.no-scroll {
     left: 0;
     height: 100vh;
     width: 250px;
-    transform: translateX(-1000%);
+    transform: translateX(-100%);
     z-index: 35; 
     background: #f7f5f1;
     box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), 
@@ -44,21 +50,107 @@ body.no-scroll {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 30; /* Lower than submenu overlay (40) */
+    z-index: 30;
   }
-
- 
+  
+  /* On mobile, desktop-hidden means completely hidden */
+  #sidebar.desktop-hidden {
+    display: none;
+  }
+  
+  body.sidebar-closed .main-content-wrapper {
+    padding-left: 0 !important;
+  }
 }
 
-/* Desktop sidebar - always visible, content adjusts */
+/* Desktop sidebar - 1024px to 1200px: Icon-only mode */
+@media (min-width: 1024px) and (max-width: 1200px) {
+  #sidebar.desktop-hidden {
+    width: 60px !important;
+    transform: translateX(0) !important; /* Keep visible, just narrow */
+    overflow: visible !important;
+  }
+
+  #sidebar.desktop-hidden .p-5 {
+    padding: 0.5rem !important;
+  }
+
+  #sidebar.desktop-hidden .px-4,
+  #sidebar.desktop-hidden nav {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  /* Hide text but keep icons visible */
+  #sidebar.desktop-hidden .nav-item span span {
+    display: none;
+  }
+
+  #sidebar.desktop-hidden .nav-item img {
+    display: none;
+  }
+
+  #sidebar.desktop-hidden .nav-item {
+    justify-content: center;
+    padding: 0.75rem 0.5rem;
+  }
+
+  #sidebar.desktop-hidden .nav-item i {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  #sidebar.desktop-hidden .nav-item .flex {
+    justify-content: center;
+  }
+
+  /* Logout button in icon mode */
+  #sidebar.desktop-hidden .logout {
+    padding: 0.75rem 0.5rem;
+    font-size: 0;
+  }
+
+  #sidebar.desktop-hidden .logout::before {
+    content: '\f2f5';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    font-size: 1.25rem;
+    display: inline-block;
+  }
+
+  /* Adjust main content when sidebar is collapsed */
+  body.sidebar-closed .main-content-wrapper {
+    padding-left: 60px !important;
+  }
+  
+  /* Full sidebar when open */
+  body.sidebar-open .main-content-wrapper {
+    padding-left: 250px !important;
+  }
+}
+
+/* Desktop sidebar - Above 1200px: Full width always */
+@media (min-width: 1201px) {
+  #sidebar {
+    width: 250px !important;
+    transform: translateX(0) !important;
+  }
+  
+  body.sidebar-open .main-content-wrapper {
+    padding-left: 250px !important;
+  }
+}
+
+/* Remove conflicting rules */
 @media (min-width: 1200px) {
   .main-container {
     transition: margin-left 0.3s ease-in-out;
   }
   
-  #sidebar.desktop-hidden {
+  /* REMOVE this rule - it was hiding the sidebar */
+  /* #sidebar.desktop-hidden {
     transform: translateX(-1000%);
-  }
+  } */
 }
 
 @media (max-width: 1999px) and (min-width: 1024px) {
@@ -66,9 +158,10 @@ body.no-scroll {
     transition: margin-left 0.3s ease-in-out;
   }
   
-  #sidebar.desktop-hidden {
+  /* REMOVE this rule - it was hiding the sidebar */
+  /* #sidebar.desktop-hidden {
     transform: translateX(-1000%);
-  }
+  } */
 }
 
 /* Mobile submenu styles - make scrollable */
@@ -240,5 +333,85 @@ body::-webkit-scrollbar {
     text-align: center;
     margin-top: 20px;
     font-size: 12px;
+  }
+}
+
+/* Icon-only sidebar state */
+#sidebar.desktop-hidden {
+  width: 60px !important;
+  overflow: visible !important;
+}
+
+#sidebar.desktop-hidden .p-5 {
+  padding: 0.5rem !important;
+}
+
+#sidebar.desktop-hidden .px-4 {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+}
+
+#sidebar.desktop-hidden nav {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+}
+
+/* Hide text but keep icons visible */
+#sidebar.desktop-hidden .nav-item span span {
+  display: none;
+}
+
+#sidebar.desktop-hidden .nav-item img {
+  display: none;
+}
+
+#sidebar.desktop-hidden .nav-item {
+  justify-content: center;
+  padding: 0.75rem 0.5rem;
+}
+
+#sidebar.desktop-hidden .nav-item i {
+  margin: 0;
+  font-size: 1rem;
+}
+
+#sidebar.desktop-hidden .nav-item .flex {
+  justify-content: center;
+}
+
+/* Logout button in icon mode */
+#sidebar.desktop-hidden .logout {
+  padding: 0.75rem 0.5rem;
+  font-size: 0;
+}
+
+#sidebar.desktop-hidden .logout::before {
+  content: '\f2f5';
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  font-size: 1.25rem;
+  display: inline-block;
+}
+
+/* Adjust main content when sidebar is collapsed */
+body.sidebar-closed .main-content-wrapper {
+  padding-left: 60px !important;
+}
+
+@media (max-width: 1023px) {
+  body.sidebar-closed .main-content-wrapper {
+    padding-left: 0 !important;
+  }
+  
+  #sidebar.desktop-hidden {
+    display: none;
+  }
+}
+
+/* Ensure sidebar stays visible on desktop even when collapsed */
+@media (min-width: 1024px) {
+  #sidebar.desktop-hidden {
+    display: block !important;
+    visibility: visible !important;
   }
 }

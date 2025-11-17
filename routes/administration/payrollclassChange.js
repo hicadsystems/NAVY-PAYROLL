@@ -485,6 +485,7 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
   }
 });
 
+// ==================== OPTIMIZED BULK MIGRATION ====================
 // Bulk Migration - Migrate ALL employees in current class to target class
 router.post('/payroll-class/bulk', verifyToken, async (req, res) => {
   const { TargetPayrollClass } = req.body;
@@ -530,130 +531,201 @@ router.post('/payroll-class/bulk', verifyToken, async (req, res) => {
     });
   }
 
-  let sourceConnection = null;
-  let targetConnection = null;
-  let migratedCount = 0;
-  let totalRecords = 0;
-  const errors = [];
+  let connection = null;
 
   try {
-    sourceConnection = await pool.getConnection();
-    targetConnection = await pool.getConnection();
+    const startTime = Date.now();
+    connection = await pool.getConnection();
 
-    await sourceConnection.query(`USE \`${sourceDb}\``);
-    await targetConnection.query(`USE \`${targetDb}\``);
+    // Start a single transaction for the entire operation
+    await connection.beginTransaction();
 
-    // Get all active employees
-    const [employees] = await sourceConnection.query(
-      `SELECT * FROM hr_employees 
+    // Use source database
+    await connection.query(`USE \`${sourceDb}\``);
+
+    // Get count of employees to migrate
+    const [countResult] = await connection.query(
+      `SELECT COUNT(*) as total FROM hr_employees 
        WHERE (DateLeft IS NULL OR DateLeft = '') 
        AND (exittype IS NULL OR exittype = '')`
     );
+    const totalEmployees = countResult[0].total;
+    console.log(`📦 Found ${totalEmployees} employees to migrate`);
 
-    console.log(`📦 Found ${employees.length} employees to migrate`);
+    // Step 1: Bulk update payrollclass in source database first
+    await connection.query(
+      `UPDATE hr_employees 
+       SET payrollclass = ?
+       WHERE (DateLeft IS NULL OR DateLeft = '') 
+       AND (exittype IS NULL OR exittype = '')`,
+      [payrollClassInput]
+    );
 
-    for (const employee of employees) {
-      try {
-        await sourceConnection.beginTransaction();
-        await targetConnection.beginTransaction();
+    // Step 2: Get employee IDs for related table cleanup
+    const [employeeIds] = await connection.query(
+      `SELECT Empl_ID FROM hr_employees 
+       WHERE (DateLeft IS NULL OR DateLeft = '') 
+       AND (exittype IS NULL OR exittype = '')`
+    );
+    const emplIdList = employeeIds.map(row => row.Empl_ID);
 
-        const employeeId = employee.Empl_ID;
-        employee.payrollclass = payrollClassInput;
-
-        // Delete existing in target
-        await targetConnection.query(`DELETE FROM hr_employees WHERE Empl_ID = ?`, [employeeId]);
+    // Step 3: Bulk delete existing records in target database
+    await connection.query(`USE \`${targetDb}\``);
+    
+    if (emplIdList.length > 0) {
+      // Delete in batches to avoid query length limits
+      const batchSize = 1000;
+      for (let i = 0; i < emplIdList.length; i += batchSize) {
+        const batch = emplIdList.slice(i, i + batchSize);
+        const placeholders = batch.map(() => '?').join(',');
         
+        await connection.query(
+          `DELETE FROM hr_employees WHERE Empl_ID IN (${placeholders})`,
+          batch
+        );
+
+        // Delete related records
         const relatedTables = ['Children', 'NextOfKin', 'Spouse'];
         for (const table of relatedTables) {
           try {
-            await targetConnection.query(`DELETE FROM ${table} WHERE Empl_ID = ?`, [employeeId]);
-          } catch (err) { /* Table may not exist */ }
-        }
-
-        // Copy to target
-        const columns = Object.keys(employee);
-        const placeholders = columns.map(() => '?').join(', ');
-        const values = Object.values(employee);
-
-        await targetConnection.query(
-          `INSERT INTO hr_employees (${columns.join(', ')}) VALUES (${placeholders})`,
-          values
-        );
-        totalRecords++;
-
-        // Copy related records
-        for (const table of relatedTables) {
-          try {
-            const [records] = await sourceConnection.query(
-              `SELECT * FROM ${table} WHERE Empl_ID = ?`,
-              [employeeId]
+            await connection.query(
+              `DELETE FROM ${table} WHERE Empl_ID IN (${placeholders})`,
+              batch
             );
-
-            for (const record of records) {
-              const cols = Object.keys(record);
-              const vals = Object.values(record);
-              const ph = cols.map(() => '?').join(', ');
-
-              await targetConnection.query(
-                `INSERT INTO ${table} (${cols.join(', ')}) VALUES (${ph})`,
-                vals
-              );
-              totalRecords++;
-            }
-          } catch (err) { /* Table may not exist */ }
+          } catch (err) {
+            console.log(`⚠️ Could not delete from ${table}: ${err.message}`);
+          }
         }
+      }
+      console.log(`✓ Cleaned up existing records in target database`);
+    }
 
-        // Delete from source
-        for (const table of relatedTables) {
-          try {
-            await sourceConnection.query(`DELETE FROM ${table} WHERE Empl_ID = ?`, [employeeId]);
-          } catch (err) { /* Ignore */ }
+    // Step 4: Bulk copy employees from source to target
+    await connection.query(
+      `INSERT INTO \`${targetDb}\`.hr_employees 
+       SELECT * FROM \`${sourceDb}\`.hr_employees 
+       WHERE (DateLeft IS NULL OR DateLeft = '') 
+       AND (exittype IS NULL OR exittype = '')`
+    );
+    console.log(`✓ Copied ${totalEmployees} employees to target database`);
+
+    // Step 5: Bulk copy related records
+    const relatedTables = ['Children', 'NextOfKin', 'Spouse'];
+    let totalRelatedRecords = 0;
+
+    for (const table of relatedTables) {
+      try {
+        // Check if table exists in both databases
+        const [sourceTableExists] = await connection.query(
+          `SELECT COUNT(*) as count FROM information_schema.tables 
+           WHERE table_schema = ? AND table_name = ?`,
+          [sourceDb, table]
+        );
+        
+        const [targetTableExists] = await connection.query(
+          `SELECT COUNT(*) as count FROM information_schema.tables 
+           WHERE table_schema = ? AND table_name = ?`,
+          [targetDb, table]
+        );
+
+        if (sourceTableExists[0].count > 0 && targetTableExists[0].count > 0) {
+          // Get count first
+          const [countRes] = await connection.query(
+            `SELECT COUNT(*) as count FROM \`${sourceDb}\`.${table} 
+             WHERE Empl_ID IN (SELECT Empl_ID FROM \`${sourceDb}\`.hr_employees 
+                               WHERE (DateLeft IS NULL OR DateLeft = '') 
+                               AND (exittype IS NULL OR exittype = ''))`
+          );
+          const recordCount = countRes[0].count;
+
+          if (recordCount > 0) {
+            await connection.query(
+              `INSERT INTO \`${targetDb}\`.${table} 
+               SELECT s.* FROM \`${sourceDb}\`.${table} s
+               INNER JOIN \`${sourceDb}\`.hr_employees e ON s.Empl_ID = e.Empl_ID
+               WHERE (e.DateLeft IS NULL OR e.DateLeft = '') 
+               AND (e.exittype IS NULL OR e.exittype = '')`
+            );
+            totalRelatedRecords += recordCount;
+            console.log(`✓ Copied ${recordCount} records from ${table}`);
+          }
         }
-        await sourceConnection.query(`DELETE FROM hr_employees WHERE Empl_ID = ?`, [employeeId]);
-
-        await targetConnection.commit();
-        await sourceConnection.commit();
-        migratedCount++;
-
-      } catch (error) {
-        await sourceConnection.rollback();
-        await targetConnection.rollback();
-        errors.push({ employeeId: employee.Empl_ID, error: error.message });
-        console.error(`Failed to migrate ${employee.Empl_ID}:`, error.message);
+      } catch (err) {
+        console.log(`⚠️ Could not copy ${table}: ${err.message}`);
       }
     }
 
+    // Step 6: Bulk delete from source database
+    await connection.query(`USE \`${sourceDb}\``);
+    
+    for (const table of relatedTables) {
+      try {
+        const [result] = await connection.query(
+          `DELETE s FROM ${table} s
+           INNER JOIN hr_employees e ON s.Empl_ID = e.Empl_ID
+           WHERE (e.DateLeft IS NULL OR e.DateLeft = '') 
+           AND (e.exittype IS NULL OR e.exittype = '')`
+        );
+        if (result.affectedRows > 0) {
+          console.log(`✓ Deleted ${result.affectedRows} records from ${table}`);
+        }
+      } catch (err) {
+        console.log(`⚠️ Could not delete from ${table}: ${err.message}`);
+      }
+    }
+
+    const [deleteResult] = await connection.query(
+      `DELETE FROM hr_employees 
+       WHERE (DateLeft IS NULL OR DateLeft = '') 
+       AND (exittype IS NULL OR exittype = '')`
+    );
+    console.log(`✓ Deleted ${deleteResult.affectedRows} employees from source database`);
+
+    // Commit the transaction
+    await connection.commit();
+
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`✅ Migration completed in ${duration} seconds`);
+
     res.status(200).json({
       success: true,
-      message: `Bulk migration completed`,
+      message: `Bulk migration completed successfully`,
       data: {
-        TotalEmployees: employees.length,
-        SuccessfulMigrations: migratedCount,
-        FailedMigrations: errors.length,
-        TotalRecordsMigrated: totalRecords,
+        TotalEmployees: totalEmployees,
+        TotalRelatedRecords: totalRelatedRecords,
+        TotalRecordsMigrated: totalEmployees + totalRelatedRecords,
         SourceDatabase: sourceDb,
         TargetDatabase: targetDb,
         SourceDatabaseName: getFriendlyDbName(sourceDb),
         TargetDatabaseName: getFriendlyDbName(targetDb),
-        Errors: errors,
+        DurationSeconds: duration,
         Timestamp: new Date().toISOString()
       }
     });
 
   } catch (error) {
-    console.error('Bulk migration failed:', error);
+    console.error('❌ Bulk migration failed:', error);
+    
+    if (connection) {
+      try {
+        await connection.rollback();
+        console.log('⚠️ Transaction rolled back');
+      } catch (rollbackError) {
+        console.error('❌ Rollback error:', rollbackError);
+      }
+    }
+
     res.status(500).json({
       success: false,
       error: 'Bulk migration failed',
       message: error.message
     });
   } finally {
-    if (sourceConnection) sourceConnection.release();
-    if (targetConnection) targetConnection.release();
+    if (connection) connection.release();
   }
 });
 
-// Range Migration - Migrate employees within a range
+// ==================== OPTIMIZED RANGE MIGRATION ====================
 router.post('/payroll-class/range', verifyToken, async (req, res) => {
   const { StartEmpl_ID, EndEmpl_ID, TargetPayrollClass } = req.body;
 
@@ -704,137 +776,201 @@ router.post('/payroll-class/range', verifyToken, async (req, res) => {
     });
   }
 
-  let sourceConnection = null;
-  let targetConnection = null;
-  let migratedCount = 0;
-  let totalRecords = 0;
-  const errors = [];
+  let connection = null;
 
   try {
-    sourceConnection = await pool.getConnection();
-    targetConnection = await pool.getConnection();
+    const startTime = Date.now();
+    connection = await pool.getConnection();
 
-    await sourceConnection.query(`USE \`${sourceDb}\``);
-    await targetConnection.query(`USE \`${targetDb}\``);
+    await connection.beginTransaction();
+    await connection.query(`USE \`${sourceDb}\``);
 
-    // Get employees in range
-    const [employees] = await sourceConnection.query(
-      `SELECT * FROM hr_employees 
+    // Get count of employees in range
+    const [countResult] = await connection.query(
+      `SELECT COUNT(*) as total FROM hr_employees 
        WHERE Empl_ID BETWEEN ? AND ?
        AND (DateLeft IS NULL OR DateLeft = '') 
-       AND (exittype IS NULL OR exittype = '')
-       ORDER BY Empl_ID ASC`,
+       AND (exittype IS NULL OR exittype = '')`,
       [startId, endId]
     );
+    
+    const totalEmployees = countResult[0].total;
 
-    if (employees.length === 0) {
+    if (totalEmployees === 0) {
+      await connection.rollback();
+      connection.release();
       return res.status(404).json({
         success: false,
         error: `No employees found in range ${startId} to ${endId}`
       });
     }
 
-    console.log(`📦 Found ${employees.length} employees in range`);
+    console.log(`📦 Found ${totalEmployees} employees in range`);
 
-    for (const employee of employees) {
-      try {
-        await sourceConnection.beginTransaction();
-        await targetConnection.beginTransaction();
+    // Update payrollclass in source
+    await connection.query(
+      `UPDATE hr_employees 
+       SET payrollclass = ?
+       WHERE Empl_ID BETWEEN ? AND ?
+       AND (DateLeft IS NULL OR DateLeft = '') 
+       AND (exittype IS NULL OR exittype = '')`,
+      [payrollClassInput, startId, endId]
+    );
 
-        const employeeId = employee.Empl_ID;
-        employee.payrollclass = payrollClassInput;
+    // Get employee IDs in range
+    const [employeeIds] = await connection.query(
+      `SELECT Empl_ID FROM hr_employees 
+       WHERE Empl_ID BETWEEN ? AND ?
+       AND (DateLeft IS NULL OR DateLeft = '') 
+       AND (exittype IS NULL OR exittype = '')`,
+      [startId, endId]
+    );
+    const emplIdList = employeeIds.map(row => row.Empl_ID);
 
-        // Delete existing in target
-        await targetConnection.query(`DELETE FROM hr_employees WHERE Empl_ID = ?`, [employeeId]);
+    // Delete existing records in target
+    await connection.query(`USE \`${targetDb}\``);
+    
+    if (emplIdList.length > 0) {
+      const batchSize = 1000;
+      for (let i = 0; i < emplIdList.length; i += batchSize) {
+        const batch = emplIdList.slice(i, i + batchSize);
+        const placeholders = batch.map(() => '?').join(',');
         
+        await connection.query(
+          `DELETE FROM hr_employees WHERE Empl_ID IN (${placeholders})`,
+          batch
+        );
+
         const relatedTables = ['Children', 'NextOfKin', 'Spouse'];
         for (const table of relatedTables) {
           try {
-            await targetConnection.query(`DELETE FROM ${table} WHERE Empl_ID = ?`, [employeeId]);
-          } catch (err) { /* Table may not exist */ }
-        }
-
-        // Copy to target
-        const columns = Object.keys(employee);
-        const placeholders = columns.map(() => '?').join(', ');
-        const values = Object.values(employee);
-
-        await targetConnection.query(
-          `INSERT INTO hr_employees (${columns.join(', ')}) VALUES (${placeholders})`,
-          values
-        );
-        totalRecords++;
-
-        // Copy related records
-        for (const table of relatedTables) {
-          try {
-            const [records] = await sourceConnection.query(
-              `SELECT * FROM ${table} WHERE Empl_ID = ?`,
-              [employeeId]
+            await connection.query(
+              `DELETE FROM ${table} WHERE Empl_ID IN (${placeholders})`,
+              batch
             );
-
-            for (const record of records) {
-              const cols = Object.keys(record);
-              const vals = Object.values(record);
-              const ph = cols.map(() => '?').join(', ');
-
-              await targetConnection.query(
-                `INSERT INTO ${table} (${cols.join(', ')}) VALUES (${ph})`,
-                vals
-              );
-              totalRecords++;
-            }
-          } catch (err) { /* Table may not exist */ }
+          } catch (err) {
+            console.log(`⚠️ Could not delete from ${table}: ${err.message}`);
+          }
         }
-
-        // Delete from source
-        for (const table of relatedTables) {
-          try {
-            await sourceConnection.query(`DELETE FROM ${table} WHERE Empl_ID = ?`, [employeeId]);
-          } catch (err) { /* Ignore */ }
-        }
-        await sourceConnection.query(`DELETE FROM hr_employees WHERE Empl_ID = ?`, [employeeId]);
-
-        await targetConnection.commit();
-        await sourceConnection.commit();
-        migratedCount++;
-
-      } catch (error) {
-        await sourceConnection.rollback();
-        await targetConnection.rollback();
-        errors.push({ employeeId: employee.Empl_ID, error: error.message });
-        console.error(`Failed to migrate ${employee.Empl_ID}:`, error.message);
       }
     }
 
+    // Bulk copy employees
+    await connection.query(
+      `INSERT INTO \`${targetDb}\`.hr_employees 
+       SELECT * FROM \`${sourceDb}\`.hr_employees 
+       WHERE Empl_ID BETWEEN ? AND ?
+       AND (DateLeft IS NULL OR DateLeft = '') 
+       AND (exittype IS NULL OR exittype = '')`,
+      [startId, endId]
+    );
+    console.log(`✓ Copied ${totalEmployees} employees`);
+
+    // Bulk copy related records
+    const relatedTables = ['Children', 'NextOfKin', 'Spouse'];
+    let totalRelatedRecords = 0;
+
+    for (const table of relatedTables) {
+      try {
+        const [countRes] = await connection.query(
+          `SELECT COUNT(*) as count FROM \`${sourceDb}\`.${table} 
+           WHERE Empl_ID IN (SELECT Empl_ID FROM \`${sourceDb}\`.hr_employees 
+                             WHERE Empl_ID BETWEEN ? AND ?
+                             AND (DateLeft IS NULL OR DateLeft = '') 
+                             AND (exittype IS NULL OR exittype = ''))`,
+          [startId, endId]
+        );
+        const recordCount = countRes[0].count;
+
+        if (recordCount > 0) {
+          await connection.query(
+            `INSERT INTO \`${targetDb}\`.${table} 
+             SELECT s.* FROM \`${sourceDb}\`.${table} s
+             INNER JOIN \`${sourceDb}\`.hr_employees e ON s.Empl_ID = e.Empl_ID
+             WHERE e.Empl_ID BETWEEN ? AND ?
+             AND (e.DateLeft IS NULL OR e.DateLeft = '') 
+             AND (e.exittype IS NULL OR e.exittype = '')`,
+            [startId, endId]
+          );
+          totalRelatedRecords += recordCount;
+          console.log(`✓ Copied ${recordCount} records from ${table}`);
+        }
+      } catch (err) {
+        console.log(`⚠️ Could not copy ${table}: ${err.message}`);
+      }
+    }
+
+    // Bulk delete from source
+    await connection.query(`USE \`${sourceDb}\``);
+    
+    for (const table of relatedTables) {
+      try {
+        const [result] = await connection.query(
+          `DELETE s FROM ${table} s
+           INNER JOIN hr_employees e ON s.Empl_ID = e.Empl_ID
+           WHERE e.Empl_ID BETWEEN ? AND ?
+           AND (e.DateLeft IS NULL OR e.DateLeft = '') 
+           AND (e.exittype IS NULL OR e.exittype = '')`,
+          [startId, endId]
+        );
+        if (result.affectedRows > 0) {
+          console.log(`✓ Deleted ${result.affectedRows} records from ${table}`);
+        }
+      } catch (err) {
+        console.log(`⚠️ Could not delete from ${table}: ${err.message}`);
+      }
+    }
+
+    const [deleteResult] = await connection.query(
+      `DELETE FROM hr_employees 
+       WHERE Empl_ID BETWEEN ? AND ?
+       AND (DateLeft IS NULL OR DateLeft = '') 
+       AND (exittype IS NULL OR exittype = '')`,
+      [startId, endId]
+    );
+    console.log(`✓ Deleted ${deleteResult.affectedRows} employees from source`);
+
+    await connection.commit();
+
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`✅ Range migration completed in ${duration} seconds`);
+
     res.status(200).json({
       success: true,
-      message: `Range migration completed`,
+      message: `Range migration completed successfully`,
       data: {
         Range: `${startId} to ${endId}`,
-        TotalEmployees: employees.length,
-        SuccessfulMigrations: migratedCount,
-        FailedMigrations: errors.length,
-        TotalRecordsMigrated: totalRecords,
+        TotalEmployees: totalEmployees,
+        TotalRelatedRecords: totalRelatedRecords,
+        TotalRecordsMigrated: totalEmployees + totalRelatedRecords,
         SourceDatabase: sourceDb,
         TargetDatabase: targetDb,
         SourceDatabaseName: getFriendlyDbName(sourceDb),
         TargetDatabaseName: getFriendlyDbName(targetDb),
-        Errors: errors,
+        DurationSeconds: duration,
         Timestamp: new Date().toISOString()
       }
     });
 
   } catch (error) {
-    console.error('Range migration failed:', error);
+    console.error('❌ Range migration failed:', error);
+    
+    if (connection) {
+      try {
+        await connection.rollback();
+        console.log('⚠️ Transaction rolled back');
+      } catch (rollbackError) {
+        console.error('❌ Rollback error:', rollbackError);
+      }
+    }
+
     res.status(500).json({
       success: false,
       error: 'Range migration failed',
       message: error.message
     });
   } finally {
-    if (sourceConnection) sourceConnection.release();
-    if (targetConnection) targetConnection.release();
+    if (connection) connection.release();
   }
 });
 

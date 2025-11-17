@@ -1292,43 +1292,6 @@ async function updateDashboardStats() {
   }
 }
 
-function updateNotifications(data) {
-  const notificationsList = document.getElementById('notificationsList');
-  
-  let html = '';
-  
-  // Check for anomalies
-  if (data.unresolved_issues > 0) {
-    html += `
-      <div class="notification warning" onclick="showCalculationReports()">
-        <i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i> ${data.unresolved_issues} issues need review
-      </div>
-    `;
-  }
-  
-  // Check approval status
-  if (data.stage === 'CALCULATED') {
-    html += `
-      <div class="notification info">
-        <i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i> Payroll ready for approval
-      </div>
-    `;
-  }
-  
-  // Check if approved
-  if (data.stage === 'APPROVED') {
-    html += `
-      <div class="notification success">
-        <i class="fas fa-check-circle text-success" style="font-size: 20px"></i> Payroll approved by ${data.approved_by}
-      </div>
-    `;
-  }
-  
-  notificationsList.innerHTML = html;
-}
-
-// Auto-refresh every 30 seconds
-//setInterval(updateDashboardStats, 30000);
 
 function logout() {
   // Clear user session data

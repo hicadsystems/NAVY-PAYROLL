@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 
@@ -13,6 +14,15 @@
 }
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+/* Add smooth transitions */
+.verify-step, .reset-step {
+  transition: opacity 0.3s ease-in-out;
+}
+
+html{ 
+  scroll-behavior: smooth; 
+  font-size: 90%;
 }
 </style>
 
@@ -58,7 +68,10 @@
         </select>
       </div>
       <div class="text-right">
-        <a href="#" class="text-sm text-blue-500 hover:underline">Forgot Password?</a>
+        <a href="#" onclick="window.openForgotPassword(); return false;" 
+          class="text-sm text-blue-600 hover:underline">
+          Forgot Password?
+        </a>
       </div>
       <button type="submit" class="w-full bg-yellow-400 text-blue-900 font-bold py-2 rounded-md hover:bg-yellow-500">Login</button>
     </form>
@@ -71,6 +84,161 @@
     <div id="loginSpinner" class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
     <!-- Message -->
     <p id="loginMessage" class="text-lg font-semibold text-gray-700">Logging you in...</p>
+  </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div id="forgotPasswordModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden flex items-center justify-center z-50">
+  <div class="absolute inset-0 bg-black bg-opacity-70"></div>
+  <div class="relative bg-white rounded-xl shadow-2xl w-11/12 max-w-md p-6 z-10 max-h-[90vh] overflow-y-auto border border-amber-200">
+    
+    <div id="verify-step" class="verify-step">
+      <div class="flex justify-between items-start mb-4">
+        <h3 class="text-2xl font-bold text-navy">🔑 Reset Password</h3>
+        <button id="close-forgot-modal" class="text-navy hover:text-red-600 text-2xl font-light">&times;</button>
+      </div>
+
+      <p class="text-sm text-gray-700 mb-6">
+        Please verify your identity by providing the following information:
+      </p>
+
+      <form id="verify-identity-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-navy mb-2">User ID *</label>
+          <input type="text" id="verify-user-id" name="user_id" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-navy mb-2">Full Name *</label>
+          <input type="text" id="verify-full-name" name="full_name" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800">
+          <small class="text-xs text-gray-600">Enter your full name exactly as registered</small>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-navy mb-2">Email Address *</label>
+          <input type="email" id="verify-email" name="email" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-navy mb-2">Payroll Class (Optional)</label>
+          <select id="verify-payroll-class" name="primary_class"
+               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800">
+            <option value="">Select if known...</option>
+            </select>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4">
+          <button type="button" id="cancel-verify-btn" class="px-4 py-2 bg-gray-300 text-navy rounded-lg hover:bg-gray-400 transition duration-150">
+            Cancel
+          </button>
+          <button type="submit" id="verify-btn" class="px-4 py-2 bg-blue-700 text-white font-semibold rounded-lg hover:bg-blue-800 transition duration-150 shadow-md">
+            Verify Identity
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div id="reset-step" class="reset-step hidden">
+      <div class="flex justify-between items-start mb-4">
+        <h3 class="text-2xl font-bold text-green-700">✅ Identity Verified</h3>
+        <button id="close-reset-modal" class="text-navy hover:text-red-600 text-2xl font-light">&times;</button>
+      </div>
+
+      <p class="text-sm text-gray-700 mb-6">
+        Please enter your new password:
+      </p>
+
+      <form id="reset-password-form" class="space-y-4">
+        <input type="hidden" id="reset-user-id" name="user_id">
+        <input type="hidden" id="reset-full-name" name="full_name">
+        <input type="hidden" id="reset-email" name="email">
+        <input type="hidden" id="reset-primary-class" name="primary_class">
+
+        <div class="relative">
+          <label class="block text-sm font-medium text-navy mb-2">New Password *</label>
+          <input type="password" id="new-password" name="new_password" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 text-gray-800">
+          
+          <span class="toggle-password-reset" data-target="new-password" style="position: absolute; top: 36px; right: 10px; cursor: pointer;">
+            <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg class="eye-closed" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500" style="display: none;">
+              <path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.7 21.7 0 014.6-5.94M1 1l22 22"/>
+              <path d="M9.5 9.5a3 3 0 004 4"/>
+            </svg>
+          </span>
+          <small class="text-xs text-gray-600">Minimum 6 characters</small>
+        </div>
+
+        <div class="relative">
+          <label class="block text-sm font-medium text-navy mb-2">Confirm New Password *</label>
+          <input type="password" id="confirm-new-password" name="confirm_password" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 text-gray-800">
+          
+          <span class="toggle-password-reset" data-target="confirm-new-password" style="position: absolute; top: 36px; right: 10px; cursor: pointer;">
+            <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg class="eye-closed" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500" style="display: none;">
+              <path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.7 21.7 0 014.6-5.94M1 1l22 22"/>
+              <path d="M9.5 9.5a3 3 0 004 4"/>
+            </svg>
+          </span>
+          <small id="password-match-msg" class="text-xs"></small>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4">
+          <button type="button" id="back-to-verify-btn" class="px-4 py-2 bg-gray-300 text-navy rounded-lg hover:bg-gray-400 transition duration-150">
+            Back
+          </button>
+          <button type="submit" id="reset-btn" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-150 shadow-md">
+            Reset Password
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="resetSuccessModal" class="fixed inset-0 hidden flex items-center justify-center z-50">
+  <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+  <div class="relative bg-white rounded-lg shadow-lg w-11/12 max-w-sm p-6 z-10 text-center">
+    <div class="mb-4">
+      <svg class="w-16 h-16 text-green-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+    </div>
+    <h3 class="text-xl font-semibold text-gray-900 mb-2">Password Reset Successful!</h3>
+    <p class="text-gray-600 mb-6">You can now login with your new password.</p>
+    <button id="close-success-modal" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+      Go to Login
+    </button>
+  </div>
+</div>
+
+<!-- Alert Modal -->
+<div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden flex items-center justify-center z-50">
+  <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+  <div class="relative bg-white rounded-lg shadow-lg w-11/12 max-w-md p-6 z-10">
+    <div class="flex items-start mb-4">
+      <div id="alert-icon" class="flex-shrink-0 mr-3"></div>
+      <div class="flex-1">
+        <h3 id="alert-title" class="text-lg font-semibold mb-2"></h3>
+        <p id="alert-message" class="text-gray-700"></p>
+      </div>
+    </div>
+    <div class="flex justify-end gap-3 mt-6">
+      <button id="alert-cancel-btn" class="hidden px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Cancel</button>
+      <button id="alert-ok-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
+    </div>
   </div>
 </div>
 

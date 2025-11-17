@@ -39,7 +39,7 @@
   <div class="max-w-layout mx-auto min-h-dvh flex flex-col">
 
     <!-- top row: left hamburger + brand, right logo -->
-    <header class="max-w-layout fixed top-0 w-full z-30 bg-transparent flex items-center justify-between py-4 px-2 lg:h-20">
+    <header class="max-w-layout fixed top-0 w-full z-30 bg-transparent flex items-center justify-between pb-4 px-2 lg:h-20">
       <div class="flex items-center gap-4">
         <button id="menu-toggle" class="p-2 rounded focus:outline-none" aria-label="Toggle menu">
             <div class="menu flex flex-col gap-1.5" aria-hidden="true">
@@ -78,16 +78,12 @@
       <img src="photos/logo.png" alt="logo" class="hidden sm:block lg:w-[40px] h-[50px] object-contain" />
     </header>
 
-    <div class="main-content-wrapper pt-0 sm:pt-0 md:pt-2 lg:pt-2 xl:pt-20 lg:pl-[250px] h-dvh overflow-y-auto transition-all duration-300">
+    <div class="main-content-wrapper pt-0 sm:pt-0 md:pt-2 lg:pt-2 lg:pl-[250px] h-dvh overflow-y-auto transition-all duration-300">
 
       <!-- Sidebar -->
-      <aside id="sidebar" 
-           class="overlap-wrapper lg:fixed lg:top-[5rem] lg:left-[max(0px,calc(50%-720px))] z-20 lg:w-[250px] 
-                  bg-transparent lg:h-[calc(100vh-5rem)] shadow-lg overflow-y-auto">
-        <div class="p-5">
-        </div>
+      <aside id="sidebar" class="overlap-wrapper lg:fixed lg:top-[5rem] lg:left-[max(0px,calc(50%-720px))] z-20 lg:w-[250px] bg-transparent lg:h-[calc(100vh-1rem)] shadow-lg overflow-y-auto">
 
-        <nav class="px-4 pb-6">
+        <nav class="px-4">
           <ul class="flex flex-col gap-4">
             <li class="relative">
                 <a class="nav-item flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25" 
@@ -102,9 +98,9 @@
 
             <li class="relative" data-menu="administration">
               <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
-                href="#" aria-expanded="false" role="button" tabindex="0" title="Administration">
+                href="#" aria-expanded="false" role="button" tabindex="0">
                 <span class="flex items-center gap-2">
-                  <i class="fas fa-cog"></i>
+                  <i class="fas fa-desktop"></i>
                   <span>Administration</span>
                 </span>
                 <img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5 ml-2 self-center transform transition-transform duration-200" />
@@ -124,9 +120,8 @@
                   <li class="has-subsubmenu relative">
                     <div class="flex items-center justify-between px-3 py-1 hover:bg-amber-50 rounded cursor-pointer">
                       <span class="text-navy">Irregular One-Off Payments</span>
-                      <button type="button" 
-                              class="toggle-subsubmenu px-2 text-sm text-gray-500 hover:text-gray-800" 
-                              aria-label="Toggle submenu">▸</button>
+                      <button type="button" class="toggle-subsubmenu px-2 text-sm text-gray-500 hover:text-gray-800" 
+                      aria-label="Toggle submenu">▸</button>
                     </div>
                     
                     <ul class="subsubmenu hidden mt-1 ml-2 border-l border-amber-100/50 space-y-1">
@@ -134,7 +129,7 @@
                         <a href="#" 
                           data-section="report-requirement-setup" 
                           class="block px-3 py-1 rounded hover:bg-blue-50 text-sm">
-                          Report Requirement Setup
+                          One-Off Requirement Setup
                         </a>
                       </li>
                       <li>
@@ -148,7 +143,7 @@
                         <a href="#" 
                           data-section="individual-payment-input" 
                           class="block px-3 py-1 rounded hover:bg-blue-50 text-sm">
-                          Individual Payment Input
+                          Individual One-Off Payment Input
                         </a>
                       </li>
                       <li>
@@ -223,7 +218,7 @@
               <a class="nav-item has-submenu flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25"
                 href="#" aria-expanded="false" role="button" tabindex="0">
                 <span class="flex items-center gap-2">
-                  <i class="fas fa-sync-alt"></i>
+                  <i class="fas fa-folder"></i>
                   <span>File Update</span>
                 </span>
                 <img src="photos/rectangle54i339-1pu3.svg" alt="" class="w-2.5 h-1.5" />
@@ -371,19 +366,21 @@
                 </ul>
               </div>
             </li>
+          
+            <li class="relative">
+              <button onclick="logout()" class="w-full logout bg-amber-100/25 text-red-600 font-bold rounded py-2">
+                Logout              
+              </button>
+          </li>
           </ul>
         </nav>
-
-        <div class="p-4">
-          <button onclick="logout()" class="w-full logout bg-amber-100/25 text-red-600 font-bold rounded py-2">Logout</button>
-        </div>
       </aside>
 
       <!-- Main content -->
       <main class="overlap relative p-6 lg:px-10">
 
         <!-- Page title -->
-        <div class="mt-6">
+        <div class="mt-4">
           <p id="dynamicGreeting" class="text-md md:text-xl lg:text-xl font-bold text-navy text-center text-blue-900">
           </p>
         </div>
@@ -394,7 +391,7 @@
         </div>
 
         <!-- Stats container -->
-        <section class="mt-8 flex justify-center">
+        <section class="mt-4 flex justify-center">
           <div class="frame-2 relative w-full sm:w-[640px] sm:h-[209px] h-auto bg-white/15 rounded-xl border border-amber-100 shadow-lg p-3">
             <div class="grid grid-cols-1 sm:grid-cols-3 h-full rounded-lg overflow-hidden">
                 <div class="p-6 flex flex-col items-center gap-4">
@@ -402,7 +399,7 @@
                     <h3 class="text-navy font-bold">Payroll Pending Approval</h3>
                       <i class="fas fa-hourglass-half font-bold text-yellow-600" style="font-size: 24px"></i>
                   </div>
-                  <div id="pendingApproval" class="rounded-md bg-amber-50 px-4 py-2 text-2xl font-bold text-warning">1,500</div>
+                  <div id="pendingApproval" class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold text-warning">1,500</div>
                 </div>
 
                 <div class="p-6 flex flex-col items-center gap-4">
@@ -410,7 +407,7 @@
                     <h3 class="text-navy font-bold">Nominal Number Processed</h3>
                       <i class="fas fa-check-circle text-success" style="font-size: 24px"></i>
                   </div>
-                  <div id="nominalProcessed" class="rounded-md bg-amber-50 px-4 py-2 text-2xl font-bold text-success">2,700</div>
+                  <div id="nominalProcessed" class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold text-success">2,700</div>
                 </div>
 
               <div class="p-6 flex flex-col items-center gap-4">
@@ -418,7 +415,7 @@
                   <h3 class="text-navy font-bold">Current Payroll Period</h3>
                   <i class='fas fa-calendar-alt' style="font-size: 24px"></i>
                 </div>
-                <div class="rounded-md bg-amber-50 px-4 py-2 text-2xl font-bold">October</div>
+                <div class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold">October</div>
               </div>
             </div>
 
@@ -429,51 +426,31 @@
         </section>
 
         <!-- Quick Access + Notifications -->
-        <section class="mt-8 flex flex-col lg:flex-row xs:flex-row justify-center gap-6 max-w-4xl mx-auto">
+        <section class="mt-6 flex flex-col lg:flex-row xs:flex-row justify-center gap-6 max-w-4xl mx-auto">
           <!-- Quick Access -->
-          <div class="frame-3 w-full sm:w-[416px] sm:h-[319px] h-auto bg-white/20 rounded-xl p-6 shadow-lg">
+          <div class="frame-3 w-full h-auto sm:w-[416px] bg-white/20 rounded-xl p-6 shadow-lg">
             <h4 class="text-xl font-bold text-navy text-center mb-6">Quick Access</h4>
             <div class="grid grid-cols-2 gap-6">
-              <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('back-up', 'Back Up')">Back Up</button>
+              <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('database-backup', 'Database Backup')">Database Backup</button>
               <button class="quick-access-btn bg-[#FBBF24]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('save-payroll-files', 'Save Payroll Files')">Save Payroll Files</button>
-
               <button class="quick-access-btn bg-[#FBBF24]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('add-personnel', 'Add New Personnel')">Add New Personnel</button>
               <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('monthly-yearly-processing', 'Month End Processing')">Process Month End</button>
-              <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('export-pay-records', 'Export Pay Records')">Export Pay Records</button>
-              <button class="quick-access-btn bg-[#FBBF24]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('database-backup', 'Database Backup')">Database Backup</button>
+              <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('pay-slips', 'Pay Slips')">Pay Slips</button>
+              <button class="quick-access-btn bg-[#FBBF24]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('payments-deductions', 'Payments/Deductions')">Payment/Deduction</button>
             </div>
           </div>
 
           <!-- Notifications -->
-          <aside id="notificationsList" class="notifications flex-col justify-center w-full sm:w-[192px] sm:h-[319px] h-auto bg-white/20 rounded-xl p-2 pt-6 shadow-lg">
-            <h4 class="text-xl font-bold text-navy mb-6 text-center">Notifications</h4>
-            <ul class="space-y-4">
-              <li class="flex items-center gap-3">
-                <i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i>
-                <div class="text-sm">Submit variation for Approval</div>
-              </li>
-
-              <li class="flex items-center gap-3">
-                <i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i>
-                <div class="text-sm">Failed Payroll Transactions</div>
-              </li>
-
-              <li class="flex items-center gap-3">
-                <i class="fas fa-check-circle text-success" style="font-size: 20px"></i>
-                <div class="text-sm">Successfully Created a New Personnel</div>
-              </li>
-
-              <li class="flex items-center gap-3">
-                <i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i>
-                <div class="text-sm">Back Up failed!</div>
-              </li>
-            </ul>
+          <aside id="notificationsList" class="notifications flex-col justify-center w-full sm:w-[192px] h-auto bg-white/20 rounded-xl p-2 pt-6 shadow-lg">
+            <!-- Will be dynamically filled -->
           </aside>
         </section>
       </main>
     </div>
   </div>
+  <script src="script/menu-highlighting.js"></script>
 </body>
 <script type="module" src="script/dashboard.js"></script>
 <script src="script/data-input-visibility-control.js"></script>
+<script src="script/notifications.js"></script>
 </html>

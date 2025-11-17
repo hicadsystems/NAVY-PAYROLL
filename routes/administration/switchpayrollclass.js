@@ -19,14 +19,16 @@ const DISPLAY_MAPPING = {
 // Get all available database classes (for populating the table)
 router.get('/dbclasses', verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      'SELECT id, display_name, db_name, is_active FROM db_classes WHERE is_active = 1'
-    );
+const [rows] = await pool.query(`
+    SELECT classcode, classname, db_name, status
+      FROM py_payrollclass
+      WHERE status = 'active'
+    `);
 
     // mark which is primary & current
     const classes = rows.map(row => ({
       id: row.db_name, // unique db identifier
-      display: row.display_name,
+      display: row.classname,
       dbName: row.db_name,
       isPrimary: row.db_name === req.primary_class,
       isActive: row.db_name === req.current_class,
@@ -49,7 +51,7 @@ router.get('/dbclasses', verifyToken, async (req, res) => {
 // Switch payroll class (temporary for session)
 router.post('/switch-class', verifyToken, async (req, res) => {
   try {
-    const { targetClass } = req.body; // could be display_name OR db_name
+    const { targetClass } = req.body; // could be classname OR db_name
     const userId = req.user_id;
 
     console.log(`\n🔄 User ${userId} attempting to switch to: ${targetClass}`);
@@ -57,16 +59,22 @@ router.post('/switch-class', verifyToken, async (req, res) => {
     // First, resolve targetClass to db_name
     let targetDbName = targetClass;
     
-    // Try lookup by display_name first
-    let [classRows] = await pool.query(
-      'SELECT id, display_name, db_name FROM db_classes WHERE display_name = ? AND is_active = 1',
+    // Try lookup by classname first
+    let [classRows] = await pool.query(`
+      SELECT classcode, classname, db_name, status
+        FROM py_payrollclass
+        WHERE classname = ? AND status = 'active'
+      `,
       [targetClass]
     );
 
     // If not found, try lookup by db_name
     if (classRows.length === 0) {
-      [classRows] = await pool.query(
-        'SELECT id, display_name, db_name FROM db_classes WHERE db_name = ? AND is_active = 1',
+      [classRows] = await pool.query(`
+        SELECT classcode, classname, db_name, status
+          FROM py_payrollclass
+          WHERE db_name = ? AND status = 'active'
+        `,
         [targetClass]
       );
     }
@@ -78,7 +86,7 @@ router.post('/switch-class', verifyToken, async (req, res) => {
     const selectedClass = classRows[0];
     targetDbName = selectedClass.db_name;
 
-    console.log(`✅ Resolved target class: ${selectedClass.display_name} (${targetDbName})`);
+    console.log(`✅ Resolved target class: ${selectedClass.classname} (${targetDbName})`);
 
     // Simply switch to the target database
     // User can work in ANY database, not restricted to their primary_class
@@ -103,11 +111,11 @@ router.post('/switch-class', verifyToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: `Switched to ${selectedClass.display_name}`,
+      message: `Switched to ${selectedClass.classname} successfully.`,
       token: newToken,
       newClass: {
         id: selectedClass.db_name,
-        display: selectedClass.display_name
+        display: selectedClass.classname
       },
       isPrimary: selectedClass.db_name === req.primary_class,
       switchedAt: new Date().toISOString()

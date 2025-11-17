@@ -36,11 +36,11 @@ router.get("/classes", (req, res) => {
 router.get("/db_classes", verifyToken, async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT db_name, display_name FROM db_classes WHERE is_active = 1 ORDER BY db_name ASC"
+      "SELECT db_name, classname FROM py_payrollclass WHERE status = 'active' ORDER BY db_name ASC"
     );
     res.json(rows);
   } catch (err) {
-    console.error("❌ Failed to fetch db_classes:", err.message);
+    console.error("❌ Failed to fetch classname:", err.message);
     res.status(500).json({ error: "Failed to fetch db_classes" });
   }
 });

@@ -1,5 +1,6 @@
 const dotenv = require('dotenv');
 const envFile = 'production' ? '.env.production' : '.env.local';
+const { notificationMiddleware } = require('./middware/notifications');
 const express = require('express');
 const app = express();
 const session = require('express-session');
@@ -70,6 +71,8 @@ app.use(session({
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
+
+app.use(notificationMiddleware);
 
 
 // mount routes

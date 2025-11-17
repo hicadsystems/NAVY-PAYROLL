@@ -42,16 +42,16 @@ const upload = multer({
 // Field mapping from Excel/CSV headers to database columns
 const FIELD_MAPPING = {
   'Service Number': 'Empl_id',
-  'Deduction Type': 'type',
-  'Delete Maker Annual': 'mak1',
+  'Payment Type': 'type',
+  'Maker 1': 'mak1',
   'Amount Payable': 'amtp',
-  'Delete Maker Cumulative': 'mak2',
+  'Maker 2': 'mak2',
   'Amount': 'amt',
-  'Amount Already Deducted': 'amtad',
+  //'Amount Action': 'amtad',
   'Amount To Date': 'amttd',
   'Payment Indicator': 'payind',
   'Number of Months': 'nomth',
-  'Created By': 'createdby'
+  //'Created By': 'createdby'
 };
 
 // Helper function to parse Excel file
@@ -108,8 +108,8 @@ function mapFields(row, defaultCreatedBy) {
   // Set defaults
   if (!mappedRow.mak1) mappedRow.mak1 = 'No';
   if (!mappedRow.mak2) mappedRow.mak2 = 'No';
-  if (!mappedRow.amt && mappedRow.amtp) mappedRow.amt = mappedRow.amtp;
-  if (!mappedRow.amtad) mappedRow.amtad = 0;
+  if (!mappedRow.amt && mappedRow.amtp) mappedRow.amt = 0;
+  //if (!mappedRow.amtad) mappedRow.amtad = 0;
   if (!mappedRow.amttd) mappedRow.amttd = 0;
   if (!mappedRow.nomth) mappedRow.nomth = 0;
   if (!mappedRow.createdby) mappedRow.createdby = defaultCreatedBy;
@@ -166,9 +166,8 @@ async function checkDuplicates(deductions) {
 async function insertDeduction(data) {
   const query = `
     INSERT INTO py_payded (
-      Empl_id, type, mak1, amtp, mak2, amt, 
-      amtad, amttd, payind, nomth, createdby, datecreated
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      Empl_id, type, mak1, amtp, mak2, amt, amttd, payind, nomth, createdby, datecreated
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
   `;
   
   const [result] = await pool.query(query, [
@@ -178,7 +177,7 @@ async function insertDeduction(data) {
     data.amtp,
     data.mak2,
     data.amt,
-    data.amtad,
+    //data.amtad,
     data.amttd,
     data.payind,
     data.nomth,
@@ -307,12 +306,12 @@ router.get('/batch-template', verifyToken, (req, res) => {
   // Create sample data
   const sampleData = [{
     'Service Number': 'NN001',
-    'Deduction Type': 'PT330',
-    'Delete Maker Annual': 'No',
+    'Payment Type': 'PT330',
+    'Maker 1': 'No',
     'Amount Payable': '5000.00',
-    'Delete Maker Cumulative': 'No',
+    'Maker 2': 'No',
     'Amount': '5000.00',
-    'Amount Already Deducted': '0.00',
+    //'Amount Already Deducted': '0.00',
     'Amount To Date': '0.00',
     'Payment Indicator': 'T',
     'Number of Months': '12',
@@ -322,13 +321,13 @@ router.get('/batch-template', verifyToken, (req, res) => {
   // Create workbook
   const worksheet = XLSX.utils.json_to_sheet(sampleData);
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Deductions');
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Payment-Deductions');
   
   // Generate buffer
   const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
   
   // Send file
-  res.setHeader('Content-Disposition', 'attachment; filename=deductions_template.xlsx');
+  res.setHeader('Content-Disposition', 'attachment; filename=payment-deductions_template.xlsx');
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.send(buffer);
 });

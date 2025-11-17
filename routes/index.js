@@ -1,6 +1,6 @@
 //Dashboard
 const statsRoutes = require('./dashboard/stats');
-
+const notificationRoutes = require('./dashboard/notification');
 
 
 //administration
@@ -116,6 +116,7 @@ const logServiceRoutes = require('./helpers/logRoutes');
 module.exports = (app) => {
     //dashboard
     app.use('/stats', statsRoutes);
+    app.use('/notifications', notificationRoutes);
 
     //administration
     app.use('/api/users', usersRoutes);

@@ -216,6 +216,27 @@
   </div>
 </div>
 
+  <!-- View Modal -->
+  <div id="viewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-lg p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4 border-b pb-3">
+        <h2 class="text-xl font-bold text-blue-600">Payment/Deduction Details</h2>
+        <button id="closeViewBtn" class="text-gray-400 hover:text-gray-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div id="viewContent" class="text-gray-700 text-sm">
+        <!-- Dynamic content will be inserted here -->
+      </div>
+      <div class="flex justify-end mt-6 pt-4 border-t">
+        <button id="closeViewBtnBottom"
+          class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">Close</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 (function () {
   const API_BASE = '/payded';
@@ -233,6 +254,10 @@
   const successTick = document.getElementById("successTick");
   const errorIcon = document.getElementById("errorIcon");
   const successMessage = document.getElementById("successMessage");
+  const viewModal = document.getElementById("viewModal");
+  const viewContent = document.getElementById("viewContent");
+  const closeViewBtn = document.getElementById("closeViewBtn");
+  const closeViewBtnBottom = document.getElementById("closeViewBtnBottom");
 
   const createBtn = document.getElementById("createPayDedBtn");
   const cancelBtn = document.getElementById("cancelPayDedBtn");
@@ -281,9 +306,23 @@
   hiddenInput.id = 'emplId';
   form.appendChild(hiddenInput);
 
-  
-  // API FUNCTIONS
+  // Field labels mapping for display
+  const fieldLabels = {
+    'Empl_id': 'Service Number',
+    'type': 'Payment/Deduction Type',
+    'delete_maker_annual': 'Maker 1',
+    'amount_payable': 'Amount Payable',
+    'delete_maker_cumulative': 'Maker 2',
+    'amount_to_date': 'Amount To Date',
+    'amt': 'Amount',
+    'indicator': 'Pay Indicator',
+    'months_remaining': 'Months Remaining',
+    'createdby': 'Created By',
+    'datecreated': 'Created At'
+  };
 
+  
+  //------- API FUNCTIONS --------//
   //load dropdown
   async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
     try {
@@ -337,6 +376,76 @@
   function resolveName(code, endpoint) {
     if (!code) return 'N/A';
     return lookupMaps[endpoint]?.[code] || code;
+  }
+
+  // Format currency
+  function formatCurrency(amount) {
+    if (!amount && amount !== 0) return 'N/A';
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN'
+    }).format(amount);
+  }
+
+  // Format date
+  function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-NG', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+    // Show view modal with all fields
+  function showViewModal(item) {
+    let contentHtml = '<dl class="divide-y divide-gray-200">';
+    
+    // Define the order and grouping of fields
+    const fieldGroups = [
+      {
+        fields: ['Empl_id', 'type', 'indicator', 'delete_maker_annual', 'amount_payable', 'delete_maker_cumulative', 'amount_to_date', 'amt', 'months_remaining', 'createdby', 'datecreated']
+      }
+    ];
+
+    fieldGroups.forEach((group, groupIndex) => {
+      if (groupIndex > 0) {
+        contentHtml += '<div class="pt-4 mt-4"></div>';
+      }
+      
+      group.fields.forEach(key => {
+        if (item.hasOwnProperty(key)) {
+          let value = item[key];
+          
+          // Format based on field type
+          if (key.includes('amount') || key === 'amt') {
+            value = formatCurrency(value);
+          } else if (key.includes('date') || key === 'created_at' || key === 'updated_at') {
+            value = formatDate(value);
+          } else if (key === 'indicator') {
+            value = resolveName(value, 'payindicator');
+          } else if (key === 'type') {
+            value = resolveName(value, 'elementtype') || value;
+          } else if (!value && value !== 0) {
+            value = 'N/A';
+          }
+          
+          contentHtml += `
+            <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
+              <dt class="font-medium text-gray-600">${fieldLabels[key] || key}:</dt>
+              <dd class="col-span-2 text-gray-900">${value}</dd>
+            </div>`;
+        }
+      });
+    });
+    
+    contentHtml += '</dl>';
+    
+    viewContent.innerHTML = contentHtml;
+    viewModal.classList.remove('hidden');
   }
 
   async function fetchAllDeductions() {
@@ -557,10 +666,22 @@
         <td class="py-2 px-4 border">${item.months_remaining || '-'}</td>
         <td class="py-2 px-4 border">
           <button onclick="editRow('${escapeQuotes(item.Empl_id)}', '${escapeQuotes(item.type)}')" class="text-blue-600 hover:underline">Edit</button> |
-          <button onclick="deleteRow('${escapeQuotes(item.Empl_id)}', '${escapeQuotes(item.type)}')" class="text-red-600 hover:underline">Delete</button>
+          <button onclick="deleteRow('${escapeQuotes(item.Empl_id)}', '${escapeQuotes(item.type)}')" class="text-red-600 hover:underline">Delete</button> |
+          <button class="view-btn text-green-600 hover:underline" 
+          data-item='${JSON.stringify(item)}'>
+            View
+          </button>
         </td>
       `;
       tableBody.appendChild(row);
+    });
+
+    // Add event listeners to view buttons
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const itemData = JSON.parse(e.target.getAttribute('data-item'));
+        showViewModal(itemData);
+      });
     });
   }
 
@@ -805,6 +926,14 @@
     recordsPerPage = parseInt(e.target.value);
     currentPage = 1;
     fetchAllDeductions();
+  });
+
+  closeViewBtn.addEventListener("click", () => {
+    viewModal.classList.add("hidden");
+  });
+
+  closeViewBtnBottom.addEventListener("click", () => {
+    viewModal.classList.add("hidden");
   });
 
   // TABLE SEARCH FUNCTIONALITY

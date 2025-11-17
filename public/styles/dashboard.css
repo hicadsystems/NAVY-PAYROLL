@@ -1,4 +1,3 @@
-
 :root{
   --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
@@ -16,6 +15,120 @@ body.no-scroll {
   transition: transform 0.3s ease-in-out;
 }
 
+html {
+  font-size: 90% !important;
+} 
+
+/* ==================== RESPONSIVE VERTICAL SPACING ==================== */
+/* Adjust content spacing based on screen height */
+@media (min-height: 900px) and (min-width: 1440px) {
+  main.overlap {
+    padding-top: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: calc(100vh - 5rem);
+  }
+  
+  /* Greeting spacing */
+  main.overlap > .mt-6 {
+    margin-top: 3rem;
+  }
+  
+  /* Stats container spacing */
+  main.overlap section:first-of-type {
+    margin-top: 3rem;
+  }
+  
+  /* Quick access + notifications spacing */
+  main.overlap section:last-of-type {
+    margin-top: 3rem;
+  }
+  
+  /* Sidebar height adjustment */
+  #sidebar {
+    min-height: calc(100vh - 5rem);
+    margin-top: 2.3rem;
+  }
+  
+  /* Sidebar nav spacing adjustment */
+  #sidebar nav ul {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  #sidebar nav ul li {
+    margin: 0;
+  }
+
+  html {
+    font-size: 100% !important;
+  } 
+}
+
+@media (min-height: 1200px) and (min-width: 1440px) {
+  main.overlap {
+    padding-top: 6rem;
+    padding-bottom: 6rem;
+  }
+  
+  main.overlap > .mt-6 {
+    margin-top: 4rem;
+  }
+  
+  main.overlap section:first-of-type {
+    margin-top: 4rem;
+  }
+  
+  main.overlap section:last-of-type {
+    margin-top: 4rem;
+  }
+  
+  /* Increased sidebar nav spacing for ultra-tall screens */
+  #sidebar nav ul {
+    gap: 3rem;
+  }
+
+  html {
+    font-size: 100% !important;
+  } 
+}
+
+/* ==================== HEADER ICONS BEHAVIOR ==================== */
+/* Hide header icons and HICAD text when sidebar is collapsed */
+@media (min-width: 1024px) {
+  /* Header icons container and HICAD text */
+  header .flex.items-center.gap-4 > div.relative.group,
+  header .flex.items-center.gap-4 > .text-2xl.lg\:text-3xl {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  
+  /* Hide icons and HICAD when sidebar is collapsed */
+  body.sidebar-closed header .flex.items-center.gap-4 > div.relative.group,
+  body.sidebar-closed header .flex.items-center.gap-4 > .text-2xl.lg\:text-3xl {
+    opacity: 0;
+    transform: translateX(-10px);
+    pointer-events: none;
+  }
+  
+  /* Show icons and HICAD when sidebar is open */
+  body.sidebar-open header .flex.items-center.gap-4 > div.relative.group,
+  body.sidebar-open header .flex.items-center.gap-4 > .text-2xl.lg\:text-3xl {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+  
+  /* Show icons and HICAD on header hover when collapsed */
+  body.sidebar-closed header:hover .flex.items-center.gap-4 > div.relative.group,
+  body.sidebar-closed header:hover .flex.items-center.gap-4 > .text-2xl.lg\:text-3xl {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+}
+
 /* ==================== SIDEBAR STYLES ==================== */
 
 #sidebar {
@@ -23,7 +136,7 @@ body.no-scroll {
 }
 
 /* Mobile and medium sidebar */
-@media (max-width: 1023px) {
+@media (max-width: 1000px) {
   #sidebar {
     position: fixed;
     top: 0;
@@ -53,7 +166,6 @@ body.no-scroll {
     z-index: 30;
   }
   
-  /* On mobile, desktop-hidden means completely hidden */
   #sidebar.desktop-hidden {
     display: none;
   }
@@ -67,7 +179,7 @@ body.no-scroll {
 @media (min-width: 1024px) and (max-width: 1200px) {
   #sidebar.desktop-hidden {
     width: 60px !important;
-    transform: translateX(0) !important; /* Keep visible, just narrow */
+    transform: translateX(0) !important;
     overflow: visible !important;
   }
 
@@ -81,7 +193,6 @@ body.no-scroll {
     padding-right: 0.5rem !important;
   }
 
-  /* Hide text but keep icons visible */
   #sidebar.desktop-hidden .nav-item span span {
     display: none;
   }
@@ -104,7 +215,6 @@ body.no-scroll {
     justify-content: center;
   }
 
-  /* Logout button in icon mode */
   #sidebar.desktop-hidden .logout {
     padding: 0.75rem 0.5rem;
     font-size: 0;
@@ -118,12 +228,10 @@ body.no-scroll {
     display: inline-block;
   }
 
-  /* Adjust main content when sidebar is collapsed */
   body.sidebar-closed .main-content-wrapper {
     padding-left: 60px !important;
   }
   
-  /* Full sidebar when open */
   body.sidebar-open .main-content-wrapper {
     padding-left: 250px !important;
   }
@@ -141,27 +249,49 @@ body.no-scroll {
   }
 }
 
-/* Remove conflicting rules */
-@media (min-width: 1200px) {
-  .main-container {
-    transition: margin-left 0.3s ease-in-out;
+/* ==================== SIDEBAR HOVER - DISABLED ==================== */
+@media (min-width: 1024px) {
+  /* Sidebar stays collapsed on hover - no expansion */
+  #sidebar.desktop-hidden {
+    width: 60px !important;
   }
   
-  /* REMOVE this rule - it was hiding the sidebar */
-  /* #sidebar.desktop-hidden {
-    transform: translateX(-1000%);
-  } */
+  /* Submenus appear to the right of icons on hover */
+  #sidebar.desktop-hidden li[data-menu]:hover > .submenu {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: fixed !important;
+    left: 60px !important;
+    z-index: 50 !important;
+  }
+  
+  /* Position submenus correctly next to icons */
+  #sidebar.desktop-hidden .submenu {
+    min-width: 200px;
+  }
 }
 
-@media (max-width: 1999px) and (min-width: 1024px) {
-  .main-container {
-    transition: margin-left 0.3s ease-in-out;
-  }
-  
-  /* REMOVE this rule - it was hiding the sidebar */
-  /* #sidebar.desktop-hidden {
-    transform: translateX(-1000%);
-  } */
+/* ==================== ACTIVE MENU HIGHLIGHTING ==================== */
+/* Highlight active menu item */
+.nav-item.active,
+.nav-item.active:hover {
+  background-color: rgba(251, 191, 36, 0.3) !important;
+  font-weight: 600;
+}
+
+/* Highlight parent menu when child is active */
+.nav-item.has-submenu.parent-active,
+.nav-item.has-submenu.parent-active:hover {
+  background-color: rgba(250, 228, 174, 0.2) !important;
+  font-weight: 600;
+}
+
+/* Active submenu item */
+.submenu a.active {
+  background-color: rgba(252, 236, 196, 0.3) !important;
+  color: #e08952 !important;
+  font-weight: 600;
 }
 
 /* Mobile submenu styles - make scrollable */
@@ -179,7 +309,6 @@ body.no-scroll {
     max-height: none !important;
   }
   
-  /* Custom scrollbar for mobile submenu */
   .submenu::-webkit-scrollbar {
     width: 4px;
   }
@@ -203,19 +332,17 @@ body.no-scroll {
   overflow: hidden;
 }
 
-/* Left bar (grows from bottom up) */
+/* Loading animation */
 @keyframes grow-up {
   0%, 100% { height: 0; bottom: 0; top: auto; }
   50% { height: 100%; bottom: 0; top: auto; }
 }
 
-/* Right bar (grows from top down) */
 @keyframes grow-down {
   0%, 100% { height: 0; top: 0; bottom: auto; }
   50% { height: 100%; top: 0; bottom: auto; }
 }
 
-/* Middle bar expands horizontally */
 @keyframes expand {
   0%, 100% { width: 0; }
   50% { width: 30px; }
@@ -231,57 +358,48 @@ body.no-scroll {
   animation: expand .9s ease-in-out infinite;
 }
 
-
-/* Custom CSS to hide scrollbars for seamless appearance */
-
-/* 1. Hide the main browser scrollbar and force main content to handle scrolling */
+/* ==================== SCROLLBAR HIDING ==================== */
 html, body {
-  overflow: hidden;              /* Prevent native browser scrolling */
-  scrollbar-width: none;         /* Firefox */
-  -ms-overflow-style: none;      /* IE/Edge */
+  overflow: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   scroll-behavior: smooth;
 }
 
-/* Chrome, Safari, Opera scrollbar hiding for html/body */
 html::-webkit-scrollbar, 
 body::-webkit-scrollbar {
   display: none;               
 }
 
-/* 2. Hide scrollbar for the fixed sidebar */
 #sidebar {
-  scrollbar-width: none;         /* Firefox */
-  -ms-overflow-style: none;      /* IE/Edge */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-/* Chrome, Safari, Opera scrollbar hiding for sidebar */
 #sidebar::-webkit-scrollbar {
   display: none;               
 }
 
-/* Targeting the main scrollable content wrapper */
 .main-content-wrapper {
-  scrollbar-width: none;       /* Firefox */
-  -ms-overflow-style: none;    /* IE/Edge */
-   transition: opacity 0.15s ease;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  transition: opacity 0.15s ease;
 }
 
 .main-content-wrapper::-webkit-scrollbar {
-  display: none;               /* Chrome, Safari, Opera */
+  display: none;
 }
 
 .hide-scrollbar {
-  /* For IE and Edge */
   -ms-overflow-style: none;  
-  /* For Firefox */
   scrollbar-width: none;  
 }
 
-/* For Chrome, Safari, and Opera */
 .hide-scrollbar::-webkit-scrollbar {
   display: none; 
 }
 
+/* ==================== ANIMATIONS ==================== */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -297,14 +415,12 @@ body::-webkit-scrollbar {
   animation: fadeInUp 0.4s ease-out forwards;
 }
 
-
+/* ==================== PRINT STYLES ==================== */
 @media print {
-  /* Hide non-printable elements */
   button, input, .no-print {
     display: none !important;
   }
   
-  /* Style the print table */
   .print-table {
     width: 100%;
     border-collapse: collapse;
@@ -336,7 +452,7 @@ body::-webkit-scrollbar {
   }
 }
 
-/* Icon-only sidebar state */
+/* ==================== ICON-ONLY SIDEBAR STATE ==================== */
 #sidebar.desktop-hidden {
   width: 60px !important;
   overflow: visible !important;
@@ -356,7 +472,6 @@ body::-webkit-scrollbar {
   padding-right: 0.5rem !important;
 }
 
-/* Hide text but keep icons visible */
 #sidebar.desktop-hidden .nav-item span span {
   display: none;
 }
@@ -379,21 +494,20 @@ body::-webkit-scrollbar {
   justify-content: center;
 }
 
-/* Logout button in icon mode */
 #sidebar.desktop-hidden .logout {
   padding: 0.75rem 0.5rem;
   font-size: 0;
+  background: none;
 }
 
 #sidebar.desktop-hidden .logout::before {
   content: '\f2f5';
   font-family: 'Font Awesome 5 Free';
   font-weight: 900;
-  font-size: 1.25rem;
+  font-size: 1rem;
   display: inline-block;
 }
 
-/* Adjust main content when sidebar is collapsed */
 body.sidebar-closed .main-content-wrapper {
   padding-left: 60px !important;
 }
@@ -408,7 +522,6 @@ body.sidebar-closed .main-content-wrapper {
   }
 }
 
-/* Ensure sidebar stays visible on desktop even when collapsed */
 @media (min-width: 1024px) {
   #sidebar.desktop-hidden {
     display: block !important;

@@ -214,7 +214,8 @@ router.post('/backup/mysql', verifyToken, async (req, res) => {
     });
     
     return res.json({ 
-      success: true, 
+      success: true,
+      message: 'Backup completed successfully',
       filename: result.filename, 
       path: result.path,
       class_name: friendlyName

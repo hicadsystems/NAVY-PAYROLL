@@ -36,7 +36,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">User ID</label>
-            <input type="text" name="user_id" readonly  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <input type="text" name="user_id" readonly  class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed">
           </div>
 
           <div>
@@ -52,19 +52,20 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Payroll Class *</label>
             <select id="payroll-class" name="payroll_class" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              <option selected>Select Payroll Class</option>
+              <option value="">Select Payroll Class</option>
             </select>
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">User Role *</label>
             <select name="user_role" id="role" required  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option value="">Select Role...</option>
             </select>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select name="status"  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+            <select name="status" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
               <option value="">Select Status...</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -80,29 +81,49 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
             <input type="date" name="expiry_date"  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <small class="text-gray-500 text-xs">Leave blank to remove expiry</small>
           </div>
         </div>
 
         <div class="flex justify-end gap-3 pt-4">
-          <button type="button" id="cancel-edit-btn" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
-          <button type="submit" id="submit-edit-btn" class="px-4 py-2 bg-green-600 text-white rounded">Save Changes</button>
+          <button type="button" id="cancel-edit-btn" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+          <button type="submit" id="submit-edit-btn" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Save Changes</button>
         </div>
       </form>
     </div>
   </div>
 
+  <!-- View User Modal -->
   <div id="viewEmployeeModal" class="fixed inset-0 hidden flex items-center justify-center z-50">
     <div id="viewEmployeeBackdrop" class="absolute inset-0 bg-black bg-opacity-50"></div>
     <div class="relative bg-white rounded-lg shadow-lg w-11/12 max-w-lg p-6 z-10 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-start">
         <h3 class="text-lg font-semibold text-blue-600">User Details</h3>
-        <button id="close-view-modal" class="text-gray-500 hover:text-gray-800">✕</button>
+        <button id="close-view-modal" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
       </div>
 
       <div id="viewEmployeeContent" class="mt-4 space-y-2 text-gray-700"></div>
 
       <div class="flex justify-end mt-6">
         <button id="view-modal-close-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Modal -->
+  <div id="alertModal" class="fixed inset-0 hidden flex items-center justify-center z-50">
+    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+    <div class="relative bg-white rounded-lg shadow-lg w-11/12 max-w-md p-6 z-10">
+      <div class="flex items-start mb-4">
+        <div id="alert-icon" class="flex-shrink-0 mr-3"></div>
+        <div class="flex-1">
+          <h3 id="alert-title" class="text-lg font-semibold mb-2"></h3>
+          <p id="alert-message" class="text-gray-700"></p>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mt-6">
+        <button id="alert-cancel-btn" class="hidden px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Cancel</button>
+        <button id="alert-ok-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
       </div>
     </div>
   </div>
@@ -117,6 +138,89 @@
 </div>
 
 <script>
+// Alert Modal System
+const AlertModal = {
+  modal: null,
+  title: null,
+  message: null,
+  icon: null,
+  okBtn: null,
+  cancelBtn: null,
+  resolve: null,
+
+  init() {
+    this.modal = document.getElementById('alertModal');
+    this.title = document.getElementById('alert-title');
+    this.message = document.getElementById('alert-message');
+    this.icon = document.getElementById('alert-icon');
+    this.okBtn = document.getElementById('alert-ok-btn');
+    this.cancelBtn = document.getElementById('alert-cancel-btn');
+
+    this.okBtn?.addEventListener('click', () => this.close(true));
+    this.cancelBtn?.addEventListener('click', () => this.close(false));
+  },
+
+  show(options = {}) {
+    return new Promise((resolve) => {
+      this.resolve = resolve;
+      
+      const type = options.type || 'info'; // 'info', 'error', 'warning', 'success', 'confirm'
+      const title = options.title || this.getDefaultTitle(type);
+      const message = options.message || '';
+      const showCancel = options.showCancel || false;
+
+      this.title.textContent = title;
+      this.message.textContent = message;
+      this.icon.innerHTML = this.getIcon(type);
+
+      if (showCancel) {
+        this.cancelBtn.classList.remove('hidden');
+        this.okBtn.textContent = options.okText || 'Yes';
+      } else {
+        this.cancelBtn.classList.add('hidden');
+        this.okBtn.textContent = options.okText || 'OK';
+      }
+
+      this.modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    });
+  },
+
+  close(result) {
+    this.modal.classList.add('hidden');
+    document.body.style.overflow = '';
+    if (this.resolve) {
+      this.resolve(result);
+      this.resolve = null;
+    }
+  },
+
+  getDefaultTitle(type) {
+    const titles = {
+      info: 'Information',
+      error: 'Error',
+      warning: 'Warning',
+      success: 'Success',
+      confirm: 'Confirm Action'
+    };
+    return titles[type] || 'Alert';
+  },
+
+  getIcon(type) {
+    const icons = {
+      info: '<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+      error: '<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+      warning: '<svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>',
+      success: '<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+      confirm: '<svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+    };
+    return icons[type] || icons.info;
+  }
+};
+
+// Initialize alert modal
+AlertModal.init();
+
 async function fetchRoles() {
   try {
     const token = localStorage.getItem('token');
@@ -129,8 +233,14 @@ async function fetchRoles() {
         }                 
     });
 
+    if (!res.ok) {
+      throw new Error(`Failed to fetch roles: ${res.status}`);
+    }
+
     const roles = await res.json();
     const select = document.getElementById("role");
+    
+    if (!select) return;
     
     // Clear existing options first
     select.innerHTML = "";
@@ -146,12 +256,17 @@ async function fetchRoles() {
     // Add role options
     roles.forEach(r => {
       const opt = document.createElement("option");
-      opt.value = r.name;
-      opt.textContent = r.name;
+      opt.value = r.name || r.id;
+      opt.textContent = r.name || r.display_name || r.id;
       select.appendChild(opt);
     });
   } catch (err) {
     console.error("❌ Failed to fetch roles:", err);
+    await AlertModal.show({
+      type: 'error',
+      title: 'Failed to Load Roles',
+      message: 'Could not fetch user roles. Please refresh the page.'
+    });
   }
 }
 
@@ -194,17 +309,25 @@ async function loadPayrollClasses() {
     // Populate with DB data
     classes.forEach(cls => {
       const opt = document.createElement("option");
-      opt.value = cls.db_name;            // backend value
-      opt.textContent = cls.display_name; // human-readable label
+      opt.value = cls.classname;            // backend value
+      opt.textContent = cls.classname; // human-readable label
       select.appendChild(opt);
     });
   } catch (err) {
     console.error("❌ Failed to load payroll classes:", err);
+    await AlertModal.show({
+      type: 'error',
+      title: 'Failed to Load Payroll Classes',
+      message: 'Could not fetch payroll classes. Please refresh the page.'
+    });
   }
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener("DOMContentLoaded", fetchRoles, loadPayrollClasses);
+  document.addEventListener("DOMContentLoaded", () => {
+    fetchRoles();
+    loadPayrollClasses();
+  });
 } else {
   fetchRoles();
   loadPayrollClasses();
@@ -271,11 +394,21 @@ class PersonnelManager {
         "Authorization": `Bearer ${token}`, 
       }
     });
+      
+      if (!res.ok) {
+        throw new Error(`Failed to load users: ${res.status}`);
+      }
+      
       const data = await res.json();
       this.personnel = Array.isArray(data) ? data : [];
     } catch (err) {
       console.error('Failed to load users', err);
       this.personnel = [];
+      await AlertModal.show({
+        type: 'error',
+        title: 'Failed to Load Users',
+        message: 'Could not fetch user data. Please refresh the page.'
+      });
     }
     this.filtered = [...this.personnel];
     this.renderTable();
@@ -285,7 +418,9 @@ class PersonnelManager {
     const q = (this.search?.value || '').toLowerCase();
     this.filtered = this.personnel.filter(u =>
       (u.full_name || '').toLowerCase().includes(q) ||
-      (u.user_id || '').toLowerCase().includes(q)
+      (u.user_id || '').toLowerCase().includes(q) ||
+      (u.user_role || '').toLowerCase().includes(q) ||
+      (u.email || '').toLowerCase().includes(q)
     );
     this.renderTable();
   }
@@ -312,9 +447,9 @@ class PersonnelManager {
           </span>
         </td>
         <td class="border border-gray-300 px-4 py-3 text-left text-center">
-          <button onclick="window.personnelManager.viewUser('${u.user_id}')" class="px-2 py-1 bg-blue-600 text-white text-xs rounded mr-1">View</button>
-          <button onclick="window.personnelManager.startEdit('${u.user_id}')" class="px-2 py-1 bg-green-600 text-white text-xs rounded mr-1">Edit</button>
-          <button onclick="window.personnelManager.deleteUser('${u.user_id}')" class="px-2 py-1 bg-red-600 text-white text-xs rounded">Delete</button>
+          <button onclick="window.personnelManager.viewUser('${u.user_id}')" class="px-2 py-1 bg-blue-600 text-white text-xs rounded mr-1 hover:bg-blue-700">View</button>
+          <button onclick="window.personnelManager.startEdit('${u.user_id}')" class="px-2 py-1 bg-green-600 text-white text-xs rounded mr-1 hover:bg-green-700">Edit</button>
+          <button onclick="window.personnelManager.deleteUser('${u.user_id}')" class="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">Delete</button>
         </td>
       </tr>
     `).join('');
@@ -329,14 +464,26 @@ class PersonnelManager {
     }
   }
 
-  viewUser(id) {
+  async viewUser(id) {
     const u = this.personnel.find(x => x.user_id === id);
     if (!u) {
       // try fetch single user
-      fetch(`/api/users/${encodeURIComponent(id)}`).then(r => {
-        if (!r.ok) throw r;
-        return r.json();
-      }).then(data => { this.showUserModal(data); }).catch(()=> alert('User not found'));
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`/api/users/${encodeURIComponent(id)}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        
+        if (!res.ok) throw new Error('User not found');
+        const data = await res.json();
+        this.showUserModal(data);
+      } catch (err) {
+        await AlertModal.show({
+          type: 'error',
+          title: 'User Not Found',
+          message: 'Could not find the requested user.'
+        });
+      }
       return;
     }
     this.showUserModal(u);
@@ -350,10 +497,10 @@ class PersonnelManager {
       ['Full name', user.full_name || ''],
       ['Payroll Class', user.class_display_name || user.primary_class || ''],
       ['Role', user.user_role || ''],
-      ['Status', user.status || ''],
+      ['Status', user.status ? (user.status.charAt(0).toUpperCase() + user.status.slice(1)) : ''],
       ['Email', user.email || ''],
       ['Phone', user.phone_number || ''],
-      ['Expiry Date', user.expiry_date ? new Date(user.expiry_date).toLocaleDateString() : '']
+      ['Expiry Date', user.expiry_date ? new Date(user.expiry_date).toLocaleDateString() : 'No expiry']
     ];
 
     this.viewContent.innerHTML = rows.map(r => `
@@ -379,11 +526,25 @@ class PersonnelManager {
     let user = this.personnel.find(x => x.user_id === id);
     if (!user) {
       try {
-        const res = await fetch(`/api/users/${encodeURIComponent(id)}`);
+        const token = localStorage.getItem("token");
+        const res = await fetch(`/api/users/${encodeURIComponent(id)}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
         if (res.ok) user = await res.json();
-      } catch (e) { /* ignore */ }
+      } catch (e) { 
+        console.error('Failed to fetch user', e);
+      }
     }
-    if (!user) return alert('User not found');
+    
+    if (!user) {
+      await AlertModal.show({
+        type: 'error',
+        title: 'User Not Found',
+        message: 'Could not find the requested user.'
+      });
+      return;
+    }
+    
     this.editingUserId = id;
     this.fillForm(user);
     this.showEdit();
@@ -407,7 +568,7 @@ class PersonnelManager {
     this.tableView.classList.add('hidden');
     this.editView.classList.remove('hidden');
     document.getElementById('page-title').textContent = 'Edit User';
-    window.scrollTo({ top: this.editView.offsetTop || 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   showList() {
@@ -421,14 +582,44 @@ class PersonnelManager {
 
   async onEditSubmit(e) {
     e.preventDefault();
+    
     if (!this.editingUserId) {
-      alert('Not in edit mode. Use Create User page to add users.');
+      await AlertModal.show({
+        type: 'warning',
+        title: 'Not in Edit Mode',
+        message: 'Please use the Create User page to add new users.'
+      });
       return;
     }
+    
     const btn = this.submitBtn;
     btn.disabled = true;
+    btn.textContent = 'Saving...';
 
     const f = this.editForm;
+
+    // Validate required fields
+    if (!f.elements['full_name'].value.trim()) {
+      await AlertModal.show({
+        type: 'error',
+        title: 'Validation Error',
+        message: 'Full name is required.'
+      });
+      btn.disabled = false;
+      btn.textContent = 'Save Changes';
+      return;
+    }
+
+    if (!f.elements['email'].value.trim()) {
+      await AlertModal.show({
+        type: 'error',
+        title: 'Validation Error',
+        message: 'Email is required.'
+      });
+      btn.disabled = false;
+      btn.textContent = 'Save Changes';
+      return;
+    }
 
     // build raw values from form
     const raw = {
@@ -438,9 +629,7 @@ class PersonnelManager {
       status: f.elements['status'].value,
       email: f.elements['email'].value.trim(),
       phone_number: f.elements['phone_number'].value.trim(),
-      expiry_date: f.elements['expiry_date'].value || null,
-      // include password only if user filled it (do NOT send empty string or null)
-      ...(f.elements['password'] && f.elements['password'].value.trim() ? { password: f.elements['password'].value.trim() } : {})
+      expiry_date: f.elements['expiry_date'].value || null
     };
 
     // remove keys with empty string or explicit null for fields we don't want to overwrite
@@ -456,7 +645,8 @@ class PersonnelManager {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
-           "Authorization": `Bearer ${token}`},
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify(payload)
       });
 
@@ -473,38 +663,71 @@ class PersonnelManager {
         this.showList();
       } else {
         const msg = (data && (data.error || data.message)) || 'Update failed';
-        alert('❌ ' + msg);
+        await AlertModal.show({
+          type: 'error',
+          title: 'Update Failed',
+          message: msg
+        });
       }
     } catch (err) {
       console.error('Edit error', err);
-      alert('❌ Server error');
+      await AlertModal.show({
+        type: 'error',
+        title: 'Server Error',
+        message: 'Failed to connect to server. Please check your connection.'
+      });
     } finally {
       btn.disabled = false;
+      btn.textContent = 'Save Changes';
     }
   }
 
   async deleteUser(id) {
-    if (!confirm('Are you sure?')) return;
+    // Find user to get their full details for confirmation
+    const user = this.personnel.find(u => u.user_id === id);
+    const userName = user ? user.full_name : '';
+    
+    const confirmed = await AlertModal.show({
+      type: 'confirm',
+      title: 'Confirm Delete',
+      message: `Are you sure you want to delete this user (${id})${userName ? ' - ' + userName : ''}? This action cannot be undone.`,
+      showCancel: true,
+      okText: 'Delete'
+    });
+
+    if (!confirmed) return;
+
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch(`/api/users/${encodeURIComponent(id)}`, { method: 'DELETE',
+      const res = await fetch(`/api/users/${encodeURIComponent(id)}`, { 
+        method: 'DELETE',
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}` 
-        }});
+        }
+      });
+      
       if (res.ok) {
         this.personnel = this.personnel.filter(p => p.user_id !== id);
         this.filtered = [...this.personnel];
         this.renderTable();
-        this.showSuccess('User deleted');
+        this.showSuccess('User deleted successfully');
       } else {
-        const txt = await res.json().catch(()=>({error:'Delete failed'}));
-        alert('❌ ' + (txt.error || txt.message));
+        const txt = await res.json().catch(() => ({error: 'Delete failed'}));
+        await AlertModal.show({
+          type: 'error',
+          title: 'Delete Failed',
+          message: txt.error || txt.message || 'Could not delete user.'
+        });
       }
     } catch (err) {
       console.error('Delete user', err);
-      alert('❌ Server error');
+      await AlertModal.show({
+        type: 'error',
+        title: 'Server Error',
+        message: 'Failed to connect to server. Please check your connection.'
+      });
     }
   }
 
@@ -513,11 +736,11 @@ class PersonnelManager {
     this.successMessage.textContent = message || 'Success';
     this.successSpinner?.classList.remove('hidden');
     this.successPopup.classList.remove('hidden');
-    setTimeout(()=> {
+    setTimeout(() => {
       this.successSpinner?.classList.add('hidden');
       this.successMessage.innerHTML = `<span class="text-green-600 font-semibold">✔ ${message}</span>`;
     }, 1000);
-    setTimeout(()=> {
+    setTimeout(() => {
       this.successPopup.classList.add('hidden');
       this.successSpinner?.classList.remove('hidden');
       this.successMessage.textContent = 'Processing...';
@@ -526,53 +749,4 @@ class PersonnelManager {
 }
 
 window.personnelManager = new PersonnelManager();
-
-/*const form = document.getElementById("registerForm");
-const emailInput = document.getElementById("email");
-const phoneInput = document.getElementById("phone");
-const passwordInput = document.getElementById("password");
-const confirmPasswordInput = document.getElementById("confirmPassword");
-const errorMessages = document.getElementById("errorMessages");
-
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-  let errors = [];
-
-  // Email validation
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailPattern.test(emailInput.value.trim())) {
-    errors.push("Invalid email address");
-  }
-
-  // Phone validation (digits only, 10–15 length)
-  const phonePattern = /^[0-9]{10,15}$/;
-  if (!phonePattern.test(phoneInput.value.trim())) {
-    errors.push("Phone must be 10–15 digits");
-  }
-
-  // Password validation (min 8 chars, one uppercase, one lowercase, one number, one special char)
-  const password = passwordInput.value;
-  const passwordPattern =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
-  if (!passwordPattern.test(password)) {
-    errors.push(
-      "Password must be at least 8 characters and include uppercase, lowercase, number, and special character"
-    );
-  }
-
-  // Confirm password validation
-  if (password !== confirmPasswordInput.value) {
-    errors.push("Passwords do not match");
-  }
-
-  // Show errors or submit
-  if (errors.length > 0) {
-    errorMessages.innerHTML = errors.join("<br>");
-  } else {
-    errorMessages.innerHTML = "";
-    alert("Form submitted successfully!");
-    // here you can send data to backend with fetch()
-    form.submit();
-  }
-});*/
 </script>

@@ -67,7 +67,7 @@ router.post('/create', verifyToken, async(req, res) => {
     );
 
     res.status(201).json({
-        message: 'Documentation created sucessfully',
+        message: 'New Documentation record created successfully',
         doc_numb
     });
   } catch (err) {
@@ -126,7 +126,7 @@ router.put('/:doc_numb', verifyToken, async(req, res) => {
     // Get updated record
     const [updatedRows] = await pool.query('SELECT * FROM py_documentation WHERE doc_numb = ?', [doc_numb]);
     res.json({
-      message: 'Documentation updated successfully',
+      message: 'Successfully updated a Documentation record',
       documentation: updatedRows[0]
     });
 
@@ -148,12 +148,12 @@ router.delete('/:doc_numb', verifyToken, async(req, res) => {
     }
 
     res.json({ 
-      message: 'Documentation deleted successfully',
+      message: 'Successfully deleted a Documentation record',
       doc_numb: doc_numb 
     });
     
-  } catch{
-    console.error('Error deleting documentation:', err);
+  } catch(err){
+    console.error('Error deleting documentation record:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });

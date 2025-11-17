@@ -72,11 +72,11 @@ router.post('/create', verifyToken, async(req, res) => {
     );
 
     res.status(201).json({
-        message: 'Cummulative created sucessfully',
+        message: 'New Cummulative record created successfully',
         EmpL_ID
     });
   } catch (err) {
-    console.error('Error creating cummulative:', err);
+    console.error('Error creating cummulative record:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });
@@ -131,12 +131,12 @@ router.put('/:EmpL_ID', verifyToken, async(req, res) => {
     // Get updated record
     const [updatedRows] = await pool.query('SELECT * FROM py_cumulated WHERE EmpL_ID = ?', [EmpL_ID]);
     res.json({
-      message: 'Cummulative updated successfully',
+      message: 'Successfully updated a Cummulative record',
       cummulative: updatedRows[0]
     });
 
   } catch (err) {
-    console.error('Error updating cummulative:', err);
+    console.error('Error updating cummulative record:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });
@@ -153,12 +153,12 @@ router.delete('/:EmpL_ID', verifyToken, async(req, res) => {
     }
 
     res.json({ 
-      message: 'Cummulative deleted successfully',
+      message: 'Successfully deleted a Cummulative record',
       EmpL_ID: EmpL_ID 
     });
     
-  } catch{
-    console.error('Error deleting cummulative:', err);
+  } catch(err){
+    console.error('Error deleting cummulative record:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });

@@ -61,7 +61,7 @@ class BatchUploadController {
             }
 
             res.json({
-                message: 'Batch upload completed',
+                message: 'Salary scale batch upload completed',
                 summary: {
                     totalRecords: records.length,
                     successful: results.successful.length,
@@ -72,7 +72,7 @@ class BatchUploadController {
             });
 
         } catch (error) {
-            console.error('Batch upload error:', error);
+            console.error('Salary scale batch upload error:', error);
             
             // Clean up uploaded file on error
             if (filePath && fs.existsSync(filePath)) {
@@ -80,7 +80,7 @@ class BatchUploadController {
             }
 
             res.status(500).json({
-                error: 'Batch upload failed',
+                error: 'Salary scale batch upload failed',
                 message: error.message
             });
         }

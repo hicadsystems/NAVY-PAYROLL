@@ -64,7 +64,7 @@ router.post("/post-department", verifyToken, async (req, res) => {
        misc1, misc2, misc3, AddressCode, createdby]
     );
 
-    res.status(201).json({ message: "Department created" });
+    res.status(201).json({ message: "New Department created" });
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
       res.status(400).json({ error: "Duplicate entry detected" });
@@ -122,7 +122,7 @@ router.put("/:factcode/:deptcode", verifyToken, async (req, res) => {
     );
 
     if (result.affectedRows === 0) return res.status(404).json({ message: "Department not found" });
-    res.json({ message: "Department updated" });
+    res.json({ message: "Successfully updated a Department record" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -136,7 +136,7 @@ router.delete("/:factcode/:deptcode", verifyToken, async (req, res) => {
       [req.params.factcode, req.params.deptcode]
     );
     if (result.affectedRows === 0) return res.status(404).json({ message: "Department not found" });
-    res.json({ message: "Department deleted" });
+    res.json({ message: "Successfully deleted a Department record" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

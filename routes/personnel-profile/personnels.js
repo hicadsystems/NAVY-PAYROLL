@@ -519,7 +519,7 @@ router.post('/employees', verifyToken, attachPayrollClass, async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Employee created successfully',
+      message: 'New Personnel created successfully',
       employeeId: req.body.Empl_ID,
       created_by: createdBy
     });
@@ -557,7 +557,7 @@ router.put('/employees/:id', verifyToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Employee not found' });
     }
     
-    res.json({ success: true, message: 'Employee updated successfully' });
+    res.json({ success: true, message: 'Personnel updated successfully' });
   } catch (error) {
     console.error('UPDATE ERROR:', error.message);
     res.status(500).json({ success: false, error: error.message });
@@ -578,7 +578,7 @@ router.delete('/employees/:id', verifyToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Employee not found' });
     }
     
-    res.json({ success: true, message: 'Employee and all related records deleted successfully' });
+    res.json({ success: true, message: 'Personnel and all related records deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

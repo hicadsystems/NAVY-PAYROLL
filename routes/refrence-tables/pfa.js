@@ -70,7 +70,7 @@ router.post('/post', verifyToken, async (req, res) => {
       [pfacode, pfadesc, pfapfcname, pfapfc]
     );
     
-    res.status(201).json({ message: 'PFA created successfully', pfacode });
+    res.status(201).json({ message: 'New PFA record created successfully', pfacode });
   } catch (error) {
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ error: 'PFA code already exists' });
@@ -93,7 +93,7 @@ router.put('/:pfacode', verifyToken, async (req, res) => {
       return res.status(404).json({ error: 'PFA not found' });
     }
     
-    res.json({ message: 'PFA updated successfully' });
+    res.json({ message: 'Successfully updated a PFA record' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -108,7 +108,7 @@ router.delete('/:pfacode', verifyToken, async (req, res) => {
       return res.status(404).json({ error: 'PFA not found' });
     }
     
-    res.json({ message: 'PFA deleted successfully' });
+    res.json({ message: 'Successfully deleted a PFA record' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

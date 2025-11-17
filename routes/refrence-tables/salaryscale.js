@@ -38,7 +38,7 @@ router.post('/salary-scales', verifyToken, async (req, res) => {
         const [result] = await pool.query(query, values);
 
         res.status(201).json({
-            message: 'Salary scale created successfully',
+            message: 'New Salary scale record created successfully',
             data: { salcode, saltype, grade }
         });
 
@@ -200,7 +200,7 @@ router.put('/salary-scales/:salcode/:saltype/:grade', verifyToken, async (req, r
         }
 
         res.json({
-            message: 'Salary scale updated successfully',
+            message: 'Successfully updated a Salary scale record',
             data: { salcode, saltype, grade }
         });
 
@@ -229,7 +229,7 @@ router.delete('/salary-scales/:salcode/:saltype/:grade', verifyToken, async (req
         }
 
         res.json({
-            message: 'Salary scale deleted successfully',
+            message: 'Successfully deleted a salary scale record',
             data: { salcode, saltype, grade }
         });
 
@@ -433,7 +433,7 @@ router.post('/salary-groups', verifyToken, async (req, res) => {
         const [result] = await pool.query(query, values);
 
         res.status(201).json({
-            message: 'Salary group created successfully',
+            message: 'Successfully created a New Salary group',
             data: { groupcode, effdate, lastdate, grpdesc }
         });
 
@@ -630,7 +630,7 @@ router.put('/salary-groups/:groupcode', verifyToken, async (req, res) => {
         }
 
         res.json({
-            message: 'Salary group updated successfully',
+            message: 'Successfully updated a Salary group record',
             data: { groupcode }
         });
 
@@ -659,7 +659,7 @@ router.delete('/salary-groups/:groupcode', verifyToken, async (req, res) => {
         }
 
         res.json({
-            message: 'Salary group deleted successfully',
+            message: 'Successfully deleted a Salary group record',
             data: { groupcode }
         });
 

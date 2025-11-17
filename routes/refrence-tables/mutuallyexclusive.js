@@ -52,7 +52,7 @@ router.post("/post", verifyToken, async (req, res) => {
       typeldesc ? typeldesc.trim().toUpperCase() : null,
     ]);
 
-    res.json({ message: "Record created successfully" });
+    res.json({ message: "New Mutually Exclusive Record created successfully" });
   } catch (err) {
     console.error("Insert failed:", err);
     res.status(500).json({ error: "Insert failed" });
@@ -85,7 +85,7 @@ router.put("/:typeH/:typeL", verifyToken, async (req, res) => {
       return res.status(404).json({ error: "Record not found" });
     }
 
-    res.json({ message: "Record updated successfully" });
+    res.json({ message: "Successfully updated a Mutually Exclusive record" });
   } catch (err) {
     console.error("Update failed:", err);
     res.status(500).json({ error: "Update failed" });
@@ -104,7 +104,7 @@ router.delete("/:typeH/:typeL", verifyToken, async (req, res) => {
     if (result.affectedRows === 0)
       return res.status(404).json({ error: "Record not found" });
 
-    res.json({ message: "Record deleted successfully" });
+    res.json({ message: "Successfully deleted a Mutually Exclusive record" });
   } catch (err) {
     console.error("Delete failed:", err);
     res.status(500).json({ error: "Delete failed" });

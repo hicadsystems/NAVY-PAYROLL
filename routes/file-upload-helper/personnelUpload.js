@@ -300,16 +300,16 @@ router.post('/batch-upload', verifyToken, upload.single('file'), async (req, res
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
     return res.status(200).json({
-    message: 'Batch upload completed',
+    message: 'Personnel batch upload completed',
     summary: results
     });
 
   } catch (error) {
-    console.error('Batch upload error:', error);
+    console.error('Personnel batch upload error:', error);
     if (filePath && fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
     return res.status(500).json({
-      error: 'Batch upload failed',
+      error: 'Personnel batch upload failed',
       details: error.message
     });
   }

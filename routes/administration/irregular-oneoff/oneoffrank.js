@@ -80,7 +80,7 @@ router.post("/oneoffrank", verifyToken, async (req, res) => {
     const sql = `INSERT INTO py_oneoffrank (${fields.join(",")}) VALUES (${fields.map(() => "?").join(",")})`;
     await pool.query(sql, values);
 
-    res.json({ message: "Record created successfully" });
+    res.json({ message: "One-off rank amounts created successfully" });
   } catch (err) {
     console.error("Insert failed:", err);
     res.status(500).json({ error: "Insert failed" });
@@ -107,7 +107,7 @@ router.put("/:one_type", verifyToken, async (req, res) => {
       [...values, one_type]
     );
 
-    res.json({ message: "Record updated successfully" });
+    res.json({ message: "One-off rank amounts updated successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Update failed" });
@@ -120,7 +120,7 @@ router.delete("/:one_type", verifyToken, async (req, res) => {
     await pool.query("DELETE FROM py_oneoffrrank WHERE one_type=?", [
       req.params.one_type,
     ]);
-    res.json({ message: "Record deleted successfully" });
+    res.json({ message: "One-off rank amounts deleted successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Delete failed" });

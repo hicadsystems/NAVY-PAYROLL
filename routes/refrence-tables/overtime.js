@@ -20,7 +20,7 @@ router.post('/overtime', verifyToken, async (req, res) => {
     data.createdby = req.user_fullname || "Admin User";
 
     await pool.query("INSERT INTO py_stdrate SET ?", data);
-    res.status(201).json({ message: "Overtime (BT03) created successfully" });
+    res.status(201).json({ message: "New Overtime record created successfully" });
   } catch (err) {
     console.error("Error creating overtime:", err);
     res.status(500).json({ error: "Database error" });
@@ -49,7 +49,7 @@ router.put('/overtime', verifyToken, async (req, res) => {
     }
 
     await pool.query("UPDATE py_stdrate SET ? WHERE type = 'BT03'", [data]);
-    res.json({ message: "Overtime (BT03) updated successfully" });
+    res.json({ message: "Overtime record updated successfully" });
   } catch (err) {
     console.error("Error updating overtime:", err);
     res.status(500).json({ error: "Database error" });
@@ -67,7 +67,7 @@ router.post('/overpayment', verifyToken, async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT COUNT(*) as count FROM py_stdrate WHERE type = 'BT04'");
     if (rows[0].count > 0) {
-      return res.status(400).json({ error: "Overpayment (BT04) already exists" });
+      return res.status(400).json({ error: "Overpayment already exists" });
     }
 
     const data = { ...req.body };
@@ -75,7 +75,7 @@ router.post('/overpayment', verifyToken, async (req, res) => {
     data.createdby = req.user_fullname || "Admin User";
 
     await pool.query("INSERT INTO py_stdrate SET ?", data);
-    res.status(201).json({ message: "Overpayment (BT04) created successfully" });
+    res.status(201).json({ message: "New Overpayment record created successfully" });
   } catch (err) {
     console.error("Error creating overpayment:", err);
     res.status(500).json({ error: "Database error" });
@@ -100,11 +100,11 @@ router.put('/overpayment', verifyToken, async (req, res) => {
     const [rows] = await pool.query("SELECT type FROM py_stdrate WHERE type = 'BT04' LIMIT 1");
 
     if (rows.length === 0) {
-      return res.status(404).json({ error: "No overpayment (BT04) record exists" });
+      return res.status(404).json({ error: "No overpayment record exists" });
     }
 
     await pool.query("UPDATE py_stdrate SET ? WHERE type = 'BT04'", [data]);
-    res.json({ message: "Overpayment (BT04) updated successfully" });
+    res.json({ message: "Overpayment record updated successfully" });
   } catch (err) {
     console.error("Error updating overpayment:", err);
     res.status(500).json({ error: "Database error" });
@@ -116,11 +116,11 @@ router.delete('/overpayment', verifyToken, async (req, res) => {
     const [rows] = await pool.query("SELECT type FROM py_stdrate WHERE type = 'BT04' LIMIT 1");
 
     if (rows.length === 0) {
-      return res.status(404).json({ error: "No overpayment (BT04) record exists to delete" });
+      return res.status(404).json({ error: "No overpayment record exists to delete" });
     }
 
     await pool.query("DELETE FROM py_stdrate WHERE type = 'BT04'");
-    res.json({ message: "Overpayment (BT04) deleted successfully" });
+    res.json({ message: "Successfully deleted an Overpayment record" });
   } catch (err) {
     console.error("Error deleting overpayment:", err);
     res.status(500).json({ error: "Database error" });

@@ -23,7 +23,7 @@ router.post("/bankcreate", verifyToken, async (req, res) => {
       [bankcode, branchcode, bankname, branchname, address, CompanyAcctNo, ContactMgrAccountant, remarks, telephone, email, contact, createdby, datecreated, cbn_code, cbn_branch]
     );
 
-    res.status(201).json({ message: "Bank created successfully" });
+    res.status(201).json({ message: "Sucessfully created a new Bank" });
   } catch (err) {
     console.error("❌ Error creating bank:", err);
     res.status(500).json({ error: "Database error" });
@@ -85,61 +85,6 @@ router.get("/:bankcode/:branchcode", verifyToken, async (req, res) => {
   } catch (err) {
     console.error("❌ Error fetching bank:", err);
     res.status(500).json({ error: "Database error" });
-  }
-});
-
-// Search
-router.get('/employees-current/search', verifyToken, async (req, res) => {
-  try {
-    const currentDb = pool.getCurrentDatabase(req.user_id);
-    console.log('🔍 Search database:', currentDb);
-    console.log('🔍 User ID:', req.user_id);
-    
-    const searchTerm = req.query.q || req.query.search || '';
-    
-    console.log('🔎 Search term:', searchTerm);
-
-    let query = `
-      SELECT * FROM py_bank
-    `;
-
-    const params = [];
-
-    // Add search conditions if search term provided
-    if (searchTerm) {
-      query += ` AND (
-        bankcode LIKE ? OR
-        branchcode LIKE ? OR
-        branchname LIKE ? OR
-        bankname LIKE ? OR
-        CONCAT(branchcode, ' ', branchname) LIKE ?
-      )`;
-      
-      const searchPattern = `%${searchTerm}%`;
-      params.push(
-        searchPattern, // bankcode
-        searchPattern, // branchcode
-        searchPattern, // branchname
-        searchPattern, // bankname
-        searchPattern  // Full name
-      );
-    }
-
-    query += 'ORDER BY bankname ASC'
-
-    const [rows] = await pool.query(query, params);
-
-    console.log('🔍 Search returned:', rows.length, 'records');
-
-    res.json({ 
-      success: true, 
-      data: rows,
-      searchTerm: searchTerm,
-      resultCount: rows.length
-    });
-  } catch (err) {
-    console.error('❌ Search error:', err);
-    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -212,7 +157,7 @@ router.put("/:bankcode/:branchcode", verifyToken, async (req, res) => {
     const [updatedRows] = await pool.query('SELECT * FROM py_bank WHERE bankcode = ? AND branchcode = ?', [bankcode, branchcode]);
 
     res.json({ 
-        message: "Bank updated successfully",
+        message: "Successfully updated a Bank record",
         elementType: updatedRows[0]
      });
   } catch (err) {
@@ -221,7 +166,7 @@ router.put("/:bankcode/:branchcode", verifyToken, async (req, res) => {
   }
 });
 
-// 📌 Delete bank
+// Delete bank
 router.delete("/:bankcode/:branchcode", verifyToken, async (req, res) => {
   try {
     const { bankcode, branchcode } = req.params;
@@ -231,7 +176,7 @@ router.delete("/:bankcode/:branchcode", verifyToken, async (req, res) => {
       [bankcode, branchcode]
     );
 
-    res.json({ message: "Bank deleted successfully" });
+    res.json({ message: "Successfully deleted a Bank record" });
   } catch (err) {
     console.error("❌ Error deleting bank:", err);
     res.status(500).json({ error: "Database error" });

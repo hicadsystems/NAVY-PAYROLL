@@ -486,7 +486,7 @@ router.post('/', verifyToken, async (req, res) => {
     if (existing.length > 0) {
       return res.status(409).json({
         success: false,
-        message: 'Deduction already exists for this employee and type'
+        message: 'Payment/Deduction already exists for this employee and type'
       });
     }
 
@@ -517,14 +517,14 @@ router.post('/', verifyToken, async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Deduction created successfully',
+      message: 'New Payment/Deduction record created successfully',
       data: newRecord[0]
     });
   } catch (error) {
-    console.error('Error creating deduction:', error);
+    console.error('Error creating payment/deduction:', error);
     res.status(500).json({
       success: false,
-      message: 'Error creating deduction',
+      message: 'Error creating payment/deduction',
       error: error.message
     });
   }
@@ -587,14 +587,14 @@ router.post('/variation', verifyToken, async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Variation created successfully',
+      message: 'New Variation to Payment/Deduction record created successfully',
       data: newRecord[0]
     });
   } catch (error) {
-    console.error('Error creating deduction:', error);
+    console.error('Error creating a new Variation to payment/deduction:', error);
     res.status(500).json({
       success: false,
-      message: 'Error creating deduction',
+      message: 'Error creating a new Variation to payment/deduction',
       error: error.message
     });
   }
@@ -684,14 +684,14 @@ router.put('/:emplId/:type',  verifyToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Deduction updated successfully',
+      message: 'Successfully updated a payment/deduction record',
       data: updated[0]
     });
   } catch (error) {
-    console.error('Error updating deduction:', error);
+    console.error('Error updating payment/deduction:', error);
     res.status(500).json({
       success: false,
-      message: 'Error updating deduction',
+      message: 'Error updating payment/deduction',
       error: error.message
     });
   }
@@ -757,14 +757,14 @@ router.put('/variation/:emplId/:type',  verifyToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Variation updated successfully',
+      message: 'Successfully updated a Variation to Payment/Deduction record',
       data: updated[0]
     });
   } catch (error) {
-    console.error('Error updating Variation:', error);
+    console.error('Error updating a Variation to payment/deduction record:', error);
     res.status(500).json({
       success: false,
-      message: 'Error updating Variation',
+      message: 'Error updating a Variation to payment/deduction record',
       error: error.message
     });
   }
@@ -795,14 +795,14 @@ router.patch('/:emplId/:type/deactivate', verifyToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Deduction deactivated successfully',
+      message: 'Payment/Deduction deactivated successfully',
       affectedRows: result.affectedRows
     });
   } catch (error) {
-    console.error('Error deactivating deduction:', error);
+    console.error('Error deactivating payment/deduction:', error);
     res.status(500).json({
       success: false,
-      message: 'Error deactivating deduction',
+      message: 'Error deactivating payment/deduction',
       error: error.message
     });
   }
@@ -833,20 +833,20 @@ router.patch('/:emplId/:type/reactivate', verifyToken, async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Deduction not found'
+        message: 'Payment/Deduction not found'
       });
     }
 
     res.json({
       success: true,
-      message: 'Deduction reactivated successfully',
+      message: 'Payment/Deduction reactivated successfully',
       affectedRows: result.affectedRows
     });
   } catch (error) {
-    console.error('Error reactivating deduction:', error);
+    console.error('Error reactivating payment/deduction:', error);
     res.status(500).json({
       success: false,
-      message: 'Error reactivating deduction',
+      message: 'Error reactivating payment/deduction',
       error: error.message
     });
   }
@@ -874,14 +874,14 @@ router.delete('/:emplId/:type', verifyToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Deduction deleted successfully',
+      message: 'Successfully deleted payment/deduction record',
       affectedRows: result.affectedRows
     });
   } catch (error) {
-    console.error('Error deleting deduction:', error);
+    console.error('Error deleting payment/deduction record:', error);
     res.status(500).json({
       success: false,
-      message: 'Error deleting deduction',
+      message: 'Error deleting payment/deduction record',
       error: error.message
     });
   }

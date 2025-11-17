@@ -36,7 +36,11 @@ router.post('/create', verifyToken, async (req, res) => {
             'INSERT INTO py_calculation (his_empno, his_type, amtthismth, createdby) VALUES (?, ?, ?, ?)',
             [his_empno, his_type, amtthismth, createdby]
         );
-        res.json({ success: true, data: result });
+        res.json({ 
+          success: true,
+          message: 'Individual one-off payment added successfully',
+          data: result 
+          });
     } catch (error) {
         console.error('Error adding individual payment:', error);
         res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
@@ -63,7 +67,7 @@ router.put('/:his_empno/:his_type', verifyToken, async (req, res) => {
       });
     }
 
-    res.json({ success: true, message: 'Payment updated successfully', data: result });
+    res.json({ success: true, message: 'Individual one-off payment updated successfully', data: result });
   } catch (error) {
     console.error('Error updating individual payment:', error);
     res.status(500).json({
@@ -81,7 +85,7 @@ router.delete('/:his_empno/:his_type', verifyToken, async (req, res) => {
     const his_type  = req.params.his_type.replace(/_SLASH_/g, '/');
     try {
         const [result] = await pool.query('DELETE FROM py_calculation WHERE his_empno = ? AND his_type = ?', [his_empno, his_type]);
-        res.json({ success: true, data: result });
+        res.json({ success: true, message: 'Individual one-off payment deleted successfully', data: result });
     } catch (error) {
         console.error('Error deleting individual payment:', error);
         res.status(500).json({ success: false, message: 'Internal server error', error: error.message });

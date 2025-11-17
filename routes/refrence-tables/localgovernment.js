@@ -12,7 +12,7 @@ router.post("/postlga", verifyToken, async (req, res) => {
       "INSERT INTO py_tblLGA (Lgcode, Lgname, Lghqs, Statecode, createdby, datecreated) VALUES (?, ?, ?, ?, ?, NOW())",
       [Lgcode, Lgname, Lghqs, Statecode, createdby]
     );
-    res.status(201).json({ message: "LGA created", id: result.insertId });
+    res.status(201).json({ message: "New Local Government Area created", id: result.insertId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -80,7 +80,7 @@ router.put("/:Lgcode", verifyToken, async (req, res) => {
       [Lgname, Lghqs, Lgcode, req.params.Lgcode]
     );
     if (result.affectedRows === 0) return res.status(404).json({ message: "LGA not found" });
-    res.json({ message: "LGA updated" });
+    res.json({ message: "Successfully updated a Local Government Area record" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -93,7 +93,7 @@ router.delete("/:Lgcode", async (req, res) => {
       req.params.Lgcode,
     ]);
     if (result.affectedRows === 0) return res.status(404).json({ message: "LGA not found" });
-    res.json({ message: "LGA deleted" });
+    res.json({ message: "Successfully deleted a Local Government Area record" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

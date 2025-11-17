@@ -63,7 +63,7 @@ class UserNotificationSystem {
       }
     });
     
-    console.log(`✅ Cross-tab sync enabled for tab ${this.tabId}`);
+    console.log(`Cross-tab sync enabled for tab ${this.tabId}`);
   }
 
   // Setup fetch interceptor with tab coordination
@@ -235,10 +235,10 @@ class UserNotificationSystem {
         this.saveUserNotifications();
         
         if (newCount > 0) {
-          console.log(`✅ [${this.tabId}] Synced ${newCount} new notifications from backend`);
+          console.log(`[${this.tabId}] Synced ${newCount} new notifications from backend`);
           this.render();
         } else {
-          console.log(`✅ [${this.tabId}] Backend sync complete - no new notifications`);
+          console.log(`[${this.tabId}] Backend sync complete - no new notifications`);
         }
         
         this.lastSyncTime = Date.now();
@@ -311,7 +311,7 @@ class UserNotificationSystem {
     setTimeout(() => {
       const eventKey = `recentEvents_${this.userId}`;
       localStorage.removeItem(eventKey);
-      console.log(`🧹 [${this.tabId}] Cleared recent events after animation`);
+      console.log(`[${this.tabId}] Cleared recent events after animation`);
     }, recentEvents.length * 800 + 2000);
   }
 
@@ -370,7 +370,7 @@ class UserNotificationSystem {
     // Wait for FULL animation to complete before adding to panel
     setTimeout(() => {
       floatingNotif.remove();
-      console.log(`✅ [${this.tabId}] Animation complete, adding to panel:`, event.message);
+      console.log(`[${this.tabId}] Animation complete, adding to panel:`, event.message);
       
       // Now add to panel ONLY after animation is done
       this.addToPanel(event);
@@ -443,7 +443,7 @@ class UserNotificationSystem {
     });
     
     if (this.notifications.length < before) {
-      console.log(`🧹 [${this.tabId}] Removed ${before - this.notifications.length} related error(s)`);
+      console.log(`[${this.tabId}] Removed ${before - this.notifications.length} related error(s)`);
       this.saveUserNotifications();
     }
   }
@@ -451,7 +451,11 @@ class UserNotificationSystem {
   // Render notifications in container
   render() {
     const container = document.getElementById('notificationsList');
-    if (!container) return;
+    if (!container) {
+      // Check if we're on the "All Notifications" page
+      this.renderAllNotifications();
+      return;
+    }
 
     const displayNotifs = this.notifications.slice(0, 2);
     const unreadCount = this.notifications.length;
@@ -466,6 +470,9 @@ class UserNotificationSystem {
           <p class="text-xs">No notifications</p>
         </div>
       `;
+      
+      // Update aside notification count
+      this.updateAsideNotificationCount(0);
       return;
     }
 
@@ -487,25 +494,164 @@ class UserNotificationSystem {
       `;
     }).join('');
 
+        // Only show "View all" if count is > 2
+    const viewAllButton = unreadCount > 2 ? `
+      <div class="text-center mt-4">
+        <button onclick="event.stopPropagation(); window.navigation.navigateToSection('notifications', 'All Notifications')" 
+        class="text-xs text-blue-600 hover:text-blue-800 font-semibold">
+          View all (${unreadCount}) notifications →
+        </button>
+      </div>
+    ` : '';
+
     container.innerHTML = `
       <div class="cursor-pointer" onclick="window.navigation.navigateToSection('notifications', 'All Notifications')">
         <h4 class="text-xl font-bold text-navy mb-4 text-center hover:text-blue-600 transition-colors">
           Notifications
-          ${unreadCount > 4 ? `<span class="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">${unreadCount}</span>` : ''}
+          ${unreadCount > 0 ? `<span class="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">${unreadCount}</span>` : ''}
         </h4>
       </div>
       <ul class="space-y-3">
         ${html}
       </ul>
-      ${unreadCount > 4 ? `
-        <div class="text-center mt-4">
-          <button onclick="event.stopPropagation(); window.navigation.navigateToSection('notifications', 'All Notifications')" 
-                  class="text-xs text-blue-600 hover:text-blue-800 font-semibold">
-            View all ${unreadCount} notifications →
-          </button>
-        </div>
-      ` : ''}
+      ${viewAllButton}
     `;
+    
+    // Update aside notification count
+    this.updateAsideNotificationCount(unreadCount);
+  }
+
+  // Update notification count in aside/sidebar
+  updateAsideNotificationCount(count) {
+    // Find the "Notifications" link in the aside/sidebar
+    const asideLinks = document.querySelectorAll('aside a, .sidebar a, nav a');
+    
+    asideLinks.forEach(link => {
+      // Check if this link is for notifications (case-insensitive)
+      const linkText = link.textContent.toLowerCase();
+      if (linkText.includes('notification')) {
+        // Remove existing badge if any
+        const existingBadge = link.querySelector('.notification-count-badge');
+        if (existingBadge) {
+          existingBadge.remove();
+        }
+        
+        // Add new badge if count > 0
+        if (count > 0) {
+          const badge = document.createElement('span');
+          badge.className = 'notification-count-badge ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full';
+          badge.textContent = count;
+          link.appendChild(badge);
+        }
+      }
+    });
+  }
+
+  // Render all notifications page
+  renderAllNotifications() {
+    const contentArea = document.getElementById('content-area');
+    if (!contentArea) return;
+
+    const unreadCount = this.notifications.length;
+
+    if (this.notifications.length === 0) {
+      contentArea.innerHTML = `
+        <div class="bg-dark-card rounded-lg shadow-lg p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-2xl font-bold text-white">All Notifications</h3>
+            <div class="flex gap-3">
+              <!--<button onclick="window.notificationSystem.syncWithBackend()" class="btn-primary flex items-center gap-2">
+                <i class="fas fa-sync-alt"></i> Sync
+              </button>-->
+              <button onclick="window.notificationSystem.clearAll()" class="btn-danger flex items-center gap-2">
+                <i class="fas fa-trash"></i> Clear All
+              </button>
+            </div>
+          </div>
+          <div class="text-center text-gray-500 py-12">
+            <i class="fas fa-bell-slash text-4xl mb-4"></i>
+            <p>No notifications</p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const allNotifsHtml = this.notifications.map((notif) => {
+      const icon = this.getIcon(notif.type);
+      const timeAgo = this.getTimeAgo(notif.timestamp);
+      const countBadge = notif.count > 1 ? `<span class="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-blue-500 rounded-full">${notif.count}x</span>` : '';
+      
+      return `
+        <div class="bg-dark-secondary rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-all">
+          <div class="flex items-start gap-4">
+            ${icon}
+            <div class="flex-1">
+              <div class="text-white font-medium">${notif.message}${countBadge}</div>
+              <div class="text-xs text-gray-400 mt-2">${timeAgo}</div>
+              ${notif.method ? `<span class="inline-block mt-2 px-2 py-1 text-xs font-semibold bg-blue-900 text-blue-300 rounded">${notif.method}</span>` : ''}
+            </div>
+              <button onclick="event.stopPropagation(); window.notificationSystem.deleteNotification('${notif.id}')" 
+                    class="text-gray-400 hover:text-red-500 transition-colors">
+              <i class="fas fa-times text-lg"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    contentArea.innerHTML = `
+      <div class="bg-dark-card rounded-lg shadow-lg p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-2xl font-bold text-white">
+            All Notifications
+            <span class="ml-3 inline-flex items-center justify-center px-3 py-1 text-sm font-bold leading-none text-white bg-red-500 rounded-full">${unreadCount}</span>
+          </h3>
+          <div class="flex gap-3">
+            <button onclick="window.notificationSystem.syncWithBackend()" class="btn-primary flex items-center gap-2">
+              <i class="fas fa-sync-alt"></i> Sync
+            </button>
+            <button onclick="window.notificationSystem.clearAll()" class="btn-danger flex items-center gap-2">
+              <i class="fas fa-trash"></i> Clear All
+            </button>
+          </div>
+        </div>
+        <div class="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
+          ${allNotifsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  // Delete single notification
+  async deleteNotification(notificationId) {
+    console.log(`[${this.tabId}] Attempting to delete notification via API:`, notificationId);
+    
+    try {
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`/notifications/delete/${notificationId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        this.notifications = this.notifications.filter(n => n.id !== notificationId);
+        
+        console.log(`[${this.tabId}] Notification deleted successfully:`, notificationId, result.message);
+        this.render();
+      } else {
+        console.error(`[${this.tabId}] API Error deleting notification ${notificationId}:`, result.error || 'Unknown server error');
+  
+      }
+    } catch (error) {
+      console.error(`[${this.tabId}] Network Error deleting notification ${notificationId}:`, error);
+    }
   }
 
   getTimeAgo(timestamp) {
@@ -530,6 +676,18 @@ class UserNotificationSystem {
   }
 
   async clearAll() {
+    console.log(`[${this.tabId}] Starting clear all...`);
+    
+    // Clear locally FIRST for immediate UI update
+    this.notifications = [];
+    this.saveUserNotifications();
+    
+    // Force immediate re-render
+    this.render();
+    
+    console.log(`[${this.tabId}] UI cleared immediately`);
+    
+    // Then clear on backend
     try {
       const token = localStorage.getItem('token');
       
@@ -543,17 +701,12 @@ class UserNotificationSystem {
         });
         
         if (response.ok) {
-          console.log(`✅ [${this.tabId}] Cleared notifications on backend`);
+          console.log(`[${this.tabId}] Cleared notifications on backend`);
         }
       }
     } catch (error) {
       console.error('Failed to clear backend notifications:', error);
     }
-    
-    this.notifications = [];
-    this.saveUserNotifications();
-    this.render();
-    console.log(`🧹 [${this.tabId}] All notifications cleared locally`);
   }
 
   add(type, message, action = null) {
@@ -607,7 +760,7 @@ window.notify = {
 
 document.addEventListener('DOMContentLoaded', () => {
   window.notificationSystem = new UserNotificationSystem();
-  console.log('✅ User Notification System ready with cross-tab sync');
+  console.log('User Notification System ready with cross-tab sync');
 });
 
 window.addEventListener('beforeunload', () => {

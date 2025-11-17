@@ -70,7 +70,7 @@ router.put("/:navalcmd", verifyToken, async (req, res) => {
   const { name } = req.body;
   try {
     await pool.query("UPDATE py_navalcommand SET name = ? WHERE navalcmd = ?", [name, req.params.navalcmd]);
-    res.json({ message: "Naval Command updated successfully" });
+    res.json({ message: "Successfully updated a Naval Command record" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -80,7 +80,7 @@ router.put("/:navalcmd", verifyToken, async (req, res) => {
 router.delete("/:navalcmd", verifyToken, async (req, res) => {
   try {
     await pool.query("DELETE FROM py_navalcommand WHERE navalcmd = ?", [req.params.navalcmd]);
-    res.json({ message: "Naval Command deleted successfully" });
+    res.json({ message: "Successfully deleted a Naval Command record" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

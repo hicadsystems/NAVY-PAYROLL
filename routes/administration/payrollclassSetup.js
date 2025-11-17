@@ -49,7 +49,7 @@ router.post('/create', verifyToken, async (req, res) => {
     ]);
 
     res.status(201).json({
-      message: 'Payroll class created successfully',
+      message: 'New Payroll class created successfully',
       data: {
         classcode: classcode.trim(),
         classname: classname ? classname.trim() : null,

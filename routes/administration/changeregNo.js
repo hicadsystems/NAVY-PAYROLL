@@ -88,7 +88,7 @@ router.put('/update-regno', verifyToken, async (req, res) => {
     await conn.commit();
 
     res.status(200).json({
-      message: 'Registration number updated successfully. All related records updated automatically.',
+      message: 'Registration number updated successfully.',
       data: {
         oldRegNo,
         newRegNo,

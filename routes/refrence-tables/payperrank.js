@@ -77,7 +77,7 @@ router.post("/payrank", verifyToken, async (req, res) => {
     const sql = `INSERT INTO py_payperrank (${fields.join(",")}) VALUES (${fields.map(() => "?").join(",")})`;
     await pool.query(sql, values);
 
-    res.json({ message: "Record created successfully" });
+    res.json({ message: "New Pay-Per-Rank record created successfully" });
   } catch (err) {
     console.error("Insert failed:", err);
     res.status(500).json({ error: "Insert failed" });
@@ -104,7 +104,7 @@ router.put("/:one_type", verifyToken, async (req, res) => {
       [...values, one_type]
     );
 
-    res.json({ message: "Record updated successfully" });
+    res.json({ message: "Successfully updated a Pay-Per-Rank record" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Update failed" });
@@ -117,7 +117,7 @@ router.delete("/:one_type", verifyToken, async (req, res) => {
     await pool.query("DELETE FROM py_payperrank WHERE one_type=?", [
       req.params.one_type,
     ]);
-    res.json({ message: "Record deleted successfully" });
+    res.json({ message: "Successfully deleted a Pay-Per-Rank record" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Delete failed" });

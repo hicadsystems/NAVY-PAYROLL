@@ -48,7 +48,7 @@ router.post('/elementtypes', verifyToken, async (req, res) => {
     );
 
     res.status(201).json({
-      message: 'Element type created successfully',
+      message: 'New Element Type created successfully',
       PaymentType,
       elmDesc,
       Status: Status || 'Active'
@@ -217,7 +217,7 @@ router.put('/elementtypes/:PaymentType', verifyToken, async (req, res) => {
     const [updatedRows] = await pool.query('SELECT * FROM py_elementType WHERE PaymentType = ?', [PaymentType]);
     
     res.json({
-      message: 'Element type updated successfully',
+      message: 'Successfully updated an element type record',
       elementType: updatedRows[0]
     });
 
@@ -239,7 +239,7 @@ router.delete('/elementtypes/:PaymentType', verifyToken, async (req, res) => {
     }
 
     res.json({ 
-      message: 'Element type deleted successfully',
+      message: 'Successfully deleted an element type record',
       PaymentType: PaymentType 
     });
     

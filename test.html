@@ -1,168 +1,333 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-</head>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-dyZ88n1QbQh1OA0h3U7zmQxVncDA5pNLU0C2s3zJ+L4pE1kqU6Y5F6k9fXK8N5d2e6dZ+3h1F5+5z5x5Z5x5Z5x==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-<body>
-    <!-- Report Sections Container -->
-  <div id="reportsContainer" class="">
-    <!-- Previous Report Section -->
-    <div id="previousReportSection" class="space-y-4">
-      <div class="flex justify-between items-center no-print">
-        <h3 class="text-xl font-bold text-navy flex items-center">
-          <i class="fas fa-history mr-2"></i>Previous Personnel Details
-          <span id="prevRecordCount" class="ml-3 text-sm font-normal text-gray-600">(0 records)</span>
-        </h3>
-        <div class="flex gap-2">
-          <button id="prevExportExcel" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition shadow">
-            <i class="fas fa-file-excel mr-2"></i>Excel
-          </button>
-          <button id="prevExportPdf" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition shadow">
-            <i class="fas fa-file-pdf mr-2"></i>PDF
-          </button>
-          <button id="prevPrint" class="px-4 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 transition shadow">
-            <i class="fas fa-print mr-2"></i>Print
-          </button>
+import React, { useState } from 'react';
+import { Calculator, AlertCircle, CheckCircle, Info } from 'lucide-react';
+
+const ManualPayrollGuide = () => {
+  const [selectedEmployee, setSelectedEmployee] = useState('employee1');
+  const [month, setMonth] = useState(5);
+
+  const examples = {
+    employee1: {
+      id: 'NN/0001',
+      gradelevel: '0901',
+      taxed: 'Yes',
+      basic_annual: 2400000,
+      elements: {
+        'BP01': { type: 'Basic', annual: 2400000, monthly: 200000 },
+        'BP02': { type: 'Housing', annual: 1200000, monthly: 100000 },
+        'PR01': { type: 'NSITF', percent: 1, base: 'BP01+BP02' },
+        'PR02': { type: 'Pension', percent: 8, base: 'BP01+BP02' },
+        'FP90': { type: 'Tax Free', fixed: 200000 }
+      },
+      previous_cum: {
+        grosstodate: 1200000,
+        taxtodate: 84000,
+        nettodate: 1000000
+      }
+    }
+  };
+
+  const emp = examples[selectedEmployee];
+
+  // Manual calculation steps
+  const calc_step1_gross = emp.elements['BP01'].monthly + emp.elements['BP02'].monthly;
+  const calc_step2_nsitf = (calc_step1_gross * 1) / 100;
+  const calc_step3_pension = (calc_step1_gross * 8) / 100;
+  const calc_step4_totalded = calc_step2_nsitf + calc_step3_pension;
+  const calc_step5_grossthistmth = calc_step1_gross;
+  const calc_step6_grosstodate = emp.previous_cum.grosstodate + calc_step5_grossthistmth;
+  
+  // Tax calculation
+  const calc_step7_taxfreepay = emp.elements['FP90'].fixed + (0.2 * calc_step6_grosstodate / 100) + (1 * calc_step6_grosstodate / 100);
+  const calc_step8_minfree = (200000 * month) / 12;
+  const calc_step9_actualfree = Math.max(calc_step7_taxfreepay, calc_step8_minfree);
+  const calc_step10_taxable = Math.max(0, calc_step6_grosstodate - calc_step9_actualfree);
+  
+  // Progressive tax (example brackets)
+  let calc_step11_progtax = 0;
+  if (calc_step10_taxable > 0) {
+    if (calc_step10_taxable <= 300000) {
+      calc_step11_progtax = calc_step10_taxable * 0.07;
+    } else if (calc_step10_taxable <= 600000) {
+      calc_step11_progtax = (300000 * 0.07) + ((calc_step10_taxable - 300000) * 0.11);
+    } else {
+      calc_step11_progtax = (300000 * 0.07) + (300000 * 0.11) + ((calc_step10_taxable - 600000) * 0.15);
+    }
+  }
+  
+  // Minimum tax check
+  const calc_step12_mintax = calc_step6_grosstodate * 0.5 / 100;
+  const calc_step13_finaltax = Math.max(calc_step11_progtax, calc_step12_mintax);
+  const calc_step14_taxthismth = calc_step13_finaltax - emp.previous_cum.taxtodate;
+  const calc_step15_netthismth = calc_step5_grossthistmth - calc_step14_taxthismth - calc_step4_totalded;
+
+  return (
+    <div className="w-full max-w-6xl mx-auto p-6 bg-gray-50">
+      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <h1 className="text-3xl font-bold text-gray-800 mb-4 flex items-center gap-3">
+          <Calculator className="w-8 h-8 text-blue-600" />
+          Manual Payroll Calculation Guide
+        </h1>
+        
+        <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <Info className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+            <div>
+              <p className="text-blue-900 font-semibold mb-2">
+                Critical Understanding: grossmth vs grosstodate
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-blue-800 text-sm">
+                <li><strong>grossmth</strong> = Gross pay for THIS month only (BP + BT types)</li>
+                <li><strong>grosstodate</strong> = CUMULATIVE gross from January to current month</li>
+                <li><strong>Formula:</strong> grosstodate = previous_month_grosstodate + current_grossmth</li>
+                <li><strong>Tax is calculated on grosstodate</strong> (cumulative), not grossmth</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="overflow-x-auto rounded-lg border-2 border-gray-200 shadow">
-        <table class="min-w-full text-sm">
-          <thead class="bg-blue-600 text-white">
-            <tr>
-              <th class="border border-blue-500 px-3 py-3 text-left">Period</th>
-              <th class="border border-blue-500 px-3 py-3 text-left">Service No</th>
-              <th class="border border-blue-500 px-3 py-3 text-left">Full Name</th>
-              <th class="border border-blue-500 px-3 py-3 text-left">Location</th>
-              <th class="border border-blue-500 px-3 py-3 text-left">Grade</th>
-              <th class="border border-blue-500 px-3 py-3 text-left">Status</th>
-              <th class="border border-blue-500 px-3 py-3 text-left no-print">Action</th>
-            </tr>
-          </thead>
-          <tbody id="prevTableBody" class="bg-white divide-y divide-gray-200"></tbody>
-        </table>
+      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Step-by-Step Calculation</h2>
+        
+        <div className="space-y-4">
+          <div className="bg-green-50 border-l-4 border-green-500 p-4">
+            <h3 className="font-bold text-green-800 mb-2">Step 1: Calculate Gross Pay This Month</h3>
+            <div className="font-mono text-sm">
+              <p>BP01 (Basic) = ₦{emp.elements['BP01'].monthly.toLocaleString()}</p>
+              <p>BP02 (Housing) = ₦{emp.elements['BP02'].monthly.toLocaleString()}</p>
+              <p className="font-bold mt-2 text-green-900">
+                Gross This Month = ₦{calc_step1_gross.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-orange-50 border-l-4 border-orange-500 p-4">
+            <h3 className="font-bold text-orange-800 mb-2">Step 2: Calculate Deductions</h3>
+            <div className="font-mono text-sm">
+              <p>NSITF (1% of gross) = {calc_step1_gross.toLocaleString()} × 1% = ₦{calc_step2_nsitf.toLocaleString()}</p>
+              <p>Pension (8% of gross) = {calc_step1_gross.toLocaleString()} × 8% = ₦{calc_step3_pension.toLocaleString()}</p>
+              <p className="font-bold mt-2 text-orange-900">
+                Total Deductions = ₦{calc_step4_totalded.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-purple-50 border-l-4 border-purple-500 p-4">
+            <h3 className="font-bold text-purple-800 mb-2">Step 3: Calculate Cumulative Gross (CRITICAL!)</h3>
+            <div className="font-mono text-sm">
+              <p>Previous Gross To Date (Month {month-1}) = ₦{emp.previous_cum.grosstodate.toLocaleString()}</p>
+              <p>Plus: Gross This Month = ₦{calc_step5_grossthistmth.toLocaleString()}</p>
+              <p className="font-bold mt-2 text-purple-900 text-lg">
+                Gross To Date (Month {month}) = ₦{calc_step6_grosstodate.toLocaleString()}
+              </p>
+              <p className="text-purple-700 mt-2 text-xs italic">
+                ⚠️ This cumulative value is used for tax calculation!
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+            <h3 className="font-bold text-blue-800 mb-2">Step 4: Calculate Tax Free Allowance</h3>
+            <div className="font-mono text-sm">
+              <p>FP90 (Fixed) = ₦{emp.elements['FP90'].fixed.toLocaleString()}</p>
+              <p>Plus: Consolidation Relief (0.2%) = {calc_step6_grosstodate.toLocaleString()} × 0.2% = ₦{((0.2 * calc_step6_grosstodate) / 100).toLocaleString()}</p>
+              <p>Plus: NHF/NIS (1%) = {calc_step6_grosstodate.toLocaleString()} × 1% = ₦{((1 * calc_step6_grosstodate) / 100).toLocaleString()}</p>
+              <p className="mt-2">Calculated Free Pay = ₦{calc_step7_taxfreepay.toLocaleString()}</p>
+              <p className="mt-1">Minimum Free Pay = ₦{calc_step8_minfree.toLocaleString()} ({month} months × ₦{(200000/12).toFixed(2)}/month)</p>
+              <p className="font-bold mt-2 text-blue-900">
+                Actual Tax Free = MAX(above) = ₦{calc_step9_actualfree.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-red-50 border-l-4 border-red-500 p-4">
+            <h3 className="font-bold text-red-800 mb-2">Step 5: Calculate Taxable Income</h3>
+            <div className="font-mono text-sm">
+              <p>Gross To Date = ₦{calc_step6_grosstodate.toLocaleString()}</p>
+              <p>Minus: Tax Free = ₦{calc_step9_actualfree.toLocaleString()}</p>
+              <p className="font-bold mt-2 text-red-900">
+                Taxable Income = ₦{calc_step10_taxable.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4">
+            <h3 className="font-bold text-yellow-800 mb-2">Step 6: Calculate Progressive Tax</h3>
+            <div className="font-mono text-sm text-xs">
+              <p className="mb-2">Tax Brackets (example - check your py_tax table):</p>
+              <ul className="list-disc list-inside space-y-1 mb-2">
+                <li>₦0 - ₦300,000: 7%</li>
+                <li>₦300,001 - ₦600,000: 11%</li>
+                <li>₦600,001+: 15%</li>
+              </ul>
+              <p className="font-bold text-yellow-900">
+                Progressive Tax = ₦{calc_step11_progtax.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4">
+            <h3 className="font-bold text-indigo-800 mb-2">Step 7: Apply Minimum Tax (CRITICAL!)</h3>
+            <div className="font-mono text-sm">
+              <p>Minimum Tax (0.5% of gross) = {calc_step6_grosstodate.toLocaleString()} × 0.5% = ₦{calc_step12_mintax.toLocaleString()}</p>
+              <p>Progressive Tax = ₦{calc_step11_progtax.toLocaleString()}</p>
+              <p className="font-bold mt-2 text-indigo-900 text-lg">
+                Tax To Date = MAX(above) = ₦{calc_step13_finaltax.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-pink-50 border-l-4 border-pink-500 p-4">
+            <h3 className="font-bold text-pink-800 mb-2">Step 8: Calculate Tax This Month</h3>
+            <div className="font-mono text-sm">
+              <p>Tax To Date (This Month) = ₦{calc_step13_finaltax.toLocaleString()}</p>
+              <p>Minus: Tax To Date (Last Month) = ₦{emp.previous_cum.taxtodate.toLocaleString()}</p>
+              <p className="font-bold mt-2 text-pink-900">
+                Tax This Month = ₦{calc_step14_taxthismth.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-green-100 border-l-4 border-green-600 p-4">
+            <h3 className="font-bold text-green-800 mb-2 text-xl">Step 9: Calculate Net Pay</h3>
+            <div className="font-mono text-sm">
+              <p>Gross This Month = ₦{calc_step5_grossthistmth.toLocaleString()}</p>
+              <p>Minus: Tax This Month = ₦{calc_step14_taxthismth.toLocaleString()}</p>
+              <p>Minus: Deductions = ₦{calc_step4_totalded.toLocaleString()}</p>
+              <p className="font-bold mt-3 text-green-900 text-2xl">
+                NET PAY = ₦{calc_step15_netthismth.toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div id="prevPagination" class="flex justify-between items-center no-print">
-        <div class="text-sm text-gray-600">
-          Showing <span id="prevShowingStart">0</span> to <span id="prevShowingEnd">0</span> of <span id="prevTotalRecords">0</span>
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">SQL Queries to Verify Your Data</h2>
+        
+        <div className="space-y-4">
+          <div className="bg-gray-50 p-4 rounded">
+            <h3 className="font-bold text-gray-800 mb-2">1. Check a Single Employee's Calculation</h3>
+            <pre className="bg-gray-900 text-green-400 p-4 rounded text-xs overflow-x-auto">
+{`-- Replace 'NN/0001' with your test employee
+SELECT 
+    mp.his_empno,
+    mp.his_type,
+    mp.amtthismth,
+    mp.totamtpayable,
+    et.dependence,
+    et.perc,
+    et.std
+FROM py_masterpayded mp
+LEFT JOIN py_elementType et ON mp.his_type = et.PaymentType
+WHERE mp.his_empno = 'NN/0001'
+  AND mp.amtthismth > 0
+ORDER BY mp.his_type;`}
+            </pre>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded">
+            <h3 className="font-bold text-gray-800 mb-2">2. Check Cumulative Values</h3>
+            <pre className="bg-gray-900 text-green-400 p-4 rounded text-xs overflow-x-auto">
+{`SELECT 
+    his_empno,
+    his_type AS month,
+    his_grossmth,        -- Gross THIS month
+    his_grosstodate,     -- CUMULATIVE gross
+    his_taxabletodate,   -- Taxable amount
+    his_taxfreepaytodate,-- Tax free allowance
+    his_taxtodate,       -- CUMULATIVE tax
+    his_taxmth,          -- Tax THIS month
+    his_netmth,          -- Net THIS month
+    his_nettodate        -- CUMULATIVE net
+FROM py_mastercum
+WHERE his_empno = 'NN/0001'
+ORDER BY his_type;`}
+            </pre>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded">
+            <h3 className="font-bold text-gray-800 mb-2">3. Verify Tax Brackets from py_tax</h3>
+            <pre className="bg-gray-900 text-green-400 p-4 rounded text-xs overflow-x-auto">
+{`SELECT 
+    inter,
+    lowbound,
+    highbound,
+    val AS tax_rate_percent,
+    perc,
+    cumval
+FROM py_tax
+ORDER BY CASE WHEN inter = 999 THEN 999999 ELSE lowbound END;`}
+            </pre>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded">
+            <h3 className="font-bold text-gray-800 mb-2">4. Manual Tax Calculation Query</h3>
+            <pre className="bg-gray-900 text-green-400 p-4 rounded text-xs overflow-x-auto">
+{`-- Calculate tax for one employee manually
+SET @empno = 'NN/0001';
+SET @curmth = (SELECT mth FROM py_stdrate WHERE type='BT05');
+
+SELECT 
+    mc.his_empno,
+    mc.his_grosstodate,
+    mc.his_taxfreepaytodate,
+    (mc.his_grosstodate - mc.his_taxfreepaytodate) AS taxable,
+    -- Progressive tax
+    (SELECT SUM(
+        CASE 
+            WHEN (mc.his_grosstodate - mc.his_taxfreepaytodate) > t.lowbound 
+            THEN LEAST(
+                (mc.his_grosstodate - mc.his_taxfreepaytodate) - t.lowbound,
+                COALESCE(t.highbound, 999999999) - t.lowbound
+            ) * t.val / 100
+            ELSE 0
+        END
+    ) FROM py_tax t WHERE t.inter <> 999) AS progressive_tax,
+    -- Minimum tax
+    mc.his_grosstodate * (SELECT perc FROM py_tax WHERE inter=999) / 100 AS minimum_tax,
+    -- Actual tax (should be in his_taxtodate)
+    mc.his_taxtodate AS stored_tax,
+    -- Compare
+    GREATEST(
+        (SELECT SUM(CASE WHEN (mc.his_grosstodate - mc.his_taxfreepaytodate) > t.lowbound 
+            THEN LEAST((mc.his_grosstodate - mc.his_taxfreepaytodate) - t.lowbound,
+                COALESCE(t.highbound, 999999999) - t.lowbound) * t.val / 100 ELSE 0 END)
+         FROM py_tax t WHERE t.inter <> 999),
+        mc.his_grosstodate * (SELECT perc FROM py_tax WHERE inter=999) / 100
+    ) AS calculated_tax,
+    -- Difference
+    mc.his_taxtodate - GREATEST(
+        (SELECT SUM(CASE WHEN (mc.his_grosstodate - mc.his_taxfreepaytodate) > t.lowbound 
+            THEN LEAST((mc.his_grosstodate - mc.his_taxfreepaytodate) - t.lowbound,
+                COALESCE(t.highbound, 999999999) - t.lowbound) * t.val / 100 ELSE 0 END)
+         FROM py_tax t WHERE t.inter <> 999),
+        mc.his_grosstodate * (SELECT perc FROM py_tax WHERE inter=999) / 100
+    ) AS difference
+FROM py_mastercum mc
+WHERE mc.his_empno = @empno
+  AND mc.his_type = @curmth;`}
+            </pre>
+          </div>
         </div>
-        <div class="flex gap-2">
-          <button id="prevFirstPage" class="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50">
-            <i class="fas fa-angle-double-left"></i>
-          </button>
-          <button id="prevPrevPage" class="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50">
-            <i class="fas fa-angle-left"></i> Prev
-          </button>
-          <span id="prevPageInfo" class="px-4 py-2 bg-blue-50 text-blue-900 rounded-lg font-medium">Page 1 of 1</span>
-          <button id="prevNextPage" class="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50">
-            Next <i class="fas fa-angle-right"></i>
-          </button>
-          <button id="prevLastPage" class="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50">
-            <i class="fas fa-angle-double-right"></i>
-          </button>
-        </div>
+      </div>
+
+      <div className="bg-red-50 border-2 border-red-300 rounded-lg p-6 mt-6">
+        <h2 className="text-xl font-bold text-red-800 mb-4 flex items-center gap-2">
+          <AlertCircle className="w-6 h-6" />
+          If You're Getting Wrong Figures - Check These:
+        </h2>
+        <ol className="list-decimal list-inside space-y-2 text-red-900">
+          <li><strong>Fresh Table Issue:</strong> If py_masterpayded is fresh with no totamtpayable values, run py_updatepayroll procedures FIRST</li>
+          <li><strong>Missing Previous Month:</strong> Calculations depend on previous month's py_mastercum data</li>
+          <li><strong>Tax Brackets:</strong> Verify your py_tax table has correct brackets</li>
+          <li><strong>Minimum Tax:</strong> Check inter=999 record exists in py_tax with correct perc value</li>
+          <li><strong>Element Dependencies:</strong> PR types depend on BP types being calculated first</li>
+          <li><strong>Cumulative Values:</strong> grosstodate MUST equal previous_grosstodate + current_grossmth</li>
+        </ol>
       </div>
     </div>
+  );
+};
 
-    <!-- Current Report Section -->
-    <div id="currentReportSection" class="hidden space-y-4">
-      <div class="flex justify-between items-center no-print">
-        <h3 class="text-xl font-bold text-navy flex items-center">
-          <i class="fas fa-file-alt mr-2"></i>Current Personnel Details
-          <span id="currRecordCount" class="ml-3 text-sm font-normal text-gray-600">(0 records)</span>
-        </h3>
-        <div class="flex gap-2">
-          <button id="currExportExcel" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition shadow">
-            <i class="fas fa-file-excel mr-2"></i>Excel
-          </button>
-          <button id="currExportPdf" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition shadow">
-            <i class="fas fa-file-pdf mr-2"></i>PDF
-          </button>
-          <button id="currPrint" class="px-4 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 transition shadow">
-            <i class="fas fa-print mr-2"></i>Print
-          </button>
-        </div>
-      </div>
-
-      <div class="overflow-x-auto rounded-lg border-2 border-gray-200 shadow">
-        <table class="min-w-full text-sm">
-          <thead class="bg-green-600 text-white">
-            <tr>
-              <th class="border border-green-500 px-3 py-3 text-left">Service No</th>
-              <th class="border border-green-500 px-3 py-3 text-left">Full Name</th>
-              <th class="border border-green-500 px-3 py-3 text-left">Location</th>
-              <th class="border border-green-500 px-3 py-3 text-left">Grade</th>
-              <th class="border border-green-500 px-3 py-3 text-left">Status</th>
-              <th class="border border-green-500 px-3 py-3 text-left">Email</th>
-              <th class="border border-green-500 px-3 py-3 text-left no-print">Action</th>
-            </tr>
-          </thead>
-          <tbody id="currTableBody" class="bg-white divide-y divide-gray-200"></tbody>
-        </table>
-      </div>
-
-      <div id="currPagination" class="flex justify-between items-center no-print">
-        <div class="text-sm text-gray-600">
-          Showing <span id="currShowingStart">0</span> to <span id="currShowingEnd">0</span> of <span id="currTotalRecords">0</span>
-        </div>
-        <div class="flex gap-2">
-          <button id="currFirstPage" class="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50">
-            <i class="fas fa-angle-double-left"></i>
-          </button>
-          <button id="currPrevPage" class="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50">
-            <i class="fas fa-angle-left"></i> Prev
-          </button>
-          <span id="currPageInfo" class="px-4 py-2 bg-green-50 text-green-900 rounded-lg font-medium">Page 1 of 1</span>
-          <button id="currNextPage" class="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50">
-            Next <i class="fas fa-angle-right"></i>
-          </button>
-          <button id="currLastPage" class="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50">
-            <i class="fas fa-angle-double-right"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Comparison Report Section -->
-    <div id="comparisonReportSection" class="hidden space-y-4">
-      <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4">
-        <p class="text-sm text-yellow-800">
-          <i class="fas fa-info-circle mr-2"></i>
-          Select up to 5 personnel from the lists above to compare their previous and current details.
-        </p>
-      </div>
-
-      <div class="flex justify-between items-center no-print">
-        <h3 class="text-xl font-bold text-navy flex items-center">
-          <i class="fas fa-exchange-alt mr-2"></i>Personnel Comparison
-          <span id="compSelectedCount" class="ml-3 text-sm font-normal text-gray-600">(0 selected)</span>
-        </h3>
-        <button id="compPrint" class="px-4 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 transition shadow">
-          <i class="fas fa-print mr-2"></i>Print
-        </button>
-      </div>
-
-      <div id="comparisonContent" class="space-y-6">
-        <div class="text-center py-12 text-gray-500">
-          <i class="fas fa-users text-4xl mb-3"></i>
-          <p class="text-lg">No personnel selected for comparison</p>
-          <p class="text-sm mt-2">Click "Compare" button on any record in Previous or Current tabs</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Regenerate Button (Always visible in reports container) -->
-    <div class="flex justify-center mt-6 no-print">
-      <button id="regenerateBtn" class="px-8 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all shadow-lg">
-        <i class="fas fa-sync-alt mr-2"></i>Generate New Report
-      </button>
-    </div>
-  </div>
-
-</body>
-</html>
+export default ManualPayrollGuide;

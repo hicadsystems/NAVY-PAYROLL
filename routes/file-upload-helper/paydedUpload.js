@@ -284,16 +284,16 @@ router.post('/batch-upload', verifyToken, upload.single('file'), async (req, res
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
     return res.status(200).json({
-      message: 'Batch deduction upload completed',
+      message: 'Batch payment and deduction upload completed',
       summary: results
     });
 
   } catch (error) {
-    console.error('Batch deduction upload error:', error);
+    console.error('Batch payment and deduction upload error:', error);
     if (filePath && fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
     return res.status(500).json({
-      error: 'Batch deduction upload failed',
+      error: 'Batch payment and deduction upload failed',
       details: error.message
     });
   }

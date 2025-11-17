@@ -35,7 +35,7 @@ router.post('/states', verifyToken, async (req, res) => {
     );
 
     res.status(201).json({
-      message: 'State created',
+      message: 'New State created successfully',
       id: result.insertId,
       Statecode,
       Statename,
@@ -184,7 +184,7 @@ router.put('/states/:Statecode', verifyToken, async (req, res) => {
     const [updatedRows] = await pool.query('SELECT * FROM py_tblstates WHERE Statecode = ?', [Statecode]);
     
     res.json({
-      message: 'State updated successfully',
+      message: 'Successfully updated a State record',
       state: updatedRows[0]
     });
 
@@ -206,7 +206,7 @@ router.delete('/states/:Statecode', verifyToken, async (req, res) => {
     }
 
     res.json({ 
-      message: 'State deleted successfully',
+      message: 'Successfully deleted a State record',
       Statecode: Statecode 
     });
     

@@ -1,6 +1,7 @@
 //Dashboard
 const statsRoutes = require('./dashboard/stats');
 const notificationRoutes = require('./dashboard/notification');
+const preferencesRoutes = require('./dashboard/preferences');
 
 
 //administration
@@ -117,6 +118,7 @@ module.exports = (app) => {
     //dashboard
     app.use('/stats', statsRoutes);
     app.use('/notifications', notificationRoutes);
+    app.use('/preferences', preferencesRoutes);
 
     //administration
     app.use('/api/users', usersRoutes);

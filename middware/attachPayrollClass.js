@@ -11,6 +11,13 @@ async function attachPayrollClass(req, res, next) {
       return next();
     }
 
+    // Skip auto-assignment for OFFICERS database
+    const officersDb = process.env.DB_OFFICERS || 'hicaddata';
+    if (dbName === officersDb) {
+      console.log(`⏭️ Skipping auto-assign for OFFICERS database: ${dbName}`);
+      return next();
+    }
+
     console.log(`🧩 Auto-assign middleware triggered for DB: ${dbName}`);
 
     const result = await autoAssignPayrollClass(dbName);

@@ -175,8 +175,25 @@ router.post('/fix-unassigned-classes', verifyToken, async (req, res) => {
 
     console.log('🔧 Starting manual fix for all unassigned employees...');
 
+    // Get OFFICERS database name to skip it
+    const officersDb = process.env.DB_OFFICERS || 'hicaddata';
+
     // Process each database
     for (const [dbName, dbInfo] of Object.entries(DATABASE_MAP)) {
+      // Skip OFFICERS database
+      if (dbName === officersDb) {
+        console.log(`\n⏭️ Skipping OFFICERS database: ${dbName} (${dbInfo.name})`);
+        results.push({
+          database: dbName,
+          friendlyName: dbInfo.name,
+          payrollClass: dbInfo.code,
+          employeesUpdated: 0,
+          skipped: true,
+          reason: 'OFFICERS database - auto-assignment disabled'
+        });
+        continue;
+      }
+
       console.log(`\nProcessing database: ${dbName} (${dbInfo.name})...`);
       
       const exists = await checkDatabaseExists(dbName);
@@ -211,7 +228,7 @@ router.post('/fix-unassigned-classes', verifyToken, async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: `Fixed ${totalFixed} unassigned employee(s) across all databases`,
+      message: `Fixed ${totalFixed} unassigned employee(s) across all databases (OFFICERS database skipped)`,
       totalEmployeesFixed: totalFixed,
       databaseResults: results,
       timestamp: new Date().toISOString()

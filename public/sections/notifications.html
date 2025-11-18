@@ -133,15 +133,16 @@ window.getTimeAgo = function(timestamp) {
   });
 }
 
-window.removeNotification = function(id) {
+window.removeNotification = async function(id) {
   if (!window.notificationSystem) return;
   
-  window.notificationSystem.notifications = window.notificationSystem.notifications.filter(n => n.id !== id);
-  window.notificationSystem.saveUserNotifications();
-  window.loadAllNotifications();
+  console.log('removeNotification called for:', id);
   
-  // Update dashboard notification count
-  window.notificationSystem.render();
+  // Call the proper delete method that makes the API call
+  await window.notificationSystem.deleteNotification(id);
+  
+  // Reload the list
+  window.loadAllNotifications();
 }
 
 window.clearAllNotifications = function() {

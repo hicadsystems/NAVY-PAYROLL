@@ -294,7 +294,7 @@ class UserNotificationSystem {
     
     // Only run on dashboard page
     const isDashboard = document.getElementById('notificationsList') && 
-                        document.querySelector('.frame-2');
+    document.querySelector('.frame-2');
     
     if (!isDashboard || recentEvents.length === 0) return;
     
@@ -591,8 +591,7 @@ class UserNotificationSystem {
               <div class="text-xs text-gray-400 mt-2">${timeAgo}</div>
               ${notif.method ? `<span class="inline-block mt-2 px-2 py-1 text-xs font-semibold bg-blue-900 text-blue-300 rounded">${notif.method}</span>` : ''}
             </div>
-              <button onclick="event.stopPropagation(); window.notificationSystem.deleteNotification('${notif.id}')" 
-                    class="text-gray-400 hover:text-red-500 transition-colors">
+            <button data-notification-id="${notif.id}" class="delete-notification text-gray-400 hover:text-red-500 transition-colors">
               <i class="fas fa-times text-lg"></i>
             </button>
           </div>
@@ -616,11 +615,24 @@ class UserNotificationSystem {
             </button>
           </div>
         </div>
-        <div class="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
+        <div class="space-y-3 max-h-[70vh] overflow-y-auto pr-2" id="notifications-container">
           ${allNotifsHtml}
         </div>
       </div>
     `;
+    
+    // Add event delegation for delete buttons
+    const container = document.getElementById('notifications-container');
+    if (container) {
+      container.addEventListener('click', (e) => {
+        const deleteBtn = e.target.closest('.delete-notification');
+        if (deleteBtn) {
+          const notificationId = deleteBtn.dataset.notificationId;
+          console.log('Delete button clicked for:', notificationId);
+          this.deleteNotification(notificationId);
+        }
+      });
+    }
   }
 
   // Delete single notification

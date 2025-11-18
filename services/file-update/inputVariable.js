@@ -92,7 +92,10 @@ exports.getInputVariables = async (year, month, user) => {
       }
     };
 
-    return { summary, records: rows };
+    return { 
+      summary, records: rows,
+      message: 'Input Variables loaded successfully'
+    };
   } catch (err) {
     await updateLog(logId, 'FAILED', err.message);
     throw err;

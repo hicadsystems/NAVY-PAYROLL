@@ -429,14 +429,15 @@
         <section class="mt-6 flex flex-col lg:flex-row xs:flex-row justify-center gap-6 max-w-4xl mx-auto">
           <!-- Quick Access -->
           <div class="frame-3 w-full h-auto sm:w-[416px] bg-white/20 rounded-xl p-6 shadow-lg">
-            <h4 class="text-xl font-bold text-navy text-center mb-6">Quick Access</h4>
+            <!-- Content will be dynamically rendered by QuickAccessManager -->
+            <div class="flex items-center justify-between mb-6">
+              <h4 class="text-xl font-bold text-navy">Quick Access</h4>
+              <div class="text-sm text-gray-400">Loading...</div>
+            </div>
             <div class="grid grid-cols-2 gap-6">
-              <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('database-backup', 'Database Backup')">Database Backup</button>
-              <button class="quick-access-btn bg-[#FBBF24]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('save-payroll-files', 'Save Payroll Files')">Save Payroll Files</button>
-              <button class="quick-access-btn bg-[#FBBF24]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('add-personnel', 'Add New Personnel')">Add New Personnel</button>
-              <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('monthly-yearly-processing', 'Month End Processing')">Process Month End</button>
-              <button class="quick-access-btn bg-[#8CB5F8]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('pay-slips', 'Pay Slips')">Pay Slips</button>
-              <button class="quick-access-btn bg-[#FBBF24]/20 py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg" onclick="window.navigation.navigateToSection('payments-deductions', 'Payments/Deductions')">Payment/Deduction</button>
+              <div class="col-span-2 text-center py-8 text-gray-500">
+                <p>Loading quick access...</p>
+              </div>
             </div>
           </div>
 

@@ -278,6 +278,10 @@ router.post("/restore", verifyToken, async (req, res) => {
             const dbHost = process.env.DB_HOST || dbConfig.host || 'localhost';
             const dbPort = process.env.DB_PORT || dbConfig.port || 3306;
 
+            // Detect platform
+            const os = require("os");
+            const isWindows = os.platform().startsWith("win");
+
             switch (engine.toLowerCase()) {
                 case "mysql":
                     let mysqlOptions = `-h ${dbHost} -P ${dbPort} -u ${dbUser} -p${dbPassword}`;
@@ -291,7 +295,13 @@ router.post("/restore", verifyToken, async (req, res) => {
                     if (originalFilename.endsWith('.gz')) {
                         command = `gunzip < "${restoreFile}" | mysql ${mysqlOptions} ${database}`;
                     } else {
-                         command = `sed 's/DEFINER=\`[^\\\`]*\`@\`[^\\\`]*\`//g' "${restoreFile}" | mysql ${mysqlOptions} ${database}`;
+                        if (isWindows) {
+                            // Windows: Use PowerShell to strip DEFINER and pipe to mysql
+                            command = `powershell -Command "Get-Content '${restoreFile}' | ForEach-Object { $_ -replace 'DEFINER\\s*=\\s*\`[^\`]+\`@\`[^\`]+\`', '' } | mysql ${mysqlOptions} ${database}"`;
+                        } else {
+                            // Linux: Use sed to strip DEFINER
+                            command = `sed 's/DEFINER\\s*=\\s*\`[^\`]*\`@\`[^\`]*\`//g' "${restoreFile}" | mysql ${mysqlOptions} ${database}`;
+                        }
                     }
                     break;
                     

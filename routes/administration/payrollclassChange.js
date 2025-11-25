@@ -260,6 +260,7 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
   const payrollClassInput = PayrollClass.toString().trim();
   const targetDb = getDbNameFromPayrollClass(payrollClassInput);
   const sourceDb = req.current_class;
+  const officersDb = process.env.DB_OFFICERS || 'hicaddata';
 
   console.log(`📋 Payroll class mapping:`);
   console.log(`   Input: ${payrollClassInput}`);
@@ -309,13 +310,6 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
     });
   }
 
-  if (sourceDb === targetDb) {
-    return res.status(400).json({ 
-      success: false, 
-      error: 'Employee is already in this payroll class database' 
-    });
-  }
-
   let sourceConnection = null;
   let targetConnection = null;
 
@@ -342,9 +336,7 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
       throw new Error(`Target database "${targetDb}" (${targetName}) does not exist. Please create it first.`);
     }
 
-    await sourceConnection.beginTransaction();
-    await targetConnection.beginTransaction();
-
+    // Fetch employee from source database
     const [employeeRows] = await sourceConnection.query(
       `SELECT * FROM hr_employees 
        WHERE Empl_ID = ? 
@@ -354,8 +346,8 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
     );
 
     if (employeeRows.length === 0) {
-      await sourceConnection.rollback();
-      await targetConnection.rollback();
+      sourceConnection.release();
+      targetConnection.release();
       return res.status(404).json({ 
         success: false, 
         error: `Employee not found or inactive in ${sourceName} database` 
@@ -366,12 +358,85 @@ router.post('/payroll-class', verifyToken, async (req, res) => {
     const employeeName = `${employee.Surname} ${employee.OtherName || ''}`.trim();
     console.log(`✓ Employee found: ${employeeName}`);
 
+    // Special handling for OFFICERS database
+    if (sourceDb === officersDb) {
+      const currentPayrollClass = employee.payrollclass;
+      
+      // If employee has no payroll class assigned, assign '1' and stay in OFFICERS
+      if (!currentPayrollClass || currentPayrollClass === '' || currentPayrollClass === '0') {
+        console.log(`📝 Employee in OFFICERS database has no payroll class. Assigning class '1'...`);
+        
+        await sourceConnection.beginTransaction();
+        
+        // Update employee with payroll class '1'
+        await sourceConnection.query(
+          `UPDATE hr_employees SET payrollclass = '1' WHERE Empl_ID = ?`,
+          [employeeId]
+        );
+        
+        // Ensure payroll class '1' exists in py_payrollclass
+        const [payrollClassCheck] = await sourceConnection.query(
+          `SELECT classcode FROM py_payrollclass WHERE classcode = '1'`
+        );
+        
+        if (payrollClassCheck.length === 0) {
+          await sourceConnection.query(
+            `INSERT INTO py_payrollclass (classcode, classname) VALUES ('1', 'OFFICERS')`
+          );
+          console.log(`✓ Created payroll class '1' in py_payrollclass`);
+        }
+        
+        await sourceConnection.commit();
+        sourceConnection.release();
+        targetConnection.release();
+        
+        console.log(`✅ Assigned payroll class '1' to employee ${employeeId}`);
+        
+        return res.status(200).json({
+          success: true,
+          message: `Employee assigned to payroll class '1' (OFFICERS)`,
+          data: {
+            Empl_ID: employeeId,
+            Name: employeeName,
+            AssignedPayrollClass: '1',
+            PayrollClassName: 'OFFICERS',
+            Database: sourceDb,
+            Action: 'Payroll class assigned (no migration)',
+            Timestamp: new Date().toISOString()
+          }
+        });
+      }
+      
+      // If employee already has the target payroll class, throw error
+      if (currentPayrollClass === payrollClassInput) {
+        sourceConnection.release();
+        targetConnection.release();
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Employee is already in this payroll class' 
+        });
+      }
+    }
+
+    // Normal migration flow for other databases or OFFICERS with assigned class
+    if (sourceDb === targetDb) {
+      sourceConnection.release();
+      targetConnection.release();
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Employee is already in this payroll class database' 
+      });
+    }
+
+    await sourceConnection.beginTransaction();
+    await targetConnection.beginTransaction();
+
+    const relatedTables = ['Children', 'NextOfKin', 'Spouse'];
+
     const [existingInTarget] = await targetConnection.query(
       `SELECT Empl_ID FROM hr_employees WHERE Empl_ID = ?`,
       [employeeId]
     );
-
-    const relatedTables = ['Children', 'NextOfKin', 'Spouse'];
 
     if (existingInTarget.length > 0) {
       console.log(`⚠️ Employee exists in ${targetName}. Clearing old records...`);

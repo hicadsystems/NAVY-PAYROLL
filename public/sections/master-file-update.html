@@ -16,7 +16,7 @@
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center space-x-3">
         <div class="bg-yellow-500 text-white p-3 rounded-full shadow">
-          <i class="fas fa-database text-2xl"></i>
+          <i class="fas fa-folder text-2xl"></i>
         </div>
         <h2 class="text-2xl font-bold text-blue-800">Update Master File</h2>
       </div>
@@ -62,7 +62,7 @@
         
     <button onclick="window.navigation && window.navigation.navigateToSection && window.navigation.navigateToSection('payroll-calculations', 'Payroll Calculations')" 
             class="px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">
-      <i class="fas fa-hdd mr-2"></i>Proceed to Payroll calculations
+      <i class="fas fa-calculator mr-2"></i>Proceed to Payroll calculations
     </button>
   </div>
 
@@ -126,52 +126,21 @@
 
 <!-- Progress Modal -->
 <div id="updateProgressModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 p-6">
+  <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6">
     <div class="text-center">
       <div class="flex justify-center mb-4">
-        <div class="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-      <h3 class="text-xl font-semibold text-gray-900 mb-2">Updating Master Files...</h3>
-      <p id="updateProgressMessage" class="text-gray-600 mb-4">Processing payroll updates...</p>
-      
-      <!-- Progress Steps -->
-      <div id="progressSteps" class="bg-gray-50 rounded-lg p-4 mb-4 text-left">
-        <div class="space-y-2 text-sm">
-          <div id="step0" class="flex items-center text-gray-400">
-            <i class="fas fa-circle-notch fa-spin mr-2"></i>
-            <span>Populating working employees...</span>
-          </div>
-          <div id="step1" class="flex items-center text-gray-400">
-            <i class="fas fa-circle mr-2"></i>
-            <span>Creating compulsory records...</span>
-          </div>
-          <div id="step2" class="flex items-center text-gray-400">
-            <i class="fas fa-circle mr-2"></i>
-            <span>Processing standard payments...</span>
-          </div>
-          <div id="step3" class="flex items-center text-gray-400">
-            <i class="fas fa-circle mr-2"></i>
-            <span>Applying salary scales...</span>
-          </div>
-          <div id="step4" class="flex items-center text-gray-400">
-            <i class="fas fa-circle mr-2"></i>
-            <span>Calculating hourly & overtime...</span>
-          </div>
-          <div id="step5" class="flex items-center text-gray-400">
-            <i class="fas fa-circle mr-2"></i>
-            <span>Transferring cumulative data...</span>
-          </div>
-          <div id="step6" class="flex items-center text-gray-400">
-            <i class="fas fa-circle mr-2"></i>
-            <span>Generating dependent calculations...</span>
-          </div>
+        <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
+          <i class="fas fa-database text-white text-3xl"></i>
         </div>
       </div>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">Updating Master Files...</h3>
+      <p id="updateProgressMessage" class="text-gray-600 mb-6">Please wait while we process your request...</p>
       
-      <!-- Log Container -->
-      <div id="updateLogContainer" class="bg-gray-50 rounded-lg p-3 max-h-48 overflow-y-auto text-left text-xs">
-        <!-- Backend logs will appear here -->
+      <!-- Progress Bar -->
+      <div class="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
+        <div id="progressBar" class="bg-blue-600 h-3 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
       </div>
+      <div id="progressPercent" class="text-sm text-gray-500 mb-4">0%</div>
     </div>
   </div>
 </div>
@@ -345,45 +314,39 @@
   // Main Update Function
   confirmBtn.addEventListener('click', async () => {
     saveConfirm.classList.add('hidden');
-    //performanceLog.classList.add('hidden');
-    statusEl.classList.remove('hidden');
-    statusEl.className = 'mt-4 p-3 rounded-lg bg-blue-50 text-blue-700';
-    statusEl.textContent = 'Starting master file update...';
+    statusEl.classList.add('hidden');
     confirmBtn.disabled = true;
     closeModal();
 
     // Show progress modal
     progressModal.classList.remove('hidden');
-    logContainer.innerHTML = '';
-    progressMessage.textContent = 'Processing master file updates...';
+    progressMessage.textContent = 'Please wait while we process your request...';
+    
+    // Safely hide the steps container and log container if they exist
+    if (progressSteps) progressSteps.style.display = 'none';
+    if (logContainer) logContainer.style.display = 'none';
+    
+    // Get progress bar elements
+    const progressBar = document.getElementById('progressBar');
+    const progressPercent = document.getElementById('progressPercent');
+    
+    // Reset progress bar
+    if (progressBar) progressBar.style.width = '0%';
+    if (progressPercent) progressPercent.textContent = '0%';
+
+    // Simulate progress
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+      if (progress < 90) {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+        if (progressBar) progressBar.style.width = progress + '%';
+        if (progressPercent) progressPercent.textContent = Math.round(progress) + '%';
+      }
+    }, 500);
 
     try {
       const token = localStorage.getItem('token');
-      
-      // Step simulation for user feedback
-      const steps = [
-        { num: 0, msg: 'Extracting active employees...' },
-        { num: 1, msg: 'Creating compulsory records...' },
-        { num: 2, msg: 'Processing standard payments...' },
-        { num: 3, msg: 'Applying salary scales...' },
-        { num: 4, msg: 'Calculating hourly & overtime...' },
-        { num: 5, msg: 'Transferring cumulative data...' },
-        { num: 6, msg: 'Generating dependent calculations...' }
-      ];
-
-      let currentStep = 0;
-      const stepInterval = setInterval(() => {
-        if (currentStep > 0) {
-          updateProgressStep(currentStep - 1, 'completed');
-        }
-        if (currentStep < steps.length) {
-          updateProgressStep(currentStep, 'processing');
-          addLog(steps[currentStep].msg);
-          currentStep++;
-        }
-      }, 1000);
-
-      addLog('Connecting to server...');
 
       const response = await fetch(`${API_BASE}`, {
         method: 'POST',
@@ -393,29 +356,34 @@
         }
       });
 
-      clearInterval(stepInterval);
+      clearInterval(progressInterval);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
+        throw new Error(errorData.error || `Server error: HTTP ${response.status}`);
       }
 
       const data = await response.json();
-
-      // Mark all steps as completed
-      for (let i = 0; i < steps.length; i++) {
-        updateProgressStep(i, 'completed');
+      
+      // Check for failures in the response
+      if (data.status === 'FAILED' || data.error) {
+        throw new Error(data.error || data.message || 'Master file update failed');
       }
 
-      addLog('Master file update completed successfully', 'success');
+      // Complete progress bar
+      if (progressBar) progressBar.style.width = '100%';
+      if (progressPercent) progressPercent.textContent = '100%';
+      progressMessage.textContent = 'Master file update completed successfully!';
 
       hasUpdatedOnce = true;
       currentPayrollStage = STAGE_UPDATE_COMPLETED;
 
       setTimeout(() => {
         progressModal.classList.add('hidden');
+        if (progressSteps) progressSteps.style.display = 'block';
+        if (logContainer) logContainer.style.display = 'block';
         updateUIVisibility();
-        showAlert('Success!', data.message || 'Master file updated successfully', 'success');
+        showAlert('Success!', data.message || 'Master file updated successfully. You can now proceed to Payroll Calculations.', 'success');
         
         // Dispatch event to notify other sections
         window.dispatchEvent(new CustomEvent('payrollStatusChanged', {
@@ -425,19 +393,57 @@
 
     } catch (error) {
       console.error('Update error:', error);
+      clearInterval(progressInterval);
       
-      // Mark current step as error
-      if (currentStep > 0) {
-        updateProgressStep(currentStep - 1, 'error');
+      // Extract error message
+      let errorMessage = error.message || 'An error occurred during the master file update.';
+      
+      // Stop progress and show error state
+      progressMessage.textContent = errorMessage;
+      progressMessage.className = 'text-red-600 mb-4 font-semibold';
+      
+      // Change progress bar to red
+      if (progressBar) {
+        progressBar.classList.remove('bg-blue-600');
+        progressBar.classList.add('bg-red-600');
       }
       
-      addLog(error.message || 'Update failed', 'error');
+      // Hide icon, show error icon
+      const iconDiv = progressModal.querySelector('.bg-blue-600.rounded-full');
+      if (iconDiv) {
+        iconDiv.className = 'w-16 h-16 bg-red-600 rounded-full flex items-center justify-center';
+        iconDiv.innerHTML = '<i class="fas fa-exclamation-circle text-white text-3xl"></i>';
+      }
       
-      setTimeout(() => {
-        progressModal.classList.add('hidden');
-        showAlert('Update Failed', error.message || 'An error occurred during the update', 'error');
-        confirmBtn.disabled = false;
-      }, 1000);
+      // Add cancel button
+      let cancelBtnError = document.getElementById('progressCancelBtn');
+      if (!cancelBtnError) {
+        cancelBtnError = document.createElement('button');
+        cancelBtnError.id = 'progressCancelBtn';
+        cancelBtnError.className = 'mt-4 px-6 py-3 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition';
+        cancelBtnError.innerHTML = '<i class="fas fa-times mr-2"></i>Close';
+        cancelBtnError.onclick = () => {
+          progressModal.classList.add('hidden');
+          if (progressSteps) progressSteps.style.display = 'block';
+          if (logContainer) logContainer.style.display = 'block';
+          // Reset UI
+          progressMessage.textContent = 'Please wait while we process your request...';
+          progressMessage.className = 'text-gray-600 mb-6';
+          if (progressBar) {
+            progressBar.style.width = '0%';
+            progressBar.classList.remove('bg-red-600');
+            progressBar.classList.add('bg-blue-600');
+          }
+          if (progressPercent) progressPercent.textContent = '0%';
+          if (iconDiv) {
+            iconDiv.className = 'w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center';
+            iconDiv.innerHTML = '<i class="fas fa-database text-white text-3xl"></i>';
+          }
+          cancelBtnError.remove();
+          confirmBtn.disabled = false;
+        };
+        progressModal.querySelector('.text-center').appendChild(cancelBtnError);
+      }
     }
   });
 

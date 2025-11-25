@@ -101,8 +101,8 @@
     </div>
 
     <div class="flex justify-end space-x-4 pt-4">
-      <button type="button" id="loadInputVarBtn" class="px-8 py-3 bg-yellow-600 text-white font-medium rounded-lg hover:bg-yellow-700 transition-all shadow-lg">
-        <i class="fas fa-sync-alt mr-2"></i>Preview & Print
+      <button type="button" id="loadInputVarBtn" class="px-8 py-3 bg-yellow-600 text-white font-medium rounded-lg hover:bg-yellow-700 transition-all shadow-lg cursor-not-allowed opacity-50" disabled>
+        <i class="fas fa-file-alt mr-2"></i>Waiting For Personnel Changes To Be Processed
       </button>
     </div>
   </form>
@@ -410,7 +410,8 @@
       topActionBar.classList.add('hidden');
       inputVarForm.classList.remove('hidden');
       loadBtn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Process & Load Input Variables';
-      loadBtn.classList.remove('bg-yellow-600','hover:bg-yellow-700');
+      loadBtn.classList.remove('bg-yellow-600','hover:bg-yellow-700', 'cursor-not-allowed', 'opacity-50');
+      loadBtn.disabled = false;
       loadBtn.classList.add('bg-green-600','hover:bg-green-700');
       filterTabs.classList.add('hidden');
       filterFormContainer.classList.add('hidden');

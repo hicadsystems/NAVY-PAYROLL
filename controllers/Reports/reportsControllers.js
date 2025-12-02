@@ -28,6 +28,48 @@ class ReportController {
     }
   }
 
+  // Helper method to return common Handlebars helpers
+  _getCommonHelpers() {
+    return `
+      function formatCurrency(value) {
+        const num = parseFloat(value) || 0;
+        return num.toLocaleString('en-NG', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
+      
+      function formatDate(date) {
+        const d = new Date(date || new Date());
+        return d.toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+      }
+      
+      function subtract(a, b) {
+        return (parseFloat(a) || 0) - (parseFloat(b) || 0);
+      }
+      
+      function eq(a, b) {
+        return a === b;
+      }
+      
+      function sumByType(earnings, type) {
+        let total = 0;
+        if (Array.isArray(earnings)) {
+          earnings.forEach(item => {
+            if (item.type === type) {
+              total += parseFloat(item.amount) || 0;
+            }
+          });
+        }
+        return total;
+      }
+    `;
+  }
+
   // ==========================================================================
   // IMPROVED DATA MAPPING FOR PAYSLIPS 
   // ==========================================================================
@@ -102,7 +144,7 @@ class ReportController {
         factory: employee.factory || '',
         
         // Bank Info
-        bank_name: employee.bank_name || '',
+        bank_name: employee.bankname || '',
         bank_account_number: employee.bankacnumber || '',
         
         // Period Info
@@ -125,7 +167,8 @@ class ReportController {
         nsitf: employee.nsitf || '',
         nsitfcode: employee.nsitfcode || '',
         email: employee.email || '',
-        payclass: employee.payclass || ''
+        payclass: employee.payclass || '',
+        payclass_name: employee.payclass_name || ''
       };
     });
   }
@@ -181,470 +224,100 @@ class ReportController {
   }
 
   // ==========================================================================
-  // GENERATE PAYSLIP PDF - PDFKIT VERSION
-  // ==========================================================================
-  async generatePayslipPDF(req, res) {
-    const mappedData = req.body.data || [];
-
-    if (mappedData.length === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        error: "No payslip data provided for PDF generation." 
-      });
-    }
-
-    const doc = new PDFDocument({ 
-      margin: 40, 
-      size: 'A4',
-      bufferPages: true
-    });
-    
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=payslips.pdf');
-    doc.pipe(res);
-
-    doc.on('error', (err) => {
-      console.error('PDFDocument Error:', err);
-      res.end();
-    });
-
-    // Generate each payslip
-    mappedData.forEach((employee, index) => {
-      try {
-        if (index > 0) doc.addPage();
-        this._generatePayslipPage(doc, employee);
-      } catch (pdfError) {
-        console.error(`Error generating PDF for employee ${employee.employee_id}:`, pdfError);
-        doc.addPage();
-        doc.fontSize(12).text(`[ERROR: Could not generate payslip for ${employee.empl_name}]`, { color: 'red' });
-      }
-    });
-
-    doc.end();
-  }
-
-  // ==========================================================================
-  // GENERATE SINGLE PAYSLIP PAGE - PDFKIT
-  // ==========================================================================
-  _generatePayslipPage(doc, employee) {
-    const pageWidth = doc.page.width - 80;
-    const leftCol = 40;
-    const rightColStart = leftCol + pageWidth - 140;
-    let yPos = 60;
-
-    // ========== HEADER WITH DOUBLE LINE ==========
-    doc.fontSize(22).font('Helvetica-Bold')
-       .text('NIGERIAN NAVY', leftCol, yPos, { width: pageWidth, align: 'center' });
-    yPos += 28;
-    
-    doc.fontSize(14).font('Helvetica')
-       .text('Monthly Salary Statement', leftCol, yPos, { width: pageWidth, align: 'center' });
-    yPos += 25;
-
-    // Double line separator
-    doc.strokeColor('#000000').lineWidth(1.5);
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 3;
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 30;
-
-    // ========== PAY PERIOD INFO ==========
-    doc.fontSize(10).font('Helvetica');
-    doc.text(`Pay Period: ${employee.payroll_month} ${employee.payroll_year}`, leftCol, yPos);
-    yPos += 14;
-    const payDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-    doc.text(`Pay Date: ${payDate}`, leftCol, yPos);
-    yPos += 30;
-
-    // ========== EMPLOYEE INFORMATION ==========
-    doc.fontSize(10).font('Helvetica-Bold')
-       .text('EMPLOYEE INFORMATION', leftCol, yPos);
-    yPos += 16;
-
-    doc.lineWidth(0.5);
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 14;
-
-    const title = (employee.title || '').trim();
-    const surname = (employee.surname || '').trim();
-    const othername = (employee.othername || '').trim();
-    const fullName = [title, surname, othername].filter(x => x).join(' ');
-
-    const gradelevel = (employee.gradelevel || '').trim();
-    const gradetype = (employee.gradetype || '').trim();
-    const gradeInfo = [gradelevel, gradetype].filter(x => x).join(' - ');
-
-    const accountNum = (employee.bank_account_number || '').trim();
-    const bankName = (employee.bank_name || '').trim();
-    let bankInfo = accountNum;
-    if (accountNum && bankName) {
-      bankInfo = `${accountNum} (${bankName})`;
-    } else if (bankName) {
-      bankInfo = bankName;
-    }
-
-    const employeeInfo = [
-      { label: 'Name:', value: fullName },
-      { label: 'Employee ID:', value: (employee.employee_id || '').trim() },
-      { label: 'Grade:', value: gradeInfo },
-      { label: 'Department:', value: (employee.department || '').trim() },
-      { label: 'Bank Account:', value: bankInfo }
-    ];
-
-    doc.fontSize(10);
-    employeeInfo.forEach(info => {
-      if (info.value) {
-        const currentY = yPos;
-        doc.font('Helvetica-Bold').text(info.label, leftCol, currentY, { 
-          width: 85, 
-          continued: false 
-        });
-        doc.font('Helvetica').text(info.value, leftCol + 90, currentY, { 
-          width: pageWidth - 90, 
-          continued: false 
-        });
-        yPos += 14;
-      }
-    });
-    yPos += 20;
-
-    // ========== EARNINGS SECTION ==========
-    doc.fontSize(10).font('Helvetica-Bold');
-    doc.text('EARNINGS', leftCol, yPos, { continued: false });
-    doc.text('AMOUNT', rightColStart, yPos, { width: 140, align: 'right', continued: false });
-    yPos += 16;
-
-    doc.lineWidth(0.5);
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 12;
-
-    doc.fontSize(10).font('Helvetica');
-    if (employee.earnings && employee.earnings.length > 0) {
-      employee.earnings.forEach(earning => {
-        const currentY = yPos;
-        doc.text(earning.description || '', leftCol, currentY, { 
-          width: pageWidth - 160, 
-          continued: false 
-        });
-        
-        const amount = parseFloat(earning.amount) || 0;
-        const formattedAmount = amount.toLocaleString('en-NG', { 
-          minimumFractionDigits: 2, 
-          maximumFractionDigits: 2 
-        });
-        doc.text(`NGN ${formattedAmount}`, rightColStart, currentY, { 
-          width: 140, 
-          align: 'right', 
-          continued: false 
-        });
-        yPos += 14;
-      });
-    }
-
-    yPos += 8;
-    doc.lineWidth(0.5);
-    doc.moveTo(rightColStart - 10, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 10;
-
-    doc.lineWidth(0.5);
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 10;
-
-    doc.font('Helvetica-Bold').fontSize(10);
-    const currentY1 = yPos;
-    doc.text('GROSS PAY', leftCol, currentY1, { continued: false });
-    const grossAmount = parseFloat(employee.total_earnings) || 0;
-    const formattedGross = grossAmount.toLocaleString('en-NG', { 
-      minimumFractionDigits: 2, 
-      maximumFractionDigits: 2 
-    });
-    doc.text(`NGN ${formattedGross}`, rightColStart, currentY1, { 
-      width: 140, 
-      align: 'right', 
-      continued: false 
-    });
-    yPos += 15;
-
-    doc.lineWidth(0.5);
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 25;
-
-    // ========== DEDUCTIONS SECTION ==========
-    doc.fontSize(10).font('Helvetica-Bold');
-    doc.text('DEDUCTIONS', leftCol, yPos, { continued: false });
-    yPos += 16;
-
-    doc.lineWidth(0.5);
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 12;
-
-    doc.fontSize(10).font('Helvetica');
-    if (employee.deductions && employee.deductions.length > 0) {
-      employee.deductions.forEach(deduction => {
-        let desc = deduction.description || '';
-        if (deduction.is_loan && deduction.loan_balance > 0) {
-          const loanBal = parseFloat(deduction.loan_balance) || 0;
-          const formattedLoanBal = loanBal.toLocaleString('en-NG', { 
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2 
-          });
-          desc += ` (Bal: NGN ${formattedLoanBal})`;
-        }
-        
-        const currentY = yPos;
-        doc.text(desc, leftCol, currentY, { 
-          width: pageWidth - 160, 
-          continued: false 
-        });
-        
-        const dedAmount = parseFloat(deduction.amount) || 0;
-        const formattedDed = dedAmount.toLocaleString('en-NG', { 
-          minimumFractionDigits: 2, 
-          maximumFractionDigits: 2 
-        });
-        doc.text(`NGN ${formattedDed}`, rightColStart, currentY, { 
-          width: 140, 
-          align: 'right', 
-          continued: false 
-        });
-        yPos += 14;
-      });
-    }
-
-    yPos += 8;
-    doc.lineWidth(0.5);
-    doc.moveTo(rightColStart - 10, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 10;
-
-    doc.lineWidth(0.5);
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 10;
-
-    doc.font('Helvetica-Bold').fontSize(10);
-    const currentY2 = yPos;
-    doc.text('TOTAL DEDUCTIONS', leftCol, currentY2, { continued: false });
-    const totalDed = parseFloat(employee.total_deductions) || 0;
-    const formattedTotalDed = totalDed.toLocaleString('en-NG', { 
-      minimumFractionDigits: 2, 
-      maximumFractionDigits: 2 
-    });
-    doc.text(`NGN ${formattedTotalDed}`, rightColStart, currentY2, { 
-      width: 140, 
-      align: 'right', 
-      continued: false 
-    });
-    yPos += 15;
-
-    doc.lineWidth(0.5);
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 25;
-
-    // ========== NET PAY ==========
-    doc.lineWidth(1.5);
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 3;
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 15;
-
-    doc.fontSize(13).font('Helvetica-Bold');
-    const currentY3 = yPos;
-    doc.text('NET PAY', leftCol, currentY3, { continued: false });
-    const netPay = parseFloat(employee.net_pay) || 0;
-    const formattedNetPay = netPay.toLocaleString('en-NG', { 
-      minimumFractionDigits: 2, 
-      maximumFractionDigits: 2 
-    });
-    doc.text(`NGN ${formattedNetPay}`, rightColStart, currentY3, { 
-      width: 140, 
-      align: 'right', 
-      continued: false 
-    });
-    yPos += 18;
-
-    doc.lineWidth(1.5);
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 3;
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 35;
-
-    // ========== YEAR-TO-DATE SUMMARY ==========
-    doc.lineWidth(0.5);
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 3;
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 15;
-
-    doc.fontSize(10).font('Helvetica-Bold')
-       .text(`YEAR-TO-DATE TOTALS (Jan - ${employee.payroll_month} ${employee.payroll_year})`, 
-             leftCol, yPos, { continued: false });
-    yPos += 16;
-
-    doc.lineWidth(0.5);
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 14;
-
-    const ytdGross = parseFloat(employee.ytd_gross) || 0;
-    const ytdTax = parseFloat(employee.ytd_tax) || 0;
-    const ytdNet = ytdGross - ytdTax;
-
-    const ytdItems = [
-      { 
-        label: 'YTD Gross:', 
-        value: ytdGross.toLocaleString('en-NG', { 
-          minimumFractionDigits: 2, 
-          maximumFractionDigits: 2 
-        }) 
-      },
-      { 
-        label: 'YTD Tax:', 
-        value: ytdTax.toLocaleString('en-NG', { 
-          minimumFractionDigits: 2, 
-          maximumFractionDigits: 2 
-        }) 
-      },
-      { 
-        label: 'YTD Net:', 
-        value: ytdNet.toLocaleString('en-NG', { 
-          minimumFractionDigits: 2, 
-          maximumFractionDigits: 2 
-        }) 
-      }
-    ];
-
-    doc.fontSize(10);
-    ytdItems.forEach(item => {
-      const currentY = yPos;
-      doc.font('Helvetica-Bold').text(item.label, leftCol, currentY, { 
-        width: pageWidth - 160, 
-        continued: false 
-      });
-      doc.font('Helvetica').text(`NGN ${item.value}`, rightColStart, currentY, { 
-        width: 140, 
-        align: 'right', 
-        continued: false 
-      });
-      yPos += 14;
-    });
-    yPos += 10;
-
-    doc.lineWidth(0.5);
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 3;
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-
-    // ========== FOOTER ==========
-    yPos = doc.page.height - 90;
-    doc.lineWidth(1.5);
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 3;
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 15;
-
-    doc.fontSize(9).font('Helvetica')
-       .text('This is a computer-generated document. No signature required.', 
-             leftCol, yPos, { width: pageWidth, align: 'center', continued: false });
-    yPos += 12;
-    doc.text('For queries, contact the Human Resources Department', 
-             leftCol, yPos, { width: pageWidth, align: 'center', continued: false });
-    yPos += 12;
-
-    doc.lineWidth(1.5);
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-    yPos += 3;
-    doc.moveTo(leftCol, yPos).lineTo(leftCol + pageWidth, yPos).stroke();
-  }
-
-  // ==========================================================================
   // GENERATE PAYSLIP PDF - JSREPORT VERSION
   // ==========================================================================
   async generatePayslipPDFEnhanced(req, res) {
-    const mappedData = req.body.data || [];
+      const mappedData = req.body.data || [];
 
-    if (mappedData.length === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        error: "No payslip data provided for PDF generation." 
-      });
-    }
+      if (mappedData.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "No payslip data provided for PDF generation." 
+        });
+      }
 
-    if (!this.jsreportReady) {
-      return res.status(500).json({
-        success: false,
-        error: "Enhanced PDF generation service not ready. Please try again."
-      });
-    }
+      if (!this.jsreportReady) {
+        return res.status(500).json({
+          success: false,
+          error: "Enhanced PDF generation service not ready. Please try again."
+        });
+      }
 
-    try {
-      const templatePath = path.join(__dirname, '../../templates/payslip-template.html');
-      const templateContent = fs.readFileSync(templatePath, 'utf8');
+      try {
+        const templatePath = path.join(__dirname, '../../templates/payslip-template.html');
+        const templateContent = fs.readFileSync(templatePath, 'utf8');
 
-      const result = await jsreport.render({
-        template: {
-          content: templateContent,
-          engine: 'handlebars',
-          recipe: 'chrome-pdf',
-          chrome: {
-            displayHeaderFooter: false,
-            printBackground: true,
-            format: 'A4'
-          },
-          helpers: `
-            function formatCurrency(value) {
-              const num = parseFloat(value) || 0;
-              return num.toLocaleString('en-NG', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              });
-            }
-            
-            function formatDate(date) {
-              const d = new Date(date || new Date());
-              return d.toLocaleDateString('en-GB', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-              });
-            }
-            
-            function subtract(a, b) {
-              return (parseFloat(a) || 0) - (parseFloat(b) || 0);
-            }
-            
-            function eq(a, b) {
-              return a === b;
-            }
-            
-            function sumByType(earnings, type) {
-              let total = 0;
-              if (Array.isArray(earnings)) {
-                earnings.forEach(item => {
-                  if (item.type === type) {
-                    total += parseFloat(item.amount) || 0;
-                  }
+        const result = await jsreport.render({
+          template: {
+            content: templateContent,
+            engine: 'handlebars',
+            recipe: 'chrome-pdf',
+            chrome: {
+              displayHeaderFooter: false,
+              printBackground: true,
+              format: 'A5'
+            },
+            helpers: `
+              function formatCurrency(value) {
+                const num = parseFloat(value) || 0;
+                return num.toLocaleString('en-NG', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
                 });
               }
-              return total;
-            }
-          `
-        },
-        data: {
-          employees: mappedData,
-          payDate: new Date()
-        }
-      });
+              
+              function formatDate(date) {
+                const d = new Date(date || new Date());
+                return d.toLocaleDateString('en-GB', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric'
+                });
+              }
+              
+              function add(a, b) {
+                return (parseFloat(a) || 0) + (parseFloat(b) || 0);
+              }
+              
+              function subtract(a, b) {
+                return (parseFloat(a) || 0) - (parseFloat(b) || 0);
+              }
+              
+              function eq(a, b) {
+                return a === b;
+              }
+              
+              function sumByType(earnings, type) {
+                let total = 0;
+                if (Array.isArray(earnings)) {
+                  earnings.forEach(item => {
+                    if (item.type === type) {
+                      total += parseFloat(item.amount) || 0;
+                    }
+                  });
+                }
+                return total;
+              }
+            `
+          },
+          data: {
+            employees: mappedData,
+            payDate: new Date()
+          }
+        });
 
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'attachment; filename=payslips_enhanced.pdf');
-      res.send(result.content);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=payslips_enhanced.pdf');
+        res.send(result.content);
 
-    } catch (error) {
-      console.error('JSReport PDF generation error:', error);
-      return res.status(500).json({ 
-        success: false, 
-        error: error.message || "An error occurred during PDF generation." 
-      });
+      } catch (error) {
+        console.error('JSReport PDF generation error:', error);
+        return res.status(500).json({ 
+          success: false, 
+          error: error.message || "An error occurred during PDF generation." 
+        });
+      }
     }
-  }
 
   // ==========================================================================
   // GENERATE PAYSLIP EXCEL
@@ -725,7 +398,9 @@ class ReportController {
       const data = await reportService.getPaymentsByBank(filters);
 
       if (format === 'excel') {
-        return this.generatePaymentsByBankExcel(data, res);
+        return this.generatePaymentsByBankExcel(data, filters, res);
+      } else if (format === 'pdf') {
+        return this.generatePaymentsByBankPDF(data, filters, res);
       }
 
       res.json({ success: true, data });
@@ -735,36 +410,53 @@ class ReportController {
     }
   }
 
-  async generatePaymentsByBankExcel(data, res) {
+  async generatePaymentsByBankExcel(data, filters, res) {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Payments by Bank');
 
-    worksheet.columns = [
-      { header: 'Bank Name', key: 'bank_name', width: 25 },
-      { header: 'Branch', key: 'bank_branch', width: 20 },
-      { header: 'Employee Count', key: 'employee_count', width: 15 },
-      { header: 'Total Gross', key: 'total_gross', width: 18 },
-      { header: 'Total Tax', key: 'total_tax', width: 18 },
-      { header: 'Total Net', key: 'total_net', width: 18 }
-    ];
+    if (filters.summaryOnly) {
+      // Summary columns
+      worksheet.columns = [
+        { header: 'Bank Code', key: 'Bankcode', width: 15 },
+        { header: 'Branch', key: 'bankbranch', width: 25 },
+        { header: 'Total Employees', key: 'employee_count', width: 18 },
+        { header: 'Total Net Payment', key: 'total_net', width: 20 }
+      ];
+
+      // Add data
+      data.forEach(row => {
+        worksheet.addRow(row);
+      });
+
+      // Format currency for column D
+      worksheet.getColumn('D').numFmt = '₦#,##0.00';
+    } else {
+      // Detailed columns
+      worksheet.columns = [
+        { header: 'Bank Code', key: 'Bankcode', width: 15 },
+        { header: 'Branch', key: 'bankbranch', width: 25 },
+        { header: 'Employee ID', key: 'empl_id', width: 15 },
+        { header: 'Full Name', key: 'fullname', width: 30 },
+        { header: 'Net Payment', key: 'total_net', width: 18 },
+        { header: 'Account Number', key: 'BankACNumber', width: 20 }
+      ];
+
+      // Add data
+      data.forEach(row => {
+        worksheet.addRow(row);
+      });
+
+      // Format currency for column E
+      worksheet.getColumn('E').numFmt = '₦#,##0.00';
+    }
 
     // Style header
     worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
     worksheet.getRow(1).fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FF0070C0' }
+      fgColor: { argb: 'FF2c5aa0' }
     };
-
-    // Add data
-    data.forEach(row => {
-      worksheet.addRow(row);
-    });
-
-    // Format currency
-    ['D', 'E', 'F'].forEach(col => {
-      worksheet.getColumn(col).numFmt = '₦#,##0.00';
-    });
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=payments_by_bank.xlsx');
@@ -773,16 +465,118 @@ class ReportController {
     res.end();
   }
 
+  async generatePaymentsByBankPDF(data, filters, res) {
+    if (!this.jsreportReady) {
+      return res.status(500).json({
+        success: false,
+        error: "PDF generation service not ready."
+      });
+    }
+
+    try {
+      const templatePath = path.join(__dirname, '../../templates/payments-by-bank.html');
+      const templateContent = fs.readFileSync(templatePath, 'utf8');
+
+      // Get user's full name from request
+      //const generatedBy = req.user_fullname || 'System';
+
+      // Prepare data based on summary or detailed view
+      let templateData = {
+        reportDate: new Date(),
+        //generatedBy: generatedBy,
+        isSummary: filters.summaryOnly === 'true' || filters.summaryOnly === true,
+        reportTitle: filters.summaryOnly ? 'Summary Report' : 'Detailed Report'
+      };
+
+      if (templateData.isSummary) {
+        // For summary, pass data as-is
+        templateData.data = data;
+      } else {
+        // For detailed, group by bank and branch
+        const bankGroups = {};
+        
+        data.forEach(row => {
+          const key = `${row.Bankcode}_${row.bankbranch}`;
+          
+          if (!bankGroups[key]) {
+            bankGroups[key] = {
+              bankName: row.Bankcode,
+              branch: row.bankbranch,
+              employees: [],
+              totalAmount: 0,
+              employeeCount: 0
+            };
+          }
+          
+          bankGroups[key].employees.push({
+            empl_id: row.empl_id,
+            fullname: row.fullname,
+            rank: row.rank,
+            total_net: parseFloat(row.total_net || 0),
+            BankACNumber: row.BankACNumber
+          });
+          
+          bankGroups[key].totalAmount += parseFloat(row.total_net || 0);
+          bankGroups[key].employeeCount++;
+        });
+        
+        templateData.bankGroups = Object.values(bankGroups);
+      }
+
+      const result = await jsreport.render({
+        template: {
+          content: templateContent,
+          engine: 'handlebars',
+          recipe: 'chrome-pdf',
+          chrome: {
+            displayHeaderFooter: false,
+            printBackground: true,
+            format: 'A4',
+            landscape: true
+          },
+          helpers: this._getCommonHelpers()
+        },
+        data: templateData
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=payments_by_bank.pdf');
+      res.send(result.content);
+
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  }
+
   // ==========================================================================
   // REPORT 3: EARNINGS/DEDUCTIONS ANALYSIS
   // ==========================================================================
   async generateEarningsDeductionsAnalysis(req, res) {
     try {
-      const { format, ...filters } = req.query;
+      const { format, summary, payment_type, ...otherFilters } = req.query;
+      
+      // Map frontend parameter names to backend expected names
+      const filters = {
+        ...otherFilters,
+        summaryOnly: summary === '1' || summary === 'true',
+        paymentType: payment_type
+      };
+      
+      console.log('Filters:', filters); // DEBUG
+      
       const data = await reportService.getEarningsDeductionsAnalysis(filters);
+      
+      console.log('Data rows:', data.length); // DEBUG
+      console.log('Sample row:', data[0]); // DEBUG
 
       if (format === 'excel') {
-        return this.generateEarningsAnalysisExcel(data, res);
+        return this.generateEarningsDeductionsAnalysisExcel(data, res);
+      } else if (format === 'pdf') {
+        return this.generateEarningsDeductionsAnalysisPDF(data, res);
       }
 
       res.json({ success: true, data });
@@ -792,7 +586,7 @@ class ReportController {
     }
   }
 
-  async generateEarningsAnalysisExcel(data, res) {
+  async generateEarningsDeductionsAnalysisExcel(data, res) {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Earnings & Deductions');
 
@@ -854,6 +648,146 @@ class ReportController {
     res.end();
   }
 
+  async generateEarningsDeductionsAnalysisPDF(data, res) {
+    if (!this.jsreportReady) {
+      return res.status(500).json({
+        success: false,
+        error: "PDF generation service not ready."
+      });
+    }
+
+    try {
+      if (!data || data.length === 0) {
+        throw new Error('No data available for the selected filters');
+      }
+
+      const isSummary = data.length > 0 && !data[0].hasOwnProperty('his_empno');
+      
+      console.log('Is Summary:', isSummary);
+      console.log('Data rows:', data.length);
+      
+      // Group data by category
+      const categoriesMap = {};
+      
+      data.forEach(row => {
+        const category = row.category || 'Other';
+        const paymentCode = row.payment_code;
+        
+        // Initialize category if it doesn't exist
+        if (!categoriesMap[category]) {
+          categoriesMap[category] = {
+            categoryName: category,
+            paymentTypesMap: {},
+            categoryTotal: 0
+          };
+        }
+        
+        // Initialize payment type if it doesn't exist
+        if (!categoriesMap[category].paymentTypesMap[paymentCode]) {
+          categoriesMap[category].paymentTypesMap[paymentCode] = {
+            payment_code: paymentCode,
+            payment_description: row.payment_description || paymentCode,
+            employees: [],
+            subtotal: 0,
+            employee_count: 0
+          };
+        }
+        
+        if (isSummary) {
+          // Summary mode
+          const amount = parseFloat(row.total_amount || 0);
+          categoriesMap[category].paymentTypesMap[paymentCode].employee_count = parseInt(row.employee_count || 0);
+          categoriesMap[category].paymentTypesMap[paymentCode].subtotal = amount;
+          categoriesMap[category].categoryTotal += amount;
+        } else {
+          // Detailed mode - add individual employee
+          const amount = parseFloat(row.total_amount || 0);
+          categoriesMap[category].paymentTypesMap[paymentCode].employees.push({
+            his_empno: row.his_empno,
+            fullname: row.fullname || 'N/A',
+            total_amount: amount
+          });
+          categoriesMap[category].paymentTypesMap[paymentCode].subtotal += amount;
+          categoriesMap[category].paymentTypesMap[paymentCode].employee_count++;
+          categoriesMap[category].categoryTotal += amount;
+        }
+      });
+      
+      // Convert to array format for template
+      const categories = Object.values(categoriesMap).map(cat => {
+        if (isSummary) {
+          return {
+            categoryName: cat.categoryName,
+            items: Object.values(cat.paymentTypesMap),
+            categoryTotal: cat.categoryTotal
+          };
+        } else {
+          return {
+            categoryName: cat.categoryName,
+            paymentTypes: Object.values(cat.paymentTypesMap),
+            categoryTotal: cat.categoryTotal
+          };
+        }
+      });
+      
+      console.log('Categories processed:', categories.length);
+      console.log('First category structure:', JSON.stringify(categories[0], null, 2));
+
+      const templatePath = path.join(__dirname, '../../templates/earnings-deductions.html');
+      const templateContent = fs.readFileSync(templatePath, 'utf8');
+
+      const result = await jsreport.render({
+        template: {
+          content: templateContent,
+          engine: 'handlebars',
+          recipe: 'chrome-pdf',
+          chrome: {
+            displayHeaderFooter: false,
+            printBackground: true,
+            format: 'A4',
+            landscape: !isSummary
+          },
+          helpers: `
+            function formatDate(date) {
+              return new Date(date).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            }
+            
+            function formatCurrency(amount) {
+              return parseFloat(amount || 0).toLocaleString('en-NG', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              });
+            }
+          `
+        },
+        data: {
+          categories: categories,
+          reportDate: new Date(),
+          month: data[0]?.month || 'N/A',
+          year: data[0]?.year || 'N/A',
+          isSummary: isSummary
+        }
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=earnings-deductions-${data[0]?.month}-${data[0]?.year}.pdf`);
+      res.send(result.content);
+
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  }
+
   // ==========================================================================
   // REPORT 4: LOAN ANALYSIS
   // ==========================================================================
@@ -864,6 +798,8 @@ class ReportController {
 
       if (format === 'excel') {
         return this.generateLoanAnalysisExcel(data, res);
+      } else if (format === 'pdf') {
+        return this.generateLoanAnalysisPDF(data, res);
       }
 
       res.json({ success: true, data });
@@ -957,16 +893,85 @@ class ReportController {
     res.end();
   }
 
+  async generateLoanAnalysisPDF(data, res) {
+    if (!this.jsreportReady) {
+      return res.status(500).json({
+        success: false,
+        error: "PDF generation service not ready."
+      });
+    }
+
+    try {
+      const templatePath = path.join(__dirname, '../../templates/loan-analysis.html');
+      const templateContent = fs.readFileSync(templatePath, 'utf8');
+
+      const result = await jsreport.render({
+        template: {
+          content: templateContent,
+          engine: 'handlebars',
+          recipe: 'chrome-pdf',
+          chrome: {
+            displayHeaderFooter: false,
+            printBackground: true,
+            format: 'A4',
+            landscape: true
+          },
+          helpers: `
+            ${this._getCommonHelpers()}
+            
+            function getStatusClass(status) {
+              if (status === 'COMPLETED') return 'status-completed';
+              if (status === 'OVERPAID') return 'status-overpaid';
+              if (status === 'FINAL MONTHS') return 'status-active';
+              return '';
+            }
+          `
+        },
+        data: {
+          data: data,
+          reportDate: new Date()
+        }
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=loan_analysis.pdf');
+      res.send(result.content);
+
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  }
+
   // ==========================================================================
   // REPORT 5: PAYMENTS/DEDUCTIONS BY BANK
   // ==========================================================================
   async generatePaymentsDeductionsByBank(req, res) {
     try {
-      const { format, ...filters } = req.query;
+      const { format, summary, payment_type, bank_name, ...otherFilters } = req.query;
+      
+      // Map frontend parameter names to backend expected names
+      const filters = {
+        ...otherFilters,
+        summaryOnly: summary === '1' || summary === 'true',
+        paymentType: payment_type,
+        bankName: bank_name
+      };
+      
+      console.log('Bank Report Filters:', filters); // DEBUG
+      
       const data = await reportService.getPaymentsDeductionsByBank(filters);
+      
+      console.log('Bank Data rows:', data.length); // DEBUG
+      console.log('Bank Sample row:', data[0]); // DEBUG
 
       if (format === 'excel') {
-        return this.generatePaymentsByBankDetailExcel(data, res);
+        return this.generatePaymentsDeductionsByBankExcel(data, res, filters.summaryOnly);
+      } else if (format === 'pdf') {
+        return this.generatePaymentsDeductionsByBankPDF(data, res);
       }
 
       res.json({ success: true, data });
@@ -976,19 +981,33 @@ class ReportController {
     }
   }
 
-  async generatePaymentsByBankDetailExcel(data, res) {
+  async generatePaymentsDeductionsByBankExcel(data, res, isSummary = false) {
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Payments by Bank Detail');
+    const worksheet = workbook.addWorksheet('Payments by Bank');
 
-    worksheet.columns = [
-      { header: 'Bank', key: 'bank_name', width: 25 },
-      { header: 'Branch', key: 'bank_branch', width: 20 },
-      { header: 'Payment Code', key: 'payment_code', width: 15 },
-      { header: 'Description', key: 'payment_description', width: 35 },
-      { header: 'Category', key: 'category', width: 20 },
-      { header: 'Employee Count', key: 'employee_count', width: 15 },
-      { header: 'Total Amount', key: 'total_amount', width: 18 }
-    ];
+    // Define columns based on summary mode
+    if (isSummary) {
+      worksheet.columns = [
+        { header: 'Bank', key: 'Bankcode', width: 25 },
+        { header: 'Branch', key: 'bankbranch', width: 20 },
+        { header: 'Payment Code', key: 'payment_code', width: 15 },
+        { header: 'Description', key: 'payment_description', width: 35 },
+        { header: 'Category', key: 'category', width: 20 },
+        { header: 'Employee Count', key: 'employee_count', width: 15 },
+        { header: 'Total Amount', key: 'total_amount', width: 18 }
+      ];
+    } else {
+      worksheet.columns = [
+        { header: 'Bank', key: 'Bankcode', width: 25 },
+        { header: 'Branch', key: 'bankbranch', width: 20 },
+        { header: 'Employee No', key: 'his_empno', width: 15 },
+        { header: 'Employee Name', key: 'Surname', width: 25 },
+        { header: 'Payment Code', key: 'payment_code', width: 15 },
+        { header: 'Description', key: 'payment_description', width: 35 },
+        { header: 'Category', key: 'category', width: 20 },
+        { header: 'Total Amount', key: 'total_amount', width: 18 }
+      ];
+    }
 
     // Style header
     worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
@@ -1001,7 +1020,7 @@ class ReportController {
     // Group by bank
     const banks = {};
     data.forEach(row => {
-      const bankKey = `${row.bank_name} - ${row.bank_branch}`;
+      const bankKey = `${row.Bankcode || 'Unknown'} - ${row.bankbranch || 'Unknown'}`;
       if (!banks[bankKey]) banks[bankKey] = [];
       banks[bankKey].push(row);
     });
@@ -1018,7 +1037,8 @@ class ReportController {
         pattern: 'solid',
         fgColor: { argb: 'FFE7E6E6' }
       };
-      worksheet.mergeCells(headerRow.number, 1, headerRow.number, 7);
+      const maxCol = isSummary ? 7 : 8;
+      worksheet.mergeCells(headerRow.number, 1, headerRow.number, maxCol);
 
       // Add bank data
       banks[bank].forEach(row => {
@@ -1027,22 +1047,209 @@ class ReportController {
 
       // Bank subtotal
       const subtotalRow = worksheet.lastRow.number + 1;
-      worksheet.getCell(`E${subtotalRow}`).value = 'Subtotal:';
-      worksheet.getCell(`E${subtotalRow}`).font = { bold: true };
-      worksheet.getCell(`G${subtotalRow}`).value = {
-        formula: `SUBTOTAL(9,G${headerRow.number + 1}:G${subtotalRow - 1})`
+      const amountCol = isSummary ? 'G' : 'H';
+      const labelCol = isSummary ? 'E' : 'F';
+      
+      worksheet.getCell(`${labelCol}${subtotalRow}`).value = 'Bank Subtotal:';
+      worksheet.getCell(`${labelCol}${subtotalRow}`).font = { bold: true };
+      worksheet.getCell(`${amountCol}${subtotalRow}`).value = {
+        formula: `SUBTOTAL(9,${amountCol}${headerRow.number + 1}:${amountCol}${subtotalRow - 1})`
       };
-      worksheet.getCell(`G${subtotalRow}`).font = { bold: true };
+      worksheet.getCell(`${amountCol}${subtotalRow}`).font = { bold: true };
     });
 
     // Format currency
-    worksheet.getColumn('G').numFmt = '₦#,##0.00';
+    const currencyCol = isSummary ? 'G' : 'H';
+    worksheet.getColumn(currencyCol).numFmt = '₦#,##0.00';
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=payments_by_bank_detail.xlsx');
+    res.setHeader('Content-Disposition', 'attachment; filename=payments_by_bank.xlsx');
 
     await workbook.xlsx.write(res);
     res.end();
+  }
+
+  async generatePaymentsDeductionsByBankPDF(data, res) {
+    if (!this.jsreportReady) {
+      return res.status(500).json({
+        success: false,
+        error: "PDF generation service not ready."
+      });
+    }
+
+    try {
+      if (!data || data.length === 0) {
+        throw new Error('No data available for the selected filters');
+      }
+
+      const isSummary = data.length > 0 && !data[0].hasOwnProperty('his_empno');
+      
+      console.log('Bank PDF - Is Summary:', isSummary);
+      console.log('Bank PDF - Data rows:', data.length);
+      
+      // Group data by bank, then category
+      const banksMap = {};
+      
+      data.forEach(row => {
+        const bankKey = `${row.Bankcode || 'Unknown'} - ${row.bankbranch || 'Unknown'}`;
+        const category = row.category || 'Other';
+        const paymentCode = row.payment_code;
+        
+        // Initialize bank if it doesn't exist
+        if (!banksMap[bankKey]) {
+          banksMap[bankKey] = {
+            bankName: row.Bankcode || 'Unknown',
+            bankBranch: row.bankbranch || 'Unknown',
+            categoriesMap: {},
+            bankTotal: 0
+          };
+        }
+        
+        // Initialize category if it doesn't exist
+        if (!banksMap[bankKey].categoriesMap[category]) {
+          banksMap[bankKey].categoriesMap[category] = {
+            categoryName: category,
+            paymentTypesMap: {},
+            categoryTotal: 0
+          };
+        }
+        
+        // Initialize payment type if it doesn't exist
+        if (!banksMap[bankKey].categoriesMap[category].paymentTypesMap[paymentCode]) {
+          banksMap[bankKey].categoriesMap[category].paymentTypesMap[paymentCode] = {
+            payment_code: paymentCode,
+            payment_description: row.payment_description || paymentCode,
+            employees: [],
+            subtotal: 0,
+            employee_count: 0
+          };
+        }
+        
+        // Determine if this is a deduction (to be subtracted)
+        const isDeduction = category === 'Deduction' || category === 'Loan';
+        const rawAmount = parseFloat(row.total_amount || 0);
+        const amount = isDeduction ? -Math.abs(rawAmount) : rawAmount;
+        
+        if (isSummary) {
+          // Summary mode
+          banksMap[bankKey].categoriesMap[category].paymentTypesMap[paymentCode].employee_count = parseInt(row.employee_count || 0);
+          banksMap[bankKey].categoriesMap[category].paymentTypesMap[paymentCode].subtotal = rawAmount; // Store positive for display
+          banksMap[bankKey].categoriesMap[category].paymentTypesMap[paymentCode].isDeduction = isDeduction;
+          banksMap[bankKey].categoriesMap[category].categoryTotal += amount; // Use signed amount for total
+          banksMap[bankKey].bankTotal += amount;
+        } else {
+          // Detailed mode - add individual employee
+          banksMap[bankKey].categoriesMap[category].paymentTypesMap[paymentCode].employees.push({
+            his_empno: row.his_empno,
+            fullname: row.Surname || 'N/A',
+            total_amount: rawAmount // Store positive for display
+          });
+          banksMap[bankKey].categoriesMap[category].paymentTypesMap[paymentCode].subtotal += rawAmount; // Store positive for display
+          banksMap[bankKey].categoriesMap[category].paymentTypesMap[paymentCode].employee_count++;
+          banksMap[bankKey].categoriesMap[category].paymentTypesMap[paymentCode].isDeduction = isDeduction;
+          banksMap[bankKey].categoriesMap[category].categoryTotal += amount; // Use signed amount for total
+          banksMap[bankKey].bankTotal += amount;
+        }
+      });
+      
+      // Convert to array format for template
+      const banks = Object.values(banksMap).map(bank => {
+        const categories = Object.values(bank.categoriesMap).map(cat => {
+          if (isSummary) {
+            return {
+              categoryName: cat.categoryName,
+              items: Object.values(cat.paymentTypesMap),
+              categoryTotal: cat.categoryTotal
+            };
+          } else {
+            return {
+              categoryName: cat.categoryName,
+              paymentTypes: Object.values(cat.paymentTypesMap),
+              categoryTotal: cat.categoryTotal
+            };
+          }
+        });
+        
+        return {
+          bankName: bank.bankName,
+          bankBranch: bank.bankBranch,
+          categories: categories,
+          bankTotal: bank.bankTotal
+        };
+      });
+      
+      console.log('Banks processed:', banks.length);
+      console.log('First bank structure:', JSON.stringify(banks[0], null, 2));
+
+      const templatePath = path.join(__dirname, '../../templates/payded-by-bank.html');
+      const templateContent = fs.readFileSync(templatePath, 'utf8');
+
+      const result = await jsreport.render({
+        template: {
+          content: templateContent,
+          engine: 'handlebars',
+          recipe: 'chrome-pdf',
+          chrome: {
+            displayHeaderFooter: false,
+            printBackground: true,
+            format: 'A4',
+            landscape: !isSummary
+          },
+          helpers: `
+            function formatDate(date) {
+              return new Date(date).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            }
+            
+            function formatCurrency(amount) {
+              return parseFloat(amount || 0).toLocaleString('en-NG', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              });
+            }
+            
+            function formatCurrencyWithSign(amount) {
+              const num = parseFloat(amount || 0);
+              const formatted = Math.abs(num).toLocaleString('en-NG', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              });
+              if (num < 0) {
+                return '(' + formatted + ')';
+              }
+              return formatted;
+            }
+            
+            function isNegative(amount) {
+              return parseFloat(amount || 0) < 0;
+            }
+          `
+        },
+        data: {
+          banks: banks,
+          reportDate: new Date(),
+          month: data[0]?.month || 'N/A',
+          year: data[0]?.year || 'N/A',
+          isSummary: isSummary
+        }
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=payments-by-bank-${data[0]?.month}-${data[0]?.year}.pdf`);
+      res.send(result.content);
+
+    } catch (error) {
+      console.error('Bank PDF generation error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
   }
 
   // ==========================================================================
@@ -1050,11 +1257,24 @@ class ReportController {
   // ==========================================================================
   async generatePayrollRegister(req, res) {
     try {
-      const { format, ...filters } = req.query;
+      const { format, summary, include_elements, ...otherFilters } = req.query;
+      
+      // Map frontend parameter names to backend expected names
+      const filters = {
+        ...otherFilters,
+        summaryOnly: summary === '1' || summary === 'true',
+        includeElements: include_elements === '1' || include_elements === 'true'
+      };
+      
+      console.log('Payroll Register Filters:', filters); // DEBUG
+      
       const data = await reportService.getPayrollRegister(filters);
+      
+      console.log('Payroll Register Data rows:', data.length); // DEBUG
+      console.log('Payroll Register Sample row:', data[0]); // DEBUG
 
       if (format === 'excel') {
-        return this.generatePayrollRegisterExcel(data, res);
+        return this.generatePayrollRegisterExcel(data, res, filters.summaryOnly, filters.includeElements);
       } else if (format === 'pdf') {
         return this.generatePayrollRegisterPDF(data, res);
       }
@@ -1066,12 +1286,13 @@ class ReportController {
     }
   }
 
-  async generatePayrollRegisterExcel(data, res) {
+  async generatePayrollRegisterExcel(data, res, isSummary = false, includeElements = false) {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Payroll Register');
 
     // Title
-    worksheet.mergeCells('A1:J1');
+    const titleColspan = isSummary ? 'A1:H1' : (includeElements ? 'A1:K1' : 'A1:J1');
+    worksheet.mergeCells(titleColspan);
     const titleCell = worksheet.getCell('A1');
     titleCell.value = 'NIGERIAN NAVY - PAYROLL REGISTER';
     titleCell.font = { bold: true, size: 16 };
@@ -1079,7 +1300,7 @@ class ReportController {
     
     // Period info
     if (data.length > 0) {
-      worksheet.mergeCells('A2:J2');
+      worksheet.mergeCells(titleColspan.replace('1', '2'));
       const periodCell = worksheet.getCell('A2');
       periodCell.value = `Period: ${this.getMonthName(data[0].month)} ${data[0].year}`;
       periodCell.font = { size: 12 };
@@ -1088,20 +1309,41 @@ class ReportController {
 
     worksheet.addRow([]);
 
-    // Headers
-    const headerRow = worksheet.addRow([
-      'Service No',
-      'Name',
-      'Department',
-      'Grade',
-      'Class',
-      'Gross Pay',
-      'Tax',
-      'Net Pay',
-      'Bank',
-      'Account Number'
-    ]);
-    
+    // Define columns based on mode
+    if (isSummary) {
+      worksheet.columns = [
+        { header: 'Location', key: 'location', width: 30 },
+        { header: 'Employee Count', key: 'employee_count', width: 18 },
+        { header: 'Gross Pay', key: 'gross_pay', width: 18 },
+        { header: 'Total Emoluments', key: 'total_emoluments', width: 20 },
+        { header: 'Total Deductions', key: 'total_deductions', width: 20 },
+        { header: 'Tax', key: 'tax', width: 18 },
+        { header: 'Net Pay', key: 'net_pay', width: 18 }
+      ];
+    } else {
+      const columns = [
+        { header: 'Service No', key: 'empl_id', width: 15 },
+        { header: 'Name', key: 'fullname', width: 30 },
+        { header: 'Location', key: 'location', width: 25 },
+        { header: 'Grade', key: 'gradelevel', width: 10 },
+        { header: 'Gross Pay', key: 'gross_pay', width: 18 },
+        { header: 'Total Emoluments', key: 'total_emoluments', width: 20 },
+        { header: 'Total Deductions', key: 'total_deductions', width: 20 },
+        { header: 'Tax', key: 'tax', width: 18 },
+        { header: 'Net Pay', key: 'net_pay', width: 18 },
+        { header: 'Bank', key: 'Bankcode', width: 20 },
+        { header: 'Account Number', key: 'BankACNumber', width: 20 }
+      ];
+      
+      if (includeElements) {
+        columns.splice(4, 0, { header: 'Payment Elements', key: 'payment_elements', width: 50 });
+      }
+      
+      worksheet.columns = columns;
+    }
+
+    // Style header row (row 4 after title and period)
+    const headerRow = worksheet.getRow(4);
     headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     headerRow.fill = {
       type: 'pattern',
@@ -1110,52 +1352,100 @@ class ReportController {
     };
 
     // Add data
-    data.forEach(row => {
-      worksheet.addRow([
-        row.empl_id,
-        row.empl_name,
-        row.department,
-        row.gradelevel,
-        row.payrollclass,
-        row.gross_pay,
-        row.tax,
-        row.net_pay,
-        row.bank_name,
-        row.bank_account_number
-      ]);
-    });
+    if (isSummary) {
+      data.forEach(row => {
+        worksheet.addRow(row);
+      });
 
-    // Format currency
-    ['F', 'G', 'H'].forEach(col => {
-      worksheet.getColumn(col).numFmt = '₦#,##0.00';
-      worksheet.getColumn(col).width = 18;
-    });
+      // Format currency columns
+      ['C', 'D', 'E', 'F', 'G'].forEach(col => {
+        worksheet.getColumn(col).numFmt = '₦#,##0.00';
+      });
 
-    // Set column widths
-    worksheet.getColumn('A').width = 15;
-    worksheet.getColumn('B').width = 30;
-    worksheet.getColumn('C').width = 20;
-    worksheet.getColumn('D').width = 10;
-    worksheet.getColumn('E').width = 10;
-    worksheet.getColumn('I').width = 25;
-    worksheet.getColumn('J').width = 20;
+      // Add totals
+      const totalRow = worksheet.lastRow.number + 1;
+      worksheet.getCell(`A${totalRow}`).value = 'GRAND TOTALS:';
+      worksheet.getCell(`A${totalRow}`).font = { bold: true };
+      
+      ['C', 'D', 'E', 'F', 'G'].forEach(col => {
+        worksheet.getCell(`${col}${totalRow}`).value = {
+          formula: `SUM(${col}5:${col}${totalRow - 1})`
+        };
+        worksheet.getCell(`${col}${totalRow}`).font = { bold: true };
+        worksheet.getCell(`${col}${totalRow}`).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFE699' }
+        };
+      });
+    } else {
+      // Group by location
+      const locations = {};
+      data.forEach(row => {
+        const loc = row.location || 'Unknown';
+        if (!locations[loc]) locations[loc] = [];
+        
+        // Format payment elements if included
+        if (includeElements && row.payment_elements) {
+          try {
+            const elements = JSON.parse(row.payment_elements);
+            row.payment_elements = elements.map(el => 
+              `${el.code}: ₦${parseFloat(el.amount).toLocaleString('en-NG', {minimumFractionDigits: 2})}`
+            ).join('\n');
+          } catch (e) {
+            row.payment_elements = '';
+          }
+        }
+        
+        locations[loc].push(row);
+      });
 
-    // Add totals
-    const totalRow = worksheet.lastRow.number + 1;
-    worksheet.getCell(`E${totalRow}`).value = 'TOTALS:';
-    worksheet.getCell(`E${totalRow}`).font = { bold: true };
-    
-    ['F', 'G', 'H'].forEach(col => {
-      worksheet.getCell(`${col}${totalRow}`).value = {
-        formula: `SUM(${col}4:${col}${totalRow - 1})`
-      };
-      worksheet.getCell(`${col}${totalRow}`).font = { bold: true };
-      worksheet.getCell(`${col}${totalRow}`).fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFFFE699' }
-      };
-    });
+      // Add data with location separators
+      Object.keys(locations).forEach((location, index) => {
+        if (index > 0) worksheet.addRow([]);
+        
+        // Location header
+        const headerRow = worksheet.addRow([location]);
+        headerRow.font = { bold: true, size: 12 };
+        headerRow.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE7E6E6' }
+        };
+        const maxCol = includeElements ? 11 : 11;
+        worksheet.mergeCells(headerRow.number, 1, headerRow.number, maxCol);
+
+        // Add location data
+        locations[location].forEach(row => {
+          const addedRow = worksheet.addRow(row);
+          // Wrap text for payment elements
+          if (includeElements) {
+            addedRow.getCell(5).alignment = { wrapText: true, vertical: 'top' };
+            addedRow.height = 40;
+          }
+        });
+
+        // Location subtotal
+        const subtotalRow = worksheet.lastRow.number + 1;
+        const startCol = includeElements ? 'D' : 'D';
+        worksheet.getCell(`${startCol}${subtotalRow}`).value = 'Location Subtotal:';
+        worksheet.getCell(`${startCol}${subtotalRow}`).font = { bold: true };
+        
+        const currencyCols = includeElements ? ['E', 'F', 'G', 'H', 'I'] : ['E', 'F', 'G', 'H', 'I'];
+        currencyCols.forEach(col => {
+          worksheet.getCell(`${col}${subtotalRow}`).value = {
+            formula: `SUBTOTAL(9,${col}${headerRow.number + 1}:${col}${subtotalRow - 1})`
+          };
+          worksheet.getCell(`${col}${subtotalRow}`).font = { bold: true };
+        });
+      });
+
+      // Format currency columns
+      const currencyCols = includeElements ? ['E', 'F', 'G', 'H', 'I'] : ['E', 'F', 'G', 'H', 'I'];
+      currencyCols.forEach(col => {
+        worksheet.getColumn(col).numFmt = '₦#,##0.00';
+      });
+    }
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=payroll_register.xlsx');
@@ -1164,9 +1454,189 @@ class ReportController {
     res.end();
   }
 
+  async generatePayrollRegisterPDF(data, res) {
+    if (!this.jsreportReady) {
+      return res.status(500).json({
+        success: false,
+        error: "PDF generation service not ready."
+      });
+    }
+
+    try {
+      if (!data || data.length === 0) {
+        throw new Error('No data available for the selected filters');
+      }
+
+      const isSummary = data.length > 0 && !data[0].hasOwnProperty('empl_id');
+      const includeElements = data.length > 0 && data[0].hasOwnProperty('payment_elements') && data[0].payment_elements;
+      
+      console.log('Payroll Register PDF - Is Summary:', isSummary);
+      console.log('Payroll Register PDF - Include Elements:', includeElements);
+      console.log('Payroll Register PDF - Data rows:', data.length);
+      
+      // Group data by location
+      const locationsMap = {};
+      
+      data.forEach(row => {
+        const location = row.location || 'Unknown';
+        
+        if (!locationsMap[location]) {
+          locationsMap[location] = {
+            locationName: location,
+            employees: [],
+            locationTotals: {
+              gross_pay: 0,
+              total_emoluments: 0,
+              total_deductions: 0,
+              tax: 0,
+              net_pay: 0,
+              employee_count: 0
+            }
+          };
+        }
+        
+        if (isSummary) {
+          const empCount = parseInt(row.employee_count || 0);
+          locationsMap[location].employees.push({
+            employee_count: empCount,
+            gross_pay: parseFloat(row.gross_pay || 0),
+            total_emoluments: parseFloat(row.total_emoluments || 0),
+            total_deductions: parseFloat(row.total_deductions || 0),
+            tax: parseFloat(row.tax || 0),
+            net_pay: parseFloat(row.net_pay || 0)
+          });
+          
+          locationsMap[location].locationTotals.employee_count += empCount;
+          locationsMap[location].locationTotals.gross_pay += parseFloat(row.gross_pay || 0);
+          locationsMap[location].locationTotals.total_emoluments += parseFloat(row.total_emoluments || 0);
+          locationsMap[location].locationTotals.total_deductions += parseFloat(row.total_deductions || 0);
+          locationsMap[location].locationTotals.tax += parseFloat(row.tax || 0);
+          locationsMap[location].locationTotals.net_pay += parseFloat(row.net_pay || 0);
+        } else {
+          // Parse payment elements if present
+          let parsedElements = [];
+          if (includeElements && row.payment_elements) {
+            try {
+              parsedElements = JSON.parse(row.payment_elements);
+            } catch (e) {
+              parsedElements = [];
+            }
+          }
+          
+          locationsMap[location].employees.push({
+            empl_id: row.empl_id,
+            fullname: row.fullname || 'N/A',
+            gradelevel: row.gradelevel || 'N/A',
+            gross_pay: parseFloat(row.gross_pay || 0),
+            total_emoluments: parseFloat(row.total_emoluments || 0),
+            total_deductions: parseFloat(row.total_deductions || 0),
+            tax: parseFloat(row.tax || 0),
+            net_pay: parseFloat(row.net_pay || 0),
+            Bankcode: row.Bankcode || 'N/A',
+            BankACNumber: row.BankACNumber || 'N/A',
+            payment_elements: parsedElements
+          });
+          
+          locationsMap[location].locationTotals.employee_count++;
+          locationsMap[location].locationTotals.gross_pay += parseFloat(row.gross_pay || 0);
+          locationsMap[location].locationTotals.total_emoluments += parseFloat(row.total_emoluments || 0);
+          locationsMap[location].locationTotals.total_deductions += parseFloat(row.total_deductions || 0);
+          locationsMap[location].locationTotals.tax += parseFloat(row.tax || 0);
+          locationsMap[location].locationTotals.net_pay += parseFloat(row.net_pay || 0);
+        }
+      });
+      
+      // Convert to array format for template
+      const locations = Object.values(locationsMap);
+      
+      // Calculate grand totals
+      const grandTotals = {
+        employee_count: 0,
+        gross_pay: 0,
+        total_emoluments: 0,
+        total_deductions: 0,
+        tax: 0,
+        net_pay: 0
+      };
+      
+      locations.forEach(loc => {
+        grandTotals.employee_count += loc.locationTotals.employee_count;
+        grandTotals.gross_pay += loc.locationTotals.gross_pay;
+        grandTotals.total_emoluments += loc.locationTotals.total_emoluments;
+        grandTotals.total_deductions += loc.locationTotals.total_deductions;
+        grandTotals.tax += loc.locationTotals.tax;
+        grandTotals.net_pay += loc.locationTotals.net_pay;
+      });
+      
+      console.log('Locations processed:', locations.length);
+      console.log('Grand Totals:', grandTotals);
+
+      const period = data.length > 0 ? 
+        `${this.getMonthName(data[0].month)} ${data[0].year}` : 
+        'N/A';
+
+      const templatePath = path.join(__dirname, '../../templates/payroll-register.html');
+      const templateContent = fs.readFileSync(templatePath, 'utf8');
+
+      const result = await jsreport.render({
+        template: {
+          content: templateContent,
+          engine: 'handlebars',
+          recipe: 'chrome-pdf',
+          chrome: {
+            displayHeaderFooter: false,
+            printBackground: true,
+            format: 'A4',
+            landscape: true,
+            marginTop: '10mm',
+            marginBottom: '10mm',
+            marginLeft: '10mm',
+            marginRight: '10mm'
+          },
+          helpers: `
+            function formatDate(date) {
+              return new Date(date).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            }
+            
+            function formatCurrency(amount) {
+              return parseFloat(amount || 0).toLocaleString('en-NG', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              });
+            }
+          `
+        },
+        data: {
+          locations: locations,
+          grandTotals: grandTotals,
+          period: period,
+          reportDate: new Date(),
+          isSummary: isSummary,
+          includeElements: includeElements
+        }
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=payroll_register_${data[0]?.month}_${data[0]?.year}.pdf`);
+      res.send(result.content);
+
+    } catch (error) {
+      console.error('Payroll Register PDF generation error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  }
+
   // ==========================================================================
   // REPORT 7-13: Similar implementations...
-  // (Continue with remaining reports)
   // ==========================================================================
 
   async generatePayrollFilesListing(req, res) {
@@ -1186,16 +1656,267 @@ class ReportController {
 
   async generatePaymentStaffList(req, res) {
     try {
-      const { format, ...filters } = req.query;
+      const { format, summary, bank_name, location, ...otherFilters } = req.query;
+      
+      // Map frontend parameter names to backend expected names
+      const filters = {
+        ...otherFilters,
+        summaryOnly: summary === '1' || summary === 'true',
+        bankName: bank_name,
+        location: location
+      };
+      
+      console.log('Staff List Filters:', filters); // DEBUG
+      
       const data = await reportService.getPaymentStaffList(filters);
+      
+      console.log('Staff List Data rows:', data.length); // DEBUG
+      console.log('Staff List Sample row:', data[0]); // DEBUG
 
       if (format === 'excel') {
-        return this.generateGenericExcel(data, 'Payment Staff List', res);
+        return this.generatePaymentStaffListExcel(data, res, filters.summaryOnly);
+      } else if (format === 'pdf') {
+        return this.generatePaymentStaffListPDF(data, res);
       }
 
       res.json({ success: true, data });
     } catch (error) {
+      console.error('Error generating payment staff list:', error);
       res.status(500).json({ success: false, error: error.message });
+    }
+  }
+
+  async generatePaymentStaffListExcel(data, res, isSummary = false) {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Payment Staff List');
+
+    // Define columns based on summary mode
+    if (isSummary) {
+      worksheet.columns = [
+        { header: 'Location', key: 'location', width: 30 },
+        { header: 'Bank Code', key: 'Bankcode', width: 20 },
+        { header: 'Bank Branch', key: 'bankbranch', width: 25 },
+        { header: 'State of Origin', key: 'state_of_origin', width: 20 },
+        { header: 'Employee Count', key: 'employee_count', width: 18 },
+        { header: 'Net Pay', key: 'net_pay', width: 20 }
+      ];
+    } else {
+      worksheet.columns = [
+        { header: 'Service Number', key: 'service_number', width: 18 },
+        { header: 'Title', key: 'title', width: 12 },
+        { header: 'Full Name', key: 'fullname', width: 35 },
+        { header: 'Location', key: 'location', width: 30 },
+        { header: 'Bank Code', key: 'Bankcode', width: 20 },
+        { header: 'Bank Branch', key: 'bankbranch', width: 25 },
+        { header: 'Account Number', key: 'BankACNumber', width: 20 },
+        { header: 'Grade Level', key: 'gradelevel', width: 15 },
+        { header: 'Years in Level', key: 'level_years', width: 15 },
+        { header: 'State of Origin', key: 'state_of_origin', width: 20 },
+        { header: 'Net Pay', key: 'net_pay', width: 20 }
+      ];
+    }
+
+    // Style header
+    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF0070C0' }
+    };
+
+    if (isSummary) {
+      // Group by location and bank
+      const groups = {};
+      data.forEach(row => {
+        const groupKey = `${row.location || 'Unknown'} - ${row.Bankcode || 'N/A'}`;
+        if (!groups[groupKey]) groups[groupKey] = [];
+        groups[groupKey].push(row);
+      });
+
+      // Add data with group separators
+      Object.keys(groups).forEach((group, index) => {
+        if (index > 0) worksheet.addRow([]);
+        
+        // Group header
+        const headerRow = worksheet.addRow([group]);
+        headerRow.font = { bold: true, size: 12 };
+        headerRow.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE7E6E6' }
+        };
+        worksheet.mergeCells(headerRow.number, 1, headerRow.number, 6);
+
+        // Add group data
+        groups[group].forEach(row => {
+          worksheet.addRow(row);
+        });
+
+        // Group subtotal
+        const subtotalRow = worksheet.lastRow.number + 1;
+        worksheet.getCell(`D${subtotalRow}`).value = 'Subtotal:';
+        worksheet.getCell(`D${subtotalRow}`).font = { bold: true };
+        worksheet.getCell(`F${subtotalRow}`).value = {
+          formula: `SUBTOTAL(9,F${headerRow.number + 1}:F${subtotalRow - 1})`
+        };
+        worksheet.getCell(`F${subtotalRow}`).font = { bold: true };
+      });
+
+      // Format currency
+      worksheet.getColumn('F').numFmt = '₦#,##0.00';
+    } else {
+      // Detailed mode - group by bank
+      const banks = {};
+      data.forEach(row => {
+        const bankKey = `${row.Bankcode || 'Unknown'} - ${row.bankbranch || 'Unknown'}`;
+        if (!banks[bankKey]) banks[bankKey] = [];
+        banks[bankKey].push(row);
+      });
+
+      // Add data with bank separators
+      Object.keys(banks).forEach((bank, index) => {
+        if (index > 0) worksheet.addRow([]);
+        
+        // Bank header
+        const headerRow = worksheet.addRow([bank]);
+        headerRow.font = { bold: true, size: 12 };
+        headerRow.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE7E6E6' }
+        };
+        worksheet.mergeCells(headerRow.number, 1, headerRow.number, 11);
+
+        // Add bank data
+        banks[bank].forEach(row => {
+          worksheet.addRow(row);
+        });
+
+        // Bank subtotal
+        const subtotalRow = worksheet.lastRow.number + 1;
+        worksheet.getCell(`I${subtotalRow}`).value = 'Bank Subtotal:';
+        worksheet.getCell(`I${subtotalRow}`).font = { bold: true };
+        worksheet.getCell(`K${subtotalRow}`).value = {
+          formula: `SUBTOTAL(9,K${headerRow.number + 1}:K${subtotalRow - 1})`
+        };
+        worksheet.getCell(`K${subtotalRow}`).font = { bold: true };
+      });
+
+      // Format currency
+      worksheet.getColumn('K').numFmt = '₦#,##0.00';
+      // Format years in level
+      worksheet.getColumn('I').numFmt = '0.00';
+    }
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=payment_staff_list.xlsx');
+
+    await workbook.xlsx.write(res);
+    res.end();
+  }
+
+  async generatePaymentStaffListPDF(data, res) {
+    if (!this.jsreportReady) {
+      return res.status(500).json({
+        success: false,
+        error: "PDF generation service not ready."
+      });
+    }
+
+    try {
+      if (!data || data.length === 0) {
+        throw new Error('No data available for the selected filters');
+      }
+
+      const isSummary = data.length > 0 && !data[0].hasOwnProperty('service_number');
+      
+      console.log('Staff List PDF - Is Summary:', isSummary);
+      console.log('Staff List PDF - Data rows:', data.length);
+      
+      // Calculate totals
+      let totalEmployees = 0;
+      let totalNetPay = 0;
+
+      if (isSummary) {
+        data.forEach(row => {
+          totalEmployees += parseInt(row.employee_count || 0);
+          totalNetPay += parseFloat(row.net_pay || 0);
+        });
+      } else {
+        totalEmployees = data.length;
+        data.forEach(row => {
+          totalNetPay += parseFloat(row.net_pay || 0);
+        });
+      }
+
+      const templatePath = path.join(__dirname, '../../templates/payment-staff-list.html');
+      const templateContent = fs.readFileSync(templatePath, 'utf8');
+
+      const result = await jsreport.render({
+        template: {
+          content: templateContent,
+          engine: 'handlebars',
+          recipe: 'chrome-pdf',
+          chrome: {
+            displayHeaderFooter: false,
+            printBackground: true,
+            format: 'A4',
+            landscape: false,
+            marginTop: '10mm',
+            marginBottom: '10mm',
+            marginLeft: '10mm',
+            marginRight: '10mm'
+          },
+          helpers: `
+            function formatDate(date) {
+              return new Date(date).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+              });
+            }
+            
+            function formatTime(date) {
+              return new Date(date).toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+              });
+            }
+            
+            function formatCurrency(amount) {
+              return parseFloat(amount || 0).toLocaleString('en-NG', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              });
+            }
+            
+            function formatDecimal(value) {
+              return parseFloat(value || 0).toFixed(2);
+            }
+          `
+        },
+        data: {
+          data: data,
+          reportDate: new Date(),
+          month: data[0]?.month || 'N/A',
+          year: data[0]?.year || 'N/A',
+          isSummary: isSummary,
+          totalEmployees: totalEmployees,
+          totalNetPay: totalNetPay
+        }
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=payment-staff-list-${data[0]?.month || 'report'}-${data[0]?.year || 'report'}.pdf`);
+      res.send(result.content);
+
+    } catch (error) {
+      console.error('Staff List PDF generation error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
     }
   }
 

@@ -1,333 +1,407 @@
-import React, { useState } from 'react';
-import { Calculator, AlertCircle, CheckCircle, Info } from 'lucide-react';
-
-const ManualPayrollGuide = () => {
-  const [selectedEmployee, setSelectedEmployee] = useState('employee1');
-  const [month, setMonth] = useState(5);
-
-  const examples = {
-    employee1: {
-      id: 'NN/0001',
-      gradelevel: '0901',
-      taxed: 'Yes',
-      basic_annual: 2400000,
-      elements: {
-        'BP01': { type: 'Basic', annual: 2400000, monthly: 200000 },
-        'BP02': { type: 'Housing', annual: 1200000, monthly: 100000 },
-        'PR01': { type: 'NSITF', percent: 1, base: 'BP01+BP02' },
-        'PR02': { type: 'Pension', percent: 8, base: 'BP01+BP02' },
-        'FP90': { type: 'Tax Free', fixed: 200000 }
-      },
-      previous_cum: {
-        grosstodate: 1200000,
-        taxtodate: 84000,
-        nettodate: 1000000
-      }
-    }
-  };
-
-  const emp = examples[selectedEmployee];
-
-  // Manual calculation steps
-  const calc_step1_gross = emp.elements['BP01'].monthly + emp.elements['BP02'].monthly;
-  const calc_step2_nsitf = (calc_step1_gross * 1) / 100;
-  const calc_step3_pension = (calc_step1_gross * 8) / 100;
-  const calc_step4_totalded = calc_step2_nsitf + calc_step3_pension;
-  const calc_step5_grossthistmth = calc_step1_gross;
-  const calc_step6_grosstodate = emp.previous_cum.grosstodate + calc_step5_grossthistmth;
-  
-  // Tax calculation
-  const calc_step7_taxfreepay = emp.elements['FP90'].fixed + (0.2 * calc_step6_grosstodate / 100) + (1 * calc_step6_grosstodate / 100);
-  const calc_step8_minfree = (200000 * month) / 12;
-  const calc_step9_actualfree = Math.max(calc_step7_taxfreepay, calc_step8_minfree);
-  const calc_step10_taxable = Math.max(0, calc_step6_grosstodate - calc_step9_actualfree);
-  
-  // Progressive tax (example brackets)
-  let calc_step11_progtax = 0;
-  if (calc_step10_taxable > 0) {
-    if (calc_step10_taxable <= 300000) {
-      calc_step11_progtax = calc_step10_taxable * 0.07;
-    } else if (calc_step10_taxable <= 600000) {
-      calc_step11_progtax = (300000 * 0.07) + ((calc_step10_taxable - 300000) * 0.11);
-    } else {
-      calc_step11_progtax = (300000 * 0.07) + (300000 * 0.11) + ((calc_step10_taxable - 600000) * 0.15);
-    }
-  }
-  
-  // Minimum tax check
-  const calc_step12_mintax = calc_step6_grosstodate * 0.5 / 100;
-  const calc_step13_finaltax = Math.max(calc_step11_progtax, calc_step12_mintax);
-  const calc_step14_taxthismth = calc_step13_finaltax - emp.previous_cum.taxtodate;
-  const calc_step15_netthismth = calc_step5_grossthistmth - calc_step14_taxthismth - calc_step4_totalded;
-
-  return (
-    <div className="w-full max-w-6xl mx-auto p-6 bg-gray-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4 flex items-center gap-3">
-          <Calculator className="w-8 h-8 text-blue-600" />
-          Manual Payroll Calculation Guide
-        </h1>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A5;
+            margin: 10mm;
+            background-color: #f8fbff;
+        }
         
-        <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 mb-6">
-          <div className="flex items-start gap-3">
-            <Info className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
-            <div>
-              <p className="text-blue-900 font-semibold mb-2">
-                Critical Understanding: grossmth vs grosstodate
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-blue-800 text-sm">
-                <li><strong>grossmth</strong> = Gross pay for THIS month only (BP + BT types)</li>
-                <li><strong>grosstodate</strong> = CUMULATIVE gross from January to current month</li>
-                <li><strong>Formula:</strong> grosstodate = previous_month_grosstodate + current_grossmth</li>
-                <li><strong>Tax is calculated on grosstodate</strong> (cumulative), not grossmth</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Step-by-Step Calculation</h2>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         
-        <div className="space-y-4">
-          <div className="bg-green-50 border-l-4 border-green-500 p-4">
-            <h3 className="font-bold text-green-800 mb-2">Step 1: Calculate Gross Pay This Month</h3>
-            <div className="font-mono text-sm">
-              <p>BP01 (Basic) = ₦{emp.elements['BP01'].monthly.toLocaleString()}</p>
-              <p>BP02 (Housing) = ₦{emp.elements['BP02'].monthly.toLocaleString()}</p>
-              <p className="font-bold mt-2 text-green-900">
-                Gross This Month = ₦{calc_step1_gross.toLocaleString()}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-orange-50 border-l-4 border-orange-500 p-4">
-            <h3 className="font-bold text-orange-800 mb-2">Step 2: Calculate Deductions</h3>
-            <div className="font-mono text-sm">
-              <p>NSITF (1% of gross) = {calc_step1_gross.toLocaleString()} × 1% = ₦{calc_step2_nsitf.toLocaleString()}</p>
-              <p>Pension (8% of gross) = {calc_step1_gross.toLocaleString()} × 8% = ₦{calc_step3_pension.toLocaleString()}</p>
-              <p className="font-bold mt-2 text-orange-900">
-                Total Deductions = ₦{calc_step4_totalded.toLocaleString()}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-purple-50 border-l-4 border-purple-500 p-4">
-            <h3 className="font-bold text-purple-800 mb-2">Step 3: Calculate Cumulative Gross (CRITICAL!)</h3>
-            <div className="font-mono text-sm">
-              <p>Previous Gross To Date (Month {month-1}) = ₦{emp.previous_cum.grosstodate.toLocaleString()}</p>
-              <p>Plus: Gross This Month = ₦{calc_step5_grossthistmth.toLocaleString()}</p>
-              <p className="font-bold mt-2 text-purple-900 text-lg">
-                Gross To Date (Month {month}) = ₦{calc_step6_grosstodate.toLocaleString()}
-              </p>
-              <p className="text-purple-700 mt-2 text-xs italic">
-                ⚠️ This cumulative value is used for tax calculation!
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
-            <h3 className="font-bold text-blue-800 mb-2">Step 4: Calculate Tax Free Allowance</h3>
-            <div className="font-mono text-sm">
-              <p>FP90 (Fixed) = ₦{emp.elements['FP90'].fixed.toLocaleString()}</p>
-              <p>Plus: Consolidation Relief (0.2%) = {calc_step6_grosstodate.toLocaleString()} × 0.2% = ₦{((0.2 * calc_step6_grosstodate) / 100).toLocaleString()}</p>
-              <p>Plus: NHF/NIS (1%) = {calc_step6_grosstodate.toLocaleString()} × 1% = ₦{((1 * calc_step6_grosstodate) / 100).toLocaleString()}</p>
-              <p className="mt-2">Calculated Free Pay = ₦{calc_step7_taxfreepay.toLocaleString()}</p>
-              <p className="mt-1">Minimum Free Pay = ₦{calc_step8_minfree.toLocaleString()} ({month} months × ₦{(200000/12).toFixed(2)}/month)</p>
-              <p className="font-bold mt-2 text-blue-900">
-                Actual Tax Free = MAX(above) = ₦{calc_step9_actualfree.toLocaleString()}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-red-50 border-l-4 border-red-500 p-4">
-            <h3 className="font-bold text-red-800 mb-2">Step 5: Calculate Taxable Income</h3>
-            <div className="font-mono text-sm">
-              <p>Gross To Date = ₦{calc_step6_grosstodate.toLocaleString()}</p>
-              <p>Minus: Tax Free = ₦{calc_step9_actualfree.toLocaleString()}</p>
-              <p className="font-bold mt-2 text-red-900">
-                Taxable Income = ₦{calc_step10_taxable.toLocaleString()}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4">
-            <h3 className="font-bold text-yellow-800 mb-2">Step 6: Calculate Progressive Tax</h3>
-            <div className="font-mono text-sm text-xs">
-              <p className="mb-2">Tax Brackets (example - check your py_tax table):</p>
-              <ul className="list-disc list-inside space-y-1 mb-2">
-                <li>₦0 - ₦300,000: 7%</li>
-                <li>₦300,001 - ₦600,000: 11%</li>
-                <li>₦600,001+: 15%</li>
-              </ul>
-              <p className="font-bold text-yellow-900">
-                Progressive Tax = ₦{calc_step11_progtax.toLocaleString()}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4">
-            <h3 className="font-bold text-indigo-800 mb-2">Step 7: Apply Minimum Tax (CRITICAL!)</h3>
-            <div className="font-mono text-sm">
-              <p>Minimum Tax (0.5% of gross) = {calc_step6_grosstodate.toLocaleString()} × 0.5% = ₦{calc_step12_mintax.toLocaleString()}</p>
-              <p>Progressive Tax = ₦{calc_step11_progtax.toLocaleString()}</p>
-              <p className="font-bold mt-2 text-indigo-900 text-lg">
-                Tax To Date = MAX(above) = ₦{calc_step13_finaltax.toLocaleString()}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-pink-50 border-l-4 border-pink-500 p-4">
-            <h3 className="font-bold text-pink-800 mb-2">Step 8: Calculate Tax This Month</h3>
-            <div className="font-mono text-sm">
-              <p>Tax To Date (This Month) = ₦{calc_step13_finaltax.toLocaleString()}</p>
-              <p>Minus: Tax To Date (Last Month) = ₦{emp.previous_cum.taxtodate.toLocaleString()}</p>
-              <p className="font-bold mt-2 text-pink-900">
-                Tax This Month = ₦{calc_step14_taxthismth.toLocaleString()}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-green-100 border-l-4 border-green-600 p-4">
-            <h3 className="font-bold text-green-800 mb-2 text-xl">Step 9: Calculate Net Pay</h3>
-            <div className="font-mono text-sm">
-              <p>Gross This Month = ₦{calc_step5_grossthistmth.toLocaleString()}</p>
-              <p>Minus: Tax This Month = ₦{calc_step14_taxthismth.toLocaleString()}</p>
-              <p>Minus: Deductions = ₦{calc_step4_totalded.toLocaleString()}</p>
-              <p className="font-bold mt-3 text-green-900 text-2xl">
-                NET PAY = ₦{calc_step15_netthismth.toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">SQL Queries to Verify Your Data</h2>
+        html, body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 7pt;
+            color: #1a1a1a;
+            line-height: 1.2;
+            background-color: #f8fbff;
+            margin: 0;
+            padding: 0;
+        }
         
-        <div className="space-y-4">
-          <div className="bg-gray-50 p-4 rounded">
-            <h3 className="font-bold text-gray-800 mb-2">1. Check a Single Employee's Calculation</h3>
-            <pre className="bg-gray-900 text-green-400 p-4 rounded text-xs overflow-x-auto">
-{`-- Replace 'NN/0001' with your test employee
-SELECT 
-    mp.his_empno,
-    mp.his_type,
-    mp.amtthismth,
-    mp.totamtpayable,
-    et.dependence,
-    et.perc,
-    et.std
-FROM py_masterpayded mp
-LEFT JOIN py_elementType et ON mp.his_type = et.PaymentType
-WHERE mp.his_empno = 'NN/0001'
-  AND mp.amtthismth > 0
-ORDER BY mp.his_type;`}
-            </pre>
-          </div>
+        .container {
+            width: 100%;
+            margin: 0;
+            padding: 10px;
+            height: 100%;
+        }
+        
+        /* Header Styles - Simple */
+        .header {
+            text-align: center;
+            margin-bottom: 8px;
+            border-bottom: 2px solid #1a1a1a;
+            padding-bottom: 5px;
+        }
+        
+        .header h1 {
+            font-size: 13pt;
+            font-weight: bold;
+            margin-bottom: 2px;
+            letter-spacing: 1.5px;
+            color: #1e40af;
+            font-family: 'Libre Baskerville', Georgia, serif;
+        }
+        
+        .header h2 {
+            font-size: 10pt;
+            font-weight: normal;
+            margin-top: 2px;
+            color: #4a4a4a;
+            font-family: 'Libre Baskerville', Georgia, serif;
+        }
+        
+        /* Pay Period Section - Simple */
+        .pay-period {
+            margin: 5px 0;
+            padding: 4px 6px;
+            font-size: 7pt;
+            display: flex;
+            justify-content: space-between;
+            background-color: #fafafa;
+        }
+        
+        .pay-period p {
+            margin: 0;
+            color: #4a4a4a;
+        }
+        
+        .pay-period strong {
+            color: #1a1a1a;
+        }
+        
+        /* Section Headers - Blue only here */
+        .section-header {
+            font-size: 8pt;
+            font-weight: bold;
+            margin-top: 6px;
+            margin-bottom: 4px;
+            padding: 3px 5px;
+            color: #1e40af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Employee Info & Item List Styles (using Flexbox) */
+        .employee-info, .items-list {
+            margin-bottom: 6px;
+            padding: 5px 6px;
+            background-color: #fafafa;
+            border: 1px solid #d0d0d0;
+        }
 
-          <div className="bg-gray-50 p-4 rounded">
-            <h3 className="font-bold text-gray-800 mb-2">2. Check Cumulative Values</h3>
-            <pre className="bg-gray-900 text-green-400 p-4 rounded text-xs overflow-x-auto">
-{`SELECT 
-    his_empno,
-    his_type AS month,
-    his_grossmth,        -- Gross THIS month
-    his_grosstodate,     -- CUMULATIVE gross
-    his_taxabletodate,   -- Taxable amount
-    his_taxfreepaytodate,-- Tax free allowance
-    his_taxtodate,       -- CUMULATIVE tax
-    his_taxmth,          -- Tax THIS month
-    his_netmth,          -- Net THIS month
-    his_nettodate        -- CUMULATIVE net
-FROM py_mastercum
-WHERE his_empno = 'NN/0001'
-ORDER BY his_type;`}
-            </pre>
-          </div>
+        .items-list {
+            padding: 0 6px; /* Reduced vertical padding for item lists */
+        }
+        
+        .info-row, .item-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0;
+            padding: 3px 0; /* Adjusted padding for list items */
+            font-size: 7pt;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .info-row:last-child, .item-row:last-child {
+            border-bottom: none;
+        }
+        
+        /* Info Row Styles */
+        .info-label {
+            font-weight: 600;
+            min-width: 85px;
+            flex-shrink: 0;
+            color: #1a1a1a;
+        }
+        
+        .info-value {
+            flex-grow: 1;
+            color: #4a4a4a;
+        }
 
-          <div className="bg-gray-50 p-4 rounded">
-            <h3 className="font-bold text-gray-800 mb-2">3. Verify Tax Brackets from py_tax</h3>
-            <pre className="bg-gray-900 text-green-400 p-4 rounded text-xs overflow-x-auto">
-{`SELECT 
-    inter,
-    lowbound,
-    highbound,
-    val AS tax_rate_percent,
-    perc,
-    cumval
-FROM py_tax
-ORDER BY CASE WHEN inter = 999 THEN 999999 ELSE lowbound END;`}
-            </pre>
-          </div>
+        /* Item Row (Earnings/Deduction) Styles */
+        .item-description {
+            flex-grow: 1; /* Description takes up most space */
+            color: #4a4a4a;
+            padding-right: 10px; /* Space before amount */
+        }
 
-          <div className="bg-gray-50 p-4 rounded">
-            <h3 className="font-bold text-gray-800 mb-2">4. Manual Tax Calculation Query</h3>
-            <pre className="bg-gray-900 text-green-400 p-4 rounded text-xs overflow-x-auto">
-{`-- Calculate tax for one employee manually
-SET @empno = 'NN/0001';
-SET @curmth = (SELECT mth FROM py_stdrate WHERE type='BT05');
-
-SELECT 
-    mc.his_empno,
-    mc.his_grosstodate,
-    mc.his_taxfreepaytodate,
-    (mc.his_grosstodate - mc.his_taxfreepaytodate) AS taxable,
-    -- Progressive tax
-    (SELECT SUM(
-        CASE 
-            WHEN (mc.his_grosstodate - mc.his_taxfreepaytodate) > t.lowbound 
-            THEN LEAST(
-                (mc.his_grosstodate - mc.his_taxfreepaytodate) - t.lowbound,
-                COALESCE(t.highbound, 999999999) - t.lowbound
-            ) * t.val / 100
-            ELSE 0
-        END
-    ) FROM py_tax t WHERE t.inter <> 999) AS progressive_tax,
-    -- Minimum tax
-    mc.his_grosstodate * (SELECT perc FROM py_tax WHERE inter=999) / 100 AS minimum_tax,
-    -- Actual tax (should be in his_taxtodate)
-    mc.his_taxtodate AS stored_tax,
-    -- Compare
-    GREATEST(
-        (SELECT SUM(CASE WHEN (mc.his_grosstodate - mc.his_taxfreepaytodate) > t.lowbound 
-            THEN LEAST((mc.his_grosstodate - mc.his_taxfreepaytodate) - t.lowbound,
-                COALESCE(t.highbound, 999999999) - t.lowbound) * t.val / 100 ELSE 0 END)
-         FROM py_tax t WHERE t.inter <> 999),
-        mc.his_grosstodate * (SELECT perc FROM py_tax WHERE inter=999) / 100
-    ) AS calculated_tax,
-    -- Difference
-    mc.his_taxtodate - GREATEST(
-        (SELECT SUM(CASE WHEN (mc.his_grosstodate - mc.his_taxfreepaytodate) > t.lowbound 
-            THEN LEAST((mc.his_grosstodate - mc.his_taxfreepaytodate) - t.lowbound,
-                COALESCE(t.highbound, 999999999) - t.lowbound) * t.val / 100 ELSE 0 END)
-         FROM py_tax t WHERE t.inter <> 999),
-        mc.his_grosstodate * (SELECT perc FROM py_tax WHERE inter=999) / 100
-    ) AS difference
-FROM py_mastercum mc
-WHERE mc.his_empno = @empno
-  AND mc.his_type = @curmth;`}
-            </pre>
-          </div>
+        .item-amount {
+            font-weight: 700;
+            font-size: 7.5pt;
+            color: #1a1a1a;
+            white-space: nowrap;
+            text-align: right;
+            min-width: 70px; /* Tight width for amount */
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* Total Rows - Simple (Flexbox) */
+        .total-row {
+            background-color: #f5f5f5;
+            border-top: 1px solid #d0d0d0;
+            border-bottom: 1px solid #d0d0d0;
+            padding: 4px 6px;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            font-size: 8pt;
+            font-weight: 600;
+        }
+        
+        .total-row .label {
+            text-transform: uppercase;
+            color: #1a1a1a;
+            flex-grow: 1; /* Make label grow and push amount left */
+        }
+        
+        .total-row .amount {
+            text-align: right;
+            min-width: 70px; 
+            flex-shrink: 0;
+            font-family: 'Courier New', monospace;
+            color: #1a1a1a;
+            font-weight: 700;
+        }
+        
+        /* Net Pay - Bold emphasis (Flexbox) */
+        .net-pay {
+            background-color: #f0f0f0;
+            color: #1a1a1a;
+            border: 2px solid #1a1a1a;
+            padding: 5px 6px;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9pt;
+            font-weight: bold;
+        }
+        
+        .net-pay .label {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            flex-grow: 1;
+        }
+        
+        .net-pay .amount {
+            text-align: right;
+            min-width: 85px; 
+            flex-shrink: 0;
+            font-family: 'Courier New', monospace;
+            font-weight: 800;
+        }
+        
+        /* YTD Section - Minimal (Flexbox) */
+        .ytd-section {
+            border: 1px solid #d0d0d0;
+            padding: 5px 6px;
+            margin-top: 6px;
+            background-color: #fafafa;
+        }
+        
+        .ytd-header {
+            font-size: 7.5pt;
+            font-weight: 600;
+            margin-bottom: 4px;
+            padding-bottom: 2px;
+            border-bottom: 1px solid #d0d0d0;
+            color: #1a1a1a;
+            text-transform: uppercase;
+        }
+        
+        .ytd-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+            padding: 2px 3px;
+            font-size: 7pt;
+        }
+        
+        .ytd-row .label {
+            font-weight: 600;
+            color: #1a1a1a;
+            flex-grow: 1;
+        }
+        
+        .ytd-row .amount {
+            text-align: right;
+            min-width: 70px; 
+            flex-shrink: 0;
+            font-family: 'Courier New', monospace;
+            color: #1a1a1a;
+            font-weight: 700;
+        }
+        
+        /* Footer - Simple */
+        .footer {
+            margin-top: 6px;
+            padding-top: 4px;
+            border-top: 2px solid #d0d0d0;
+            text-align: center;
+            font-size: 6pt;
+            color: #6a6a6a;
+        }
+        
+        .footer p {
+            margin: 2px 0;
+        }
+        
+        .footer p:first-child {
+            font-weight: 600;
+            color: #4a4a4a;
+        }
+        
+        /* Loan Balance Display */
+        .loan-balance {
+            font-size: 6.5pt;
+            color: #d32f2f;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+        
+        /* Page Break */
+        .page-break {
+            page-break-after: always;
+        }
+        
+        /* Accent line - removed */
+        .accent-line {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    {{#each employees}}
+    <div class="container">
+        <div class="header">
+            <h1>Nigerian Navy (Naval Headquarters)</h1>
+            <div class="accent-line"></div>
+            <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
         </div>
-      </div>
-
-      <div className="bg-red-50 border-2 border-red-300 rounded-lg p-6 mt-6">
-        <h2 className="text-xl font-bold text-red-800 mb-4 flex items-center gap-2">
-          <AlertCircle className="w-6 h-6" />
-          If You're Getting Wrong Figures - Check These:
-        </h2>
-        <ol className="list-decimal list-inside space-y-2 text-red-900">
-          <li><strong>Fresh Table Issue:</strong> If py_masterpayded is fresh with no totamtpayable values, run py_updatepayroll procedures FIRST</li>
-          <li><strong>Missing Previous Month:</strong> Calculations depend on previous month's py_mastercum data</li>
-          <li><strong>Tax Brackets:</strong> Verify your py_tax table has correct brackets</li>
-          <li><strong>Minimum Tax:</strong> Check inter=999 record exists in py_tax with correct perc value</li>
-          <li><strong>Element Dependencies:</strong> PR types depend on BP types being calculated first</li>
-          <li><strong>Cumulative Values:</strong> grosstodate MUST equal previous_grosstodate + current_grossmth</li>
-        </ol>
-      </div>
+        
+        <div class="pay-period">
+            <p><strong>Pay Period:</strong> {{payroll_month}} {{payroll_year}}</p>
+            <p><strong>Pay Date:</strong> {{formatDate payDate}}</p>
+        </div>
+        
+        <div class="section-header">Personnel Information</div>
+        <div class="employee-info">
+            <div class="info-row">
+                <span class="info-label">Name:</span> 	
+                <span class="info-value">{{surname}} {{othername}} ({{title}} {{rank}})</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Service No:</span>
+                <span class="info-value">{{employee_id}}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Grade:</span>
+                <span class="info-value">{{gradelevel}} {{#if gradetype}}- {{gradetype}}{{/if}}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Department:</span>
+                <span class="info-value">{{department}}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Bank Account:</span>
+                <span class="info-value">{{bank_account_number}} {{#if bank_name}}({{bank_name}}){{/if}}</span>
+            </div>
+        </div>
+        
+        <div class="section-header">Gross Pay (Taxable)</div>
+        <div class="items-list">
+            {{#each earnings}}
+            {{#if (eq type "Taxable")}}
+            <div class="item-row">
+                <span class="item-description">{{description}}</span>
+                <span class="item-amount">₦{{formatCurrency amount}}</span>
+            </div>
+            {{/if}}
+            {{/each}}
+        </div>
+        
+        <div class="total-row">
+            <span class="label">Total Gross Pay (Taxable)</span>
+            <span class="amount">₦{{formatCurrency (sumByType earnings "Taxable")}}</span>
+        </div>
+        
+        <div class="section-header">Deductions</div>
+        <div class="items-list">
+            {{#each deductions}}
+            <div class="item-row">
+                <span class="item-description">
+                    {{description}}
+                    {{#if is_loan}}
+                        {{#if loan_balance}}
+                        <span class="loan-balance">(Bal: ₦{{formatCurrency loan_balance}})</span>
+                        {{/if}}
+                    {{/if}}
+                </span>
+                <span class="item-amount">₦{{formatCurrency amount}}</span>
+            </div>
+            {{/each}}
+        </div>
+        
+        <div class="total-row">
+            <span class="label">Total Deductions</span>
+            <span class="amount">₦{{formatCurrency total_deductions}}</span>
+        </div>
+        
+        <div class="section-header">Allowances (Non-Taxable)</div>
+        <div class="items-list">
+            {{#each earnings}}
+            {{#if (eq type "Non-Taxable")}}
+            <div class="item-row">
+                <span class="item-description">{{description}}</span>
+                <span class="item-amount">₦{{formatCurrency amount}}</span>
+            </div>
+            {{/if}}
+            {{/each}}
+        </div>
+        
+        <div class="total-row">
+            <span class="label">Total Allowances (Non-Taxable)</span>
+            <span class="amount">₦{{formatCurrency (sumByType earnings "Non-Taxable")}}</span>
+        </div>
+        
+        <div class="net-pay">
+            <span class="label">Net Pay</span>
+            <span class="amount">₦{{formatCurrency net_pay}}</span>
+        </div>
+        
+        <div class="ytd-section">
+            <div class="ytd-header">
+                Year-to-Date Totals (Jan - {{payroll_month}} {{payroll_year}})
+            </div>
+            <div class="ytd-row">
+                <span class="label">YTD Gross:</span>
+                <span class="amount">₦{{formatCurrency ytd_gross}}</span>
+            </div>
+            <div class="ytd-row">
+                <span class="label">YTD Tax:</span>
+                <span class="amount">₦{{formatCurrency ytd_tax}}</span>
+            </div>
+            <div class="ytd-row">
+                <span class="label">YTD Net:</span>
+                <span class="amount">₦{{formatCurrency (subtract ytd_gross ytd_tax)}}</span>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+        </div>
     </div>
-  );
-};
-
-export default ManualPayrollGuide;
+    
+    {{#unless @last}}
+    <div class="page-break"></div>
+    {{/unless}}
+    {{/each}}
+</body>
+</html>

@@ -2,37 +2,39 @@
   <!-- Header -->
   <div class="flex justify-between items-center mb-6">
     <h3 class="text-2xl font-bold text-blue-800">Personnel Details</h3>
+
+    <!-- Styled Tabs (matching add-personnel style) -->
+    <div class="flex flex-wrap justify-center">
+      <div class="w-fit flex flex-wrap item justify-center bg-white/50 rounded-xl border border-amber-50 shadow-sm p-2 gap-2">
+        <button id="view-tab-personnel" 
+                onclick="window.ViewPersonnel?.switchTab('personnel')"
+                class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-600">
+          Personnel Details
+        </button>
+        <button id="view-tab-nok" 
+                onclick="window.ViewPersonnel?.switchTab('nok')"
+                class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
+          Next of Kin
+        </button>
+        <button id="view-tab-spouse" 
+                onclick="window.ViewPersonnel?.switchTab('spouse')"
+                class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
+          Spouse
+        </button>
+        <button id="view-tab-children" 
+                onclick="window.ViewPersonnel?.switchTab('children')"
+                class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
+          Children
+        </button>
+      </div>
+    </div>
+
     <button id="backBtn" 
       class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
       Back to List
     </button>
   </div>
 
-  <!-- Styled Tabs (matching add-personnel style) -->
-   <div class="flex flex-wrap justify-center">
-    <div class="w-fit flex flex-wrap item justify-center bg-white/50 rounded-xl border border-amber-50 shadow-sm p-2 gap-2 mb-6">
-      <button id="view-tab-personnel" 
-              onclick="window.ViewPersonnel?.switchTab('personnel')"
-              class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-600">
-        Personnel Details
-      </button>
-      <button id="view-tab-nok" 
-              onclick="window.ViewPersonnel?.switchTab('nok')"
-              class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
-        Next of Kin
-      </button>
-      <button id="view-tab-spouse" 
-              onclick="window.ViewPersonnel?.switchTab('spouse')"
-              class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
-        Spouse
-      </button>
-      <button id="view-tab-children" 
-              onclick="window.ViewPersonnel?.switchTab('children')"
-              class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
-        Children
-      </button>
-    </div>
-   </div>
 
   <!-- Content Area -->
   <div id="view-detail-content" class="min-h-[400px]">
@@ -475,7 +477,7 @@ class ViewPersonnelManager {
                           <div class="${detailItemClass}"><dt class="${dtClass}">LGA:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.LocalGovt, 'lga'))}</dd></div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">Town:</dt><dd class="${ddClass}">${this.escape(emp.town || 'N/A')}</dd></div>                        
                           <h5 class="text-lg font-semibold text-gray-700 pt-4 mb-2 border-t border-gray-100">Residential Address</h5>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Address:</dt><dd class="col-span-2 text-sm text-gray-900 text-right ml-4">${this.escape(emp.HOMEADDR || 'N/A')}</dd></div>
+                          <div class="${detailItemClass}"><dt class="${dtClass}">Address:</dt><dd class="col-span-2 text-sm text-gray-900 text-right ml-4 font-bold">${this.escape(emp.HOMEADDR || 'N/A')}</dd></div>
                       </dl>
                   </div>
               </div>

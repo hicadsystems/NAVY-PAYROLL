@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { size: A4; margin: 8mm; background-color: #f8fbff; }
+        body { 
+            font-family: Helvetica, Arial, sans-serif; 
+            font-size: 10pt; 
+            color: #1a1a1a;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3px;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        
+        .header h1 {
+            font-size: 13pt;
+            font-weight: bold;
+            margin-bottom: 2px;
+            letter-spacing: 1.5px;
+            color: #1e40af;
+            font-family: 'Libre Baskerville', Georgia, serif;
+        }
+        
+        .header h2 {
+            font-size: 10pt;
+            font-weight: normal;
+            margin-top: 2px;
+            color: #4a4a4a;
+            font-family: 'Libre Baskerville', Georgia, serif;
+        }
+        
+        .report-info { 
+            margin-top: 2px; 
+            font-size: 9pt; 
+            color: #64748b; 
+        }
+        
+        /* Bank Section */
+        .bank-section { 
+            margin-top: 10px;
+        }
+        
+        .bank-title { 
+            font-size: 12pt; 
+            font-weight: bold; 
+            color: #1e3a8a; 
+            margin-bottom: 15px;
+            padding: 8px;
+            border: .5px solid #1e3a8a;
+            page-break-after: avoid;
+        }
+        
+        /* Category Subsection */
+        .category-subsection {
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+        
+        .category-subtitle {
+            font-size: 10pt;
+            font-weight: 600;
+            color: #1e40af;
+            margin: 15px 0 10px 0;
+            padding-bottom: 3px;
+            border-bottom: 1px solid #cbd5e1;
+        }
+        
+        /* Payment Type Group */
+        .payment-group { 
+            margin-bottom: 10px; 
+            page-break-inside: avoid; 
+        }
+        
+        .payment-header { 
+            padding: 8px 10px;
+            color: #1e40af;
+            font-weight: bold; 
+            font-size: 10pt;
+            text-align: center;
+            border-bottom: .5px solid #e0e0e0;
+            background: #f8fafc;
+        }
+        
+        /* Tables */
+        table.details { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 10px 0; 
+        }
+        
+        table.details th { 
+            padding: 7px; 
+            color: #1e40af;
+            text-align: left; 
+            font-size: 8.5pt;
+            font-weight: 600;
+            border-bottom: solid 1px #1e40af;
+        }
+        
+        table.details td { 
+            padding: 5px 6px; 
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 8.5pt;
+        }
+        
+        /* Summary Table */
+        table.summary { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 10px 0; 
+        }
+        
+        table.summary th { 
+            padding: 8px; 
+            text-align: left; 
+            font-size: 9pt; 
+            font-weight: 600;
+            color: #1e40af;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        table.summary td { 
+            padding: 6px 8px; 
+            border-bottom: 1px solid #f1f5f9; 
+            font-size: 9pt; 
+        }
+        
+        table.summary th.center,
+        table.summary td.center { 
+            text-align: center; 
+        }
+        
+        .amount { 
+            font-family: 'Courier New', monospace; 
+            font-weight: 600; 
+        }
+        
+        .deduction-amount {
+            color: #dc2626;
+        }
+        
+        .employee-id { 
+            font-family: 'Courier New', monospace; 
+            font-size: 8pt; 
+        }
+        
+        /* Total Rows */
+        .total-row { 
+            font-weight: bold; 
+            border-top: 2px solid #1e3a8a;
+            background: #f8fafc;
+            page-break-inside: avoid;
+        }
+        
+        .subtotal-row {
+            font-weight: 600;
+            background: #f8fafc;
+            border-top: 1px solid #94a3b8;
+        }
+        
+        .footer {
+            padding-top: 5px;
+            border-top: .5px solid #1a1a1a;
+            text-align: center;
+            font-size: 8pt;
+            color: #64748b;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Nigerian Navy (Naval Headquarters)</h1>
+        <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+        <div class="report-info">
+            <span>PAYMENTS & DEDUCTIONS BY BANK ANALYSIS</span> |
+            Period: {{month}}/{{year}} | Generated: {{formatDate reportDate}}
+        </div>
+    </div>
+    
+    {{#if isSummary}}
+        {{!-- Summary Report - Grouped by Bank --}}
+        {{#each banks}}
+        <div class="bank-section">
+            <div class="bank-title">
+                {{bankName}} - {{bankBranch}}
+            </div>
+            
+            {{#each categories}}
+            <div class="category-subsection">
+                <div class="category-subtitle">{{categoryName}}</div>
+                <table class="summary">
+                    <thead>
+                        <tr>
+                            <th>Payment Type</th>
+                            <th>Description</th>
+                            <th class="center">Total Personnel(s)</th>
+                            <th class="amount">Total Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each items}}
+                        <tr>
+                            <td>{{payment_code}}</td>
+                            <td>{{payment_description}}</td>
+                            <td class="center">{{employee_count}}</td>
+                            <td class="amount">₦{{formatCurrency subtotal}}</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                    <tfoot>
+                        <tr class="subtotal-row">
+                            <td colspan="3" style="text-align: right;">{{categoryName}} Subtotal:</td>
+                            <td class="amount {{#if (isNegative categoryTotal)}}deduction-amount{{/if}}">₦{{formatCurrencyWithSign categoryTotal}}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {{/each}}
+            
+            <table>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="3" style="text-align: right; font-size: 10pt;">BANK TOTAL ({{bankName}}):</td>
+                        <td class="amount {{#if (isNegative bankTotal)}}deduction-amount{{/if}}" style="font-size: 10pt;">₦{{formatCurrencyWithSign bankTotal}}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {{/each}}
+        
+    {{else}}
+        {{!-- Detailed Report - Grouped by Bank, Category, and Payment Type --}}
+        {{#each banks}}
+        <div class="bank-section">
+            <div class="bank-title">
+                {{bankName}} - {{bankBranch}}
+            </div>
+            
+            {{#each categories}}
+            <div class="category-subsection">
+                <div class="category-subtitle">{{categoryName}}</div>
+                
+                {{#each paymentTypes}}
+                <div class="payment-group">
+                    <div class="payment-header">
+                        {{payment_code}} - {{payment_description}} | {{employee_count}} Personnels | Total: ₦{{formatCurrency subtotal}}
+                    </div>
+                    <table class="details">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%;">Service No.</th>
+                                <th style="width: 50%;">Full Name</th>
+                                <th class="amount" style="width: 35%;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each employees}}
+                            <tr>
+                                <td class="employee-id">{{his_empno}}</td>
+                                <td>{{fullname}}</td>
+                                <td class="amount">₦{{formatCurrency total_amount}}</td>
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+                {{/each}}
+                
+                <table style="margin-top: 10px;">
+                    <tfoot>
+                        <tr class="subtotal-row">
+                            <td colspan="2" style="text-align: right;">{{categoryName}} Subtotal:</td>
+                            <td class="amount {{#if (isNegative categoryTotal)}}deduction-amount{{/if}}">₦{{formatCurrencyWithSign categoryTotal}}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {{/each}}
+            
+            <table style="margin-top: 15px;">
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="2" style="text-align: right; font-size: 10pt;">BANK TOTAL ({{bankName}}):</td>
+                        <td class="amount {{#if (isNegative bankTotal)}}deduction-amount{{/if}}" style="font-size: 10pt;">₦{{formatCurrencyWithSign bankTotal}}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {{/each}}
+    {{/if}}
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+    </div>
+</body>
+</html>

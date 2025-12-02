@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { size: A4 landscape; margin: 15mm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 8pt; }
+        .header { text-align: center; margin-bottom: 15px; border-bottom: 3px solid #1a1a1a; padding-bottom: 10px; }
+        .header h1 { margin: 0; font-size: 16pt; }
+        .period { text-align: center; font-size: 11pt; margin-bottom: 15px; font-weight: bold; }
+
+        /* default table size */
+        table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+
+        /* toggles controlled by body classes assigned by the template */
+        body.summary table { font-size: 9pt; }
+        body.include-elements table { font-size: 7pt; }
+
+        th { background: #2c5aa0; color: white; padding: 6px 4px; text-align: left; font-size: 8pt; white-space: nowrap; }
+        td { padding: 4px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+        .amount { text-align: right; font-family: 'Courier New', monospace; font-weight: 600; white-space: nowrap; }
+        .location-header { background: #e7e6e6; font-weight: bold; font-size: 10pt; padding: 8px; }
+        .location-subtotal { background: #f5f5f5; font-weight: bold; }
+        .grand-totals { background: #ffe699; font-weight: bold; font-size: 9pt; }
+        .elements-cell { font-size: 7pt; line-height: 1.3; max-width: 200px; }
+        .element-item { margin: 2px 0; }
+
+        @media print {
+            .location-group { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body class="{{#if isSummary}}summary{{/if}} {{#if includeElements}}include-elements{{/if}}">
+    <div class="header">
+        <h1>NIGERIAN NAVY - PAYROLL REGISTER</h1>
+    </div>
+    <div class="period">Period: {{period}}</div>
+    
+    <table>
+        <thead>
+            <tr>
+                {{#if isSummary}}
+                    <th>Location</th>
+                    <th style="text-align: right;">Employee Count</th>
+                    <th class="amount">Gross Pay</th>
+                    <th class="amount">Total Emoluments</th>
+                    <th class="amount">Total Deductions</th>
+                    <th class="amount">Tax</th>
+                    <th class="amount">Net Pay</th>
+                {{else}}
+                    <th>Service No</th>
+                    <th>Name</th>
+                    <th>Grade</th>
+                    {{#if includeElements}}
+                    <th>Payment Elements</th>
+                    {{/if}}
+                    <th class="amount">Gross Pay</th>
+                    <th class="amount">Total Emoluments</th>
+                    <th class="amount">Total Deductions</th>
+                    <th class="amount">Tax</th>
+                    <th class="amount">Net Pay</th>
+                    <th>Bank</th>
+                    <th>Account No</th>
+                {{/if}}
+            </tr>
+        </thead>
+        <tbody>
+            {{#each locations}}
+            <tr class="location-group">
+                <td colspan="{{#if ../isSummary}}7{{else}}{{#if ../includeElements}}11{{else}}10{{/if}}{{/if}}" class="location-header">
+                    {{locationName}}
+                </td>
+            </tr>
+            
+            {{#each employees}}
+            <tr>
+                {{#if ../isSummary}}
+                    <td>{{../locationName}}</td>
+                    <td style="text-align: right;">{{employee_count}}</td>
+                    <td class="amount">₦{{formatCurrency gross_pay}}</td>
+                    <td class="amount">₦{{formatCurrency total_emoluments}}</td>
+                    <td class="amount">₦{{formatCurrency total_deductions}}</td>
+                    <td class="amount">₦{{formatCurrency tax}}</td>
+                    <td class="amount">₦{{formatCurrency net_pay}}</td>
+                {{else}}
+                    <td>{{empl_id}}</td>
+                    <td>{{fullname}}</td>
+                    <td>{{gradelevel}}</td>
+                    {{#if ../../includeElements}}
+                    <td class="elements-cell">
+                        {{#if payment_elements}}
+                            {{#each payment_elements}}
+                            <div class="element-item">{{code}}: ₦{{formatCurrency amount}}</div>
+                            {{/each}}
+                        {{else}}
+                            -
+                        {{/if}}
+                    </td>
+                    {{/if}}
+                    <td class="amount">₦{{formatCurrency gross_pay}}</td>
+                    <td class="amount">₦{{formatCurrency total_emoluments}}</td>
+                    <td class="amount">₦{{formatCurrency total_deductions}}</td>
+                    <td class="amount">₦{{formatCurrency tax}}</td>
+                    <td class="amount">₦{{formatCurrency net_pay}}</td>
+                    <td>{{Bankcode}}</td>
+                    <td>{{BankACNumber}}</td>
+                {{/if}}
+            </tr>
+            {{/each}}
+            
+            <!-- Location Subtotal -->
+            <tr class="location-subtotal">
+                {{#if ../isSummary}}
+                    <td><strong>Location Total:</strong></td>
+                    <td style="text-align: right;"><strong>{{locationTotals.employee_count}}</strong></td>
+                    <td class="amount">₦{{formatCurrency locationTotals.gross_pay}}</td>
+                    <td class="amount">₦{{formatCurrency locationTotals.total_emoluments}}</td>
+                    <td class="amount">₦{{formatCurrency locationTotals.total_deductions}}</td>
+                    <td class="amount">₦{{formatCurrency locationTotals.tax}}</td>
+                    <td class="amount">₦{{formatCurrency locationTotals.net_pay}}</td>
+                {{else}}
+                    <td colspan="{{#if ../includeElements}}4{{else}}3{{/if}}"><strong>Location Total:</strong></td>
+                    <td class="amount">₦{{formatCurrency locationTotals.gross_pay}}</td>
+                    <td class="amount">₦{{formatCurrency locationTotals.total_emoluments}}</td>
+                    <td class="amount">₦{{formatCurrency locationTotals.total_deductions}}</td>
+                    <td class="amount">₦{{formatCurrency locationTotals.tax}}</td>
+                    <td class="amount">₦{{formatCurrency locationTotals.net_pay}}</td>
+                    <td colspan="2"></td>
+                {{/if}}
+            </tr>
+            {{/each}}
+        </tbody>
+        
+        <!-- Grand Totals -->
+        <tfoot>
+            <tr class="grand-totals">
+                {{#if isSummary}}
+                    <td><strong>GRAND TOTALS:</strong></td>
+                    <td style="text-align: right;"><strong>{{grandTotals.employee_count}}</strong></td>
+                    <td class="amount">₦{{formatCurrency grandTotals.gross_pay}}</td>
+                    <td class="amount">₦{{formatCurrency grandTotals.total_emoluments}}</td>
+                    <td class="amount">₦{{formatCurrency grandTotals.total_deductions}}</td>
+                    <td class="amount">₦{{formatCurrency grandTotals.tax}}</td>
+                    <td class="amount">₦{{formatCurrency grandTotals.net_pay}}</td>
+                {{else}}
+                    <td colspan="{{#if includeElements}}4{{else}}3{{/if}}"><strong>GRAND TOTALS:</strong></td>
+                    <td class="amount">₦{{formatCurrency grandTotals.gross_pay}}</td>
+                    <td class="amount">₦{{formatCurrency grandTotals.total_emoluments}}</td>
+                    <td class="amount">₦{{formatCurrency grandTotals.total_deductions}}</td>
+                    <td class="amount">₦{{formatCurrency grandTotals.tax}}</td>
+                    <td class="amount">₦{{formatCurrency grandTotals.net_pay}}</td>
+                    <td colspan="2"></td>
+                {{/if}}
+            </tr>
+        </tfoot>
+    </table>
+</body>
+</html>

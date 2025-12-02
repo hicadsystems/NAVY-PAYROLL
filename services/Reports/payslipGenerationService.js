@@ -250,6 +250,8 @@ class PayslipGenerationService {
       factory_desc: '',
       dept_desc: '',
       bank_name: '',
+      title_desc: '',
+      payclass_desc: '',
       pfa_desc: ''
     };
 
@@ -293,6 +295,24 @@ class PayslipGenerationService {
     } catch (error) {
       console.error('Error fetching metadata:', error);
     }
+
+    // Get title description
+    if (employee.title) {
+      const [titleRows] = await pool.query(
+        `SELECT Description FROM py_Title WHERE Titlecode = ? LIMIT 1`,
+        [employee.title]
+      );
+      metadata.title_desc = titleRows[0]?.Description || '';
+    }
+
+    // Get payclass description
+    /*if (employee.payrollclass) {
+      const [payclassRows] = await pool.query(
+        `SELECT classname FROM py_payrollclass WHERE classcode = ? LIMIT 1`,
+        [employee.payrollclass]
+      );
+      metadata.payclass_desc = payclassRows[0]?.payclassdesc || '';
+    }*/
 
     return metadata;
   }
@@ -399,7 +419,7 @@ class PayslipGenerationService {
       mthdesc,                              // desc1 (month description)
       '',                                   // tpcoy (company - empty)
       '',                                   // tpaddr (address - empty)
-      employee.title || '',                 // title
+      metadata.title_desc || '',            // title
       employee.surname || '',               // surname
       employee.othername || '',             // othername
       employee.bankacnumber || '',          // bankacnumber
@@ -483,36 +503,38 @@ class PayslipGenerationService {
   async getPayslipsGroupedByEmployee(station){
     const query = `
       SELECT 
-        NUMB as employee_id,
-        title,
-        surname,
-        othername,
-        bankacnumber,
-        bankname,
-        gradelevel,
-        gradetype,
-        ord as year,
-        desc1 as month_desc,
-        factory,
-        location,
-        nsitf,
-        nsitfcode,
-        email,
-        payclass,
-        MAX(prvtaxtodate) as prvtaxtodate,
-        MAX(taxtodate) as taxtodate,
-        MAX(grstodate) as grstodate,
-        MAX(freetodate) as freetodate,
-        MAX(txbltodate) as txbltodate,
-        MAX(currtax) as currtax,
-        MAX(netpay) as netpay
-      FROM py_tempslipnlpc
-      WHERE work_station = ?
+        p.NUMB as employee_id,
+        p.title,
+        p.surname,
+        p.othername,
+        p.bankacnumber,
+        p.bankname,
+        p.gradelevel,
+        p.gradetype,
+        p.ord as year,
+        p.desc1 as month_desc,
+        p.factory,
+        p.location,
+        p.nsitf,
+        p.nsitfcode,
+        p.email,
+        p.payclass,
+        pc.classname as payclass_name,
+        MAX(p.prvtaxtodate) as prvtaxtodate,
+        MAX(p.taxtodate) as taxtodate,
+        MAX(p.grstodate) as grstodate,
+        MAX(p.freetodate) as freetodate,
+        MAX(p.txbltodate) as txbltodate,
+        MAX(p.currtax) as currtax,
+        MAX(p.netpay) as netpay
+      FROM py_tempslipnlpc p
+      LEFT JOIN py_payrollclass pc ON p.payclass = pc.classcode
+      WHERE p.work_station = ?
       GROUP BY 
-        NUMB, title, surname, othername, bankacnumber, bankname,
-        gradelevel, gradetype, ord, desc1, factory, location,
-        nsitf, nsitfcode, email, payclass
-      ORDER BY NUMB
+        p.NUMB, p.title, p.surname, p.othername, p.bankacnumber, p.bankname,
+        p.gradelevel, p.gradetype, p.ord, p.desc1, p.factory, p.location,
+        p.nsitf, p.nsitfcode, p.email, p.payclass, pc.classname
+      ORDER BY p.NUMB
     `;
 
     const [rows] = await pool.query(query, [station]);

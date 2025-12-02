@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { size: A4; margin: 8mm; background-color: #f8fbff; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #1a1a1a; }
+        .header {
+            text-align: center;
+            margin-bottom: 3px;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        
+        .header h1 {
+            font-size: 13pt;
+            font-weight: bold;
+            margin-bottom: 2px;
+            letter-spacing: 1.5px;
+            color: #1e40af;
+            font-family: 'Libre Baskerville', Georgia, serif;
+        }
+        
+        .header h2 {
+            font-size: 10pt;
+            font-weight: normal;
+            margin-top: 2px;
+            color: #4a4a4a;
+            font-family: 'Libre Baskerville', Georgia, serif;
+        }
+        .report-info { margin-top: 2px; font-size: 9pt; color: #64748b; }
+        
+        .category-section { 
+            margin-top: 30px;
+            page-break-inside: avoid;
+        }
+        .category-title { 
+            font-size: 12pt; 
+            font-weight: bold; 
+            color: #1e3a8a; 
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #1e3a8a;
+            page-break-after: avoid;
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 20px;
+            page-break-inside: auto;
+        }
+        
+        thead { 
+            display: table-header-group;
+            page-break-after: avoid;
+        }
+        
+        tbody { 
+            display: table-row-group;
+        }
+        
+        tfoot {
+            display: table-footer-group;
+            page-break-inside: avoid;
+        }
+        
+        tr { 
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+        
+        th { 
+            padding: 8px; 
+            text-align: left; 
+            font-size: 9pt; 
+            font-weight: 600;
+            color: #1e3a8a;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        td { 
+            padding: 6px 8px; 
+            border-bottom: 1px solid #f1f5f9; 
+            font-size: 9pt; 
+        }
+        
+        .amount { text-align: right; font-family: 'Courier New', monospace; font-weight: 400; }
+        .employee-id { font-family: 'Courier New', monospace; font-size: 8pt; }
+        
+        .total-row { 
+            font-weight: bold; 
+            border-top: 2px solid #1e3a8a;
+            background: #f8fafc;
+            page-break-inside: avoid;
+        }
+        .total-row td { padding: 10px 8px; }
+        
+        /* Summary specific */
+        .summary-table th { text-align: center; }
+        .summary-table td { text-align: center; }
+        .summary-table td.amount { text-align: right; }
+        .summary-table .total-row td:first-child { text-align: right; }
+
+        /* NEW: Detailed View - Grouped by Payment Type (similar to document 2) */
+        .payment-group { 
+            margin-bottom: 25px; 
+            page-break-inside: avoid; 
+        }
+        
+        .payment-header { 
+            padding: 10px;
+            color: #1e40af;
+            font-weight: bold; 
+            font-size: 11pt;
+            text-align: center;
+            border-bottom: .5px solid #e0e0e0;
+            background: #f8fafc;
+        }
+        
+        table.details { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 10px 0; 
+        }
+        
+        table.details th { 
+            padding: 7px; 
+            color: #1e40af;
+            text-align: left; 
+            font-size: 8.5pt;
+            font-weight: 600;
+            border-bottom: solid 1px #1e40af;
+        }
+        
+        table.details td { 
+            padding: 5px 6px; 
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 8.5pt;
+        }
+
+        .footer {
+            padding-top: 5px;
+            border-top: .5px solid #1a1a1a;
+            text-align: center;
+            font-size: 8pt;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Nigerian Navy (Naval Headquarters)</h1>
+        <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+        <div class="report-info">
+            <span>ANALYSIS OF EARNINGS & DEDUCTIONS</span> |
+            Period: {{month}}/{{year}} | Generated: {{formatDate reportDate}}
+        </div>
+    </div>
+    
+    {{#if isSummary}}
+        {{!-- Summary Report --}}
+        {{#each categories}}
+        <div class="category-section">
+            <div class="category-title">{{categoryName}}</div>
+            <table class="summary-table">
+                <thead>
+                    <tr>
+                        <th>Payment Type</th>
+                        <th>Description</th>
+                        <th>Total Personnel(s)</th>
+                        <th class="amount">Total Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each items}}
+                    <tr>
+                        <td>{{payment_code}}</td>
+                        <td>{{payment_description}}</td>
+                        <td>{{employee_count}}</td>
+                        <td class="amount">₦{{formatCurrency subtotal}}</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="3">TOTAL:</td>
+                        <td class="amount">₦{{formatCurrency categoryTotal}}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {{/each}}
+        
+    {{else}}
+        {{!-- Detailed Report - NEW GROUPED DESIGN --}}
+        {{#each categories}}
+        <div class="category-section">
+            <div class="category-title">{{categoryName}}</div>
+            
+            {{#each paymentTypes}}
+            <div class="payment-group">
+                <div class="payment-header">
+                    {{payment_code}} - {{payment_description}} | {{employee_count}} Personnel(s) | Total: ₦{{formatCurrency subtotal}}
+                </div>
+                <table class="details">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Service No.</th>
+                            <th style="width: 45%;">Full Name</th>
+                            <th style="width: 20%;">Rank</th>
+                            <th class="amount" style="width: 20%;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each employees}}
+                        <tr>
+                            <td class="employee-id">{{his_empno}}</td>
+                            <td>{{fullname}}</td>
+                            <td>{{title}}</td>
+                            <td class="amount">₦{{formatCurrency total_amount}}</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+            {{/each}}
+            
+            <table style="margin-top: 15px;">
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="3" style="text-align: right;">{{categoryName}} TOTAL:</td>
+                        <td class="amount">₦{{formatCurrency categoryTotal}}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {{/each}}
+    {{/if}}
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+    </div>
+</body>
+</html>

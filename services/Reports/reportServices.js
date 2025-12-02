@@ -10,36 +10,67 @@ class ReportService {
   async getPaymentsByBank(filters = {}) {
     const { year, month, bankName, summaryOnly } = filters;
     
-    const query = `
-      SELECT 
-        sr.ord as year,
-        sr.mth as month,
-        we.Bankcode,
-        we.bankbranch,
-        ${summaryOnly ? '' : 'we.empl_id, we.Surname, we.BankACNumber,'}
-        COUNT(DISTINCT we.empl_id) as employee_count,
-        ROUND(SUM(mc.his_grossmth), 2) as total_gross,
-        ROUND(SUM(mc.his_taxmth), 2) as total_tax,
-        ROUND(SUM(mc.his_netmth), 2) as total_net
-      FROM py_wkemployees we
-      CROSS JOIN (SELECT ord, mth FROM py_stdrate WHERE type = 'BT05') sr
-      INNER JOIN py_mastercum mc ON mc.his_empno = we.empl_id AND mc.his_type = sr.mth
-      WHERE 1=1
-        ${year ? 'AND sr.ord = ?' : ''}
-        ${month ? 'AND sr.mth = ?' : ''}
-        ${bankName ? 'AND we.Bankcode = ?' : ''}
-      GROUP BY sr.ord, sr.mth, we.Bankcode, we.bankbranch
-        ${summaryOnly ? '' : ', we.empl_id, we.Surname, we.BankACNumber'}
-      ORDER BY we.Bankcode, we.bankbranch, we.empl_id
-    `;
-    
-    const params = [];
-    if (year) params.push(year);
-    if (month) params.push(month);
-    if (bankName) params.push(bankName);
-    
-    const [rows] = await pool.query(query, params);
-    return rows;
+    if (summaryOnly === 'true' || summaryOnly === true) {
+      // Summary query - aggregated data
+      const query = `
+        SELECT 
+          sr.ord as year,
+          sr.mth as month,
+          we.Bankcode,
+          we.bankbranch,
+          COUNT(DISTINCT we.empl_id) as employee_count,
+          ROUND(SUM(mc.his_netmth), 2) as total_net
+        FROM py_wkemployees we
+        CROSS JOIN (SELECT ord, mth FROM py_stdrate WHERE type = 'BT05') sr
+        INNER JOIN py_mastercum mc ON mc.his_empno = we.empl_id AND mc.his_type = sr.mth
+        WHERE 1=1
+          ${year ? 'AND sr.ord = ?' : ''}
+          ${month ? 'AND sr.mth = ?' : ''}
+          ${bankName ? 'AND we.Bankcode = ?' : ''}
+        GROUP BY sr.ord, sr.mth, we.Bankcode, we.bankbranch
+        ORDER BY we.Bankcode, we.bankbranch
+      `;
+      
+      const params = [];
+      if (year) params.push(year);
+      if (month) params.push(month);
+      if (bankName) params.push(bankName);
+      
+      const [rows] = await pool.query(query, params);
+      return rows;
+      
+    } else {
+      // Detailed query - individual employee records with rank
+      const query = `
+        SELECT 
+          sr.ord as year,
+          sr.mth as month,
+          we.Bankcode,
+          we.bankbranch,
+          we.empl_id,
+          CONCAT(we.Surname, ' ', we.OtherName) as fullname,
+          tt.Description as title,
+          we.BankACNumber,
+          ROUND(mc.his_netmth, 2) as total_net
+        FROM py_wkemployees we
+        CROSS JOIN (SELECT ord, mth FROM py_stdrate WHERE type = 'BT05') sr
+        INNER JOIN py_mastercum mc ON mc.his_empno = we.empl_id AND mc.his_type = sr.mth
+        LEFT JOIN py_Title tt ON tt.Titlecode = we.Title
+        WHERE 1=1
+          ${year ? 'AND sr.ord = ?' : ''}
+          ${month ? 'AND sr.mth = ?' : ''}
+          ${bankName ? 'AND we.Bankcode = ?' : ''}
+        ORDER BY we.Bankcode, we.bankbranch, we.empl_id
+      `;
+      
+      const params = [];
+      if (year) params.push(year);
+      if (month) params.push(month);
+      if (bankName) params.push(bankName);
+      
+      const [rows] = await pool.query(query, params);
+      return rows;
+    }
   }
 
   // ========================================================================
@@ -47,6 +78,9 @@ class ReportService {
   // ========================================================================
   async getEarningsDeductionsAnalysis(filters = {}) {
     const { year, month, paymentType, summaryOnly } = filters;
+    
+    // Convert summaryOnly to boolean if it's a string
+    const isSummary = summaryOnly === true || summaryOnly === '1' || summaryOnly === 'true';
     
     const query = `
       SELECT 
@@ -62,23 +96,21 @@ class ReportService {
           WHEN LEFT(mp.his_type, 2) = 'PL' THEN 'Loan'
           ELSE 'Other'
         END as category,
-        ${summaryOnly ? '' : 'mp.his_empno, we.Surname,'}
-        COUNT(DISTINCT mp.his_empno) as employee_count,
-        ROUND(SUM(mp.amtthismth), 2) as total_amount,
-        ROUND(AVG(mp.amtthismth), 2) as average_amount,
-        ROUND(MIN(mp.amtthismth), 2) as min_amount,
-        ROUND(MAX(mp.amtthismth), 2) as max_amount
+        ${!isSummary ? `mp.his_empno,
+        CONCAT(TRIM(we.Surname), ' ', TRIM(we.OtherName)) as fullname,` : ''}
+        ${isSummary ? 'COUNT(DISTINCT mp.his_empno) as employee_count,' : ''}
+        ROUND(SUM(mp.amtthismth), 2) as total_amount
       FROM py_masterpayded mp
       CROSS JOIN (SELECT ord, mth FROM py_stdrate WHERE type = 'BT05') sr
-      LEFT JOIN py_wkemployees we ON we.empl_id = mp.his_empno
+      ${!isSummary ? 'LEFT JOIN py_wkemployees we ON we.empl_id = mp.his_empno' : ''}
       LEFT JOIN py_elementType et ON et.PaymentType = mp.his_type
       WHERE mp.amtthismth != 0
         ${year ? 'AND sr.ord = ?' : ''}
         ${month ? 'AND sr.mth = ?' : ''}
         ${paymentType ? 'AND mp.his_type = ?' : ''}
       GROUP BY sr.ord, sr.mth, mp.his_type, et.elmDesc
-        ${summaryOnly ? '' : ', mp.his_empno, we.Surname'}
-      ORDER BY category, mp.his_type, mp.his_empno
+        ${!isSummary ? ', mp.his_empno, we.Surname, we.OtherName' : ''}
+      ORDER BY category, mp.his_type${!isSummary ? ', mp.his_empno' : ''}
     `;
     
     const params = [];
@@ -99,7 +131,7 @@ class ReportService {
     const query = `
       SELECT 
         mp.his_empno as employee_id,
-        we.Surname,
+        CONCAT(we.Surname, ' ', we.OtherName) as fullname,
         we.Location,
         mp.his_type as loan_type,
         et.elmDesc as loan_description,
@@ -135,6 +167,9 @@ class ReportService {
   async getPaymentsDeductionsByBank(filters = {}) {
     const { year, month, bankName, paymentType, summaryOnly } = filters;
     
+    // Convert summaryOnly to boolean if it's a string
+    const isSummary = summaryOnly === true || summaryOnly === '1' || summaryOnly === 'true';
+    
     const query = `
       SELECT 
         sr.ord as year,
@@ -145,12 +180,15 @@ class ReportService {
         et.elmDesc as payment_description,
         CASE 
           WHEN LEFT(mp.his_type, 2) IN ('BP', 'BT') THEN 'Earnings'
-          WHEN LEFT(mp.his_type, 2) IN ('FP', 'PT') THEN 'Allowances'
+          WHEN LEFT(mp.his_type, 2) = 'FP' THEN 'Tax-Free Allowance'
+          WHEN LEFT(mp.his_type, 2) = 'PT' THEN 'Taxable Allowance'
           WHEN LEFT(mp.his_type, 2) = 'PR' THEN 'Deduction'
           WHEN LEFT(mp.his_type, 2) = 'PL' THEN 'Loan'
+          ELSE 'Other'
         END as category,
-        ${summaryOnly ? '' : 'mp.his_empno, we.Surname,'}
-        COUNT(DISTINCT mp.his_empno) as employee_count,
+        ${!isSummary ? `mp.his_empno,
+        we.Surname,` : ''}
+        ${isSummary ? 'COUNT(DISTINCT mp.his_empno) as employee_count,' : ''}
         ROUND(SUM(mp.amtthismth), 2) as total_amount
       FROM py_masterpayded mp
       CROSS JOIN (SELECT ord, mth FROM py_stdrate WHERE type = 'BT05') sr
@@ -162,8 +200,8 @@ class ReportService {
         ${bankName ? 'AND we.Bankcode = ?' : ''}
         ${paymentType ? 'AND mp.his_type = ?' : ''}
       GROUP BY sr.ord, sr.mth, we.Bankcode, we.bankbranch, mp.his_type, et.elmDesc
-        ${summaryOnly ? '' : ', mp.his_empno, we.Surname'}
-      ORDER BY we.Bankcode, category, mp.his_type
+        ${!isSummary ? ', mp.his_empno, we.Surname' : ''}
+      ORDER BY we.Bankcode, we.bankbranch, category, mp.his_type${!isSummary ? ', mp.his_empno' : ''}
     `;
     
     const params = [];
@@ -180,21 +218,38 @@ class ReportService {
   // REPORT 6: PAYROLL REGISTER
   // ========================================================================
   async getPayrollRegister(filters = {}) {
-    const { year, month, Location, includeElements, summaryOnly } = filters;
+    const { year, month, location, includeElements, summaryOnly } = filters;
+    
+    // Convert summaryOnly to boolean if it's a string
+    const isSummary = summaryOnly === true || summaryOnly === '1' || summaryOnly === 'true';
     
     const query = `
       SELECT 
         sr.ord as year,
         sr.mth as month,
-        we.empl_id,
-        we.Surname,
-        we.Location,
-        we.gradelevel,
-        we.payrollclass,
-        ROUND(mc.his_grossmth, 2) as gross_pay,
-        ROUND(mc.his_taxmth, 2) as tax,
-        ROUND(mc.his_netmth, 2) as net_pay,
-        ${includeElements ? `
+        ${!isSummary ? `we.empl_id,
+        CONCAT(TRIM(we.Surname), ' ', TRIM(we.OtherName)) as fullname,` : ''}
+        cc.unitdesc as location,
+        ${!isSummary ? 'we.gradelevel,' : ''}
+        ${isSummary ? 'COUNT(DISTINCT we.empl_id) as employee_count,' : ''}
+        ROUND(${isSummary ? 'SUM(mc.his_grossmth)' : 'mc.his_grossmth'}, 2) as gross_pay,
+        ROUND(${isSummary ? 'SUM(' : ''}(
+          SELECT COALESCE(SUM(mp.amtthismth), 0)
+          FROM py_masterpayded mp
+          WHERE mp.his_empno = we.empl_id
+            AND LEFT(mp.his_type, 2) IN ('PT', 'BP', 'BT')
+            AND mp.amtthismth != 0
+        )${isSummary ? ')' : ''}, 2) as total_emoluments,
+        ROUND(${isSummary ? 'SUM(' : ''}(
+          SELECT COALESCE(SUM(mp.amtthismth), 0)
+          FROM py_masterpayded mp
+          WHERE mp.his_empno = we.empl_id
+            AND LEFT(mp.his_type, 2) IN ('PL', 'PR')
+            AND mp.amtthismth != 0
+        )${isSummary ? ')' : ''}, 2) as total_deductions,
+        ROUND(${isSummary ? 'SUM(mc.his_taxmth)' : 'mc.his_taxmth'}, 2) as tax,
+        ROUND(${isSummary ? 'SUM(mc.his_netmth)' : 'mc.his_netmth'}, 2) as net_pay,
+        ${includeElements && !isSummary ? `
           (
             SELECT JSON_ARRAYAGG(
               JSON_OBJECT(
@@ -210,23 +265,25 @@ class ReportService {
               AND mp2.amtthismth != 0
           ) as payment_elements,
         ` : ''}
-        we.Bankcode,
+        ${!isSummary ? `we.Bankcode,
         we.BankACNumber,
-        DATE_FORMAT(mc.datecreated, '%Y-%m-%d %H:%i:%s') as processed_date
+        DATE_FORMAT(mc.datecreated, '%Y-%m-%d %H:%i:%s') as processed_date` : 'NULL as Bankcode, NULL as BankACNumber, NULL as processed_date'}
       FROM py_wkemployees we
       CROSS JOIN (SELECT ord, mth FROM py_stdrate WHERE type = 'BT05') sr
       INNER JOIN py_mastercum mc ON mc.his_empno = we.empl_id AND mc.his_type = sr.mth
+      LEFT JOIN ac_costcentre cc ON cc.unitcode = we.Location
       WHERE 1=1
         ${year ? 'AND sr.ord = ?' : ''}
         ${month ? 'AND sr.mth = ?' : ''}
-        ${Location ? 'AND we.Location = ?' : ''}
-      ORDER BY we.Location, we.empl_id
+        ${location ? 'AND we.Location = ?' : ''}
+      GROUP BY sr.ord, sr.mth${!isSummary ? ', we.empl_id, we.Surname, we.OtherName, we.gradelevel, we.Bankcode, we.BankACNumber, mc.datecreated' : ''}, cc.unitdesc
+      ORDER BY cc.unitdesc${!isSummary ? ', we.empl_id' : ''}
     `;
     
     const params = [];
     if (year) params.push(year);
     if (month) params.push(month);
-    if (Location) params.push(Location);
+    if (location) params.push(location);
     
     const [rows] = await pool.query(query, params);
     return rows;
@@ -279,34 +336,46 @@ class ReportService {
   // REPORT 8: PAYMENT STAFF LIST
   // ========================================================================
   async getPaymentStaffList(filters = {}) {
-    const { year, month, payrollClass, bankName } = filters;
+    const { year, month, location, bankName, summaryOnly } = filters;
+    
+    // Convert summaryOnly to boolean if it's a string
+    const isSummary = summaryOnly === true || summaryOnly === '1' || summaryOnly === 'true';
     
     const query = `
       SELECT 
-        we.empl_id as service_number,
-        we.Surname,
-        we.payrollclass,
-        we.Location,
+        ${!isSummary ? `we.empl_id as service_number,
+        CONCAT(TRIM(we.Surname), ' ', TRIM(we.OtherName)) as fullname,
+        tt.Description as title,` : ''}
+        cc.unitdesc as location,
         we.Bankcode,
         we.bankbranch,
-        we.BankACNumber,
-        ROUND(mc.his_netmth, 2) as net_pay,
-        we.gsm_number
+        ${!isSummary ? `we.BankACNumber,
+        we.gradelevel,
+        ROUND((DATEDIFF(NOW(), we.datepmted)) / 365.25, 2) AS level_years,` : ''}
+        st.Statename as state_of_origin,
+        ${isSummary ? 'COUNT(DISTINCT we.empl_id) as employee_count,' : ''}
+        ROUND(${isSummary ? 'SUM(mc.his_netmth)' : 'mc.his_netmth'}, 2) as net_pay
       FROM py_wkemployees we
       CROSS JOIN (SELECT ord, mth FROM py_stdrate WHERE type = 'BT05') sr
       INNER JOIN py_mastercum mc ON mc.his_empno = we.empl_id AND mc.his_type = sr.mth
+      LEFT JOIN py_tblstates st ON st.Statecode = we.StateofOrigin
+      LEFT JOIN ac_costcentre cc ON cc.unitcode = we.Location
+      ${!isSummary ? 'LEFT JOIN py_Title tt ON tt.Titlecode = we.Title' : ''}
       WHERE mc.his_netmth > 0
         ${year ? 'AND sr.ord = ?' : ''}
         ${month ? 'AND sr.mth = ?' : ''}
-        ${payrollClass ? 'AND we.payrollclass = ?' : ''}
+        ${location ? 'AND we.Location = ?' : ''}
         ${bankName ? 'AND we.Bankcode = ?' : ''}
-      ORDER BY we.Bankcode, we.empl_id
+      GROUP BY ${!isSummary ? 'we.empl_id, we.Surname, we.OtherName, tt.Description, ' : ''}
+        cc.unitdesc, we.Bankcode, we.bankbranch${!isSummary ? ', we.BankACNumber, we.gradelevel, we.datepmted' : ''}, st.Statename
+        ${!isSummary ? ', mc.his_netmth' : ''}
+      ORDER BY we.Bankcode, ${!isSummary ? 'we.empl_id' : 'cc.unitdesc'}
     `;
     
     const params = [];
     if (year) params.push(year);
     if (month) params.push(month);
-    if (payrollClass) params.push(payrollClass);
+    if (location) params.push(location);
     if (bankName) params.push(bankName);
     
     const [rows] = await pool.query(query, params);
@@ -505,56 +574,6 @@ class ReportService {
     if (bankName) params.push(bankName);
     
     const [rows] = await pool.query(query, params);
-    return rows;
-  }
-
-   // ========================================================================
-  // HELPER: Get Available Banks
-  // ========================================================================
-  async getAvailableBanks() {
-    const query = `
-      SELECT DISTINCT bank_name, bank_branch
-      FROM py_wkemployees
-      WHERE bank_name IS NOT NULL
-      ORDER BY bank_name, bank_branch
-    `;
-    const [rows] = await pool.query(query);
-    return rows;
-  }
-
-  // ========================================================================
-  // HELPER: Get Available Departments
-  // ========================================================================
-  async getAvailableDepartments() {
-    const query = `
-      SELECT DISTINCT department
-      FROM py_wkemployees
-      WHERE department IS NOT NULL
-      ORDER BY department
-    `;
-    const [rows] = await pool.query(query);
-    return rows;
-  }
-
-  // ========================================================================
-  // HELPER: Get Payment Types
-  // ========================================================================
-  async getPaymentTypes() {
-    const query = `
-      SELECT PaymentType, elmDesc, 
-        CASE 
-          WHEN LEFT(PaymentType, 2) IN ('BP', 'BT') THEN 'Earnings'
-          WHEN LEFT(PaymentType, 2) = 'FP' THEN 'Tax-Free Allowance'
-          WHEN LEFT(PaymentType, 2) = 'PT' THEN 'Taxable Allowance'
-          WHEN LEFT(PaymentType, 2) = 'PR' THEN 'Deduction'
-          WHEN LEFT(PaymentType, 2) = 'PL' THEN 'Loan'
-          ELSE 'Other'
-        END as category
-      FROM py_elementType
-      WHERE status = 'Active'
-      ORDER BY category, PaymentType
-    `;
-    const [rows] = await pool.query(query);
     return rows;
   }
 

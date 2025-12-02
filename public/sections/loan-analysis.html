@@ -1,21 +1,76 @@
 <!-- Loan Analysis Section -->
 <section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
-  <h2 class="text-lg font-bold text-blue-600 mb-4">Print Loan Analysis Report</h2>
+  <h2 class="text-lg font-bold text-blue-600 mb-4 text-center border-b pb-2">Print Loan Analysis Report</h2>
 
-  <!-- Print button -->
-    <div class="flex justify-end">
-        <button id="loanPrintBtn"
-        class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-        Print Report
-        </button>
+  <form id="loanForm" class="space-y-4">
+    <!-- Processing Month -->
+    <div>
+      <label for="loanMonth" class="block text-sm font-medium mb-1">Processing Month</label>
+      <select id="loanMonth" name="loanMonth"
+        class="w-full border rounded px-3 py-2 focus:ring focus:ring-purple-300">
+        <option value="">Select Month</option>
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3">March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+      </select>
     </div>
+
+    <!-- Processing Year -->
+    <div>
+      <label for="loanYear" class="block text-sm font-medium mb-1">Processing Year</label>
+      <input type="number" id="loanYear" name="loanYear" 
+        class="w-full border rounded px-3 py-2 focus:ring focus:ring-purple-300"
+        placeholder="e.g., 2025" min="2020" max="2099">
+    </div>
+
+    <!-- Output Format -->
+    <div>
+      <label class="block font-medium mb-2">Output Format</label>
+      <div class="flex space-x-4">
+        <label class="flex text-sm items-center space-x-2">
+          <input type="radio" name="loanFormat" value="pdf" checked>
+          <span>PDF</span>
+        </label>
+        <label class="flex text-sm items-center space-x-2">
+          <input type="radio" name="loanFormat" value="excel">
+          <span>Excel</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Print button -->
+    <div class="flex justify-end space-x-2">
+      <button type="reset" id="loanClearBtn"
+        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+        Clear
+      </button>
+      <button type="button" id="loanPrintBtn"
+        class="px-5 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition">
+        Generate Report
+      </button>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loanLoadingIndicator" class="hidden text-center text-purple-600 text-sm">
+      <span>Generating report...</span>
+    </div>
+  </form>
 </section>
 
 <!-- Confirmation Modal -->
 <div id="loanConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6">
-    <h3 class="text-lg font-semibold mb-4">Confirm Print</h3>
-    <p class="mb-6 text-gray-700">Do you want to generate and print the loan analysis report?</p>
+    <h3 class="text-lg font-semibold mb-4">Confirm Generation</h3>
+    <p class="mb-6 text-gray-700">Do you want to generate the loan analysis report?</p>
     <div class="flex justify-end space-x-2">
       <button id="loanCancelBtn"
         class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
@@ -29,19 +84,11 @@
   </div>
 </div>
 
-<!-- Processing Modal -->
-<div id="loanProcessingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
-    <div class="animate-spin h-10 w-10 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-    <p class="text-gray-700">Generating report...</p>
-  </div>
-</div>
-
 <!-- Success Modal -->
 <div id="loanSuccessModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
     <h3 class="text-lg font-semibold text-green-600 mb-4">Success</h3>
-    <p class="mb-6 text-gray-700">Loan analysis report generated successfully!</p>
+    <p class="mb-6 text-gray-700" id="loanSuccessMessage">Loan analysis report generated successfully!</p>
     <button id="loanSuccessOkBtn"
       class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
       OK
@@ -49,17 +96,55 @@
   </div>
 </div>
 
+<!-- Error Modal -->
+<div id="loanErrorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
+    <h3 class="text-lg font-semibold text-red-600 mb-4">Error</h3>
+    <p class="mb-6 text-gray-700" id="loanErrorMessage">An error occurred.</p>
+    <button id="loanErrorOkBtn"
+      class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+      OK
+    </button>
+  </div>
+</div>
+
 <script>
+  const API_BASE = '/loan';
+  
   const loanPrintBtn = document.getElementById("loanPrintBtn");
+  const loanClearBtn = document.getElementById("loanClearBtn");
+  const loanMonth = document.getElementById("loanMonth");
+  const loanYear = document.getElementById("loanYear");
+  const loanLoadingIndicator = document.getElementById("loanLoadingIndicator");
+
   const loanConfirmModal = document.getElementById("loanConfirmModal");
   const loanCancelBtn = document.getElementById("loanCancelBtn");
   const loanContinueBtn = document.getElementById("loanContinueBtn");
 
-  const loanProcessingModal = document.getElementById("loanProcessingModal");
   const loanSuccessModal = document.getElementById("loanSuccessModal");
   const loanSuccessOkBtn = document.getElementById("loanSuccessOkBtn");
+  const loanSuccessMessage = document.getElementById("loanSuccessMessage");
+
+  const loanErrorModal = document.getElementById("loanErrorModal");
+  const loanErrorOkBtn = document.getElementById("loanErrorOkBtn");
+  const loanErrorMessage = document.getElementById("loanErrorMessage");
+
+  // Set current year as default
+  loanYear.value = new Date().getFullYear();
 
   loanPrintBtn.addEventListener("click", () => {
+    // Validation
+    if (!loanMonth.value) {
+      loanErrorMessage.textContent = 'Please select a processing month.';
+      loanErrorModal.classList.remove("hidden");
+      return;
+    }
+    if (!loanYear.value) {
+      loanErrorMessage.textContent = 'Please enter a processing year.';
+      loanErrorModal.classList.remove("hidden");
+      return;
+    }
+
     loanConfirmModal.classList.remove("hidden");
   });
 
@@ -67,19 +152,78 @@
     loanConfirmModal.classList.add("hidden");
   });
 
-  loanContinueBtn.addEventListener("click", () => {
+  loanContinueBtn.addEventListener("click", async () => {
     loanConfirmModal.classList.add("hidden");
-    loanProcessingModal.classList.remove("hidden");
+    loanLoadingIndicator.classList.remove("hidden");
+    loanPrintBtn.disabled = true;
 
-    // Simulate processing delay
-    setTimeout(() => {
-      loanProcessingModal.classList.add("hidden");
+    const format = document.querySelector('input[name="loanFormat"]:checked').value;
+    const month = loanMonth.value;
+    const year = loanYear.value;
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Build query parameters
+      const params = new URLSearchParams({
+        format: format,
+        month: month,
+        year: year
+      });
+
+      const response = await fetch(`${API_BASE}/generate?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate report');
+      }
+
+      // Download file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      // Open PDF in new tab
+      if (format === 'pdf') {
+        window.open(url, '_blank');
+      }
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `loan_analysis_${month}_${year}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      
+      // Clean up blob URL after a delay
+      setTimeout(() => window.URL.revokeObjectURL(url), 100);
+
+      loanLoadingIndicator.classList.add("hidden");
+      loanPrintBtn.disabled = false;
+      loanSuccessMessage.textContent = `Loan analysis report generated successfully! Your ${format.toUpperCase()} is downloading.`;
       loanSuccessModal.classList.remove("hidden");
-      // real implementation: window.print() or API call
-    }, 2000);
+
+    } catch (error) {
+      loanLoadingIndicator.classList.add("hidden");
+      loanPrintBtn.disabled = false;
+      loanErrorMessage.textContent = error.message || 'Failed to generate report. Please try again.';
+      loanErrorModal.classList.remove("hidden");
+      console.error('Error:', error);
+    }
   });
 
   loanSuccessOkBtn.addEventListener("click", () => {
     loanSuccessModal.classList.add("hidden");
+  });
+
+  loanErrorOkBtn.addEventListener("click", () => {
+    loanErrorModal.classList.add("hidden");
+  });
+
+  loanClearBtn.addEventListener("click", () => {
+    loanYear.value = new Date().getFullYear();
   });
 </script>

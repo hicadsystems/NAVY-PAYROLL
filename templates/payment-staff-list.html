@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { size: A4 landscape; margin: 5mm; background-color: #f8fbff; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 8pt; }
+
+        .header {
+            text-align: center;
+            margin-bottom: 8px;
+            border-bottom: 2px solid #1a1a1a;
+            padding-bottom: 5px;
+        }
+        
+        .header h1 {
+            font-size: 13pt;
+            font-weight: bold;
+            margin-bottom: 2px;
+            letter-spacing: 1.5px;
+            color: #1e40af;
+            font-family: 'Libre Baskerville', Georgia, serif;
+        }
+        
+        .header h2 {
+            font-size: 10pt;
+            font-weight: normal;
+            margin-top: 2px;
+            color: #4a4a4a;
+            font-family: 'Libre Baskerville', Georgia, serif;
+        }
+
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 9pt;
+        }
+
+        .header-info .left {
+            text-align: left;
+        }
+
+        .header-info .right {
+            text-align: right;
+        }
+
+        .report-title {
+            font-size: 10pt;
+            font-weight: 600;
+            margin: 10px 0;
+            color: #333333;
+        }
+        
+        /* Table Styles */
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 10px 0;
+        }
+        
+        thead { 
+            background-color: #fff;
+        }
+        
+        th { 
+            padding: 8px 6px; 
+            text-align: left; 
+            font-size: 8pt;
+            font-weight: 600;
+            color: #000;
+            border-top: 2px solid #000;
+            border-bottom: 2px solid #000;
+        }
+        
+        td { 
+            padding: 6px; 
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 8pt;
+        }
+
+        tbody tr:hover {
+            background-color: #f8fafc;
+        }
+        
+        .amount { 
+            text-align: right; 
+            font-family: 'Courier New', monospace; 
+        }
+        
+        .service-no { 
+            font-family: 'Courier New', monospace; 
+        }
+
+        .account-no {
+            font-family: 'Courier New', monospace;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        /* Total Row */
+        .total-row {
+            border-top: 2px solid #000;
+            font-weight: bold;
+        }
+
+        .total-row td {
+            padding: 10px 6px;
+        }
+
+        .footer {
+            padding-top: 10px;
+            border-top: 0.5px solid #1a1a1a;
+            text-align: center;
+            font-size: 8pt;
+            color: #64748b;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>NIGERIAN NAVY (NAVAL HEADQUARTERS)</h1>
+        <h2>CENTRAL PAY OFFICE, 23 POINT ROAD, APAPA</h2>
+    </div>
+
+    <div class="header-info">
+        <div class="left">
+            <strong>STAFF LISTING</strong>
+        </div>
+        <div class="center">
+            <span>PRODUCED ON</span> 
+            <strong>{{formatDate reportDate}}</strong> 
+            <span>AT</span> 
+            <strong>{{formatTime reportDate}}</strong>
+        </div>
+        <!--<div class="right">
+            <span>As At</span> 
+            <strong>{{month}}/{{year}}</strong>
+        </div>-->
+    </div>
+    
+    {{#if isSummary}}
+    <!-- Summary View -->
+    <!--<div class="report-title">STAFF LISTING - SUMMARY</div>-->
+    <table>
+        <thead>
+            <tr>
+                <th>Location</th>
+                <th>Bank Code</th>
+                <th>Bank Branch</th>
+                <th>State of Origin</th>
+                <th class="center">Employee Count</th>
+                <th class="amount">Net Pay</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each data}}
+            <tr>
+                <td>{{location}}</td>
+                <td>{{Bankcode}}</td>
+                <td>{{bankbranch}}</td>
+                <td>{{state_of_origin}}</td>
+                <td class="center">{{employee_count}}</td>
+                <td class="amount">₦{{formatCurrency net_pay}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="4" style="text-align: right;"><strong>TOTAL NUMBER:</strong></td>
+                <td class="center"><strong>{{totalEmployees}}</strong></td>
+                <td class="amount"><strong>₦{{formatCurrency totalNetPay}}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+    {{else}}
+    <!-- Detailed View -->
+    <!--<div class="report-title">STAFF LISTING - DETAILED</div>-->
+    <table>
+        <thead>
+            <tr>
+                <th>Serv. No</th>
+                <th>Full Name</th>
+                <th>Rank</th>
+                <th>Department</th>
+                <th class="center">Grade/Level</th>
+                <th>State</th>
+                <th>Bank</th>
+                <th>Account Number</th>
+                <th class="amount">Net Pay</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each data}}
+            <tr>
+                <td class="service-no">{{service_number}}</td>
+                <td>{{fullname}}</td>
+                <td>{{title}}</td>
+                <td>{{location}}</td>
+                <td class="center">{{gradelevel}}/({{level_years}})</td>
+                <td>{{state_of_origin}}</td>
+                <td>{{Bankcode}}</td>
+                <td class="account-no">{{BankACNumber}}</td>
+                <td class="amount">₦{{formatCurrency net_pay}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="8" style="text-align: right;"><strong>TOTAL NUMBER:</strong> {{totalEmployees}}</td>
+                <td class="amount"><strong>₦{{formatCurrency totalNetPay}}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+    {{/if}}
+
+    <div class="footer">
+        <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+    </div>
+</body>
+</html>

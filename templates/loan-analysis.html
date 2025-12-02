@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nigerian Navy Loan Analysis Report</title>
+    <style>
+        /* Document Setup */
+        @page { 
+            size: A4;
+            margin: 2mm; 
+            background-color: #f8fbff;
+        }
+        body { 
+            font-family: Helvetica, Arial, sans-serif; 
+            font-size: 7pt;
+            color: #1a1a1a; 
+        }
+
+        /* Header Styling */
+        .header {
+            text-align: center;
+            margin-bottom: 3px;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        
+        .header h1 {
+            font-size: 13pt;
+            font-weight: bold;
+            margin-bottom: 2px;
+            letter-spacing: 1.5px;
+            color: #1e40af;
+            font-family: 'Libre Baskerville', Georgia, serif;
+        }
+        
+        .header h2 {
+            font-size: 10pt;
+            font-weight: normal;
+            margin-top: 2px;
+            color: #4a4a4a;
+            font-family: 'Libre Baskerville', Georgia, serif;
+        }
+
+        /* Table Structure */
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 6.5pt;
+        }
+
+        thead { 
+            display: table-header-group;
+        }
+
+        /* Table Header (th) Styling */
+        th { 
+            padding: 6px 4px; 
+            text-align: left; 
+            font-size: 7pt; 
+            font-weight: 600;
+            color: #1e40af;
+            border-bottom: solid 1px #1e40af;
+        }
+        th:last-child {
+            border-right: none;
+        }
+
+        /* Table Data (td) Styling */
+        td { 
+            padding: 4px; 
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        /* Specific Column Formatting */
+        .amount { 
+            text-align: right; 
+            font-family: 'Courier New', monospace; 
+            font-weight: 600; 
+        }
+        .employee-id {
+            font-family: 'Courier New', monospace;
+            font-size: 6pt;
+            font-weight: 600; 
+        }
+
+        /* Row Status Styling - Cleaner look */
+        .status-active { 
+            background: #fcfcfa;
+        }
+        .status-completed { 
+            background: #f9fdf8;
+        }
+        .status-overpaid { 
+            background: #fdfcfc;
+            color: #991b1b;
+        }
+
+        /* Make sure table rows don't break across pages where possible */
+        tr { 
+            page-break-inside: avoid;
+        }
+
+        /* Specific column styling */
+        .name-col {
+            font-size: 6pt;
+            font-weight: 700;
+        }
+
+        .description-col {
+            font-size: 6pt;
+            font-weight: 700;
+        }
+
+        .status-col {
+            font-size: 6pt;
+            font-weight: 600;
+        }
+
+        .footer {
+            padding-top: 5px;
+            border-top: .5px solid #1a1a1a;
+            text-align: center;
+            font-size: 8pt;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Nigerian Navy (Naval Headquarters)</h1>
+        <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+        <div class="report-info">
+            <span>LOAN ANALYSIS</span>  | Generated: {{formatDate reportDate}}
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 6%;">Service No.</th>
+                <th style="width: 15%;">Name</th>
+                <th style="width: 15%;">Description(Type)</th>
+                <th class="amount" style="width: 12%;">Loan Amount</th>
+                <th class="amount" style="width: 12%;">Total Paid</th>
+                <th class="amount" style="width: 12%;">Outstanding</th>
+                <th style="width: 2%; text-align: center;">Months Left</th>
+                <th class="amount" style="width: 12%;">Monthly Payment</th>
+                <th style="width: 6%;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each data}}
+            <tr class="{{getStatusClass status}}">
+                <td class="employee-id">{{employee_id}}</td>
+                <td class="name-col">{{fullname}}</td>
+                <td class="description-col">{{loan_description}} ({{loan_type}})</td>
+                <td class="amount">₦{{formatCurrency original_loan}}</td>
+                <td class="amount">₦{{formatCurrency total_paid}}</td>
+                <td class="amount">₦{{formatCurrency outstanding_balance}}</td>
+                <td style="text-align: center;">{{months_remaining}}</td>
+                <td class="amount">₦{{formatCurrency this_month_payment}}</td>
+                <td class="status-col">{{status}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+    </div>
+</body>
+</html>

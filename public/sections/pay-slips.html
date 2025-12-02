@@ -472,13 +472,19 @@
 
     const blob = await exportResponse.blob();
     const url = window.URL.createObjectURL(blob);
+
+    // Open PDF in new tab
+    if (format === 'pdf') {
+      window.open(url, '_blank');
+    }
+
     const a = document.createElement('a');
     a.href = url;
     a.download = `payslips_${new Date().getTime()}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    window.URL.revokeObjectURL(url);
+    setTimeout(() => window.URL.revokeObjectURL(url), 100);
   }
 
   // Preview modal event listeners

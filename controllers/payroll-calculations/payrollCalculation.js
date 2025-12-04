@@ -11,7 +11,8 @@ exports.calculatePayroll = async (req, res) => {
     if (sun >= 999) return res.status(400).json({ error: 'Calculations already completed.' });
 
     const user = req.user_fullname || 'System Auto';
-    const result = await payrollCalculationService.runCalculations(year, month, user);
+    const userId = req.user_id;
+    const result = await payrollCalculationService.runCalculations(year, month, user, userId);
 
     await pool.query("UPDATE py_stdrate SET sun = 999, createdby = ? WHERE type = 'BT05'", [user]);
 
@@ -23,7 +24,7 @@ exports.calculatePayroll = async (req, res) => {
 };
 
 
-// In your controller file, add this new endpoint:
+// Callback to get calculation results
 
 exports.getCalculationResults = async (req, res) => {
   try {

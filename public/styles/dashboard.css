@@ -228,6 +228,10 @@ html {
     display: inline-block;
   }
 
+  #sidebar:not(.desktop-hidden) {
+    width: 250px !important;
+  }
+
   body.sidebar-closed .main-content-wrapper {
     padding-left: 60px !important;
   }

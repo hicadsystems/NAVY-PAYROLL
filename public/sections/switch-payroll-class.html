@@ -278,7 +278,7 @@
     }
 
     const targetClass = selectedRow.dataset.class;
-    console.log(' Confirming switch to:', targetClass);
+    console.log('🚀 Confirming switch to:', targetClass);
     
     try {
       // Show loading modal
@@ -312,11 +312,6 @@
         resetRows();
         markRowActive(selectedRow);
 
-        // Update dashboard if available
-        if (window.updateDashboardGreeting) {
-          window.updateDashboardGreeting(targetClass);
-        }
-
         // Fire custom event
         const event = new CustomEvent("payrollClassFocused", {
           detail: { focusedClass: targetClass, internalClass: selectedRow.dataset.internalClass }
@@ -326,11 +321,11 @@
         // Clear selection after successful switch
         selectedRow = null;
 
+        // ✅ Redirect to dashboard after 1.5 seconds
         setTimeout(() => { 
-          successModal.classList.add('hidden'); 
-          // Optionally reload the page to refresh all data
-          // window.location.reload();
-        }, 1200);
+          console.log('🔄 Redirecting to dashboard...');
+          window.location.href = '/dashboard.html';
+        }, 1500);
       }, 1500);
 
     } catch (error) {
@@ -358,6 +353,6 @@
   // Expose function to reload classes (useful after login)
   window.reloadPayrollClasses = loadDbClasses;
   
-  console.log(' Class switcher script initialized');
+  console.log('✅ Class switcher script initialized');
 })();
 </script>

@@ -1,18 +1,40 @@
 const pool = require('../../config/db');
 
-exports.runCalculations = async (year, month, user) => {
+exports.runCalculations = async (year, month, user, userId) => {
   const startTime = Date.now();
   
   try {
-    // Sequential SP calls
+    // Get current database from session
+    const sessionId = userId.toString();
+    const dbName = pool.getCurrentDatabase(sessionId);
+    
+    if (!dbName) {
+      throw new Error('No database context found for user session');
+    }
+    
+    console.log(`Running calculations in database: ${dbName} for user session: ${sessionId}`);
+    
+    // Get system configuration dynamically from py_paysystem
+    const [systemConfig] = await pool.query(`
+      SELECT comp_code, mthly_tax 
+      FROM py_paysystem 
+      LIMIT 1
+    `);
+    
+    const compcode = systemConfig[0]?.comp_code || 'NAVY';
+    const mthly_tax = systemConfig[0]?.mthly_tax || 'No';
+    
+    console.log(`System config - Company: ${compcode}, Monthly Tax: ${mthly_tax}`);
+    
+    // Run calculation procedure with dynamic parameters
     const procedures = [
-      'sp_calculate_01_complete_optimized',
-      //'sp_calculate_02_optimized', 
-      //'py_calculate_tax_optimized'
+      'py_calculate_pay'
     ];
     
-    for (const sp of procedures) {
-      await pool.query(`CALL ${sp}(?, ?, ?, ?)`, [user, 500, 'NAVY', 'No']);
+    for (const py of procedures) {
+      console.log(`Executing ${py}...`);
+      await pool.query(`CALL ${py}(?, ?, ?, ?)`, [user, 500, compcode, mthly_tax]);
+      console.log(`✅ ${py} completed`);
     }
 
     // Get reconciliation after calculations
@@ -75,16 +97,27 @@ exports.runCalculations = async (year, month, user) => {
       FROM (SELECT ord, mth FROM py_stdrate WHERE type = 'BT05') sr
     `;
     
+    console.log('Fetching reconciliation data...');
     const [reconciliation] = await pool.query(reconciliationQuery);
     const recon = reconciliation[0] || {};
     
     const executionTime = Math.round((Date.now() - startTime) / 1000);
 
+    console.log(`✅ Calculations completed in ${executionTime}s`);
+    console.log(`Employees processed: ${recon.employee_count || 0}`);
+    console.log(`Total net: ₦${parseFloat(recon.total_net_cumulative || 0).toLocaleString()}`);
+    console.log(`Status: ${recon.reconciliation_status}`);
+
     return {
       year: recon.year || year,
       month: recon.month || month,
+      database: dbName,
       employees_processed: parseInt(recon.employee_count) || 0,
       time_seconds: executionTime,
+      system_config: {
+        compcode,
+        mthly_tax
+      },
       reconciliation: {
         total_net_cumulative: parseFloat(recon.total_net_cumulative) || 0,
         total_net_detail: parseFloat(recon.total_net_detail) || 0,
@@ -98,7 +131,7 @@ exports.runCalculations = async (year, month, user) => {
       }
     };
   } catch (err) {
-    console.error('Payroll calculation service error:', err);
+    console.error('❌ Payroll calculation service error:', err);
     throw err;
   }
 };

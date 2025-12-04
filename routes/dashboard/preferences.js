@@ -124,4 +124,56 @@ router.delete('/delete', verifyToken, (req, res) => {
   }
 });
 
+// Get sidebar state
+router.get('/sidebar', verifyToken, (req, res) => {
+  const userId = req.user_id;
+  const preferencesFile = path.join(PREFERENCES_DIR, `${userId}_preferences.json`);
+  
+  if (!fs.existsSync(preferencesFile)) {
+    return res.json({
+      success: true,
+      sidebarCollapsed: false // Default: expanded
+    });
+  }
+  
+  try {
+    const fileContent = fs.readFileSync(preferencesFile, 'utf8');
+    const preferences = JSON.parse(fileContent);
+    
+    res.json({
+      success: true,
+      sidebarCollapsed: preferences.sidebarCollapsed || false
+    });
+  } catch (error) {
+    console.error('Failed to read sidebar state:', error);
+    res.status(500).json({ success: false, error: 'Failed to load sidebar state' });
+  }
+});
+
+// Save sidebar state
+router.post('/sidebar/save', verifyToken, (req, res) => {
+  const userId = req.user_id;
+  const { sidebarCollapsed } = req.body;
+  const preferencesFile = path.join(PREFERENCES_DIR, `${userId}_preferences.json`);
+  
+  try {
+    let preferences = {};
+    
+    if (fs.existsSync(preferencesFile)) {
+      const fileContent = fs.readFileSync(preferencesFile, 'utf8');
+      preferences = JSON.parse(fileContent);
+    }
+    
+    preferences.sidebarCollapsed = sidebarCollapsed;
+    preferences.updatedAt = Date.now();
+    
+    fs.writeFileSync(preferencesFile, JSON.stringify(preferences, null, 2), 'utf8');
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save sidebar state:', error);
+    res.status(500).json({ success: false, error: 'Failed to save sidebar state' });
+  }
+});
+
 module.exports = router;

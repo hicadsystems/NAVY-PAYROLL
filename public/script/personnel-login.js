@@ -156,6 +156,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
       localStorage.setItem("full_name", data.user.full_name);
       localStorage.setItem("role", data.user.role);
       localStorage.setItem("class", data.user.primary_class);
+      localStorage.setItem("current_class", data.user.current_class);
 
     } else {
       await AlertModal.show({

@@ -3,40 +3,59 @@ const masterFileUpdate = require('../../services/file-update/masterFileUpdate');
 
 exports.masterFileUpdate = async (req, res) => {
   try {
-    // Get the current database from user's primary class
-    const currentDb = req.primary_class;
+    const userId = req.user_id || req.userId;
     
-    if (!currentDb) {
-      return res.status(400).json({ 
-        error: 'No primary class found. Please ensure you have selected a payroll class'
+    if (!userId) {
+      return res.status(401).json({ 
+        error: 'User ID not found. Please log in again.' 
       });
     }
 
-    // Map primary_class values to database names and indicators
-    const classToDbAndIndicator = {
-      'OFFICERS': { db: process.env.DB_OFFICERS, indicator: '1' },
-      'W/OFFICERS': { db: process.env.DB_WOFFICERS, indicator: '2' },
-      'RATE A': { db: process.env.DB_RATINGS, indicator: '3' },
-      'RATE B': { db: process.env.DB_RATINGS_A, indicator: '4' },
-      'RATE C': { db: process.env.DB_RATINGS_B, indicator: '5' },
-      'TRAINEE': { db: process.env.DB_JUNIOR_TRAINEE, indicator: '6' }
+    // ✅ Get the CURRENT database from session context (the one they switched to)
+    const sessionId = userId.toString();
+    const databaseName = pool.getCurrentDatabase(sessionId);
+    
+    if (!databaseName) {
+      return res.status(400).json({ 
+        error: 'No database selected. Please select a payroll class first.'
+      });
+    }
+
+    console.log(`✅ Using session database: ${databaseName} for user: ${sessionId}`);
+
+    // ✅ Reverse-map database name to get the indicator
+    const dbToIndicator = {
+      [process.env.DB_OFFICERS]: '1',
+      [process.env.DB_WOFFICERS]: '2',
+      [process.env.DB_RATINGS]: '3',
+      [process.env.DB_RATINGS_A]: '4',
+      [process.env.DB_RATINGS_B]: '5',
+      [process.env.DB_JUNIOR_TRAINEE]: '6'
+    };
+
+    const dbToClass = {
+      [process.env.DB_OFFICERS]: 'OFFICERS',
+      [process.env.DB_WOFFICERS]: 'W/OFFICERS',
+      [process.env.DB_RATINGS]: 'RATE A',
+      [process.env.DB_RATINGS_A]: 'RATE B',
+      [process.env.DB_RATINGS_B]: 'RATE C',
+      [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
     };
     
-    const mapping = classToDbAndIndicator[currentDb];
+    const indicator = dbToIndicator[databaseName];
+    const className = dbToClass[databaseName] || 'Unknown';
     
-    if (!mapping) {
+    if (!indicator) {
       return res.status(400).json({ 
-        error: `Invalid payroll class: '${currentDb}'. Please contact system administrator.`
+        error: `Invalid database: '${databaseName}'. Please select a valid payroll class.`
       });
     }
 
-    const { db: databaseName, indicator } = mapping;
+    console.log(`Database: ${databaseName}, Class: ${className}, Indicator: ${indicator}`);
 
-    // Switch to the correct database
-    await pool.query(`USE ${databaseName}`);
-
+    // Query using fully qualified table name
     const [bt05Rows] = await pool.query(
-      "SELECT ord AS year, mth AS month, sun FROM py_stdrate WHERE type='BT05' LIMIT 1"
+      `SELECT ord AS year, mth AS month, sun FROM ${databaseName}.py_stdrate WHERE type='BT05' LIMIT 1`
     );
     
     if (!bt05Rows.length) {
@@ -61,14 +80,14 @@ exports.masterFileUpdate = async (req, res) => {
 
     const user = req.user_fullname || 'System Update';
     
-    console.log(`🎯 Master file update - Class: ${currentDb}, Database: ${databaseName}, Indicator: ${indicator}, User: ${user}`);
+    console.log(`Master file update - Class: ${className}, Database: ${databaseName}, Indicator: ${indicator}, User: ${user}, UserID: ${userId}`);
     
-    // Run the master file updates with all 4 parameters
-    const result = await masterFileUpdate.runUpdates(year, month, indicator, user);
+    // ✅ Call service - it will get the database from session using userId
+    const result = await masterFileUpdate.runUpdates(year, month, indicator, user, userId);
 
-    // Update the stage to 888 (master file update completed)
+    // Update the stage to 888 using fully qualified table name
     await pool.query(
-      "UPDATE py_stdrate SET sun = 888, createdby = ? WHERE type = 'BT05'", 
+      `UPDATE ${databaseName}.py_stdrate SET sun = 888, createdby = ? WHERE type = 'BT05'`, 
       [user]
     );
 
@@ -79,16 +98,16 @@ exports.masterFileUpdate = async (req, res) => {
       year,
       month,
       database: databaseName,
-      class: currentDb,
+      class: className,
       indicator,
-      recordsProcessed: result.recordsProcessed || 0,
-      logId: result.logId || result.insertId || null
+      employeesProcessed: result.data?.employeesProcessed || 0,
+      totalRecords: result.data?.totalRecords || 0,
+      totalAmount: result.data?.totalAmount || '0.00'
     });
     
   } catch (err) {
     console.error('❌ Error running master file update:', err);
     
-    // Return user-friendly error messages
     const errorMessage = err.message || 'An unexpected error occurred during master file update';
     
     res.status(500).json({ 

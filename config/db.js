@@ -1,7 +1,66 @@
 const dbConfig = require("./db-config");
 const mysql = require("mysql2/promise");
 
-// Create connection pool without specifying database
+// ==========================================
+// MASTER DATABASE CONFIGURATION
+// ==========================================
+
+const MASTER_DB = process.env.DB_OFFICERS || 'hicaddata';
+
+// List of master tables that need to be qualified
+const MASTER_TABLES = new Set([
+  // Employee and Personal Info
+  'hr_employees',
+  'Spouse',
+  'Children',
+  'NextOfKin',
+  
+  // Organizational Structure
+  'ac_businessline',
+  'ac_costcentre',
+  'accchart',
+  'ac_months',
+  'py_navalcommand',
+  'py_paysystem',
+  
+  // Payroll Configuration
+  'py_bank',
+  //'py_elementType',
+  //'py_exclusiveType',
+  'py_functionType',
+  'py_Grade',
+  'py_gradelevel',
+  'py_paydesc',
+  'py_payind',
+  'py_payrollclass',
+  'py_paysystem',
+  //'py_stdrate',
+  //'py_tax',
+  'py_salarygroup',
+  'py_salaryscale',
+  'py_exittype',
+  'entrymode',
+  'py_specialisationarea',
+  
+  // Lookup/Reference Tables
+  'py_MaritalStatus',
+  'py_pfa',
+  'py_relationship',
+  'py_religion',
+  'py_status',
+  'py_tblLga',
+  'py_tblstates',
+  'geozone',
+  'py_Country',
+  'py_Title',
+  'py_sex',
+  
+  // System Tables
+  'roles',
+  'users'
+]);
+
+// Create connection pool
 const connectionPool = mysql.createPool({
   host: dbConfig.host,
   port: dbConfig.port,
@@ -10,13 +69,12 @@ const connectionPool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 20,
   queueLimit: 0,
-  // Valid MySQL2 pool-specific options
-  idleTimeout: 900000, // 15 minutes - how long idle connections stay alive
-  // Valid connection-level options
+  idleTimeout: 900000,
   connectTimeout: 60000, // Connection establishment timeout
   multipleStatements: false, // Security best practice
   timezone: '+00:00',
-  charset: 'utf8mb4'
+  charset: 'utf8mb4',
+  flags: '+MULTI_STATEMENTS'
 });
 
 // Cache for database validation
@@ -46,7 +104,36 @@ const setSessionContext = (req, res, next) => {
   });
 };
 
-// Enhanced pool object with automatic session detection
+// ==========================================
+// HELPER: QUALIFY MASTER TABLES
+// ==========================================
+
+function qualifyMasterTables(sql, currentDb) {
+  if (currentDb === MASTER_DB) return sql;
+  
+  let processedSql = sql;
+  let modificationsCount = 0;
+  
+  MASTER_TABLES.forEach(table => {
+    const regex = new RegExp(`(?<![.\\w])\\b${table}\\b(?=\\s|,|\\)|;|$|\\b(?!\\.))`, 'gi');
+    const matches = sql.match(regex);
+    if (matches) {
+      processedSql = processedSql.replace(regex, `${MASTER_DB}.${table}`);
+      modificationsCount += matches.length;
+    }
+  });
+  
+  if (modificationsCount > 0 && process.env.NODE_ENV !== 'production') {
+    console.log(`🔗 Auto-qualified ${modificationsCount} master table(s) in ${currentDb}`);
+  }
+  
+  return processedSql;
+}
+
+// ==========================================
+// POOL OBJECT
+// ==========================================
+
 const pool = {
   // Middleware function to be used in Express app (optional - JWT middleware handles it)
   middleware: setSessionContext,
@@ -54,72 +141,62 @@ const pool = {
   // Method to switch database context for a specific session
   useDatabase(databaseName, sessionId = null) {
     initializeDatabaseCache();
-    
+
     // Auto-detect session if not provided
-    if (!sessionId) {
-      sessionId = sessionContext.getStore() || 'default';
-    }
-    
+    if (!sessionId) sessionId = sessionContext.getStore() || 'default';
     // Check if the database name exists in our config values or is a valid database name directly
     const validDatabases = Array.from(validDatabasesCache);
     const dbToUse = validDatabases.includes(databaseName) ? databaseName : dbConfig.databases[databaseName];
     
     if (!dbToUse) {
-      throw new Error(`❌ Invalid database: ${databaseName}. Valid databases: ${validDatabases.join(', ')} or classes: ${Object.keys(dbConfig.databases).join(', ')}`);
+      throw new Error(`❌ Invalid database: ${databaseName}`);
     }
     
-    // Store the actual database name for this session
     sessionDatabases.set(sessionId, dbToUse);
-    console.log(`📊 Database context switched to: ${dbToUse} for session: ${sessionId}`);
-    
+    console.log(`📊 Database context: ${dbToUse} for session: ${sessionId}`);
     return this; // Allow chaining
   },
 
   // Get current database for a session (auto-detects session)
   getCurrentDatabase(sessionId = null) {
-    if (!sessionId) {
-      sessionId = sessionContext.getStore() || 'default';
-    }
+    if (!sessionId) sessionId = sessionContext.getStore() || 'default';
     return sessionDatabases.get(sessionId) || null;
   },
 
-  // Main query method - automatically detects session context
-  async query(sql, params = []) {
+  // SMART QUERY METHODS (with auto-qualification)
+  async smartQuery(sql, params = []) {
     const sessionId = sessionContext.getStore() || 'default';
     const currentDatabase = sessionDatabases.get(sessionId);
     
     if (!currentDatabase) {
-      throw new Error(`❌ No database selected for session ${sessionId}. Call pool.useDatabase(databaseName) first.`);
+      throw new Error(`❌ No database selected for session ${sessionId}`);
     }
 
     let connection;
     try {
       connection = await connectionPool.getConnection();
-      
       // Switch to the current database
       await connection.query(`USE \`${currentDatabase}\``);
       
+      const processedSql = qualifyMasterTables(sql, currentDatabase);
+
       // Execute the actual query
-      const [rows, fields] = await connection.query(sql, params);
+      const [rows, fields] = await connection.query(processedSql, params);
       return [rows, fields];
-      
     } catch (error) {
-      console.error(`❌ Database query error on ${currentDatabase} for session ${sessionId}:`, error.message);
+      console.error(`❌ Query error on ${currentDatabase}for session ${sessionId}:`, error.message);
       throw error;
     } finally {
-      if (connection) {
-        connection.release();
-      }
+      if (connection) connection.release();
     }
   },
 
-  // Execute method for prepared statements
-  async execute(sql, params = []) {
+  async smartExecute(sql, params = []) {
     const sessionId = sessionContext.getStore() || 'default';
     const currentDatabase = sessionDatabases.get(sessionId);
 
     if (!currentDatabase) {
-      throw new Error(`❌ No database selected for session ${sessionId}. Call pool.useDatabase(databaseName) first.`);
+      throw new Error(`❌ No database selected for session ${sessionId}`);
     }
 
     let connection;
@@ -127,17 +204,17 @@ const pool = {
       connection = await connectionPool.getConnection();
       await connection.query(`USE \`${currentDatabase}\``);
 
+      const processedSql = qualifyMasterTables(sql, currentDatabase);
+
       // Use query() instead of execute() to avoid prepared statement cache issues
       // after USE database - execute() can return stale data from wrong database
-      const [rows, fields] = await connection.query(sql, params);
+      const [rows, fields] = await connection.query(processedSql, params);
       return [rows, fields];
     } catch (error) {
-      console.error(`❌ Database execute error on ${currentDatabase} for session ${sessionId}:`, error.message);
+      console.error(`❌ Execute error on ${currentDatabase}:`, error.message);
       throw error;
     } finally {
-      if (connection) {
-        connection.release();
-      }
+      if (connection) connection.release();
     }
   },
 
@@ -153,13 +230,13 @@ const pool = {
     return connection;
   },
 
-  // Transaction support with automatic session context
-  async transaction(callback) {
+  // Transaction support with automatic session Context
+  async smartTransaction(callback) {
     const sessionId = sessionContext.getStore() || 'default';
     const currentDatabase = sessionDatabases.get(sessionId);
     
     if (!currentDatabase) {
-      throw new Error(`❌ No database selected for session ${sessionId}. Call pool.useDatabase(databaseName) first.`);
+      throw new Error(`❌ No database selected for session ${sessionId}`);
     }
 
     let connection;
@@ -168,20 +245,27 @@ const pool = {
       await connection.query(`USE \`${currentDatabase}\``);
       await connection.beginTransaction();
       
-      const result = await callback(connection);
+      const smartConnection = {
+        ...connection,
+        query: async (sql, params = []) => {
+          const processedSql = qualifyMasterTables(sql, currentDatabase);
+          return connection.query(processedSql, params);
+        },
+        execute: async (sql, params = []) => {
+          const processedSql = qualifyMasterTables(sql, currentDatabase);
+          return connection.query(processedSql, params);
+        }
+      };
+      
+      const result = await callback(smartConnection);
       await connection.commit();
       return result;
-      
     } catch (error) {
-      if (connection) {
-        await connection.rollback();
-      }
-      console.error(`❌ Transaction error on ${currentDatabase} for session ${sessionId}:`, error.message);
+      if (connection) await connection.rollback();
+      console.error(`❌ Transaction error on ${currentDatabase}:`, error.message);
       throw error;
     } finally {
-      if (connection) {
-        connection.release();
-      }
+      if (connection) connection.release();
     }
   },
 
@@ -191,7 +275,7 @@ const pool = {
     const currentDatabase = sessionDatabases.get(sessionId);
     
     if (!currentDatabase) {
-      throw new Error(`❌ No database selected for session ${sessionId}.`);
+      throw new Error(`❌ No database selected for session ${sessionId}`);
     }
 
     let connection;
@@ -201,18 +285,16 @@ const pool = {
       
       const results = [];
       for (const { sql, params = [] } of queries) {
-        const [rows, fields] = await connection.query(sql, params);
+        const processedSql = qualifyMasterTables(sql, currentDatabase);
+        const [rows, fields] = await connection.query(processedSql, params);
         results.push([rows, fields]);
       }
-      
       return results;
     } catch (error) {
-      console.error(`❌ Batch query error on ${currentDatabase} for session ${sessionId}:`, error.message);
+      console.error(`❌ Batch query error:`, error.message);
       throw error;
     } finally {
-      if (connection) {
-        connection.release();
-      }
+      if (connection) connection.release();
     }
   },
 
@@ -227,21 +309,15 @@ const pool = {
       console.error('❌ Raw query error:', error.message);
       throw error;
     } finally {
-      if (connection) {
-        connection.release();
-      }
+      if (connection) connection.release();
     }
   },
 
   // Clear session database context (on logout)
   clearSession(sessionId = null) {
-    if (!sessionId) {
-      sessionId = sessionContext.getStore() || 'default';
-    }
+    if (!sessionId) sessionId = sessionContext.getStore() || 'default';
     const wasCleared = sessionDatabases.delete(sessionId);
-    if (wasCleared) {
-      console.log(`Database context cleared for session: ${sessionId}`);
-    }
+    if (wasCleared) console.log(`Session cleared: ${sessionId}`);
     return wasCleared;
   },
 
@@ -264,9 +340,7 @@ const pool = {
   // Helper method to get class name from database name
   getPayrollClassFromDatabase(databaseName) {
     for (const [className, dbName] of Object.entries(dbConfig.databases)) {
-      if (dbName === databaseName) {
-        return className;
-      }
+      if (dbName === databaseName) return className;
     }
     return null;
   },
@@ -274,6 +348,23 @@ const pool = {
   // Get database name from class name
   getDatabaseFromPayrollClass(className) {
     return dbConfig.databases[className] || null;
+  },
+
+  // Master DB utilities
+  getMasterDb() {
+    return MASTER_DB;
+  },
+
+  isMasterTable(tableName) {
+    return MASTER_TABLES.has(tableName);
+  },
+
+  getMasterTables() {
+    return Array.from(MASTER_TABLES);
+  },
+
+  qualify(tableName) {
+    return MASTER_TABLES.has(tableName) ? `${MASTER_DB}.${tableName}` : tableName;
   },
 
   // Pool statistics
@@ -287,7 +378,9 @@ const pool = {
       activeSessions: sessionDatabases.size,
       currentSession: sessionId,
       currentDatabase: sessionDatabases.get(sessionId),
-      sessionMappings: this.getSessionMappings()
+      sessionMappings: this.getSessionMappings(),
+      masterDatabase: MASTER_DB,
+      totalMasterTables: MASTER_TABLES.size
     };
   },
 
@@ -344,7 +437,23 @@ const pool = {
   }
 };
 
-// Enhanced startup connectivity test with better error handling
+pool._getSessionContext = () => sessionContext;
+
+// ==========================================
+// Redirect all old methods to smart versions
+// ==========================================
+
+pool.query = pool.smartQuery;
+pool.execute = pool.smartExecute;
+pool.transaction = pool.smartTransaction;
+
+console.log('✅ Cross-database queries enabled');
+console.log(`📊 Master Database: ${MASTER_DB}`);
+console.log(`🔗 Master Tables: ${MASTER_TABLES.size} configured`);
+
+// ==========================================
+// STARTUP CONNECTIVITY TEST
+// ==========================================
 (async () => {
   try {
     console.log('🔄 Initializing database connection pool...');
@@ -386,7 +495,7 @@ const pool = {
   }
 })();
 
-// Graceful shutdown handling
+// Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('\n🔄 Shutting down gracefully...');
   try {

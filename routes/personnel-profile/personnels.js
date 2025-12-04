@@ -1,32 +1,64 @@
 const express = require('express');
+require('dotenv').config();
 const pool = require('../../config/db'); // mysql2 pool
 const verifyToken = require('../../middware/authentication');
-const { attachPayrollClass } = require('../../middware/attachPayrollClass');
+//const { attachPayrollClass } = require('../../middware/attachPayrollClass');
 const router = express.Router();
 
+
+
+// =============================================================================
+// HELPER FUNCTION: Get Payroll Class from Current Database
+// =============================================================================
+
+/**
+ * Maps database name to payroll class number
+ * @param {string} dbName - Current database name
+ * @returns {string} Payroll class (1-6)
+ */
+function getPayrollClassFromDb(dbName) {
+  // Use environment variables for dynamic mapping
+  const classMapping = {
+    [process.env.DB_OFFICERS]: '1',
+    [process.env.DB_WOFFICERS]: '2',
+    [process.env.DB_RATINGS]: '3',
+    [process.env.DB_RATINGS_A]: '4',
+    [process.env.DB_RATINGS_B]: '5',
+    [process.env.DB_JUNIOR_TRAINEE]: '6'
+  };
+  
+  const result = classMapping[dbName] || '1';
+  console.log('🔍 Database:', dbName, '→ Payroll Class:', result);
+  return result;
+}
 
 // =============================================================================
 // HR_EMPLOYEES CRUD OPERATIONS
 // =============================================================================
 
 // GET all current employees
-router.get('/employees-current', verifyToken, attachPayrollClass, async (req, res) => {
+router.get('/employees-current', verifyToken, async (req, res) => {
   try {
+    
+    // Get database from pool using user_id as session
+    const currentDb = pool.getCurrentDatabase(req.user_id.toString());
+    const payrollClass = getPayrollClassFromDb(currentDb);
 
-    const currentDb = pool.getCurrentDatabase(req.user_id);
-    console.log('🔍 Current database for query:', currentDb);
-    console.log('🔍 User ID:', req.user_id);
+    //console.log('🔍 Current database:', currentDb);
+    //console.log('🔍 Payroll class filter:', payrollClass);
+    //console.log('🔍 User ID:', req.user_id);
 
-    // Get employees first
+    // Get employees filtered by payroll class
     const [rows] = await pool.query(`
       SELECT * 
       FROM hr_employees 
       WHERE (DateLeft IS NULL OR DateLeft = '')
         AND (exittype IS NULL OR exittype = '')
+        AND payrollclass = ?
       ORDER BY Empl_ID ASC
-    `);
+    `, [payrollClass]);
 
-    // Add counts to each employee
+    // Add counts for related data
     for (let employee of rows) {
       const [children] = await pool.query(
         'SELECT COUNT(*) as count FROM Children WHERE Empl_ID = ? AND chactive = 1',
@@ -46,10 +78,14 @@ router.get('/employees-current', verifyToken, attachPayrollClass, async (req, re
       employee.spouse_count = spouse[0].count;
     }
 
-    console.log('🔍 Query returned:', rows.length, 'records');
-    //console.log('🔍 Employee IDs:', rows.map(r => r.Empl_ID).join(', '));
+    console.log('✅ Query returned:', rows.length, 'records for payroll class', payrollClass);
 
-    res.json({ success: true, data: rows });
+    res.json({ 
+      success: true, 
+      data: rows, 
+      payrollClass,
+      database: currentDb 
+    });
   } catch (error) {
     console.error('❌ Query error:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -57,39 +93,44 @@ router.get('/employees-current', verifyToken, attachPayrollClass, async (req, re
 });
 
 // GET all current employees with pagination
-router.get('/employees-current-pages', verifyToken, attachPayrollClass, async (req, res) => {
+router.get('/employees-current-pages', verifyToken, async (req, res) => {
   try {
-    const currentDb = pool.getCurrentDatabase(req.user_id);
-    console.log('🔍 Current database for query:', currentDb);
-    console.log('🔍 User ID:', req.user_id);
+    // Get database from pool using user_id as session
+    const currentDb = pool.getCurrentDatabase(req.user_id.toString());
+    const payrollClass = getPayrollClassFromDb(currentDb);
     
-    // Get pagination parameters from query string
+    //console.log('🔍 Current database:', currentDb);
+    //console.log('🔍 Payroll class filter:', payrollClass);
+    //console.log('🔍 User ID:', req.user_id);
+    
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     
     console.log('Pagination - Page:', page, 'Limit:', limit, 'Offset:', offset);
     
-    // Get total count first
+    // Get total count with payroll class filter
     const [countResult] = await pool.query(`
       SELECT COUNT(*) as total
       FROM hr_employees 
       WHERE (DateLeft IS NULL OR DateLeft = '')
         AND (exittype IS NULL OR exittype = '')
-    `);
+        AND payrollclass = ?
+    `, [payrollClass]);
     
     const totalRecords = countResult[0].total;
     const totalPages = Math.ceil(totalRecords / limit);
     
-    // Get paginated employees
+    // Get paginated employees with payroll class filter
     const [rows] = await pool.query(`
       SELECT * 
       FROM hr_employees 
       WHERE (DateLeft IS NULL OR DateLeft = '')
         AND (exittype IS NULL OR exittype = '')
+        AND payrollclass = ?
       ORDER BY Empl_ID ASC
       LIMIT ? OFFSET ?
-    `, [limit, offset]);
+    `, [payrollClass, limit, offset]);
 
     // Add counts to each employee
     for (let employee of rows) {
@@ -116,6 +157,7 @@ router.get('/employees-current-pages', verifyToken, attachPayrollClass, async (r
     res.json({ 
       success: true, 
       data: rows,
+      payrollClass,
       pagination: {
         currentPage: page,
         totalPages: totalPages,
@@ -131,12 +173,15 @@ router.get('/employees-current-pages', verifyToken, attachPayrollClass, async (r
   }
 });
 
-// GET current employees with SEARCH - queries whole table
+// GET current employees with SEARCH
 router.get('/employees-current/search', verifyToken, async (req, res) => {
   try {
-    const currentDb = pool.getCurrentDatabase(req.user_id);
-    console.log('🔍 Search database:', currentDb);
-    console.log('🔍 User ID:', req.user_id);
+    const currentDb = pool.getCurrentDatabase(req.user_id.toString());
+    const payrollClass = getPayrollClassFromDb(currentDb);
+    
+    //console.log('🔍 Search database:', currentDb);
+    //console.log('🔍 Payroll class filter:', payrollClass);
+    //console.log('🔍 User ID:', req.user_id);
     
     const searchTerm = req.query.q || req.query.search || '';
     
@@ -147,9 +192,10 @@ router.get('/employees-current/search', verifyToken, async (req, res) => {
       FROM hr_employees 
       WHERE (DateLeft IS NULL OR DateLeft = '')
         AND (exittype IS NULL OR exittype = '')
+        AND payrollclass = ?
     `;
     
-    const params = [];
+    const params = [payrollClass];
     
     // Add search conditions if search term provided
     if (searchTerm) {
@@ -204,6 +250,7 @@ router.get('/employees-current/search', verifyToken, async (req, res) => {
     res.json({ 
       success: true, 
       data: rows,
+      payrollClass,
       searchTerm: searchTerm,
       resultCount: rows.length
     });
@@ -214,21 +261,25 @@ router.get('/employees-current/search', verifyToken, async (req, res) => {
   }
 });
 
-//Old Employees endpoint
+// GET old employees
 router.get('/employees-old', verifyToken, async (req, res) => {
   try {
-    const currentDb = pool.getCurrentDatabase(req.user_id);
-    console.log('🔍 Current database for query:', currentDb);
-    console.log('🔍 User ID:', req.user_id);
+    const currentDb = pool.getCurrentDatabase(req.user_id.toString());
+    const payrollClass = getPayrollClassFromDb(currentDb);
     
-    // Get employees first
+    //console.log('🔍 Current database:', currentDb);
+    //console.log('🔍 Payroll class filter:', payrollClass);
+    //console.log('🔍 User ID:', req.user_id);
+    
+    // Get employees with payroll class filter
     const [rows] = await pool.query(`
       SELECT * 
       FROM hr_employees 
-      WHERE (DateLeft IS NOT NULL AND DateLeft <> '')
-        OR (exittype IS NOT NULL AND TRIM(exittype) <> '')
-      ORDER BY Empl_ID ASC;
-    `);
+      WHERE ((DateLeft IS NOT NULL AND DateLeft <> '')
+        OR (exittype IS NOT NULL AND TRIM(exittype) <> ''))
+        AND payrollclass = ?
+      ORDER BY Empl_ID ASC
+    `, [payrollClass]);
 
     // Add counts to each employee
     for (let employee of rows) {
@@ -251,49 +302,52 @@ router.get('/employees-old', verifyToken, async (req, res) => {
     }
     
     console.log('🔍 Query returned:', rows.length, 'records');
-    //console.log('🔍 Employee IDs:', rows.map(r => r.Empl_ID).join(', '));
     
-    res.json({ success: true, data: rows });
+    res.json({ success: true, data: rows, payrollClass });
   } catch (error) {
     console.error('❌ Query error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// GET all current employees with pagination
-router.get('/employees-old-pages', verifyToken, attachPayrollClass, async (req, res) => {
+// GET old employees with pagination
+router.get('/employees-old-pages', verifyToken, async (req, res) => {
   try {
-    const currentDb = pool.getCurrentDatabase(req.user_id);
-    console.log('🔍 Current database for query:', currentDb);
-    console.log('🔍 User ID:', req.user_id);
+    const currentDb = pool.getCurrentDatabase(req.user_id.toString());
+    const payrollClass = getPayrollClassFromDb(currentDb);
     
-    // Get pagination parameters from query string
+    //console.log('🔍 Current database:', currentDb);
+    //console.log('🔍 Payroll class filter:', payrollClass);
+    //console.log('🔍 User ID:', req.user_id);
+    
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     
     console.log('Pagination - Page:', page, 'Limit:', limit, 'Offset:', offset);
     
-    // Get total count first
+    // Get total count with payroll class filter
     const [countResult] = await pool.query(`
       SELECT COUNT(*) as total
       FROM hr_employees 
-      WHERE (DateLeft IS NOT NULL AND DateLeft <> '')
-        OR (exittype IS NOT NULL AND TRIM(exittype) <> '')
-    `);
+      WHERE ((DateLeft IS NOT NULL AND DateLeft <> '')
+        OR (exittype IS NOT NULL AND TRIM(exittype) <> ''))
+        AND payrollclass = ?
+    `, [payrollClass]);
     
     const totalRecords = countResult[0].total;
     const totalPages = Math.ceil(totalRecords / limit);
     
-    // Get paginated employees
+    // Get paginated employees with payroll class filter
     const [rows] = await pool.query(`
       SELECT * 
       FROM hr_employees 
-      WHERE (DateLeft IS NOT NULL AND DateLeft <> '0000-00-00')
-         OR (exittype IS NOT NULL AND TRIM(exittype) <> '')
+      WHERE ((DateLeft IS NOT NULL AND DateLeft <> '0000-00-00')
+         OR (exittype IS NOT NULL AND TRIM(exittype) <> ''))
+        AND payrollclass = ?
       ORDER BY Empl_ID ASC
       LIMIT ? OFFSET ?
-    `, [limit, offset]);
+    `, [payrollClass, limit, offset]);
 
     // Add counts to each employee
     for (let employee of rows) {
@@ -320,6 +374,7 @@ router.get('/employees-old-pages', verifyToken, attachPayrollClass, async (req, 
     res.json({ 
       success: true, 
       data: rows,
+      payrollClass,
       pagination: {
         currentPage: page,
         totalPages: totalPages,
@@ -335,12 +390,15 @@ router.get('/employees-old-pages', verifyToken, attachPayrollClass, async (req, 
   }
 });
 
-// GET old employees with SEARCH - queries whole table
-router.get('/employees-old/search', verifyToken, attachPayrollClass, async (req, res) => {
+// GET old employees with SEARCH
+router.get('/employees-old/search', verifyToken, async (req, res) => {
   try {
-    const currentDb = pool.getCurrentDatabase(req.user_id);
-    console.log('🔍 Search database:', currentDb);
-    console.log('🔍 User ID:', req.user_id);
+    const currentDb = pool.getCurrentDatabase(req.user_id.toString());
+    const payrollClass = getPayrollClassFromDb(currentDb);
+    
+    //console.log('🔍 Search database:', currentDb);
+    //console.log('🔍 Payroll class filter:', payrollClass);
+    //console.log('🔍 User ID:', req.user_id);
     
     const searchTerm = req.query.q || req.query.search || '';
     
@@ -349,11 +407,12 @@ router.get('/employees-old/search', verifyToken, attachPayrollClass, async (req,
     let query = `
       SELECT * 
       FROM hr_employees 
-        WHERE (DateLeft IS NOT NULL AND DateLeft <> '')
-        OR (exittype IS NOT NULL AND TRIM(exittype) <> '')
+      WHERE ((DateLeft IS NOT NULL AND DateLeft <> '')
+        OR (exittype IS NOT NULL AND TRIM(exittype) <> ''))
+        AND payrollclass = ?
     `;
     
-    const params = [];
+    const params = [payrollClass];
     
     // Add search conditions if search term provided
     if (searchTerm) {
@@ -408,6 +467,7 @@ router.get('/employees-old/search', verifyToken, attachPayrollClass, async (req,
     res.json({ 
       success: true, 
       data: rows,
+      payrollClass,
       searchTerm: searchTerm,
       resultCount: rows.length
     });
@@ -418,7 +478,7 @@ router.get('/employees-old/search', verifyToken, attachPayrollClass, async (req,
   }
 });
 
-// GET single employee with all related data
+// GET single employee (no payroll class filter needed - specific ID lookup)
 router.get('/employees/:id', verifyToken, async (req, res) => {
   const id = req.params.id.replace(/_SLASH_/g, '/');
 
@@ -461,12 +521,11 @@ router.get('/employees/:id', verifyToken, async (req, res) => {
   }
 });
 
-//validation
+// Validation (no payroll class filter - checking uniqueness across all classes)
 router.get('/employees/check/:field/:value', verifyToken, async (req, res) => {
   const { field, value } = req.params;
   const { exclude } = req.query;
 
-  // Only allow specific fields to prevent SQL injection
   const allowedFields = ["Empl_ID"];
   if (!allowedFields.includes(field)) {
     return res.status(400).json({ error: "Invalid field" });
@@ -476,7 +535,6 @@ router.get('/employees/check/:field/:value', verifyToken, async (req, res) => {
     let query = `SELECT ${field} FROM hr_employees WHERE ${field} = ?`;
     let params = [value];
 
-    // If exclude Empl_ID is provided, exclude that record from the check
     if (exclude) {
       query += ' AND Empl_ID != ?';
       params.push(exclude);
@@ -491,10 +549,16 @@ router.get('/employees/check/:field/:value', verifyToken, async (req, res) => {
   }
 });
 
-// POST create employee
-router.post('/employees', verifyToken, attachPayrollClass, async (req, res) => {
+// POST create employee - AUTO-ASSIGN PAYROLL CLASS
+router.post('/employees', verifyToken, async (req, res) => {
   try {
     console.log('=== CREATE EMPLOYEE ===');
+    
+    const currentDb = pool.getCurrentDatabase(req.user_id.toString());
+    const payrollClass = getPayrollClassFromDb(currentDb);
+    
+    console.log('🔍 Current database:', currentDb);
+    console.log('🔍 Auto-assigning payroll class:', payrollClass);
     console.log('Received fields:', Object.keys(req.body));
     console.log('Passport present?', !!req.body.passport);
 
@@ -502,9 +566,10 @@ router.post('/employees', verifyToken, attachPayrollClass, async (req, res) => {
       console.log('Passport length:', req.body.passport.length);
     }
 
-    // Add created_by automatically
+    // Add created_by and payroll class automatically
     const createdBy = req.user_fullname || 'System';
     req.body.createdby = createdBy;
+    req.body.payrollclass = payrollClass; // ← AUTO-ASSIGN based on current DB
 
     const fields = Object.keys(req.body);
     const values = Object.values(req.body);
@@ -512,6 +577,7 @@ router.post('/employees', verifyToken, attachPayrollClass, async (req, res) => {
 
     const query = `INSERT INTO hr_employees (${fields.join(', ')}) VALUES (${placeholders})`;
     console.log('Executing query with', fields.length, 'fields');
+    console.log('✅ Payroll class assigned:', payrollClass);
 
     const [result] = await pool.query(query, values);
 
@@ -521,6 +587,7 @@ router.post('/employees', verifyToken, attachPayrollClass, async (req, res) => {
       success: true,
       message: 'New Personnel created successfully',
       employeeId: req.body.Empl_ID,
+      payrollClass: payrollClass,
       created_by: createdBy
     });
 
@@ -530,7 +597,7 @@ router.post('/employees', verifyToken, attachPayrollClass, async (req, res) => {
   }
 });
 
-// PUT update employee
+// PUT update employee (no payroll class modification allowed)
 router.put('/employees/:id', verifyToken, async (req, res) => {
   try {
     const id = req.params.id.replace(/_SLASH_/g, '/');
@@ -538,6 +605,13 @@ router.put('/employees/:id', verifyToken, async (req, res) => {
     console.log('=== UPDATE EMPLOYEE ===');
     console.log('Employee ID:', id);
     console.log('Received fields:', Object.keys(req.body));
+    
+    // Prevent payroll class from being modified
+    if (req.body.payrollclass) {
+      delete req.body.payrollclass;
+      console.log('⚠️ Removed payrollclass from update - cannot be modified');
+    }
+    
     console.log('Passport present?', !!req.body.passport);
 
     if (req.body.passport) {

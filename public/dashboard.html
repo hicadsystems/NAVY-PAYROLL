@@ -75,7 +75,13 @@
         </div>
       </div>
 
-      <img src="photos/logo.png" alt="logo" class="hidden sm:block lg:w-[40px] h-[50px] object-contain" />
+      <div class="flex flex-wrap items-center gap-6">
+        <p id="workingClass" class="text-sm md:text-sm lg:text-sm font-bold text-navy text-center text-blue-900">
+          Currently Active In: <span class="text-yellow-600 text-md" id="payrollClassName">Loading...</span>
+        </p>
+
+        <img src="photos/logo.png" alt="logo" class="hidden sm:block lg:w-[25px] h-[35px] object-contain" />
+      </div>
     </header>
 
     <div class="main-content-wrapper pt-0 sm:pt-0 md:pt-2 lg:pt-2 lg:pl-[250px] h-dvh overflow-y-auto transition-all duration-300">
@@ -87,7 +93,8 @@
           <ul class="flex flex-col gap-[1.1rem]">
             <li class="relative">
                 <a class="nav-item flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25" 
-                  href="dashboard.html" 
+                  href="#" 
+                  onclick="window.navigation.returnToDashboard(); return false;"
                   title="Dashboard">
                   <span class="flex items-center gap-2">
                     <i class="fas fa-home"></i>
@@ -415,7 +422,7 @@
                   <h3 class="text-navy font-bold">Current Payroll Period</h3>
                   <i class='fas fa-calendar-alt' style="font-size: 24px"></i>
                 </div>
-                <div class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold">October</div>
+                <div id="current-payroll-period" class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold">Loading...</div>
               </div>
             </div>
 

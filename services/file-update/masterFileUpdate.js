@@ -1,30 +1,35 @@
 const pool = require('../../config/db');
 const { startLog, updateLog } = require('../helpers/logService');
-const getDatabaseForIndicator = require('../helpers/mapdbclasses');
 
-exports.runUpdates = async (year, month, indicator, user) => {
+exports.runUpdates = async (year, month, indicator, user, userId) => {
   const logId = await startLog('FileUpdate', 'MasterFileUpdates', year, month, user);
-  const dbName = getDatabaseForIndicator(indicator);
   
-  // Get a connection from the pool to maintain session context
+  // Get current database from session instead of mapping
+  const sessionId = userId.toString();
+  const dbName = pool.getCurrentDatabase(sessionId);
+  
+  if (!dbName) {
+    throw new Error('No database context found for user session');
+  }
+  
+  console.log(`Using current database: ${dbName} for user session: ${sessionId}`);
+  
+  // Get a connection from the pool
   const connection = await pool.getConnection();
 
   try {
-    // Switch to target database on this specific connection
-    await connection.query(`USE \`${dbName}\``);
-    console.log(`Switched to database: ${dbName}`);
+    // Database is already set by pool.getConnection() via session context
+    // No need to manually switch - just verify
+    const [currentDb] = await connection.query('SELECT DATABASE() as db');
+    console.log(`✅ Connected to database: ${currentDb[0].db}`);
 
-    // Step 0: Set the payroll period in py_stdrate (BT05)
+    // Rest of your code stays the same...
     console.log(`Setting payroll period: ${year}-${month}...`);
     await connection.query(
       `UPDATE py_stdrate SET mth = ?, ord = ? WHERE type = 'BT05'`,
       [month, year]
     );
 
-    // Step 1: Capture timestamp BEFORE running procedures
-    const executionStartTime = new Date();
-    
-    // Step 2: Run extraction to populate py_wkemployees and input tables
     console.log('Running sp_extractrec_optimized...');
     const [extractResult] = await connection.query(
       `CALL sp_extractrec_optimized(?, ?, ?, ?)`, 
@@ -32,21 +37,30 @@ exports.runUpdates = async (year, month, indicator, user) => {
     );
     console.log(`Extraction completed`);
 
-    // Step 3: Check working employees count (info only, not an error)
     const [wkempCount] = await connection.query(
       `SELECT COUNT(*) as count FROM py_wkemployees`
     );
     console.log(`Working employees: ${wkempCount[0].count}`);
 
-    // Step 4: Run master file updates (calls all 6 sub-procedures)
-    console.log('Running py_update_payrollfiles...');
+    // Get from py_paysystem table
+    const [systemConfig] = await pool.query(`
+      SELECT comp_code, salaryscale 
+      FROM py_paysystem 
+      LIMIT 1
+    `);
+
+    const compcode = systemConfig[0]?.comp_code || 'NAVY';
+    const salaryscale = systemConfig[0]?.salaryscale || 'Yes';
+
+    console.log(`Running py_update_payrollfiles... Company: ${compcode}, Salary  Scale: ${salaryscale}`);
     const [updateResult] = await connection.query(
       `CALL py_update_payrollfiles(?, ?)`, 
-      ['NAVY', 'Yes']
+      [compcode, salaryscale]
     );
     console.log(`Master file updates completed`);
 
-    // Step 5: Check performance log for FAILED procedures from THIS execution only
+    // Check for failures
+    const executionStartTime = new Date();
     const [perfLog] = await connection.query(`
       SELECT procedure_name, status, records_processed, execution_time_ms, error_details
       FROM py_performance_log 
@@ -63,7 +77,6 @@ exports.runUpdates = async (year, month, indicator, user) => {
       throw new Error(`Master file update failed. ${failureDetails}`);
     }
 
-    // Step 6: Get summary stats
     const [summary] = await connection.query(`
       SELECT 
         COUNT(DISTINCT his_empno) as employees_processed,
@@ -95,34 +108,9 @@ exports.runUpdates = async (year, month, indicator, user) => {
 
   } catch (err) {
     console.error('❌ Error in runUpdates:', err);
-    
-    // Get most recent error details from performance log if available
-    try {
-      const [errorLog] = await connection.query(`
-        SELECT procedure_name, error_details 
-        FROM py_performance_log 
-        WHERE status = 'FAILED' 
-          AND started_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
-        ORDER BY started_at DESC 
-        LIMIT 1
-      `);
-      
-      if (errorLog.length > 0 && errorLog[0].error_details) {
-        // Only append if we don't already have this info in the error message
-        if (!err.message.includes(errorLog[0].error_details)) {
-          err.message = `${errorLog[0].procedure_name}: ${errorLog[0].error_details}`;
-        }
-      }
-    } catch (logErr) {
-      // Ignore error log retrieval errors
-      console.error('Could not fetch error log details:', logErr);
-    }
-
     await updateLog(logId, 'FAILED', err.message);
     throw err;
-
   } finally {
-    // Always release the connection back to the pool
     connection.release();
     console.log('Database connection released');
   }

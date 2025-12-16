@@ -1,6 +1,6 @@
 <!-- Payment Staff List -->
 <section class="p-6">
-  <h2 class="text-xl border-b text-center font-bold text-blue-600 mb-12">Select Options And Generate List</h2>
+  <h2 class="text-xl border-b text-center font-bold text-blue-600 mb-12">Select Options And Generate Staff List</h2>
 
   <!-- Filters -->
   <form id="staffListForm" class="space-y-4">
@@ -8,7 +8,7 @@
       <!-- Location -->
       <div>
         <label class="block text-sm font-medium mb-1">Department</label>
-        <select id="staffLocation" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <select id="staffLocation" class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
           <option value="">All Locations</option>
           <!-- Will be loaded from API -->
         </select>
@@ -17,7 +17,7 @@
       <!-- Bank -->
       <div>
         <label class="block text-sm font-medium mb-1">Bank</label>
-        <select id="staffBank" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <select id="staffBank" class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
           <option value="">All Banks</option>
           <!-- Will be loaded from API -->
         </select>
@@ -28,7 +28,7 @@
       <!-- Month -->
       <div>
         <label class="block text-sm font-medium mb-1">Processing Month</label>
-        <select id="staffMonth" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        <select id="staffMonth" class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
           <option value="">Select Month</option>
           <option value="1">January</option>
           <option value="2">February</option>
@@ -48,31 +48,33 @@
       <!-- Year -->
       <div>
         <label class="block text-sm font-medium mb-1">Processing Year</label>
-        <input type="number" id="staffYear" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300"
+        <input type="number" id="staffYear" class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="e.g., 2025" min="2020" max="2099">
       </div>
     </div>
 
     <!-- Output Format -->
-    <div>
-      <label class="block text-sm font-medium mb-1">Output Format</label>
-      <div class="flex space-x-4 mt-2">
-        <label class="flex text-sm items-center space-x-2">
-          <input type="radio" name="staffFormat" value="pdf" checked>
-          <span>PDF</span>
-        </label>
-        <label class="flex text-sm items-center space-x-2">
-          <input type="radio" name="staffFormat" value="excel">
-          <span>Excel</span>
-        </label>
-      </div>
-    </div>
+
 
     <div class="flex justify-between items-center gap-2 mb-4">
       <!-- Summary Checkbox -->
-      <div class="flex items-center">
+      <div class="hidden flex items-center">
         <input type="checkbox" id="staffSummary" class="h-4 w-4 mr-2">
         <label for="staffSummary" class="text-sm font-medium">Summary Report</label>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Output Format</label>
+        <div class="flex space-x-4 mt-2">
+          <label class="flex text-sm items-center space-x-2">
+            <input type="radio" name="staffFormat" value="pdf" checked>
+            <span>PDF</span>
+          </label>
+          <label class="hidden flex text-sm items-center space-x-2">
+            <input type="radio" name="staffFormat" value="excel">
+            <span>Excel</span>
+          </label>
+        </div>
       </div>
 
       <!-- Buttons -->
@@ -86,13 +88,16 @@
         </button>
       </div>
     </div>
-
-      <!-- Loading Indicator -->
-    <div id="staffLoadingIndicator" class="hidden text-center text-blue-600 text-sm">
-      <span>Generating report...</span>
-    </div>
   </form>
 </section>
+
+  <!-- Loading Indicator -->
+<div id="staffLoadingIndicator" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
+    <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+    <span>Generating report...</span>
+  </div>
+</div>
 
 <!-- Confirmation Modal -->
 <div id="staffConfirmModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -153,8 +158,26 @@
   const staffErrorOkBtn = document.getElementById("staffErrorOkBtn");
   const staffErrorMessage = document.getElementById("staffErrorMessage");
 
-  // Set current year
-  staffYear.value = new Date().getFullYear();
+  // Load current period and set default values
+  async function loadCurrentPeriod() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/salarysummary/filter-options`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const period = result.data.currentPeriod;
+          staffYear.value = period.year;
+          staffMonth.value = period.month;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading current period:', error);
+    }
+  }
 
   // Load dropdowns
   async function loadStaffDropdown(endpoint, elementId, valueField, textField, placeholder) {
@@ -311,4 +334,5 @@
 
   // Initialize
   loadAllStaffDropdowns();
+  loadCurrentPeriod();
 </script>

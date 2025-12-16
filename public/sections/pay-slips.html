@@ -41,10 +41,7 @@
     <div>
       <label for="payrollClass" class="block text-sm font-medium mb-1">Payroll Class</label>
       <select id="payrollClass" name="payrollClass"
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
-        <option value="1">Officers</option>
-        <option value="2">W/Officers</option>
-        <option value="3">Ratings</option>
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled>
       </select>
     </div>
 
@@ -74,13 +71,17 @@
         Generate
       </button>
     </div>
-
-    <!-- Loading Indicator -->
-    <div id="loadingIndicator" class="hidden text-center text-blue-600 text-sm">
-      <span>Generating payslips...</span>
-    </div>
   </form>
 </section>
+
+
+<!-- Loading Indicator -->
+<div id="loadingIndicator" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
+    <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+  <span class="text-gray-700">Generating payslips...</span>
+  </div>
+</div>
 
 <!-- Confirmation Modal -->
 <div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -155,6 +156,7 @@
   const generateBtn = document.getElementById("generateBtn");
   const clearBtn = document.getElementById("clearBtn");
   const loadingIndicator = document.getElementById("loadingIndicator");
+  const payrollClass = document.getElementById("payrollClass");
 
   const confirmModal = document.getElementById("confirmModal");
   const cancelBtn = document.getElementById("cancelBtn");
@@ -167,6 +169,59 @@
   const errorModal = document.getElementById("errorModal");
   const errorOkBtn = document.getElementById("errorOkBtn");
   const errorMessage = document.getElementById("errorMessage");
+
+    // Load payroll classes
+  async function loadPayrollClasses() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/payslips/filter-options`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data.locations) {
+          payrollClass.innerHTML = '<option value="">All Locations</option>';
+          result.data.locations.forEach(cls => {
+            const option = document.createElement('option');
+            option.value = cls.classcode;
+            option.textContent = cls.classname || cls.classcode;
+            payrollClass.appendChild(option);
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading locations:', error);
+    }
+  }
+
+  async function fetchDatabaseName() {
+    try {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch("/payslips/database",{
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      }                 
+    });
+
+    const data = await res.json();
+
+
+    payrollClass.innerHTML = ""; // clear old options
+
+    const option = document.createElement("option");
+    option.value = data.database;
+    option.textContent = data.class_name;
+    option.selected = true;
+
+    payrollClass.appendChild(option);
+    } catch (err) {
+    console.error("Failed to load payroll class:", err);
+    }
+  }
 
   function toggleInputs() {
     const selectedValue = document.querySelector('input[name="people"]:checked').value;
@@ -511,4 +566,6 @@
 
   toggleInputs();
   updateFormatOptions();
+  loadPayrollClasses();
+  fetchDatabaseName();
 </script>

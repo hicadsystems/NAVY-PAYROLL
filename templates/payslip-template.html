@@ -6,8 +6,8 @@
         @page {
             size: A5;
             margin: 10mm;
-            margin-top: 2mm;
-            margin-bottom: 4mm;
+            margin-top: 0.2mm;
+            margin-bottom: 0.2mm;
             background-color: #f8fbff;
         }
         
@@ -42,11 +42,25 @@
         }
         
         /* Header Styles - Simple */
-        .header {
-            text-align: center;
+        .header-wrapper {
+            display: flex;
+            align-items: flex-start;
             margin-bottom: 8px;
             border-bottom: 2px solid #1a1a1a;
             padding-bottom: 5px;
+        }
+
+        .className {
+            flex-shrink: 0;
+            margin-right: 20px;
+            align-self: center;
+            font-size: 6pt;
+            font-weight: bold;
+        }
+
+        .header {
+            flex-grow: 1;
+            text-align: center;
         }
         
         .header h1 {
@@ -68,8 +82,8 @@
         
         /* Pay Period Section - Simple */
         .pay-period {
-            margin: 5px 0;
-            padding: 4px 6px;
+            margin: 3px 0;
+            padding: 1px 6px;
             font-size: 7pt;
             display: flex;
             justify-content: space-between;
@@ -90,9 +104,9 @@
         .section-header {
             font-size: 8pt;
             font-weight: bold;
-            margin-top: 6px;
+            margin-top: 3px;
             margin-bottom: 4px;
-            padding: 3px 5px;
+            padding: 2px 5px;
             color: #1e40af;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -104,7 +118,7 @@
         /* Employee Info - With borders */
         .employee-info {
             margin-bottom: 6px;
-            padding: 5px 6px;
+            padding: 2px 6px;
             background-color: #fafafa;
             border: 1px solid #d0d0d0;
             width: 70%;
@@ -138,7 +152,7 @@
         .items-table {
             width: 70%;
             border-collapse: collapse;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         
         .items-table thead {
@@ -148,7 +162,7 @@
         .items-table th {
             font-size: 7pt;
             font-weight: 600;
-            padding: 3px 4px;
+            padding: 1px 4px;
             text-align: left;
             color: #1a1a1a;
         }
@@ -163,7 +177,7 @@
         }
         
         .items-table tbody td {
-            padding: 3px 4px;
+            padding: 1px 4px;
             font-size: 7pt;
             vertical-align: top;
             color: #4a4a4a;
@@ -184,8 +198,7 @@
             background-color: #f5f5f5;
             border-top: 1px solid #d0d0d0;
             border-bottom: 1px solid #d0d0d0;
-            padding: 4px 6px;
-            margin: 5px 0;
+            padding: 2px 6px;
             display: flex;
             justify-content: space-between;
             font-size: 8pt;
@@ -212,7 +225,7 @@
             color: #1a1a1a;
             border: 2px solid #1a1a1a;
             padding: 5px 6px;
-            margin: 8px 0;
+            margin: 4px 0;
             display: flex;
             justify-content: space-between;
             font-size: 9pt;
@@ -236,7 +249,7 @@
         .ytd-section {
             border: 1px solid #d0d0d0;
             padding: 5px 6px;
-            margin-top: 6px;
+            margin-top: 3px;
             background-color: #fafafa;
         }
         
@@ -273,8 +286,8 @@
         
         /* Footer - Simple */
         .footer {
-            margin-top: 6px;
-            padding-top: 4px;
+            margin-top: 3px;
+            padding-top: 1px;
             border-top: 2px solid #d0d0d0;
             text-align: center;
             font-size: 6pt;
@@ -282,7 +295,7 @@
         }
         
         .footer p {
-            margin: 2px 0;
+            margin: 1px 0;
         }
         
         .footer p:first-child {
@@ -312,10 +325,14 @@
     {{#each employees}}
     <div class="container">
         <!-- Header -->
-        <div class="header">
-            <h1>Nigerian Navy (Naval Headquarters)</h1>
-            <div class="accent-line"></div>
-            <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+        <div class="header-wrapper">
+            <div class="className">
+                {{#if payclass}} {{payclass_name}}{{/if}}
+            </div>
+            <div class="header">
+                <h1>Nigerian Navy (Naval Headquarters)</h1>
+                <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+            </div>
         </div>
         
         <div class="center-wrapper">
@@ -330,12 +347,11 @@
             <div class="employee-info">
                 <div class="info-row">
                     <span class="info-label">Name:</span>  
-                    {{surname}} {{othername}}</span> <br>
-                    <span class="info-value" style="margin-right: 2px;">({{title}})</span>
+                    {{title}}. {{surname}} {{othername}}</span> <br>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Service No:</span>
-                    <span class="info-value">{{employee_id}} {{#if payclass}} - ({{payclass_name}}{{/if}})</span>
+                    <span class="info-value">{{employee_id}}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Grade:</span>
@@ -354,7 +370,7 @@
                     <span class="info-value">{{bank_account_number}} {{#if bank_name}}({{bank_name}}){{/if}}</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">NSITF Code:</span>
+                    <span class="info-label">RSA(Pension):</span>
                     <span class="info-value">{{nsitfcode}}</span>
                 </div>
             </div>
@@ -408,7 +424,7 @@
             </div>
 
             <!-- Deductions Section (PR) -->
-            <div class="section-header">Deduction</div>
+            <div class="section-header">Deductions</div>
             <table class="items-table">
                 <tbody>
                     {{#each deductions}}

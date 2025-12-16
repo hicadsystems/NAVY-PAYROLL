@@ -13,4 +13,7 @@ router.post('/export/pdf', verifyToken, reportsController.generateEarningsDeduct
 // EARNINGS/DEDUCTIONS - EXCEL EXPORT (Receives data in body, returns Excel file)
 router.post('/export/excel', verifyToken, reportsController.generateEarningsDeductionsAnalysisExcel.bind(reportsController));
 
+// EARNINGS/DEDUCTIONS - FETCH FILTER OPTIONS
+router.get('/filter-options', verifyToken, reportsController.getFilterOptions.bind(reportsController));
+
 module.exports = router;

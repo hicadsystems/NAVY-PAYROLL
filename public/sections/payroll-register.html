@@ -17,7 +17,7 @@
         </label>
       </div>
       <select id="payrollLocationDropdown"
-        class="mt-2 w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300" disabled>
+        class="mt-2 w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled>
         <option value="">Select Location</option>
         <!-- Options will be loaded from API -->
       </select>
@@ -27,7 +27,7 @@
     <div>
       <label for="payrollMonth" class="block text-sm font-medium mb-2">Processing Month</label>
       <select id="payrollMonth"
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
         <option value="">Select Month</option>
         <option value="1">January</option>
         <option value="2">February</option>
@@ -48,7 +48,7 @@
     <div>
       <label for="payrollYear" class="block text-sm font-medium mb-2">Processing Year</label>
       <input type="number" id="payrollYear"
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300"
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         placeholder="e.g., 2025" min="2020" max="2099">
     </div>
 
@@ -60,22 +60,19 @@
           <input type="radio" name="payrollFormat" value="pdf" checked>
           <span>PDF</span>
         </label>
-        <label class="flex text-sm items-center space-x-2">
+        <label class="hidden flex text-sm items-center space-x-2">
           <input type="radio" name="payrollFormat" value="excel">
           <span>Excel</span>
         </label>
-      </div>
-    </div>
 
-    <!-- Options side by side -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="flex items-center gap-2 mt-2">
-        <input type="checkbox" id="payrollSummary" class="h-4 w-4">
-        <label for="payrollSummary" class="text-sm">Summary Report</label>
-      </div>
-      <div class="flex items-center gap-2 mt-2">
-        <input type="checkbox" id="payrollElements" class="h-4 w-4">
-        <label for="payrollElements" class="text-sm">Include Pay Elements</label>
+        <div class="flex items-center gap-2 ">
+          <input type="checkbox" id="payrollSummary" class="h-4 w-4">
+          <label for="payrollSummary" class="text-sm">Summary Report</label>
+        </div>
+        <div class="hidden flex items-center gap-2 ">
+          <input type="checkbox" id="payrollElements" class="h-4 w-4">
+          <label for="payrollElements" class="text-sm">Include Pay Elements</label>
+        </div>
       </div>
     </div>
 
@@ -90,13 +87,16 @@
         Generate
       </button>
     </div>
-
-    <!-- Loading Indicator -->
-    <div id="payrollLoadingIndicator" class="hidden text-center text-blue-600 text-sm">
-      <span>Generating payroll register...</span>
-    </div>
   </form>
 </section>
+
+<!-- Loading Indicator -->
+<div id="payrollLoadingIndicator" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
+      <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+    <span>Generating report...</span>
+  </div>
+</div>
 
 <!-- Confirmation Modal -->
 <div id="payrollConfirmModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -154,28 +154,43 @@
   const payrollErrorOkBtn = document.getElementById('payrollErrorOkBtn');
   const payrollErrorText = document.getElementById('payrollErrorText');
 
-  // Set current year
-  payrollYear.value = new Date().getFullYear();
-
-  // Load locations on page load
-  async function loadPayrollLocations() {
+  // Load current period and set default values
+  async function loadCurrentPeriod() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/reference/costcentre', {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const response = await fetch(`/salarysummary/filter-options`, {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (response.ok) {
-        const data = await response.json();
-        if (data && data.length > 0) {
-          payrollLocationDropdown.innerHTML = '<option value="">Select Location</option>';
-          data.forEach(loc => {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const period = result.data.currentPeriod;
+          payrollYear.value = period.year;
+          payrollMonth.value = period.month;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading current period:', error);
+    }
+  }
+
+  // Load locations on page load
+  async function loadLocations() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/salarysummary/filter-options`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data.locations) {
+          payrollLocationDropdown.innerHTML = '<option value="">All Locations</option>';
+          result.data.locations.forEach(loc => {
             const option = document.createElement('option');
-            option.value = loc.unitcode;
-            option.textContent = loc.unitdesc;
+            option.value = loc.location_code;
+            option.textContent = loc.location_name || loc.location_code;
             payrollLocationDropdown.appendChild(option);
           });
         }
@@ -313,5 +328,6 @@
 
   // Initialize
   togglePayrollLocation();
-  loadPayrollLocations();
+  loadLocations();
+  loadCurrentPeriod();
 </script>

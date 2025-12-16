@@ -39,6 +39,24 @@
 
     <!-- Report Cards Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+
+      <!-- Control Sheet Report -->
+      <div class="bg-slate-50 rounded-lg border-2 border-gray-200 p-3 hover:border-purple-500 hover:shadow-lg transition">
+        <div class="flex items-start justify-between mb-4">
+          <i class="fas fa-clipboard-list text-purple-600 text-2xl"></i>
+          <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-semibold">EXCEL</span>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800 mb-2">Control Sheet</h3>
+        <p class="text-sm text-gray-600 mb-4">Debit/Credit analysis</p>
+        <div class="flex gap-2">
+          <button onclick="viewReport('controlsheet')" class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm">
+            <i class="fas fa-eye mr-2"></i>View
+          </button>
+          <button onclick="downloadReport('controlsheet', 'excel')" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
+            <i class="fas fa-download"></i>
+          </button>
+        </div>
+      </div>
       
       <!-- Payroll Summary Report -->
       <div class="bg-slate-50 rounded-lg border-2 border-gray-200 p-3 hover:border-blue-500 hover:shadow-lg transition">
@@ -94,13 +112,31 @@
         </div>
       </div>
 
+      <!-- Allowances Summary Report -->
+      <div class="bg-slate-50 rounded-lg border-2 border-gray-200 p-3 hover:border-cyan-500 hover:shadow-lg transition">
+        <div class="flex items-start justify-between mb-4">
+          <i class="fas fa-hand-holding-usd text-cyan-600 text-2xl"></i>
+          <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-semibold">EXCEL</span>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800 mb-2">Allowances Summary</h3>
+        <p class="text-sm text-gray-600 mb-4">Detailed breakdown of all allowances paid</p>
+        <div class="flex gap-2">
+          <button onclick="viewReport('allowances')" class="flex-1 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition text-sm">
+            <i class="fas fa-eye mr-2"></i>View
+          </button>
+          <button onclick="downloadReport('allowances', 'excel')" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
+            <i class="fas fa-download"></i>
+          </button>
+        </div>
+      </div>
+
       <!-- Tax Report (PAYE) -->
       <div class="bg-slate-50 rounded-lg border-2 border-gray-200 p-3 hover:border-yellow-500 hover:shadow-lg transition">
         <div class="flex items-start justify-between mb-4">
           <i class="fas fa-receipt text-yellow-600 text-2xl"></i>
           <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-semibold">EXCEL</span>
         </div>
-        <h3 class="text-lg font-bold text-gray-800 mb-2">Tax Report (PAYE)</h3>
+        <h3 class="text-lg font-bold text-gray-800 mb-2">Tax Report </h3>
         <p class="text-sm text-gray-600 mb-4">Detailed tax deductions and cumulative tax</p>
         <div class="flex gap-2">
           <button onclick="viewReport('tax')" class="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition text-sm">
@@ -447,10 +483,12 @@ function showAlert(message, type = 'error') {
       summary: 'Overall Summary Report',
       bank: 'Bank Payment Report',
       deductions: 'Deductions Summary Report',
-      tax: 'Tax Report (PAYE)',
-      department: 'Department-wise Summary',
+      tax: 'Tax Report',
+      department: 'Department Summary',
       grade: 'Grade-wise Summary',
-      exceptions: 'Exception Report'
+      exceptions: 'Exception Report',
+      controlsheet: 'Payroll Control Sheet',
+      allowances: 'Allowances Summary Report'
     };
 
     reportModalTitle.textContent = titles[reportType] || 'Report';
@@ -478,6 +516,12 @@ function showAlert(message, type = 'error') {
         break;
       case 'exceptions':
         html = renderExceptionsReport(data);
+        break;
+      case 'controlsheet':
+        html = renderControlSheetReport(data);
+        break;
+      case 'allowances':
+        html = renderAllowancesReport(data);
         break;
     }
 
@@ -912,6 +956,218 @@ function showAlert(message, type = 'error') {
             </div>
           </div>
         `).join('')}
+      </div>
+    `;
+  }
+
+  // Render Control Sheet Report
+  function renderControlSheetReport(data) {
+    const { period, controlData, byCategory, summary } = data;
+    
+    // Helper function to render a category table
+    function renderCategory(title, categoryData, bgColor, borderColor) {
+      if (categoryData.length === 0) return '';
+      
+      const categoryTotal = categoryData.reduce((sum, item) => {
+        return sum + parseFloat(item.dr_amount || 0) + parseFloat(item.cr_amount || 0);
+      }, 0);
+
+      return `
+        <div class="border-2 ${borderColor} rounded-lg overflow-hidden mb-4">
+          <div class="${bgColor} p-3 border-b">
+            <div class="flex justify-between items-center">
+              <h5 class="font-bold text-gray-800">${title}</h5>
+              <span class="text-sm font-semibold">${categoryData.length} item(s)</span>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-2 text-left border">Code</th>
+                  <th class="px-4 py-2 text-left border">Description</th>
+                  <th class="px-4 py-2 text-left border">Ledger Code</th>
+                  <th class="px-4 py-2 text-center border">DR/CR</th>
+                  <th class="px-4 py-2 text-right border">Debit (₦)</th>
+                  <th class="px-4 py-2 text-right border">Credit (₦)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y">
+                ${categoryData.map(item => `
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-2 border font-semibold">${item.payment_type}</td>
+                    <td class="px-4 py-2 border">${item.payment_description}</td>
+                    <td class="px-4 py-2 border text-center">${item.ledger_code || '-'}</td>
+                    <td class="px-4 py-2 border text-center">
+                      <span class="px-2 py-1 rounded text-xs font-semibold ${item.dr_cr_indicator === 'DR' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}">
+                        ${item.dr_cr_indicator}
+                      </span>
+                    </td>
+                    <td class="px-4 py-2 border text-right ${parseFloat(item.dr_amount) > 0 ? 'font-bold text-blue-700' : 'text-gray-400'}">
+                      ${parseFloat(item.dr_amount) > 0 ? formatCurrency(item.dr_amount) : '-'}
+                    </td>
+                    <td class="px-4 py-2 border text-right ${parseFloat(item.cr_amount) > 0 ? 'font-bold text-green-700' : 'text-gray-400'}">
+                      ${parseFloat(item.cr_amount) > 0 ? formatCurrency(item.cr_amount) : '-'}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="space-y-6">
+        <!-- Summary Header -->
+        <div class="bg-purple-50 p-4 rounded-lg border-2 border-purple-200">
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="font-bold text-purple-900">
+              Period: ${monthNames[period.month - 1]} ${period.year}
+            </h4>
+            <div class="flex items-center gap-2">
+              <span class="text-purple-700 text-sm">Reconciliation Status:</span>
+              <span class="px-3 py-1 rounded-full text-sm font-bold ${summary.isBalanced ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                ${summary.isBalanced ? '✓ BALANCED' : '✗ VARIANCE DETECTED'}
+              </span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div class="bg-white p-3 rounded-lg border">
+              <div class="text-blue-700 text-sm font-semibold mb-1">Total Debits</div>
+              <div class="text-2xl font-bold text-blue-900">${formatCurrency(summary.totalDR)}</div>
+            </div>
+            <div class="bg-white p-3 rounded-lg border">
+              <div class="text-green-700 text-sm font-semibold mb-1">Total Credits</div>
+              <div class="text-2xl font-bold text-green-900">${formatCurrency(summary.totalCR)}</div>
+            </div>
+            <div class="bg-white p-3 rounded-lg border">
+              <div class="${summary.isBalanced ? 'text-green-700' : 'text-red-700'} text-sm font-semibold mb-1">Variance</div>
+              <div class="text-2xl font-bold ${summary.isBalanced ? 'text-green-900' : 'text-red-900'}">
+                ${summary.isBalanced ? '₦0.00' : formatCurrency(summary.variance)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Breakdown -->
+        <div class="space-y-4">
+          <h4 class="text-lg font-bold text-gray-800 border-b-2 pb-2">Breakdown by Category</h4>
+          
+          ${renderCategory('Basic Salary & Pay', byCategory.basic_salary, 'bg-blue-50', 'border-blue-200')}
+          ${renderCategory('Allowances', byCategory.allowances, 'bg-cyan-50', 'border-cyan-200')}
+          ${renderCategory('Fringe Benefits', byCategory.fringe_benefits, 'bg-teal-50', 'border-teal-200')}
+          ${renderCategory('Deductions', byCategory.deductions, 'bg-red-50', 'border-red-200')}
+          ${renderCategory('Loans', byCategory.loans, 'bg-orange-50', 'border-orange-200')}
+          ${renderCategory('Payments (Net/Tax/Roundup)', byCategory.payments, 'bg-green-50', 'border-green-200')}
+        </div>
+
+        <!-- Final Totals -->
+        <div class="bg-gray-50 p-4 rounded-lg border-2">
+          <div class="flex justify-between items-center">
+            <span class="text-lg font-bold text-gray-800">GRAND TOTALS:</span>
+            <div class="flex gap-8">
+              <div class="text-right">
+                <div class="text-sm text-blue-700">Total Debits</div>
+                <div class="text-xl font-bold text-blue-900">${formatCurrency(summary.totalDR)}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm text-green-700">Total Credits</div>
+                <div class="text-xl font-bold text-green-900">${formatCurrency(summary.totalCR)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Render Allowances Summary Report
+  function renderAllowancesReport(data) {
+    const { period, allowances, totalAllowances, allowanceCount } = data;
+    
+    return `
+      <div class="space-y-6">
+        <!-- Summary Header -->
+        <div class="bg-cyan-50 p-4 rounded-lg border-2 border-cyan-200">
+          <div class="flex items-center justify-between gap-6">
+            <!-- Period -->
+            <h4 class="font-bold text-cyan-900 whitespace-nowrap">
+              Period: ${monthNames[period.month - 1]} ${period.year}
+            </h4>
+
+            <!-- Allowance Types -->
+            <div class="flex items-center gap-2">
+              <span class="text-cyan-700 text-sm whitespace-nowrap">Allowance Types:</span>
+              <span class="text-xl font-bold text-cyan-900">${allowanceCount}</span>
+            </div>
+
+            <!-- Total Amount -->
+            <div class="flex items-center gap-2">
+              <span class="text-cyan-700 text-sm whitespace-nowrap">Total Allowances:</span>
+              <span class="text-xl font-bold text-cyan-900">${formatCurrency(totalAllowances)}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed Table -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm border">
+            <thead class="bg-cyan-50">
+              <tr>
+                <th class="px-4 py-3 text-left border">S/N</th>
+                <th class="px-4 py-3 text-left border">Code</th>
+                <th class="px-4 py-3 text-left border">Allowance Name</th>
+                <th class="px-4 py-3 text-right border">Employees</th>
+                <th class="px-4 py-3 text-right border">Total Amount (₦)</th>
+                <th class="px-4 py-3 text-right border">Average (₦)</th>
+                <th class="px-4 py-3 text-right border">Min (₦)</th>
+                <th class="px-4 py-3 text-right border">Max (₦)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y">
+              ${allowances.map((item, idx) => `
+                <tr class="hover:bg-gray-50">
+                  <td class="px-4 py-2 border text-center">${idx + 1}</td>
+                  <td class="px-4 py-2 border font-semibold">${item.his_type}</td>
+                  <td class="px-4 py-2 border">${item.allowance_name || 'Unknown'}</td>
+                  <td class="px-4 py-2 border text-right">${item.employee_count}</td>
+                  <td class="px-4 py-2 border text-right font-bold text-cyan-700">${formatCurrency(item.total_amount)}</td>
+                  <td class="px-4 py-2 border text-right">${formatCurrency(item.average_amount)}</td>
+                  <td class="px-4 py-2 border text-right">${formatCurrency(item.min_amount)}</td>
+                  <td class="px-4 py-2 border text-right">${formatCurrency(item.max_amount)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+            <tfoot class="bg-gray-100 font-bold">
+              <tr>
+                <td colspan="4" class="px-4 py-3 border text-right">TOTAL:</td>
+                <td class="px-4 py-3 border text-right text-cyan-900">${formatCurrency(totalAllowances)}</td>
+                <td colspan="3" class="border"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Statistics Summary -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-white p-4 rounded-lg border">
+            <div class="text-cyan-700 text-sm font-semibold mb-1">Total Types</div>
+            <div class="text-2xl font-bold text-cyan-900">${allowanceCount}</div>
+          </div>
+          <div class="bg-white p-4 rounded-lg border">
+            <div class="text-cyan-700 text-sm font-semibold mb-1">Total Paid</div>
+            <div class="text-2xl font-bold text-cyan-900">${formatCurrency(totalAllowances)}</div>
+          </div>
+          <div class="bg-white p-4 rounded-lg border">
+            <div class="text-cyan-700 text-sm font-semibold mb-1">Average per Type</div>
+            <div class="text-2xl font-bold text-cyan-900">
+              ${formatCurrency(allowanceCount > 0 ? totalAllowances / allowanceCount : 0)}
+            </div>
+          </div>
+        </div>
       </div>
     `;
   }

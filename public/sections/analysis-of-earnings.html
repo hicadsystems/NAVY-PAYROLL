@@ -22,7 +22,7 @@
     <div>
       <label for="paymentType" class="block text-sm font-medium mb-1">Payment Type</label>
       <select id="paymentType" name="paymentType"
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300" disabled>
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled>
         <option value="">Select Payment Type</option>
         <!-- Options will be loaded from API -->
       </select>
@@ -32,7 +32,7 @@
     <div>
       <label for="processingMonth" class="block text-sm font-medium mb-1">Processing Month</label>
       <select id="processingMonth" name="processingMonth"
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
         <option value="">Select Month</option>
         <option value="1">January</option>
         <option value="2">February</option>
@@ -53,13 +53,13 @@
     <div>
       <label for="processingYear" class="block text-sm font-medium mb-1">Processing Year</label>
       <input type="number" id="processingYear" name="processingYear"
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300"
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         placeholder="e.g., 2025" min="2020" max="2099">
     </div>
 
     <!-- Output Format -->
-    <div>
-      <label class="block font-medium mb-2">Output Format</label>
+    <div class="flex flex-wrap items-center gap-2">
+      <label class="block font-medium">Output Format</label>
       <div class="flex space-x-4">
         <label class="flex text-sm items-center space-x-2">
           <input type="radio" name="earningsFormat" value="pdf" checked>
@@ -91,13 +91,16 @@
         </button>
       </div>
     </div>
-
-    <!-- Loading Indicator -->
-    <div id="earningsLoadingIndicator" class="hidden text-center text-blue-600 text-sm">
-      <span>Generating report...</span>
-    </div>
   </form>
 </section>
+
+<!-- Loading Indicator -->
+<div id="earningsLoadingIndicator" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
+    <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+    <span>Generating report...</span>
+  </div>
+</div>
 
 <!-- Confirmation Modal -->
 <div id="printConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -167,8 +170,26 @@
   const printErrorOkBtn = document.getElementById("printErrorOkBtn");
   const earningsErrorMessage = document.getElementById("earningsErrorMessage");
 
-  // Set current year
-  processingYear.value = new Date().getFullYear();
+  // Load current period and set default values
+  async function loadCurrentPeriod() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/salarysummary/filter-options`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const period = result.data.currentPeriod;
+          processingYear.value = period.year;
+          processingMonth.value = period.month;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading current period:', error);
+    }
+  }
 
   // Load payment types on page load
   async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
@@ -212,7 +233,6 @@
   async function loadAllDropdowns() {
     try {
       await loadDropdown("elementtype","paymentType", "PaymentType", "elmDesc", "Select Payment Type");
-      //await loadDropdown("payindicator","payind", "ind", "inddesc", "Select Payment Indicator");
       
       //console.log('All dropdowns loaded. Final lookupMaps:', lookupMaps);
     } catch (error) {
@@ -343,4 +363,5 @@
   // Initialize
   toggleBankInput();
   loadAllDropdowns();
+  loadCurrentPeriod();
 </script>

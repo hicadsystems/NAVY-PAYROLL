@@ -9,8 +9,8 @@ const CONFIG = {
   company: {
     name: 'Nigerian Navy (Naval Headquarters)',
     address: '123 Business Street, City, Country',
-    phone: '+234 XXX XXX XXXX',
-    email: 'hr@company.com'
+    //phone: '+234 XXX XXX XXXX',
+    //email: 'hr@company.com'
   },
   colors: {
     primary: '1F4E79',
@@ -51,8 +51,6 @@ function formatMoney(amount) {
 
 // ============================================
 // UNIFIED EXPORT HANDLER
-// Route: GET /:reportType/export/:format
-// Examples: /bank/export/excel, /tax/export/pdf
 // ============================================
 exports.exportReport = async (req, res) => {
   try {
@@ -85,6 +83,9 @@ async function generateExcelReport(req, res, reportType, period) {
     switch (reportType) {
       case 'allowances':
         await createAllowancesExcel(workbook, period);
+        break;
+      case 'controlsheet':
+        await createControlSheetExcel(workbook, period);
         break;
       case 'bank':
         await createBankExcel(workbook, period);
@@ -279,7 +280,7 @@ async function createBankExcel(workbook, period) {
 
   const columns = [
     { header: 'S/N', key: 'sn', width: 6, align: 'center' },
-    { header: 'Employee ID', key: 'employee_id', width: 12 },
+    { header: 'Svc No.', key: 'employee_id', width: 12 },
     { header: 'Full Name', key: 'full_name', width: 30 },
     { header: 'Bank Code', key: 'bankcode', width: 12 },
     { header: 'Branch', key: 'bankbranch', width: 15 },
@@ -541,14 +542,14 @@ async function createExceptionsExcel(workbook, period) {
       CASE
         WHEN mc.his_netmth <= 0 THEN 'Zero or Negative Pay'
         WHEN mc.his_grossmth <= 0 THEN 'Zero Gross Pay'
-        WHEN mc.his_netmth > mc.his_grossmth THEN 'Net Exceeds Gross'
+        WHEN mc.his_netmth < mc.his_grossmth THEN 'Gross Exceeds Net'
         WHEN mc.his_taxmth < 0 THEN 'Negative Tax'
         ELSE 'Other Exception'
       END as exception_type
     FROM py_mastercum mc
     INNER JOIN py_wkemployees we ON we.empl_id = mc.his_empno
     WHERE mc.his_type = ?
-      AND (mc.his_netmth <= 0 OR mc.his_grossmth <= 0 OR mc.his_netmth > mc.his_grossmth OR mc.his_taxmth < 0)
+      AND (mc.his_netmth <= 0 OR mc.his_grossmth <= 0 OR mc.his_netmth < mc.his_grossmth OR mc.his_taxmth < 0)
     ORDER BY exception_type, full_name
   `, [period.month]);
 
@@ -557,8 +558,8 @@ async function createExceptionsExcel(workbook, period) {
   });
 
   const columns = [
-    { header: 'S/N', key: 'sn', width: 6, align: 'center' },
-    { header: 'Employee ID', key: 'employee_id', width: 12 },
+    { header: 'S/N', key: 'sn', width: 12, align: 'center' },
+    { header: 'Svc No.', key: 'employee_id', width: 12 },
     { header: 'Full Name', key: 'full_name', width: 28 },
     { header: 'Grade', key: 'gradelevel', width: 10, align: 'center' },
     { header: 'Gross Pay (₦)', key: 'gross_pay', width: 14, align: 'right', numFmt: '#,##0.00' },
@@ -649,873 +650,88 @@ async function createSummaryExcel(workbook, period) {
 }
 
 // ============================================
-// PDF EXPORT
+// CONTROL SHEET EXCEL EXPORT
 // ============================================
-async function generatePDFReport(req, res, reportType, period) {
-  try {
-    const doc = new PDFDocument({
-      size: 'A4',
-      margins: { top: 50, bottom: 50, left: 50, right: 50 },
-      bufferPages: true
-    });
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=${reportType}_report_${period.year}_${period.month}.pdf`);
-    doc.pipe(res);
-
-    switch (reportType) {
-      case 'allowances':
-        await generateAllowancesPDF(doc, period);
-        break;
-      case 'bank':
-        await generateBankPDF(doc, period);
-        break;
-      case 'deductions':
-        await generateDeductionsPDF(doc, period);
-        break;
-      case 'tax':
-        await generateTaxPDF(doc, period);
-        break;
-      case 'department':
-        await generateDepartmentPDF(doc, period);
-        break;
-      case 'grade':
-        await generateGradePDF(doc, period);
-        break;
-      case 'exceptions':
-        await generateExceptionsPDF(doc, period);
-        break;
-      case 'summary':
-        await generateSummaryPDF(doc, period);
-        break;
-      default:
-        throw new Error('Invalid report type');
-    }
-
-    // Add page numbers
-    const pages = doc.bufferedPageRange();
-    for (let i = 0; i < pages.count; i++) {
-      doc.switchToPage(i);
-      doc.fontSize(8).fillColor('#666666');
-      doc.text(`Page ${i + 1} of ${pages.count}`, 50, doc.page.height - 30, { align: 'center' });
-    }
-
-    doc.end();
-  } catch (error) {
-    throw error;
-  }
-}
-
-// ============================================
-// PDF HELPER FUNCTIONS
-// ============================================
-function addPDFHeader(doc, title, period) {
-  doc.fontSize(16).fillColor('#1F4E79').font('Helvetica-Bold')
-     .text(CONFIG.company.name, { align: 'center' });
-  doc.fontSize(9).fillColor('#666666').font('Helvetica')
-     .text(CONFIG.company.address, { align: 'center' })
-     .text(`Tel: ${CONFIG.company.phone} | Email: ${CONFIG.company.email}`, { align: 'center' });
-
-  doc.moveDown(0.5);
-  doc.fontSize(12).fillColor('#000000').font('Helvetica-Bold')
-     .text(title, { align: 'center' });
-  doc.fontSize(10).font('Helvetica')
-     .text(`Period: ${getMonthName(period.month)} ${period.year}`, { align: 'center' });
-
-  doc.moveDown(0.3);
-  doc.strokeColor('#1F4E79').lineWidth(1.5)
-     .moveTo(50, doc.y).lineTo(545, doc.y).stroke();
-  doc.moveDown(0.5);
-
-  return doc.y;
-}
-
-function drawPDFTable(doc, headers, data, options = {}) {
-  const { startY = doc.y, rowHeight = 18 } = options;
-  const pageWidth = doc.page.width - 100;
-  const colWidths = headers.map(h => h.width);
-  
-  let currentY = startY;
-  const startX = 50;
-
-  // Draw header background
-  doc.fillColor('#1F4E79').rect(startX, currentY, pageWidth, rowHeight + 2).fill();
-
-  // Draw header text
-  doc.fillColor('#FFFFFF').fontSize(8).font('Helvetica-Bold');
-  let xPos = startX;
-  headers.forEach((header) => {
-    doc.text(header.label, xPos + 3, currentY + 4, {
-      width: header.width - 6,
-      align: header.align || 'left'
-    });
-    xPos += header.width;
-  });
-  currentY += rowHeight + 2;
-
-  // Draw data rows
-  doc.font('Helvetica').fontSize(7);
-  data.forEach((row, rowIdx) => {
-    // Check for page break
-    if (currentY > doc.page.height - 70) {
-      doc.addPage();
-      currentY = 50;
-
-      // Redraw header on new page
-      doc.fillColor('#1F4E79').rect(startX, currentY, pageWidth, rowHeight + 2).fill();
-      doc.fillColor('#FFFFFF').fontSize(8).font('Helvetica-Bold');
-      xPos = startX;
-      headers.forEach((header) => {
-        doc.text(header.label, xPos + 3, currentY + 4, { width: header.width - 6, align: header.align || 'left' });
-        xPos += header.width;
-      });
-      currentY += rowHeight + 2;
-      doc.font('Helvetica').fontSize(7);
-    }
-
-    // Alternate row background
-    if (rowIdx % 2 === 0) {
-      doc.fillColor('#F5F5F5').rect(startX, currentY, pageWidth, rowHeight).fill();
-    }
-
-    // Draw row data
-    doc.fillColor('#000000');
-    xPos = startX;
-    headers.forEach((header) => {
-      const value = row[header.key] !== undefined ? String(row[header.key]) : '';
-      doc.text(value, xPos + 3, currentY + 4, {
-        width: header.width - 6,
-        align: header.align || 'left'
-      });
-      xPos += header.width;
-    });
-    currentY += rowHeight;
-  });
-
-  return currentY;
-}
-
-function addPDFTotals(doc, y, labels) {
-  doc.moveDown(0.5);
-  doc.fontSize(9).fillColor('#1F4E79').font('Helvetica-Bold');
-  labels.forEach((label, idx) => {
-    doc.text(label, 50, y + (idx * 15));
-  });
-  doc.font('Helvetica');
-}
-
-function addSignatureSection(doc) {
-  const y = doc.y + 40;
-  doc.fontSize(9).fillColor('#000000');
-  doc.text('Prepared By: _______________________', 50, y);
-  doc.text('Approved By: _______________________', 300, y);
-  doc.text('Date: _____________', 50, y + 25);
-  doc.text('Date: _____________', 300, y + 25);
-}
-
-// ===== HELPER FUNCTION: Text Truncation =====
-function truncateText(text, maxLength) {
-  if (!text) return '';
-  return text.length > maxLength ? text.substring(0, maxLength - 3) + '...' : text;
-}
-
-
-// ============================================
-// ALLOWANCES REPORT - PDF
-// ============================================
-async function generateAllowancesPDF(doc, period) {
-  // Fetch allowances data with comprehensive metrics
-  const [data] = await pool.query`
-    SELECT 
-      mp.his_type,
-      et.elmDesc as allowance_name,
-      COUNT(DISTINCT mp.his_empno) as employee_count,
-      ROUND(SUM(mp.amtthismth), 2) as total_amount,
-      ROUND(AVG(mp.amtthismth), 2) as average_amount,
-      ROUND(MIN(mp.amtthismth), 2) as min_amount,
-      ROUND(MAX(mp.amtthismth), 2) as max_amount
-    FROM py_masterpayded mp
-    INNER JOIN py_elementtype et ON et.PaymentType = mp.his_type
-    WHERE LEFT(mp.his_type, 2) = 'PT' AND mp.amtthismth > 0
-    GROUP BY mp.his_type, et.elmDesc
-    ORDER BY total_amount DESC
-  `;
-
-  // ===== DOCUMENT HEADER =====
-  addPDFHeader(doc, 'ALLOWANCES SUMMARY REPORT', period);
-  
-  let currentY = doc.y + 15;
-
-  // ===== EXECUTIVE SUMMARY SECTION =====
-  const totalAllowances = data.reduce((sum, d) => sum + parseFloat(d.total_amount || 0), 0);
-  const totalEmployees = data.reduce((sum, d) => sum + parseInt(d.employee_count || 0), 0);
-  const allowanceTypes = data.length;
-
-  doc.fontSize(11)
-     .font('Helvetica-Bold')
-     .fillColor('#2c3e50')
-     .text('EXECUTIVE SUMMARY', 50, currentY);
-  
-  currentY += 20;
-
-  // Summary boxes with professional styling
-  const summaryMetrics = [
-    { label: 'Total Allowance Types', value: allowanceTypes, icon: '▪' },
-    { label: 'Total Employees Affected', value: totalEmployees.toLocaleString(), icon: '▪' },
-    { label: 'Total Allowances Paid', value: `₦${formatMoney(totalAllowances)}`, icon: '▪' },
-    { label: 'Average per Employee', value: `₦${formatMoney(totalAllowances / totalEmployees)}`, icon: '▪' }
-  ];
-
-  doc.fontSize(9).font('Helvetica');
-  
-  summaryMetrics.forEach((metric, idx) => {
-    const xPos = 50 + (idx % 2) * 260;
-    const yPos = currentY + Math.floor(idx / 2) * 35;
-    
-    // Background box
-    doc.rect(xPos, yPos, 240, 28)
-       .fillAndStroke('#f8f9fa', '#dee2e6');
-    
-    // Icon
-    doc.fillColor('#3498db')
-       .font('Helvetica-Bold')
-       .text(metric.icon, xPos + 10, yPos + 8);
-    
-    // Label
-    doc.fillColor('#6c757d')
-       .font('Helvetica')
-       .text(metric.label, xPos + 25, yPos + 6, { width: 150 });
-    
-    // Value
-    doc.fillColor('#2c3e50')
-       .font('Helvetica-Bold')
-       .fontSize(10)
-       .text(metric.value, xPos + 25, yPos + 16, { width: 200 });
-  });
-
-  currentY += 85;
-
-  // ===== DETAILED BREAKDOWN SECTION =====
-  doc.fontSize(11)
-     .font('Helvetica-Bold')
-     .fillColor('#2c3e50')
-     .text('DETAILED BREAKDOWN BY ALLOWANCE TYPE', 50, currentY);
-  
-  currentY += 20;
-
-  // Table headers with professional design
-  const headers = [
-    { label: 'S/N', key: 'sn', width: 35, align: 'center' },
-    { label: 'Code', key: 'his_type', width: 55, align: 'center' },
-    { label: 'Allowance Name', key: 'allowance_name', width: 150 },
-    { label: 'Employees', key: 'employee_count', width: 60, align: 'center' },
-    { label: 'Total Amount (₦)', key: 'total_amount', width: 90, align: 'right' },
-    { label: 'Average (₦)', key: 'average_amount', width: 75, align: 'right' },
-    { label: 'Range (₦)', key: 'range', width: 80, align: 'center' }
-  ];
-
-  // Enhanced table data with range information
-  const tableData = data.map((item, idx) => ({
-    sn: idx + 1,
-    his_type: item.his_type,
-    allowance_name: truncateText(item.allowance_name || 'Unknown', 30),
-    employee_count: item.employee_count.toLocaleString(),
-    total_amount: formatMoney(item.total_amount),
-    average_amount: formatMoney(item.average_amount),
-    range: `${formatMoney(item.min_amount)}-${formatMoney(item.max_amount)}`
-  }));
-
-  const endY = drawPDFTable(doc, headers, tableData, currentY);
-
-  // ===== FOOTER SECTION WITH TOTALS =====
-  const footerY = endY + 20;
-  
-  // Horizontal divider
-  doc.moveTo(50, footerY)
-     .lineTo(545, footerY)
-     .strokeColor('#dee2e6')
-     .lineWidth(1)
-     .stroke();
-
-  // Summary totals box
-  doc.rect(350, footerY + 10, 195, 60)
-     .fillAndStroke('#e8f4f8', '#3498db');
-  
-  doc.fontSize(9)
-     .fillColor('#2c3e50')
-     .font('Helvetica-Bold')
-     .text('REPORT SUMMARY', 360, footerY + 18);
-
-  const summaryLines = [
-    `Allowance Categories: ${allowanceTypes}`,
-    `Total Disbursed: ₦${formatMoney(totalAllowances)}`,
-    `Average per Type: ₦${formatMoney(totalAllowances / allowanceTypes)}`
-  ];
-
-  doc.font('Helvetica').fontSize(8);
-  summaryLines.forEach((line, idx) => {
-    doc.text(line, 360, footerY + 33 + (idx * 10));
-  });
-
-  // Report metadata
-  doc.fontSize(7)
-     .fillColor('#95a5a6')
-     .text(`Generated: ${new Date().toLocaleString()}`, 50, footerY + 50)
-     .text(`Period: ${period}`, 50, footerY + 60);
-}
-
-
-// ============================================
-// BANK REPORT PDF
-// ============================================
-async function generateBankPDF(doc, period) {
+async function createControlSheetExcel(workbook, period) {
   const [data] = await pool.query(`
     SELECT 
-      mc.his_empno AS employee_id,
-      CONCAT(we.Surname, ' ', IFNULL(we.OtherName, '')) AS full_name,
-      we.bankcode,
-      we.bankacnumber,
-      ROUND(mc.his_netmth, 2) AS net_pay
-    FROM py_mastercum mc
-    INNER JOIN py_wkemployees we ON we.empl_id = mc.his_empno
-    WHERE mc.his_type = ?
-    ORDER BY we.bankcode, we.Surname
-  `, [period.month]);
-
-  addPDFHeader(doc, 'BANK PAYMENT SCHEDULE', period);
-
-  const headers = [
-    { label: 'S/N', key: 'sn', width: 30, align: 'center' },
-    { label: 'Emp ID', key: 'employee_id', width: 55 },
-    { label: 'Full Name', key: 'full_name', width: 160 },
-    { label: 'Bank Code', key: 'bankcode', width: 70 },
-    { label: 'Account No.', key: 'bankacnumber', width: 90 },
-    { label: 'Net Pay (₦)', key: 'net_pay', width: 90, align: 'right' }
-  ];
-
-  const tableData = data.map((item, idx) => ({
-    sn: idx + 1,
-    employee_id: item.employee_id,
-    full_name: item.full_name,
-    bankcode: item.bankcode || 'N/A',
-    bankacnumber: item.bankacnumber || 'N/A',
-    net_pay: formatMoney(item.net_pay)
-  }));
-
-  const endY = drawPDFTable(doc, headers, tableData);
-
-  const totalNet = data.reduce((sum, d) => sum + parseFloat(d.net_pay || 0), 0);
-  addPDFTotals(doc, endY + 10, [
-    `Total Records: ${data.length}`,
-    `Total Net Pay: ₦${formatMoney(totalNet)}`
-  ]);
-
-  addSignatureSection(doc);
-}
-
-// ============================================
-// DEDUCTIONS REPORT - PROFESSIONAL PDF FORMAT
-// ============================================
-async function generateDeductionsPDF(doc, period) {
-  // Fetch deductions data
-  const [data] = await pool.query(`
-    SELECT 
-      mp.his_type,
-      et.elmDesc as deduction_name,
-      COUNT(DISTINCT mp.his_empno) as employee_count,
-      ROUND(SUM(mp.amtthismth), 2) as total_amount,
-      ROUND(AVG(mp.amtthismth), 2) as average_amount,
-      ROUND(MIN(mp.amtthismth), 2) as min_amount,
-      ROUND(MAX(mp.amtthismth), 2) as max_amount
-    FROM py_masterpayded mp
-    INNER JOIN py_elementtype et ON et.PaymentType = mp.his_type
-    WHERE LEFT(mp.his_type, 2) = 'DT' AND mp.amtthismth > 0
-    GROUP BY mp.his_type, et.elmDesc
-    ORDER BY total_amount DESC
+      ts.cyear as year,
+      ts.pmonth as month,
+      ts.type1 as payment_type,
+      COALESCE(et.elmDesc, ts.desc1) as payment_description,
+      CASE 
+        WHEN LEFT(ts.type1, 2) IN ('BP', 'BT', 'PT', 'FP') THEN 'DR'
+        WHEN LEFT(ts.type1, 2) IN ('PR', 'PL', 'PY') THEN 'CR'
+        ELSE 'DR'
+      END as dr_cr_indicator,
+      CASE 
+        WHEN LEFT(ts.type1, 2) IN ('BP', 'BT', 'PT', 'FP') 
+        THEN ROUND(SUM(ts.amt1), 2)
+        ELSE 0.00
+      END as dr_amount,
+      CASE 
+        WHEN ts.type1 = 'PY01' THEN ROUND(SUM(ts.net), 2)
+        WHEN ts.type1 = 'PY02' THEN ROUND(SUM(ts.tax), 2)
+        WHEN ts.type1 = 'PY03' THEN ROUND(SUM(ts.roundup), 2)
+        WHEN LEFT(ts.type1, 2) IN ('PR', 'PL') THEN ROUND(SUM(ts.amt2), 2)
+        ELSE 0.00
+      END as cr_amount,
+      COALESCE(ts.ledger1, '') as ledger_code,
+      CASE 
+        WHEN LEFT(ts.type1, 2) IN ('BP', 'BT') THEN 1
+        WHEN LEFT(ts.type1, 2) = 'PT' THEN 2
+        WHEN LEFT(ts.type1, 2) = 'FP' THEN 3
+        WHEN LEFT(ts.type1, 2) = 'PR' THEN 4
+        WHEN LEFT(ts.type1, 2) = 'PL' THEN 5
+        WHEN LEFT(ts.type1, 2) = 'PY' THEN 6
+        ELSE 7
+      END as sort_order
+    FROM py_tempsumm ts
+    LEFT JOIN py_elementType et ON et.PaymentType = ts.type1
+    WHERE (ts.amt1 != 0 OR ts.amt2 != 0 OR ts.tax != 0 OR ts.net != 0 OR ts.roundup != 0)
+    GROUP BY ts.cyear, ts.pmonth, ts.type1, ts.desc1, et.elmDesc, ts.ledger1, dr_cr_indicator, sort_order
+    ORDER BY sort_order, ts.type1
   `);
 
-  const totalDeductions = data.reduce((sum, d) => sum + parseFloat(d.total_amount || 0), 0);
-  const totalEmployees = data.reduce((sum, d) => sum + parseInt(d.employee_count || 0), 0);
-  const deductionTypes = data.length;
-
-  // Page setup
-  const margin = 35;
-  const pageWidth = 595.28;
-  const usableWidth = pageWidth - (margin * 2);
-  let y = 40;
-
-  // ===== HEADER =====
-  doc.fontSize(11)
-     .font('Helvetica-Bold')
-     .fillColor('#000000')
-     .text('NIGERIAN NAVY (NAVAL HEADQUARTERS)', margin, y);
-
-  // Page number (top right)
-  doc.fontSize(9)
-     .font('Helvetica')
-     .text(`Page 1`, pageWidth - margin - 50, y, { width: 50, align: 'right' });
-
-  y += 35;
-
-  // Report title and period on same line
-  doc.fontSize(11)
-     .font('Helvetica-Bold')
-     .text('DEDUCTIONS SUMMARY REPORT', margin, y);
-
-  doc.fontSize(9)
-     .font('Helvetica')
-     .text(`BETWEEN`, 280, y)
-     .text(`AND`, 390, y)
-     .text(`PRODUCED`, 460, y);
-
-  y += 15;
-
-  // Second line with values
-  doc.fontSize(9)
-     .font('Helvetica-Bold')
-     .text('S/No', margin, y)
-     .text('DESCRIPTION', 80, y);
-
-  doc.font('Helvetica')
-     .text(period, 280, y)
-     .text(period, 390, y)
-     .text(new Date().toLocaleDateString('en-GB'), 460, y);
-
-  y += 25;
-
-  // ===== TABLE HEADER =====
-  const tableTop = y;
-  const colWidths = {
-    sno: 40,
-    code: 60,
-    description: 150,
-    employees: 70,
-    total: 100,
-    average: 85,
-    range: 90
-  };
-
-  // Draw header row background
-  doc.rect(margin, y, usableWidth, 20)
-     .fillAndStroke('#f0f0f0', '#000000')
-     .lineWidth(0.5);
-
-  // Header text
-  doc.fontSize(9)
-     .font('Helvetica-Bold')
-     .fillColor('#000000');
-
-  let xPos = margin + 5;
-  doc.text('S/NO', xPos, y + 6, { width: colWidths.sno - 10, align: 'center' });
-  xPos += colWidths.sno;
-  
-  doc.text('CODE', xPos, y + 6, { width: colWidths.code - 10, align: 'center' });
-  xPos += colWidths.code;
-  
-  doc.text('DESCRIPTION', xPos, y + 6, { width: colWidths.description - 10 });
-  xPos += colWidths.description;
-  
-  doc.text('EMPLOYEES', xPos, y + 6, { width: colWidths.employees - 10, align: 'center' });
-  xPos += colWidths.employees;
-  
-  doc.text('TOTAL AMOUNT', xPos, y + 6, { width: colWidths.total - 10, align: 'right' });
-  xPos += colWidths.total;
-  
-  doc.text('AVERAGE', xPos, y + 6, { width: colWidths.average - 10, align: 'right' });
-  xPos += colWidths.average;
-  
-  doc.text('RANGE', xPos, y + 6, { width: colWidths.range - 10, align: 'right' });
-
-  y += 20;
-
-  // ===== TABLE ROWS =====
-  doc.fontSize(8).font('Helvetica');
-
-  data.forEach((item, idx) => {
-    // Check for page break
-    if (y > 720) {
-      doc.addPage();
-      y = 40;
-    }
-
-    // Draw row borders
-    doc.rect(margin, y, usableWidth, 18)
-       .stroke('#000000')
-       .lineWidth(0.3);
-
-    // Row data
-    xPos = margin + 5;
-    
-    doc.text(String(idx + 1), xPos, y + 5, { width: colWidths.sno - 10, align: 'center' });
-    xPos += colWidths.sno;
-    
-    doc.text(item.his_type || '', xPos, y + 5, { width: colWidths.code - 10 });
-    xPos += colWidths.code;
-    
-    doc.text(truncate(item.deduction_name || 'Unknown', 35), xPos, y + 5, { width: colWidths.description - 10 });
-    xPos += colWidths.description;
-    
-    doc.text(String(item.employee_count), xPos, y + 5, { width: colWidths.employees - 10, align: 'center' });
-    xPos += colWidths.employees;
-    
-    doc.text(formatCurrency(item.total_amount), xPos, y + 5, { width: colWidths.total - 10, align: 'right' });
-    xPos += colWidths.total;
-    
-    doc.text(formatCurrency(item.average_amount), xPos, y + 5, { width: colWidths.average - 10, align: 'right' });
-    xPos += colWidths.average;
-    
-    const range = `${formatCurrency(item.min_amount)}-${formatCurrency(item.max_amount)}`;
-    doc.text(range, xPos, y + 5, { width: colWidths.range - 10, align: 'right' });
-
-    y += 18;
+  const ws = workbook.addWorksheet('Control Sheet', {
+    pageSetup: { paperSize: 9, orientation: 'landscape' }
   });
 
-  // ===== FOOTER SUMMARY =====
-  y += 15;
+  const columns = [
+    { header: 'S/N', key: 'sn', width: 12, align: 'center' },
+    { header: 'Code', key: 'payment_type', width: 12 },
+    { header: 'Description', key: 'payment_description', width: 35 },
+    { header: 'Ledger Code', key: 'ledger_code', width: 15 },
+    { header: 'DR/CR', key: 'dr_cr_indicator', width: 8, align: 'center' },
+    { header: 'Debit (₦)', key: 'dr_amount', width: 15, align: 'right', numFmt: '#,##0.00' },
+    { header: 'Credit (₦)', key: 'cr_amount', width: 15, align: 'right', numFmt: '#,##0.00' }
+  ];
 
-  // Summary box
-  const summaryBoxWidth = 200;
-  const summaryBoxHeight = 60;
-  const summaryX = pageWidth - margin - summaryBoxWidth;
+  columns.forEach((col, idx) => { ws.getColumn(idx + 1).width = col.width; });
 
-  doc.rect(summaryX, y, summaryBoxWidth, summaryBoxHeight)
-     .strokeColor('#000000')
-     .lineWidth(1)
-     .stroke();
+  const startRow = addExcelHeader(ws, 'PAYROLL CONTROL SHEET', period, columns.length);
 
-  // Summary header
-  doc.fontSize(9)
-     .font('Helvetica-Bold')
-     .fillColor('#000000')
-     .text('SUMMARY', summaryX + 10, y + 8);
+  const headerRow = ws.getRow(startRow);
+  columns.forEach((col, idx) => { headerRow.getCell(idx + 1).value = col.header; });
+  styleHeaderRow(ws, startRow, columns.length);
 
-  y += 22;
+  const dataWithSN = data.map((item, idx) => ({ ...item, sn: idx + 1 }));
+  const endRow = addDataRows(ws, dataWithSN, columns, startRow + 1);
 
-  // Summary details
-  doc.fontSize(8)
-     .font('Helvetica')
-     .text(`Total Deduction Types: ${deductionTypes}`, summaryX + 10, y);
+  const totalDR = data.reduce((sum, d) => sum + parseFloat(d.dr_amount || 0), 0);
+  const totalCR = data.reduce((sum, d) => sum + parseFloat(d.cr_amount || 0), 0);
   
-  y += 12;
-  doc.text(`Total Employees: ${totalEmployees}`, summaryX + 10, y);
-  
-  y += 12;
-  doc.text(`Total Deducted: ${formatCurrency(totalDeductions)}`, summaryX + 10, y);
+  addTotalsRow(ws, endRow + 1, { 6: totalDR, 7: totalCR }, columns.length);
 
-  // Footer metadata
-  const footerY = 750;
-  doc.fontSize(7)
-     .font('Helvetica')
-     .fillColor('#666666')
-     .text(`Generated: ${new Date().toLocaleString('en-GB')}`, margin, footerY)
-     .text(`Period: ${period}`, margin, footerY + 10);
+  // Variance check
+  const variance = Math.abs(totalDR - totalCR);
+  const varianceRow = ws.getRow(endRow + 3);
+  varianceRow.getCell(1).value = 'VARIANCE:';
+  varianceRow.getCell(1).font = { bold: true };
+  varianceRow.getCell(2).value = variance < 0.01 ? 'BALANCED' : formatMoney(variance);
+  varianceRow.getCell(2).font = { bold: true, color: { argb: variance < 0.01 ? '70AD47' : 'FF0000' } };
 }
 
-// ============================================
-// TAX REPORT PDF
-// ============================================
-async function generateTaxPDF(doc, period) {
-  const [data] = await pool.query(`
-    SELECT 
-      mc.his_empno as employee_id,
-      CONCAT(we.Surname, ' ', IFNULL(we.OtherName, '')) AS full_name,
-      ROUND(mc.his_grossmth, 2) as gross_pay,
-      ROUND(mc.his_taxabletodate, 2) as taxable_income,
-      ROUND(mc.his_taxmth, 2) as tax_deducted
-    FROM py_mastercum mc
-    INNER JOIN py_wkemployees we ON we.empl_id = mc.his_empno
-    WHERE mc.his_type = ?
-    ORDER BY mc.his_taxmth DESC
-  `, [period.month]);
-
-  addPDFHeader(doc, 'PAYE TAX SCHEDULE', period);
-
-  const headers = [
-    { label: 'S/N', key: 'sn', width: 30, align: 'center' },
-    { label: 'Emp ID', key: 'employee_id', width: 55 },
-    { label: 'Full Name', key: 'full_name', width: 165 },
-    { label: 'Gross Pay (₦)', key: 'gross_pay', width: 85, align: 'right' },
-    { label: 'Taxable (₦)', key: 'taxable_income', width: 85, align: 'right' },
-    { label: 'PAYE (₦)', key: 'tax_deducted', width: 75, align: 'right' }
-  ];
-
-  const tableData = data.map((item, idx) => ({
-    sn: idx + 1,
-    employee_id: item.employee_id,
-    full_name: item.full_name,
-    gross_pay: formatMoney(item.gross_pay),
-    taxable_income: formatMoney(item.taxable_income),
-    tax_deducted: formatMoney(item.tax_deducted)
-  }));
-
-  const endY = drawPDFTable(doc, headers, tableData);
-
-  const totals = {
-    gross: data.reduce((sum, d) => sum + parseFloat(d.gross_pay || 0), 0),
-    taxable: data.reduce((sum, d) => sum + parseFloat(d.taxable_income || 0), 0),
-    tax: data.reduce((sum, d) => sum + parseFloat(d.tax_deducted || 0), 0)
-  };
-
-  addPDFTotals(doc, endY + 10, [
-    `Total Employees: ${data.length}`,
-    `Total Gross: ₦${formatMoney(totals.gross)}`,
-    `Total Taxable: ₦${formatMoney(totals.taxable)}`,
-    `Total PAYE: ₦${formatMoney(totals.tax)}`
-  ]);
-
-  addSignatureSection(doc);
-}
-
-// ============================================
-// DEPARTMENT REPORT PDF
-// ============================================
-async function generateDepartmentPDF(doc, period) {
-  const [data] = await pool.query(`
-    SELECT 
-      we.Location as department,
-      COUNT(DISTINCT mc.his_empno) as employee_count,
-      ROUND(SUM(mc.his_grossmth), 2) as total_gross,
-      ROUND(SUM(mc.his_taxmth), 2) as total_tax,
-      ROUND(SUM(mc.his_netmth), 2) as total_net
-    FROM py_mastercum mc
-    INNER JOIN py_wkemployees we ON we.empl_id = mc.his_empno
-    WHERE mc.his_type = ?
-    GROUP BY we.Location
-    ORDER BY total_net DESC
-  `, [period.month]);
-
-  addPDFHeader(doc, 'DEPARTMENTAL PAYROLL SUMMARY', period);
-
-  const grandTotal = data.reduce((sum, d) => sum + parseFloat(d.total_net || 0), 0);
-
-  const headers = [
-    { label: 'S/N', key: 'sn', width: 30, align: 'center' },
-    { label: 'Department/Location', key: 'department', width: 140 },
-    { label: 'Staff', key: 'employee_count', width: 45, align: 'center' },
-    { label: 'Gross (₦)', key: 'total_gross', width: 90, align: 'right' },
-    { label: 'Tax (₦)', key: 'total_tax', width: 80, align: 'right' },
-    { label: 'Net Pay (₦)', key: 'total_net', width: 90, align: 'right' },
-    { label: '%', key: 'percentage', width: 40, align: 'center' }
-  ];
-
-  const tableData = data.map((item, idx) => ({
-    sn: idx + 1,
-    department: item.department || 'Unassigned',
-    employee_count: item.employee_count,
-    total_gross: formatMoney(item.total_gross),
-    total_tax: formatMoney(item.total_tax),
-    total_net: formatMoney(item.total_net),
-    percentage: ((parseFloat(item.total_net) / grandTotal) * 100).toFixed(1) + '%'
-  }));
-
-  const endY = drawPDFTable(doc, headers, tableData);
-
-  addPDFTotals(doc, endY + 10, [
-    `Total Departments: ${data.length}`,
-    `Total Employees: ${data.reduce((sum, d) => sum + parseInt(d.employee_count), 0)}`,
-    `Grand Total Net Pay: ₦${formatMoney(grandTotal)}`
-  ]);
-}
-
-// ============================================
-// GRADE REPORT PDF
-// ============================================
-async function generateGradePDF(doc, period) {
-  const [data] = await pool.query(`
-    SELECT 
-      we.gradelevel as grade,
-      we.gradetype,
-      COUNT(DISTINCT mc.his_empno) as employee_count,
-      ROUND(SUM(mc.his_grossmth), 2) as total_gross,
-      ROUND(SUM(mc.his_netmth), 2) as total_net,
-      ROUND(AVG(mc.his_netmth), 2) as average_net
-    FROM py_mastercum mc
-    INNER JOIN py_wkemployees we ON we.empl_id = mc.his_empno
-    WHERE mc.his_type = ?
-    GROUP BY we.gradelevel, we.gradetype
-    ORDER BY we.gradelevel
-  `, [period.month]);
-
-  addPDFHeader(doc, 'GRADE-WISE PAYROLL SUMMARY', period);
-
-  const headers = [
-    { label: 'S/N', key: 'sn', width: 30, align: 'center' },
-    { label: 'Grade', key: 'grade', width: 60 },
-    { label: 'Type', key: 'gradetype', width: 80 },
-    { label: 'Staff', key: 'employee_count', width: 50, align: 'center' },
-    { label: 'Gross (₦)', key: 'total_gross', width: 95, align: 'right' },
-    { label: 'Net Pay (₦)', key: 'total_net', width: 95, align: 'right' },
-    { label: 'Avg Net (₦)', key: 'average_net', width: 85, align: 'right' }
-  ];
-
-  const tableData = data.map((item, idx) => ({
-    sn: idx + 1,
-    grade: item.grade || 'N/A',
-    gradetype: item.gradetype || 'N/A',
-    employee_count: item.employee_count,
-    total_gross: formatMoney(item.total_gross),
-    total_net: formatMoney(item.total_net),
-    average_net: formatMoney(item.average_net)
-  }));
-
-  const endY = drawPDFTable(doc, headers, tableData);
-
-  const grandTotal = data.reduce((sum, d) => sum + parseFloat(d.total_net || 0), 0);
-  addPDFTotals(doc, endY + 10, [
-    `Total Grade Levels: ${data.length}`,
-    `Total Employees: ${data.reduce((sum, d) => sum + parseInt(d.employee_count), 0)}`,
-    `Grand Total Net Pay: ₦${formatMoney(grandTotal)}`
-  ]);
-}
-
-// ============================================
-// EXCEPTIONS REPORT PDF
-// ============================================
-async function generateExceptionsPDF(doc, period) {
-  const [data] = await pool.query(`
-    SELECT 
-      mc.his_empno as employee_id,
-      CONCAT(we.Surname, ' ', IFNULL(we.OtherName, '')) AS full_name,
-      we.gradelevel,
-      ROUND(mc.his_grossmth, 2) as gross_pay,
-      ROUND(mc.his_netmth, 2) as net_pay,
-      CASE
-        WHEN mc.his_netmth <= 0 THEN 'Zero/Negative Pay'
-        WHEN mc.his_grossmth <= 0 THEN 'Zero Gross'
-        WHEN mc.his_netmth > mc.his_grossmth THEN 'Net > Gross'
-        WHEN mc.his_taxmth < 0 THEN 'Negative Tax'
-        ELSE 'Other'
-      END as exception_type
-    FROM py_mastercum mc
-    INNER JOIN py_wkemployees we ON we.empl_id = mc.his_empno
-    WHERE mc.his_type = ?
-      AND (mc.his_netmth <= 0 OR mc.his_grossmth <= 0 OR mc.his_netmth > mc.his_grossmth OR mc.his_taxmth < 0)
-    ORDER BY exception_type, full_name
-  `, [period.month]);
-
-  addPDFHeader(doc, 'PAYROLL EXCEPTIONS REPORT', period);
-
-  if (data.length === 0) {
-    doc.fontSize(12).fillColor('#70AD47').text('No exceptions found for this period.', { align: 'center' });
-    return;
-  }
-
-  const headers = [
-    { label: 'S/N', key: 'sn', width: 30, align: 'center' },
-    { label: 'Emp ID', key: 'employee_id', width: 55 },
-    { label: 'Full Name', key: 'full_name', width: 150 },
-    { label: 'Grade', key: 'gradelevel', width: 50, align: 'center' },
-    { label: 'Gross (₦)', key: 'gross_pay', width: 80, align: 'right' },
-    { label: 'Net (₦)', key: 'net_pay', width: 80, align: 'right' },
-    { label: 'Exception', key: 'exception_type', width: 80 }
-  ];
-
-  const tableData = data.map((item, idx) => ({
-    sn: idx + 1,
-    employee_id: item.employee_id,
-    full_name: item.full_name,
-    gradelevel: item.gradelevel || 'N/A',
-    gross_pay: formatMoney(item.gross_pay),
-    net_pay: formatMoney(item.net_pay),
-    exception_type: item.exception_type
-  }));
-
-  const endY = drawPDFTable(doc, headers, tableData);
-
-  // Exception summary
-  const exceptionCounts = data.reduce((acc, d) => {
-    acc[d.exception_type] = (acc[d.exception_type] || 0) + 1;
-    return acc;
-  }, {});
-
-  doc.moveDown();
-  doc.fontSize(10).fillColor('#1F4E79').font('Helvetica-Bold').text('Exception Summary:', 50, endY + 15);
-  doc.font('Helvetica').fontSize(9).fillColor('#000000');
-  
-  let summaryY = endY + 30;
-  Object.entries(exceptionCounts).forEach(([type, count]) => {
-    doc.text(`• ${type}: ${count} employee(s)`, 60, summaryY);
-    summaryY += 12;
-  });
-}
-
-// ============================================
-// SUMMARY REPORT PDF
-// ============================================
-async function generateSummaryPDF(doc, period) {
-  const [[summary]] = await pool.query(`
-    SELECT 
-      COUNT(DISTINCT his_empno) AS total_employees,
-      ROUND(SUM(his_grossmth), 2) AS total_gross,
-      ROUND(SUM(his_taxmth), 2) AS total_tax,
-      ROUND(COALESCE(SUM(his_netmth), 0), 2) AS total_net,
-      ROUND(AVG(his_netmth), 2) AS average_net_pay
-    FROM py_mastercum WHERE his_type = ?
-  `, [period.month]);
-
-  const [[payded]] = await pool.query(`
-    SELECT 
-      ROUND(SUM(CASE WHEN LEFT(his_type, 2) = 'PR' THEN amtthismth ELSE 0 END), 2) AS total_deductions,
-      ROUND(SUM(CASE WHEN LEFT(his_type, 2) = 'PT' THEN amtthismth ELSE 0 END), 2) AS total_allowances
-    FROM py_masterpayded
-  `);
-
-  const [deptData] = await pool.query(`
-    SELECT we.Location as department, COUNT(DISTINCT mc.his_empno) as count, ROUND(SUM(mc.his_netmth), 2) as net
-    FROM py_mastercum mc
-    INNER JOIN py_wkemployees we ON we.empl_id = mc.his_empno
-    WHERE mc.his_type = ? GROUP BY we.Location ORDER BY net DESC LIMIT 5
-  `, [period.month]);
-
-  addPDFHeader(doc, 'PAYROLL SUMMARY REPORT', period);
-
-  // Summary Cards
-  const cardData = [
-    { label: 'Total Employees', value: summary.total_employees, color: '#4472C4' },
-    { label: 'Total Gross Pay', value: `₦${formatMoney(summary.total_gross)}`, color: '#70AD47' },
-    { label: 'Total Deductions', value: `₦${formatMoney(payded.total_deductions)}`, color: '#FFC000' },
-    { label: 'Total Net Pay', value: `₦${formatMoney(summary.total_net)}`, color: '#1F4E79' }
-  ];
-
-  let cardX = 50;
-  const cardY = doc.y + 10;
-  const cardWidth = 120;
-  const cardHeight = 50;
-
-  cardData.forEach((card) => {
-    doc.fillColor(card.color).roundedRect(cardX, cardY, cardWidth, cardHeight, 5).fill();
-    doc.fillColor('#FFFFFF').fontSize(8).text(card.label, cardX + 8, cardY + 8, { width: cardWidth - 16 });
-    doc.fontSize(11).font('Helvetica-Bold').text(String(card.value), cardX + 8, cardY + 25, { width: cardWidth - 16 });
-    doc.font('Helvetica');
-    cardX += cardWidth + 10;
-  });
-
-  doc.y = cardY + cardHeight + 25;
-
-  // Additional metrics
-  doc.fillColor('#000000').fontSize(10);
-  doc.text(`Total Allowances: ₦${formatMoney(payded.total_allowances)}`, 50);
-  doc.text(`Total Tax (PAYE): ₦${formatMoney(summary.total_tax)}`, 50);
-  doc.text(`Average Net Pay: ₦${formatMoney(summary.average_net_pay)}`, 50);
-
-  // Top departments
-  if (deptData.length > 0) {
-    doc.moveDown();
-    doc.fontSize(11).fillColor('#1F4E79').font('Helvetica-Bold').text('Top 5 Departments by Net Pay:', 50);
-    doc.font('Helvetica').fontSize(9).fillColor('#000000');
-    
-    deptData.forEach((dept, idx) => {
-      doc.text(`${idx + 1}. ${dept.department || 'Unassigned'}: ${dept.count} staff, ₦${formatMoney(dept.net)}`, 60);
-    });
-  }
-
-  // Footer
-  doc.moveDown(2);
-  doc.fontSize(8).fillColor('#666666');
-  doc.text(`Report generated: ${new Date().toLocaleString()}`, { align: 'center' });
-
-  addSignatureSection(doc);
-}
 
 
 // Helper function to check if calculations are complete
@@ -1541,7 +757,7 @@ exports.getPayrollSummary = async (req, res) => {
 
     const query = `
       SELECT 
-          mc_totals.total_employees,
+          emp_totals.total_employees,
           mc_totals.total_gross,
           mc_totals.total_tax,
           mc_totals.total_net,
@@ -1550,7 +766,11 @@ exports.getPayrollSummary = async (req, res) => {
           mc_totals.average_net_pay
       FROM (
           SELECT 
-              COUNT(DISTINCT his_empno) AS total_employees,
+              COUNT(DISTINCT Empl_ID) AS total_employees
+          FROM py_wkemployees
+      ) emp_totals
+      CROSS JOIN (
+          SELECT 
               ROUND(SUM(his_grossmth), 2) AS total_gross,
               ROUND(SUM(his_taxmth), 2) AS total_tax,
               ROUND(COALESCE(SUM(his_netmth), 0), 2) AS total_net,
@@ -1560,7 +780,7 @@ exports.getPayrollSummary = async (req, res) => {
       ) mc_totals
       CROSS JOIN (
           SELECT 
-              ROUND(SUM(CASE WHEN LEFT(his_type, 2) = 'PR' THEN amtthismth ELSE 0 END), 2) AS total_deductions,
+              ROUND(SUM(CASE WHEN LEFT(his_type, 2) IN ('PR', 'PL') THEN amtthismth ELSE 0 END), 2) AS total_deductions,
               ROUND(SUM(CASE WHEN LEFT(his_type, 2) = 'PT' THEN amtthismth ELSE 0 END), 2) AS total_allowances
           FROM py_masterpayded
       ) mp_totals
@@ -1650,7 +870,7 @@ exports.getDeductionsSummary = async (req, res) => {
         ROUND(MAX(mp.amtthismth), 2) as max_amount
       FROM py_masterpayded mp
       INNER JOIN py_elementtype et ON et.PaymentType = mp.his_type
-      WHERE LEFT(mp.his_type, 2) = 'PR'
+      WHERE LEFT(mp.his_type, 2) IN ('PR', 'PL')
         AND mp.amtthismth > 0
       GROUP BY mp.his_type, et.elmDesc
       ORDER BY total_amount DESC
@@ -1814,7 +1034,7 @@ exports.getExceptionReport = async (req, res) => {
         CASE
           WHEN mc.his_netmth <= 0 THEN 'Zero or Negative Pay'
           WHEN mc.his_grossmth <= 0 THEN 'Zero Gross Pay'
-          WHEN mc.his_netmth > mc.his_grossmth THEN 'Net Exceeds Gross'
+          WHEN mc.his_netmth < mc.his_grossmth THEN 'Gross Exceeds Net'
           WHEN mc.his_taxmth < 0 THEN 'Negative Tax'
           ELSE 'Other Exception'
         END as exception_type
@@ -1824,7 +1044,7 @@ exports.getExceptionReport = async (req, res) => {
         AND (
           mc.his_netmth <= 0 OR
           mc.his_grossmth <= 0 OR
-          mc.his_netmth > mc.his_grossmth OR
+          mc.his_netmth < mc.his_grossmth OR
           mc.his_taxmth < 0
         )
       ORDER BY exception_type, full_name
@@ -1854,9 +1074,7 @@ exports.getExceptionReport = async (req, res) => {
   }
 };
 
-// ============================================
 //10.  ALLOWANCES REPORT - DATA ENDPOINT
-// ============================================
 exports.getAllowancesSummary = async (req, res) => {
   try {
     await checkCalculationsComplete();
@@ -1897,11 +1115,117 @@ exports.getAllowancesSummary = async (req, res) => {
   }
 };
 
+// 11. CONTROL SHEET REPORT - DATA ENDPOINT
+exports.getControlSheet = async (req, res) => {
+  try {
+    await checkCalculationsComplete();
+    const period = await getCurrentPeriod();
+
+    const query = `
+      SELECT 
+        ts.cyear as year,
+        ts.pmonth as month,
+        CASE ts.pmonth
+          WHEN 1 THEN 'January' WHEN 2 THEN 'February' WHEN 3 THEN 'March'
+          WHEN 4 THEN 'April' WHEN 5 THEN 'May' WHEN 6 THEN 'June'
+          WHEN 7 THEN 'July' WHEN 8 THEN 'August' WHEN 9 THEN 'September'
+          WHEN 10 THEN 'October' WHEN 11 THEN 'November' WHEN 12 THEN 'December'
+        END as month_name,
+        COUNT(*) as recordcount,
+        ts.type1 as payment_type,
+        COALESCE(et.elmDesc, ts.desc1) as payment_description,
+        CASE 
+          WHEN LEFT(ts.type1, 2) IN ('BP', 'BT', 'PT', 'FP') THEN 'DR'
+          WHEN LEFT(ts.type1, 2) IN ('PR', 'PL', 'PY') THEN 'CR'
+          ELSE 'DR'
+        END as dr_cr_indicator,
+        CASE 
+          WHEN LEFT(ts.type1, 2) IN ('BP', 'BT', 'PT', 'FP') 
+          THEN ROUND(SUM(ts.amt1), 2)
+          ELSE 0.00
+        END as dr_amount,
+        CASE 
+          WHEN ts.type1 = 'PY01' THEN ROUND(SUM(ts.net), 2)
+          WHEN ts.type1 = 'PY02' THEN ROUND(SUM(ts.tax), 2)
+          WHEN ts.type1 = 'PY03' THEN ROUND(SUM(ts.roundup), 2)
+          WHEN LEFT(ts.type1, 2) IN ('PR', 'PL') THEN ROUND(SUM(ts.amt2), 2)
+          ELSE 0.00
+        END as cr_amount,
+        COALESCE(ts.ledger1, '') as ledger_code,
+        CASE 
+          WHEN LEFT(ts.type1, 2) IN ('BP', 'BT') THEN 1
+          WHEN LEFT(ts.type1, 2) = 'PT' THEN 2
+          WHEN LEFT(ts.type1, 2) = 'FP' THEN 3
+          WHEN LEFT(ts.type1, 2) = 'PR' THEN 4
+          WHEN LEFT(ts.type1, 2) = 'PL' THEN 5
+          WHEN LEFT(ts.type1, 2) = 'PY' THEN 6
+          ELSE 7
+        END as sort_order
+      FROM py_tempsumm ts
+      LEFT JOIN py_elementType et ON et.PaymentType = ts.type1
+      WHERE (ts.amt1 != 0 OR ts.amt2 != 0 OR ts.tax != 0 OR ts.net != 0 OR ts.roundup != 0)
+      GROUP BY ts.cyear, ts.pmonth, ts.type1, ts.desc1, et.elmDesc, ts.ledger1, dr_cr_indicator, sort_order
+      ORDER BY sort_order, ts.type1
+    `;
+
+    const [controlData] = await pool.query(query);
+
+    // Calculate totals
+    const totalDR = controlData.reduce((sum, row) => sum + parseFloat(row.dr_amount || 0), 0);
+    const totalCR = controlData.reduce((sum, row) => sum + parseFloat(row.cr_amount || 0), 0);
+    const variance = Math.abs(totalDR - totalCR);
+
+    // Group by category
+    const byCategory = {
+      basic_salary: [],
+      allowances: [],
+      fringe_benefits: [],
+      deductions: [],
+      loans: [],
+      payments: []
+    };
+
+    controlData.forEach(row => {
+      const prefix = row.payment_type.substring(0, 2);
+      if (prefix === 'BP' || prefix === 'BT') {
+        byCategory.basic_salary.push(row);
+      } else if (prefix === 'PT') {
+        byCategory.allowances.push(row);
+      } else if (prefix === 'FP') {
+        byCategory.fringe_benefits.push(row);
+      } else if (prefix === 'PR') {
+        byCategory.deductions.push(row);
+      } else if (prefix === 'PL') {
+        byCategory.loans.push(row);
+      } else if (prefix === 'PY') {
+        byCategory.payments.push(row);
+      }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        period: { year: period.year, month: period.month },
+        controlData,
+        byCategory,
+        summary: {
+          totalDR,
+          totalCR,
+          variance,
+          isBalanced: variance < 0.01
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 // Helper functions
 function getColumnsForReport(reportType) {
   const columns = {
     bank: [
-      { header: 'Employee ID', key: 'employee_id', width: 15 },
+      { header: 'Svc No.', key: 'employee_id', width: 15 },
       { header: 'Full Name', key: 'full_name', width: 30 },
       { header: 'Bank Code', key: 'bankcode', width: 15 },
       { header: 'Account Number', key: 'bankacnumber', width: 20 },

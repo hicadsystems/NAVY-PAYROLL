@@ -3,14 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        @page { size: A4; margin: 15mm; background-color: #f8fbff; }
+        @page { size: A4; margin: 5mm; background-color: #f8fbff; }
         body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; }
 
-        .header {
-            text-align: center;
+        .header-wrapper {
+            display: flex;
+            align-items: flex-start;
             margin-bottom: 8px;
             border-bottom: 2px solid #1a1a1a;
             padding-bottom: 5px;
+        }
+
+        .className {
+            flex-shrink: 0;
+            margin-right: 20px;
+            align-self: center;
+            font-size: 9pt;
+        }
+
+        .header {
+            flex-grow: 1;
+            text-align: center;
         }
         
         .header h1 {
@@ -30,11 +43,12 @@
             font-family: 'Libre Baskerville', Georgia, serif;
         }
 
-        .header p {
-            font-size: 10pt;
-            font-weight: 600;
-            margin-top: 5px;
-            color: #333333;
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 9pt;
         }
         
         /* Summary Table */
@@ -42,8 +56,16 @@
         table.summary th { padding: 8px; text-align: left; font-size: 9pt; color: #1e40af; border-bottom: solid 1px #1e40af; }
         table.summary td { padding: 6px; border-bottom: 1px solid #e0e0e0; }
         
-        /* Detailed View */
-        .bank-group { margin-bottom: 25px; page-break-inside: avoid; }
+        /* Detailed View - REMOVED page-break-inside: avoid */
+        .bank-group { 
+            margin-bottom: 25px; 
+        }
+        
+        /* Page break BEFORE non-first bank groups */
+        .bank-group.page-break {
+            page-break-before: always;
+        }
+        
         .bank-header { 
             padding: 10px;
             color: #1e40af;
@@ -51,6 +73,7 @@
             font-size: 11pt;
             text-align: center;
             border-bottom: .5px solid #e0e0e0;
+            page-break-after: avoid;
         }
         
         table.details { width: 100%; border-collapse: collapse; margin: 10px 0; }
@@ -81,20 +104,39 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Nigerian Navy (Naval Headquarters)</h1>
-        <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
-        <p>SALARY CREDIT VOUCHER LISTING - {{formatDate reportDate}}</p>
+    <div class="header-wrapper">
+        <div class="className">
+            {{className}}
+        </div>
+        <div class="header">
+            <h1>Nigerian Navy (Naval Headquarters)</h1>
+            <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+        </div>
     </div>
+
+  <div class="header-info">
+    <div class="left">
+      SALARY CREDIT VOUCHER LISTING
+    </div>
+    <div class="center">
+      <span>PRODUCED ON</span>
+      <strong>{{formatDate reportDate}}</strong>
+      <span>AT</span>
+      <strong>{{formatTime reportDate}}</strong>
+    </div>
+    <div class="period-info">
+      FOR PERIOD: {{formatMonth month}} {{year}}
+    </div>
+  </div>
     
     {{#if isSummary}}
     <!-- Summary View -->
     <table class="summary">
         <thead>
             <tr>
-                <th>Bank Code</th>
+                <th>Bank Name</th>
                 <th>Bank Branch</th>
-                <th style="text-align: center;">Total Employees</th>
+                <th style="text-align: center;">Total Records</th>
                 <th class="amount">Total Net Payment</th>
             </tr>
         </thead>
@@ -102,7 +144,7 @@
             {{#each data}}
             <tr>
                 <td>{{Bankcode}}</td>
-                <td>{{bankbranch}}</td>
+                <td>{{bank_branch_name}}</td>
                 <td style="text-align: center;">{{employee_count}}</td>
                 <td class="amount">₦{{formatCurrency total_net}}</td>
             </tr>
@@ -112,14 +154,14 @@
     {{else}}
     <!-- Detailed View - Grouped by Bank -->
     {{#each bankGroups}}
-    <div class="bank-group">
+    <div class="bank-group{{#unless @first}} page-break{{/unless}}">
         <div class="bank-header">
             {{bankName}} ({{branch}}) - {{employeeCount}} Personnel(s) | Total: ₦{{formatCurrency totalAmount}}
         </div>
         <table class="details">
             <thead>
                 <tr>
-                    <th style="width: 10%;">Service N0.</th>
+                    <th style="width: 15%;">Svc. No.</th>
                     <th style="width: 35%;">Full Name</th>
                     <th style="width: 15%;">Rank</th>
                     <th class="amount" style="width: 20%;">Net Payment</th>
@@ -131,7 +173,7 @@
                 <tr>
                     <td class="emp-id">{{empl_id}}</td>
                     <td>{{fullname}}</td>
-                    <td>{{title}}</td>
+                    <td>{{rank}}</td>
                     <td class="amount">₦{{formatCurrency total_net}}</td>
                     <td class="account-no">{{BankACNumber}}</td>
                 </tr>

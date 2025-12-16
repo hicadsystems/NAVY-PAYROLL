@@ -5,6 +5,7 @@ const PDFDocument = require('pdfkit');
 const jsreport = require('jsreport-core')();
 const fs = require('fs');
 const path = require('path');
+const { get } = require('http');
 
 class ReportController {
 
@@ -38,6 +39,22 @@ class ReportController {
           maximumFractionDigits: 2
         });
       }
+
+      function formatCurrencyWithSign(amount) {
+        const num = parseFloat(amount || 0);
+        const formatted = Math.abs(num).toLocaleString('en-NG', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+        if (num < 0) {
+          return '(' + formatted + ')';
+        }
+        return formatted;
+      }
+      
+      function isNegative(amount) {
+        return parseFloat(amount || 0) < 0;
+      }
       
       function formatDate(date) {
         const d = new Date(date || new Date());
@@ -47,6 +64,23 @@ class ReportController {
           year: 'numeric'
         });
       }
+
+      function formatTime(date) {
+        return new Date(date).toLocaleTimeString('en-GB', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+      }
+
+      function formatMonth(monthNumber) {
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        return monthNames[monthNumber - 1] || 'Unknown';
+      }
+
+      function add(a, b) {
+        return (parseFloat(a) || 0) + (parseFloat(b) || 0);
+      }
       
       function subtract(a, b) {
         return (parseFloat(a) || 0) - (parseFloat(b) || 0);
@@ -54,6 +88,33 @@ class ReportController {
       
       function eq(a, b) {
         return a === b;
+      }
+      
+      function gt(a, b) {
+          return parseFloat(a) > parseFloat(b);
+      }
+      
+      function sum(array, property) {
+        if (!array || !Array.isArray(array)) return 0;
+        return array.reduce((sum, item) => sum + (parseFloat(item[property]) || 0), 0);
+      }
+      
+      function groupBy(array, property) {
+        if (!array || !Array.isArray(array)) return [];
+        
+        const groups = {};
+        array.forEach(item => {
+          const key = item[property] || 'Unknown';
+          if (!groups[key]) {
+            groups[key] = [];
+          }
+          groups[key].push(item);
+        });
+        
+        return Object.keys(groups).sort().map(key => ({
+          key: key,
+          values: groups[key]
+        }));
       }
       
       function sumByType(earnings, type) {
@@ -257,48 +318,7 @@ class ReportController {
               printBackground: true,
               format: 'A5'
             },
-            helpers: `
-              function formatCurrency(value) {
-                const num = parseFloat(value) || 0;
-                return num.toLocaleString('en-NG', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                });
-              }
-              
-              function formatDate(date) {
-                const d = new Date(date || new Date());
-                return d.toLocaleDateString('en-GB', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric'
-                });
-              }
-              
-              function add(a, b) {
-                return (parseFloat(a) || 0) + (parseFloat(b) || 0);
-              }
-              
-              function subtract(a, b) {
-                return (parseFloat(a) || 0) - (parseFloat(b) || 0);
-              }
-              
-              function eq(a, b) {
-                return a === b;
-              }
-              
-              function sumByType(earnings, type) {
-                let total = 0;
-                if (Array.isArray(earnings)) {
-                  earnings.forEach(item => {
-                    if (item.type === type) {
-                      total += parseFloat(item.amount) || 0;
-                    }
-                  });
-                }
-                return total;
-              }
-            `
+            helpers: this._getCommonHelpers()
           },
           data: {
             employees: mappedData,
@@ -338,16 +358,16 @@ class ReportController {
     // Define columns
     worksheet.columns = [
       { header: 'Service No', key: 'employee_id', width: 15 },
-      { header: 'Name', key: 'empl_name', width: 30 },
+      { header: 'Name', key: 'empl_name', width: 40 },
       { header: 'Grade', key: 'gradelevel', width: 10 },
-      { header: 'Department', key: 'department', width: 20 },
-      { header: 'Total Earnings', key: 'total_earnings', width: 15 },
+      { header: 'Grade', key: 'gradetype', width: 10 },
+      { header: 'Location', key: 'department', width: 52 },
+      { header: 'RSA(Pension)', key: 'nsitfcode', width: 20 },
+      { header: 'Total Emoluments', key: 'total_earnings', width: 16 },
       { header: 'Total Deductions', key: 'total_deductions', width: 18 },
       { header: 'Net Pay', key: 'net_pay', width: 15 },
-      { header: 'Bank', key: 'bank_name', width: 20 },
+      { header: 'Bank', key: 'bank_name', width: 30 },
       { header: 'Account Number', key: 'bank_account_number', width: 20 },
-      { header: 'YTD Gross', key: 'ytd_gross', width: 15 },
-      { header: 'YTD Tax', key: 'ytd_tax', width: 15 }
     ];
 
     // Style header row
@@ -364,7 +384,7 @@ class ReportController {
     });
 
     // Format currency columns
-    ['E', 'F', 'G', 'J', 'K'].forEach(col => {
+    ['G', 'H', 'I', 'L'].forEach(col => {
       worksheet.getColumn(col).numFmt = '₦#,##0.00';
     });
 
@@ -374,7 +394,7 @@ class ReportController {
     worksheet.getCell(`D${totalRowIndex}`).value = 'TOTALS:';
     worksheet.getCell(`D${totalRowIndex}`).font = { bold: true };
     
-    ['E', 'F', 'G'].forEach(col => {
+    ['G', 'H', 'I'].forEach(col => {
       worksheet.getCell(`${col}${totalRowIndex}`).value = {
         formula: `SUM(${col}2:${col}${lastDataRow})`
       };
@@ -389,6 +409,7 @@ class ReportController {
   }
 
 
+
   // ==========================================================================
   // REPORT 2: PAYMENTS BY BANK
   // ==========================================================================
@@ -400,7 +421,7 @@ class ReportController {
       if (format === 'excel') {
         return this.generatePaymentsByBankExcel(data, filters, res);
       } else if (format === 'pdf') {
-        return this.generatePaymentsByBankPDF(data, filters, res);
+        return this.generatePaymentsByBankPDF(data, filters, req, res);
       }
 
       res.json({ success: true, data });
@@ -465,7 +486,7 @@ class ReportController {
     res.end();
   }
 
-  async generatePaymentsByBankPDF(data, filters, res) {
+  async generatePaymentsByBankPDF(data, filters, req, res) {
     if (!this.jsreportReady) {
       return res.status(500).json({
         success: false,
@@ -477,15 +498,19 @@ class ReportController {
       const templatePath = path.join(__dirname, '../../templates/payments-by-bank.html');
       const templateContent = fs.readFileSync(templatePath, 'utf8');
 
-      // Get user's full name from request
-      //const generatedBy = req.user_fullname || 'System';
+      const period = data.length > 0 ? 
+        `${data[0].month_name}, ${data[0].year}` : 
+        'N/A';
 
       // Prepare data based on summary or detailed view
       let templateData = {
         reportDate: new Date(),
-        //generatedBy: generatedBy,
+        period: period,
+        year: filters.year,
+        month: filters.month,
         isSummary: filters.summaryOnly === 'true' || filters.summaryOnly === true,
-        reportTitle: filters.summaryOnly ? 'Summary Report' : 'Detailed Report'
+        reportTitle: filters.summaryOnly ? 'Summary Report' : 'Detailed Report',
+        className: this.getDatabaseNameFromRequest(req)
       };
 
       if (templateData.isSummary) {
@@ -496,12 +521,12 @@ class ReportController {
         const bankGroups = {};
         
         data.forEach(row => {
-          const key = `${row.Bankcode}_${row.bankbranch}`;
+          const key = `${row.Bankcode}_${row.bank_branch_name || row.bankbranch || ''}`;
           
           if (!bankGroups[key]) {
             bankGroups[key] = {
               bankName: row.Bankcode,
-              branch: row.bankbranch,
+              branch: row.bank_branch_name || row.bankbranch || '',
               employees: [],
               totalAmount: 0,
               employeeCount: 0
@@ -511,7 +536,7 @@ class ReportController {
           bankGroups[key].employees.push({
             empl_id: row.empl_id,
             fullname: row.fullname,
-            rank: row.rank,
+            rank: row.title || row.Title || '',
             total_net: parseFloat(row.total_net || 0),
             BankACNumber: row.BankACNumber
           });
@@ -576,7 +601,7 @@ class ReportController {
       if (format === 'excel') {
         return this.generateEarningsDeductionsAnalysisExcel(data, res);
       } else if (format === 'pdf') {
-        return this.generateEarningsDeductionsAnalysisPDF(data, res);
+        return this.generateEarningsDeductionsAnalysisPDF(data, req, res);
       }
 
       res.json({ success: true, data });
@@ -593,12 +618,8 @@ class ReportController {
     worksheet.columns = [
       { header: 'Payment Code', key: 'payment_code', width: 15 },
       { header: 'Description', key: 'payment_description', width: 35 },
-      { header: 'Category', key: 'category', width: 20 },
-      { header: 'Employee Count', key: 'employee_count', width: 15 },
+      { header: 'Total Records', key: 'employee_count', width: 15 },
       { header: 'Total Amount', key: 'total_amount', width: 18 },
-      { header: 'Average Amount', key: 'average_amount', width: 18 },
-      { header: 'Min Amount', key: 'min_amount', width: 15 },
-      { header: 'Max Amount', key: 'max_amount', width: 15 }
     ];
 
     // Style header
@@ -637,7 +658,7 @@ class ReportController {
     });
 
     // Format currency
-    ['E', 'F', 'G', 'H'].forEach(col => {
+    ['D'].forEach(col => {
       worksheet.getColumn(col).numFmt = '₦#,##0.00';
     });
 
@@ -648,7 +669,7 @@ class ReportController {
     res.end();
   }
 
-  async generateEarningsDeductionsAnalysisPDF(data, res) {
+  async generateEarningsDeductionsAnalysisPDF(data, req, res) {
     if (!this.jsreportReady) {
       return res.status(500).json({
         success: false,
@@ -705,6 +726,7 @@ class ReportController {
           categoriesMap[category].paymentTypesMap[paymentCode].employees.push({
             his_empno: row.his_empno,
             fullname: row.fullname || 'N/A',
+            rank: row.Title || row.title || '',
             total_amount: amount
           });
           categoriesMap[category].paymentTypesMap[paymentCode].subtotal += amount;
@@ -747,30 +769,14 @@ class ReportController {
             format: 'A4',
             landscape: !isSummary
           },
-          helpers: `
-            function formatDate(date) {
-              return new Date(date).toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              });
-            }
-            
-            function formatCurrency(amount) {
-              return parseFloat(amount || 0).toLocaleString('en-NG', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              });
-            }
-          `
+          helpers: this._getCommonHelpers()
         },
         data: {
           categories: categories,
           reportDate: new Date(),
           month: data[0]?.month || 'N/A',
           year: data[0]?.year || 'N/A',
+          className: this.getDatabaseNameFromRequest(req),
           isSummary: isSummary
         }
       });
@@ -789,7 +795,7 @@ class ReportController {
   }
 
   // ==========================================================================
-  // REPORT 4: LOAN ANALYSIS
+  // REPORT 4: LOAN ANALYSIS (GROUPED BY LOAN TYPE)
   // ==========================================================================
   async generateLoanAnalysis(req, res) {
     try {
@@ -799,7 +805,7 @@ class ReportController {
       if (format === 'excel') {
         return this.generateLoanAnalysisExcel(data, res);
       } else if (format === 'pdf') {
-        return this.generateLoanAnalysisPDF(data, res);
+        return this.generateLoanAnalysisPDF(data, filters, req, res);
       }
 
       res.json({ success: true, data });
@@ -815,75 +821,124 @@ class ReportController {
 
     worksheet.columns = [
       { header: 'Employee ID', key: 'employee_id', width: 15 },
-      { header: 'Name', key: 'empl_name', width: 30 },
-      { header: 'Department', key: 'department', width: 20 },
-      { header: 'Loan Type', key: 'loan_type', width: 12 },
-      { header: 'Description', key: 'loan_description', width: 30 },
+      { header: 'Full Name', key: 'fullname', width: 30 },
+      { header: 'Location', key: 'location', width: 20 },
       { header: 'Original Loan', key: 'original_loan', width: 18 },
-      { header: 'Total Paid', key: 'total_paid', width: 18 },
-      { header: 'Outstanding', key: 'outstanding_balance', width: 18 },
-      { header: 'Months Remaining', key: 'months_remaining', width: 15 },
-      { header: 'Monthly Payment', key: 'this_month_payment', width: 18 },
-      { header: 'Interest Rate %', key: 'annual_interest_rate', width: 15 },
-      { header: 'Monthly Interest', key: 'monthly_interest', width: 18 },
-      { header: '% Paid', key: 'percent_paid', width: 12 },
-      { header: 'Status', key: 'status', width: 15 }
+      { header: 'This Month Payment', key: 'this_month_payment', width: 18 },
+      { header: 'Months Remaining', key: 'months_remaining', width: 15 }
     ];
 
-    // Style header
-    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    worksheet.getRow(1).fill = {
+    let currentRow = 1;
+
+    // Process each loan type group
+    data.forEach((group, groupIndex) => {
+      // Add spacing between groups
+      if (groupIndex > 0) {
+        currentRow += 2;
+      }
+
+      // Add group header
+      const groupHeaderRow = worksheet.getRow(currentRow);
+      worksheet.mergeCells(`A${currentRow}:F${currentRow}`);
+      groupHeaderRow.getCell(1).value = `${group.loan_type} - ${group.loan_description}`;
+      groupHeaderRow.getCell(1).font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+      groupHeaderRow.getCell(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF0070C0' }
+      };
+      groupHeaderRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
+      groupHeaderRow.height = 25;
+      currentRow++;
+
+      // Add column headers
+      const headerRow = worksheet.getRow(currentRow);
+      ['Employee ID', 'Full Name', 'Location', 'Original Loan', 'This Month Payment', 'Months Remaining'].forEach((header, idx) => {
+        headerRow.getCell(idx + 1).value = header;
+      });
+      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4472C4' }
+      };
+      currentRow++;
+
+      // Add loan data
+      const startDataRow = currentRow;
+      group.loans.forEach(loan => {
+        const dataRow = worksheet.getRow(currentRow);
+        dataRow.getCell(1).value = loan.employee_id;
+        dataRow.getCell(2).value = loan.fullname;
+        dataRow.getCell(3).value = loan.Location;
+        dataRow.getCell(4).value = loan.original_loan;
+        dataRow.getCell(5).value = loan.this_month_payment;
+        dataRow.getCell(6).value = loan.months_remaining;
+        
+        // Alternate row colors for readability
+        if ((currentRow - startDataRow) % 2 === 1) {
+          dataRow.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF2F2F2' }
+          };
+        }
+        
+        currentRow++;
+      });
+
+      // Add subtotal row
+      const subtotalRow = worksheet.getRow(currentRow);
+      subtotalRow.getCell(1).value = 'SUBTOTAL';
+      subtotalRow.getCell(1).font = { bold: true };
+      subtotalRow.getCell(2).value = `${group.totals.count} loans`;
+      subtotalRow.getCell(2).font = { bold: true };
+      subtotalRow.getCell(4).value = group.totals.original_loan;
+      subtotalRow.getCell(4).font = { bold: true };
+      subtotalRow.getCell(5).value = group.totals.this_month_payment;
+      subtotalRow.getCell(5).font = { bold: true };
+      
+      subtotalRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE7E6E6' }
+      };
+      
+      currentRow++;
+    });
+
+    // Add grand total
+    currentRow += 2;
+    const grandTotalRow = worksheet.getRow(currentRow);
+    worksheet.mergeCells(`A${currentRow}:C${currentRow}`);
+    grandTotalRow.getCell(1).value = 'GRAND TOTAL';
+    grandTotalRow.getCell(1).font = { bold: true, size: 12 };
+    grandTotalRow.getCell(1).alignment = { horizontal: 'center' };
+    
+    const grandTotalOriginal = data.reduce((sum, g) => sum + g.totals.original_loan, 0);
+    const grandTotalPayment = data.reduce((sum, g) => sum + g.totals.this_month_payment, 0);
+    const grandTotalCount = data.reduce((sum, g) => sum + g.totals.count, 0);
+    
+    grandTotalRow.getCell(4).value = grandTotalOriginal;
+    grandTotalRow.getCell(4).font = { bold: true, size: 12 };
+    grandTotalRow.getCell(5).value = grandTotalPayment;
+    grandTotalRow.getCell(5).font = { bold: true, size: 12 };
+    grandTotalRow.getCell(6).value = `${grandTotalCount} total loans`;
+    grandTotalRow.getCell(6).font = { bold: true };
+    
+    grandTotalRow.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FF0070C0' }
+      fgColor: { argb: 'FFFFD966' }
     };
 
-    // Add data with color coding by status
-    data.forEach(row => {
-      const addedRow = worksheet.addRow(row);
-      
-      // Color code by status
-      if (row.status === 'COMPLETED') {
-        addedRow.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFD4EDDA' } // Green
-        };
-      } else if (row.status === 'OVERPAID') {
-        addedRow.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFF8D7DA' } // Red
-        };
-      } else if (row.status === 'FINAL MONTHS') {
-        addedRow.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFFFF3CD' } // Yellow
-        };
-      }
-    });
+    // Format currency columns
+    worksheet.getColumn(4).numFmt = '₦#,##0.00';
+    worksheet.getColumn(5).numFmt = '₦#,##0.00';
 
-    // Format currency
-    ['F', 'G', 'H', 'J', 'L'].forEach(col => {
-      worksheet.getColumn(col).numFmt = '₦#,##0.00';
-    });
-
-    // Format percentages
-    ['K', 'M'].forEach(col => {
-      worksheet.getColumn(col).numFmt = '0.00"%"';
-    });
-
-    // Add summary
-    const lastRow = worksheet.lastRow.number + 2;
-    worksheet.getCell(`E${lastRow}`).value = 'TOTALS:';
-    worksheet.getCell(`E${lastRow}`).font = { bold: true };
-    
-    ['F', 'G', 'H', 'J', 'L'].forEach(col => {
-      worksheet.getCell(`${col}${lastRow}`).value = {
-        formula: `SUM(${col}2:${col}${lastRow - 2})`
-      };
-      worksheet.getCell(`${col}${lastRow}`).font = { bold: true };
+    // Auto-fit columns
+    worksheet.columns.forEach(column => {
+      column.width = column.width || 15;
     });
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -893,7 +948,7 @@ class ReportController {
     res.end();
   }
 
-  async generateLoanAnalysisPDF(data, res) {
+  async generateLoanAnalysisPDF(data, filters, req, res) {
     if (!this.jsreportReady) {
       return res.status(500).json({
         success: false,
@@ -904,6 +959,13 @@ class ReportController {
     try {
       const templatePath = path.join(__dirname, '../../templates/loan-analysis.html');
       const templateContent = fs.readFileSync(templatePath, 'utf8');
+
+      // Calculate grand totals
+      const grandTotals = {
+        original_loan: data.reduce((sum, g) => sum + g.totals.original_loan, 0),
+        this_month_payment: data.reduce((sum, g) => sum + g.totals.this_month_payment, 0),
+        count: data.reduce((sum, g) => sum + g.totals.count, 0)
+      };
 
       const result = await jsreport.render({
         template: {
@@ -918,18 +980,15 @@ class ReportController {
           },
           helpers: `
             ${this._getCommonHelpers()}
-            
-            function getStatusClass(status) {
-              if (status === 'COMPLETED') return 'status-completed';
-              if (status === 'OVERPAID') return 'status-overpaid';
-              if (status === 'FINAL MONTHS') return 'status-active';
-              return '';
-            }
           `
         },
         data: {
-          data: data,
-          reportDate: new Date()
+          groups: data,
+          grandTotals: grandTotals,
+          className: this.getDatabaseNameFromRequest(req),
+          reportDate: new Date(),
+          month: filters.month || 'N/A',
+          year: filters.year || 'N/A'
         }
       });
 
@@ -971,7 +1030,7 @@ class ReportController {
       if (format === 'excel') {
         return this.generatePaymentsDeductionsByBankExcel(data, res, filters.summaryOnly);
       } else if (format === 'pdf') {
-        return this.generatePaymentsDeductionsByBankPDF(data, res);
+        return this.generatePaymentsDeductionsByBankPDF(data, req, res);
       }
 
       res.json({ success: true, data });
@@ -1069,7 +1128,7 @@ class ReportController {
     res.end();
   }
 
-  async generatePaymentsDeductionsByBankPDF(data, res) {
+  async generatePaymentsDeductionsByBankPDF(data, req, res) {
     if (!this.jsreportReady) {
       return res.status(500).json({
         success: false,
@@ -1091,7 +1150,7 @@ class ReportController {
       const banksMap = {};
       
       data.forEach(row => {
-        const bankKey = `${row.Bankcode || 'Unknown'} - ${row.bankbranch || 'Unknown'}`;
+        const bankKey = `${row.Bankcode || 'Unknown'} - ${ row.bank_branch_name || row.bankbranch || 'Unknown'}`;
         const category = row.category || 'Other';
         const paymentCode = row.payment_code;
         
@@ -1100,6 +1159,7 @@ class ReportController {
           banksMap[bankKey] = {
             bankName: row.Bankcode || 'Unknown',
             bankBranch: row.bankbranch || 'Unknown',
+            branchName: row.bank_branch_name || row.bankbranch || 'Unknown',
             categoriesMap: {},
             bankTotal: 0
           };
@@ -1141,7 +1201,8 @@ class ReportController {
           // Detailed mode - add individual employee
           banksMap[bankKey].categoriesMap[category].paymentTypesMap[paymentCode].employees.push({
             his_empno: row.his_empno,
-            fullname: row.Surname || 'N/A',
+            fullname: row.fullname || 'N/A',
+            rank: row.Title || row.title || '',
             total_amount: rawAmount // Store positive for display
           });
           banksMap[bankKey].categoriesMap[category].paymentTypesMap[paymentCode].subtotal += rawAmount; // Store positive for display
@@ -1172,6 +1233,7 @@ class ReportController {
         
         return {
           bankName: bank.bankName,
+          branchName: bank.branchName,
           bankBranch: bank.bankBranch,
           categories: categories,
           bankTotal: bank.bankTotal
@@ -1195,46 +1257,14 @@ class ReportController {
             format: 'A4',
             landscape: !isSummary
           },
-          helpers: `
-            function formatDate(date) {
-              return new Date(date).toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              });
-            }
-            
-            function formatCurrency(amount) {
-              return parseFloat(amount || 0).toLocaleString('en-NG', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              });
-            }
-            
-            function formatCurrencyWithSign(amount) {
-              const num = parseFloat(amount || 0);
-              const formatted = Math.abs(num).toLocaleString('en-NG', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              });
-              if (num < 0) {
-                return '(' + formatted + ')';
-              }
-              return formatted;
-            }
-            
-            function isNegative(amount) {
-              return parseFloat(amount || 0) < 0;
-            }
-          `
+          helpers: this._getCommonHelpers()
         },
         data: {
           banks: banks,
           reportDate: new Date(),
           month: data[0]?.month || 'N/A',
           year: data[0]?.year || 'N/A',
+          className: this.getDatabaseNameFromRequest(req),
           isSummary: isSummary
         }
       });
@@ -1276,7 +1306,7 @@ class ReportController {
       if (format === 'excel') {
         return this.generatePayrollRegisterExcel(data, res, filters.summaryOnly, filters.includeElements);
       } else if (format === 'pdf') {
-        return this.generatePayrollRegisterPDF(data, res);
+        return this.generatePayrollRegisterPDF(data, req, res);
       }
 
       res.json({ success: true, data });
@@ -1454,7 +1484,7 @@ class ReportController {
     res.end();
   }
 
-  async generatePayrollRegisterPDF(data, res) {
+  async generatePayrollRegisterPDF(data, req, res) {
     if (!this.jsreportReady) {
       return res.status(500).json({
         success: false,
@@ -1468,7 +1498,10 @@ class ReportController {
       }
 
       const isSummary = data.length > 0 && !data[0].hasOwnProperty('empl_id');
-      const includeElements = data.length > 0 && data[0].hasOwnProperty('payment_elements') && data[0].payment_elements;
+      const includeElements = data.length > 0 && 
+      data[0].hasOwnProperty('payment_elements') && 
+      Array.isArray(data[0].payment_elements) && 
+      data[0].payment_elements.length > 0;
       
       console.log('Payroll Register PDF - Is Summary:', isSummary);
       console.log('Payroll Register PDF - Include Elements:', includeElements);
@@ -1516,10 +1549,16 @@ class ReportController {
           // Parse payment elements if present
           let parsedElements = [];
           if (includeElements && row.payment_elements) {
-            try {
-              parsedElements = JSON.parse(row.payment_elements);
-            } catch (e) {
-              parsedElements = [];
+            // Check if it's already an array or if it's a JSON string
+            if (Array.isArray(row.payment_elements)) {
+              parsedElements = row.payment_elements;
+            } else if (typeof row.payment_elements === 'string') {
+              try {
+                parsedElements = JSON.parse(row.payment_elements);
+              } catch (e) {
+                console.error('Failed to parse payment_elements:', e);
+                parsedElements = [];
+              }
             }
           }
           
@@ -1527,6 +1566,7 @@ class ReportController {
             empl_id: row.empl_id,
             fullname: row.fullname || 'N/A',
             gradelevel: row.gradelevel || 'N/A',
+            rank: row.Title || row.title || '',
             gross_pay: parseFloat(row.gross_pay || 0),
             total_emoluments: parseFloat(row.total_emoluments || 0),
             total_deductions: parseFloat(row.total_deductions || 0),
@@ -1593,24 +1633,7 @@ class ReportController {
             marginLeft: '10mm',
             marginRight: '10mm'
           },
-          helpers: `
-            function formatDate(date) {
-              return new Date(date).toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              });
-            }
-            
-            function formatCurrency(amount) {
-              return parseFloat(amount || 0).toLocaleString('en-NG', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              });
-            }
-          `
+          helpers: this._getCommonHelpers()
         },
         data: {
           locations: locations,
@@ -1618,6 +1641,7 @@ class ReportController {
           period: period,
           reportDate: new Date(),
           isSummary: isSummary,
+          className: this.getDatabaseNameFromRequest(req),
           includeElements: includeElements
         }
       });
@@ -1638,21 +1662,6 @@ class ReportController {
   // ==========================================================================
   // REPORT 7-13: Similar implementations...
   // ==========================================================================
-
-  async generatePayrollFilesListing(req, res) {
-    try {
-      const { format, ...filters } = req.query;
-      const data = await reportService.getPayrollFilesListing(filters);
-
-      if (format === 'excel') {
-        return this.generateGenericExcel(data, 'Payroll Files', res);
-      }
-
-      res.json({ success: true, data });
-    } catch (error) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  }
 
   async generatePaymentStaffList(req, res) {
     try {
@@ -1676,7 +1685,7 @@ class ReportController {
       if (format === 'excel') {
         return this.generatePaymentStaffListExcel(data, res, filters.summaryOnly);
       } else if (format === 'pdf') {
-        return this.generatePaymentStaffListPDF(data, res);
+        return this.generatePaymentStaffListPDF(data, filters, req, res);
       }
 
       res.json({ success: true, data });
@@ -1815,7 +1824,7 @@ class ReportController {
     res.end();
   }
 
-  async generatePaymentStaffListPDF(data, res) {
+  async generatePaymentStaffListPDF(data, filters, req, res) {
     if (!this.jsreportReady) {
       return res.status(500).json({
         success: false,
@@ -1867,41 +1876,15 @@ class ReportController {
             marginLeft: '10mm',
             marginRight: '10mm'
           },
-          helpers: `
-            function formatDate(date) {
-              return new Date(date).toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-              });
-            }
-            
-            function formatTime(date) {
-              return new Date(date).toLocaleTimeString('en-GB', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-              });
-            }
-            
-            function formatCurrency(amount) {
-              return parseFloat(amount || 0).toLocaleString('en-NG', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              });
-            }
-            
-            function formatDecimal(value) {
-              return parseFloat(value || 0).toFixed(2);
-            }
-          `
+          helpers: this._getCommonHelpers()
         },
         data: {
           data: data,
           reportDate: new Date(),
-          month: data[0]?.month || 'N/A',
-          year: data[0]?.year || 'N/A',
+          month: data[0]?.month || filters.month || 'N/A',
+          year: data[0]?.year || filters.year || 'N/A',
           isSummary: isSummary,
+          className: this.getDatabaseNameFromRequest(req),
           totalEmployees: totalEmployees,
           totalNetPay: totalNetPay
         }
@@ -1919,6 +1902,9 @@ class ReportController {
       });
     }
   }
+
+
+
 
   async generateNSITFReport(req, res) {
     try {
@@ -1965,6 +1951,10 @@ class ReportController {
     }
   }
 
+
+
+
+
   async generateOverpaymentReport(req, res) {
     try {
       const { format, ...filters } = req.query;
@@ -2000,20 +1990,17 @@ class ReportController {
   // ==========================================================================
   async getFilterOptions(req, res) {
     try {
-      const banks = await reportService.getAvailableBanks();
-      const departments = await reportService.getAvailableDepartments();
-      const paymentTypes = await reportService.getPaymentTypes();
       const currentPeriod = await reportService.getCurrentPeriod();
+      const bank = await reportService.getAvailableBanks(req);
 
       res.json({
         success: true,
         data: {
-          banks,
-          departments,
-          paymentTypes,
+          bank,
           currentPeriod
         }
       });
+
     } catch (error) {
       res.status(500).json({ success: false, error: error.message });
     }
@@ -2083,6 +2070,23 @@ class ReportController {
     const months = ['January', 'February', 'March', 'April', 'May', 'June',
                    'July', 'August', 'September', 'October', 'November', 'December'];
     return months[month - 1] || '';
+  }
+
+  getDatabaseNameFromRequest(req) {
+    const dbToClassMap = {
+      [process.env.DB_OFFICERS]: 'OFFICERS',
+      [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
+      [process.env.DB_RATINGS]: 'RATE A',
+      [process.env.DB_RATINGS_A]: 'RATE B',
+      [process.env.DB_RATINGS_B]: 'RATE C',
+      [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
+    };
+
+    // Get the current database from request
+    const currentDb = req.current_class;
+    
+    // Return the mapped class name, or fallback to the current_class value, or default to 'OFFICERS'
+    return dbToClassMap[currentDb] || currentDb || 'OFFICERS';
   }
 }
 

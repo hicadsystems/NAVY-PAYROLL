@@ -3,14 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        @page { size: A4 landscape; margin: 5mm; background-color: #f8fbff; }
+        @page { size: A4; margin: 0.2mm; background-color: #f8fbff; }
         body { font-family: Helvetica, Arial, sans-serif; font-size: 8pt; }
 
-        .header {
-            text-align: center;
+        .header-wrapper {
+            display: flex;
+            align-items: flex-start;
             margin-bottom: 8px;
             border-bottom: 2px solid #1a1a1a;
             padding-bottom: 5px;
+        }
+
+        .className {
+            flex-shrink: 0;
+            margin-right: 20px;
+            align-self: center;
+            font-size: 9pt;
+        }
+
+        .header {
+            flex-grow: 1;
+            text-align: center;
         }
         
         .header h1 {
@@ -58,26 +71,23 @@
             width: 100%; 
             border-collapse: collapse; 
             margin: 10px 0;
-        }
-        
-        thead { 
-            background-color: #fff;
+            font-size: 11px;
         }
         
         th { 
+            color: #1e40af;
             padding: 8px 6px; 
             text-align: left; 
             font-size: 8pt;
             font-weight: 600;
-            color: #000;
-            border-top: 2px solid #000;
-            border-bottom: 2px solid #000;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
         }
         
         td { 
             padding: 6px; 
             border-bottom: 1px solid #e0e0e0;
-            font-size: 8pt;
+            font-size: 7pt;
         }
 
         tbody tr:hover {
@@ -86,7 +96,8 @@
         
         .amount { 
             text-align: right; 
-            font-family: 'Courier New', monospace; 
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
         }
         
         .service-no { 
@@ -102,30 +113,66 @@
         }
 
         /* Total Row */
-        .total-row {
+        .summary-totals-wrapper {
+            display: flex; /* Use flex to align items like table columns */
             border-top: 2px solid #000;
             font-weight: bold;
+            font-size: 7pt; /* Match table cell font size */
+            padding: 10px 6px;
+            page-break-inside: avoid; /* Ensures the total div doesn't split */
         }
 
-        .total-row td {
+        .summary-totals-wrapper .total-left {
+            width: 66.666%;
+            text-align: right;
+            padding-right: 20px;
+        }
+        .summary-totals-wrapper .total-center {
+            width: 16.666%;
+            text-align: center;
+        }
+        .summary-totals-wrapper .total-right {
+            width: 16.666%; 
+        }
+
+        .detailed-totals-wrapper {
+            display: flex;
+            border-top: 2px solid #000;
+            font-weight: bold;
+            font-size: 12pt;
             padding: 10px 6px;
+            page-break-inside: avoid;
+        }
+
+        .detailed-totals-wrapper .total-left {
+            width: 80.888%; 
+            text-align: right;
+            padding-right: 10px;
+        }
+        .detailed-totals-wrapper .total-right {
+            width: 11.111%;
         }
 
         .footer {
-            padding-top: 10px;
+            padding-top: 7px;
             border-top: 0.5px solid #1a1a1a;
             text-align: center;
             font-size: 8pt;
             color: #64748b;
-            margin-top: 20px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>NIGERIAN NAVY (NAVAL HEADQUARTERS)</h1>
-        <h2>CENTRAL PAY OFFICE, 23 POINT ROAD, APAPA</h2>
-    </div>
+  <div class="header-wrapper">
+      <div class="className">
+          {{className}}
+      </div>
+      <div class="header">
+          <h1>Nigerian Navy (Naval Headquarters)</h1>
+          <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+      </div>
+  </div>
 
     <div class="header-info">
         <div class="left">
@@ -137,10 +184,10 @@
             <span>AT</span> 
             <strong>{{formatTime reportDate}}</strong>
         </div>
-        <!--<div class="right">
+        <div class="right">
             <span>As At</span> 
-            <strong>{{month}}/{{year}}</strong>
-        </div>-->
+            <strong>{{formatMonth month}} {{year}}</strong>
+        </div>
     </div>
     
     {{#if isSummary}}
@@ -183,11 +230,11 @@
     <table>
         <thead>
             <tr>
-                <th>Serv. No</th>
+                <th>Svc. No</th>
                 <th>Full Name</th>
                 <th>Rank</th>
-                <th>Department</th>
-                <th class="center">Grade/Level</th>
+                <th>Location</th>
+                <th class="center">Grade</th>
                 <th>State</th>
                 <th>Bank</th>
                 <th>Account Number</th>
@@ -198,10 +245,10 @@
             {{#each data}}
             <tr>
                 <td class="service-no">{{service_number}}</td>
-                <td>{{fullname}}</td>
-                <td>{{title}}</td>
+                <td style="white-space: nowrap;">{{fullname}}</td>
+                <td>{{title}} {{Title}}</td>
                 <td>{{location}}</td>
-                <td class="center">{{gradelevel}}/({{level_years}})</td>
+                <td class="text-center">{{gradelevel}}0{{level_years}}</td>
                 <td>{{state_of_origin}}</td>
                 <td>{{Bankcode}}</td>
                 <td class="account-no">{{BankACNumber}}</td>
@@ -209,13 +256,12 @@
             </tr>
             {{/each}}
         </tbody>
-        <tfoot>
-            <tr class="total-row">
-                <td colspan="8" style="text-align: right;"><strong>TOTAL NUMBER:</strong> {{totalEmployees}}</td>
-                <td class="amount"><strong>₦{{formatCurrency totalNetPay}}</strong></td>
-            </tr>
-        </tfoot>
     </table>
+
+    <div class="detailed-totals-wrapper total-row">
+        <div class="total-left"><strong>TOTAL NUMBER:</strong> {{totalEmployees}}</div>
+        <div class="total-right amount"><strong>₦{{formatCurrency totalNetPay}}</strong></div>
+    </div>    
     {{/if}}
 
     <div class="footer">

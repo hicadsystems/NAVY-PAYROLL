@@ -22,7 +22,7 @@
     <div id="bankSelectContainer" class="hidden">
       <label for="bankName" class="block text-sm font-medium mb-1">Bank Name</label>
       <select id="bankName" name="bankName"
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
         <option value="">Select Bank</option>
         <!-- Options will be loaded from API -->
       </select>
@@ -32,7 +32,7 @@
     <div>
       <label for="processingMonth" class="block text-sm font-medium mb-1">Processing Month</label>
       <select id="processingMonth" name="processingMonth"
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
         <option value="">Select Month</option>
         <option value="1">January</option>
         <option value="2">February</option>
@@ -53,21 +53,21 @@
     <div>
       <label for="processingYear" class="block text-sm font-medium mb-1">Processing Year</label>
       <input type="number" id="processingYear" name="processingYear"
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300"
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         placeholder="e.g., 2025" min="2020" max="2099">
     </div>
 
     <!-- Output Format -->
-    <div>
-      <label class="block font-medium mb-2">Output Format</label>
+    <div class="flex flex-wrap items-center gap-2">
+      <label class="block font-medium">Output Format</label>
       <div class="flex space-x-4">
         <label class="flex text-sm items-center space-x-2">
           <input type="radio" name="bankFormat" value="pdf" checked>
           <span>PDF</span>
         </label>
         <label class="flex text-sm items-center space-x-2">
-          <input type="radio" name="bankFormat" value="excel">
-          <span>Excel</span>
+          <input type="radio" class="hidden" name="bankFormat" value="excel">
+          <span class="hidden">Excel</span>
         </label>
       </div>
     </div>
@@ -91,13 +91,16 @@
         </button>
       </div>
     </div>
-
-    <!-- Loading Indicator -->
-    <div id="bankLoadingIndicator" class="hidden text-center text-blue-600 text-sm">
-      <span>Generating report...</span>
-    </div>
   </form>
 </section>
+
+  <!-- Loading Indicator -->
+  <div id="bankLoadingIndicator" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
+      <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+      <span>Generating report...</span>
+    </div>
+  </div>
 
 <!-- Confirmation Modal -->
 <div id="printConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -167,8 +170,19 @@
   const printErrorOkBtn = document.getElementById("printErrorOkBtn");
   const bankErrorMessage = document.getElementById("bankErrorMessage");
 
-  // Set current year
-  processingYear.value = new Date().getFullYear();
+  // Helper function to convert month name to number
+  function getMonthNumber(monthName) {
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+    return months.indexOf(monthName) + 1;
+  }
+
+  // Helper function to convert month number to name
+  function getMonthName(monthNum) {
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+    return months[monthNum - 1] || '';
+  }
 
   // Load banks on page load
   async function loadBanks() {
@@ -180,18 +194,39 @@
 
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.data.banks) {
+        if (result.success && result.data.bank) {
           bankName.innerHTML = '<option value="">Select Bank</option>';
-          result.data.banks.forEach(bank => {
+          result.data.bank.forEach(bank => {
             const option = document.createElement('option');
-            option.value = bank.bank_code;
-            option.textContent = bank.bank_name;
+            option.value = bank.Bankcode;
+            option.textContent = bank.Bankcode + ' - ' + bank.branchname || bank.bankbranch;
             bankName.appendChild(option);
           });
         }
       }
     } catch (error) {
       console.error('Error loading banks:', error);
+    }
+  }
+
+  // Load current period and set default values
+  async function loadCurrentPeriod() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE}/filter-options`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const period = result.data.currentPeriod;
+          processingYear.value = period.year;
+          processingMonth.value = period.month;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading current period:', error);
     }
   }
 
@@ -316,4 +351,5 @@
   // Initialize
   toggleBankInput();
   loadBanks();
+  loadCurrentPeriod();
 </script>

@@ -419,7 +419,7 @@ class PayslipGenerationService {
       mthdesc,                              // desc1 (month description)
       '',                                   // tpcoy (company - empty)
       '',                                   // tpaddr (address - empty)
-      metadata.title_desc || '',            // title
+      metadata.title_desc || employee.title,            // title
       employee.surname || '',               // surname
       employee.othername || '',             // othername
       employee.bankacnumber || '',          // bankacnumber

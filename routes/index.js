@@ -78,12 +78,13 @@ const dropdownhelperRoutes = require('./refrence-tables/dropdownhelper');
 const erndedAnalysisRoutes = require('./reports/erndedAnalysis');
 const loanAnalysisRoutes = require('./reports/loanAnalysis');
 const nathouseFundsRoutes = require('./reports/nathouseFunds');
-const normhrsdeptAnalysisRoutes = require('./reports/normhrsdeptAnalysis');
+const personnelReportRoutes = require('./reports/personnelReport');
+//const normhrsdeptAnalysisRoutes = require('./reports/normhrsdeptAnalysis');
 const nstifRoutes = require('./reports/nstif');
-const overtimeAnalysisRoutes = require('./reports/overtimeAnalysis');
+//const overtimeAnalysisRoutes = require('./reports/overtimeAnalysis');
 const paydedBankAnalysisRoutes = require('./reports/paydedBankAnalysis');
 const paymentsBankRoutes = require('./reports/paymentsBank');
-const payrollfilesListRoutes = require('./reports/payrollfilesList');
+const controlSheetRoutes = require('./reports/controlSheet');
 const payrollRegisterRoutes = require('./reports/payrollRegister');
 const payslipsRoutes = require('./reports/payslips');
 const salaryReconcileRoutes = require('./reports/salaryReconcile');
@@ -186,19 +187,20 @@ module.exports = (app) => {
     //reports
     app.use('/ernded', erndedAnalysisRoutes);
     app.use('/loan', loanAnalysisRoutes);
-    app.use('/nathouse', nathouseFundsRoutes);
-    app.use('/normhrsdept', normhrsdeptAnalysisRoutes);
+    app.use('/nhf', nathouseFundsRoutes);
+    //app.use('/normhrsdept', normhrsdeptAnalysisRoutes);
     app.use('/nstif', nstifRoutes);
-    app.use('/overtime', overtimeAnalysisRoutes);
+    //app.use('/overtime', overtimeAnalysisRoutes);
     app.use('/paydedbank', paydedBankAnalysisRoutes);
     app.use('/paymentsbank', paymentsBankRoutes);
-    app.use('/payrollfiles', payrollfilesListRoutes);
+    app.use('/controlsheet', controlSheetRoutes);
     app.use('/payrollregister', payrollRegisterRoutes);
     app.use('/payslips', payslipsRoutes);
     app.use('/salaryreconcile', salaryReconcileRoutes);
     app.use('/salarysummary', salarySummaryRoutes);
     app.use('/staffpaylist', staffpayListRoutes);
     app.use('/taxstatepay', taxstatePayRoutes);
+    app.use('/personnel-report', personnelReportRoutes);
 
 
     //audit-trail

@@ -1,6 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../../config/db'); // mysql2 pool
+const nhfReportController = require('../../controllers/Reports/nhfReportController');
 const verifyToken = require('../../middware/authentication');
+
+
+// NHF REPORT - DATA GENERATION (Returns JSON data)
+router.get('/generate', verifyToken, nhfReportController.generateNHFReport.bind(nhfReportController));
+
+// NHF - PDF EXPORT (Receives data in body, returns PDF file)
+router.post('/export/pdf', verifyToken, nhfReportController.generateNHFReportPDF.bind(nhfReportController));
+
+// NHF - EXCEL EXPORT (Receives data in body, returns Excel file)
+router.post('/export/excel', verifyToken, nhfReportController.generateNHFReportExcel.bind(nhfReportController));
+
+// FILTER OPTIONS - GET AVAILABLE STATES
+router.get('/filter-options', verifyToken, nhfReportController.getNHFFilterOptions.bind(nhfReportController));
 
 module.exports = router;

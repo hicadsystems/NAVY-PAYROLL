@@ -43,9 +43,17 @@ exports.runCalculations = async (year, month, user, userId) => {
           sr.ord as year,
           sr.mth as month,
           
-          -- From cumulative (summary)
+          -- From cumulative (summary) - NET only
           (SELECT ROUND(COALESCE(SUM(his_netmth), 0), 2) 
-           FROM py_mastercum WHERE his_type = sr.mth) as total_net_cumulative,
+          FROM py_mastercum WHERE his_type = sr.mth) as total_net_cumulative,
+          
+          -- ROUNDUP from cumulative
+          (SELECT ROUND(COALESCE(SUM(his_roundup), 0), 2) 
+          FROM py_mastercum WHERE his_type = sr.mth) as total_roundup,
+          
+          -- NET + ROUNDUP (actual payout) - FIXED: Handle NULLs properly
+          (SELECT ROUND(COALESCE(SUM(COALESCE(his_netmth, 0) + COALESCE(his_roundup, 0)), 0), 2) 
+          FROM py_mastercum WHERE his_type = sr.mth) as total_net_with_roundup,
           
           -- From detail breakdown
           (SELECT ROUND(
@@ -53,44 +61,50 @@ exports.runCalculations = async (year, month, user, userId) => {
               COALESCE(SUM(CASE WHEN LEFT(his_type, 2) = 'PR' THEN amtthismth ELSE 0 END), 0) -
               COALESCE(SUM(CASE WHEN LEFT(his_type, 2) = 'PL' THEN amtthismth ELSE 0 END), 0) +
               COALESCE(SUM(CASE WHEN LEFT(his_type, 2) = 'PT' THEN amtthismth ELSE 0 END), 0), 2)
-           FROM py_masterpayded) as total_net_detail,
+          FROM py_masterpayded) as total_net_detail,
           
           -- Gross pay
           (SELECT ROUND(COALESCE(SUM(his_grossmth), 0), 2) 
-           FROM py_mastercum WHERE his_type = sr.mth) as total_gross,
+          FROM py_mastercum WHERE his_type = sr.mth) as total_gross,
           
           -- Tax
           (SELECT ROUND(COALESCE(SUM(his_taxmth), 0), 2) 
-           FROM py_mastercum WHERE his_type = sr.mth) as total_tax,
+          FROM py_mastercum WHERE his_type = sr.mth) as total_tax,
           
           -- Deductions
           (SELECT ROUND(COALESCE(SUM(CASE WHEN LEFT(his_type, 2) = 'PR' THEN amtthismth ELSE 0 END), 0), 2)
-           FROM py_masterpayded) as total_deductions,
+          FROM py_masterpayded) as total_deductions,
           
           -- Allowances
           (SELECT ROUND(COALESCE(SUM(CASE WHEN LEFT(his_type, 2) = 'PT' THEN amtthismth ELSE 0 END), 0), 2)
-           FROM py_masterpayded) as total_allowances,
+          FROM py_masterpayded) as total_allowances,
           
           -- Employee count
           (SELECT COUNT(DISTINCT his_empno) 
-           FROM py_mastercum WHERE his_type = sr.mth) as employee_count,
+          FROM py_mastercum WHERE his_type = sr.mth) as employee_count,
           
-          -- Variance
-          ABS((SELECT COALESCE(SUM(his_netmth), 0) FROM py_mastercum WHERE his_type = sr.mth) - 
+          -- Variance - FIXED: Handle NULLs properly
+          ROUND(ABS(
+              (SELECT COALESCE(SUM(COALESCE(his_netmth, 0) + COALESCE(his_roundup, 0)), 0) 
+              FROM py_mastercum WHERE his_type = sr.mth) - 
               (SELECT COALESCE(SUM(CASE WHEN LEFT(his_type, 2) IN ('BP', 'BT') THEN amtthismth ELSE 0 END), 0) -
                       COALESCE(SUM(CASE WHEN LEFT(his_type, 2) = 'PR' THEN amtthismth ELSE 0 END), 0) -
                       COALESCE(SUM(CASE WHEN LEFT(his_type, 2) = 'PL' THEN amtthismth ELSE 0 END), 0) +
                       COALESCE(SUM(CASE WHEN LEFT(his_type, 2) = 'PT' THEN amtthismth ELSE 0 END), 0)
-               FROM py_masterpayded)) as variance,
+              FROM py_masterpayded)
+          ), 2) as variance,
           
-          -- Status check
+          -- Status check - FIXED: Handle NULLs properly
           CASE 
-              WHEN ABS((SELECT COALESCE(SUM(his_netmth), 0) FROM py_mastercum WHERE his_type = sr.mth) - 
-                       (SELECT COALESCE(SUM(CASE WHEN LEFT(his_type, 2) IN ('BP', 'BT') THEN amtthismth ELSE 0 END), 0) -
-                               COALESCE(SUM(CASE WHEN LEFT(his_type, 2) = 'PR' THEN amtthismth ELSE 0 END), 0) -
-                               COALESCE(SUM(CASE WHEN LEFT(his_type, 2) = 'PL' THEN amtthismth ELSE 0 END), 0) +
-                               COALESCE(SUM(CASE WHEN LEFT(his_type, 2) = 'PT' THEN amtthismth ELSE 0 END), 0)
-                        FROM py_masterpayded)) < 1
+              WHEN ABS(
+                  (SELECT COALESCE(SUM(COALESCE(his_netmth, 0) + COALESCE(his_roundup, 0)), 0) 
+                  FROM py_mastercum WHERE his_type = sr.mth) - 
+                  (SELECT COALESCE(SUM(CASE WHEN LEFT(his_type, 2) IN ('BP', 'BT') THEN amtthismth ELSE 0 END), 0) -
+                          COALESCE(SUM(CASE WHEN LEFT(his_type, 2) = 'PR' THEN amtthismth ELSE 0 END), 0) -
+                          COALESCE(SUM(CASE WHEN LEFT(his_type, 2) = 'PL' THEN amtthismth ELSE 0 END), 0) +
+                          COALESCE(SUM(CASE WHEN LEFT(his_type, 2) = 'PT' THEN amtthismth ELSE 0 END), 0)
+                  FROM py_masterpayded)
+              ) < 1
               THEN 'BALANCED'
               ELSE 'VARIANCE_DETECTED'
           END as reconciliation_status

@@ -255,6 +255,12 @@ let migrationType = 'individual';
 let isLoading = false;
 let migrationStartTime = null;
 
+// Dropdown Managemant
+let currentPage = 0;
+const pageSize = 50;
+let totalEmployeeCount = 0;
+let isLoadingMore = false;
+
 // DOM elements
 const migrationTypeRadios = document.querySelectorAll('input[name="migrationType"]');
 const individualForm = document.getElementById('individualForm');
@@ -275,6 +281,11 @@ const rangeSearchInputEnd = document.getElementById('rangeSearchInputEnd');
 const rangeHiddenInputEnd = document.getElementById('rangeHiddenInputEnd');
 const rangeDropdownListEnd = document.getElementById('rangeDropdownListEnd');
 const rangeNewClassSelect = document.getElementById('rangeNewClass');
+
+// Scroll Listeners
+setupScrollListener(dropdownList);
+setupScrollListener(rangeDropdownListStart);
+setupScrollListener(rangeDropdownListEnd);
 
 const selectionDisplay = document.getElementById('selectionDisplay');
 const selectionText = document.getElementById('selectionText');
@@ -428,11 +439,16 @@ function showMigrationSummary(data) {
 }
 
 // Load Personnel
-async function loadPersonnel() {
-  if (isLoading) return;
-  if (allEmployees.length > 0) return;
+async function loadPersonnel(append = false) {
+  if (isLoading || isLoadingMore) return;
   
-  isLoading = true;
+  if (append) {
+    isLoadingMore = true;
+  } else {
+    isLoading = true;
+    currentPage = 0;
+    allEmployees = [];
+  }
   
   const loadingHTML = `
     <div class="py-1">
@@ -441,18 +457,28 @@ async function loadPersonnel() {
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
-        Loading employees...
+        ${append ? 'Loading more...' : 'Loading employees...'}
       </div>
     </div>
   `;
   
-  dropdownList.innerHTML = loadingHTML;
-  rangeDropdownListStart.innerHTML = loadingHTML;
-  rangeDropdownListEnd.innerHTML = loadingHTML;
+  if (!append) {
+    dropdownList.innerHTML = loadingHTML;
+    rangeDropdownListStart.innerHTML = loadingHTML;
+    rangeDropdownListEnd.innerHTML = loadingHTML;
+  }
   
   try {
-    const result = await apiRequest(`${API_BASE}/active-employees`);
-    allEmployees = result.data || result.employees || result.results || (Array.isArray(result) ? result : []);
+    const offset = currentPage * pageSize;
+    const result = await apiRequest(`${API_BASE}/active-employees?limit=${pageSize}&offset=${offset}`);
+    const newEmployees = result.data || result.employees || result.results || [];
+    totalEmployeeCount = result.total || newEmployees.length;
+    
+    if (append) {
+      allEmployees = [...allEmployees, ...newEmployees];
+    } else {
+      allEmployees = newEmployees;
+    }
     
     if (allEmployees.length === 0) {
       const noDataHTML = '<div class="py-1"><div class="px-3 py-4 text-center text-gray-500">No employees found</div></div>';
@@ -465,6 +491,8 @@ async function loadPersonnel() {
       renderDropdown(allEmployees, rangeDropdownListEnd, 'end');
     }
     
+    currentPage++;
+    
   } catch (error) {
     console.error('Error fetching employees:', error);
     const errorHTML = `<div class="py-1"><div class="px-3 py-4 text-center text-red-500">Failed to load employees<br><span class="text-xs">${error.message}</span></div></div>`;
@@ -473,7 +501,19 @@ async function loadPersonnel() {
     rangeDropdownListEnd.innerHTML = errorHTML;
   } finally {
     isLoading = false;
+    isLoadingMore = false;
   }
+}
+
+function setupScrollListener(container) {
+  container.addEventListener('scroll', function() {
+    const scrollPercentage = (this.scrollTop + this.clientHeight) / this.scrollHeight;
+    
+    // Load more when user scrolls to 80% of the list
+    if (scrollPercentage > 0.8 && !isLoadingMore && allEmployees.length < totalEmployeeCount) {
+      loadPersonnel(true);
+    }
+  });
 }
 
 function renderDropdown(employees, container, type = 'individual') {
@@ -713,11 +753,22 @@ rangeNewClassSelect.addEventListener('change', () => {
 });
 
 // Individual search
-searchInput.addEventListener('focus', () => {
-  if (allEmployees.length === 0) {
-    loadPersonnel();
+searchInput.addEventListener('input', function() {
+  const searchText = this.value.trim();
+  
+  // Only show dropdown if user has typed something
+  if (searchText.length === 0) {
+    dropdownList.classList.add('hidden');
+    return;
   }
-  dropdownList.classList.remove('hidden');
+  
+  if (allEmployees.length === 0) {
+    loadPersonnel().then(() => {
+      filterDropdown(searchText.toLowerCase(), dropdownList, 'individual');
+    });
+  } else {
+    filterDropdown(searchText.toLowerCase(), dropdownList, 'individual');
+  }
 });
 
 searchInput.addEventListener('input', function() {
@@ -733,22 +784,42 @@ searchInput.addEventListener('input', function() {
 });
 
 // Range searches
-rangeSearchInputStart.addEventListener('focus', () => {
-  if (allEmployees.length === 0) {
-    loadPersonnel();
+rangeSearchInputStart.addEventListener('input', function() {
+  const searchText = this.value.trim();
+  
+  if (searchText.length === 0) {
+    rangeDropdownListStart.classList.add('hidden');
+    return;
   }
-  rangeDropdownListStart.classList.remove('hidden');
+  
+  if (allEmployees.length === 0) {
+    loadPersonnel().then(() => {
+      filterDropdown(searchText.toLowerCase(), rangeDropdownListStart, 'start');
+    });
+  } else {
+    filterDropdown(searchText.toLowerCase(), rangeDropdownListStart, 'start');
+  }
 });
 
 rangeSearchInputStart.addEventListener('input', function() {
   filterDropdown(this.value.toLowerCase(), rangeDropdownListStart, 'start');
 });
 
-rangeSearchInputEnd.addEventListener('focus', () => {
-  if (allEmployees.length === 0) {
-    loadPersonnel();
+rangeSearchInputEnd.addEventListener('input', function() {
+  const searchText = this.value.trim();
+  
+  if (searchText.length === 0) {
+    rangeDropdownListEnd.classList.add('hidden');
+    return;
   }
-  rangeDropdownListEnd.classList.remove('hidden');
+  
+  if (allEmployees.length === 0) {
+    loadPersonnel().then(() => {
+      filterDropdown(searchText.toLowerCase(), rangeDropdownListEnd, 'end');
+    });
+  } else {
+    filterDropdown(searchText.toLowerCase(), rangeDropdownListEnd, 'end');
+  }
 });
 
 rangeSearchInputEnd.addEventListener('input', function() {

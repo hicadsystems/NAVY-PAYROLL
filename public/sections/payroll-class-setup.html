@@ -3,32 +3,15 @@
   <h2 class="text-2xl font-bold text-blue-800 mb-6">Add New Record</h2>
   
   <!-- Form -->
-  <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-      <input id="payrollCode" type="text" placeholder="Enter Code"  
-       class="border bg-transparent border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
-      <input id="payrollDesc" type="text" placeholder="Enter Description"
-          class="border bg-transparent border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
-      <input id="payrollYear" type="text" placeholder="Enter Year"
-          class="border bg-transparent border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
-      <select id="payrollMonth" class="border bg-transparent border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
-          <option value="">Select Month</option>
-          <option value="01">01 - January</option>
-          <option value="02">02 - February</option>
-          <option value="03">03 - March</option>
-          <option value="04">04 - April</option>
-          <option value="05">05 - May</option>
-          <option value="06">06 - June</option>
-          <option value="07">07 - July</option>
-          <option value="08">08 - August</option>
-          <option value="09">09 - September</option>
-          <option value="10">10 - October</option>
-          <option value="11">11 - November</option>
-          <option value="12">12 - December</option>
-      </select>
-      <button id="addPayrollBtn"
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">
-          Add Payroll Class
-      </button>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <input id="payrollCode" type="text" placeholder="Enter Code"  
+    class="border bg-transparent border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
+    <input id="payrollDesc" type="text" placeholder="Enter Description"
+        class="border bg-transparent border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
+    <button id="addPayrollBtn"
+        class="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">
+        Add Payroll Class
+    </button>
   </div>
 
   <!-- Table -->
@@ -136,8 +119,8 @@
       const addBtn = document.getElementById("addPayrollBtn");
       const codeInput = document.getElementById("payrollCode");
       const descInput = document.getElementById("payrollDesc");
-      const yearInput = document.getElementById("payrollYear");
-      const monthInput = document.getElementById("payrollMonth");
+      //const yearInput = document.getElementById("payrollYear");
+      //const monthInput = document.getElementById("payrollMonth");
       const tableBody = document.getElementById("payrollTableBody");
 
       const deleteModal = document.getElementById("deleteModal");
@@ -209,7 +192,7 @@
           showError(error.message || 'An unexpected error occurred');
       }
 
-      function createRow(code, desc, year, month, status) {
+        function createRow(code, desc, year, month, status) {
         const tr = document.createElement("tr");
         tr.className = "hover:bg-gray-50";
 
@@ -218,8 +201,8 @@
         tr.innerHTML = `
             <td class="border py-2 px-4">${code}</td>
             <td class="border py-2 px-4">${desc}</td>
-            <td class="border py-2 px-4">${year}</td>
-            <td class="border py-2 px-4">${month}</td>
+            <td class="border py-2 px-4 text-gray-500">${year}</td>
+            <td class="border py-2 px-4 text-gray-500">${month}</td>
             <td class="border py-2 px-4 space-x-2 text-center">
                 <button class="text-blue-600 hover:underline editBtn">Edit</button> |
                 <button class="text-red-600 hover:underline deleteBtn">Delete</button>
@@ -233,7 +216,7 @@
             </td>
         `;
 
-        // =============== EDIT HANDLER ==================
+        // =============== EDIT HANDLER (Updated) ==================
         tr.querySelector(".editBtn").addEventListener("click", async (e) => {
             const editBtn = e.target;
             const codeCell = tr.children[0];
@@ -242,101 +225,90 @@
             const monthCell = tr.children[3];
 
             if (editBtn.textContent === "Edit") {
-            const currentCode = codeCell.textContent;
-            const currentDesc = descCell.textContent;
-            const currentYear = yearCell.textContent;
-            const currentMonthName = monthCell.textContent;
+                const currentCode = codeCell.textContent;
+                const currentDesc = descCell.textContent;
+                const currentYear = yearCell.textContent;
+                const currentMonth = monthCell.textContent;
 
-            // Convert month name back to numeric
-            const currentMonth = String(monthNames.indexOf(currentMonthName) + 1).padStart(2, '0');
+                codeCell.innerHTML = `<input type="text" value="${currentCode}" class="border px-2 py-1 rounded w-full" data-original-code="${currentCode}"/>`;
+                descCell.innerHTML = `<input type="text" value="${currentDesc}" class="border px-2 py-1 rounded w-full"/>`;
+                // Year and month are disabled (read-only with gray styling)
+                yearCell.innerHTML = `<span class="text-gray-500">${currentYear}</span>`;
+                monthCell.innerHTML = `<span class="text-gray-500">${currentMonth}</span>`;
 
-            codeCell.innerHTML = `<input type="text" value="${currentCode}" class="border px-2 py-1 rounded w-full" data-original-code="${currentCode}"/>`;
-            descCell.innerHTML = `<input type="text" value="${currentDesc}" class="border px-2 py-1 rounded w-full"/>`;
-            yearCell.innerHTML = `<input type="text" value="${currentYear}" class="border px-2 py-1 rounded w-full"/>`;
-            monthCell.innerHTML = `<select class="border px-2 py-1 rounded w-full">
-                ${monthNames.map((m, i) => 
-                    `<option value="${String(i + 1).padStart(2, '0')}" ${currentMonth === String(i + 1).padStart(2, '0') ? 'selected' : ''}>${m}</option>`
-                ).join('')}
-            </select>`;
+                const codeInput = codeCell.querySelector("input");
 
-            const codeInput = codeCell.querySelector("input");
+                // Duplicate check on blur
+                codeInput.addEventListener("blur", async () => {
+                    const newCode = codeInput.value.trim();
+                    const originalCode = codeInput.dataset.originalCode;
 
-            // Duplicate check on blur
-            codeInput.addEventListener("blur", async () => {
-                const newCode = codeInput.value.trim();
-                const originalCode = codeInput.dataset.originalCode;
+                    if (newCode && newCode !== originalCode) {
+                        try {
+                            const response = await API.getAllClasses();
+                            const codeExists = response.data.some(item => item.classcode === newCode);
 
-                if (newCode && newCode !== originalCode) {
-                try {
-                    const response = await API.getAllClasses();
-                    const codeExists = response.data.some(item => item.classcode === newCode);
-
-                    if (codeExists) {
-                    showError("Code already exists");
-                    codeInput.value = originalCode;
-                    codeInput.focus();
+                            if (codeExists) {
+                                showError("Code already exists");
+                                codeInput.value = originalCode;
+                                codeInput.focus();
+                            }
+                        } catch (error) {
+                            console.error("Error checking code:", error);
+                        }
                     }
-                } catch (error) {
-                    console.error("Error checking code:", error);
-                }
-                }
-            });
-
-            // Enable Enter key for save
-            const inputs = tr.querySelectorAll("input, select");
-            inputs.forEach(input =>
-                input.addEventListener("keydown", (ev) => {
-                if (ev.key === "Enter") editBtn.click();
-                })
-            );
-
-            editBtn.textContent = "Save";
-            } else {
-            const codeInput = codeCell.querySelector("input");
-            const newCode = codeInput.value.trim();
-            const originalCode = codeInput.dataset.originalCode;
-            const newDesc = descCell.querySelector("input").value.trim();
-            const newYear = yearCell.querySelector("input").value.trim();
-            const newMonth = monthCell.querySelector("select").value;
-
-            if (!newCode || !newDesc || !newYear || !newMonth) {
-                showError("All fields are required");
-                return;
-            }
-
-            // Validate code change
-            if (newCode !== originalCode) {
-                try {
-                const response = await API.getAllClasses();
-                const codeExists = response.data.some(item => item.classcode === newCode);
-                if (codeExists) {
-                    showError("Code already exists");
-                    codeInput.focus();
-                    return;
-                }
-                } catch (error) {
-                handleError(error, "validating code");
-                return;
-                }
-            }
-
-            try {
-                await API.updateClass(originalCode, {
-                classcode: newCode,
-                classname: newDesc,
-                year: parseInt(newYear),
-                month: parseInt(newMonth),
                 });
 
-                codeCell.textContent = newCode;
-                descCell.textContent = newDesc;
-                yearCell.textContent = newYear;
-                monthCell.textContent = monthNames[parseInt(newMonth) - 1];
-                editBtn.textContent = "Edit";
-                showSuccess("Updated Successfully");
-            } catch (error) {
-                handleError(error, "updating payroll class");
-            }
+                // Enable Enter key for save
+                const inputs = tr.querySelectorAll("input");
+                inputs.forEach(input =>
+                    input.addEventListener("keydown", (ev) => {
+                        if (ev.key === "Enter") editBtn.click();
+                    })
+                );
+
+                editBtn.textContent = "Save";
+            } else {
+                const codeInput = codeCell.querySelector("input");
+                const newCode = codeInput.value.trim();
+                const originalCode = codeInput.dataset.originalCode;
+                const newDesc = descCell.querySelector("input").value.trim();
+
+                if (!newCode || !newDesc) {
+                    showError("Code and Description are required");
+                    return;
+                }
+
+                // Validate code change
+                if (newCode !== originalCode) {
+                    try {
+                        const response = await API.getAllClasses();
+                        const codeExists = response.data.some(item => item.classcode === newCode);
+                        if (codeExists) {
+                            showError("Code already exists");
+                            codeInput.focus();
+                            return;
+                        }
+                    } catch (error) {
+                        handleError(error, "validating code");
+                        return;
+                    }
+                }
+
+                try {
+                    // Only send code and description (no year/month)
+                    await API.updateClass(originalCode, {
+                        classcode: newCode,
+                        classname: newDesc
+                    });
+
+                    codeCell.textContent = newCode;
+                    descCell.textContent = newDesc;
+                    editBtn.textContent = "Edit";
+                    showSuccess("Updated Successfully");
+                } catch (error) {
+                    handleError(error, "updating payroll class");
+                }
             }
         });
 
@@ -533,36 +505,32 @@
     });
 
 
-    // ==================== ADD NEW RECORD ====================
+    // ==================== ADD NEW RECORD (Updated) ====================
     addBtn.addEventListener("click", async () => {
         const code = codeInput.value.trim();
         const desc = descInput.value.trim();
-        const year = yearInput.value;
-        const month = monthInput.value;
 
-        // Basic validation
-        if (!code || !desc || !year || !month) {
+        // Basic validation (no year/month)
+        if (!code || !desc) {
             showError("Please fill all fields");
             return;
         }
 
         try {
-            // Check again for duplicate (safety net)
+            // Check for duplicate
             const response = await API.getAllClasses();
             const codeExists = response.data.some(item => item.classcode === code);
 
             if (codeExists) {
-            showError("Code already exists");
-            codeInput.focus();
-            return;
+                showError("Code already exists");
+                codeInput.focus();
+                return;
             }
 
-            // Create record
+            // Create record without year/month (backend will get from py_stdrate)
             await API.createClass({
-            classcode: code,
-            classname: desc,
-            year: parseInt(year),
-            month: parseInt(month),
+                classcode: code,
+                classname: desc
             });
 
             // Reload list
@@ -572,14 +540,12 @@
             // Clear form
             codeInput.value = "";
             descInput.value = "";
-            yearInput.value = "";
-            monthInput.value = "";
         } catch (error) {
             handleError(error, 'adding payroll class');
         }
-    });
+    });      
 
-      // Cancel delete
+     // Cancel delete
       cancelDeleteBtn.addEventListener("click", () => {
           rowToDelete = null;
           deleteModal.classList.add("hidden");

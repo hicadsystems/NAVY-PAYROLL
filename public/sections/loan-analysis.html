@@ -7,7 +7,7 @@
     <div>
       <label for="loanMonth" class="block text-sm font-medium mb-1">Processing Month</label>
       <select id="loanMonth" name="loanMonth"
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-purple-300">
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
         <option value="">Select Month</option>
         <option value="1">January</option>
         <option value="2">February</option>
@@ -28,7 +28,7 @@
     <div>
       <label for="loanYear" class="block text-sm font-medium mb-1">Processing Year</label>
       <input type="number" id="loanYear" name="loanYear" 
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-purple-300"
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         placeholder="e.g., 2025" min="2020" max="2099">
     </div>
 
@@ -58,13 +58,16 @@
         Generate Report
       </button>
     </div>
-
-    <!-- Loading Indicator -->
-    <div id="loanLoadingIndicator" class="hidden text-center text-purple-600 text-sm">
-      <span>Generating report...</span>
-    </div>
   </form>
 </section>
+
+<!-- Loading Indicator -->
+<div id="loanLoadingIndicator" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
+    <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+    <p class="text-gray-700">Generating report...</p>
+  </div>
+</div>
 
 <!-- Confirmation Modal -->
 <div id="loanConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -130,7 +133,42 @@
   const loanErrorMessage = document.getElementById("loanErrorMessage");
 
   // Set current year as default
-  loanYear.value = new Date().getFullYear();
+  // Helper function to convert month name to number
+  function getMonthNumber(monthName) {
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+    return months.indexOf(monthName) + 1;
+  }
+
+  // Helper function to convert month number to name
+  function getMonthName(monthNum) {
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+    return months[monthNum - 1] || '';
+  }
+
+  // Load filter options
+  async function loadFilters() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/salarysummary/filter-options`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const period = result.data.currentPeriod;
+          loanYear.value = period.year;
+          loanMonth.value = getMonthName(period.month);
+
+          console.log('Current Period:', period);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading current period:', error);
+    }
+  }
 
   loanPrintBtn.addEventListener("click", () => {
     // Validation
@@ -226,4 +264,7 @@
   loanClearBtn.addEventListener("click", () => {
     loanYear.value = new Date().getFullYear();
   });
+
+  // Init
+  loadFilters();
 </script>

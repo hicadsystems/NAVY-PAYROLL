@@ -10,8 +10,9 @@ const {
   getTaxReport, 
   getDepartmentSummary, 
   getGradeSummary, 
-  getExceptionReport, 
-  exportReport  // Use the unified export handler
+  getExceptionReport,
+  getControlSheet, 
+  exportReport
 } = require('../../controllers/payroll-calculations/calculationReports');
 
 // Data endpoints
@@ -23,6 +24,7 @@ router.get('/department', verifyToken, getDepartmentSummary);
 router.get('/grade', verifyToken, getGradeSummary);
 router.get('/exceptions', verifyToken, getExceptionReport);
 router.get('/allowances', verifyToken, getAllowancesSummary);
+router.get('/controlsheet', verifyToken, getControlSheet);
 
 // Single export route handles all report types and formats
 router.get('/:reportType/export/:format', verifyToken, exportReport);

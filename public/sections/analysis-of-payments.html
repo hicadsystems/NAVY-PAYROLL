@@ -19,7 +19,7 @@
           </label>
         </div>
         <select id="bankAnalysisBankName"
-          class="mt-2 w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300"
+          class="mt-2 w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="Enter Bank Name" disabled>
           <option value="">Select Bank</option>
           <!-- Options will be loaded from API -->
@@ -40,7 +40,7 @@
           </label>
         </div>
         <select id="bankAnalysisPaymentType"
-          class="mt-2 w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300" disabled>
+          class="mt-2 w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled>
           <option value="">Select Payment Type</option>
           <!-- Options will be loaded from API -->
         </select>
@@ -52,7 +52,7 @@
       <div>
         <label for="bankAnalysisMonth" class="block text-sm font-medium mb-1">Processing Month</label>
         <select id="bankAnalysisMonth"
-          class="mt-2 w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+          class="mt-2 w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
           <option value="">Select Month</option>
           <option value="1">January</option>
           <option value="2">February</option>
@@ -73,7 +73,7 @@
       <div>
         <label for="bankAnalysisYear" class="block text-sm font-medium mb-1">Processing Year</label>
         <input type="number" id="bankAnalysisYear" name="processingYear"
-          class="mt-2 w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300"
+          class="mt-2 w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="e.g., 2025" min="2020" max="2099">
       </div>
     </div>
@@ -113,13 +113,16 @@
         </button>
       </div>
     </div>
-
-    <!-- Loading Indicator -->
-    <div id="bankAnalysisLoadingIndicator" class="hidden text-center text-blue-600 text-sm">
-      <span>Generating report...</span>
-    </div>
   </form>
 </section>
+
+<!-- Loading Indicator -->
+<div id="bankAnalysisLoadingIndicator" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
+    <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+  <span>Generating report...</span>
+  </div>
+</div>
 
 <!-- Confirmation Modal -->
 <div id="bankAnalysisConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -194,7 +197,25 @@
   const bankAnalysisErrorMessage = document.getElementById("bankAnalysisErrorMessage");
 
   // Set current year
-  bankAnalysisYear.value = new Date().getFullYear();
+  async function loadCurrentPeriod() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/salarysummary/filter-options`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const period = result.data.currentPeriod;
+          bankAnalysisYear.value = period.year;
+          bankAnalysisMonth.value = period.month;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading current period:', error);
+    }
+  }
 
   // Load dropdowns on page load
   async function loadBankDropdown(endpoint, elementId, valueField, textField, placeholder) {
@@ -376,6 +397,7 @@
   });
 
   // Initialize
+  loadCurrentPeriod();
   toggleBankInput();
   toggleTypeInput();
   loadAllBankDropdowns();

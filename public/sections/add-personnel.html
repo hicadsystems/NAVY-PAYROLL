@@ -245,7 +245,7 @@
           <select name="rent_subsidy" id="rent_subsidy" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
             <option>Select</option>
             <option value="Yes">YES</option>
-            <option value="NO">NO</option>
+            <option value="No">NO</option>
           </select>
         </div>
       </div>
@@ -2023,42 +2023,30 @@ function setEditMode(employeeId, employeeData) {
 
 // Load Employee for Edit
 async function loadEmployeeDataForEdit(employeeId) {
-  //console.log('>>> loadEmployeeDataForEdit START for:', employeeId);
   try {
     const safeId = employeeId.replace(/\//g, '_SLASH_');
-
-    //console.log('>>> Making API request...');
     const result = await apiRequest(`${API_BASE}/employees/${safeId}`);
-    //console.log('>>> API response received:', result);
     
     const { employee, children, nextOfKin, spouse } = result.data;
-    //console.log('>>> Data extracted, setting edit mode...');
-    
     
     setEditMode(employeeId, employee);
     toggleStep(1);
 
     await initializeDropdowns();
-    await loadAllDropdowns();
-    //await setupStateLGACascade('spouseState', 'spouseLga');
-    //await setupStateLGACascade('childState', 'childLga');
+    await loadAllDropdowns(employee);
     
     setTimeout(() => {
       populatePersonnelForm(employee);
       handleSpouseTabVisibility();
-      //setupStateLGACascade('field-state-of-origin', 'field-local-government');
     }, 500);
     
     loadNOKRecords(nextOfKin);
     loadSpouseRecords(spouse);
     loadChildrenRecords(children);
-
-    //console.log("Employee object keys:", Object.keys(employee));
     
     showPopup("Employee data loaded for editing");
-    //console.log('>>> loadEmployeeDataForEdit COMPLETE');
   } catch (error) {
-    console.error('>>> loadEmployeeDataForEdit ERROR:', error);
+    console.error('loadEmployeeDataForEdit ERROR:', error);
     throw error;
   }
 }
@@ -2090,44 +2078,34 @@ function populatePersonnelForm(employee) {
       }
 
       if (element) {
-        // Handle file input - convert to image avatar with change button
+        // Handle file input
         if (element.type === 'file') {
           if (dbField === 'passport' && value) {
-            console.log(`📷 Converting passport input to avatar preview`);
             convertPassportInputToAvatar(element, value);
           }
-          return; // Don't set value for file inputs
+          return;
         }
         
         // Handle date inputs
         if (element.type === 'date') {
           if (typeof value === 'string') {
-            // Handle different date formats
-            if (value.match(/^\d{8}$/))  {  // YYYYMMDD format
+            if (value.match(/^\d{8}$/))  {
               const year = value.substring(0, 4);
               const month = value.substring(4, 6);
               const day = value.substring(6, 8);
               element.value = `${year}-${month}-${day}`;
-            } else if (value.match(/^\d{2}-\d{2}-\d{4}$/)) {  // DD-MM-YYYY format
+            } else if (value.match(/^\d{2}-\d{2}-\d{4}$/)) {
               const [day, month, year] = value.split('-');
               element.value = `${year}-${month}-${day}`;
-            } else if (value.includes('T')) {  // ISO format
+            } else if (value.includes('T')) {
               element.value = value.split('T')[0];
-            } else {
-              console.warn(`Invalid date format for ${dbField}:`, value);
             }
           }
         } else {
-          // Handle all other input types (text, select, etc.)
+          // All other inputs - wrapper handles CustomDropdown vs native
           element.value = value;
         }
-        
-        //console.log(` Prefilled [${formField}] (dbField: ${dbField}) with value: ${value}`);
-      } else {
-        //console.warn(`⚠️ No element found for formField: ${formField} (dbField: ${dbField}), value: ${value}`);
       }
-    } else {
-      //console.warn(`⏩ Skipped dbField: ${dbField}, value: ${value}, mapped formField: ${reverseMap[dbField] || 'none'}`);
     }
   });
 }
@@ -2416,7 +2394,7 @@ async function submitPersonnelForm() {
   }
 
   // Collect ALL form fields
-  const allInputs = document.querySelectorAll('#step1 input, #step1 select, #step2 input, #step2 select, #step3 input, #step3 select');
+  const allInputs = document.querySelectorAll('#step1 input, #step1 select, #step1 .custom-dropdown-wrapper, #step2 input, #step2 select, #step2 .custom-dropdown-wrapper, #step3 input, #step3 select, #step3 .custom-dropdown-wrapper');
 
   for (const input of allInputs) {
     const fieldName = input.getAttribute('name') || '';
@@ -2428,6 +2406,24 @@ async function submitPersonnelForm() {
 
     // Handle SELECT
     if (input.tagName === 'SELECT') {
+      const lowerValue = value.toLowerCase();
+      const isPlaceholder =
+        lowerValue === 'select' ||
+        lowerValue.startsWith('select ') ||
+        lowerValue === 'choose' ||
+        lowerValue.startsWith('choose ') ||
+        lowerValue === '--' ||
+        lowerValue === '---' ||
+        value === '';
+
+      if (DB_FIELD_MAP[fieldName]) {
+        personnelData[DB_FIELD_MAP[fieldName]] = isPlaceholder ? null : value;
+      }
+      continue;
+    }
+
+    // Handle dropdownConfig
+    if (input.tagName === '.custom-dropdown-wrapper' || 'DIV') {
       const lowerValue = value.toLowerCase();
       const isPlaceholder =
         lowerValue === 'select' ||

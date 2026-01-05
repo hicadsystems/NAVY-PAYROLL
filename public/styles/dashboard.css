@@ -573,3 +573,70 @@ body.sidebar-closed .main-content-wrapper {
 .quick-access-btn > * {
   transition: all 0.3s ease;
 }
+
+
+/* Choices.js container full width */
+.choices {
+  width: 100%;
+}
+
+/* Choices input inner container — match Tailwind input exactly */
+.choices__inner {
+  width: 100%;
+  border-width: 1px;
+  border-color: #475569; /* border-slate-600 */
+  border-radius: 0.5rem;  /* rounded-lg */
+  padding-top: 0.5rem;    /* py-2 */
+  padding-bottom: 0.5rem;
+  padding-left: 0.75rem;  /* px-3 */
+  padding-right: 0.75rem;
+  background : transparent; /* bg-white */
+  color: #0f172a; /* text-slate-900 */
+  outline: none;
+  box-sizing: border-box;
+}
+
+/* Focus state — match Tailwind focus:ring-2 focus:ring-blue-500 focus:border-blue-500 */
+.choices__inner:focus-within {
+  border-color: #3b82f6;  /* border-blue-500 */
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); /* ring-2 + ring-blue-500 */
+}
+
+/* Dropdown list styling — optional */
+.choices__list--dropdown {
+  border-width: 1px;
+  border-color: #475569; /* border-slate-600 */
+  border-radius: 0.5rem;  /* rounded-lg */
+  margin-top: 0.25rem;    /* mt-1 */
+  box-shadow: 0 5px 10px rgba(0,0,0,0.1); /* subtle shadow like Tailwind */
+  z-index: 1000;
+}
+
+/* Dropdown container */
+.choices .choices__list--dropdown,
+.choices .choices__list[aria-expanded="true"] {
+  background-color: #FFFBEB !important;
+  border: 1px solid #475569 !important; /* slate-600 */
+  border-radius: 0.5rem !important;
+  margin-top: 0.25rem !important;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,.1),
+              0 4px 6px -4px rgba(0,0,0,.1) !important;
+  z-index: 9999 !important;
+}
+
+/* Dropdown items */
+.choices .choices__list--dropdown .choices__item {
+  padding: 0.5rem 0.75rem !important; /* py-2 px-3 */
+  color: #0f172a !important;
+  cursor: pointer;
+}
+
+/* Hover state */
+.choices .choices__list--dropdown .choices__item--selectable.is-highlighted {
+  background-color: #EFF6FF !important; /* bg-yellow-50 */
+}
+
+/* Selected item (optional) */
+.choices .choices__list--dropdown .choices__item--selectable.is-selected {
+  background-color: #FEF3C7 !important; /* yellow-100 */
+}

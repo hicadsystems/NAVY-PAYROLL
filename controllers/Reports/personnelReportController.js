@@ -140,7 +140,7 @@ class PersonnelReportController {
       
       // Map frontend parameter names to backend expected names
       const filters = {
-        title: filterParams.title || filterParams.rank,
+        title: filterParams.title || filterParams.Title,
         pfa: filterParams.pfa,
         location: filterParams.location,
         gradetype: filterParams.gradetype || filterParams.gradeType,
@@ -371,6 +371,7 @@ class PersonnelReportController {
   // ==========================================================================
   async generatePersonnelReportPDF(data, req, res, filters, statistics) {
     if (!this.jsreportReady) {
+      console.error('❌ JSReport not ready');
       return res.status(500).json({
         success: false,
         error: "PDF generation service not ready."
@@ -379,12 +380,19 @@ class PersonnelReportController {
 
     try {
       if (!data || data.length === 0) {
+        console.error('❌ No data available for PDF generation');
         throw new Error('No data available for the selected filters');
       }
 
-      console.log('Personnel Report PDF - Data rows:', data.length);
+      console.log('📄 Generating PDF with', data.length, 'records');
 
       const templatePath = path.join(__dirname, '../../templates/personnel-report.html');
+      
+      if (!fs.existsSync(templatePath)) {
+        console.error('❌ Template file not found:', templatePath);
+        throw new Error('PDF template file not found');
+      }
+      
       const templateContent = fs.readFileSync(templatePath, 'utf8');
 
       // Format filter description
@@ -429,6 +437,8 @@ class PersonnelReportController {
         }
       });
 
+      console.log('✅ PDF generated successfully');
+
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 
         `attachment; filename=personnel_report_${new Date().toISOString().split('T')[0]}.pdf`
@@ -436,29 +446,67 @@ class PersonnelReportController {
       res.send(result.content);
 
     } catch (error) {
-      console.error('Personnel Report PDF generation error:', error);
+      console.error('❌ ERROR generating Personnel Report PDF:');
+      console.error('   └─ Error Type:', error.constructor.name);
+      console.error('   └─ Error Message:', error.message);
+      console.error('   └─ Stack:', error.stack);
       return res.status(500).json({ 
         success: false, 
-        error: error.message 
+        error: error.message || 'Failed to generate PDF report'
       });
     }
   }
 
-  // ==========================================================================
   // GET FILTER OPTIONS
   // ==========================================================================
   async getPersonnelFilterOptions(req, res) {
     try {
-      const [titles, pfas, locations, gradeTypes, gradeLevels, bankBranches, states, emolumentForms] = await Promise.all([
-        personnelReportService.getAvailableTitles(),
-        personnelReportService.getAvailablePFAs(),
-        personnelReportService.getAvailableLocations(),
-        personnelReportService.getAvailableGradeTypes(),
-        personnelReportService.getAvailableGradeLevels(),
-        personnelReportService.getAvailableBankBranches(),
-        personnelReportService.getAvailableStates(),
-        personnelReportService.getAvailableEmolumentForms()
+      // Get current database from pool using user_id
+      const currentDb = pool.getCurrentDatabase(req.user_id.toString());
+      console.log('🔍 Current database for filter options:', currentDb);
+      
+      const [titles, pfas, locations, gradeTypes, gradeLevels, bankBranches, states, rentSubsidy, taxedStatus, emolumentForms] = await Promise.all([
+        personnelReportService.getAvailableTitles(currentDb),
+        personnelReportService.getAvailablePFAs(currentDb),
+        personnelReportService.getAvailableLocations(currentDb),
+        personnelReportService.getAvailableGradeTypes(currentDb),
+        personnelReportService.getAvailableGradeLevels(currentDb),
+        personnelReportService.getAvailableBankBranches(currentDb),
+        personnelReportService.getAvailableStates(currentDb),
+        personnelReportService.getAvailableRentSubsidy(currentDb),
+        personnelReportService.getAvailableTaxedStatus(currentDb),
+        personnelReportService.getAvailableEmolumentForms(currentDb)
       ]);
+
+      console.log('✅ Filter options loaded:', {
+        titles: titles.length,
+        pfas: pfas.length,
+        locations: locations.length,
+        gradeTypes: gradeTypes.length,
+        gradeLevels: gradeLevels.length,
+        bankBranches: bankBranches.length,
+        states: states.length,
+        rentSubsidy: rentSubsidy.length,
+        taxedStatus: taxedStatus.length,
+        emolumentForms: emolumentForms.length
+      });
+
+      // Check for empty filter options
+      const warnings = [];
+      if (titles.length === 0) warnings.push('titles');
+      if (pfas.length === 0) warnings.push('pfas');
+      if (locations.length === 0) warnings.push('locations');
+      if (gradeTypes.length === 0) warnings.push('gradeTypes');
+      if (gradeLevels.length === 0) warnings.push('gradeLevels');
+      if (bankBranches.length === 0) warnings.push('bankBranches');
+      if (states.length === 0) warnings.push('states');
+      if (rentSubsidy.length === 0) warnings.push('rentSubsidy');
+      if (taxedStatus.length === 0) warnings.push('taxedStatus');
+      if (emolumentForms.length === 0) warnings.push('emolumentForms');
+
+      if (warnings.length > 0) {
+        console.log('⚠️  Warning: No data found for filters:', warnings.join(', '));
+      }
 
       res.json({
         success: true,
@@ -470,24 +518,25 @@ class PersonnelReportController {
           gradeLevels,
           bankBranches,
           states,
+          rentSubsidy,
+          taxedStatus,
           emolumentForms,
           oldEmployeesOptions: [
             { code: 'yes', description: 'Separated/Left Employees' },
             { code: 'no', description: 'Active Employees Only' }
-          ],
-          rentSubsidyOptions: [
-            { code: 'yes', description: 'With Rent Subsidy' },
-            { code: 'no', description: 'Without Rent Subsidy' }
-          ],
-          emolumentFormOptions: [
-            { code: 'yes', description: 'With Emolument Form (YES)' },
-            { code: 'no', description: 'Without Emolument Form' }
           ]
-        }
+        },
+        warnings: warnings.length > 0 ? `No data available for: ${warnings.join(', ')}` : null
       });
     } catch (error) {
-      console.error('Error getting Personnel filter options:', error);
-      res.status(500).json({ success: false, error: error.message });
+      console.error('❌ ERROR getting Personnel filter options:');
+      console.error('   └─ Error Type:', error.constructor.name);
+      console.error('   └─ Error Message:', error.message);
+      console.error('   └─ Stack:', error.stack);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Failed to load filter options'
+      });
     }
   }
 

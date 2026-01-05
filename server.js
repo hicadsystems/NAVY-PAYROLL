@@ -30,6 +30,7 @@ app.use(
       scriptSrc: [
         "'self'",
         "https://cdn.tailwindcss.com",
+        "https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js",
         "'unsafe-eval'",   
       ],
       scriptSrcAttr: ["'unsafe-inline'"], 

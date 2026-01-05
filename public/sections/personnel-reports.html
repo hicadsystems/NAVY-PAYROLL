@@ -313,7 +313,7 @@
         </label>
         <label class="flex items-center cursor-pointer">
           <input type="radio" name="exportFormat" value="excel" class="text-blue-600 w-4 h-4">
-          <span class="ml-2">Excel (.xlsx)</span>
+          <span class="ml-2">Excel</span>
         </label>
         <label class="hidden flex items-center cursor-pointer">
           <input type="radio" name="exportFormat" value="json" class="text-blue-600 w-4 h-4">
@@ -454,7 +454,7 @@
   // Generate button
   generatePersonnelBtn.onclick = async () => {
     const selectedScope = document.querySelector('input[name="personnelScope"]:checked')?.value;
-    const exportFormat = document.querySelector('input[name="exportFormat"]:checked')?.value || 'excel';
+    const exportFormat = document.querySelector('input[name="exportFormat"]:checked')?.value || 'pdf';
 
     // Validation
     if (!selectedScope) {
@@ -522,6 +522,12 @@
         // Handle file download for Excel/PDF
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
+
+        // Open PDF in new tab
+        if (exportFormat === 'pdf') {
+          window.open(url, '_blank');
+        }
+
         const a = document.createElement('a');
         a.href = url;
         a.download = `personnel_report_${new Date().toISOString().split('T')[0]}.${exportFormat === 'excel' ? 'xlsx' : 'pdf'}`;

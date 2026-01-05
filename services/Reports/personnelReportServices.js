@@ -40,8 +40,10 @@ class PersonnelReportService {
     
     const payrollClass = this.getPayrollClassFromDb(currentDb);
     
-    console.log('Personnel Report Filters:', filters);
-    console.log('Payroll Class:', payrollClass);
+    console.log('📊 Personnel Report Request:');
+    console.log('   └─ Database:', currentDb);
+    console.log('   └─ Payroll Class:', payrollClass);
+    console.log('   └─ Filters:', JSON.stringify(filters, null, 2));
     
     try {
       const query = `
@@ -152,14 +154,39 @@ class PersonnelReportService {
       if (taxed) params.push(taxed);
       if (emolumentForm) params.push(emolumentForm);
       
+      console.log('🔍 Executing query with params:', params);
+      
       const [rows] = await pool.query(query, params);
       
-      console.log('Personnel Report - Rows returned:', rows.length);
+      if (rows.length === 0) {
+        console.log('⚠️  NO DATA FOUND for the selected filters');
+        console.log('   └─ Applied Filters:', {
+          payrollClass,
+          title: title || 'All',
+          pfa: pfa || 'All',
+          location: location || 'All',
+          gradetype: gradetype || 'All',
+          gradelevel: gradelevel || 'All',
+          oldEmployees: oldEmployees || 'Active Only',
+          bankBranch: bankBranch || 'All',
+          stateOfOrigin: stateOfOrigin || 'All',
+          rentSubsidy: rentSubsidy || 'All',
+          taxed: taxed || 'All',
+          emolumentForm: emolumentForm || 'All'
+        });
+      } else {
+        console.log('✅ Personnel Report - Records found:', rows.length);
+      }
       
       return rows;
       
     } catch (error) {
-      console.error('Error in getPersonnelReport:', error);
+      console.error('❌ ERROR in getPersonnelReport:');
+      console.error('   └─ Error Type:', error.constructor.name);
+      console.error('   └─ Error Code:', error.code);
+      console.error('   └─ Error Message:', error.message);
+      console.error('   └─ SQL State:', error.sqlState);
+      console.error('   └─ Full Error:', error);
       throw error;
     }
   }
@@ -183,6 +210,8 @@ class PersonnelReportService {
     } = filters;
     
     const payrollClass = this.getPayrollClassFromDb(currentDb);
+    
+    console.log('📊 Generating statistics for personnel report...');
     
     try {
       const query = `
@@ -263,10 +292,24 @@ class PersonnelReportService {
       if (emolumentForm) params.push(emolumentForm);
       
       const [rows] = await pool.query(query, params);
+      
+      console.log('✅ Statistics generated:', {
+        total_employees: rows[0].total_employees,
+        active_employees: rows[0].active_employees,
+        separated_employees: rows[0].separated_employees,
+        avg_age: rows[0].avg_age,
+        avg_years_of_service: rows[0].avg_years_of_service
+      });
+      
       return rows[0];
       
     } catch (error) {
-      console.error('Error in getPersonnelStatistics:', error);
+      console.error('❌ ERROR in getPersonnelStatistics:');
+      console.error('   └─ Error Type:', error.constructor.name);
+      console.error('   └─ Error Code:', error.code);
+      console.error('   └─ Error Message:', error.message);
+      console.error('   └─ SQL State:', error.sqlState);
+      console.error('   └─ Full Error:', error);
       throw error;
     }
   }
@@ -424,8 +467,9 @@ class PersonnelReportService {
       const query = `
         SELECT DISTINCT 
           bankbranch as code,
-          bankbranch as description
+          bk.branchname as description
         FROM hr_employees
+        LEFT JOIN py_bank bk ON bk.branchcode = LPAD(bankbranch, 3, '0')
         WHERE bankbranch IS NOT NULL AND bankbranch != ''
           AND payrollclass = ?
           AND LENGTH(IFNULL(DateLeft, '')) = 0 
@@ -452,8 +496,9 @@ class PersonnelReportService {
       const query = `
         SELECT DISTINCT 
           StateofOrigin as code,
-          StateofOrigin as description
+          s.Statename as description
         FROM hr_employees
+        LEFT JOIN py_tblstates s ON Statecode = StateofOrigin
         WHERE StateofOrigin IS NOT NULL AND StateofOrigin != ''
           AND payrollclass = ?
           AND LENGTH(IFNULL(DateLeft, '')) = 0 

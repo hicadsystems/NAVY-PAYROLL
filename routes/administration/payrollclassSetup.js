@@ -1,11 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const verifyToken = require('../../middware/authentication');
-const pool = require('../../config/db'); // mysql2 pool
+const { attachPayrollClass } = require('../../middware/attachPayrollClass');
+const pool  = require('../../config/db'); // mysql2 pool
+
+
+
+// ==================== DATABASE MAPPING ====================
+const DB_MAPPING = {
+  '1': process.env.DB_OFFICERS,
+  '2': process.env.DB_WOFFICERS,
+  '3': process.env.DB_RATINGS,
+  '4': process.env.DB_RATINGS_A,
+  '5': process.env.DB_RATINGS_B,
+  '6': process.env.DB_JUNIOR_TRAINEE
+};
+
+// Helper function to get database name for a class code
+function getDatabaseForClass(classcode) {
+  return DB_MAPPING[classcode] || null;
+}
 
 // ==================== CREATE ====================
 router.post('/create', verifyToken, async (req, res) => {
-  const { classcode, classname, year, month } = req.body;
+  const { classcode, classname } = req.body;
 
   // Validation
   if (!classcode || classcode.trim() === '') {
@@ -20,32 +38,41 @@ router.post('/create', verifyToken, async (req, res) => {
     return res.status(400).json({ error: 'Class name must not exceed 30 characters' });
   }
 
-  if (!year || !month) {
-    return res.status(400).json({ error: 'Year and month are required' });
-  }
-
-  // Validate year (4 digits)
-  if (!/^\d{4}$/.test(year.toString())) {
-    return res.status(400).json({ error: 'Year must be a 4-digit number' });
-  }
-
-  // Validate month (1-12)
-  const monthNum = parseInt(month);
-  if (monthNum < 1 || monthNum > 12) {
-    return res.status(400).json({ error: 'Month must be between 1 and 12' });
-  }
-
   try {
+    // Get the database for this specific class code
+    const classDatabase = getDatabaseForClass(classcode);
+    
+    if (!classDatabase) {
+      return res.status(400).json({ 
+        error: `No database mapping found for class code: ${classcode}` 
+      });
+    }
+
+    // Get year and month from THIS class's py_stdrate table
+    const [stdrate] = await pool.query(
+      `SELECT ord AS year, mth AS month FROM ${classDatabase}.py_stdrate WHERE type = 'BT05' LIMIT 1`
+    );
+
+    if (stdrate.length === 0) {
+      return res.status(404).json({ 
+        error: `Payroll period not found in ${classDatabase}.py_stdrate` 
+      });
+    }
+
+    const { year, month } = stdrate[0];
+
+    // Store in py_payrollclass with the database name for future reference
     const query = `
-      INSERT INTO py_payrollclass (classcode, classname, year, month)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO py_payrollclass (classcode, classname, db_name, year, month)
+      VALUES (?, ?, ?, ?, ?)
     `;
 
     await pool.query(query, [
       classcode.trim(),
       classname ? classname.trim() : null,
-      parseInt(year),
-      monthNum
+      classDatabase,
+      year,
+      month
     ]);
 
     res.status(201).json({
@@ -53,18 +80,18 @@ router.post('/create', verifyToken, async (req, res) => {
       data: {
         classcode: classcode.trim(),
         classname: classname ? classname.trim() : null,
-        year: parseInt(year),
-        month: monthNum
+        db_name: classDatabase,
+        year: year,
+        month: month
       }
     });
 
   } catch (error) {
     console.error('Error creating payroll class:', error);
 
-    // Handle duplicate key error
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({
-        error: 'Payroll class with this code, year, and month already exists'
+        error: 'Payroll class with this code already exists for this period'
       });
     }
 
@@ -72,22 +99,58 @@ router.post('/create', verifyToken, async (req, res) => {
   }
 });
 
-// ==================== READ ====================
+// ==================== READ (with individual database lookup) ====================
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const query = `
-      SELECT classcode, classname, year, month,
-      LOWER(COALESCE(status, 'inactive')) AS status
+    // First, get all payroll classes
+    const [classes] = await pool.query(`
+      SELECT classcode, classname, db_name, 
+             LOWER(COALESCE(status, 'inactive')) AS status
       FROM py_payrollclass
       ORDER BY classcode ASC
-    `;
+    `);
 
-    const [rows] = await pool.query(query);
+    // For each class, fetch year/month from its own database
+    const classesWithPeriod = await Promise.all(
+      classes.map(async (cls) => {
+        try {
+          // Get database for this class
+          const dbName = cls.db_name || getDatabaseForClass(cls.classcode);
+          
+          if (!dbName) {
+            console.warn(`No database found for class ${cls.classcode}`);
+            return {
+              ...cls,
+              year: null,
+              month: null
+            };
+          }
+
+          // Query THIS class's py_stdrate table
+          const [stdrate] = await pool.query(
+            `SELECT ord AS year, mth AS month FROM ${dbName}.py_stdrate WHERE type = 'BT05' LIMIT 1`
+          );
+
+          return {
+            ...cls,
+            year: stdrate[0]?.year || null,
+            month: stdrate[0]?.month || null
+          };
+        } catch (error) {
+          console.error(`Error fetching period for class ${cls.classcode}:`, error);
+          return {
+            ...cls,
+            year: null,
+            month: null
+          };
+        }
+      })
+    );
 
     res.status(200).json({
       message: 'Payroll classes retrieved successfully',
-      data: rows,
-      count: rows.length
+      data: classesWithPeriod,
+      count: classesWithPeriod.length
     });
 
   } catch (error) {
@@ -96,39 +159,10 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
-// Get single payroll class by code
-router.get('/:classcode', verifyToken, async (req, res) => {
-  const { classcode } = req.params;
-
-  try {
-    const query = `
-      SELECT classcode, classname, year, month, 
-      LOWER(COALESCE(status, 'inactive')) AS status
-      FROM py_payrollclass
-      WHERE classcode = ?
-    `;
-
-    const [rows] = await pool.query(query, [classcode]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Payroll class not found' });
-    }
-
-    res.status(200).json({
-      message: 'Payroll class retrieved successfully',
-      data: rows[0]
-    });
-
-  } catch (error) {
-    console.error('Error fetching payroll class:', error);
-    res.status(500).json({ error: 'Failed to fetch payroll class' });
-  }
-});
-
-// ==================== UPDATE ==================== 
+// ==================== UPDATE ====================
 router.put('/:classcode', verifyToken, async (req, res) => {
   const { classcode } = req.params;
-  const { newClasscode, classname, year, month, status } = req.body;
+  const { newClasscode, classname, status } = req.body;
 
   // Validation
   if (classname && classname.length > 30) {
@@ -150,7 +184,7 @@ router.put('/:classcode', verifyToken, async (req, res) => {
       return res.status(404).json({ error: 'Payroll class not found' });
     }
 
-    // Check if new classcode already exists (when changing classcode)
+    // Check if new classcode already exists
     if (newClasscode && newClasscode !== classcode) {
       const [duplicate] = await pool.query(
         `SELECT classcode FROM py_payrollclass WHERE classcode = ?`,
@@ -158,6 +192,15 @@ router.put('/:classcode', verifyToken, async (req, res) => {
       );
       if (duplicate.length > 0) {
         return res.status(400).json({ error: 'New class code already exists' });
+      }
+
+      // If changing classcode, update the db_name mapping too
+      const newDbName = getDatabaseForClass(newClasscode);
+      if (newDbName) {
+        const [updateDb] = await pool.query(
+          `UPDATE py_payrollclass SET db_name = ? WHERE classcode = ?`,
+          [newDbName, classcode]
+        );
       }
     }
 
@@ -175,29 +218,18 @@ router.put('/:classcode', verifyToken, async (req, res) => {
       values.push(classname.trim());
     }
 
-    if (year) {
-      fields.push('year = ?');
-      values.push(year);
-    }
-
-    if (month) {
-      fields.push('month = ?');
-      values.push(month);
-    }
-
     if (status) {
       fields.push('status = ?');
       values.push(status.toLowerCase());
     }
 
-    // Always update timestamp
     fields.push('dateupdated = NOW()');
 
-    if (fields.length === 0) {
+    if (fields.length === 1) {
       return res.status(400).json({ error: 'No fields provided for update' });
     }
 
-    values.push(classcode); // for WHERE clause
+    values.push(classcode);
 
     const updateQuery = `
       UPDATE py_payrollclass
@@ -212,8 +244,6 @@ router.put('/:classcode', verifyToken, async (req, res) => {
       data: {
         classcode: newClasscode || classcode,
         classname,
-        year,
-        month,
         status,
         dateupdated: new Date().toISOString().slice(0, 19).replace('T', ' ')
       }
@@ -230,7 +260,6 @@ router.delete('/:classcode', verifyToken, async (req, res) => {
   const { classcode } = req.params;
 
   try {
-    // Check if record exists
     const [existing] = await pool.query(
       `SELECT classcode FROM py_payrollclass WHERE classcode = ?`,
       [classcode]
@@ -240,7 +269,6 @@ router.delete('/:classcode', verifyToken, async (req, res) => {
       return res.status(404).json({ error: 'Payroll class not found' });
     }
 
-    // Delete record
     await pool.query(`DELETE FROM py_payrollclass WHERE classcode = ?`, [classcode]);
 
     res.status(200).json({
@@ -251,7 +279,6 @@ router.delete('/:classcode', verifyToken, async (req, res) => {
   } catch (error) {
     console.error('Error deleting payroll class:', error);
 
-    // Handle foreign key constraint error
     if (error.code === 'ER_ROW_IS_REFERENCED_2' || error.errno === 1451) {
       return res.status(409).json({
         error: 'Cannot delete payroll class. It is being referenced by other records.'

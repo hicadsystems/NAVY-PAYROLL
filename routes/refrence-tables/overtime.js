@@ -255,4 +255,43 @@ router.put('/status/monthend', verifyToken, async (req, res) => {
   }
 });
 
+// Get current payroll period
+router.get('/payroll-period', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user_id;
+    const currentClass = req.current_class;
+    
+    if (!currentClass) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'No active payroll class' 
+      });
+    }
+    
+    const [rows] = await pool.query(
+      `SELECT ord AS year, mth AS month FROM ${currentClass}.py_stdrate WHERE type = 'BT05' LIMIT 1`
+    );
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Payroll period not found' 
+      });
+    }
+    
+    res.json({
+      success: true,
+      year: rows[0].year,
+      month: rows[0].month
+    });
+    
+  } catch (error) {
+    console.error('Error fetching payroll period:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch payroll period' 
+    });
+  }
+});
+
 module.exports = router;

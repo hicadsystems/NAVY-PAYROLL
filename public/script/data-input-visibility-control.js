@@ -51,16 +51,29 @@
    */
   function updateMenuVisibility() {
     const shouldHide = currentPayrollStage >= DATA_INPUT_HIDDEN_STAGE;
-    const action = shouldHide ? 'hidden' : 'visible';
-
+    const menuContainer = document.querySelector('ul.flex.flex-col');
+    
     // Handle Data Input Menu
     dataInputMenu.classList[shouldHide ? 'add' : 'remove']('hidden');
-
+    
     // Handle Personnel Profile Menu
     if (personnelProfileMenu) {
       personnelProfileMenu.classList[shouldHide ? 'add' : 'remove']('hidden');
     }
-
+    
+    // Adjust gap based on visibility
+    if (menuContainer) {
+      if (shouldHide) {
+        // When items are hidden, use larger gap
+        menuContainer.classList.remove('gap-[1.1rem]');
+        menuContainer.classList.add('gap-8');
+      } else {
+        // When items are visible, use smaller gap
+        menuContainer.classList.remove('gap-8');
+        menuContainer.classList.add('gap-[1.1rem]');
+      }
+    }
+    
     if (shouldHide) {
       console.log(`✓ Menus **hidden** - Payroll files saved (stage: ${currentPayrollStage})`);
     } else {

@@ -1,38 +1,40 @@
+
 <div class="p-6">
   <!-- Header -->
   <div class="flex justify-between items-center mb-6">
     <h3 class="text-2xl font-bold text-blue-800">Personnel Details</h3>
+
+    <!-- Styled Tabs -->
+    <div class="flex flex-wrap justify-center">
+      <div class="w-fit flex flex-wrap item justify-center bg-white/50 rounded-xl border border-amber-50 shadow-sm p-2 gap-2">
+        <button id="view-tab-personnel" 
+                onclick="window.ViewPersonnel?.switchTab('personnel')"
+                class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-600">
+          Personnel Details
+        </button>
+        <button id="view-tab-nok" 
+                onclick="window.ViewPersonnel?.switchTab('nok')"
+                class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
+          Next of Kin
+        </button>
+        <button id="view-tab-spouse" 
+                onclick="window.ViewPersonnel?.switchTab('spouse')"
+                class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
+          Spouse
+        </button>
+        <button id="view-tab-children" 
+                onclick="window.ViewPersonnel?.switchTab('children')"
+                class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
+          Children
+        </button>
+      </div>
+    </div>
+
     <button id="backBtn" 
       class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
       Back to List
     </button>
   </div>
-
-  <!-- Styled Tabs (matching add-personnel style) -->
-   <div class="flex flex-wrap justify-center">
-    <div class="w-fit flex flex-wrap item justify-center bg-white/50 rounded-xl border border-amber-50 shadow-sm p-2 gap-2 mb-6">
-      <button id="view-tab-personnel" 
-              onclick="window.ViewPersonnel?.switchTab('personnel')"
-              class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-600">
-        Personnel Details
-      </button>
-      <button id="view-tab-nok" 
-              onclick="window.ViewPersonnel?.switchTab('nok')"
-              class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
-        Next of Kin
-      </button>
-      <button id="view-tab-spouse" 
-              onclick="window.ViewPersonnel?.switchTab('spouse')"
-              class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
-        Spouse
-      </button>
-      <button id="view-tab-children" 
-              onclick="window.ViewPersonnel?.switchTab('children')"
-              class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600">
-        Children
-      </button>
-    </div>
-   </div>
 
   <!-- Content Area -->
   <div id="view-detail-content" class="min-h-[400px]">
@@ -44,23 +46,19 @@
 </div>
 
 <script>
-// View Personnel Management
 class ViewPersonnelManager {
   constructor() {
     this.currentEmployeeId = null;
     this.employeeData = null;
     this.currentTab = 'personnel';
-    this.lookupMaps = {}; // Stores all endpoint lookups
-    this.lookupsLoaded = false; // Track if lookups are loaded
+    this.lookupMaps = {};
+    this.lookupsLoaded = false;
   }
 
   async loadEmployee(employeeId) {
     this.currentEmployeeId = employeeId;
-    
-    // Store in sessionStorage to persist across page navigation
     sessionStorage.setItem('currentEmployeeId', employeeId);
     
-    // Load lookups first if not already loaded
     if (!this.lookupsLoaded) {
       await this.loadLookupData();
       this.lookupsLoaded = true;
@@ -68,142 +66,181 @@ class ViewPersonnelManager {
 
     await this.loadEmployeeData();
 
-    // Ensure lookups are really ready before rendering anything
     if (!this.lookupMaps || Object.keys(this.lookupMaps).length === 0) {
       console.warn("Lookup data not ready, retrying...");
-      await new Promise(resolve => setTimeout(resolve, 200)); // small delay
+      await new Promise(resolve => setTimeout(resolve, 200));
       await this.loadLookupData();
     }
 
-    // Now safely render tab
     await this.switchTab('personnel');
   }
 
-  // Format date from ddmmyyyy, yyyymmdd, or d/m/yyyy to yyyy-mm-dd (for displaying in date inputs)
-  formatDateForDisplay(dateInput) {
-    if (!dateInput) {
-      return '';
-    }
+  formatDateWithOrdinal(dateInput) {
+    if (!dateInput) return 'N/A';
     
-    // Remove any whitespace
     const trimmedDate = dateInput.toString().trim();
+    let day, month, year;
     
-    // Check if format is d/m/yyyy or dd/mm/yyyy
     if (trimmedDate.includes('/')) {
       const parts = trimmedDate.split('/');
-      if (parts.length !== 3) {
-        return '';
-      }
-      
-      const day = parts[0].padStart(2, '0');
-      const month = parts[1].padStart(2, '0');
-      const year = parts[2];
-      
-      return `${year}-${month}-${day}`;
+      if (parts.length !== 3) return 'Invalid Date';
+      day = parseInt(parts[0]);
+      month = parseInt(parts[1]);
+      year = parseInt(parts[2]);
+    } else if (trimmedDate.length === 8 && /^(19|20)\d{6}$/.test(trimmedDate)) {
+      year = parseInt(trimmedDate.substring(0, 4));
+      month = parseInt(trimmedDate.substring(4, 6));
+      day = parseInt(trimmedDate.substring(6, 8));
+    } else if (trimmedDate.length === 8 && /^\d{8}$/.test(trimmedDate)) {
+      day = parseInt(trimmedDate.substring(0, 2));
+      month = parseInt(trimmedDate.substring(2, 4));
+      year = parseInt(trimmedDate.substring(4, 8));
+    } else {
+      return 'Invalid Date';
     }
     
-    // Check if format is yyyymmdd (8 digits starting with 19xx or 20xx)
-    if (trimmedDate.length === 8 && /^(19|20)\d{6}$/.test(trimmedDate)) {
-      const year = trimmedDate.substring(0, 4);
-      const month = trimmedDate.substring(4, 6);
-      const day = trimmedDate.substring(6, 8);
-      
-      return `${year}-${month}-${day}`;
-    }
+      const monthNames = ['Jan', 'Feb', 'March', 'April', 'May', 'June', 
+                         'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
     
-    // Check if format is ddmmyyyy (8 digits NOT starting with 19xx or 20xx)
-    if (trimmedDate.length === 8 && /^\d{8}$/.test(trimmedDate)) {
-      const day = trimmedDate.substring(0, 2);
-      const month = trimmedDate.substring(2, 4);
-      const year = trimmedDate.substring(4, 8);
-      
-      return `${year}-${month}-${day}`;
-    }
-    
-    return '';
+    return `${this.getOrdinal(day)} ${monthNames[month - 1]}, ${year}`;
   }
 
-  // Format date from ddmmyyyy to readable format (e.g., "15 Mar 2024")
-  formatDateReadable(ddmmyyyyDate) {
-    if (!ddmmyyyyDate || ddmmyyyyDate.length !== 8) {
-      return '';
-    }
-    
-    const day = ddmmyyyyDate.substring(0, 2);
-    const month = ddmmyyyyDate.substring(2, 4);
-    const year = ddmmyyyyDate.substring(4, 8);
-    
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    return `${day} ${monthNames[parseInt(month) - 1]} ${year}`;
-  }
-
-  // Format ISO datetime (2010-10-02T00:00:00.000Z) to yyyy-mm-dd (for date inputs)
   formatISODateForDisplay(isoDate) {
-    if (!isoDate) {
-      return '';
-    }
+    if (!isoDate) return 'N/A';
     
     try {
       const date = new Date(isoDate);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      
-      return `${year}-${month}-${day}`;
-    } catch (error) {
-      console.error('Invalid ISO date:', isoDate);
-      return '';
-    }
-  }
-
-  // Format ISO datetime (2010-10-02T00:00:00.000Z) to readable format (e.g., "02 Oct 2010")
-  formatISODateReadable(isoDate) {
-    if (!isoDate) {
-      return '';
-    }
-    
-    try {
-      const date = new Date(isoDate);
-      const day = String(date.getDate()).padStart(2, '0');
+      const day = date.getDate();
       const month = date.getMonth();
       const year = date.getFullYear();
       
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthNames = ['Jan', 'Feb', 'March', 'April', 'May', 'June', 
+                         'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
       
-      return `${day} ${monthNames[month]} ${year}`;
+      return `${this.getOrdinal(day)} ${monthNames[month]}, ${year}`;
     } catch (error) {
-      console.error('Invalid ISO date:', isoDate);
-      return '';
+      return 'Invalid Date';
     }
   }
 
-  // Format ISO datetime with time (2010-10-02T00:00:00.000Z) to readable format with time
-  formatISODateTimeReadable(isoDate) {
-    if (!isoDate) {
-      return '';
+  getOrdinal(day) {
+    if (day > 3 && day < 21) return day + 'th';
+    switch (day % 10) {
+      case 1: return day + 'st';
+      case 2: return day + 'nd';
+      case 3: return day + 'rd';
+      default: return day + 'th';
+    }
+  }
+
+  calculateEmpAge(dateInput) {
+    if (!dateInput) return null;
+    
+    let birthDate = null;
+    const trimmedDate = dateInput.toString().trim();
+    
+    // Handle ISO format dates (YYYY-MM-DD or with time)
+    if (trimmedDate.includes('T') || trimmedDate.includes('-')) {
+      birthDate = new Date(trimmedDate);
+      // Normalize to local timezone to avoid timezone issues
+      if (!isNaN(birthDate.getTime())) {
+        birthDate = new Date(birthDate.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+      }
+    } 
+    // Handle DD/MM/YYYY format
+    else if (trimmedDate.includes('/')) {
+      const parts = trimmedDate.split('/');
+      if (parts.length === 3) {
+        birthDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+      }
+    } 
+    // Handle YYYYMMDD format
+    else if (trimmedDate.length === 8 && /^(19|20)\d{6}$/.test(trimmedDate)) {
+      birthDate = new Date(
+        parseInt(trimmedDate.substring(0, 4)),
+        parseInt(trimmedDate.substring(4, 6)) - 1,
+        parseInt(trimmedDate.substring(6, 8))
+      );
+    } 
+    // Handle DDMMYYYY format
+    else if (trimmedDate.length === 8) {
+      birthDate = new Date(
+        parseInt(trimmedDate.substring(4, 8)),
+        parseInt(trimmedDate.substring(2, 4)) - 1,
+        parseInt(trimmedDate.substring(0, 2))
+      );
+    } else {
+      return null;
     }
     
-    try {
-      const date = new Date(isoDate);
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = date.getMonth();
-      const year = date.getFullYear();
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      
-      return `${day} ${monthNames[month]} ${year} ${hours}:${minutes}`;
-    } catch (error) {
-      console.error('Invalid ISO date:', isoDate);
-      return '';
+    if (!birthDate || isNaN(birthDate.getTime())) return null;
+    
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
     }
+    
+    return age;
+  }
+
+  calculateYearsOfService(dateInput) {
+    if (!dateInput) return null;
+    
+    let serviceDate;
+    const trimmedDate = dateInput.toString().trim();
+    
+    if (trimmedDate.includes('T') || trimmedDate.includes('-')) {
+      serviceDate = new Date(dateInput);
+    } else if (trimmedDate.includes('/')) {
+      const parts = trimmedDate.split('/');
+      serviceDate = new Date(parts[2], parts[1] - 1, parts[0]);
+    } else if (trimmedDate.length === 8 && /^(19|20)\d{6}$/.test(trimmedDate)) {
+      serviceDate = new Date(
+        trimmedDate.substring(0, 4),
+        trimmedDate.substring(4, 6) - 1,
+        trimmedDate.substring(6, 8)
+      );
+    } else if (trimmedDate.length === 8) {
+      serviceDate = new Date(
+        trimmedDate.substring(4, 8),
+        trimmedDate.substring(2, 4) - 1,
+        trimmedDate.substring(0, 2)
+      );
+    }
+    
+    if (!serviceDate || isNaN(serviceDate.getTime())) return null;
+    
+    const today = new Date();
+    let years = today.getFullYear() - serviceDate.getFullYear();
+    const monthDiff = today.getMonth() - serviceDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < serviceDate.getDate())) {
+      years--;
+    }
+    
+    return years;
+  }
+
+  calculateGradeSteps(dateInput) {
+    const years = this.calculateYearsOfService(dateInput);
+    if (years === null) return null;
+    return Math.floor(years);
+  }
+
+  getFirstTwo(str) {
+    if (!str) return "";
+
+    return str.toString().substring(0, 2);
   }
 
   async loadLookupData() {
     const endpoints = [
-      'location', 'branch', 'state', 'lga', 'command', 'title', 'religion', 'pfa', 'salarygrade', 'salarygroup', 'country', 'payrollclass', 'relationship', 'marital', 'exittype', 'sex',
+      'location', 'branch', 'state', 'lga', 'command', 'title', 'religion', 'pfa', 
+      'salarygrade', 'salarygroup', 'country', 'payrollclass', 'relationship', 'marital', 
+      'exittype', 'sex',
     ];
     
     const token = localStorage.getItem('token');
@@ -218,27 +255,18 @@ class ViewPersonnelManager {
         });
         
         if (!res.ok) {
-          console.warn(`Failed to fetch ${endpoint}: ${res.status}`);
           this.lookupMaps[endpoint] = {};
           return;
         }
         
         const result = await res.json();
+        let data = result.data || result;
         
-        // Handle different response formats
-        let data = result;
-        if (result.data) {
-          data = result.data;
-        }
-        
-        // Ensure data is an array
         if (!Array.isArray(data)) {
-          console.warn(`${endpoint} did not return an array:`, data);
           this.lookupMaps[endpoint] = {};
           return;
         }
         
-        // Build lookup map based on endpoint
         const valueField = this.getValueField(endpoint);
         const textField = this.getTextField(endpoint);
         
@@ -246,7 +274,6 @@ class ViewPersonnelManager {
           data.map(item => [item[valueField], item[textField]])
         );
       } catch (err) {
-        console.error(`Failed to load ${endpoint}:`, err);
         this.lookupMaps[endpoint] = {};
       }
     }));
@@ -254,21 +281,11 @@ class ViewPersonnelManager {
 
   getValueField(endpoint) {
     const fieldMap = {
-      'location': 'unitcode',
-      'branch': 'busline',
-      'state': 'Statecode',
-      'lga': 'Lgcode',
-      'command': 'navalcmd',
-      'title': 'Titlecode',
-      'religion': 'ReligionCode',
-      'pfa': 'pfacode',
-      'relationship': 'RShipcode',
-      'marital': 'MaritalCode',
-      'exittype': 'Name',
-      'salarygrade': 'grade_no',
-      'salarygroup': 'groupcode',
-      'country': 'countrycode',
-      'payrollclass': 'classcode',
+      'location': 'unitcode', 'branch': 'busline', 'state': 'Statecode',
+      'lga': 'Lgcode', 'command': 'navalcmd', 'title': 'Titlecode',
+      'religion': 'ReligionCode', 'pfa': 'pfacode', 'relationship': 'RShipcode',
+      'marital': 'MaritalCode', 'exittype': 'Name', 'salarygrade': 'grade_no',
+      'salarygroup': 'groupcode', 'country': 'countrycode', 'payrollclass': 'classcode',
       'sex': 'sex_code',     
     };
     return fieldMap[endpoint] || 'code';
@@ -276,21 +293,11 @@ class ViewPersonnelManager {
 
   getTextField(endpoint) {
     const fieldMap = {
-      'location': 'unitdesc',
-      'branch': 'busdesc',
-      'state': 'Statename',
-      'lga': 'Lgname',
-      'command': 'name',
-      'title': 'Description',
-      'religion': 'ReligionName',
-      'pfa': 'pfadesc',
-      'relationship': 'Relationship',
-      'marital': 'MaritalStatus',
-      'exittype': 'Description',
-      'salarygrade': 'grade_desc',
-      'salarygroup': 'grpdesc',
-      'country': 'Countryname',
-      'payrollclass': 'classname',
+      'location': 'unitdesc', 'branch': 'busdesc', 'state': 'Statename',
+      'lga': 'Lgname', 'command': 'name', 'title': 'Description',
+      'religion': 'ReligionName', 'pfa': 'pfadesc', 'relationship': 'Relationship',
+      'marital': 'MaritalStatus', 'exittype': 'Description', 'salarygrade': 'grade_desc',
+      'salarygroup': 'grpdesc', 'country': 'Countryname', 'payrollclass': 'classname',
       'sex': 'sex_desc',
     };
     return fieldMap[endpoint] || 'name';
@@ -322,7 +329,6 @@ class ViewPersonnelManager {
       this.employeeData = result.data;
       
     } catch (error) {
-      console.error('Failed to load employee:', error);
       document.getElementById('view-detail-content').innerHTML = `
         <div class="text-red-500 p-4 text-center">
           <p class="text-lg font-medium">Error loading personnel details</p>
@@ -336,28 +342,23 @@ class ViewPersonnelManager {
   async switchTab(tab) {
     this.currentTab = tab;
 
-    // Prevent rendering before data is ready
     if (!this.employeeData || !this.lookupsLoaded) {
-      console.warn("Data not ready yet, retrying...");
       setTimeout(() => this.switchTab(tab), 150);
       return;
     }
     
-    // Check marital status to determine if spouse tab should be visible
     const isMarried = this.employeeData?.employee?.MaritalStatus === 'M' || 
                       this.employeeData?.employee?.MaritalStatus === 'Married';
     
-    // Update tab styling
     const tabs = ['personnel', 'nok', 'spouse', 'children'];
     tabs.forEach(t => {
       const tabBtn = document.getElementById(`view-tab-${t}`);
       if (tabBtn) {
-        // Hide spouse tab if not married
         if (t === 'spouse' && !isMarried) {
           tabBtn.style.display = 'none';
           return;
         } else {
-          tabBtn.style.display = ''; // Show the tab
+          tabBtn.style.display = '';
         }
         
         if (t === tab) {
@@ -368,13 +369,11 @@ class ViewPersonnelManager {
       }
     });
 
-    // If spouse tab was active but user is not married, switch to personnel tab
     if (tab === 'spouse' && !isMarried) {
       this.switchTab('personnel');
       return;
     }
 
-    // Render content
     const contentArea = document.getElementById('view-detail-content');
     if (!contentArea || !this.employeeData) return;
 
@@ -396,12 +395,18 @@ class ViewPersonnelManager {
   
   renderPersonnelDetails() {
       const emp = this.employeeData.employee;
-      // Check if passport exists and format it properly for display
+      
+      const age = this.calculateEmpAge(emp.Birthdate);
+      const yearsEmployed = this.calculateYearsOfService(emp.DateEmpl);
+      const yearsOfService = this.calculateYearsOfService(emp.dateconfirmed);
+      const yearsSinceSeniority = this.calculateYearsOfService(emp.datepmted);
+      const gradeSteps = this.calculateGradeSteps(emp.datepmted);
+      const gradeLevel = this.getFirstTwo(emp.gradelevel);
+      
       const photoSrc = emp.passport 
           ? `data:image/jpeg;base64,${emp.passport}` 
           : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23e5e7eb"/%3E%3Cpath d="M100 60c-16.569 0-30 13.431-30 30 0 16.569 13.431 30 30 30s30-13.431 30-30c0-16.569-13.431-30-30-30zm0 80c-27.614 0-50 17.909-50 40h100c0-22.091-22.386-40-50-40z" fill="%239ca3af"/%3E%3C/svg%3E';
 
-      // Helper class for a detail item in a two-column grid
       const detailItemClass = "flex justify-between items-start py-3 border-b border-gray-300";
       const dtClass = "text-sm font-medium text-gray-600";
       const ddClass = "text-sm font-medium text-gray-900 text-right ml-4";
@@ -460,7 +465,10 @@ class ViewPersonnelManager {
                           <div class="${detailItemClass}"><dt class="${dtClass}">Other Names:</dt><dd class="${ddClass}">${this.escape(emp.OtherName || 'N/A')}</dd></div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">Rank:</dt><dd class="${highlightDDClass}">${this.escape(this.resolveName(emp.Title, 'title'))}</dd></div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">Sex:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.Sex, 'sex') || 'N/A')}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Date of Birth:</dt><dd class="${ddClass}">${this.formatDateForDisplay(emp.Birthdate) || 'N/A'}</dd></div>
+                          <div class="${detailItemClass}">
+                            <dt class="${dtClass}">Date of Birth:</dt>
+                            <dd class="${ddClass}">${this.formatDateWithOrdinal(emp.Birthdate)} <span class="text-md font-semibold text-blue-500">(${age !== null ? age + ' years old' : 'Age unknown'})</span></dd>
+                          </div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">Marital Status:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.MaritalStatus, 'marital'))}</dd></div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">Religion:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.religion, 'religion'))}</dd></div>
                       </dl>
@@ -475,7 +483,7 @@ class ViewPersonnelManager {
                           <div class="${detailItemClass}"><dt class="${dtClass}">LGA:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.LocalGovt, 'lga'))}</dd></div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">Town:</dt><dd class="${ddClass}">${this.escape(emp.town || 'N/A')}</dd></div>                        
                           <h5 class="text-lg font-semibold text-gray-700 pt-4 mb-2 border-t border-gray-100">Residential Address</h5>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Address:</dt><dd class="col-span-2 text-sm text-gray-900 text-right ml-4">${this.escape(emp.HOMEADDR || 'N/A')}</dd></div>
+                          <div class="${detailItemClass}"><dt class="${dtClass}">Address:</dt><dd class="col-span-2 text-sm text-gray-900 text-right ml-4 font-bold">${this.escape(emp.HOMEADDR || 'N/A')}</dd></div>
                       </dl>
                   </div>
               </div>
@@ -484,12 +492,21 @@ class ViewPersonnelManager {
                   <div class="${cardClass} space-y-2">
                       <h4 class="${sectionTitleClass}">Employment Information</h4>
                       <dl>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Date Employed:</dt><dd class="${ddClass}">${this.formatDateForDisplay(emp.DateEmpl) || 'N/A'}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Date Confirmed:</dt><dd class="${ddClass}">${this.formatDateForDisplay(emp.dateconfirmed) || 'N/A'}</dd></div>
+                          <div class="${detailItemClass}">
+                            <dt class="${dtClass}">Date Employed:</dt>
+                            <dd class="${ddClass}">${this.formatDateWithOrdinal(emp.DateEmpl)} <span class="text-md font-semibold text-blue-500">(${yearsEmployed !== null ? yearsEmployed + ' years of service' : ''})</span></dd>
+                          </div>
+                          <div class="${detailItemClass}">
+                            <dt class="${dtClass}">Date Confirmed:</dt>
+                            <dd class="${ddClass}">${this.formatDateWithOrdinal(emp.dateconfirmed)} <span class="text-md font-semibold text-blue-500">(${yearsOfService !== null ? yearsOfService + ' years ago' : ''})</span></dd>
+                          </div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">Entry Mode:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.entry_mode, 'entrymode'))}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Date Left:</dt><dd class="${ddClass}">${this.formatDateForDisplay(emp.DateLeft) || 'N/A'}</dd></div>
+                          <div class="${detailItemClass}"><dt class="${dtClass}">Date Left:</dt><dd class="${ddClass}">${this.formatDateWithOrdinal(emp.DateLeft)}</dd></div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">Exit Type:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.exittype, 'exittype'))}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Seniority Date:</dt><dd class="${ddClass}">${this.formatDateForDisplay(emp.datepmted) || 'N/A'}</dd></div>
+                          <div class="${detailItemClass}">
+                            <dt class="${dtClass}">Seniority Date:</dt>
+                            <dd class="${ddClass}">${this.formatDateWithOrdinal(emp.datepmted)} <span class="text-md font-semibold text-blue-500">(${yearsSinceSeniority !== null ? yearsSinceSeniority + ' years since promotion' : ''})</span></dd>
+                          </div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">Location:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.Location, 'location'))}</dd></div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">Command:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.command, 'command'))}</dd></div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">Specialisation:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.specialisation, 'specialisations'))}</dd></div>
@@ -502,8 +519,11 @@ class ViewPersonnelManager {
                           <div class="${detailItemClass}"><dt class="${dtClass}">Taxed:</dt><dd class="${ddClass}">${this.escape(emp.taxed || 'N/A')}</dd></div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">Tax Code:</dt><dd class="${ddClass}">${this.escape(emp.TaxCode || 'N/A')}</dd></div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">Tax State:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.state, 'state'))}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">NSITF Code:</dt><dd class="${ddClass}">${this.escape(emp.NSITFcode || 'N/A')}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Grade Level:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.gradelevel, 'salarygrade'))}</dd></div>
+                          <div class="${detailItemClass}"><dt class="${dtClass}">RSA(Pension) Code:</dt><dd class="${ddClass}">${this.escape(emp.NSITFcode || 'N/A')}</dd></div>
+                          <div class="${detailItemClass}">
+                            <dt class="${dtClass}">Grade Level:</dt>
+                            <dd class="${ddClass}">${this.escape(this.getFirstTwo(emp.gradelevel, 'salarygrade'))}0<span class="text-md font-semibold text-blue-500">${gradeSteps !== null ? gradeSteps: ''}</span></dd>
+                          </div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">Grade Type:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.gradetype, 'salarygroup'))}</dd></div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">Branch:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.Factory, 'branch'))}</dd></div>
                           <div class="${detailItemClass}"><dt class="${dtClass}">PFA:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.pfacode, 'pfa'))}</dd></div>                          

@@ -19,8 +19,8 @@ const DISPLAY_MAPPING = {
 // Get all available database classes (for populating the table)
 router.get('/dbclasses', verifyToken, async (req, res) => {
   try {
-const [rows] = await pool.query(`
-    SELECT classcode, classname, db_name, status
+    const [rows] = await pool.query(`
+      SELECT classcode, classname, db_name, status
       FROM py_payrollclass
       WHERE status = 'active'
     `);
@@ -30,7 +30,7 @@ const [rows] = await pool.query(`
       id: row.db_name, // unique db identifier
       display: row.classname,
       dbName: row.db_name,
-      isPrimary: row.db_name === req.primary_class,
+      isPrimary: row.classname === req.primary_class,
       isActive: row.db_name === req.current_class,
       hasAccess: true
     }));
@@ -62,20 +62,20 @@ router.post('/switch-class', verifyToken, async (req, res) => {
     // Try lookup by classname first
     let [classRows] = await pool.query(`
       SELECT classcode, classname, db_name, status
-        FROM py_payrollclass
-        WHERE classname = ? AND status = 'active'
-      `,
-      [targetClass]
+      FROM py_payrollclass
+      WHERE classname = ? AND status = 'active'
+    `,
+    [targetClass]
     );
 
     // If not found, try lookup by db_name
     if (classRows.length === 0) {
       [classRows] = await pool.query(`
         SELECT classcode, classname, db_name, status
-          FROM py_payrollclass
-          WHERE db_name = ? AND status = 'active'
-        `,
-        [targetClass]
+        FROM py_payrollclass
+        WHERE db_name = ? AND status = 'active'
+      `,
+      [targetClass]
       );
     }
 
@@ -107,7 +107,7 @@ router.post('/switch-class', verifyToken, async (req, res) => {
 
     console.log(`\n✅ Successfully switched user ${userId} to ${targetDbName}`);
     console.log(`   Primary class (home): ${req.primary_class}`);
-    console.log(`   Current class (working): ${targetDbName}`);
+    console.log(`   Current class (working): ${targetDbName} (${selectedClass.classname})`); // ✅ Added class name
 
     res.json({
       success: true,

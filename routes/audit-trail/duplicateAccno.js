@@ -1,6 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../../config/db'); // mysql2 pool
 const verifyToken = require('../../middware/authentication');
+router.use(verifyToken);
+const duplicateAccountController = require('../../controllers/audit-trail/duplicateAccnoController');
+
+router.get(
+  '/',
+  duplicateAccountController.generateDuplicateAccountReport.bind(duplicateAccountController)
+);
+
+router.get(
+  '/filter-options',
+  duplicateAccountController.getDuplicateAccountFilterOptions.bind(duplicateAccountController)
+);
 
 module.exports = router;

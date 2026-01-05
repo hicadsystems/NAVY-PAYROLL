@@ -60,6 +60,7 @@ class MenuHighlighter {
       'add-personnel': 'personel-profile',
       'current-personnel': 'personel-profile',
       'old-personnel': 'personel-profile',
+      'view-personnel' : 'personel-profile',
       
       // Data Input menu items
       'payments-deductions': 'data-entry',
@@ -107,15 +108,19 @@ class MenuHighlighter {
       'loan-analysis': 'reports',
       'analysis-of-payments': 'reports',
       'tax-payments-by-state': 'reports',
-      'overtime-analysis-by-dept': 'reports',
+      //'overtime-analysis-by-dept': 'reports',
       'payroll-register': 'reports',
-      'listing-of-payroll-files': 'reports',
+      //'listing-of-payroll-files': 'reports',
       'payment-staff-list': 'reports',
       'national-housing-funds': 'reports',
       'nsitf': 'reports',
       'salary-summary': 'reports',
-      'analysis-of-normal-hours': 'reports',
+      //'analysis-of-normal-hours': 'reports',
       'salary-reconciliation': 'reports',
+      'control-sheet': 'reports',
+      'payment-statistics': 'reports',
+      'personnel-reports': 'reports',
+
       
       // Audit Trail menu items
       'salary-variance-analysis': 'audit-trail',

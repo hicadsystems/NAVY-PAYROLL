@@ -10,6 +10,7 @@ const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+//const jsreport = require('jsreport-core')();
 //const multer = require("multer");
 const PORT = process.env.PORT || 5500;
 
@@ -29,6 +30,7 @@ app.use(
       scriptSrc: [
         "'self'",
         "https://cdn.tailwindcss.com",
+        "https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js",
         "'unsafe-eval'",   
       ],
       scriptSrcAttr: ["'unsafe-inline'"], 
@@ -73,7 +75,6 @@ app.use(session({
 }));
 
 app.use(notificationMiddleware);
-
 
 // mount routes
 require('./routes')(app);

@@ -123,6 +123,8 @@
       roles.forEach(role => {
         const row = document.createElement("tr");
         row.className = "border-b";
+        row.dataset.id = role.id;   // ← FIX ADDED
+
         row.innerHTML = `
           <td class="px-4 py-2 font-medium">${role.name}</td>
           <td class="px-4 py-2">${role.description || ""}</td>
@@ -151,7 +153,15 @@
     try {
       const token = localStorage.getItem('token');
       const isEditing = editingRow !== null;
-      const roleId = isEditing ? editingRow.querySelector('.editBtn').dataset.id : null;
+      let roleId = null;
+
+      if (isEditing) {
+        roleId = editingRow.dataset.id;
+        if (!roleId) {
+          alert("Error: Missing role ID");
+          return;
+        }
+      }
 
       const response = await fetch(isEditing ? `/roles/${roleId}` : "/roles", {
         method: isEditing ? "PUT" : "POST",
@@ -185,7 +195,7 @@
     try {
       const token = localStorage.getItem('token');
 
-      const response = await fetch(`/roles/${deleteRoleId}`, {
+      const response = await fetch(`/roles/${roleId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

@@ -4,29 +4,10 @@ const pool = require('../../config/db'); // mysql2 pool
 const verifyToken = require('../../middware/authentication');
 
 
-// Backend: /routes/payroll.js
-router.post('/', verifyToken, async (req, res) => {
-  try {
-    const { year, month, payrollclass, globalcoy, salscale } = req.body;
-    const user = req.user_fullname;
+const { calculatePayroll } = require('../../controllers/payroll-calculations/payrollCalculation');
+router.post('/', verifyToken, calculatePayroll);
 
-    // Start async processing (this takes time!)
-    const [result] = await pool.query(
-      'CALL sp_run_payroll_cycle_optimized(?, ?, ?, ?, ?, ?)',
-      [year, month, payrollclass, globalcoy, salscale, user]
-    );
-
-    res.json({
-      success: true,
-      message: 'Payroll calculated successfully',
-      data: result[0][0]
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
+const { getCalculationResults } = require('../../controllers/payroll-calculations/payrollCalculation');
+router.get('/results', verifyToken, getCalculationResults);
 
 module.exports = router;

@@ -58,3 +58,6 @@ migratedata.js
 migration_checkpoint.json
 notifications
 preferences
+data
+logs
+temp

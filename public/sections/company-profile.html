@@ -120,8 +120,8 @@
         <dt class="text-sm font-medium text-gray-500">Shall Use Standard Salary Scale?</dt>
         <dd id="salaryScaleDisplay" class="text-lg font-semibold text-gray-800">Loading...</dd>
         <select id="salaryScaleInput" name="salaryscale" class="hidden w-full border rounded px-2 py-1 mt-2">
-          <option value="YES">YES</option>
-          <option value="NO">NO</option>
+          <option value="Yes">YES</option>
+          <option value="No">NO</option>
         </select>
       </div>
 
@@ -130,8 +130,8 @@
         <dt class="text-sm font-medium text-gray-500">Independent Monthly Tax</dt>
         <dd id="independentMonthlyTaxDisplay" class="text-lg font-semibold text-gray-800">Loading...</dd>
         <select id="independentMonthlyTaxInput" name="mthly_tax" class="hidden w-full border rounded px-2 py-1 mt-2">
-          <option value="YES">YES</option>
-          <option value="NO">NO</option>
+          <option value="Yes">YES</option>
+          <option value="No">NO</option>
         </select>
       </div>
 
@@ -140,8 +140,8 @@
         <dt class="text-sm font-medium text-gray-500">Linked To Human Resources</dt>
         <dd id="linkToHRDisplay" class="text-lg font-semibold text-gray-800">Loading...</dd>
         <select id="linkToHRInput" name="hrlink" class="hidden w-full border rounded px-2 py-1 mt-2">
-          <option value="YES">YES</option>
-          <option value="NO">NO</option>
+          <option value="Yes">YES</option>
+          <option value="No">NO</option>
         </select>
       </div>
 
@@ -508,9 +508,9 @@
       document.getElementById('serverAddressInput').value = data.serveraddr || '';
       document.getElementById('emailPasswordInput').value = data.email_pword || '';
       document.getElementById('addressInput').value = data.Address || '';
-      document.getElementById('salaryScaleInput').value = data.salaryscale || 'YES';
-      document.getElementById('independentMonthlyTaxInput').value = data.mthly_tax || 'YES';
-      document.getElementById('linkToHRInput').value = data.hrlink || 'YES';
+      document.getElementById('salaryScaleInput').value = data.salaryscale || 'Yes';
+      document.getElementById('independentMonthlyTaxInput').value = data.mthly_tax || 'Yes';
+      document.getElementById('linkToHRInput').value = data.hrlink || 'Yes';
       document.getElementById('processingMonthInput').value = data.processmonth || '';
       document.getElementById('processingYearInput').value = data.Processyear || '';
       document.getElementById('retirementAgeInput').value = data.retireage || '';

@@ -10,6 +10,10 @@
     "express-session": "^1.18.2",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "jsreport": "^4.10.1",
+    "jsreport-chrome-pdf": "^1.10.0",
+    "jsreport-core": "^2.10.1",
+    "jsreport-handlebars": "^2.1.0",
     "morgan": "^1.10.1",
     "mssql": "^11.0.1",
     "multer": "^2.0.2",
@@ -39,5 +43,10 @@
     "url": "https://github.com/hicadsystems/NAVY-PAYROLL/issues"
   },
   "homepage": "https://github.com/hicadsystems/NAVY-PAYROLL#readme",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18"
+  }
 }

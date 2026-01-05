@@ -1,6 +1,6 @@
 <!-- Print Options Section -->
 <section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
-  <h2 class="text-xl text-center border-b font-bold text-blue-600 mb-4">Print analysis of Earnings/Deduction Report</h2>
+  <h2 class="text-xl text-center border-b font-bold text-blue-600 mb-4">Print Analysis of Earnings/Deduction Report</h2>
 
   <form id="printForm" class="space-y-4">
     <!-- Radio selection -->
@@ -22,11 +22,9 @@
     <div>
       <label for="paymentType" class="block text-sm font-medium mb-1">Payment Type</label>
       <select id="paymentType" name="paymentType"
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300" disabled>
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled>
         <option value="">Select Payment Type</option>
-        <option>Type A</option>
-        <option>Type B</option>
-        <option>Type C</option>
+        <!-- Options will be loaded from API -->
       </select>
     </div>
 
@@ -34,50 +32,81 @@
     <div>
       <label for="processingMonth" class="block text-sm font-medium mb-1">Processing Month</label>
       <select id="processingMonth" name="processingMonth"
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
         <option value="">Select Month</option>
-        <option>January</option>
-        <option>February</option>
-        <option>March</option>
-        <option>April</option>
-        <option>May</option>
-        <option>June</option>
-        <option>July</option>
-        <option>August</option>
-        <option>September</option>
-        <option>October</option>
-        <option>November</option>
-        <option>December</option>
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3">March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
       </select>
     </div>
 
-  <div class="flex justify-between items-center gap-2 mb-4">
-    <!-- Summary Report -->
-    <div class="flex items-center space-x-2">
-      <input type="checkbox" id="summaryReport" name="summaryReport" class="h-4 w-4">
-      <label for="summaryReport" class="text-sm">Summary Report</label>
+    <!-- Processing Year -->
+    <div>
+      <label for="processingYear" class="block text-sm font-medium mb-1">Processing Year</label>
+      <input type="number" id="processingYear" name="processingYear"
+        class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        placeholder="e.g., 2025" min="2020" max="2099">
     </div>
 
-    <!-- Buttons -->
-    <div class="flex space-x-2 pt-2">
-      <button type="reset" id="clearPrintBtn"
-        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
-        Clear
-      </button>
-      <button type="button" id="printBtn"
-        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-        Print
-      </button>
+    <!-- Output Format -->
+    <div class="flex flex-wrap items-center gap-2">
+      <label class="block font-medium">Output Format</label>
+      <div class="flex space-x-4">
+        <label class="flex text-sm items-center space-x-2">
+          <input type="radio" name="earningsFormat" value="pdf" checked>
+          <span>PDF</span>
+        </label>
+        <label class="flex text-sm items-center space-x-2">
+          <input type="radio" name="earningsFormat" value="excel">
+          <span>Excel</span>
+        </label>
+      </div>
     </div>
-  </div>
+
+    <div class="flex justify-between items-center gap-2 mb-4">
+      <!-- Summary Report -->
+      <div class="flex items-center space-x-2">
+        <input type="checkbox" id="summaryReport" name="summaryReport" class="h-4 w-4">
+        <label for="summaryReport" class="text-sm">Summary Report</label>
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex space-x-2 pt-2">
+        <button type="reset" id="clearPrintBtn"
+          class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+          Clear
+        </button>
+        <button type="button" id="printBtn"
+          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          Generate
+        </button>
+      </div>
+    </div>
   </form>
 </section>
+
+<!-- Loading Indicator -->
+<div id="earningsLoadingIndicator" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
+    <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+    <span>Generating report...</span>
+  </div>
+</div>
 
 <!-- Confirmation Modal -->
 <div id="printConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6">
-    <h3 class="text-lg font-semibold mb-4">Confirm Print</h3>
-    <p class="mb-6 text-gray-700">Do you want to continue with printing options?</p>
+    <h3 class="text-lg font-semibold mb-4">Confirm Generation</h3>
+    <p class="mb-6 text-gray-700">Do you want to continue with report generation?</p>
 
     <div class="flex justify-end space-x-2">
       <button id="printCancelBtn"
@@ -96,7 +125,7 @@
 <div id="printSuccessModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
     <h3 class="text-lg font-semibold text-green-600 mb-4">Success</h3>
-    <p class="mb-6 text-gray-700">Report generated successfully!</p>
+    <p class="mb-6 text-gray-700" id="earningsSuccessMessage">Report generated successfully!</p>
     <button id="printSuccessOkBtn"
       class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
       OK
@@ -108,7 +137,7 @@
 <div id="printErrorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
     <h3 class="text-lg font-semibold text-red-600 mb-4">Error</h3>
-    <p class="mb-6 text-gray-700">Please enter a bank name when Specific Bank is selected.</p>
+    <p class="mb-6 text-gray-700" id="earningsErrorMessage">Please complete all required fields.</p>
     <button id="printErrorOkBtn"
       class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
       OK
@@ -117,11 +146,17 @@
 </div>
 
 <script>
+  const API_BASE = '/ernded';
+  let lookupMaps = {};
+  
   const allTypes = document.getElementById("allTypes");
   const specificType = document.getElementById("specificType");
   const paymentType = document.getElementById("paymentType");
+  const processingMonth = document.getElementById("processingMonth");
+  const processingYear = document.getElementById("processingYear");
   const printBtn = document.getElementById("printBtn");
   const clearPrintBtn = document.getElementById("clearPrintBtn");
+  const earningsLoadingIndicator = document.getElementById("earningsLoadingIndicator");
 
   const printConfirmModal = document.getElementById("printConfirmModal");
   const printCancelBtn = document.getElementById("printCancelBtn");
@@ -129,9 +164,86 @@
 
   const printSuccessModal = document.getElementById("printSuccessModal");
   const printSuccessOkBtn = document.getElementById("printSuccessOkBtn");
+  const earningsSuccessMessage = document.getElementById("earningsSuccessMessage");
 
   const printErrorModal = document.getElementById("printErrorModal");
   const printErrorOkBtn = document.getElementById("printErrorOkBtn");
+  const earningsErrorMessage = document.getElementById("earningsErrorMessage");
+
+  // Load current period and set default values
+  async function loadCurrentPeriod() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/salarysummary/filter-options`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const period = result.data.currentPeriod;
+          processingYear.value = period.year;
+          processingMonth.value = period.month;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading current period:', error);
+    }
+  }
+
+  // Load payment types on page load
+  async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/reference/${endpoint}`, {   
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        }
+      });
+      const data = await response.json();
+      
+      // BUILD THE LOOKUP MAP FIRST
+      lookupMaps[endpoint] = Object.fromEntries(
+        data.map(item => [item[valueField], item[textField]])
+      );
+      
+      //console.log(`Loaded ${endpoint}:`, lookupMaps[endpoint]); // Debug log
+      
+      // THEN POPULATE THE DROPDOWN IF IT EXISTS
+      const dropdown = document.getElementById(elementId);
+      if (dropdown) {
+        dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+        data.forEach(item => {
+          const option = document.createElement("option");
+          option.value = item[valueField];
+          option.textContent = item[textField];
+          dropdown.appendChild(option);
+        });
+      }
+      
+      return data;
+    } catch (err) {
+      console.error(`Failed to load ${endpoint}:`, err);
+      return [];
+    }
+  }
+
+  async function loadAllDropdowns() {
+    try {
+      await loadDropdown("elementtype","paymentType", "PaymentType", "elmDesc", "Select Payment Type");
+      
+      //console.log('All dropdowns loaded. Final lookupMaps:', lookupMaps);
+    } catch (error) {
+      console.error('Error loading dropdowns:', error);
+    }
+  }
+
+  function resolveName(code, endpoint) {
+    if (!code) return 'N/A';
+    return lookupMaps[endpoint]?.[code] || code;
+  }
 
   function toggleBankInput() {
     paymentType.disabled = allTypes.checked;
@@ -141,6 +253,23 @@
   specificType.addEventListener("change", toggleBankInput);
 
   printBtn.addEventListener("click", () => {
+    // Validation
+    if (!processingMonth.value) {
+      earningsErrorMessage.textContent = 'Please select a processing month.';
+      printErrorModal.classList.remove("hidden");
+      return;
+    }
+    if (!processingYear.value) {
+      earningsErrorMessage.textContent = 'Please enter a processing year.';
+      printErrorModal.classList.remove("hidden");
+      return;
+    }
+    if (specificType.checked && !paymentType.value) {
+      earningsErrorMessage.textContent = 'Please select a payment type.';
+      printErrorModal.classList.remove("hidden");
+      return;
+    }
+
     printConfirmModal.classList.remove("hidden");
   });
 
@@ -148,22 +277,77 @@
     printConfirmModal.classList.add("hidden");
   });
 
-  printContinueBtn.addEventListener("click", () => {
+  printContinueBtn.addEventListener("click", async () => {
     printConfirmModal.classList.add("hidden");
+    earningsLoadingIndicator.classList.remove("hidden");
+    printBtn.disabled = true;
 
-    if (specificType.checked && !paymentType.value.trim()) {
-      printErrorModal.classList.remove("hidden");
-    } else {
+    const format = document.querySelector('input[name="earningsFormat"]:checked').value;
+    const month = processingMonth.value;
+    const year = processingYear.value;
+    const summary = document.getElementById("summaryReport").checked;
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Build query parameters
+      const params = new URLSearchParams({
+        format: format,
+        month: month,
+        year: year,
+        summary: summary ? '1' : '0'
+      });
+
+      if (specificType.checked && paymentType.value) {
+        params.append('payment_type', paymentType.value);
+      }
+
+      const response = await fetch(`${API_BASE}/generate?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate report');
+      }
+
+      // Download file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      // Open PDF in new tab
+      if (format === 'pdf') {
+        window.open(url, '_blank');
+      }
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `earnings_deductions_${month}_${year}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      
+      // Clean up blob URL after a delay
+      setTimeout(() => window.URL.revokeObjectURL(url), 100);
+
+      earningsLoadingIndicator.classList.add("hidden");
+      printBtn.disabled = false;
+      earningsSuccessMessage.textContent = `Report generated successfully! Your ${format.toUpperCase()} is downloading.`;
       printSuccessModal.classList.remove("hidden");
-      // Real implementation: trigger print or API call here
+
+    } catch (error) {
+      earningsLoadingIndicator.classList.add("hidden");
+      printBtn.disabled = false;
+      earningsErrorMessage.textContent = error.message || 'Failed to generate report. Please try again.';
+      printErrorModal.classList.remove("hidden");
+      console.error('Error:', error);
     }
   });
 
   printSuccessOkBtn.addEventListener("click", () => {
     printSuccessModal.classList.add("hidden");
-    // Reset form or perform other actions
-    document.getElementById("printForm").reset();
-    toggleBankInput();
   });
 
   printErrorOkBtn.addEventListener("click", () => {
@@ -173,7 +357,11 @@
   clearPrintBtn.addEventListener("click", () => {
     allTypes.checked = true;
     toggleBankInput();
+    processingYear.value = new Date().getFullYear();
   });
 
+  // Initialize
   toggleBankInput();
+  loadAllDropdowns();
+  loadCurrentPeriod();
 </script>

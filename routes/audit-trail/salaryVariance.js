@@ -1,6 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../../config/db'); // mysql2 pool
 const verifyToken = require('../../middware/authentication');
+router.use(verifyToken);
+
+// Load Salary Variance Controller
+const salaryVarianceController = require('../../controllers/audit-trail/varianceAnalysisController');
+
+// Route to get Salary Variance Audit Trail
+router.get(
+  '/',
+  salaryVarianceController.generateSalaryVarianceReport.bind(salaryVarianceController)
+);
+
+//Filter options
+router.get(
+  '/filter-options',
+  salaryVarianceController.getFilterOptions.bind(salaryVarianceController)
+);
 
 module.exports = router;

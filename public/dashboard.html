@@ -29,9 +29,15 @@
 
   <!-- Tailwind CDN + config -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="styles/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+  <!--<script src="script/choices.js"></script> -->
+  
+  
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
+  <link rel="stylesheet" href="styles/dashboard.css">
+
 </head>
 
 <body class="bg-gradient-to-br from-amber-50 to-blue-100 min-h-dvh antialiased dark overflow-auto">
@@ -75,7 +81,13 @@
         </div>
       </div>
 
-      <img src="photos/logo.png" alt="logo" class="hidden sm:block lg:w-[40px] h-[50px] object-contain" />
+      <div class="flex flex-wrap items-center gap-6">
+        <p id="workingClass" class="text-sm md:text-sm lg:text-sm font-bold text-navy text-center text-blue-900">
+          Currently Active In: <span class="text-yellow-600 text-md" id="payrollClassName">Loading...</span>
+        </p>
+
+        <img src="photos/logo.png" alt="logo" class="hidden sm:block lg:w-[25px] h-[35px] object-contain" />
+      </div>
     </header>
 
     <div class="main-content-wrapper pt-0 sm:pt-0 md:pt-2 lg:pt-2 lg:pl-[250px] h-dvh overflow-y-auto transition-all duration-300">
@@ -84,10 +96,11 @@
       <aside id="sidebar" class="overlap-wrapper lg:fixed lg:top-[5rem] lg:left-[max(0px,calc(50%-720px))] z-20 lg:w-[250px] bg-transparent lg:h-[calc(100vh-1rem)] shadow-lg overflow-y-auto">
 
         <nav class="px-4">
-          <ul class="flex flex-col gap-4">
+          <ul class="flex flex-col gap-[1.1rem]">
             <li class="relative">
                 <a class="nav-item flex items-center justify-between text-navy font-medium py-2 rounded px-2 hover:bg-amber-100/25" 
-                  href="dashboard.html" 
+                  href="#" 
+                  onclick="window.navigation.returnToDashboard(); return false;"
                   title="Dashboard">
                   <span class="flex items-center gap-2">
                     <i class="fas fa-home"></i>
@@ -331,15 +344,18 @@
                   <li><a href="#" data-section="loan-analysis" class="block px-3 py-1 rounded hover:bg-amber-50">Loan Analysis</a></li>
                   <li><a href="#" data-section="analysis-of-payments" class="block px-3 py-1 rounded hover:bg-amber-50 whitespace-normal break-words w-56">Analisis of Payments/Deductions by Bank</a></li>
                   <li><a href="#" data-section="tax-payments-by-state" class="block px-3 py-1 rounded hover:bg-amber-50">Tax Payments By State</a></li>
-                  <li><a href="#" data-section="overtime-analysis-by-dept" class="block px-3 py-1 rounded hover:bg-amber-50">Overtime Analysis by Dept</a></li>
+                  <!--<li><a href="#" data-section="overtime-analysis-by-dept" class="block px-3 py-1 rounded hover:bg-amber-50">Overtime Analysis by Dept</a></li>-->
                   <li><a href="#" data-section="payroll-register" class="block px-3 py-1 rounded hover:bg-amber-50">Payroll Register</a></li>
-                  <li><a href="#" data-section="listing-of-payroll-files" class="block px-3 py-1 rounded hover:bg-amber-50">Listing of Payroll Files</a></li>
+                  <!--<li><a href="#" data-section="listing-of-payroll-files" class="block px-3 py-1 rounded hover:bg-amber-50">Listing of Payroll Files</a></li>-->
                   <li><a href="#" data-section="payment-staff-list" class="block px-3 py-1 rounded hover:bg-amber-50">Payment Staff List</a></li>
                   <li><a href="#" data-section="national-housing-funds" class="block px-3 py-1 rounded hover:bg-amber-50">National Housing Funds</a></li>
-                  <li><a href="#" data-section="nsitf" class="block px-3 py-1 rounded hover:bg-amber-50">NSITF</a></li>
+                  <li><a href="#" data-section="nsitf" class="block px-3 py-1 rounded hover:bg-amber-50">Pension Fund Scheme</a></li>
                   <li><a href="#" data-section="salary-summary" class="block px-3 py-1 rounded hover:bg-amber-50">Salary Summary</a></li>
-                  <li><a href="#" data-section="analysis-of-normal-hours" class="block px-3 py-1 rounded hover:bg-amber-50">Analysis of Normal Hours by Dept.</a></li>
+                  <!--<li><a href="#" data-section="analysis-of-normal-hours" class="block px-3 py-1 rounded hover:bg-amber-50">Analysis of Normal Hours by Dept.</a></li>-->                  
+                  <!--<li><a href="#" data-section="payment-statistics" class="block px-3 py-1 rounded hover:bg-amber-50">Payment Statistics</a></li>-->
+                  <li><a href="#" data-section="control-sheet" class="block px-3 py-1 rounded hover:bg-amber-50">Control Sheet/Journal</a></li>
                   <li><a href="#" data-section="salary-reconciliation" class="block px-3 py-1 rounded hover:bg-amber-50">Salary Reconcilation</a></li>
+                  <li><a href="#" data-section="personnel-reports" class="block px-3 py-1 rounded hover:bg-amber-50">Personnel Reports</a></li>
                 </ul>
               </div>
             </li>
@@ -415,7 +431,7 @@
                   <h3 class="text-navy font-bold">Current Payroll Period</h3>
                   <i class='fas fa-calendar-alt' style="font-size: 24px"></i>
                 </div>
-                <div class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold">October</div>
+                <div id="current-payroll-period" class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold">Loading...</div>
               </div>
             </div>
 

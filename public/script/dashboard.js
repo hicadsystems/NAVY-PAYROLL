@@ -113,6 +113,83 @@ function openSidebar() {
   }
 }
 
+// Save sidebar state (lg screens only)
+async function saveSidebarState() {
+  if (window.innerWidth < 1200) return; // Only save on lg screens
+  
+  const isCollapsed = sidebarEl.classList.contains('desktop-hidden');
+  
+  try {
+    const token = localStorage.getItem('token');
+    await fetch('/preferences/sidebar/save', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ sidebarCollapsed: isCollapsed })
+    });
+  } catch (error) {
+    console.error('Failed to save sidebar state:', error);
+  }
+}
+
+// Load sidebar state on page load
+async function loadSidebarState() {
+  const width = window.innerWidth;
+  
+  // Only apply saved state on full desktop (>= 1200px)
+  if (width < 1200) {
+    console.log('Not full desktop - skipping saved state');
+    
+    if (width >= 1024) {
+      // Icon mode: force collapsed
+      sidebarEl.classList.add('desktop-hidden');
+      document.body.classList.add('sidebar-closed');
+      document.body.classList.remove('sidebar-open');
+    }
+    return;
+  }
+  
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch('/preferences/sidebar', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    console.log('Loaded sidebar state:', data);
+    
+    if (data.success) {
+      if (data.sidebarCollapsed) {
+        // User prefers collapsed
+        sidebarEl.classList.add('desktop-hidden');
+        document.body.classList.add('sidebar-closed');
+        document.body.classList.remove('sidebar-open');
+        console.log('✅ Applied collapsed state');
+      } else {
+        // User prefers expanded
+        sidebarEl.classList.remove('desktop-hidden');
+        document.body.classList.add('sidebar-open');
+        document.body.classList.remove('sidebar-closed');
+        console.log('✅ Applied expanded state');
+      }
+    } else {
+      // No saved state: default to expanded on 1200+
+      sidebarEl.classList.remove('desktop-hidden');
+      document.body.classList.add('sidebar-open');
+      document.body.classList.remove('sidebar-closed');
+    }
+  } catch (error) {
+    console.error('Failed to load sidebar state:', error);
+  }
+}
+
+// Modify toggleSidebar to save state:
 function toggleSidebar() {
   const isOpen = window.innerWidth < 1024 
     ? sidebarEl.classList.contains('sidebar-visible')
@@ -123,53 +200,112 @@ function toggleSidebar() {
   } else {
     openSidebar();
   }
+  
+  // Save state for lg screens only
+  if (window.innerWidth >= 1200) {
+    saveSidebarState();
+  }
 }
 
 btn?.addEventListener('click', toggleSidebar);
 
 // Handle window resize with debouncing
 let resizeTimeout;
+let previousWidth = window.innerWidth;
+
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(() => {
+  resizeTimeout = setTimeout(async () => {
+    const currentWidth = window.innerWidth;
+    const wasLargeScreen = previousWidth >= 1200;
+    const isLargeScreen = currentWidth >= 1200;  
+    const wasIconMode = previousWidth >= 1024 && previousWidth < 1200;
+    const isIconMode = currentWidth >= 1024 && currentWidth < 1200;
+    
     removeSidebarOverlay();
     document.body.classList.remove('no-scroll');
     
-    if (window.innerWidth >= 1024) {
+    if (previousWidth < 1024 && currentWidth >= 1024) {
+      // Moving FROM mobile TO desktop (1024+)
+      console.log('Transitioning from mobile to desktop');
       sidebarEl.classList.remove('sidebar-visible');
       
-      // Auto-collapse sidebar to icons for screens 1200px and below
-      if (window.innerWidth <= 1200) {
+      if (currentWidth < 1200) {
+        // Entering icon mode (1024-1199)
+        console.log('Entering icon mode (1024-1199)');
         sidebarEl.classList.add('desktop-hidden');
         document.body.classList.add('sidebar-closed');
         document.body.classList.remove('sidebar-open');
       } else {
-        // Above 1200px - show full sidebar
-        sidebarEl.classList.remove('desktop-hidden');
+        // Entering full desktop (1200+)
+        await loadSidebarState();
+      }
+      
+    } else if (previousWidth >= 1024 && currentWidth < 1024) {
+      // Moving FROM desktop TO mobile
+      console.log('Transitioning from desktop to mobile');
+      
+      // Reset desktop classes
+      sidebarEl.classList.remove('desktop-hidden');
+      document.body.classList.remove('sidebar-closed', 'sidebar-open');
+      sidebarEl.classList.remove('sidebar-visible');
+      
+    } else if (!wasLargeScreen && isLargeScreen) {
+      // Moving FROM icon mode (1024-1199) TO full desktop (1200+)
+      console.log('Transitioning from icon mode to full desktop');
+      await loadSidebarState();
+      
+    } else if (wasLargeScreen && !isLargeScreen && isIconMode) {
+      // Moving FROM full desktop (1200+) TO icon mode (1024-1199)
+      console.log('Transitioning from full desktop to icon mode');
+      
+      // Force icon mode
+      sidebarEl.classList.add('desktop-hidden');
+      document.body.classList.add('sidebar-closed');
+      document.body.classList.remove('sidebar-open');
+      
+    } else if (isLargeScreen) {
+      // Staying on full desktop (1200+) - maintain current state
+      const isCollapsed = sidebarEl.classList.contains('desktop-hidden');
+      
+      if (isCollapsed) {
+        document.body.classList.add('sidebar-closed');
+        document.body.classList.remove('sidebar-open');
+      } else {
         document.body.classList.add('sidebar-open');
         document.body.classList.remove('sidebar-closed');
       }
-      
-      mainContainer?.classList.add('sidebar-open');
-      mainContainer?.classList.remove('sidebar-closed');
+    } else if (isIconMode) {
+      // Staying in icon mode (1024-1199) - always collapsed
+      sidebarEl.classList.add('desktop-hidden');
+      document.body.classList.add('sidebar-closed');
+      document.body.classList.remove('sidebar-open');
     }
+    
+    previousWidth = currentWidth;
   }, 150);
 });
 
 // Initialize sidebar state on page load
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const width = window.innerWidth;
   
-  // Set sidebar state
-  if (width <= 1200 && width >= 1024) {
+  if (width >= 1200) {
+    // Full desktop: load saved state
+    await loadSidebarState();
+  } else if (width >= 1024) {
+    // Icon mode: force collapsed
     sidebarEl?.classList.add('desktop-hidden');
     document.body.classList.add('sidebar-closed');
     document.body.classList.remove('sidebar-open');
-  } else if (width > 1200) {
-    sidebarEl?.classList.remove('desktop-hidden');
-    document.body.classList.add('sidebar-open');
-    document.body.classList.remove('sidebar-closed');
+  } else {
+    // Mobile/tablet: ensure sidebar is hidden
+    sidebarEl?.classList.remove('sidebar-visible');
+    document.body.classList.remove('sidebar-closed', 'sidebar-open');
   }
+  
+  // Store initial width
+  previousWidth = width;
 });
 
 // Toggle submenu on click (touch support) and close when clicking outside.
@@ -390,119 +526,193 @@ window.addEventListener('resize', ()=>{
 });
 window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
 
-  // Figure out the current time of day
-  function getTimeOfDay() {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Morning';
-    if (hour >= 12 && hour < 16) return 'Afternoon';
-    if (hour >= 16 && hour < 21) return 'Evening';
-    return 'Night';
-  }
+// Figure out the current time of day
+function getTimeOfDay() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return 'Morning';
+  if (hour >= 12 && hour < 16) return 'Afternoon';
+  if (hour >= 16 && hour < 21) return 'Evening';
+  return 'Night';
+}
 
-  // Get logged-in user from localStorage
-  function getLoggedInUser() {
+// Get logged-in user from JWT token
+function getLoggedInUser() {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      // Fallback to localStorage for backward compatibility
+      return {
+        user_id: localStorage.getItem("user_id"),
+        full_name: localStorage.getItem("full_name"),
+        role: localStorage.getItem("role"),
+        primary_class: localStorage.getItem("class"),
+        current_class: localStorage.getItem("class")
+      };
+    }
+
+    // ✅ Decode JWT token to get user info including current_class
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    
+    return {
+      user_id: payload.user_id,
+      full_name: payload.full_name,
+      role: payload.role,
+      primary_class: payload.primary_class,
+      current_class: payload.current_class || payload.primary_class // ✅ Use current_class from token
+    };
+  } catch (error) {
+    console.error('Error decoding token:', error);
+    // Fallback to localStorage
     return {
       user_id: localStorage.getItem("user_id"),
       full_name: localStorage.getItem("full_name"),
       role: localStorage.getItem("role"),
       primary_class: localStorage.getItem("class"),
+      current_class: localStorage.getItem("class")
     };
   }
+}
 
-  // Cache for class mappings
-  let classMapping = {};
-  let selectedPayrollClass = sessionStorage.getItem("currentPayrollClass") || null;
+// Cache for class mappings
+let classMapping = {};
 
-  // Load class mappings from backend endpoint
-  async function loadClassMappings() {
-    try {
-      const token = localStorage.getItem('token');
+// Load class mappings from backend endpoint
+async function loadClassMappings() {
+  try {
+    const token = localStorage.getItem('token');
 
-      const response = await fetch('/db_classes', {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-      }); 
+    const response = await fetch('/dbclasses', {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+    }); 
 
-      const classes = await response.json();
+    const data = await response.json();
 
-      // Create mapping from db_name → display_name
-      classMapping = {};
-      classes.forEach(cls => {
-        classMapping[cls.db_name] = cls.display_name;
-      });
-
-    } catch (error) {
-      console.error('Failed to load class mappings:', error);
-    }
-  }
-
-  // Update greeting message
-  function updateGreeting() {
-    const greetingElement = document.getElementById('dynamicGreeting');
-    if (!greetingElement) return; // Only run if element exists
-
-    const user = getLoggedInUser();
-    const timeOfDay = getTimeOfDay();
-
-    // Use current payroll class (session override) or fallback to user's primary
-    const effectiveClass = selectedPayrollClass || user.primary_class;
-    const userClass = classMapping[effectiveClass] || effectiveClass || 'OFFICERS';
-
-    // Default to "User" if no login info
-    const userName = user?.full_name || user?.user_id || 'User';
-
-    const greeting = `Good ${timeOfDay} ${userName}, welcome to ${userClass} payroll`;
-    greetingElement.textContent = greeting;
-  }
-
-  // Update current time display
-  function updateCurrentTime() {
-    const timeElement = document.getElementById('currentTime');
-    if (!timeElement) return;
-
-    const now = new Date();
-    const timeString = now.toLocaleString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
+    // ✅ Create mapping from db_name → display_name
+    classMapping = {};
+    data.classes.forEach(cls => {
+      classMapping[cls.dbName] = cls.display;
     });
-    timeElement.textContent = timeString;
+
+    console.log('✅ Class mappings loaded:', classMapping);
+
+  } catch (error) {
+    console.error('❌ Failed to load class mappings:', error);
   }
+}
 
-  // Expose payroll class change function globally
-  window.changePayrollClass = function(newClass) {
-    selectedPayrollClass = newClass;
-    sessionStorage.setItem('currentPayrollClass', newClass);
+// Update greeting message
+function updateGreeting() {
+  const greetingElement = document.getElementById('dynamicGreeting');
+  const workingClassElement = document.getElementById('payrollClassName');
+  if (!greetingElement && !workingClassElement) return; // Only run if element exists
+
+  const user = getLoggedInUser();
+  const timeOfDay = getTimeOfDay();
+
+  // ✅ Use current_class from JWT token (the database they switched to)
+  const effectiveClass = user.current_class;
+  const userClass = classMapping[effectiveClass] || effectiveClass || 'OFFICERS';
+
+  // Default to "User" if no login info
+  const userName = user?.full_name || user?.user_id || 'User';
+
+  const greeting = `Good ${timeOfDay} ${userName}, welcome to ${userClass} payroll`;
+  greetingElement.textContent = greeting;
+  workingClassElement.textContent = userClass;
+
+  console.log('📊 Dashboard greeting updated:', {
+    user: userName,
+    primaryClass: user.primary_class,
+    currentClass: user.current_class,
+    displayClass: userClass
+  });
+}
+
+// Update current time display
+function updateCurrentTime() {
+  const timeElement = document.getElementById('currentTime');
+  if (!timeElement) return;
+
+  const now = new Date();
+  const timeString = now.toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+  timeElement.textContent = timeString;
+}
+
+// ✅ Update function for when payroll class is switched
+window.updateDashboardGreeting = function(newClassName) {
+  console.log('🔄 Updating dashboard greeting for new class:', newClassName);
+  
+  // Reload user info from updated token
+  const user = getLoggedInUser();
+  if (user) {
     updateGreeting();
-  };
+  }
+};
 
-  // Init only on dashboard pages
-  (async function initDashboard() {
-    if (document.getElementById('dynamicGreeting')) {
-      await loadClassMappings();   // ✅ wait for mapping to load
-      updateGreeting();
-      updateCurrentTime();
+// ✅ Listen for payroll class switch events
+document.addEventListener('payrollClassFocused', (event) => {
+  console.log('🎯 Payroll class focused event received:', event.detail);
+  updateGreeting();
+});
 
-      setInterval(updateCurrentTime, 1000);  // Update time every second
-      setInterval(updateGreeting, 60000);    // Refresh greeting every minute
-
-      // Watch for payroll class changes
-      setInterval(function () {
-        const storedClass = sessionStorage.getItem('currentPayrollClass');
-        if (storedClass && storedClass !== selectedPayrollClass) {
-          selectedPayrollClass = storedClass;
-          updateGreeting();
-        }
-      }, 1000);
+// Get current payroll period from database
+async function getCurrentPayrollPeriod() {
+  try {
+    const token = localStorage.getItem('token');
+    const user = getLoggedInUser();
+    const dbName = user.current_class;
+    
+    const response = await fetch('/payroll-period', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // Update the payroll period display
+      const periodElement = document.querySelector('#current-payroll-period');
+      if (periodElement) {
+        const monthNames = ['Jan', 'Feb', 'March', 'April', 'May', 'June',
+                           'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+        const monthName = monthNames[data.month - 1] || 'Unknown';
+        periodElement.textContent = `${monthName} ${data.year}`;
+      }
+      
+      return { month: data.month, year: data.year };
     }
-  })();
+  } catch (error) {
+    console.error('Failed to load payroll period:', error);
+  }
+}
+
+// Init only on dashboard pages
+(async function initDashboard() {
+  if (document.getElementById('dynamicGreeting')) {
+    await loadClassMappings();   // ✅ wait for mapping to load
+    updateGreeting();
+    updateCurrentTime();
+
+    setInterval(updateCurrentTime, 1000);  // Update time every second
+    setInterval(updateGreeting, 60000);    // Refresh greeting every minute (to catch token updates)
+    await getCurrentPayrollPeriod();  // Load current payroll period
+  }
+})();
 
 
 // SIMPLE SUBSUBMENU FUNCTIONALITY - Direct approach
@@ -781,6 +991,7 @@ class NavigationSystem {
     this.cache = new Map(); // Cache loaded content
     this.state = {}; // State for section navigation
     this.isNavigating = false; // Prevent race conditions
+    this.navigationHistory = [];
     this.init();
   }
 
@@ -946,6 +1157,17 @@ class NavigationSystem {
         return;
       }
 
+      // Store current section in history before navigating
+      if (this.currentSection && this.currentSection !== sectionId) {
+        // Get the section name from history state or derive it
+        const currentSectionName = this.getSectionNameFromId(this.currentSection);
+        this.navigationHistory.push({
+          sectionId: this.currentSection,
+          sectionName: currentSectionName
+        });
+        console.log('Added to history:', this.currentSection);
+      }
+
       // Store the navigation state
       this.state = state;
 
@@ -1040,7 +1262,7 @@ class NavigationSystem {
 
           <div class="my-6">
             <button 
-              onclick="window.navigation.returnToDashboard()" 
+              onclick="window.navigation.goBack()" 
               class="bg-yellow-500 hover:bg-red-500 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center gap-2"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1079,6 +1301,62 @@ class NavigationSystem {
       });
     }
   }
+
+  // New method to go back to previous section
+  goBack() {
+    console.log('Going back, history length:', this.navigationHistory.length);
+    
+    if (this.navigationHistory.length > 0) {
+      // Get the last section from history
+      const previousSection = this.navigationHistory.pop();
+      console.log('Returning to:', previousSection);
+      
+      // Navigate back to previous section (don't add to history again)
+      this.navigateToSectionWithoutHistory(previousSection.sectionId, previousSection.sectionName);
+    } else {
+      // No history, return to dashboard
+      console.log('No history, returning to dashboard');
+      this.returnToDashboard();
+    }
+  }
+
+  // Navigate without adding to history (for back navigation)
+  async navigateToSectionWithoutHistory(sectionId, sectionName, state = {}) {
+    if (this.isNavigating) {
+      console.log('Navigation already in progress');
+      return;
+    }
+
+    try {
+      this.isNavigating = true;
+
+      // Store the navigation state
+      this.state = state;
+
+      // Load content from file
+      const content = await this.loadSectionContent(sectionId, sectionName);
+      this.renderSection(sectionName, content);
+      this.updateHistory(sectionId, sectionName);
+      this.currentSection = sectionId;
+
+      // UPDATE MENU HIGHLIGHTING
+      if (window.menuHighlighter) {
+        window.menuHighlighter.setActiveSection(sectionId);
+      }
+
+      // DISPATCH EVENT FOR MENU HIGHLIGHTER
+      const event = new CustomEvent('sectionLoaded', {
+        detail: { sectionId, sectionName }
+      });
+      document.dispatchEvent(event);
+
+    } catch (error) {
+      this.showErrorState(sectionName, error);
+    } finally {
+      this.isNavigating = false;
+    }
+  }
+
 
   initializeLoadedScripts() {
     // Execute any scripts in the newly loaded content
@@ -1126,7 +1404,7 @@ class NavigationSystem {
           <!-- Return to Dashboard Button -->
           <div class="mb-4">
             <button 
-              onclick="window.navigation.returnToDashboard()" 
+              onclick="window.navigation.goBack()" 
               class="bg-yellow-500 hover:bg-red-500 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center gap-2"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -1145,13 +1423,20 @@ class NavigationSystem {
     // Clear current section
     this.currentSection = null;
     
+    // Clear navigation history
+    this.navigationHistory = [];
+
+    // CLEAR MENU HIGHLIGHTING
+    if (window.menuHighlighter) {
+      window.menuHighlighter.clearAllActiveStates();
+    }
+    
     // Update URL to remove hash
     window.history.pushState({}, '', window.location.pathname);
     
     // Clear main content or redirect to dashboard
     const mainContent = document.querySelector('main');
     if (mainContent) {
-      // Option 1: Clear content and show dashboard
       mainContent.innerHTML = `
         <div class="mt-6">
           <div class="text-center py-12">
@@ -1184,7 +1469,7 @@ class NavigationSystem {
     window.addEventListener('popstate', (event) => {
       if (event.state && event.state.section && event.state.sectionId) {
         // Use the original section name stored in history state
-        this.navigateToSection(
+        this.navigateToSectionWithoutHistory(
           event.state.sectionId, 
           event.state.section  // Use original section name, not converted from ID
         );
@@ -1293,7 +1578,7 @@ async function updateDashboardStats() {
 }
 
 
-// ==================== QUICK ACCESS MANAGEMENT SYSTEM (FIXED DRAGGING) ====================
+// ==================== QUICK ACCESS MANAGEMENT SYSTEM ==================== //
 
 class QuickAccessManager {
   constructor() {

@@ -116,8 +116,8 @@
           <label class="block text-sm font-medium text-gray-700">Taxed ?</label>
           <select name="taxed" id="taxed" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
             <option>Select</option>
-            <option value="YES">YES</option>
-            <option value="NO">NO</option>
+            <option value="Yes">YES</option>
+            <option value="No">NO</option>
           </select>
         </div>
         <div>
@@ -148,9 +148,7 @@
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700">Salary Grade</label>
-          <select id="salarygrade" name="gradelevel" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-            <option>Select Salary Grade</option>
-          </select>
+          <input type="text" id="salarygrade" name="gradelevel" maxlength="4" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700">Bank Code</label>
@@ -166,7 +164,7 @@
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700">Account Number</label>
-          <input type="text" name="BankACNumber" id="BankACNumber" placeholder="Account Number" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" />
+          <input type="text" name="BankACNumber" id="BankACNumber" placeholder="Account Number" maxlength="10" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>
         </div>
       </div>
 
@@ -212,8 +210,8 @@
           <label class="block text-sm font-medium text-gray-700">Emolument Form Received?</label>
           <select name="emolumentform" id="emolumentform" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
             <option>Select</option>
-            <option value="YES">YES</option>
-            <option value="NO">NO</option>
+            <option value="Yes">YES</option>
+            <option value="No">NO</option>
           </select>
         </div>
         <div>
@@ -246,8 +244,8 @@
           <label class="block text-sm font-medium text-gray-700">Rent Subsidy</label>
           <select name="rent_subsidy" id="rent_subsidy" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
             <option>Select</option>
-            <option value="YES">YES</option>
-            <option value="NO">NO</option>
+            <option value="Yes">YES</option>
+            <option value="No">NO</option>
           </select>
         </div>
       </div>
@@ -664,6 +662,39 @@ async function initializeDropdowns() {
     return loadDropdown(cfg.endpoint, elementId, cfg.value, cfg.text, `Select ${field}`);
   });
   await Promise.all(promises);
+
+  const rankDropdown = document.getElementById('field-rank');
+  if (rankDropdown) {
+    rankDropdown.addEventListener('change', async function(e) {
+      const titleCode = e.target.value;
+      if (!titleCode) return;
+      
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/reference/title`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        const data = await response.json();
+        
+        // Find the selected title's description
+        const selectedTitle = data.find(item => item.Titlecode === titleCode);
+        if (selectedTitle) {
+          // Set the TitleDesc field (assuming you have a hidden or visible field for it)
+          const titleDescField = document.querySelector('[name="Title"]');
+          if (titleDescField) {
+            titleDescField.setAttribute('data-titledesc', selectedTitle.Description);
+            console.log('TitleDesc set to:', selectedTitle.Description);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to get title description:', err);
+      }
+    });
+  }
 }
 
 function handleSpouseTabVisibility() {
@@ -699,7 +730,7 @@ async function loadAllDropdowns() {
     loadDropdown("command", "command", "navalcmd", "name", "Select Command"),
     loadDropdown("pfa", "pfa", "pfacode", "pfadesc", "Select PFA"),
     loadDropdown("salarygroup", "salarygroup", "groupcode", "grpdesc", "Select Salary Group"),
-    loadDropdown("salarygrade", "salarygrade", "grade_no", "grade_desc", "Select Salary Grade"),
+    //loadDropdown("salarygrade", "salarygrade", "grade_no", "grade_desc", "Select Salary Grade"),
     loadDropdown("exittype", "exittype", "Name", "Description", "Select Exit Type"),
     loadDropdown("specialisation", "specialisation", "sp_desc", "sp_desc", "Select Specialisation"),
     loadDropdown("branch", "branch", "busline", "busdesc", "Select Branch"),
@@ -775,27 +806,27 @@ function setupStateLGACascade(stateFieldId, lgaFieldId) {
 }
 
 // Format date from ddmmyyyy to yyyy-mm-dd (for displaying in date inputs)
-function formatDateForDisplay(ddmmyyyyDate) {
-  if (!ddmmyyyyDate || ddmmyyyyDate.length !== 8) {
+function formatDateForDisplay(yyyymmddDate) {
+  if (!yyyymmddDate || yyyymmddDate.length !== 8) {
     return '';
   }
   
-  const day = ddmmyyyyDate.substring(0, 2);
-  const month = ddmmyyyyDate.substring(2, 4);
-  const year = ddmmyyyyDate.substring(4, 8);
+  const year = yyyymmddDate.substring(0, 4);
+  const month = yyyymmddDate.substring(4, 6);
+  const day = yyyymmddDate.substring(6, 8);
   
   return `${year}-${month}-${day}`;
 }
 
 // Format date from ddmmyyyy to readable format (e.g., "15 Mar 2024")
-function formatDateReadable(ddmmyyyyDate) {
-  if (!ddmmyyyyDate || ddmmyyyyDate.length !== 8) {
+function formatDateReadable(yyyymmddDate) {
+  if (!yyyymmddDate || yyyymmddDate.length !== 8) {
     return '';
   }
   
-  const day = ddmmyyyyDate.substring(0, 2);
-  const month = ddmmyyyyDate.substring(2, 4);
-  const year = ddmmyyyyDate.substring(4, 8);
+  const year = yyyymmddDate.substring(0, 4);
+  const month = yyyymmddDate.substring(4, 6);
+  const day = yyyymmddDate.substring(6, 8);
   
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -1269,16 +1300,23 @@ function actionBtns(type, id) {
 // View Family Record Modal - FULL DATA
 window.viewFamilyRecord = async function(type, id) {
   let data;
-
-  const safeId = currentEmployeeId.replace(/\//g, '_SLASH_');
   
   if (formMode === 'create') {
+    // In create mode, get from pendingFamilyData (no API call needed)
     if (type === 'NOK') data = pendingFamilyData.nok.find(n => n._tempId === id);
     if (type === 'Spouse') data = pendingFamilyData.spouse.find(s => s._tempId === id);
     if (type === 'Child') data = pendingFamilyData.children.find(c => c._tempId === id);
   } else {
+    // In edit mode, fetch from API
+    if (!currentEmployeeId) {
+      showError('No employee selected');
+      return;
+    }
+    
     try {
+      const safeId = currentEmployeeId.replace(/\//g, '_SLASH_');
       let result;
+      
       if (type === 'NOK') {
         result = await apiRequest(`${API_BASE}/employees/${safeId}`);
         data = result.data.nextOfKin.find(n => n.nok_id == id);
@@ -1295,7 +1333,10 @@ window.viewFamilyRecord = async function(type, id) {
     }
   }
   
-  if (!data) return;
+  if (!data) {
+    showError('Record not found');
+    return;
+  }
   
   let content = '<div class="space-y-2 max-h-96 overflow-y-auto">';
 
@@ -1429,15 +1470,23 @@ const editStates = {
 // Edit functionality - FIXED WITH SEPARATE EDIT STATES
 window.editRow = async function(type, id) {
   let data;
-  const safeId = currentEmployeeId.replace(/\//g, '_SLASH_');
   
   if (formMode === 'create') {
+    // In create mode, get from pendingFamilyData (no API call needed)
     if (type === 'NOK') data = pendingFamilyData.nok.find(n => n._tempId === id);
     if (type === 'Spouse') data = pendingFamilyData.spouse.find(s => s._tempId === id);
     if (type === 'Child') data = pendingFamilyData.children.find(c => c._tempId === id);
   } else {
+    // In edit mode, fetch from API
+    if (!currentEmployeeId) {
+      showError('No employee selected');
+      return;
+    }
+    
     try {
+      const safeId = currentEmployeeId.replace(/\//g, '_SLASH_');
       let result;
+      
       if (type === 'NOK') {
         result = await apiRequest(`${API_BASE}/employees/${safeId}`);
         data = result.data.nextOfKin.find(n => n.nok_id == id);
@@ -1454,7 +1503,10 @@ window.editRow = async function(type, id) {
     }
   }
   
-  if (!data) return;
+  if (!data) {
+    showError('Record not found');
+    return;
+  }
   
   // Set edit state for THIS specific type only
   editStates[type].id = id;
@@ -1464,11 +1516,11 @@ window.editRow = async function(type, id) {
   const formatDate = (value) => {
     if (!value) return '';
     if (typeof value === 'string') {
-      // Handle DDMMYYYY format (8 digits)
+      // Handle YYYYMMDD format (8 digits)
       if (value.match(/^\d{8}$/)) {
-        const day = value.substring(0, 2);
-        const month = value.substring(2, 4);
-        const year = value.substring(4, 8);
+        const year = value.substring(0, 4);
+        const month = value.substring(4, 6);
+        const day = value.substring(6, 8);
         return `${year}-${month}-${day}`;
       }
       // Handle DD-MM-YYYY format
@@ -1971,42 +2023,30 @@ function setEditMode(employeeId, employeeData) {
 
 // Load Employee for Edit
 async function loadEmployeeDataForEdit(employeeId) {
-  //console.log('>>> loadEmployeeDataForEdit START for:', employeeId);
   try {
     const safeId = employeeId.replace(/\//g, '_SLASH_');
-
-    //console.log('>>> Making API request...');
     const result = await apiRequest(`${API_BASE}/employees/${safeId}`);
-    //console.log('>>> API response received:', result);
     
     const { employee, children, nextOfKin, spouse } = result.data;
-    //console.log('>>> Data extracted, setting edit mode...');
-    
     
     setEditMode(employeeId, employee);
     toggleStep(1);
 
     await initializeDropdowns();
-    await loadAllDropdowns();
-    //await setupStateLGACascade('spouseState', 'spouseLga');
-    //await setupStateLGACascade('childState', 'childLga');
+    await loadAllDropdowns(employee);
     
     setTimeout(() => {
       populatePersonnelForm(employee);
       handleSpouseTabVisibility();
-      //setupStateLGACascade('field-state-of-origin', 'field-local-government');
     }, 500);
     
     loadNOKRecords(nextOfKin);
     loadSpouseRecords(spouse);
     loadChildrenRecords(children);
-
-    //console.log("Employee object keys:", Object.keys(employee));
     
     showPopup("Employee data loaded for editing");
-    //console.log('>>> loadEmployeeDataForEdit COMPLETE');
   } catch (error) {
-    console.error('>>> loadEmployeeDataForEdit ERROR:', error);
+    console.error('loadEmployeeDataForEdit ERROR:', error);
     throw error;
   }
 }
@@ -2038,44 +2078,34 @@ function populatePersonnelForm(employee) {
       }
 
       if (element) {
-        // Handle file input - convert to image avatar with change button
+        // Handle file input
         if (element.type === 'file') {
           if (dbField === 'passport' && value) {
-            console.log(`📷 Converting passport input to avatar preview`);
             convertPassportInputToAvatar(element, value);
           }
-          return; // Don't set value for file inputs
+          return;
         }
         
         // Handle date inputs
         if (element.type === 'date') {
           if (typeof value === 'string') {
-            // Handle different date formats
-            if (value.match(/^\d{8}$/)) {  // DDMMYYYY format
-              const day = value.substring(0, 2);
-              const month = value.substring(2, 4);
-              const year = value.substring(4, 8);
+            if (value.match(/^\d{8}$/))  {
+              const year = value.substring(0, 4);
+              const month = value.substring(4, 6);
+              const day = value.substring(6, 8);
               element.value = `${year}-${month}-${day}`;
-            } else if (value.match(/^\d{2}-\d{2}-\d{4}$/)) {  // DD-MM-YYYY format
+            } else if (value.match(/^\d{2}-\d{2}-\d{4}$/)) {
               const [day, month, year] = value.split('-');
               element.value = `${year}-${month}-${day}`;
-            } else if (value.includes('T')) {  // ISO format
+            } else if (value.includes('T')) {
               element.value = value.split('T')[0];
-            } else {
-              console.warn(`Invalid date format for ${dbField}:`, value);
             }
           }
         } else {
-          // Handle all other input types (text, select, etc.)
+          // All other inputs - wrapper handles CustomDropdown vs native
           element.value = value;
         }
-        
-        //console.log(` Prefilled [${formField}] (dbField: ${dbField}) with value: ${value}`);
-      } else {
-        //console.warn(`⚠️ No element found for formField: ${formField} (dbField: ${dbField}), value: ${value}`);
       }
-    } else {
-      //console.warn(`⏩ Skipped dbField: ${dbField}, value: ${value}, mapped formField: ${reverseMap[dbField] || 'none'}`);
     }
   });
 }
@@ -2364,7 +2394,7 @@ async function submitPersonnelForm() {
   }
 
   // Collect ALL form fields
-  const allInputs = document.querySelectorAll('#step1 input, #step1 select, #step2 input, #step2 select, #step3 input, #step3 select');
+  const allInputs = document.querySelectorAll('#step1 input, #step1 select, #step1 .custom-dropdown-wrapper, #step2 input, #step2 select, #step2 .custom-dropdown-wrapper, #step3 input, #step3 select, #step3 .custom-dropdown-wrapper');
 
   for (const input of allInputs) {
     const fieldName = input.getAttribute('name') || '';
@@ -2392,7 +2422,24 @@ async function submitPersonnelForm() {
       continue;
     }
 
-    // Handle DATE
+    // Handle dropdownConfig
+    if (input.tagName === '.custom-dropdown-wrapper' || 'DIV') {
+      const lowerValue = value.toLowerCase();
+      const isPlaceholder =
+        lowerValue === 'select' ||
+        lowerValue.startsWith('select ') ||
+        lowerValue === 'choose' ||
+        lowerValue.startsWith('choose ') ||
+        lowerValue === '--' ||
+        lowerValue === '---' ||
+        value === '';
+
+      if (DB_FIELD_MAP[fieldName]) {
+        personnelData[DB_FIELD_MAP[fieldName]] = isPlaceholder ? null : value;
+      }
+      continue;
+    }
+
     if (input.type === 'date') {
       if (!value) {
         if (DB_FIELD_MAP[fieldName]) personnelData[DB_FIELD_MAP[fieldName]] = null;
@@ -2401,7 +2448,7 @@ async function submitPersonnelForm() {
         const day = String(dateObj.getDate()).padStart(2, '0');
         const month = String(dateObj.getMonth() + 1).padStart(2, '0');
         const year = dateObj.getFullYear();
-        if (DB_FIELD_MAP[fieldName]) personnelData[DB_FIELD_MAP[fieldName]] = `${day}${month}${year}`;
+        if (DB_FIELD_MAP[fieldName]) personnelData[DB_FIELD_MAP[fieldName]] = `${year}${month}${day}`; // YYYYMMDD
       }
       continue;
     }
@@ -2416,6 +2463,18 @@ async function submitPersonnelForm() {
   if (passportBase64) {
     personnelData.passport = passportBase64;
     console.log('Passport added to personnelData');
+  }
+
+  // After collecting all form data, add TitleDesc
+  const rankDropdown = document.getElementById('field-rank');
+  if (rankDropdown && rankDropdown.value) {
+    const titleDescField = document.querySelector('[name="Title"]');
+    if (titleDescField) {
+      const titleDesc = titleDescField.getAttribute('data-titledesc');
+      if (titleDesc) {
+        personnelData.Titledesc = titleDesc; // Add to payload
+      }
+    }
   }
   
   console.log('Final personnelData keys:', Object.keys(personnelData));
@@ -2489,7 +2548,8 @@ async function submitPersonnelForm() {
       if (pendingFamilyData.nok.length > 0) {
         for (const nok of pendingFamilyData.nok) {
           delete nok._tempId;
-          await apiRequest(`${API_BASE}/employees/${serviceNo}/nextofkin`, {
+          const safeServiceNo = serviceNo.replace(/\//g, '_SLASH_');
+          await apiRequest(`${API_BASE}/employees/${safeServiceNo}/nextofkin`, {
             method: 'POST',
             body: JSON.stringify(nok)
           });
@@ -2499,7 +2559,8 @@ async function submitPersonnelForm() {
       if (pendingFamilyData.spouse.length > 0) {
         for (const spouse of pendingFamilyData.spouse) {
           delete spouse._tempId;
-          await apiRequest(`${API_BASE}/employees/${serviceNo}/spouse`, {
+          const safeServiceNo = serviceNo.replace(/\//g, '_SLASH_');
+          await apiRequest(`${API_BASE}/employees/${safeServiceNo}/spouse`, {
             method: 'POST',
             body: JSON.stringify(spouse)
           });
@@ -2509,7 +2570,8 @@ async function submitPersonnelForm() {
       if (pendingFamilyData.children.length > 0) {
         for (const child of pendingFamilyData.children) {
           delete child._tempId;
-          await apiRequest(`${API_BASE}/employees/${serviceNo}/children`, {
+          const safeServiceNo = serviceNo.replace(/\//g, '_SLASH_');
+          await apiRequest(`${API_BASE}/employees/${safeServiceNo}/children`, {
             method: 'POST',
             body: JSON.stringify(child)
           });
@@ -2574,7 +2636,7 @@ function capitalizeWords(str) {
 });
 
 //Numeric only
-["field-gsm-number",  "BankACNumber", "nokMobile", "nokHome", "spousePhone", "childPhone"].forEach(id => {
+["field-gsm-number", "salarygrade",  "BankACNumber", "nokMobile", "nokHome", "spousePhone", "childPhone"].forEach(id => {
   const el = document.getElementById(id);
   if (el) {
     el.addEventListener("input", () => {

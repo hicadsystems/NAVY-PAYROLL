@@ -1,115 +1,191 @@
-<section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
+<section class="items border rounded-lg m-6 max-w-4xl mr-auto p-6 mx-auto">
+
+  <!-- Report Title -->
+  <div class="hidden mb-6 text-center">
+    <h2 class="text-2xl font-bold text-blue-700">Variation Input Listings</h2>
+    <p class="text-sm text-gray-600 mt-1">Generate pay period variation reports with customizable filters</p>
+  </div>
 
   <!-- Radio Selection -->
-  <div class="mb-4">
-    <span class="text-blue-600 font-semibold text-xl">Select Scope:</span>
-    <div class="flex gap-6 mt-2">
-      <label class="flex items-center">
-        <input type="radio" name="variationScope" value="all" class="text-blue-600">
-        <span class="ml-2">All</span>
+  <div class="mb-6 bg-blue-50 p-4 rounded-lg">
+    <span class="text-blue-600 font-semibold text-lg block mb-3">Select Report Scope:</span>
+    <div class="flex flex-wrap gap-6">
+      <label class="flex items-center cursor-pointer">
+        <input type="radio" name="variationScope" value="all" class="text-blue-600 w-4 h-4" checked>
+        <span class="ml-2 font-medium">All Records</span>
       </label>
-      <label class="flex items-center">
-        <input type="radio" name="variationScope" value="payelements" class="text-blue-600">
-        <span class="ml-2">Pay Elements</span>
+      <label class="flex items-center cursor-pointer">
+        <input type="radio" name="variationScope" value="payelements" class="text-blue-600 w-4 h-4">
+        <span class="ml-2 font-medium">By Pay Elements</span>
       </label>
-      <label class="flex items-center">
-        <input type="radio" name="variationScope" value="payee" class="text-blue-600">
-        <span class="ml-2">Payee</span>
+      <label class="flex items-center cursor-pointer">
+        <input type="radio" name="variationScope" value="payee" class="text-blue-600 w-4 h-4">
+        <span class="ml-2 font-medium">By Employee</span>
       </label>
-      <label class="flex items-center">
-        <input type="radio" name="variationScope" value="username" class="text-blue-600">
-        <span class="ml-2">Username</span>
+      <label class="flex items-center cursor-pointer">
+        <input type="radio" name="variationScope" value="username" class="text-blue-600 w-4 h-4">
+        <span class="ml-2 font-medium">By Operator</span>
       </label>
     </div>
   </div>
 
   <!-- Dynamic Form Fields -->
-  <div id="variationForm" class="space-y-4">
-    <!-- Start Year & Month -->
-    <div class="grid md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-900">Start Year</label>
-        <input type="number" id="startYear" placeholder="YYYY" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+  <div id="variationForm" class="space-y-5">
+    <!-- Date Range Section -->
+    <div class="bg-gray-50 p-4 rounded-lg">
+      <h3 class="text-sm font-semibold text-gray-700 mb-3">📅 Report Period Range</h3>
+      
+      <!-- Start Period -->
+      <div class="grid md:grid-cols-2 gap-4 mb-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-900 mb-1">Start Year</label>
+          <input 
+            type="number" 
+            id="startYear" 
+            placeholder="YYYY" 
+            min="2020" 
+            max="2099"
+            class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-900 mb-1">Start Month</label>
+          <select id="startMonth" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <option value="">-- Select Month --</option>
+            <option value="01">January</option>
+            <option value="02">February</option>
+            <option value="03">March</option>
+            <option value="04">April</option>
+            <option value="05">May</option>
+            <option value="06">June</option>
+            <option value="07">July</option>
+            <option value="08">August</option>
+            <option value="09">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+        </div>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-900">Start Month</label>
-        <select id="startMonth" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-          <option value="">-- Month --</option>
-          <option>January</option><option>February</option><option>March</option>
-          <option>April</option><option>May</option><option>June</option>
-          <option>July</option><option>August</option><option>September</option>
-          <option>October</option><option>November</option><option>December</option>
-        </select>
+
+      <!-- End Period -->
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-900 mb-1">End Year</label>
+          <input 
+            type="number" 
+            id="endYear" 
+            placeholder="YYYY" 
+            min="2020" 
+            max="2099"
+            class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-900 mb-1">End Month</label>
+          <select id="endMonth" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <option value="">-- Select Month --</option>
+            <option value="01">January</option>
+            <option value="02">February</option>
+            <option value="03">March</option>
+            <option value="04">April</option>
+            <option value="05">May</option>
+            <option value="06">June</option>
+            <option value="07">July</option>
+            <option value="08">August</option>
+            <option value="09">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+        </div>
       </div>
     </div>
 
-    <!-- End Year & Month (Below Start) -->
-    <div class="grid md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-900">End Year</label>
-        <input type="number" id="endYear" placeholder="YYYY" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-900">End Month</label>
-        <select id="endMonth" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-          <option value="">-- Month --</option>
-          <option>January</option><option>February</option><option>March</option>
-          <option>April</option><option>May</option><option>June</option>
-          <option>July</option><option>August</option><option>September</option>
-          <option>October</option><option>November</option><option>December</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Conditional Inputs -->
-    <div id="payelementsWrapper" class="hidden">
-      <label class="block text-sm font-medium text-gray-900">Select Pay Element</label>
-      <select id="payelementSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+    <!-- Conditional Filters -->
+    <div id="payelementsWrapper" class="hidden bg-blue-50 p-4 rounded-lg">
+      <label class="block text-sm font-medium text-gray-900 mb-2">
+        <i class="fas fa-money-bill-wave text-blue-600 mr-2"></i>Select Pay Element
+      </label>
+      <select id="payelementSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
         <option value="">-- Choose Pay Element --</option>
-        <option value="basic">Basic Salary</option>
-        <option value="allowance">Allowance</option>
-        <option value="bonus">Bonus</option>
       </select>
     </div>
 
-    <div id="payeeWrapper" class="hidden">
-      <label class="block text-sm font-medium text-gray-900">Select Payee</label>
-      <select id="payeeSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-        <option value="">-- Choose Payee --</option>
-        <option value="payee1">Payee 1</option>
-        <option value="payee2">Payee 2</option>
-        <option value="payee3">Payee 3</option>
+    <div id="payeeWrapper" class="hidden bg-green-50 p-4 rounded-lg">
+      <label class="block text-sm font-medium text-gray-900 mb-2">
+        <i class="fas fa-user text-green-600 mr-2"></i>Select Employee
+      </label>
+      <select id="payeeSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500">
+        <option value="">-- Choose Employee --</option>
+      </select>
+      <div id="payeeLoading" class="hidden mt-2 text-sm text-gray-600">
+        <i class="fas fa-spinner fa-spin mr-2"></i>Loading employees...
+      </div>
+    </div>
+
+    <div id="usernameWrapper" class="hidden bg-purple-50 p-4 rounded-lg">
+      <label class="block text-sm font-medium text-gray-900 mb-2">
+        <i class="fas fa-user-circle text-purple-600 mr-2"></i>Select Operator/Username
+      </label>
+      <select id="usernameSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+        <option value="">-- Choose Operator --</option>
       </select>
     </div>
 
-    <div id="usernameWrapper" class="hidden">
-      <label class="block text-sm font-medium text-gray-900">Select Username</label>
-      <select id="usernameSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-        <option value="">-- Choose Username --</option>
-        <option value="user1">User 1</option>
-        <option value="user2">User 2</option>
-        <option value="user3">User 3</option>
-      </select>
+    <!-- Export Format Selection -->
+    <div class="bg-gray-50 p-4 rounded-lg">
+      <label class="block text-sm font-medium text-gray-900 mb-2">
+        <i class="fas fa-file-export text-gray-600 mr-2"></i>Export Format
+      </label>
+      <div class="flex gap-4">
+        <label class="flex items-center cursor-pointer">
+          <input type="radio" name="exportFormat" value="pdf" class="text-blue-600 w-4 h-4" checked>
+          <span class="ml-2">PDF</span>
+        </label>
+        <label class="flex items-center cursor-pointer">
+          <input type="radio" name="exportFormat" value="excel" class="text-blue-600 w-4 h-4">
+          <span class="ml-2">Excel (.xlsx)</span>
+        </label>
+        <label class="hidden flex items-center cursor-pointer">
+          <input type="radio" name="exportFormat" value="json" class="text-blue-600 w-4 h-4">
+          <span class="ml-2">JSON</span>
+        </label>
+      </div>
     </div>
 
     <!-- Action Buttons -->
-    <div class="flex justify-end gap-3 pt-4">
-      <button id="cancelVariation" class=" bg-gray-300 hover:bg-gray-400 py-2 px-4 rounded-lg transition-colors">
-        <i class="fas fa-times mr-2"></i>Cancel
+    <div class="flex justify-end gap-3 pt-4 border-t">
+      <button id="cancelVariation" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition-colors">
+        <i class="fas fa-times mr-2"></i>Clear
       </button>
 
-      <button id="generateVariation" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors">
-        <i class="fas fa-file-alt mr-2"></i>Generate
+      <button id="generateVariation" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-lg hover:shadow-xl">
+        <i class="fas fa-file-alt mr-2"></i>Generate Report
       </button>
     </div>
   </div>
 </section>
 
+<!-- Loading Modal -->
+<div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg p-8 text-center">
+    <div class="mb-4">
+      <i class="fas fa-spinner fa-spin text-4xl text-blue-600"></i>
+    </div>
+    <h3 class="text-lg font-semibold mb-2">Generating Report...</h3>
+    <p class="text-gray-600">Please wait while we prepare your variation report.</p>
+  </div>
+</div>
+
 <!-- Reusable Modal -->
 <div id="variationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-    <h3 id="variationModalTitle" class="text-lg font-semibold mb-4"></h3>
-    <p id="variationModalMessage" class="text-gray-700 mb-6"></p>
+    <div class="flex items-start mb-4">
+      <div id="variationModalIcon" class="mr-3 text-2xl"></div>
+      <div class="flex-1">
+        <h3 id="variationModalTitle" class="text-lg font-semibold mb-2"></h3>
+        <p id="variationModalMessage" class="text-gray-700"></p>
+      </div>
+    </div>
     <div class="flex justify-end">
       <button id="variationModalCloseBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">OK</button>
     </div>
@@ -122,18 +198,115 @@
   const payeeWrapper = document.getElementById("payeeWrapper");
   const usernameWrapper = document.getElementById("usernameWrapper");
 
+  const payelementSelect = document.getElementById("payelementSelect");
+  const payeeSelect = document.getElementById("payeeSelect");
+  const usernameSelect = document.getElementById("usernameSelect");
+  const payeeLoading = document.getElementById("payeeLoading");
+
   const generateVariationBtn = document.getElementById("generateVariation");
   const cancelVariationBtn = document.getElementById("cancelVariation");
 
   const variationModal = document.getElementById("variationModal");
   const variationModalTitle = document.getElementById("variationModalTitle");
   const variationModalMessage = document.getElementById("variationModalMessage");
+  const variationModalIcon = document.getElementById("variationModalIcon");
   const variationModalCloseBtn = document.getElementById("variationModalCloseBtn");
+  const loadingModal = document.getElementById("loadingModal");
+
+  let filterOptions = null;
+
+  // Load filter options on page load
+  async function loadFilterOptions() {
+    try {
+        const token = localStorage.getItem('token') || '';
+        const response = await fetch('/variationinput/filter-options', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      const result = await response.json();
+      
+      if (result.success) {
+        filterOptions = result.data;
+        
+        // Populate pay elements
+        if (filterOptions.payTypes && filterOptions.payTypes.length > 0) {
+          filterOptions.payTypes.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type.code;
+            option.textContent = `${type.code} - ${type.description}`;
+            payelementSelect.appendChild(option);
+          });
+        }
+        
+        // Populate operators
+        if (filterOptions.operators && filterOptions.operators.length > 0) {
+          filterOptions.operators.forEach(op => {
+            const option = document.createElement('option');
+            option.value = op.operator_name;
+            option.textContent = op.operator_name;
+            usernameSelect.appendChild(option);
+          });
+        }
+        
+        // Set default period if available
+        if (filterOptions.currentPeriod) {
+          const period = filterOptions.currentPeriod;
+          document.getElementById('endYear').value = period.substring(0, 4);
+          document.getElementById('endMonth').value = period.substring(4, 6);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading filter options:', error);
+    }
+  }
+
+  // Load employees when payee radio is selected
+  async function loadEmployees() {
+    if (!filterOptions || !filterOptions.employees) {
+      payeeLoading.classList.remove('hidden');
+      try {
+        const token = localStorage.getItem('token') || '';
+        const response = await fetch('/variationinput/filter-options', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const result = await response.json();
+        
+        if (result.success && result.data.employees) {
+          filterOptions = result.data;
+          populateEmployees();
+        }
+      } catch (error) {
+        console.error('Error loading employees:', error);
+      } finally {
+        payeeLoading.classList.add('hidden');
+      }
+    } else {
+      populateEmployees();
+    }
+  }
+
+  function populateEmployees() {
+    payeeSelect.innerHTML = '<option value="">-- Choose Employee --</option>';
+    if (filterOptions.employees && filterOptions.employees.length > 0) {
+      filterOptions.employees.forEach(emp => {
+        const option = document.createElement('option');
+        option.value = emp.employee_id;
+        option.textContent = `${emp.employee_id} - ${emp.full_name}`;
+        payeeSelect.appendChild(option);
+      });
+    }
+  }
 
   // Show modal
-  function showVariationModal(title, message) {
+  function showVariationModal(title, message, isError = false) {
     variationModalTitle.textContent = title;
     variationModalMessage.textContent = message;
+    variationModalIcon.innerHTML = isError 
+      ? '<i class="fas fa-exclamation-circle text-red-500"></i>'
+      : '<i class="fas fa-check-circle text-green-500"></i>';
     variationModal.classList.remove("hidden");
   }
 
@@ -146,37 +319,122 @@
       payeeWrapper.classList.add("hidden");
       usernameWrapper.classList.add("hidden");
 
-      if (radio.value === "payelements") payelementsWrapper.classList.remove("hidden");
-      if (radio.value === "payee") payeeWrapper.classList.remove("hidden");
-      if (radio.value === "username") usernameWrapper.classList.remove("hidden");
+      if (radio.value === "payelements") {
+        payelementsWrapper.classList.remove("hidden");
+      } else if (radio.value === "payee") {
+        payeeWrapper.classList.remove("hidden");
+        loadEmployees();
+      } else if (radio.value === "username") {
+        usernameWrapper.classList.remove("hidden");
+      }
     });
   });
 
   // Generate button
-  generateVariationBtn.onclick = () => {
+  generateVariationBtn.onclick = async () => {
     const selectedScope = document.querySelector('input[name="variationScope"]:checked')?.value;
     const startYear = document.getElementById("startYear").value;
     const endYear = document.getElementById("endYear").value;
     const startMonth = document.getElementById("startMonth").value;
     const endMonth = document.getElementById("endMonth").value;
+    const exportFormat = document.querySelector('input[name="exportFormat"]:checked')?.value || 'excel';
 
-    if (!selectedScope) return showVariationModal("Error", "Please select a scope!");
-    if (!startYear || !endYear || !startMonth || !endMonth) return showVariationModal("Error", "Please fill all year/month fields!");
+    // Validation
+    if (!selectedScope) {
+      return showVariationModal("Validation Error", "Please select a report scope!", true);
+    }
+    if (!startYear || !endYear || !startMonth || !endMonth) {
+      return showVariationModal("Validation Error", "Please fill in all period fields (year and month)!", true);
+    }
 
-    let message = `Generating variation report for scope: ${selectedScope}, Period: ${startMonth} ${startYear} to ${endMonth} ${endYear}`;
-    if (selectedScope === "payelements") message += `, Pay Element: ${document.getElementById("payelementSelect").value || "N/A"}`;
-    if (selectedScope === "payee") message += `, Payee: ${document.getElementById("payeeSelect").value || "N/A"}`;
-    if (selectedScope === "username") message += `, Username: ${document.getElementById("usernameSelect").value || "N/A"}`;
+    // Build query parameters
+    const fromPeriod = `${startYear}${startMonth}`;
+    const toPeriod = `${endYear}${endMonth}`;
+    
+    let queryParams = `fromPeriod=${fromPeriod}&toPeriod=${toPeriod}&format=${exportFormat}`;
 
-    showVariationModal("Success", message);
+    // Add conditional filters
+    if (selectedScope === "payelements") {
+      const payType = payelementSelect.value;
+      if (!payType) {
+        return showVariationModal("Validation Error", "Please select a pay element!", true);
+      }
+      queryParams += `&payType=${payType}`;
+    } else if (selectedScope === "payee") {
+      const emplId = payeeSelect.value;
+      if (!emplId) {
+        return showVariationModal("Validation Error", "Please select an employee!", true);
+      }
+      queryParams += `&emplId=${emplId}`;
+    } else if (selectedScope === "username") {
+      const operator = usernameSelect.value;
+      if (!operator) {
+        return showVariationModal("Validation Error", "Please select an operator!", true);
+      }
+      queryParams += `&createdBy=${operator}`;
+    }
+
+    // Show loading modal
+    loadingModal.classList.remove("hidden");
+
+    try {
+      const token = localStorage.getItem('token') || '';
+      const response = await fetch(`/variationinput?${queryParams}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      if (exportFormat === 'json') {
+        const result = await response.json();
+        loadingModal.classList.add("hidden");
+        
+        if (result.success) {
+          showVariationModal(
+            "Success", 
+            `Report generated successfully! Found ${result.data.length} records.`
+          );
+          console.log('Report data:', result);
+        } else {
+          showVariationModal("Error", result.error || "Failed to generate report", true);
+        }
+      } else {
+        // Handle file download for Excel/PDF
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `variation_report_${fromPeriod}_${toPeriod}.${exportFormat === 'excel' ? 'xlsx' : 'pdf'}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        loadingModal.classList.add("hidden");
+        showVariationModal(
+          "Success", 
+          `Report downloaded successfully! File: variation_report_${fromPeriod}_${toPeriod}.${exportFormat === 'excel' ? 'xlsx' : 'pdf'}`
+        );
+      }
+    } catch (error) {
+      loadingModal.classList.add("hidden");
+      console.error('Error generating report:', error);
+      showVariationModal("Error", `Failed to generate report: ${error.message}`, true);
+    }
   };
 
-  // Cancel button
+  // Cancel/Clear button
   cancelVariationBtn.onclick = () => {
+    // Hide conditional wrappers
     payelementsWrapper.classList.add("hidden");
     payeeWrapper.classList.add("hidden");
     usernameWrapper.classList.add("hidden");
 
+    // Reset all form fields
     document.getElementById("startYear").value = "";
     document.getElementById("endYear").value = "";
     document.getElementById("startMonth").value = "";
@@ -184,5 +442,14 @@
     document.getElementById("payelementSelect").value = "";
     document.getElementById("payeeSelect").value = "";
     document.getElementById("usernameSelect").value = "";
+    
+    // Reset radio to "all"
+    document.querySelector('input[name="variationScope"][value="all"]').checked = true;
+    
+    // Reset export format to Excel
+    document.querySelector('input[name="exportFormat"][value="excel"]').checked = true;
   };
+
+  // Initialize
+  loadFilterOptions();
 </script>

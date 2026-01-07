@@ -213,31 +213,6 @@
     </div>
   </div>
 
-  <!-- Summary Statistics -->
-  <div class="summary-box">
-    <div class="summary-item">
-      <div class="label">Total Personnel</div>
-      <div class="value">{{summary.totalEmployees}}</div>
-    </div>
-    
-    <div class="summary-item highlight">
-      <div class="label">Total Net Pay</div>
-      <div class="value">₦{{formatCurrency summary.totalNetPay}}</div>
-    </div>
-    
-    <div class="summary-item">
-      <div class="label">Average Net Pay</div>
-      <div class="value">₦{{formatCurrency summary.averageNetPay}}</div>
-    </div>
-    
-    {{#if summary.pfaCount}}
-    <div class="summary-item">
-      <div class="label">PFA Count</div>
-      <div class="value">{{summary.pfaCount}}</div>
-    </div>
-    {{/if}}
-  </div>
-
   {{#if isSummary}}
     <!-- SUMMARY VIEW - BY PFA -->
     <table>
@@ -287,14 +262,14 @@
             <th style="width: 6%;">Rank</th>
             <th>Full Name</th>
             <th style="width: 10%;">DateOF 1st Appiontment</th>
-            <th style="width: 10%;">RSA(Pension) Code</th>
+            <th>RSA(Pension) Code</th>
             <th>Grade Type</th>
             <th style="width: 6%;">Grade Level</th>
             <th style="width: 6%;">State ofOrig.</th>
             <th style="width: 3%;">Sex</th>
             <!--<th style="width: 6%;">Yrs</th>-->
             <th style="width: 10%;">PFA Code</th>
-            <th style="width: 16%;" class="text-right">Net Pay</th>
+            <!--<th style="width: 16%;" class="text-right">Net Pay</th>-->
           </tr>
         </thead>
         <tbody>
@@ -304,27 +279,52 @@
               <td>{{this.title}} {{this.Title}}</td>
               <td style="white-space: nowrap;">{{this.full_name}}</td>
               <td class="text-center">{{this.date_employed}}</td>
-              <td class="text-center">{{this.nsitf_code}}</td>
+              <td class="text-center"  style="white-space: nowrap;">{{this.nsitf_code}}</td>
               <td class="text-center" style="white-space: nowrap;">{{this.grade_type}}</td>
               <td class="text-center">{{this.grade_level}}0{{this.years_in_level}}</td>
               <!--<td class="text-center">{{this.years_in_level}}</td>-->
               <td class="text-center">{{this.state}}</td>
               <td class="text-center">{{this.Sex}}</td>
               <td class="text-center">{{this.pfa_code}}</td>
-              <td class="currency">₦{{formatCurrency this.net_pay}}</td>
+              <!--<td class="currency">₦{{formatCurrency this.net_pay}}</td>-->
             </tr>
           {{/each}}
           
-          <!-- PFA Subtotal -->
+          <!-- PFA Subtotal 
           <tr class="subtotal-row">
             <td colspan="10"><strong>{{this.key}}   TOTAL</strong></td>
             <td class="currency"><strong>₦{{formatCurrency (sum this.values 'net_pay')}}</strong></td>
-          </tr>
+          </tr>-->
         </tbody>
       </table>
     {{/each}}
 
   {{/if}}
+
+  <!-- Summary Statistics -->
+  <div class="summary-box">
+    <div class="summary-item">
+      <div class="label">Total Personnel</div>
+      <div class="value">{{summary.totalEmployees}}</div>
+    </div>
+    
+    <!--<div class="summary-item highlight">
+      <div class="label">Total Net Pay</div>
+      <div class="value">₦{{formatCurrency summary.totalNetPay}}</div>
+    </div>
+    
+    <div class="summary-item">
+      <div class="label">Average Net Pay</div>
+      <div class="value">₦{{formatCurrency summary.averageNetPay}}</div>
+    </div>-->
+    
+    {{#if summary.pfaCount}}
+    <div class="summary-item">
+      <div class="label">PFA Count</div>
+      <div class="value">{{summary.pfaCount}}</div>
+    </div>
+    {{/if}}
+  </div>
 
   <div class="footer">
     <p>All rights reserved &#xA9; Hicad Systems Limited.</p>

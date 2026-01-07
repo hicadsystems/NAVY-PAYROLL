@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <style>
-    @page { size: A4; margin: 0.8mm; }
+    @page { size: A4; margin: 0.8mm; background-color: #fef8f8;}
     body { 
       font-family: Helvetica, Arial, sans-serif; 
       font-size: 8pt;
@@ -104,7 +104,7 @@
     .duplicate-section {
       margin-bottom: 20px;
       page-break-inside: avoid;
-      border: 2px solid #ddd;
+      border-top: 2px solid #f6e5e5;
       border-radius: 4px;
       overflow: hidden;
     }
@@ -113,22 +113,21 @@
       padding: 10px 15px;
       font-weight: bold;
       font-size: 10pt;
-      color: white;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
     .duplicate-header.severity-low {
-      background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+      color: #fbb607;
     }
 
     .duplicate-header.severity-medium {
-      background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
+      color: #f53636;
     }
 
     .duplicate-header.severity-high {
-      background: linear-gradient(135deg, #DC2626 0%, #991B1B 100%);
+      color: #dc1717;
     }
 
     .duplicate-info {
@@ -158,19 +157,20 @@
       text-align: left;
       font-weight: bold;
       font-size: 8pt;
-      border: 1px solid #D1D5DB;
+      border-top: 1px solid #D1D5DB;
+      border-bottom: 1px solid #D1D5DB;
       text-transform: uppercase;
     }
 
     .employees-table td {
       padding: 8px 6px;
-      border: 1px solid #D1D5DB;
+      border-bottom: 1px solid #D1D5DB;
       vertical-align: middle;
       font-size: 8pt;
     }
 
     .employees-table tr:nth-child(even) {
-      background-color: #F9FAFB;
+      background-color: #fdfeff;
     }
 
     .employees-table tr.inactive {
@@ -267,12 +267,12 @@
 
   {{#if data}}
   {{#if (gt data.length 0)}}
-    <!-- Alert Box -->
+    <!-- Alert Box 
     <div class="alert-box">
       WARNING: {{statistics.total_duplicate_accounts}} DUPLICATE ACCOUNT NUMBER(S) DETECTED
-    </div>
+    </div>-->
 
-    <!-- Statistics Summary Box -->
+    <!-- Statistics Summary Box 
     <div class="summary-box">
       <div class="summary-item">
         <div class="label">Duplicate Accounts</div>
@@ -294,14 +294,14 @@
         <div class="label">Highest Duplicate</div>
         <div class="value">{{statistics.highest_duplicate_count}} employees</div>
       </div>
-    </div>
+    </div>-->
 
-    <!-- Severity Breakdown -->
+    <!-- Severity Breakdown 
     <div style="margin-bottom: 15px; font-size: 9pt; display: flex; justify-content: center; gap: 20px;">
       <div><span style="background-color: #F59E0B; color: white; padding: 2px 8px; border-radius: 3px;">LOW (2)</span>: {{statistics.severity_breakdown.low}}</div>
       <div><span style="background-color: #EF4444; color: white; padding: 2px 8px; border-radius: 3px;">MEDIUM (3-4)</span>: {{statistics.severity_breakdown.medium}}</div>
       <div><span style="background-color: #DC2626; color: white; padding: 2px 8px; border-radius: 3px;">HIGH (5+)</span>: {{statistics.severity_breakdown.high}}</div>
-    </div>
+    </div>-->
 
     <!-- Duplicate Sections -->
     {{#each data}}
@@ -325,14 +325,14 @@
         <table class="employees-table">
           <thead>
             <tr>
-              <th style="width: 10%;">Employee ID</th>
+              <th style="width: 10%;">Svc No.</th>
               <th style="width: 22%;">Full Name</th>
-              <th style="width: 8%;">Rank</th>
+              <th style="width: 8%;">Title</th>
               <th style="width: 8%;">G/Level</th>
               <th style="width: 12%;">Location</th>
               <th style="width: 18%;">Bank Branch</th>
               <th style="width: 10%;">Date Employed</th>
-              <th style="width: 12%;">Status</th>
+              <th style="width: 12%;">Status/DateLeft</th>
             </tr>
           </thead>
           <tbody>

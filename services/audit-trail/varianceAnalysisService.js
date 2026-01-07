@@ -115,6 +115,7 @@ class VarianceAnalysisService {
             SELECT 
               ph.his_empno as employee_id,
               COALESCE(CONCAT(TRIM(h.Surname), ' ', TRIM(IFNULL(h.OtherName, ''))), ph.his_empno) as full_name,
+              h.Title as Title,
               COALESCE(tt.Description, '') as title,
               ph.his_type as pay_type,
               COALESCE(et.elmDesc, ph.his_type) as pay_type_description,
@@ -143,6 +144,7 @@ class VarianceAnalysisService {
               ph_current.his_empno as employee_id,
               COALESCE(CONCAT(TRIM(h.Surname), ' ', TRIM(IFNULL(h.OtherName, ''))), ph_current.his_empno) as full_name,
               COALESCE(tt.Description, '') as title,
+              h.Title as Title,
               ph_current.his_type as pay_type,
               COALESCE(et.elmDesc, ph_current.his_type) as pay_type_description,
               ROUND(COALESCE(ph_prev.${prevColumn}, 0), 2) as old_amount,
@@ -257,6 +259,7 @@ class VarianceAnalysisService {
         SELECT 
           curr.his_empno as employee_id,
           CONCAT(TRIM(h.Surname), ' ', TRIM(IFNULL(h.OtherName, ''))) as full_name,
+          h.Title as Title,
           tt.Description as title,
           '${payElementCode}' as pay_element,
           COALESCE(et.elmDesc, '${payElementCode}') as pay_element_description,

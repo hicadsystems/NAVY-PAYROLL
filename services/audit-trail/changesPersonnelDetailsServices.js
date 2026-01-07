@@ -27,10 +27,7 @@ class EmployeeChangeHistoryService {
     const yearStr = year.toString().padStart(4, '0');
     const monthStr = month.toString().padStart(2, '0');
     
-    // Start of month: YYYYMM010000
     const startPeriod = `${yearStr}${monthStr}010000`;
-    
-    // End of month: YYYYMM + last day + 2359
     const lastDay = new Date(year, month, 0).getDate();
     const endPeriod = `${yearStr}${monthStr}${lastDay.toString().padStart(2, '0')}2359`;
     
@@ -56,9 +53,120 @@ class EmployeeChangeHistoryService {
   }
 
   // ========================================================================
+  // HELPER: Format date from YYYY-MM-DD to readable format
+  // ========================================================================
+  formatDate(dateStr) {
+    if (!dateStr) return '';
+    
+    // Convert to string and trim
+    const dateString = dateStr.toString().trim();
+    if (!dateString || dateString === '0000-00-00') return '';
+    
+    try {
+      // Handle MySQL DATE format (YYYY-MM-DD)
+      let year, month, day;
+      
+      if (dateString.includes('-')) {
+        // Format: YYYY-MM-DD
+        const parts = dateString.split('-');
+        year = parts[0];
+        month = parts[1];
+        day = parts[2].substring(0, 2); // Handle datetime format
+      } else if (dateString.length === 8) {
+        // Format: YYYYMMDD
+        year = dateString.substring(0, 4);
+        month = dateString.substring(4, 6);
+        day = dateString.substring(6, 8);
+      } else {
+        return dateString;
+      }
+      
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      const monthIndex = parseInt(month) - 1;
+      const monthName = months[monthIndex] || month;
+      
+      return `${day}-${monthName}-${year}`;
+    } catch (error) {
+      console.error('Date formatting error for:', dateStr, error);
+      return dateString;
+    }
+  }
+
+  // ========================================================================
+  // HELPER: Get date fields that need formatting
+  // ========================================================================
+  getDateFields() {
+    return ['Birthdate', 'DateEmpl', 'DateLeft', 'datepmted', 'dateconfirmed'];
+  }
+
+  // ========================================================================
+  // HELPER: Get lookup data for joins
+  // ========================================================================
+  async getLookupData() {
+    try {
+      // Get bank branches
+      const [bankBranches] = await pool.query(`
+        SELECT bankcode, branchcode, branchname as branch_display
+        FROM py_bank
+      `);
+
+      // Get states
+      const [states] = await pool.query(`
+        SELECT Statecode, Statename
+        FROM py_tblstates
+      `);
+
+      // Create lookup maps
+      const bankBranchMap = new Map();
+      bankBranches.forEach(row => {
+        const key = `${row.bankcode}-${row.branchcode}`;
+        bankBranchMap.set(key, row.branch_display);
+      });
+
+      const stateMap = new Map(states.map(s => [s.Statecode, s.Statename]));
+
+      return { bankBranchMap, stateMap };
+    } catch (error) {
+      console.error('❌ ERROR fetching lookup data:', error);
+      return { bankBranchMap: new Map(), stateMap: new Map() };
+    }
+  }
+
+  // ========================================================================
+  // HELPER: Resolve field value with lookups and formatting
+  // ========================================================================
+  resolveFieldValue(fieldName, value, bankcode, lookupData) {
+    if (!value || value === '(empty)') return value;
+
+    const dateFields = this.getDateFields();
+    
+    // Format date fields
+    if (dateFields.includes(fieldName)) {
+      return this.formatDate(value);
+    }
+
+    // Resolve bank branch
+    if (fieldName === 'bankbranch' && bankcode) {
+      const key = `${bankcode}-${value}`;
+      const branchDisplay = lookupData.bankBranchMap.get(key);
+      return branchDisplay || value;
+    }
+
+    // Resolve state
+    if (fieldName === 'StateofOrigin') {
+      const stateName = lookupData.stateMap.get(value);
+      return stateName || value;
+    }
+
+    return value;
+  }
+
+  // ========================================================================
   // HELPER: Compare two records and get changed fields
   // ========================================================================
-  compareRecords(historyRecord, currentRecord) {
+  compareRecords(historyRecord, currentRecord, lookupData) {
     const fields = this.getComparableFields();
     const changes = [];
 
@@ -67,10 +175,17 @@ class EmployeeChangeHistoryService {
       const newValue = (currentRecord[field] || '').toString().trim();
 
       if (oldValue !== newValue) {
+        // Get bankcode for bank branch resolution
+        const oldBankcode = historyRecord.Bankcode || '';
+        const newBankcode = currentRecord.Bankcode || '';
+
+        const oldResolved = this.resolveFieldValue(field, oldValue || '(empty)', oldBankcode, lookupData);
+        const newResolved = this.resolveFieldValue(field, newValue || '(empty)', newBankcode, lookupData);
+
         changes.push({
           field_name: field,
-          old_value: oldValue || '(empty)',
-          new_value: newValue || '(empty)'
+          old_value: oldResolved,
+          new_value: newResolved
         });
       }
     });
@@ -91,7 +206,6 @@ class EmployeeChangeHistoryService {
     console.log('   └─ Payroll Class:', payrollClass);
     console.log('   └─ Filters:', JSON.stringify(filters, null, 2));
 
-    // Validate required filters
     if (!fromYear || !fromMonth || !toYear || !toMonth) {
       throw new Error('Period range (from and to) is required');
     }
@@ -102,6 +216,11 @@ class EmployeeChangeHistoryService {
     console.log('   └─ Period Range:', fromPeriod.startPeriod, 'to', toPeriod.endPeriod);
 
     try {
+      // Get lookup data once for all employees
+      console.log('🔍 Loading lookup data (banks, states)...');
+      const lookupData = await this.getLookupData();
+      console.log('✅ Lookup data loaded');
+
       // Step 1: Get list of employees to process
       const employeeQuery = `
         SELECT DISTINCT Empl_ID
@@ -142,7 +261,8 @@ class EmployeeChangeHistoryService {
           batch,
           payrollClass,
           fromPeriod.startPeriod,
-          toPeriod.endPeriod
+          toPeriod.endPeriod,
+          lookupData
         );
 
         allResults.push(...batchResults);
@@ -172,7 +292,7 @@ class EmployeeChangeHistoryService {
   // ========================================================================
   // HELPER: Process a batch of employees
   // ========================================================================
-  async processBatch(employees, payrollClass, startPeriod, endPeriod) {
+  async processBatch(employees, payrollClass, startPeriod, endPeriod, lookupData) {
     const employeeIds = employees.map(e => e.Empl_ID);
     const results = [];
 
@@ -215,11 +335,10 @@ class EmployeeChangeHistoryService {
       const currentRecord = currentMap.get(emplId);
 
       if (!historyRecord || !currentRecord) {
-        // Skip if employee not found in either table
         continue;
       }
 
-      const changes = this.compareRecords(historyRecord, currentRecord);
+      const changes = this.compareRecords(historyRecord, currentRecord, lookupData);
 
       if (changes.length > 0) {
         results.push({
@@ -272,14 +391,12 @@ class EmployeeChangeHistoryService {
     changeData.forEach(emp => {
       stats.total_changes += emp.total_changes;
 
-      // Group by change count
       const changeCount = emp.total_changes;
       if (!stats.employees_by_change_count[changeCount]) {
         stats.employees_by_change_count[changeCount] = 0;
       }
       stats.employees_by_change_count[changeCount]++;
 
-      // Count field changes
       emp.changes.forEach(change => {
         if (!stats.most_changed_fields[change.field_name]) {
           stats.most_changed_fields[change.field_name] = 0;
@@ -287,7 +404,6 @@ class EmployeeChangeHistoryService {
         stats.most_changed_fields[change.field_name]++;
       });
 
-      // Per employee summary
       stats.changes_by_employee.push({
         employee_id: emp.employee_id,
         full_name: emp.full_name,
@@ -295,7 +411,6 @@ class EmployeeChangeHistoryService {
       });
     });
 
-    // Sort most changed fields
     stats.most_changed_fields = Object.entries(stats.most_changed_fields)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10)

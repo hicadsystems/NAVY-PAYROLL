@@ -30,9 +30,9 @@
       <label class="block text-sm font-medium text-gray-900 mb-2">
         <i class="fas fa-university text-blue-600 mr-2"></i>Select Bank
       </label>
-      <div id="bankSelect">
+      <select id="bankSelect" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
         <!--<option value="">-- Choose Bank --</option>-->
-      </div>
+      </select>
     </div>
 
     <!-- Include Inactive Toggle -->
@@ -110,7 +110,7 @@
 <script>
   const dupRadios = document.querySelectorAll('input[name="dupScope"]');
   const bankSelectWrapper = document.getElementById("bankSelectWrapper");
-  //const bankSelect = document.getElementById("bankSelect");
+  const bankSelect = document.getElementById("bankSelect");
   const includeInactiveCheckbox = document.getElementById("includeInactive");
   
   const generateDupBtn = document.getElementById("generateDup");
@@ -124,12 +124,6 @@
   const loadingModal = document.getElementById("loadingModal");
 
   let filterOptions = null;
-  
-  const bankSelect = new CustomDropdown('#bankSelect', {
-    placeholder: 'Select Bank...',
-    valueField: 'code',
-    labelField: 'description'
-  }).element;
 
   // Load filter options on page load
   async function loadFilterOptions() {

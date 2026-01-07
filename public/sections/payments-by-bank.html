@@ -91,6 +91,24 @@
         </button>
       </div>
     </div>
+
+    <!-- All Classes Option (only show in master/officers DB) -->
+    <div id="allClassesSection" class="border-t pt-4" style="display: none;">
+      <div class="flex items-center space-x-2 mb-3">
+        <input type="checkbox" id="allClassesCheck" name="allClassesCheck" class="h-4 w-4">
+        <label for="allClassesCheck" class="text-sm font-medium">Generate for All Classes</label>
+      </div>
+
+      <!-- Specific Class Selection (hidden by default) -->
+      <div id="specificClassContainer" class="hidden">
+        <label for="specificClassSelect" class="block text-sm font-medium mb-1">Or Select Specific Class</label>
+        <select id="specificClassSelect" name="specificClassSelect"
+          class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <option value="">Continue with All Classes</option>
+          <!-- Options will be loaded from API -->
+        </select>
+      </div>
+    </div>
   </form>
 </section>
 
@@ -158,6 +176,10 @@
   const clearPrintBtn = document.getElementById("clearPrintBtn");
   const bankLoadingIndicator = document.getElementById("bankLoadingIndicator");
 
+  const allClassesCheck = document.getElementById("allClassesCheck");
+  const specificClassContainer = document.getElementById("specificClassContainer");
+  const specificClassSelect = document.getElementById("specificClassSelect");
+
   const printConfirmModal = document.getElementById("printConfirmModal");
   const printCancelBtn = document.getElementById("printCancelBtn");
   const printContinueBtn = document.getElementById("printContinueBtn");
@@ -209,6 +231,42 @@
     }
   }
 
+  // Load available payroll classes
+  async function loadPayrollClasses() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE}/payroll-classes`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          // Show/hide all classes section based on if user is in master DB
+          const allClassesSection = document.getElementById('allClassesSection');
+          if (result.data.isMasterDb) {
+            allClassesSection.style.display = 'block';
+            
+            // Populate dropdown with other classes (excluding current)
+            specificClassSelect.innerHTML = '<option value="">Continue with All Classes</option>';
+            result.data.classes.forEach(cls => {
+              if (!cls.isCurrent) {
+                const option = document.createElement('option');
+                option.value = cls.name;
+                option.textContent = cls.displayName;
+                specificClassSelect.appendChild(option);
+              }
+            });
+          } else {
+            allClassesSection.style.display = 'none';
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading payroll classes:', error);
+    }
+  }
+
   // Load current period and set default values
   async function loadCurrentPeriod() {
     try {
@@ -234,8 +292,13 @@
     bankSelectContainer.classList.toggle('hidden', allBanks.checked);
   }
 
+  function toggleSpecificClassSelect() {
+    specificClassContainer.classList.toggle('hidden', !allClassesCheck.checked);
+  }
+
   allBanks.addEventListener("change", toggleBankInput);
   specificBank.addEventListener("change", toggleBankInput);
+  allClassesCheck.addEventListener("change", toggleSpecificClassSelect);
     
   printBtn.addEventListener("click", () => {
     // Validation
@@ -287,6 +350,14 @@
 
       if (specificBank.checked && bankName.value) {
         params.append('bankName', bankName.value);
+      }
+
+      // Add all classes parameters
+      if (allClassesCheck.checked) {
+        params.append('allClasses', 'true');
+        if (specificClassSelect.value) {
+          params.append('specificClass', specificClassSelect.value);
+        }
       }
 
       const response = await fetch(`${API_BASE}/generate?${params.toString()}`, {
@@ -346,10 +417,14 @@
     allBanks.checked = true;
     toggleBankInput();
     processingYear.value = new Date().getFullYear();
+    allClassesCheck.checked = false;
+    toggleSpecificClassSelect();
   });
 
   // Initialize
   toggleBankInput();
+  toggleSpecificClassSelect();
   loadBanks();
+  loadPayrollClasses();
   loadCurrentPeriod();
-</script>
+</script></document_content>

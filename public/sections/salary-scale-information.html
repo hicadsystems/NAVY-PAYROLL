@@ -85,7 +85,8 @@
   <div id="scaleSection" class="hidden">
     <div class="flex flex-wrap justify-between mb-4">
         <h2 class="text-xl lg:text-2xl text-blue-600 font-bold">Salary Scale</h2>
-      <div class="flex flex-wrap gap-2">
+      <div class="flex gap-2">
+         <input type="text" id="scaleSearchInput" placeholder="Search code or desc ..." class="border rounded px-3 py-2">
         <button id="addNewScaleBtn" type="button"
           class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
           + Add New Scale
@@ -1155,8 +1156,8 @@ function renderGroupTable() {
 }
 
 async function searchScales() {
-  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-  const searchType = document.getElementById('searchType').value;
+  const searchTerm = document.getElementById('scaleSearchInput').value.toLowerCase();
+  const searchType = document.getElementById('scaleSearchType').value;
   
   if (!searchTerm.trim()) {
     await loadScales();
@@ -1215,18 +1216,18 @@ async function searchGroups() {
   }
 }
 
-if (document.getElementById('searchBtn')) {
-  document.getElementById('searchBtn').addEventListener('click', searchScales);
+if (document.getElementById('scaleSearchBtn')) {
+  document.getElementById('scaleSearchBtn').addEventListener('click', searchScales);
 }
 
-if (document.getElementById('searchInput')) {
-  document.getElementById('searchInput').addEventListener('keypress', (e) => {
+if (document.getElementById('scaleSearchInput')) {
+  document.getElementById('scaleSearchInput').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       searchScales();
     }
   });
-  
-  document.getElementById('searchInput').addEventListener('input', (e) => {
+
+  document.getElementById('scaleSearchInput').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase();
     applyScaleSearch(term);
     scaleCurrentPage = 1;

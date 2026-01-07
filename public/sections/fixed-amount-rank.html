@@ -532,7 +532,7 @@ async function loadData(preservePfa = false) {
 
 // View row
 window.viewRow = function(index) {
-  const item = data[index];
+  const item = filteredData[index];
   let html = `
     <div class="mb-4">
       <h4 class="text-lg font-semibold">Description: ${getElmDesc(item.one_type)}</h4>
@@ -558,7 +558,7 @@ window.viewRow = function(index) {
 
 // Edit row
 window.editRow = async function(index) {
-  const item = data[index];
+  const item = filteredData[index];
 
   // Store original values for comparison
   originalData = {
@@ -585,7 +585,7 @@ window.editRow = async function(index) {
 //  Delete
 window.deleteRow = async function(index) {
   const confirmed = await showConfirmModal("Are you sure you want to delete this record?");
-  const item = data[index];
+  const item = filteredData[index];
 
   if(confirmed){
     try {
@@ -593,9 +593,9 @@ window.deleteRow = async function(index) {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${getToken()}` }
       });
-      await loadData(true);
       openModal("Record deleted sucessfully", "successModal");
-      renderTable();
+      await loadData(true);
+     // renderTable();
     } catch (err) {
       console.error("Delete failed", err);
       showAlert("Error deleting record.");
@@ -636,7 +636,7 @@ saveBtn.addEventListener("click", async () => {
   try {
     if (editingIndex !== null) {
       //UPDATE
-      const current = data[editingIndex];
+      const current = filteredData[editingIndex];
       const res = await fetch(`/rank/${current.one_type}`, {
         method: "PUT",
         headers: {
@@ -649,7 +649,7 @@ saveBtn.addEventListener("click", async () => {
       if (!res.ok) throw new Error("Update failed");
 
       // keep frontend copy
-      data[editingIndex] = { one_type, ranks, createdDate: current.createdDate };
+     // data[editingIndex] = { one_type, ranks, createdDate: current.createdDate };
 
     } else {
       // CREATE
@@ -665,14 +665,14 @@ saveBtn.addEventListener("click", async () => {
       if (!res.ok) throw new Error("Create failed");
 
       //add to frontend list
-      data.push({
-        one_type,
-        ranks,
-        createdDate: new Date().toISOString().split("T")[0]
-      });
+   //   data.push({
+     //   one_type,
+       // ranks,
+        //createdDate: new Date().toISOString().split("T")[0]
+      //});
     }
 
-    renderTable();
+   // renderTable();
     await loadData(true);
     form.classList.add("hidden");
     clearForm();
@@ -698,7 +698,7 @@ function getPaginationData() {
   const startRecord = totalRecords === 0 ? 0 : startIndex + 1;
   const endRecord = Math.min(endIndex, totalRecords);
 
-  return { totalRecords, totalPages, currentData, startRecord, endRecord };
+  return { totalRecords, totalPages, currentData, startRecord, endRecord, startIndex };
 }
 
 prevPageBtn.addEventListener('click', () => {
@@ -724,18 +724,21 @@ recordsPerPageSelect.addEventListener('change', (e) => {
 
 // UI helpers
 function renderTable() {
-  const {currentData} = getPaginationData();
+  const {currentData, startIndex} = getPaginationData();
 
-  tableBody.innerHTML = currentData.map((item, index) => `
+  tableBody.innerHTML = currentData.map((item, index) => {
+    const absoluteIndex = startIndex + index;
+    return `
     <tr class="hover:bg-gray-50">
       <td class="border px-4 py-2 text-left">${getElmDesc(item.one_type)}</td>
       <td class="border px-4 py-2 text-center">
-        <button onclick="viewRow(${index})" class="text-blue-600 hover:text-blue-800 mr-2">View</button>
-        <button onclick="editRow(${index})" class="text-green-600 hover:text-green-800 mr-2">Edit</button>
-        <button onclick="deleteRow(${index})" class="text-red-600 hover:text-red-800">Delete</button>
+        <button onclick="viewRow(${absoluteIndex})" class="text-blue-600 hover:text-blue-800 mr-2">View</button>
+        <button onclick="editRow(${absoluteIndex})" class="text-green-600 hover:text-green-800 mr-2">Edit</button>
+        <button onclick="deleteRow(${absoluteIndex})" class="text-red-600 hover:text-red-800">Delete</button>
       </td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function updatePaginationUI() {
@@ -768,6 +771,32 @@ function clearForm() {
   document.getElementById("description").value = "";
   rankFields.forEach(rank => {
     document.getElementById(rank).value = "";
+  });
+}
+
+
+// Search functionality
+function applySearch(searchTerm) {
+  currentSearchTerm = searchTerm.toLowerCase().trim();
+  
+  if (!currentSearchTerm) {
+    filteredData = [...data];
+  } else {
+    filteredData = data.filter(item => {
+      const elmDesc = getElmDesc(item.one_type).toLowerCase();
+      return elmDesc.includes(currentSearchTerm);
+    });
+  }
+  
+  currentPage = 1;
+}
+
+// Search input handler
+const searchInput = document.getElementById('searchInput');
+if (searchInput) {
+  searchInput.addEventListener('input', (e) => {
+    applySearch(e.target.value);
+    renderWithPagination();
   });
 }
 

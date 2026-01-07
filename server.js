@@ -1,5 +1,5 @@
 const dotenv = require('dotenv');
-const envFile = 'production' ? '.env.production' : '.env.local';
+const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env.local";
 const { notificationMiddleware } = require('./middware/notifications');
 const express = require('express');
 const app = express();

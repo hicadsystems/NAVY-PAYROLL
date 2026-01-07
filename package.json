@@ -30,7 +30,8 @@
   "main": "db-config.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "repository": {
     "type": "git",
@@ -46,6 +47,7 @@
   "description": "",
   "devDependencies": {
     "autoprefixer": "^10.4.23",
+    "nodemon": "^3.1.11",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18"
   }

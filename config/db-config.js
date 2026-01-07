@@ -38,7 +38,7 @@ async function detectAvailableDatabase() {
         port: mysqlConfig.port,
         user: mysqlConfig.user,
         password: mysqlConfig.password,
-        connectTimeout: 5000
+        connectTimeout: 10000
       });
       await connection.query('SELECT 1');
       await connection.end();

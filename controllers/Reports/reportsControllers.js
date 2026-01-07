@@ -416,15 +416,21 @@ class ReportController {
   async generatePaymentsByBank(req, res) {
     try {
       const { format, ...filters } = req.query;
-      const data = await reportService.getPaymentsByBank(filters);
+      const result = await reportService.getPaymentsByBank(filters);
+
+      // Check if it's a multi-class result
+      const isMultiClass = filters.allClasses === 'true' || filters.allClasses === true;
+      const data = isMultiClass ? result.data : result;
+      const summary = isMultiClass ? result.summary : null;
+      const failedClasses = isMultiClass ? result.failedClasses : null;
 
       if (format === 'excel') {
-        return this.generatePaymentsByBankExcel(data, filters, res);
+        return this.generatePaymentsByBankExcel(data, filters, summary, failedClasses, res);
       } else if (format === 'pdf') {
-        return this.generatePaymentsByBankPDF(data, filters, req, res);
+        return this.generatePaymentsByBankPDF(data, filters, summary, failedClasses, req, res);
       }
 
-      res.json({ success: true, data });
+      res.json({ success: true, data, summary, failedClasses });
     } catch (error) {
       console.error('Error generating payments by bank:', error);
       res.status(500).json({ success: false, error: error.message });
@@ -486,7 +492,7 @@ class ReportController {
     res.end();
   }
 
-  async generatePaymentsByBankPDF(data, filters, req, res) {
+  async generatePaymentsByBankPDF(data, filters, summary, failedClasses, req, res) {
     if (!this.jsreportReady) {
       return res.status(500).json({
         success: false,
@@ -498,54 +504,113 @@ class ReportController {
       const templatePath = path.join(__dirname, '../../templates/payments-by-bank.html');
       const templateContent = fs.readFileSync(templatePath, 'utf8');
 
-      const period = data.length > 0 ? 
-        `${data[0].month_name}, ${data[0].year}` : 
-        'N/A';
+      const isMultiClass = filters.allClasses === 'true' || filters.allClasses === true;
+      const isSummary = filters.summaryOnly === 'true' || filters.summaryOnly === true;
 
-      // Prepare data based on summary or detailed view
+      // Prepare template data
       let templateData = {
         reportDate: new Date(),
-        period: period,
         year: filters.year,
         month: filters.month,
-        isSummary: filters.summaryOnly === 'true' || filters.summaryOnly === true,
-        reportTitle: filters.summaryOnly ? 'Summary Report' : 'Detailed Report',
-        className: this.getDatabaseNameFromRequest(req)
+        isSummary: isSummary,
+        isMultiClass: isMultiClass,
+        reportTitle: isSummary ? 'Summary Report' : 'Detailed Report',
+        className: this.getDatabaseNameFromRequest(req),
+        summary: summary,
+        failedClasses: failedClasses
       };
 
-      if (templateData.isSummary) {
-        // For summary, pass data as-is
-        templateData.data = data;
-      } else {
-        // For detailed, group by bank and branch
-        const bankGroups = {};
-        
-        data.forEach(row => {
-          const key = `${row.Bankcode}_${row.bank_branch_name || row.bankbranch || ''}`;
-          
-          if (!bankGroups[key]) {
-            bankGroups[key] = {
-              bankName: row.Bankcode,
-              branch: row.bank_branch_name || row.bankbranch || '',
-              employees: [],
-              totalAmount: 0,
-              employeeCount: 0
-            };
+      if (isMultiClass) {
+        // Multi-class report structure
+        templateData.classes = [];
+
+        data.forEach(classData => {
+          const classInfo = {
+            payrollClass: classData.payrollClass,
+            database: classData.database,
+            period: classData.data.length > 0 ? 
+              `${classData.data[0].month_name || filters.month}, ${classData.data[0].year || filters.year}` : 
+              'N/A'
+          };
+
+          if (isSummary) {
+            // Summary data for this class
+            classInfo.data = classData.data;
+          } else {
+            // Detailed data - group by bank and branch
+            const bankGroups = {};
+            
+            classData.data.forEach(row => {
+              const key = `${row.Bankcode}_${row.bank_branch_name || row.bankbranch || ''}`;
+              
+              if (!bankGroups[key]) {
+                bankGroups[key] = {
+                  bankName: row.Bankcode,
+                  branch: row.bank_branch_name || row.bankbranch || '',
+                  employees: [],
+                  totalAmount: 0,
+                  employeeCount: 0
+                };
+              }
+              
+              bankGroups[key].employees.push({
+                empl_id: row.empl_id,
+                fullname: row.fullname,
+                rank: row.title || row.Title || '',
+                total_net: parseFloat(row.total_net || 0),
+                BankACNumber: row.BankACNumber
+              });
+              
+              bankGroups[key].totalAmount += parseFloat(row.total_net || 0);
+              bankGroups[key].employeeCount++;
+            });
+            
+            classInfo.bankGroups = Object.values(bankGroups);
           }
+
+          templateData.classes.push(classInfo);
+        });
+
+      } else {
+        // Single class report (original logic)
+        const period = data.length > 0 ? 
+          `${data[0].month_name || filters.month}, ${data[0].year || filters.year}` : 
+          'N/A';
+        
+        templateData.period = period;
+
+        if (isSummary) {
+          templateData.data = data;
+        } else {
+          const bankGroups = {};
           
-          bankGroups[key].employees.push({
-            empl_id: row.empl_id,
-            fullname: row.fullname,
-            rank: row.title || row.Title || '',
-            total_net: parseFloat(row.total_net || 0),
-            BankACNumber: row.BankACNumber
+          data.forEach(row => {
+            const key = `${row.Bankcode}_${row.bank_branch_name || row.bankbranch || ''}`;
+            
+            if (!bankGroups[key]) {
+              bankGroups[key] = {
+                bankName: row.Bankcode,
+                branch: row.bank_branch_name || row.bankbranch || '',
+                employees: [],
+                totalAmount: 0,
+                employeeCount: 0
+              };
+            }
+            
+            bankGroups[key].employees.push({
+              empl_id: row.empl_id,
+              fullname: row.fullname,
+              rank: row.title || row.Title || '',
+              total_net: parseFloat(row.total_net || 0),
+              BankACNumber: row.BankACNumber
+            });
+            
+            bankGroups[key].totalAmount += parseFloat(row.total_net || 0);
+            bankGroups[key].employeeCount++;
           });
           
-          bankGroups[key].totalAmount += parseFloat(row.total_net || 0);
-          bankGroups[key].employeeCount++;
-        });
-        
-        templateData.bankGroups = Object.values(bankGroups);
+          templateData.bankGroups = Object.values(bankGroups);
+        }
       }
 
       const result = await jsreport.render({

@@ -8,73 +8,176 @@ class ReportService {
   // REPORT 2: PAYMENTS BY BANK (BRANCH)
   // ========================================================================
   async getPaymentsByBank(filters = {}) {
-    const { year, month, bankName, summaryOnly } = filters;
+    const { year, month, bankName, summaryOnly, allClasses, specificClass } = filters;
     
-    if (summaryOnly === 'true' || summaryOnly === true) {
-      // Summary query - aggregated data
-      const query = `
-        SELECT 
-          sr.ord as year,
-          sr.mth as month,
-          we.Bankcode,
-          we.bankbranch,
-          bnk.branchname as bank_branch_name,
-          COUNT(DISTINCT we.empl_id) as employee_count,
-          ROUND(SUM(mc.his_netmth), 2) as total_net
-        FROM py_wkemployees we
-        CROSS JOIN (SELECT ord, mth FROM py_stdrate WHERE type = 'BT05') sr
-        INNER JOIN py_mastercum mc ON mc.his_empno = we.empl_id AND mc.his_type = sr.mth
-        LEFT JOIN py_bank bnk ON bnk.bankcode = we.Bankcode AND bnk.branchcode = LPAD(we.bankbranch, 3, '0')
-        WHERE 1=1
-          ${year ? 'AND sr.ord = ?' : ''}
-          ${month ? 'AND sr.mth = ?' : ''}
-          ${bankName ? 'AND we.Bankcode = ?' : ''}
-        GROUP BY sr.ord, sr.mth, we.Bankcode, we.bankbranch, bnk.branchname
-        ORDER BY we.Bankcode, we.bankbranch
-      `;
+    // Determine which databases to query
+    let databasesToQuery = [];
+    const currentDb = pool.getCurrentDatabase();
+    const masterDb = pool.getMasterDb();
+    
+    if (allClasses === 'true' || allClasses === true) {
+      // Only allow all classes if current database is the master/officers database
+      if (currentDb !== masterDb) {
+        throw new Error('All classes report can only be generated from the Officers database');
+      }
       
-      const params = [];
-      if (year) params.push(year);
-      if (month) params.push(month);
-      if (bankName) params.push(bankName);
-      
-      const [rows] = await pool.query(query, params);
-      return rows;
-      
+      // If specific class is selected, use only that class
+      if (specificClass) {
+        const targetDb = pool.getDatabaseFromPayrollClass(specificClass);
+        if (!targetDb) {
+          throw new Error(`Invalid payroll class: ${specificClass}`);
+        }
+        databasesToQuery = [{ name: specificClass, db: targetDb }];
+      } else {
+        // Database to class name mapping
+        const dbToClassMap = {
+          [process.env.DB_OFFICERS]: 'OFFICERS',
+          [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
+          [process.env.DB_RATINGS]: 'RATE A',
+          [process.env.DB_RATINGS_A]: 'RATE B',
+          [process.env.DB_RATINGS_B]: 'RATE C',
+          [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
+        };
+
+        // Get all available databases including the current one
+        const dbConfig = require('../../config/db-config').getConfigSync();
+        databasesToQuery = Object.entries(dbConfig.databases)
+          .map(([className, dbName]) => ({ 
+            name: dbToClassMap[dbName] || className, // Use mapped name or fallback to original
+            db: dbName 
+          }));
+      }
     } else {
-      // Detailed query - individual employee records with rank
-      const query = `
-        SELECT 
-            sr.ord as year,
-            sr.mth as month,
-            we.Bankcode,
-            we.bankbranch,
-            we.empl_id,
-            we.Title as Title,
-            CONCAT(we.Surname, ' ', we.OtherName) as fullname,
-            tt.Description as title,
-            we.BankACNumber,
-            bnk.branchname as bank_branch_name,
-            ROUND(mc.his_netmth, 2) as total_net
-        FROM py_wkemployees we
-        CROSS JOIN (SELECT ord, mth FROM py_stdrate WHERE type = 'BT05') sr
-        INNER JOIN py_mastercum mc ON mc.his_empno = we.empl_id AND mc.his_type = sr.mth
-        LEFT JOIN py_bank bnk ON bnk.bankcode = we.Bankcode AND bnk.branchcode = LPAD(we.bankbranch, 3, '0')
-        LEFT JOIN py_Title tt ON tt.Titlecode = we.Title
-        WHERE 1=1
-          ${year ? 'AND sr.ord = ?' : ''}
-          ${month ? 'AND sr.mth = ?' : ''}
-          ${bankName ? 'AND we.Bankcode = ?' : ''}
-        ORDER BY we.Bankcode, we.bankbranch, we.empl_id
-      `;
+      // Single database query - current session database
+      databasesToQuery = [{ name: 'current', db: currentDb }];
+    }
+    
+    const allResults = [];
+    const failedClasses = [];
+    
+    for (const { name, db } of databasesToQuery) {
+      // Temporarily switch to the target database
+      const originalDb = pool.getCurrentDatabase();
       
-      const params = [];
-      if (year) params.push(year);
-      if (month) params.push(month);
-      if (bankName) params.push(bankName);
+      try {
+        pool.useDatabase(db);
+      } catch (dbError) {
+        console.warn(`⚠️ Skipping ${name} (${db}): ${dbError.message}`);
+        failedClasses.push({ class: name, database: db, error: dbError.message });
+        continue;
+      }
       
-      const [rows] = await pool.query(query, params);
-      return rows;
+      try {
+        if (summaryOnly === 'true' || summaryOnly === true) {
+          // Summary query - aggregated data
+          const query = `
+            SELECT 
+              sr.ord as year,
+              sr.mth as month,
+              we.Bankcode,
+              we.bankbranch,
+              bnk.branchname as bank_branch_name,
+              COUNT(DISTINCT we.empl_id) as employee_count,
+              ROUND(SUM(mc.his_netmth), 2) as total_net
+            FROM py_wkemployees we
+            CROSS JOIN (SELECT ord, mth FROM py_stdrate WHERE type = 'BT05') sr
+            INNER JOIN py_mastercum mc ON mc.his_empno = we.empl_id AND mc.his_type = sr.mth
+            LEFT JOIN py_bank bnk ON bnk.bankcode = we.Bankcode AND bnk.branchcode = LPAD(we.bankbranch, 3, '0')
+            WHERE 1=1
+              ${year ? 'AND sr.ord = ?' : ''}
+              ${month ? 'AND sr.mth = ?' : ''}
+              ${bankName ? 'AND we.Bankcode = ?' : ''}
+            GROUP BY sr.ord, sr.mth, we.Bankcode, we.bankbranch, bnk.branchname
+            ORDER BY we.Bankcode, we.bankbranch
+          `;
+          
+          const params = [];
+          if (year) params.push(year);
+          if (month) params.push(month);
+          if (bankName) params.push(bankName);
+          
+          const [rows] = await pool.query(query, params);
+          
+          // Add class identifier to each row
+          allResults.push({
+            payrollClass: name,
+            database: db,
+            data: rows
+          });
+          
+        } else {
+          // Detailed query - individual employee records
+          const query = `
+            SELECT 
+                sr.ord as year,
+                sr.mth as month,
+                we.Bankcode,
+                we.bankbranch,
+                we.empl_id,
+                we.Title as Title,
+                CONCAT(we.Surname, ' ', we.OtherName) as fullname,
+                tt.Description as title,
+                we.BankACNumber,
+                bnk.branchname as bank_branch_name,
+                ROUND(mc.his_netmth, 2) as total_net
+            FROM py_wkemployees we
+            CROSS JOIN (SELECT ord, mth FROM py_stdrate WHERE type = 'BT05') sr
+            INNER JOIN py_mastercum mc ON mc.his_empno = we.empl_id AND mc.his_type = sr.mth
+            LEFT JOIN py_bank bnk ON bnk.bankcode = we.Bankcode AND bnk.branchcode = LPAD(we.bankbranch, 3, '0')
+            LEFT JOIN py_Title tt ON tt.Titlecode = we.Title
+            WHERE 1=1
+              ${year ? 'AND sr.ord = ?' : ''}
+              ${month ? 'AND sr.mth = ?' : ''}
+              ${bankName ? 'AND we.Bankcode = ?' : ''}
+            ORDER BY we.Bankcode, we.bankbranch, we.empl_id
+          `;
+          
+          const params = [];
+          if (year) params.push(year);
+          if (month) params.push(month);
+          if (bankName) params.push(bankName);
+          
+          const [rows] = await pool.query(query, params);
+          
+          // Add class identifier to each row
+          allResults.push({
+            payrollClass: name,
+            database: db,
+            data: rows
+          });
+        }
+      } catch (queryError) {
+        console.error(`❌ Query error for ${name} (${db}):`, queryError.message);
+        failedClasses.push({ class: name, database: db, error: queryError.message });
+      } finally {
+        // Restore original database context
+        try {
+          pool.useDatabase(originalDb);
+        } catch (restoreError) {
+          console.warn(`⚠️ Could not restore database context: ${restoreError.message}`);
+        }
+      }
+    }
+    
+    // Return results based on whether it's a multi-class query
+    if (allClasses === 'true' || allClasses === true) {
+      const result = { 
+        data: allResults,
+        summary: {
+          total: databasesToQuery.length,
+          successful: allResults.length,
+          failed: failedClasses.length
+        }
+      };
+      
+      if (failedClasses.length > 0) {
+        result.failedClasses = failedClasses;
+        console.warn(`⚠️ ${failedClasses.length} class(es) failed:`, failedClasses);
+      }
+      
+      return result;
+    } else {
+      return allResults[0]?.data || [];
     }
   }
 
@@ -154,7 +257,7 @@ class ReportService {
       LEFT JOIN py_elementType et ON et.PaymentType = mp.his_type
       LEFT JOIN py_Title tt ON tt.Titlecode = we.Title
       WHERE LEFT(mp.his_type, 2) = 'PL'
-        AND (mp.nmth > 0 OR mp.amtthismth > 0)
+        AND (mp.amtthismth > 0)
         ${year ? `AND sr.ord = ?` : ''}
         ${month ? `AND sr.mth = ?` : ''}
       ORDER BY mp.his_type, et.elmDesc, mp.his_empno

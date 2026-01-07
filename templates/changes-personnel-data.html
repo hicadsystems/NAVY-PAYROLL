@@ -3,19 +3,20 @@
 <head>
   <meta charset="utf-8">
   <style>
-    @page { size: A4 portrait; margin: 10mm; }
+    @page { size: A4 portrait; margin: 0.2mm; background-color: #f8fbff; }
     body { 
       font-family: Helvetica, Arial, sans-serif; 
       font-size: 9pt;
-      line-height: 1.3;
+      line-height: 1.4;
+      color: #1a1a1a;
     }
 
     .header-wrapper {
         display: flex;
         align-items: flex-start;
-        margin-bottom: 8px;
-        border-bottom: 2px solid #1a1a1a;
-        padding-bottom: 5px;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #1a1a1a;
+        padding-bottom: 8px;
     }
 
     .className {
@@ -51,66 +52,31 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin: 10px 0;
-      font-size: 9pt;
-    }
-
-    .summary-box {
-      border-top: 1.5px solid #0070C0;
-      border-bottom: 1.5px solid #0070C0;
-      padding: 8px 0;
-      margin-bottom: 15px;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-    }
-
-    .summary-item {
-      text-align: center;
-      padding: 0 15px;
-      border-right: 1px solid #ddd;
-      flex-grow: 1;
-    }
-
-    .summary-item:last-child {
-      border-right: none;
-    }
-
-    .summary-item .label {
-      font-size: 8px;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 2px;
-    }
-
-    .summary-item .value {
-      font-size: 13px;
-      font-weight: bold;
-      color: #1F4E78;
+      margin: 12px 0;
+      font-size: 8pt;
+      color: #4a4a4a;
     }
 
     .employee-section {
-      margin-bottom: 25px;
+      margin-bottom: 20px;
       page-break-inside: avoid;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      overflow: hidden;
+      border-top: 1px solid #d1d5db;
+      border-bottom: 1px solid #d1d5db;
     }
 
     .employee-header {
-      background: linear-gradient(135deg, #1e40af 0%, #0070C0 100%);
-      color: white;
-      padding: 10px 15px;
+      color: #1e40af;
+      padding: 10px 12px;
       font-weight: bold;
       font-size: 10pt;
-      border-bottom: 2px solid #1a1a1a;
+      border-bottom: 1px solid #d1d5db;
     }
 
     .employee-info {
       font-size: 8pt;
       margin-top: 3px;
-      opacity: 0.95;
+      font-weight: normal;
+      color: #4a4a4a;
     }
 
     .changes-table {
@@ -120,39 +86,32 @@
     }
 
     .changes-table th {
-      background-color: #f3f4f6;
       color: #1e40af;
       padding: 8px 6px;
       text-align: center;
       font-weight: bold;
       font-size: 8pt;
-      border: 1px solid #d1d5db;
+      border-top: 1px solid #d1d5db;
+      border-bottom: 1px solid #d1d5db;
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
 
     .changes-table td {
       padding: 8px 6px;
-      border: 1px solid #d1d5db;
+      border-top: 1px solid #d1d5db;
+      border-bottom: 1px solid #d1d5db;
       vertical-align: middle;
       font-size: 8pt;
     }
 
     .changes-table .row-label {
-      background-color: #e5e7eb;
+      background-color: #f9fafb;
       font-weight: bold;
       text-align: left;
       padding-left: 10px;
       width: 100px;
-      color: #374151;
-    }
-
-    .changes-table .old-value-row {
-      background-color: #fef3c7;
-    }
-
-    .changes-table .new-value-row {
-      background-color: #d1fae5;
+      color: #1e40af;
     }
 
     .changes-table td.value-cell {
@@ -170,10 +129,10 @@
 
     .footer {
       padding-top: 10px;
-      border-top: 0.5px solid #1a1a1a;
+      border-top: 1px solid #d1d5db;
       text-align: center;
       font-size: 8pt;
-      color: #64748b;
+      color: #6b7280;
       margin-top: 30px;
     }
 
@@ -196,13 +155,13 @@
       </div>
       <div class="header">
           <h1>Nigerian Navy (Naval Headquarters)</h1>
-          <h2>EMPLOYEE CHANGE HISTORY REPORT</h2>
+          <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
       </div>
   </div>
 
   <div class="header-info">
     <div class="left">
-      <strong>CHANGE TRACKING REPORT</strong>
+      <strong>CHANGES IN PERSONNEL DETAILS</strong>
     </div>
     <div class="center">
       <span>PRODUCED ON</span> 
@@ -214,29 +173,6 @@
       <strong>{{filters}}</strong>
     </div>
   </div>
-
-  <!-- Statistics Summary Box -->
-  <div class="summary-box">
-    <div class="summary-item">
-      <div class="label">Employees with Changes</div>
-      <div class="value">{{statistics.total_employees_processed}}</div>
-    </div>
-    <div class="summary-item">
-      <div class="label">Total Changes</div>
-      <div class="value">{{statistics.total_changes}}</div>
-    </div>
-    <div class="summary-item">
-      <div class="label">Avg Changes/Employee</div>
-      <div class="value">{{#if statistics.total_employees_processed}}{{#gt statistics.total_employees_processed 0}}{{Math.round (divide statistics.total_changes statistics.total_employees_processed)}}{{else}}0{{/gt}}{{else}}0{{/if}}</div>
-    </div>
-  </div>
-
-  <!-- Filter Information -->
-  {{#if filters}}
-  <div style="margin-bottom: 15px; font-size: 8pt; color: #4a4a4a; font-style: italic;">
-    <strong>Period:</strong> {{filters}}
-  </div>
-  {{/if}}
 
   <!-- Employee Sections -->
   {{#each data}}
@@ -254,7 +190,7 @@
         <table class="changes-table">
           <thead>
             <tr>
-              <th style="width: 100px;"></th>
+              <th style="width: 100px;" class="row-label">Field(S)</th>
               {{#each this.changes}}
                 <th>{{this.field_name}}</th>
               {{/each}}
@@ -262,14 +198,14 @@
           </thead>
           <tbody>
             <!-- Old Value Row -->
-            <tr class="old-value-row">
+            <tr>
               <td class="row-label">Old Value</td>
               {{#each this.changes}}
                 <td class="value-cell">{{this.old_value}}</td>
               {{/each}}
             </tr>
             <!-- New Value Row -->
-            <tr class="new-value-row">
+            <tr>
               <td class="row-label">New Value</td>
               {{#each this.changes}}
                 <td class="value-cell">{{this.new_value}}</td>

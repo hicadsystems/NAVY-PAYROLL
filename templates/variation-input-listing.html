@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <style>
-    @page { size: A4 landscape; margin: 5mm; background-color: #f8fbff; }
+    @page { size: A4 landscape; margin: 0.2mm; background-color: #f8fbff; }
     body { font-family: Helvetica, Arial, sans-serif; font-size: 8pt; }
 
     .header-wrapper {
@@ -187,7 +187,60 @@
     </div>
   </div>
 
-  <!-- Statistics Summary Box -->
+  <!-- Filter Information
+  {{#if filters}}
+  <div style="margin-bottom: 10px; font-size: 8pt; color: #4a4a4a; font-style: italic;">
+    <strong>Filters Applied:</strong> {{filters}}
+  </div>-->
+  {{/if}}
+
+  <!-- Data Table -->
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 6%;">Period</th>
+        <th style="width: 8%;">Svc No.</th>
+        <th style="width: 4%;">Title</th>
+        <th style="white-space: nowrap;">Full Name</th>
+        <th style="width: 6%;">Pay Code</th>
+        <th style="width: 14%;">Description</th>
+        <th style="width: 4%;">MAK1</th>
+        <th style="width: 8%;" class="text-right">Amt Payable</th>
+        <th style="width: 4%;">MAK2</th>
+        <!--<th style="width: 8%;" class="text-right">Amt ThisMth</th>
+        <th style="width: 7%;" class="text-right">Action</th>-->
+        <th style="width: 7%;" class="text-right">Amt ToDate</th>
+        <th style="width: 3%;">Pay Ind</th>
+        <th style="width: 3%;">Ternor</th>
+        <th style="width: 10%;">Created By</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each data}}
+        <tr>
+          <td class="text-center">{{formatPeriod this.pay_period}}</td>
+          <td>{{this.employee_id}}</td>
+          <td>{{this.title}} {{this.title_code}}</td>
+          <td style="white-space: nowrap;">{{this.full_name}}</td>
+          <td class="text-center">{{this.pay_element_type}}</td>
+          <td style="white-space: nowrap;">{{this.pay_element_description}}</td>
+          <td class="text-center">{{this.mak1}}</td>
+          <td class="currency {{#if (gt this.amount_primary 1000000)}}high-amount{{/if}}">
+            ₦{{formatCurrency this.amount_primary}}
+          </td>
+          <td class="text-center">{{this.mak2}}</td>
+          <!--<td class="currency">₦{{formatCurrency this.amount_secondary}}</td>
+          <td class="currency">₦{{formatCurrency this.amount_additional}}</td>-->
+          <td class="currency">₦{{formatCurrency this.amount_to_date}}</td>
+          <td class="text-center">{{this.payment_indicator}}</td>
+          <td class="text-center">{{this.number_of_months}}</td>
+          <td style="white-space: nowrap; font-size: 7px;">{{this.created_by}}</td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+
+    <!-- Statistics Summary Box -->
   <div class="summary-box">
     <div class="summary-item">
       <div class="label">Total Records</div>
@@ -210,59 +263,6 @@
       <div class="value">{{statistics.total_operators}}</div>
     </div>
   </div>
-
-  <!-- Filter Information -->
-  {{#if filters}}
-  <div style="margin-bottom: 10px; font-size: 8pt; color: #4a4a4a; font-style: italic;">
-    <strong>Filters Applied:</strong> {{filters}}
-  </div>
-  {{/if}}
-
-  <!-- Data Table -->
-  <table>
-    <thead>
-      <tr>
-        <th style="width: 6%;">Period</th>
-        <th style="width: 8%;">Svc No.</th>
-        <th style="width: 4%;">Rank</th>
-        <th style="white-space: nowrap;">Full Name</th>
-        <th style="width: 6%;">Pay Code</th>
-        <th style="width: 14%;">Description</th>
-        <th style="width: 4%;">MAK1</th>
-        <th style="width: 8%;" class="text-right">Amt Primary</th>
-        <th style="width: 4%;">MAK2</th>
-        <th style="width: 8%;" class="text-right">Amt Second</th>
-        <th style="width: 7%;" class="text-right">Amt Add</th>
-        <th style="width: 7%;" class="text-right">Amt ToDate</th>
-        <th style="width: 3%;">PI</th>
-        <th style="width: 3%;">Mth</th>
-        <th style="width: 10%;">Created By</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{#each data}}
-        <tr>
-          <td class="text-center">{{formatPeriod this.pay_period}}</td>
-          <td>{{this.employee_id}}</td>
-          <td>{{this.title}}</td>
-          <td style="white-space: nowrap;">{{this.full_name}}</td>
-          <td class="text-center">{{this.pay_element_type}}</td>
-          <td style="white-space: nowrap;">{{this.pay_element_description}}</td>
-          <td class="text-center">{{this.mak1}}</td>
-          <td class="currency {{#if (gt this.amount_primary 1000000)}}high-amount{{/if}}">
-            ₦{{formatCurrency this.amount_primary}}
-          </td>
-          <td class="text-center">{{this.mak2}}</td>
-          <td class="currency">₦{{formatCurrency this.amount_secondary}}</td>
-          <td class="currency">₦{{formatCurrency this.amount_additional}}</td>
-          <td class="currency">₦{{formatCurrency this.amount_to_date}}</td>
-          <td class="text-center">{{this.payment_indicator}}</td>
-          <td class="text-center">{{this.number_of_months}}</td>
-          <td style="white-space: nowrap; font-size: 7px;">{{this.created_by}}</td>
-        </tr>
-      {{/each}}
-    </tbody>
-  </table>
 
   <div class="footer">
     <p>All rights reserved &#xA9; Hicad Systems Limited.</p>

@@ -154,26 +154,26 @@
     </div>
   </div>
 
-  <div class="comparison-info">
+  <!--<div class="comparison-info">
     {{comparisonInfo}}
-  </div>
+  </div>-->
 
   <table>
     <thead>
       <tr>
-        <th style="width: 10%;">Employee ID</th>
+        <th style="width: 10%;">Svc No.</th>
         <th style="width: 6%;">Title</th>
         <th style="width: 25%;">Full Name</th>
-        <th style="width: 18%;" class="text-right">Old Amount</th>
-        <th style="width: 18%;" class="text-right">New Amount</th>
+        <th style="width: 18%;" class="text-right">Prev Mth</th>
+        <th style="width: 18%;" class="text-right">Curr Mth</th>
         <th style="width: 18%;" class="text-right">Variance</th>
       </tr>
     </thead>
     <tbody>
       {{#each (groupBy data 'pay_type')}}
         <!-- Pay Type Header -->
-        <tr style="background-color: #1e40af; color: white;">
-          <td colspan="6" style="padding: 10px 6px; font-weight: bold; font-size: 9px; border-top: 2px solid #0056A0; border-bottom: 2px solid #0056A0;">
+        <tr style="color: #1e40af;">
+          <td colspan="6" style="padding: 10px 6px; font-weight: bold; font-size: 9px; border-top: .5px solid #0056A0; border-bottom: .5px solid #0056A0;">
             {{this.key}} - {{this.values.0.pay_type_description}}
           </td>
         </tr>
@@ -182,7 +182,7 @@
         {{#each this.values}}
         <tr>
           <td>{{this.employee_id}}</td>
-          <td>{{this.title}}</td>
+          <td>{{this.title}} {{this.Title}}</td>
           <td style="white-space: nowrap;">{{this.full_name}}</td>
           <td class="currency">₦{{formatCurrency this.old_amount}}</td>
           <td class="currency">₦{{formatCurrency this.new_amount}}</td>
@@ -196,7 +196,7 @@
         </tr>
         {{/each}}
         
-        <!-- Subtotal for this pay type -->
+        <!-- Subtotal for this pay type 
         <tr style="background-color: #f3f4f6; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db;">
           <td colspan="3" style="font-weight: bold; padding: 8px 6px; font-size: 8.5px;">
             Subtotal for {{this.key}} ({{this.values.length}} employees)
@@ -210,7 +210,7 @@
               ₦{{formatCurrency this.variance}}
             {{/if}}
           </td>
-        </tr>
+        </tr>-->
         
         <!-- Spacing row -->
         <tr style="height: 5px;"><td colspan="6"></td></tr>

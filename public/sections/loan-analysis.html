@@ -160,7 +160,7 @@
         if (result.success && result.data) {
           const period = result.data.currentPeriod;
           loanYear.value = period.year;
-          loanMonth.value = getMonthName(period.month);
+          loanMonth.value = period.month;
 
           console.log('Current Period:', period);
         }

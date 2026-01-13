@@ -1,20 +1,19 @@
-const express = require('express');
-const pool = require('../../config/db'); // mysql2 pool
+const express = require("express");
+const pool = require("../../config/db"); // mysql2 pool
 const router = express.Router();
-const path = require('path');
-const dotenv = require('dotenv');
-const envFile = '.env.local';
+const path = require("path");
+const dotenv = require("dotenv");
+const envFile = ".env.local";
 dotenv.config({ path: path.resolve(__dirname, envFile) });
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET;
-const REFRESH_SECRET = process.env.REFRESH_SECRET
-const verifyToken = require('../../middware/authentication');
+const REFRESH_SECRET = process.env.REFRESH_SECRET;
+const verifyToken = require("../../middware/authentication");
 
 const signToken = ({ data, secret, time }) => {
-
-  console.log(secret)
-  return jwt.sign(data, secret, { expiresIn: time })
-}
+  console.log(secret);
+  return jwt.sign(data, secret, { expiresIn: time });
+};
 
 // User login - searches across all databases
 router.post("/login", async (req, res) => {
@@ -31,14 +30,18 @@ router.post("/login", async (req, res) => {
     try {
       // Try to get all db_classes from officers database
       pool.useDatabase(process.env.DB_OFFICERS);
-      const [dbClasses] = await pool.query("SELECT db_name, classname FROM py_payrollclass");
+      const [dbClasses] = await pool.query(
+        "SELECT db_name, classname FROM py_payrollclass"
+      );
 
       // Build list: officers first, then all other databases
-      const otherDatabases = dbClasses.map(row => row.db_name).filter(db => db !== process.env.DB_OFFICERS);
+      const otherDatabases = dbClasses
+        .map((row) => row.db_name)
+        .filter((db) => db !== process.env.DB_OFFICERS);
       databasesToSearch = [process.env.DB_OFFICERS, ...otherDatabases];
 
       // Create bidirectional mapping
-      dbClasses.forEach(row => {
+      dbClasses.forEach((row) => {
         dbClassMapping[row.db_name] = row.classname; // 'hicaddata' -> 'OFFICERS'
         dbClassMapping[row.classname] = row.db_name; // 'OFFICERS' -> 'hicaddata'
       });
@@ -54,7 +57,7 @@ router.post("/login", async (req, res) => {
         process.env.DB_RATINGS,
         process.env.DB_RATINGS_A,
         process.env.DB_RATINGS_B,
-        process.env.DB_JUNIOR_TRAINEE
+        process.env.DB_JUNIOR_TRAINEE,
       ];
     }
 
@@ -75,11 +78,17 @@ router.post("/login", async (req, res) => {
           const foundUser = rows[0];
           userCandidates.push({
             user: foundUser,
-            database: dbName
+            database: dbName,
           });
           console.log(`✅ User found in database: ${dbName}`);
-          console.log(`   👤 Name: ${foundUser.full_name}, Primary Class: ${foundUser.primary_class}`);
-          console.log(`   🔐 Password: "${foundUser.password}" (type: ${typeof foundUser.password})`);
+          console.log(
+            `   👤 Name: ${foundUser.full_name}, Primary Class: ${foundUser.primary_class}`
+          );
+          console.log(
+            `   🔐 Password: "${
+              foundUser.password
+            }" (type: ${typeof foundUser.password})`
+          );
         }
       } catch (err) {
         // If database doesn't exist or has no users table, continue to next
@@ -94,7 +103,9 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid User ID or password" });
     }
 
-    console.log(`\n📊 Found ${userCandidates.length} instance(s) of user ${user_id}`);
+    console.log(
+      `\n📊 Found ${userCandidates.length} instance(s) of user ${user_id}`
+    );
 
     // Now validate password and find matching user
     let authenticatedUser = null;
@@ -104,7 +115,9 @@ router.post("/login", async (req, res) => {
       const { user, database } = candidate;
 
       console.log(`\n🔐 Checking credentials for user in ${database}:`);
-      console.log(`   Stored password: "${user.password}" (${typeof user.password})`);
+      console.log(
+        `   Stored password: "${user.password}" (${typeof user.password})`
+      );
       console.log(`   Provided password: "${password}" (${typeof password})`);
       console.log(`   Match: ${user.password === password}`);
       console.log(`   Status: ${user.status}`);
@@ -131,17 +144,23 @@ router.post("/login", async (req, res) => {
       // If primary_class looks like a classname(all caps, no numbers), convert it to db_name
       if (dbClassMapping[user.primary_class]) {
         userPrimaryDbName = dbClassMapping[user.primary_class];
-        console.log(`   🔄 Converted classname "${user.primary_class}" to db_name "${userPrimaryDbName}"`);
+        console.log(
+          `   🔄 Converted classname "${user.primary_class}" to db_name "${userPrimaryDbName}"`
+        );
       }
 
       const classMatches = userPrimaryDbName === payroll_class;
-      console.log(`   Class match: ${classMatches} (user: ${userPrimaryDbName}, requested: ${payroll_class})`);
+      console.log(
+        `   Class match: ${classMatches} (user: ${userPrimaryDbName}, requested: ${payroll_class})`
+      );
 
       // Check if password matches, status is active, not expired, and primary_class matches
-      if (user.password === password &&
+      if (
+        user.password === password &&
         user.status === "active" &&
         !isExpired &&
-        classMatches) {
+        classMatches
+      ) {
         authenticatedUser = user;
         authenticatedDatabase = database;
         console.log(`✅ Valid credentials found in ${database}!`);
@@ -149,27 +168,38 @@ router.post("/login", async (req, res) => {
       } else {
         console.log(`❌ Invalid credentials in ${database}:`);
         if (user.password !== password) console.log(`   - Password mismatch`);
-        if (user.status !== "active") console.log(`   - Account status: ${user.status}`);
-        if (isExpired) console.log(`   - Account expired on ${user.expiry_date}`);
-        if (!classMatches) console.log(`   - Class mismatch (has: ${userPrimaryDbName}, wants: ${payroll_class})`);
+        if (user.status !== "active")
+          console.log(`   - Account status: ${user.status}`);
+        if (isExpired)
+          console.log(`   - Account expired on ${user.expiry_date}`);
+        if (!classMatches)
+          console.log(
+            `   - Class mismatch (has: ${userPrimaryDbName}, wants: ${payroll_class})`
+          );
       }
     }
 
     // If no valid match found after checking all instances
     if (!authenticatedUser) {
-      console.log(`\n❌ No valid credentials found for user ${user_id} across all databases`);
+      console.log(
+        `\n❌ No valid credentials found for user ${user_id} across all databases`
+      );
 
       // Provide specific error message
-      const hasPasswordMatch = userCandidates.some(c => c.user.password === password);
-      const hasInactiveAccount = userCandidates.some(c => c.user.status !== "active");
-      const hasExpiredAccount = userCandidates.some(c => {
+      const hasPasswordMatch = userCandidates.some(
+        (c) => c.user.password === password
+      );
+      const hasInactiveAccount = userCandidates.some(
+        (c) => c.user.status !== "active"
+      );
+      const hasExpiredAccount = userCandidates.some((c) => {
         if (!c.user.expiry_date) return false;
         const expiryDate = new Date(c.user.expiry_date);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         return expiryDate < today;
       });
-      const hasClassMismatch = userCandidates.some(c => {
+      const hasClassMismatch = userCandidates.some((c) => {
         let userPrimaryDbName = c.user.primary_class;
         if (dbClassMapping[c.user.primary_class]) {
           userPrimaryDbName = dbClassMapping[c.user.primary_class];
@@ -178,12 +208,19 @@ router.post("/login", async (req, res) => {
       });
 
       if (hasExpiredAccount && hasPasswordMatch) {
-        return res.status(403).json({ error: "Account has expired. Please contact administrator." });
+        return res
+          .status(403)
+          .json({
+            error: "Account has expired. Please contact administrator.",
+          });
       } else if (hasInactiveAccount && hasPasswordMatch) {
-        return res.status(403).json({ error: "Account is inactive or suspended" });
+        return res
+          .status(403)
+          .json({ error: "Account is inactive or suspended" });
       } else if (hasClassMismatch && hasPasswordMatch) {
         return res.status(403).json({
-          error: "Unauthorized payroll class selection. You can only login to your assigned class."
+          error:
+            "Unauthorized payroll class selection. You can only login to your assigned class.",
         });
       } else {
         return res.status(401).json({ error: "Invalid User ID or password" });
@@ -193,20 +230,6 @@ router.post("/login", async (req, res) => {
     // Switch to user's assigned database (their primary_class)
     pool.useDatabase(payroll_class);
 
-    // Generate JWT token
-    // const token = jwt.sign(
-    // {
-    //   user_id: authenticatedUser.user_id,
-    //   full_name: authenticatedUser.full_name,
-    //   role: authenticatedUser.user_role,
-    //   primary_class: authenticatedUser.primary_class,
-    //   current_class: payroll_class,
-    //   created_in: authenticatedDatabase
-    // },
-    //   JWT_SECRET,
-    //   { expiresIn: "8h" }
-    // );
-
     const token = signToken({
       data: {
         user_id: authenticatedUser.user_id,
@@ -214,9 +237,11 @@ router.post("/login", async (req, res) => {
         role: authenticatedUser.user_role,
         primary_class: authenticatedUser.primary_class,
         current_class: payroll_class,
-        created_in: authenticatedDatabase
-      }, secret:JWT_SECRET, time: '8h'
-    })
+        created_in: authenticatedDatabase,
+      },
+      secret: JWT_SECRET,
+      time: "8h",
+    });
     const refresh_token = signToken({
       data: {
         user_id: authenticatedUser.user_id,
@@ -224,15 +249,15 @@ router.post("/login", async (req, res) => {
         role: authenticatedUser.user_role,
         primary_class: authenticatedUser.primary_class,
         current_class: payroll_class,
-        created_in: authenticatedDatabase
-      }, secret:REFRESH_SECRET, time: '7d'
-    })
+        created_in: authenticatedDatabase,
+      },
+      secret: REFRESH_SECRET,
+      time: "7d",
+    });
 
-    pool.useDatabase(process.env.DB_OFFICERS)
-    await pool.query(`INSERT into users (tokens)
-      VALUES (?)`,  [`${token},${refresh_token}`])
-
-    console.log(`\n✅ Login successful for user ${user_id} from ${authenticatedDatabase}`);
+    console.log(
+      `\n✅ Login successful for user ${user_id} from ${authenticatedDatabase}`
+    );
 
     res.json({
       message: "✅ Login successful",
@@ -245,10 +270,9 @@ router.post("/login", async (req, res) => {
         role: authenticatedUser.user_role,
         status: authenticatedUser.status,
         primary_class: authenticatedUser.primary_class,
-        current_class: payroll_class
-      }
+        current_class: payroll_class,
+      },
     });
-
   } catch (err) {
     console.error("❌ Login error:", err);
     res.status(500).json({ error: "Server error" });
@@ -266,7 +290,6 @@ router.post("/login", async (req, res) => {
 //     token = bearerHeader.split(' ')[1];
 //   }
 
-
 //   if (!token && req.query.token) {
 //     token = req.query.token;
 //   }
@@ -277,66 +300,77 @@ router.post("/login", async (req, res) => {
 //   // Fetch Refresh Token(if defined)
 //   const { refresh_token } = req.body
 
-
-
-
-
-
-
 // })
 
 // Refresh Token
 
 //  Get all users
-router.get('/', verifyToken, async (req, res) => {
+router.get("/", verifyToken, async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT * FROM users ORDER BY full_name ASC
     `);
     res.json(rows);
   } catch (err) {
-    console.error('❌ Error fetching users:', err);
-    res.status(500).json({ error: 'Database error' });
+    console.error("❌ Error fetching users:", err);
+    res.status(500).json({ error: "Database error" });
   }
 });
 
-
 // Get single user by ID
-router.get('/:id', verifyToken, async (req, res) => {
+router.get("/:id", verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const [rows] = await pool.query(
+      `
       SELECT * FROM users u
       WHERE u.user_id = ?
-    `, [req.params.id]);
+    `,
+      [req.params.id]
+    );
 
     if (rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
 
     res.json(rows[0]);
   } catch (err) {
-    console.error('❌ Error fetching user:', err);
-    res.status(500).json({ error: 'Database error' });
+    console.error("❌ Error fetching user:", err);
+    res.status(500).json({ error: "Database error" });
   }
 });
 
 //  Create user
-router.post('/', verifyToken, async (req, res) => {
-  const { user_id, fullName, payroll_class, email, role, status, phone, password, expiryDate } = req.body;
+router.post("/", verifyToken, async (req, res) => {
+  const {
+    user_id,
+    fullName,
+    payroll_class,
+    email,
+    role,
+    status,
+    phone,
+    password,
+    expiryDate,
+  } = req.body;
 
   try {
     // Required field validation
     if (!user_id || !fullName || !email || !role || !payroll_class) {
-      return res.status(400).json({ error: 'User ID, Payroll Class, full name, email, and role are required' });
+      return res
+        .status(400)
+        .json({
+          error:
+            "User ID, Payroll Class, full name, email, and role are required",
+        });
     }
 
     // Status validation
-    const validStatuses = ['active', 'inactive', 'suspended'];
-    const userStatus = status || 'active'; // Default to 'active' if not provided
+    const validStatuses = ["active", "inactive", "suspended"];
+    const userStatus = status || "active"; // Default to 'active' if not provided
 
     if (!validStatuses.includes(userStatus)) {
       return res.status(400).json({
-        error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+        error: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
       });
     }
 
@@ -344,7 +378,7 @@ router.post('/', verifyToken, async (req, res) => {
     if (expiryDate) {
       const expiry = new Date(expiryDate);
       if (isNaN(expiry.getTime())) {
-        return res.status(400).json({ error: 'Invalid expiry date format' });
+        return res.status(400).json({ error: "Invalid expiry date format" });
       }
 
       // Optional: Check if expiry date is in the past
@@ -352,7 +386,7 @@ router.post('/', verifyToken, async (req, res) => {
       today.setHours(0, 0, 0, 0);
       if (expiry < today) {
         return res.status(400).json({
-          error: 'Expiry date cannot be in the past'
+          error: "Expiry date cannot be in the past",
         });
       }
     }
@@ -360,36 +394,59 @@ router.post('/', verifyToken, async (req, res) => {
     const [] = await pool.query(
       `INSERT INTO users (user_id, full_name, primary_class, email, user_role, status, phone_number, password, expiry_date) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [user_id, fullName, payroll_class, email, role, userStatus, phone, password, expiryDate || null]
+      [
+        user_id,
+        fullName,
+        payroll_class,
+        email,
+        role,
+        userStatus,
+        phone,
+        password,
+        expiryDate || null,
+      ]
     );
 
-    res.status(201).json({ message: '✅ User created', user_id });
+    res.status(201).json({ message: "✅ User created", user_id });
   } catch (err) {
-    console.error('❌ Error creating user:', err);
-    res.status(500).json({ error: 'Database error' });
+    console.error("❌ Error creating user:", err);
+    res.status(500).json({ error: "Database error" });
   }
 });
 
 // Update user
-router.put('/:user_id', verifyToken, async (req, res) => {
-  const { payroll_class, full_name, email, user_role, status, phone_number, password, expiry_date } = req.body;
+router.put("/:user_id", verifyToken, async (req, res) => {
+  const {
+    payroll_class,
+    full_name,
+    email,
+    user_role,
+    status,
+    phone_number,
+    password,
+    expiry_date,
+  } = req.body;
 
   try {
     // Status validation if provided
-    if (typeof status !== 'undefined') {
-      const validStatuses = ['active', 'inactive', 'suspended'];
+    if (typeof status !== "undefined") {
+      const validStatuses = ["active", "inactive", "suspended"];
       if (!validStatuses.includes(status)) {
         return res.status(400).json({
-          error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+          error: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
         });
       }
     }
 
     // Expiry date validation if provided
-    if (typeof expiry_date !== 'undefined' && expiry_date !== null && expiry_date !== '') {
+    if (
+      typeof expiry_date !== "undefined" &&
+      expiry_date !== null &&
+      expiry_date !== ""
+    ) {
       const expiry = new Date(expiry_date);
       if (isNaN(expiry.getTime())) {
-        return res.status(400).json({ error: 'Invalid expiry date format' });
+        return res.status(400).json({ error: "Invalid expiry date format" });
       }
 
       // Optional: Check if expiry date is in the past
@@ -397,7 +454,7 @@ router.put('/:user_id', verifyToken, async (req, res) => {
       today.setHours(0, 0, 0, 0);
       if (expiry < today) {
         return res.status(400).json({
-          error: 'Expiry date cannot be in the past'
+          error: "Expiry date cannot be in the past",
         });
       }
     }
@@ -405,67 +462,79 @@ router.put('/:user_id', verifyToken, async (req, res) => {
     const sets = [];
     const params = [];
 
-    if (typeof full_name !== 'undefined') {
-      sets.push('full_name = ?'); params.push(full_name);
+    if (typeof full_name !== "undefined") {
+      sets.push("full_name = ?");
+      params.push(full_name);
     }
-    if (typeof email !== 'undefined') {
-      sets.push('email = ?'); params.push(email);
+    if (typeof email !== "undefined") {
+      sets.push("email = ?");
+      params.push(email);
     }
-    if (typeof user_role !== 'undefined') {
-      sets.push('user_role = ?'); params.push(user_role);
+    if (typeof user_role !== "undefined") {
+      sets.push("user_role = ?");
+      params.push(user_role);
     }
-    if (typeof status !== 'undefined') {
-      sets.push('status = ?'); params.push(status);
+    if (typeof status !== "undefined") {
+      sets.push("status = ?");
+      params.push(status);
     }
-    if (typeof phone_number !== 'undefined') {
-      sets.push('phone_number = ?'); params.push(phone_number);
+    if (typeof phone_number !== "undefined") {
+      sets.push("phone_number = ?");
+      params.push(phone_number);
     }
-    if (typeof expiry_date !== 'undefined') {
+    if (typeof expiry_date !== "undefined") {
       // Allow setting to null to remove expiry date
-      sets.push('expiry_date = ?');
-      params.push(expiry_date === '' ? null : expiry_date);
+      sets.push("expiry_date = ?");
+      params.push(expiry_date === "" ? null : expiry_date);
     }
-    if (typeof payroll_class !== 'undefined') {
-      sets.push('primary_class = ?'); params.push(payroll_class);
+    if (typeof payroll_class !== "undefined") {
+      sets.push("primary_class = ?");
+      params.push(payroll_class);
     }
 
     // Only include password when a non-empty value is provided
-    if (typeof password !== 'undefined' && password !== '') {
-      sets.push('password = ?'); params.push(password);
+    if (typeof password !== "undefined" && password !== "") {
+      sets.push("password = ?");
+      params.push(password);
     }
 
     if (sets.length === 0) {
-      return res.status(400).json({ error: 'No updatable fields provided' });
+      return res.status(400).json({ error: "No updatable fields provided" });
     }
 
-    const sql = `UPDATE users SET ${sets.join(', ')} WHERE user_id = ?`;
+    const sql = `UPDATE users SET ${sets.join(", ")} WHERE user_id = ?`;
     params.push(req.params.user_id);
 
     const [result] = await pool.query(sql, params);
-    if (result.affectedRows === 0) return res.status(404).json({ error: 'User not found' });
+    if (result.affectedRows === 0)
+      return res.status(404).json({ error: "User not found" });
 
     // return updated row for frontend to update UI and show success reliably
-    const [rows] = await pool.query('SELECT * FROM users WHERE user_id = ?', [req.params.user_id]);
-    res.json({ message: 'User updated', user: rows[0] });
+    const [rows] = await pool.query("SELECT * FROM users WHERE user_id = ?", [
+      req.params.user_id,
+    ]);
+    res.json({ message: "User updated", user: rows[0] });
   } catch (err) {
-    console.error('❌ Error updating user:', err);
-    res.status(500).json({ error: 'Database error' });
+    console.error("❌ Error updating user:", err);
+    res.status(500).json({ error: "Database error" });
   }
 });
 
 //  Delete user
-router.delete('/:user_id', verifyToken, async (req, res) => {
+router.delete("/:user_id", verifyToken, async (req, res) => {
   try {
-    const [result] = await pool.query('DELETE FROM users WHERE user_id = ?', [req.params.user_id]);
+    const [result] = await pool.query("DELETE FROM users WHERE user_id = ?", [
+      req.params.user_id,
+    ]);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
 
-    res.json({ message: '✅ User deleted', user_id: req.params.user_id });
+    res.json({ message: "✅ User deleted", user_id: req.params.user_id });
   } catch (err) {
-    console.error('❌ Error deleting user:', err);
-    res.status(500).json({ error: 'Database error' });
+    console.error("❌ Error deleting user:", err);
+    res.status(500).json({ error: "Database error" });
   }
 });
 
@@ -481,7 +550,7 @@ router.post("/verify-identity", async (req, res) => {
     // Validation
     if (!user_id || !full_name || !email) {
       return res.status(400).json({
-        error: "User ID, Full Name, and Email are required for verification"
+        error: "User ID, Full Name, and Email are required for verification",
       });
     }
 
@@ -492,17 +561,20 @@ router.post("/verify-identity", async (req, res) => {
     // Get databases to search
     try {
       pool.useDatabase(process.env.DB_OFFICERS);
-      const [dbClasses] = await pool.query("SELECT db_name, classname FROM py_payrollclass");
+      const [dbClasses] = await pool.query(
+        "SELECT db_name, classname FROM py_payrollclass"
+      );
 
-      const otherDatabases = dbClasses.map(row => row.db_name).filter(db => db !== process.env.DB_OFFICERS);
+      const otherDatabases = dbClasses
+        .map((row) => row.db_name)
+        .filter((db) => db !== process.env.DB_OFFICERS);
       databasesToSearch = [process.env.DB_OFFICERS, ...otherDatabases];
 
       // Create bidirectional mapping
-      dbClasses.forEach(row => {
+      dbClasses.forEach((row) => {
         dbClassMapping[row.db_name] = row.display_name;
         dbClassMapping[row.display_name] = row.db_name;
       });
-
     } catch (err) {
       console.log("⚠️ Could not fetch db_classes, using fallback list");
       databasesToSearch = [
@@ -511,7 +583,7 @@ router.post("/verify-identity", async (req, res) => {
         process.env.DB_RATINGS,
         process.env.DB_RATINGS_A,
         process.env.DB_RATINGS_B,
-        process.env.DB_JUNIOR_TRAINEE
+        process.env.DB_JUNIOR_TRAINEE,
       ];
     }
 
@@ -531,7 +603,7 @@ router.post("/verify-identity", async (req, res) => {
         if (rows.length > 0) {
           userCandidates.push({
             user: rows[0],
-            database: dbName
+            database: dbName,
           });
           console.log(`✅ User found in database: ${dbName}`);
         }
@@ -543,10 +615,14 @@ router.post("/verify-identity", async (req, res) => {
 
     if (userCandidates.length === 0) {
       console.log(`❌ User ${user_id} not found in any database`);
-      return res.status(404).json({ error: "User not found. Please check your User ID." });
+      return res
+        .status(404)
+        .json({ error: "User not found. Please check your User ID." });
     }
 
-    console.log(`\n📊 Found ${userCandidates.length} instance(s) of user ${user_id}`);
+    console.log(
+      `\n📊 Found ${userCandidates.length} instance(s) of user ${user_id}`
+    );
 
     // Now verify identity with ALL provided fields
     let verifiedUser = null;
@@ -556,12 +632,20 @@ router.post("/verify-identity", async (req, res) => {
       const { user, database } = candidate;
 
       console.log(`\n🔐 Verifying identity for user in ${database}:`);
-      console.log(`   Provided - Name: ${full_name}, Email: ${email}, Class: ${primary_class || 'not provided'}`);
-      console.log(`   Database - Name: ${user.full_name}, Email: ${user.email}, Class: ${user.primary_class}`);
+      console.log(
+        `   Provided - Name: ${full_name}, Email: ${email}, Class: ${
+          primary_class || "not provided"
+        }`
+      );
+      console.log(
+        `   Database - Name: ${user.full_name}, Email: ${user.email}, Class: ${user.primary_class}`
+      );
 
       // Check all provided fields match
-      const nameMatches = user.full_name?.toLowerCase().trim() === full_name.toLowerCase().trim();
-      const emailMatches = user.email?.toLowerCase().trim() === email.toLowerCase().trim();
+      const nameMatches =
+        user.full_name?.toLowerCase().trim() === full_name.toLowerCase().trim();
+      const emailMatches =
+        user.email?.toLowerCase().trim() === email.toLowerCase().trim();
 
       // Handle primary_class matching (could be display_name or db_name)
       let classMatches = true; // Default true if not provided
@@ -580,7 +664,9 @@ router.post("/verify-identity", async (req, res) => {
         classMatches = userPrimaryDbName === providedDbName;
       }
 
-      console.log(`   Match Results - Name: ${nameMatches}, Email: ${emailMatches}, Class: ${classMatches}`);
+      console.log(
+        `   Match Results - Name: ${nameMatches}, Email: ${emailMatches}, Class: ${classMatches}`
+      );
 
       // All provided fields must match
       if (nameMatches && emailMatches && classMatches) {
@@ -605,11 +691,14 @@ router.post("/verify-identity", async (req, res) => {
       for (const candidate of userCandidates) {
         const { user } = candidate;
 
-        const nameMatches = user.full_name?.toLowerCase().trim() === full_name.toLowerCase().trim();
-        const emailMatches = user.email?.toLowerCase().trim() === email.toLowerCase().trim();
+        const nameMatches =
+          user.full_name?.toLowerCase().trim() ===
+          full_name.toLowerCase().trim();
+        const emailMatches =
+          user.email?.toLowerCase().trim() === email.toLowerCase().trim();
 
-        if (!nameMatches) incorrectFields.push('Full Name');
-        if (!emailMatches) incorrectFields.push('Email');
+        if (!nameMatches) incorrectFields.push("Full Name");
+        if (!emailMatches) incorrectFields.push("Email");
 
         if (primary_class) {
           let userPrimaryDbName = user.primary_class;
@@ -623,7 +712,7 @@ router.post("/verify-identity", async (req, res) => {
           }
 
           const classMatches = userPrimaryDbName === providedDbName;
-          if (!classMatches) incorrectFields.push('Payroll Class');
+          if (!classMatches) incorrectFields.push("Payroll Class");
         }
       }
 
@@ -632,7 +721,9 @@ router.post("/verify-identity", async (req, res) => {
 
       let errorMessage = "Identity verification failed. ";
       if (uniqueIncorrectFields.length > 0) {
-        errorMessage += `Incorrect: ${uniqueIncorrectFields.join(', ')}. Please check and try again.`;
+        errorMessage += `Incorrect: ${uniqueIncorrectFields.join(
+          ", "
+        )}. Please check and try again.`;
       } else {
         errorMessage += "Please check your information and try again.";
       }
@@ -643,11 +734,13 @@ router.post("/verify-identity", async (req, res) => {
     // Check if account is active
     if (verifiedUser.status !== "active") {
       return res.status(403).json({
-        error: "Account is not active. Please contact administrator."
+        error: "Account is not active. Please contact administrator.",
       });
     }
 
-    console.log(`\n✅ Identity verified for user ${user_id} in ${verifiedDatabase}`);
+    console.log(
+      `\n✅ Identity verified for user ${user_id} in ${verifiedDatabase}`
+    );
 
     // Return success with user info (but NO password!)
     res.json({
@@ -657,10 +750,9 @@ router.post("/verify-identity", async (req, res) => {
         full_name: verifiedUser.full_name,
         email: verifiedUser.email,
         primary_class: verifiedUser.primary_class,
-        database: verifiedDatabase
-      }
+        database: verifiedDatabase,
+      },
     });
-
   } catch (err) {
     console.error("❌ Identity verification error:", err);
     res.status(500).json({ error: "Server error" });
@@ -675,14 +767,14 @@ router.post("/reset-password", async (req, res) => {
     // Validation
     if (!user_id || !full_name || !email || !new_password) {
       return res.status(400).json({
-        error: "All fields are required"
+        error: "All fields are required",
       });
     }
 
     // Password validation
     if (new_password.length < 6) {
       return res.status(400).json({
-        error: "Password must be at least 6 characters long"
+        error: "Password must be at least 6 characters long",
       });
     }
 
@@ -693,17 +785,20 @@ router.post("/reset-password", async (req, res) => {
     // Get databases to search
     try {
       pool.useDatabase(process.env.DB_OFFICERS);
-      const [dbClasses] = await pool.query("SELECT db_name, classname FROM py_payrollclass");
+      const [dbClasses] = await pool.query(
+        "SELECT db_name, classname FROM py_payrollclass"
+      );
 
-      const otherDatabases = dbClasses.map(row => row.db_name).filter(db => db !== process.env.DB_OFFICERS);
+      const otherDatabases = dbClasses
+        .map((row) => row.db_name)
+        .filter((db) => db !== process.env.DB_OFFICERS);
       databasesToSearch = [process.env.DB_OFFICERS, ...otherDatabases];
 
       // Create bidirectional mapping
-      dbClasses.forEach(row => {
+      dbClasses.forEach((row) => {
         dbClassMapping[row.db_name] = row.display_name;
         dbClassMapping[row.display_name] = row.db_name;
       });
-
     } catch (err) {
       console.log("⚠️ Could not fetch db_classes, using fallback list");
       databasesToSearch = [
@@ -712,7 +807,7 @@ router.post("/reset-password", async (req, res) => {
         process.env.DB_RATINGS,
         process.env.DB_RATINGS_A,
         process.env.DB_RATINGS_B,
-        process.env.DB_JUNIOR_TRAINEE
+        process.env.DB_JUNIOR_TRAINEE,
       ];
     }
 
@@ -731,7 +826,7 @@ router.post("/reset-password", async (req, res) => {
         if (rows.length > 0) {
           userCandidates.push({
             user: rows[0],
-            database: dbName
+            database: dbName,
           });
         }
       } catch (err) {
@@ -750,8 +845,10 @@ router.post("/reset-password", async (req, res) => {
     for (const candidate of userCandidates) {
       const { user, database } = candidate;
 
-      const nameMatches = user.full_name?.toLowerCase().trim() === full_name.toLowerCase().trim();
-      const emailMatches = user.email?.toLowerCase().trim() === email.toLowerCase().trim();
+      const nameMatches =
+        user.full_name?.toLowerCase().trim() === full_name.toLowerCase().trim();
+      const emailMatches =
+        user.email?.toLowerCase().trim() === email.toLowerCase().trim();
 
       let classMatches = true;
       if (primary_class) {
@@ -782,11 +879,14 @@ router.post("/reset-password", async (req, res) => {
       for (const candidate of userCandidates) {
         const { user } = candidate;
 
-        const nameMatches = user.full_name?.toLowerCase().trim() === full_name.toLowerCase().trim();
-        const emailMatches = user.email?.toLowerCase().trim() === email.toLowerCase().trim();
+        const nameMatches =
+          user.full_name?.toLowerCase().trim() ===
+          full_name.toLowerCase().trim();
+        const emailMatches =
+          user.email?.toLowerCase().trim() === email.toLowerCase().trim();
 
-        if (!nameMatches) incorrectFields.push('Full Name');
-        if (!emailMatches) incorrectFields.push('Email');
+        if (!nameMatches) incorrectFields.push("Full Name");
+        if (!emailMatches) incorrectFields.push("Email");
 
         if (primary_class) {
           let userPrimaryDbName = user.primary_class;
@@ -800,7 +900,7 @@ router.post("/reset-password", async (req, res) => {
           }
 
           const classMatches = userPrimaryDbName === providedDbName;
-          if (!classMatches) incorrectFields.push('Payroll Class');
+          if (!classMatches) incorrectFields.push("Payroll Class");
         }
       }
 
@@ -809,7 +909,9 @@ router.post("/reset-password", async (req, res) => {
 
       let errorMessage = "Identity verification failed. ";
       if (uniqueIncorrectFields.length > 0) {
-        errorMessage += `Incorrect: ${uniqueIncorrectFields.join(', ')}. Please check and try again.`;
+        errorMessage += `Incorrect: ${uniqueIncorrectFields.join(
+          ", "
+        )}. Please check and try again.`;
       } else {
         errorMessage += "Please check your information and try again.";
       }
@@ -829,13 +931,14 @@ router.post("/reset-password", async (req, res) => {
       return res.status(500).json({ error: "Failed to update password" });
     }
 
-    console.log(`✅ Password reset successful for user ${user_id} in ${verifiedDatabase}`);
+    console.log(
+      `✅ Password reset successful for user ${user_id} in ${verifiedDatabase}`
+    );
 
     res.json({
       message: "✅ Password reset successfully",
-      user_id: user_id
+      user_id: user_id,
     });
-
   } catch (err) {
     console.error("❌ Password reset error:", err);
     res.status(500).json({ error: "Server error" });

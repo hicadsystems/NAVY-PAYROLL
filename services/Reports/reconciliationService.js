@@ -69,15 +69,17 @@ class ReconciliationService {
     return rows.map(row => ({
       ...row,
       status: Math.abs(row.calculated_variance || 0) < 0.01 ? 'BALANCED' : 'VARIANCE DETECTED',
-      variance_threshold: 0.01
+      variance_threshold: 0.01,
+      has_variance: Math.abs(row.calculated_variance || 0) >= 0.01
     }));
   }
 
   /**
    * Get detailed employee-level reconciliation (matches VB logic exactly)
+   * Now optimized to run only when variance is detected
    */
   async getEmployeeReconciliation(filters = {}) {
-    const { year, month, database, showErrorsOnly = true } = filters;
+    const { year, month, database, showErrorsOnly = true, employeeId = null } = filters;
     
     const useDb = database || process.env.DB_OFFICERS;
     
@@ -91,7 +93,16 @@ class ReconciliationService {
     
     console.log(`🔍 Reconciliation for year: ${year}, month: ${monthOnly} in database: ${useDb}`);
     
-    // Get ALL employees from hr_employees
+    // Build employee filter
+    let employeeFilter = '';
+    let queryParams = [];
+    
+    if (employeeId) {
+      employeeFilter = 'AND e.Empl_ID = ?';
+      queryParams.push(employeeId);
+    }
+    
+    // Get ALL employees from hr_employees (or specific employee if filtering)
     const employeesQuery = `
       SELECT DISTINCT 
         e.Empl_ID,
@@ -99,13 +110,14 @@ class ReconciliationService {
         e.Title as Title,
         ttl.Description as title_description
       FROM hr_employees e
-	  LEFT JOIN py_Title ttl ON ttl.TitleCode = e.Title
+      LEFT JOIN py_Title ttl ON ttl.TitleCode = e.Title
       WHERE (e.DateLeft IS NULL OR e.DateLeft = '')
         AND (e.exittype IS NULL OR e.exittype = '')
+        ${employeeFilter}
       ORDER BY e.Empl_ID
     `;
     
-    const [employees] = await pool.query(employeesQuery);
+    const [employees] = await pool.query(employeesQuery, queryParams);
     
     console.log(`📋 Found ${employees.length} active employees in ${useDb}`);
     
@@ -245,22 +257,157 @@ class ReconciliationService {
   }
 
   /**
-   * Get reconciliation report with summary and details
+   * OPTIMIZED: Get reconciliation report with smart variance detection
+   * Only runs detailed employee reconciliation if variance is detected
    */
   async getReconciliationReport(filters = {}) {
+    console.log('🚀 Starting optimized reconciliation report...');
+    
+    // Step 1: Check summary first
     const summary = await this.getSalaryReconciliationSummary(filters);
+    const summaryData = summary[0] || null;
+    
+    if (!summaryData) {
+      return {
+        summary: null,
+        status: 'NO_DATA',
+        message: 'No reconciliation data found for the specified period',
+        total_employees_checked: 0,
+        employees_with_errors: 0,
+        total_error_amount: 0,
+        details: []
+      };
+    }
+    
+    // Step 2: Determine if we need detailed reconciliation
+    const hasVariance = summaryData.has_variance;
+    
+    if (!hasVariance) {
+      console.log('✅ No variance detected at summary level - BALANCED!');
+      return {
+        summary: summaryData,
+        status: 'BALANCED',
+        message: 'All salaries are reconciled. No variance detected.',
+        total_employees_checked: summaryData.total_employees,
+        employees_with_errors: 0,
+        total_error_amount: 0,
+        details: [],
+        skipped_detailed_check: true
+      };
+    }
+    
+    // Step 3: Variance detected - run detailed reconciliation
+    console.log('⚠️ Variance detected! Running detailed employee-level reconciliation...');
     const details = await this.getEmployeeReconciliation(filters);
     
     const errorsOnly = details.filter(d => d.status === 'ERROR');
     
     return {
-      summary: summary[0] || null,
+      summary: summaryData,
+      status: 'VARIANCE_DETECTED',
+      message: `Variance detected: ${errorsOnly.length} employee(s) with reconciliation errors`,
       total_employees_checked: details.length,
       employees_with_errors: errorsOnly.length,
       total_error_amount: errorsOnly.reduce((sum, d) => sum + Math.abs(d.error_amount), 0),
       details: errorsOnly,
       all_details: details // Include all if needed
     };
+  }
+
+  /**
+   * ENHANCED: Quick check - just returns status without full details
+   */
+  async quickReconciliationCheck(filters = {}) {
+    const summary = await this.getSalaryReconciliationSummary(filters);
+    const summaryData = summary[0] || null;
+    
+    if (!summaryData) {
+      return {
+        status: 'NO_DATA',
+        has_variance: false,
+        message: 'No data found for the specified period'
+      };
+    }
+    
+    return {
+      status: summaryData.status,
+      has_variance: summaryData.has_variance,
+      variance_amount: summaryData.calculated_variance,
+      total_employees: summaryData.total_employees,
+      message: summaryData.has_variance 
+        ? `Variance of ${summaryData.calculated_variance} detected`
+        : 'Balanced - no variance detected'
+    };
+  }
+
+  /**
+   * ENHANCED: Trace specific employee variance
+   * Useful for debugging a specific employee's reconciliation
+   */
+  async traceEmployeeReconciliation(employeeId, filters = {}) {
+    console.log(`🔍 Tracing reconciliation for employee: ${employeeId}`);
+    
+    const result = await this.getEmployeeReconciliation({
+      ...filters,
+      employeeId,
+      showErrorsOnly: false
+    });
+    
+    if (result.length === 0) {
+      return {
+        employee_number: employeeId,
+        status: 'NOT_FOUND',
+        message: 'No reconciliation data found for this employee'
+      };
+    }
+    
+    const employeeData = result[0];
+    
+    // Build detailed trace
+    const trace = {
+      employee: {
+        number: employeeData.employee_number,
+        name: employeeData.employee_name,
+        title: employeeData.title_description
+      },
+      calculation_steps: [
+        {
+          step: 1,
+          description: 'Total Earnings (BP, BT, PT, PU)',
+          amount: employeeData.total_earnings,
+          running_total: employeeData.total_earnings
+        },
+        {
+          step: 2,
+          description: 'Subtract Deductions (PR, PL)',
+          amount: -employeeData.total_deductions,
+          running_total: employeeData.total_earnings - employeeData.total_deductions
+        },
+        {
+          step: 3,
+          description: 'Add Roundup',
+          amount: employeeData.roundup,
+          running_total: employeeData.total_earnings - employeeData.total_deductions + employeeData.roundup
+        },
+        {
+          step: 4,
+          description: 'Subtract Net Pay',
+          amount: -employeeData.net_from_cum,
+          running_total: employeeData.total_earnings - employeeData.total_deductions + employeeData.roundup - employeeData.net_from_cum
+        },
+        {
+          step: 5,
+          description: 'Subtract Tax',
+          amount: -employeeData.tax_from_cum,
+          running_total: employeeData.error_amount
+        }
+      ],
+      final_variance: employeeData.error_amount,
+      status: employeeData.status,
+      payment_breakdown: employeeData.payment_breakdown
+    };
+    
+    return trace;
   }
 
   /**

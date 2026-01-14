@@ -471,7 +471,7 @@ exports.getPersonnelDetailsView = async (req, res) => {
     if (sun < 775) {
       return res.status(400).json({ 
         status: 'FAILED',
-        error: 'Personnel details reports are not ready for viewing (must be stage 775 or higher).',
+        error: 'Personnel details reports are not ready for viewing.',
         currentStage: sun,
         requiredStage: 775
       });

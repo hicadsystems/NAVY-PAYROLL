@@ -56,7 +56,7 @@ router.put('/update-stage', verifyToken, async (req, res) => {
     "UPDATE py_stdrate SET sun = 775, createdby = ? WHERE type = 'BT05'", 
     [user]
   );
-  res.json({ message: 'BT05 marked as ready (775).' });
+  res.json({ message: 'Personnel data changes printed.' });
 });
 
 module.exports = router;

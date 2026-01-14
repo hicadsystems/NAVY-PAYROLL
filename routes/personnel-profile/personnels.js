@@ -478,46 +478,206 @@ router.get('/employees-old/search', verifyToken, async (req, res) => {
   }
 });
 
-// GET single employee (no payroll class filter needed - specific ID lookup)
-router.get('/employees/:id', verifyToken, async (req, res) => {
-  const id = req.params.id.replace(/_SLASH_/g, '/');
-
+// Grade step calculation
+router.get('/employees/:id/grade-step', verifyToken, async (req, res) => {
   try {
-    const [employee] = await pool.query(
-      'SELECT * FROM hr_employees WHERE Empl_ID = ?', 
-      [id]
-    );
+    const employeeId = req.params.id.replace(/_SLASH_/g, '/');
     
-    if (employee.length === 0) {
-      return res.status(404).json({ success: false, message: 'Employee not found' });
+    // Get employee's gradelevel and datepmted
+    const [employee] = await pool.query(
+      'SELECT gradelevel, datepmted FROM hr_employees WHERE Empl_ID = ?',
+      [employeeId]
+    );
+
+    if (!employee || employee.length === 0) {
+      return res.status(404).json({ success: false, error: 'Employee not found' });
     }
 
+    const { gradelevel, datepmted } = employee[0];
+    
+    if (!gradelevel || !datepmted) {
+      return res.json({ 
+        success: true, 
+        data: { 
+          gradeLevel: gradelevel || 'N/A',
+          currentStep: null,
+          displayValue: gradelevel || 'N/A'
+        }
+      });
+    }
+
+    // Extract the first two digits (grade level)
+    const gradeLevelPrefix = gradelevel.toString().substring(0, 2);
+    
+    // Get step20 from py_salaryscale
+    const [scaleData] = await pool.query(
+      'SELECT step20 FROM py_salaryscale WHERE grade = ? LIMIT 1',
+      [gradeLevelPrefix]
+    );
+
+    if (!scaleData || scaleData.length === 0) {
+      return res.json({ 
+        success: true, 
+        data: { 
+          gradeLevel: gradeLevelPrefix,
+          currentStep: null,
+          displayValue: `${gradeLevelPrefix}0`
+        }
+      });
+    }
+
+    const step20 = parseInt(scaleData[0].step20);
+    
+    // Calculate years since promotion
+    const promotionDate = new Date(datepmted);
+    const today = new Date();
+    let yearsSincePromotion = today.getFullYear() - promotionDate.getFullYear();
+    const monthDiff = today.getMonth() - promotionDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < promotionDate.getDate())) {
+      yearsSincePromotion--;
+    }
+
+    // Calculate current step (capped at step20)
+    const calculatedStep = 1 + yearsSincePromotion;
+    const currentStep = Math.min(calculatedStep, step20);
+
+    res.json({ 
+      success: true, 
+      data: {
+        gradeLevel: gradeLevelPrefix,
+        currentStep: currentStep,
+        displayValue: `${gradeLevelPrefix}0${currentStep}`,
+        step20: step20,
+        yearsSincePromotion: yearsSincePromotion
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Grade step calculation error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET single employee (no payroll class filter needed - specific ID lookup)
+router.get('/employees/:id', verifyToken, async (req, res) => {
+  try {
+    const employeeId = req.params.id.replace(/_SLASH_/g, '/');
+    
+    // Existing employee query...
+    const [employees] = await pool.query(
+      'SELECT * FROM hr_employees WHERE Empl_ID = ?',
+      [employeeId]
+    );
+
+    if (employees.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Employee not found' 
+      });
+    }
+
+    const employee = employees[0];
+
+    // Calculate grade step if gradelevel and datepmted exist
+    let gradeStepData = null;
+    if (employee.gradelevel && employee.datepmted) {
+      const gradeLevelPrefix = employee.gradelevel.toString().substring(0, 2);
+      
+      const [scaleData] = await pool.query(
+        'SELECT step20 FROM py_salaryscale WHERE grade = ? LIMIT 1',
+        [gradeLevelPrefix]
+      );
+
+      if (scaleData && scaleData.length > 0) {
+        const step20 = parseInt(scaleData[0].step20);
+        
+        // Parse the promotion date - handle YYYYMMDD format
+        let promotionDate;
+        const dateStr = employee.datepmted.toString().trim();
+        
+        if (dateStr.length === 8 && /^\d{8}$/.test(dateStr)) {
+          // Format: YYYYMMDD (e.g., "20150815")
+          const year = dateStr.substring(0, 4);
+          const month = dateStr.substring(4, 6);
+          const day = dateStr.substring(6, 8);
+          promotionDate = new Date(`${year}-${month}-${day}`);
+        } else {
+          // Try parsing as-is (for ISO dates or other formats)
+          promotionDate = new Date(employee.datepmted);
+        }
+        
+        // Check if date is valid
+        if (!isNaN(promotionDate.getTime())) {
+          const today = new Date();
+          let yearsSincePromotion = today.getFullYear() - promotionDate.getFullYear();
+          const monthDiff = today.getMonth() - promotionDate.getMonth();
+          
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < promotionDate.getDate())) {
+            yearsSincePromotion--;
+          }
+
+          // Ensure yearsSincePromotion is not negative
+          if (yearsSincePromotion < 0) {
+            yearsSincePromotion = 0;
+          }
+
+          const calculatedStep = 1 + yearsSincePromotion;
+          const currentStep = Math.min(calculatedStep, step20);
+
+          gradeStepData = {
+            gradeLevel: gradeLevelPrefix,
+            currentStep: currentStep,
+            displayValue: `${gradeLevelPrefix}${currentStep < 10 ? '0' : ''}${currentStep}`,
+            step20: step20,
+            yearsSincePromotion: yearsSincePromotion
+          };
+        } else {
+          // If date is invalid, set step to 1
+          gradeStepData = {
+            gradeLevel: gradeLevelPrefix,
+            currentStep: 1,
+            displayValue: `${gradeLevelPrefix}01`,
+            step20: step20,
+            yearsSincePromotion: 0
+          };
+        }
+      }
+    }
+
+    // Get related data (children, NOK, spouse)...
     const [children] = await pool.query(
-      'SELECT * FROM Children WHERE Empl_ID = ? AND chactive = 1 ORDER BY dateofbirth', 
-      [id]
+      'SELECT * FROM Children WHERE Empl_ID = ? AND chactive = 1',
+      [employeeId]
     );
 
     const [nextOfKin] = await pool.query(
-      'SELECT * FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1 ORDER BY NextofkinType DESC, FirstName', 
-      [id]
+      'SELECT * FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1',
+      [employeeId]
     );
 
     const [spouse] = await pool.query(
-      'SELECT * FROM Spouse WHERE Empl_ID = ? AND spactive = 1 ORDER BY marrieddate DESC', 
-      [id]
+      'SELECT * FROM Spouse WHERE Empl_ID = ? AND spactive = 1',
+      [employeeId]
     );
 
     res.json({
       success: true,
       data: {
-        employee: employee[0],
+        employee: employee,
         children: children,
         nextOfKin: nextOfKin,
-        spouse: spouse
+        spouse: spouse,
+        gradeStep: gradeStepData
       }
     });
+
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('❌ Error fetching employee:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
   }
 });
 

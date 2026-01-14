@@ -402,51 +402,89 @@
 
   // Load Payroll Period and Status
   async function loadPayrollPeriod() {
-      try {
-          console.log('🔍 Loading payroll period and status...');
-          const result = await apiRequest(`${API_BASE}/payroll-period`);
+    try {
+        console.log('🔍 Loading payroll period and status...');
+        const result = await apiRequest(`${API_BASE}/payroll-period`);
 
-          if (result.success) {
-              currentPeriod = result;
-              
-              document.getElementById('me_month').value = result.month;
-              document.getElementById('me_month_display').value = getMonthName(result.month);
-              document.getElementById('me_year').value = result.year;
+        if (result.success) {
+            currentPeriod = result;
+            
+            document.getElementById('me_month').value = result.month;
+            document.getElementById('me_month_display').value = getMonthName(result.month);
+            document.getElementById('me_year').value = result.year;
 
-              const banner = document.getElementById('statusBanner');
-              const statusText = document.getElementById('statusText');
-              const statusSubtext = document.getElementById('statusSubtext');
-              const statusIcon = document.getElementById('statusIcon');
-              
-              banner.classList.remove('hidden');
-              banner.className = `mb-4 p-4 rounded-lg border ${getStatusColor(result.status)}`;
-              statusIcon.innerHTML = getStatusIcon(result.status);
-              statusText.textContent = `Current Status: ${result.status} - ${result.statusMessage}`;
-              statusSubtext.textContent = `Processing ${getMonthName(result.month)} ${result.year}`;
+            const banner = document.getElementById('statusBanner');
+            const statusText = document.getElementById('statusText');
+            const statusSubtext = document.getElementById('statusSubtext');
+            const statusIcon = document.getElementById('statusIcon');
+            
+            // Check if current month is December (12) and previous month is also December (12)
+            const isYearEndPeriod = result.month === 12 && result.prevMonth === 12;
+            
+            if (isYearEndPeriod) {
+                // Special handling for year-end period
+                banner.classList.remove('hidden');
+                banner.className = 'mb-4 p-4 rounded-lg border border-green-200 bg-green-50';
+                
+                statusIcon.innerHTML = `
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                `;
+                
+                statusText.innerHTML = `
+                    <span class="text-green-800 font-semibold">Current Year Closed</span>
+                `;
+                
+                statusSubtext.innerHTML = `
+                    <span class="text-green-700">Proceed to Year-End Processing</span>
+                    <button onclick="window.navigation && window.navigation.navigateToSection && window.navigation.navigateToSection('yearly-processing', 'Year End Processing')" 
+                            class="ml-4 px-4 py-1.5 bg-green-600 text-white text-sm rounded-lg shadow hover:bg-green-700 transition inline-flex items-center">
+                        <i class="fas fa-calendar-check mr-2"></i>Process Year-End
+                    </button>
+                `;
+                
+                // Disable month-end processing button
+                const processButton = document.getElementById('processButton');
+                processButton.disabled = true;
+                
+                const blockMessage = document.getElementById('blockMessage');
+                const blockReason = document.getElementById('blockReason');
+                blockMessage.classList.remove('hidden');
+                blockReason.textContent = 'Year is closed. Please process year-end to continue.';
+                
+                console.log('📅 Year-end period detected: Month=12, Previous Month=12');
+            } else {
+                // Normal status display
+                banner.classList.remove('hidden');
+                banner.className = `mb-4 p-4 rounded-lg border ${getStatusColor(result.status)}`;
+                statusIcon.innerHTML = getStatusIcon(result.status);
+                statusText.textContent = `Current Status: ${result.statusMessage}`;
+                statusSubtext.textContent = `Processing ${getMonthName(result.month)} ${result.year}`;
 
-              const processButton = document.getElementById('processButton');
-              const blockMessage = document.getElementById('blockMessage');
-              const blockReason = document.getElementById('blockReason');
+                const processButton = document.getElementById('processButton');
+                const blockMessage = document.getElementById('blockMessage');
+                const blockReason = document.getElementById('blockReason');
 
-              if (result.canProcessMonthEnd) {
-                  processButton.disabled = false;
-                  blockMessage.classList.add('hidden');
-                  console.log('✅ Month-end processing is allowed');
-              } else {
-                  processButton.disabled = true;
-                  blockMessage.classList.remove('hidden');
-                  blockReason.textContent = result.blockReason;
-                  console.log('🚫 Month-end processing is blocked:', result.blockReason);
-              }
+                if (result.canProcessMonthEnd) {
+                    processButton.disabled = false;
+                    blockMessage.classList.add('hidden');
+                    console.log('✅ Month-end processing is allowed');
+                } else {
+                    processButton.disabled = true;
+                    blockReason.textContent = result.blockReason;
+                    console.log('🚫 Month-end processing is blocked:', result.blockReason);
+                }
+            }
 
-              console.log('✅ Payroll period loaded:', result);
-          }
-      } catch (error) {
-          console.error('❌ Error loading payroll period:', error);
-          showError('Failed to load payroll period', error.message);
-      }
+            console.log('✅ Payroll period loaded:', result);
+        }
+    } catch (error) {
+        console.error('❌ Error loading payroll period:', error);
+        showError('Failed to load payroll period', error.message);
+    }
   }
-
+  
   // Load Recent History
   async function loadRecentHistory() {
       const historyContainer = document.getElementById('recentHistory');
@@ -507,27 +545,28 @@
       }
   }
 
-  function renderHistoryCard(log) {
-      const statusColor = log.status === 'SUCCESS' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
-      
-      return `
-          <div class="border border-gray-200 rounded-lg p-4 mb-2 shadow-sm hover:shadow-md transition">
-              <div class="flex items-center justify-between mb-2">
-                  <span class="text-base font-bold text-gray-800">
-                      ${getMonthName(log.month)} ${log.year}
-                  </span>
-                  <span class="px-2 py-1 ${statusColor} text-xs font-semibold rounded">
-                      ${log.status}
-                  </span>
-              </div>
-              <div class="text-sm text-gray-700 space-y-1">
-                  <p><strong>Records:</strong> ${log.payments_processed || 0}</p>
-                  <p><strong>Duration:</strong> ${log.duration_seconds ? `${log.duration_seconds}s` : 'N/A'}</p>
-                  <p><strong>Processed:</strong> ${new Date(log.start_time).toLocaleString()}</p>
-              </div>
-          </div>
-      `;
-  }
+    function renderHistoryCard(log) {
+        const statusColor = log.status === 'SUCCESS' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+        
+        return `
+            <div class="border border-gray-200 rounded-lg p-4 mb-2 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-base font-bold text-gray-800">
+                        ${getMonthName(log.month)} ${log.year}
+                    </span>
+                    <span class="px-2 py-1 ${statusColor} text-xs font-semibold rounded">
+                        ${log.status}
+                    </span>
+                </div>
+                <div class="text-sm text-gray-700 space-y-1">
+                    <p><strong>Pay_Types Processed:</strong> ${log.payments_processed || 0}</p>
+                    <p><strong>Personnel(s) Processed:</strong> ${log.employees_processed || 0}</p>
+                    <p><strong>Processed On:</strong> ${new Date(log.start_time).toLocaleString()}</p>
+                    <p><strong>Processed By:</strong> ${log.processed_by || 'System'}</p>
+                </div>
+            </div>
+        `;
+    }
 
   window.openHistoryModal = function() {
       document.getElementById('historyModal').classList.remove('hidden');

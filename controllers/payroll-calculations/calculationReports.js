@@ -8,7 +8,7 @@ const PDFDocument = require('pdfkit');
 const CONFIG = {
   company: {
     name: 'Nigerian Navy (Naval Headquarters)',
-    address: '123 Business Street, City, Country',
+    address: 'CENTRAL PAY OFFICE, 23 POINT ROAD APAPA',
     //phone: '+234 XXX XXX XXXX',
     //email: 'hr@company.com'
   },

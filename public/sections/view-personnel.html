@@ -224,18 +224,36 @@ class ViewPersonnelManager {
     return years;
   }
 
-  calculateGradeSteps(dateInput) {
-    const years = this.calculateYearsOfService(dateInput);
-    if (years === null) return null;
-    return Math.floor(years);
-  }
-
   getFirstTwo(str) {
     if (!str) return "";
 
     return str.toString().substring(0, 2);
   }
 
+  getGradeStepDisplay() {
+    if (this.gradeStepData && this.gradeStepData.displayValue) {
+      return this.gradeStepData.displayValue;
+    }
+    
+    const emp = this.employeeData?.employee;
+    if (!emp || !emp.gradelevel) return 'N/A';
+    
+    const gradeLevel = this.getFirstTwo(emp.gradelevel);
+    return `${gradeLevel}0`;
+  }
+
+  getGradeStepTooltip() {
+    if (!this.gradeStepData) return '';
+    
+    const { currentStep, step20, yearsSincePromotion } = this.gradeStepData;
+    
+    if (!currentStep) return '';
+    
+    const atMaxStep = currentStep >= step20;
+    
+    return `Step ${currentStep} of ${step20} (${yearsSincePromotion} years since promotion)${atMaxStep ? ' - Maximum step reached' : ''}`;
+  }
+    
   async loadLookupData() {
     const endpoints = [
       'location', 'branch', 'state', 'lga', 'command', 'title', 'religion', 'pfa', 
@@ -328,6 +346,9 @@ class ViewPersonnelManager {
       
       this.employeeData = result.data;
       
+      // Store grade step data if available
+      this.gradeStepData = result.data.gradeStep || null;
+      
     } catch (error) {
       document.getElementById('view-detail-content').innerHTML = `
         <div class="text-red-500 p-4 text-center">
@@ -392,150 +413,150 @@ class ViewPersonnelManager {
         break;
     }
   }
-  
+
   renderPersonnelDetails() {
-      const emp = this.employeeData.employee;
-      
-      const age = this.calculateEmpAge(emp.Birthdate);
-      const yearsEmployed = this.calculateYearsOfService(emp.DateEmpl);
-      const yearsOfService = this.calculateYearsOfService(emp.dateconfirmed);
-      const yearsSinceSeniority = this.calculateYearsOfService(emp.datepmted);
-      const gradeSteps = this.calculateGradeSteps(emp.datepmted);
-      const gradeLevel = this.getFirstTwo(emp.gradelevel);
-      
-      const photoSrc = emp.passport 
-          ? `data:image/jpeg;base64,${emp.passport}` 
-          : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23e5e7eb"/%3E%3Cpath d="M100 60c-16.569 0-30 13.431-30 30 0 16.569 13.431 30 30 30s30-13.431 30-30c0-16.569-13.431-30-30-30zm0 80c-27.614 0-50 17.909-50 40h100c0-22.091-22.386-40-50-40z" fill="%239ca3af"/%3E%3C/svg%3E';
+    const emp = this.employeeData.employee;
+    
+    const age = this.calculateEmpAge(emp.Birthdate);
+    const yearsEmployed = this.calculateYearsOfService(emp.DateEmpl);
+    const yearsOfService = this.calculateYearsOfService(emp.dateconfirmed);
+    const yearsSinceSeniority = this.calculateYearsOfService(emp.datepmted);
+    const gradeStepDisplay = this.getGradeStepDisplay();
+    const gradeStepTooltip = this.getGradeStepTooltip();
+    
+    const photoSrc = emp.passport 
+        ? `data:image/jpeg;base64,${emp.passport}` 
+        : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect width="200" height="200" fill="%23e5e7eb"/%3E%3Cpath d="M100 60c-16.569 0-30 13.431-30 30 0 16.569 13.431 30 30 30s30-13.431 30-30c0-16.569-13.431-30-30-30zm0 80c-27.614 0-50 17.909-50 40h100c0-22.091-22.386-40-50-40z" fill="%239ca3af"/%3E%3C/svg%3E';
 
-      const detailItemClass = "flex justify-between items-start py-3 border-b border-gray-300";
-      const dtClass = "text-sm font-medium text-gray-600";
-      const ddClass = "text-sm font-medium text-gray-900 text-right ml-4";
-      const highlightDDClass = "text-sm font-semibold text-blue-600 text-right ml-4";
-      const sectionTitleClass = "text-xl font-bold text-blue-700 mb-4 pb-2 border-b border-blue-200";
-      const cardClass = "p-6 rounded-lg shadow-sm hover:shadow-lg transition duration-300";
+    const detailItemClass = "flex justify-between items-start py-3 border-b border-gray-300";
+    const dtClass = "text-sm font-medium text-gray-600";
+    const ddClass = "text-sm font-medium text-gray-900 text-right ml-4";
+    const highlightDDClass = "text-sm font-semibold text-blue-600 text-right ml-4";
+    const sectionTitleClass = "text-xl font-bold text-blue-700 mb-4 pb-2 border-b border-blue-200";
+    const cardClass = "p-6 rounded-lg shadow-sm hover:shadow-lg transition duration-300";
 
-      return `
-          <div class="grid grid-cols-1 border-2 border-blue-200 rounded-lg shadow-md lg:grid-cols-4 gap-2">
-          
-          <div class="lg:col-span-1 space-y-2">
-              <div class="${cardClass} text-center">
-                  <div class="flex justify-center mb-4">
-                      <div class="w-36 h-36">
-                          <img src="${photoSrc}" 
-                          alt="Personnel Photo" 
-                          class="w-full h-full rounded-full border-4 border-blue-500 object-cover shadow-lg"
-                          onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22 viewBox=%220 0 200 200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%23e5e7eb%22/%3E%3Cpath d=%22M100 60c-16.569 0-30 13.431-30 30 0 16.569 13.431 30 30 30s30-13.431 30-30c0-16.569-13.431-30-30-30zm0 80c-27.614 0-50 17.909-50 40h100c0-22.091-22.386-40-50-40z%22 fill=%22%239ca3af%22/%3E%3C/svg%3E'">
-                      </div>
-                  </div>
-                  <p class="text-[15px] font-bold text-gray-900">${this.escape(emp.Surname || '')}, ${this.escape(emp.OtherName || '')}</p>
-                  <p class="text-md font-semibold text-blue-600">${this.escape(this.resolveName(emp.Title, 'title'))}</p>
-              </div>
-              
-              <div class="${cardClass} space-y-2">
-                  <h4 class="${sectionTitleClass.replace('text-xl font-bold', 'text-lg font-semibold')}">Banking Details</h4>
-                  <dl>
-                      <div class="${detailItemClass}"><dt class="${dtClass}">Bank:</dt><dd class="${ddClass}">${this.escape(emp.Bankcode || 'N/A')}</dd></div>
-                      <div class="${detailItemClass}"><dt class="${dtClass}">Bank Branch:</dt><dd class="${ddClass}">${this.escape(emp.bankbranch || 'N/A')}</dd></div>
-                      <div class="${detailItemClass}"><dt class="${dtClass}">Bank AC Number:</dt><dd class="${ddClass}">${this.escape(emp.BankACNumber || 'N/A')}</dd></div>
-                      <div class="${detailItemClass}"><dt class="${dtClass}">Internal AC No:</dt><dd class="${ddClass}">${this.escape(emp.InternalACNo || 'N/A')}</dd></div>
-                  </dl>
-              </div>
+    return `
+        <div class="grid grid-cols-1 border-2 border-blue-200 rounded-lg shadow-md lg:grid-cols-4 gap-2">
+        
+        <div class="lg:col-span-1 space-y-2">
+            <div class="${cardClass} text-center">
+                <div class="flex justify-center mb-4">
+                    <div class="w-36 h-36">
+                        <img src="${photoSrc}" 
+                        alt="Personnel Photo" 
+                        class="w-full h-full rounded-full border-4 border-blue-500 object-cover shadow-lg"
+                        onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22 viewBox=%220 0 200 200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%23e5e7eb%22/%3E%3Cpath d=%22M100 60c-16.569 0-30 13.431-30 30 0 16.569 13.431 30 30 30s30-13.431 30-30c0-16.569-13.431-30-30-30zm0 80c-27.614 0-50 17.909-50 40h100c0-22.091-22.386-40-50-40z%22 fill=%22%239ca3af%22/%3E%3C/svg%3E'">
+                    </div>
+                </div>
+                <p class="text-[15px] font-bold text-gray-900">${this.escape(emp.Surname || '')}, ${this.escape(emp.OtherName || '')}</p>
+                <p class="text-md font-semibold text-blue-600">${this.escape(this.resolveName(emp.Title, 'title'))}</p>
+            </div>
+            
+            <div class="${cardClass} space-y-2">
+                <h4 class="${sectionTitleClass.replace('text-xl font-bold', 'text-lg font-semibold')}">Banking Details</h4>
+                <dl>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Bank:</dt><dd class="${ddClass}">${this.escape(emp.Bankcode || 'N/A')}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Bank Branch:</dt><dd class="${ddClass}">${this.escape(emp.bankbranch || 'N/A')}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Bank AC Number:</dt><dd class="${ddClass}">${this.escape(emp.BankACNumber || 'N/A')}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Internal AC No:</dt><dd class="${ddClass}">${this.escape(emp.InternalACNo || 'N/A')}</dd></div>
+                </dl>
+            </div>
 
-              <div class="${cardClass} space-y-2">
-                  <h4 class="${sectionTitleClass.replace('text-xl font-bold', 'text-lg font-semibold')}">Other Details</h4>
-                  <dl>
-                      <div class="${detailItemClass}"><dt class="${dtClass}">Payroll Class:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.payrollclass, 'payrollclass'))}</dd></div>
-                      <div class="${detailItemClass}"><dt class="${dtClass}">Emolument Form?</dt><dd class="${ddClass}">${this.escape(emp.emolumentform || 'N/A')}</dd></div>
-                      <div class="${detailItemClass}"><dt class="${dtClass}">Job Title:</dt><dd class="${ddClass}">${this.escape(emp.Jobtitle || 'N/A')}</dd></div>                      
-                      <div class="${detailItemClass}"><dt class="${dtClass}">NHF Code:</dt><dd class="${ddClass}">${this.escape(emp.NHFcode || 'N/A')}</dd></div>
-                      <div class="${detailItemClass}"><dt class="${dtClass}">Award:</dt><dd class="${ddClass}">${this.escape(emp.award || 'N/A')}</dd></div>
-                      <div class="${detailItemClass}"><dt class="${dtClass}">Rent Subsidy:</dt><dd class="${ddClass}">${this.escape(emp.rent_subsidy || 'N/A')}</dd></div>
-                      <div class="${detailItemClass}"><dt class="${dtClass}">Accomm Type:</dt><dd class="${ddClass}">${this.escape(emp.accomm_type || 'N/A')}</dd></div>
-                  </dl>
-              </div>
-          </div>
+            <div class="${cardClass} space-y-2">
+                <h4 class="${sectionTitleClass.replace('text-xl font-bold', 'text-lg font-semibold')}">Other Details</h4>
+                <dl>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Payroll Class:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.payrollclass, 'payrollclass'))}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Emolument Form?</dt><dd class="${ddClass}">${this.escape(emp.emolumentform || 'N/A')}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Job Title:</dt><dd class="${ddClass}">${this.escape(emp.Jobtitle || 'N/A')}</dd></div>                      
+                    <div class="${detailItemClass}"><dt class="${dtClass}">NHF Code:</dt><dd class="${ddClass}">${this.escape(emp.NHFcode || 'N/A')}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Award:</dt><dd class="${ddClass}">${this.escape(emp.award || 'N/A')}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Rent Subsidy:</dt><dd class="${ddClass}">${this.escape(emp.rent_subsidy || 'N/A')}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Accomm Type:</dt><dd class="${ddClass}">${this.escape(emp.accomm_type || 'N/A')}</dd></div>
+                </dl>
+            </div>
+        </div>
 
-          <div class="lg:col-span-3 space-y-2">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div class="${cardClass} space-y-2">
-                      <h4 class="${sectionTitleClass}">Basic Information</h4>
-                      <dl>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Service Number:</dt><dd class="${highlightDDClass}">${this.escape(emp.Empl_ID || 'N/A')}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Surname:</dt><dd class="${ddClass}">${this.escape(emp.Surname || 'N/A')}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Other Names:</dt><dd class="${ddClass}">${this.escape(emp.OtherName || 'N/A')}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Rank:</dt><dd class="${highlightDDClass}">${this.escape(this.resolveName(emp.Title, 'title'))}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Sex:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.Sex, 'sex') || 'N/A')}</dd></div>
-                          <div class="${detailItemClass}">
-                            <dt class="${dtClass}">Date of Birth:</dt>
-                            <dd class="${ddClass}">${this.formatDateWithOrdinal(emp.Birthdate)} <span class="text-md font-semibold text-blue-500">(${age !== null ? age + ' years old' : 'Age unknown'})</span></dd>
-                          </div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Marital Status:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.MaritalStatus, 'marital'))}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Religion:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.religion, 'religion'))}</dd></div>
-                      </dl>
-                  </div>
+        <div class="lg:col-span-3 space-y-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div class="${cardClass} space-y-2">
+                    <h4 class="${sectionTitleClass}">Basic Information</h4>
+                    <dl>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Service Number:</dt><dd class="${highlightDDClass}">${this.escape(emp.Empl_ID || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Surname:</dt><dd class="${ddClass}">${this.escape(emp.Surname || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Other Names:</dt><dd class="${ddClass}">${this.escape(emp.OtherName || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Rank:</dt><dd class="${highlightDDClass}">${this.escape(this.resolveName(emp.Title, 'title'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Sex:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.Sex, 'sex') || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}">
+                          <dt class="${dtClass}">Date of Birth:</dt>
+                          <dd class="${ddClass}">${this.formatDateWithOrdinal(emp.Birthdate)} <span class="text-md font-semibold text-blue-500">(${age !== null ? age + ' years old' : 'Age unknown'})</span></dd>
+                        </div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Marital Status:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.MaritalStatus, 'marital'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Religion:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.religion, 'religion'))}</dd></div>
+                    </dl>
+                </div>
 
-                  <div class="${cardClass} space-y-2">
-                      <h4 class="${sectionTitleClass}">Contact & Location</h4>
-                      <dl>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Email:</dt><dd class="${ddClass}"><a href="mailto:${this.escape(emp.email)}" class="text-blue-500 hover:text-blue-700">${this.escape(emp.email || 'N/A')}</a></dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Phone:</dt><dd class="${ddClass}">${this.escape(emp.gsm_number || 'N/A')}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">State of Origin:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.StateofOrigin, 'state'))}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">LGA:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.LocalGovt, 'lga'))}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Town:</dt><dd class="${ddClass}">${this.escape(emp.town || 'N/A')}</dd></div>                        
-                          <h5 class="text-lg font-semibold text-gray-700 pt-4 mb-2 border-t border-gray-100">Residential Address</h5>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Address:</dt><dd class="col-span-2 text-sm text-gray-900 text-right ml-4 font-bold">${this.escape(emp.HOMEADDR || 'N/A')}</dd></div>
-                      </dl>
-                  </div>
-              </div>
+                <div class="${cardClass} space-y-2">
+                    <h4 class="${sectionTitleClass}">Contact & Location</h4>
+                    <dl>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Email:</dt><dd class="${ddClass}"><a href="mailto:${this.escape(emp.email)}" class="text-blue-500 hover:text-blue-700">${this.escape(emp.email || 'N/A')}</a></dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Phone:</dt><dd class="${ddClass}">${this.escape(emp.gsm_number || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">State of Origin:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.StateofOrigin, 'state'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">LGA:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.LocalGovt, 'lga'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Town:</dt><dd class="${ddClass}">${this.escape(emp.town || 'N/A')}</dd></div>                        
+                        <h5 class="text-lg font-semibold text-gray-700 pt-4 mb-2 border-t border-gray-100">Residential Address</h5>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Address:</dt><dd class="col-span-2 text-sm text-gray-900 text-right ml-4 font-bold">${this.escape(emp.HOMEADDR || 'N/A')}</dd></div>
+                    </dl>
+                </div>
+            </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div class="${cardClass} space-y-2">
-                      <h4 class="${sectionTitleClass}">Employment Information</h4>
-                      <dl>
-                          <div class="${detailItemClass}">
-                            <dt class="${dtClass}">Date Employed:</dt>
-                            <dd class="${ddClass}">${this.formatDateWithOrdinal(emp.DateEmpl)} <span class="text-md font-semibold text-blue-500">(${yearsEmployed !== null ? yearsEmployed + ' years of service' : ''})</span></dd>
-                          </div>
-                          <div class="${detailItemClass}">
-                            <dt class="${dtClass}">Date Confirmed:</dt>
-                            <dd class="${ddClass}">${this.formatDateWithOrdinal(emp.dateconfirmed)} <span class="text-md font-semibold text-blue-500">(${yearsOfService !== null ? yearsOfService + ' years ago' : ''})</span></dd>
-                          </div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Entry Mode:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.entry_mode, 'entrymode'))}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Date Left:</dt><dd class="${ddClass}">${this.formatDateWithOrdinal(emp.DateLeft)}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Exit Type:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.exittype, 'exittype'))}</dd></div>
-                          <div class="${detailItemClass}">
-                            <dt class="${dtClass}">Seniority Date:</dt>
-                            <dd class="${ddClass}">${this.formatDateWithOrdinal(emp.datepmted)} <span class="text-md font-semibold text-blue-500">(${yearsSinceSeniority !== null ? yearsSinceSeniority + ' years since promotion' : ''})</span></dd>
-                          </div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Location:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.Location, 'location'))}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Command:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.command, 'command'))}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Specialisation:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.specialisation, 'specialisations'))}</dd></div>
-                      </dl>
-                  </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div class="${cardClass} space-y-2">
+                    <h4 class="${sectionTitleClass}">Employment Information</h4>
+                    <dl>
+                        <div class="${detailItemClass}">
+                          <dt class="${dtClass}">Date Employed:</dt>
+                          <dd class="${ddClass}">${this.formatDateWithOrdinal(emp.DateEmpl)} <span class="text-md font-semibold text-blue-500">(${yearsEmployed !== null ? yearsEmployed + ' years of service' : ''})</span></dd>
+                        </div>
+                        <div class="${detailItemClass}">
+                          <dt class="${dtClass}">Date Confirmed:</dt>
+                          <dd class="${ddClass}">${this.formatDateWithOrdinal(emp.dateconfirmed)} <span class="text-md font-semibold text-blue-500">(${yearsOfService !== null ? yearsOfService + ' years ago' : ''})</span></dd>
+                        </div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Entry Mode:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.entry_mode, 'entrymode'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Date Left:</dt><dd class="${ddClass}">${this.formatDateWithOrdinal(emp.DateLeft)}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Exit Type:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.exittype, 'exittype'))}</dd></div>
+                        <div class="${detailItemClass}">
+                          <dt class="${dtClass}">Seniority Date:</dt>
+                          <dd class="${ddClass}">${this.formatDateWithOrdinal(emp.datepmted)} <span class="text-md font-semibold text-blue-500">(${yearsSinceSeniority !== null ? yearsSinceSeniority + ' years since promotion' : ''})</span></dd>
+                        </div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Location:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.Location, 'location'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Command:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.command, 'command'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Specialisation:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.specialisation, 'specialisations'))}</dd></div>
+                    </dl>
+                </div>
 
-                  <div class="${cardClass} space-y-2">
-                      <h4 class="${sectionTitleClass}">Tax & Financial Information</h4>
-                      <dl>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Taxed:</dt><dd class="${ddClass}">${this.escape(emp.taxed || 'N/A')}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Tax Code:</dt><dd class="${ddClass}">${this.escape(emp.TaxCode || 'N/A')}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Tax State:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.state, 'state'))}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">RSA(Pension) Code:</dt><dd class="${ddClass}">${this.escape(emp.NSITFcode || 'N/A')}</dd></div>
-                          <div class="${detailItemClass}">
-                            <dt class="${dtClass}">Grade Level:</dt>
-                            <dd class="${ddClass}">${this.escape(this.getFirstTwo(emp.gradelevel, 'salarygrade'))}0<span class="text-md font-semibold text-blue-500">${gradeSteps !== null ? gradeSteps: ''}</span></dd>
-                          </div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Grade Type:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.gradetype, 'salarygroup'))}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Branch:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.Factory, 'branch'))}</dd></div>
-                          <div class="${detailItemClass}"><dt class="${dtClass}">PFA:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.pfacode, 'pfa'))}</dd></div>                          
-                          <div class="${detailItemClass}"><dt class="${dtClass}">Country:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.Country, 'country'))}</dd></div>
-                      </dl>
-                  </div>
-              </div>
-          </div>
-          </div>
-      `;
-  }
-  
+                <div class="${cardClass} space-y-2">
+                    <h4 class="${sectionTitleClass}">Tax & Financial Information</h4>
+                    <dl>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Taxed:</dt><dd class="${ddClass}">${this.escape(emp.taxed || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Tax Code:</dt><dd class="${ddClass}">${this.escape(emp.TaxCode || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Tax State:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.state, 'state'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">RSA(Pension) Code:</dt><dd class="${ddClass}">${this.escape(emp.NSITFcode || 'N/A')}</dd></div>
+                        <div class="${detailItemClass}">
+                          <dt class="${dtClass}">Grade Level:</dt>
+                          <dd class="${ddClass}" title="${gradeStepTooltip}">${this.escape(gradeStepDisplay)}</dd>
+                        </div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Grade Type:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.gradetype, 'salarygroup'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Branch:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.Factory, 'branch'))}</dd></div>
+                        <div class="${detailItemClass}"><dt class="${dtClass}">PFA:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.pfacode, 'pfa'))}</dd></div>                          
+                        <div class="${detailItemClass}"><dt class="${dtClass}">Country:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.Country, 'country'))}</dd></div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        </div>
+    `;
+}
+
   renderNOKDetails() {
     const nokList = this.employeeData.nextOfKin || [];
     

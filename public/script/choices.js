@@ -1,3 +1,8 @@
+// ============================================
+// CUSTOM DROPDOWN - FINAL FIX
+// Fixes: Placeholder blocking values, missing select attributes, cascade issues
+// ============================================
+
 class CustomDropdown {
   constructor(element, options = {}) {
     if (!element) {
@@ -10,10 +15,7 @@ class CustomDropdown {
       throw new Error('Element not found');
     }
     
-    // Store original element reference before replacing
     this.originalElement = this.element;
-    
-    // Store original value for restoration after data loads
     this.pendingValue = this.originalElement.value || null;
     
     // Extract placeholder from first option if it exists
@@ -24,6 +26,9 @@ class CustomDropdown {
         extractedPlaceholder = firstOption.textContent.trim();
       }
     }
+    
+    // Preserve ALL original attributes
+    this.originalAttributes = this.captureAttributes();
     
     this.config = {
       placeholder: extractedPlaceholder,
@@ -41,19 +46,55 @@ class CustomDropdown {
       errorText: options.errorText || 'Failed to load data',
       noResultsText: options.noResultsText || 'No results found',
       fetchHeaders: options.fetchHeaders || {},
+      cacheData: options.cacheData !== false,
       ...options
     };
     
-    this.data = [];
+    // Internal data storage
+    this._internalData = [];
+    this._cachedData = null;
     this.selectedValue = null;
     this.selectedText = null;
     this.isOpen = false;
     this.isLoading = false;
+    this.hasLoadedData = false;
     this.validationMessage = '';
     this.dataLoadedCallbacks = [];
     this.isInitialized = false;
+    this._optionProcessTimeout = null;
+    this._pendingOptionsBuffer = [];
     
     this.init();
+  }
+  
+  get data() {
+    return this._internalData;
+  }
+  
+  set data(value) {
+    if (!Array.isArray(value)) {
+      console.warn('CustomDropdown: data must be an array, got:', typeof value);
+      value = [];
+    }
+    this._internalData = value;
+    this.hasLoadedData = value.length > 0;
+  }
+  
+  captureAttributes() {
+    const attrs = {};
+    if (this.originalElement.attributes) {
+      Array.from(this.originalElement.attributes).forEach(attr => {
+        attrs[attr.name] = attr.value;
+      });
+    }
+    
+    attrs._disabled = this.originalElement.disabled;
+    attrs._hidden = this.originalElement.hidden;
+    attrs._required = this.originalElement.required;
+    attrs._autofocus = this.originalElement.autofocus;
+    attrs._tabindex = this.originalElement.tabIndex;
+    
+    return attrs;
   }
   
   init() {
@@ -63,65 +104,60 @@ class CustomDropdown {
     this.dropdownItems = this.element.querySelector('.custom-dropdown-items');
     this.hiddenInput = this.element.querySelector('.custom-dropdown-hidden');
     this.arrow = this.element.querySelector('.custom-dropdown-arrow');
-    this.bindEvents();
     
+    this.restoreAttributes();
+    this.bindEvents();
     this.isInitialized = true;
     
-    if (this.config.apiUrl) {
-      this.fetchData();
-    } else if (this.config.data.length > 0) {
+    // Only set static data if provided
+    if (this.config.data.length > 0) {
       this.setData(this.config.data);
     }
   }
   
-  /**
-   * Check if a value looks like placeholder text
-   * @param {string} value - The value to check
-   * @returns {boolean} - True if it's likely a placeholder
-   */
-  isPlaceholderText(value) {
-    if (!value || typeof value !== 'string') return true;
+  restoreAttributes() {
+    const attrs = this.originalAttributes;
     
-    const trimmedValue = value.trim();
-    
-    // Empty string
-    if (trimmedValue === '') return true;
-    
-    // Check if it matches the configured placeholder exactly
-    if (this.config.placeholder && trimmedValue === this.config.placeholder) {
-      return true;
+    if (attrs._disabled) {
+      this.disabled = true;
     }
     
-    // Only flag very obvious placeholder patterns
-    const obviousPlaceholders = [
-      /^select\s*\.\.\.$/i,      // "Select..."
-      /^choose\s*\.\.\.$/i,      // "Choose..."
-      /^--\s*select/i,           // "-- Select --"
-      /^\.\.\.$/,                // "..."
-      /^-+$/,                    // "---"
-    ];
+    if (attrs._hidden) {
+      this.hidden = true;
+    }
     
-    const lowerValue = trimmedValue.toLowerCase();
+    if (attrs._required) {
+      this.required = true;
+    }
     
-    for (const pattern of obviousPlaceholders) {
-      if (pattern.test(lowerValue)) {
-        console.log('  🚫 Detected obvious placeholder:', value);
-        return true;
+    if (attrs._autofocus && this.searchInput) {
+      this.searchInput.autofocus = true;
+    }
+    
+    if (attrs._tabindex !== undefined && this.searchInput) {
+      this.searchInput.tabIndex = attrs._tabindex;
+    }
+    
+    Object.keys(attrs).forEach(key => {
+      if (key.startsWith('data-')) {
+        this.element.setAttribute(key, attrs[key]);
       }
-    }
+    });
     
-    return false;
+    Object.keys(attrs).forEach(key => {
+      if (key.startsWith('aria-')) {
+        this.element.setAttribute(key, attrs[key]);
+      }
+    });
   }
   
   createDropdownHTML() {
     const wrapper = document.createElement('div');
     
-    // Preserve the original element's ID and name
     const originalId = this.originalElement.id;
     const originalName = this.originalElement.name;
     const originalClasses = this.originalElement.className;
     
-    // Filter out styling classes - keep only structural/grid classes
     const structuralClasses = originalClasses.split(' ').filter(cls => {
       return cls.match(/^(col-|row-|grid|flex|w-(?!full)|h-(?!full)|m-|mt-|mb-|ml-|mr-|mx-|my-)/);
     }).join(' ');
@@ -129,6 +165,7 @@ class CustomDropdown {
     wrapper.className = `custom-dropdown-wrapper relative ${structuralClasses} ${this.config.className}`.trim();
     if (originalId) wrapper.id = originalId;
     
+    // FIX: Don't show placeholder in input, only when empty
     wrapper.innerHTML = `
       <div class="relative w-full">
         <input 
@@ -144,21 +181,108 @@ class CustomDropdown {
         </span>
       </div>
 
-      <div class="custom-dropdown-list fixed z-[999999] mt-1 bg-yellow-50 border border-gray-300 rounded-md shadow-lg overflow-y-auto hidden" style="max-height: ${this.config.maxHeight}">
-        <div class="py-1 custom-dropdown-items"></div>
+      <div class="custom-dropdown-list fixed z-[999999] mt-1 bg-yellow-50 border border-gray-300 rounded-md shadow-lg overflow-hidden" style="display: none; visibility: hidden;">
+        <div class="py-1 custom-dropdown-items" style="max-height: ${this.config.maxHeight}; overflow-y: auto; overflow-x: hidden;"></div>
       </div>
       
       <input type="hidden" class="custom-dropdown-hidden" name="${originalName || this.config.hiddenInputName || ''}">
     `;
     
-    this.element.parentNode.replaceChild(wrapper, this.element);
+    const parent = this.element.parentNode;
+    const nextSibling = this.element.nextSibling;
+    
+    while (this.element.firstChild) {
+      this.element.removeChild(this.element.firstChild);
+    }
+    
+    parent.removeChild(this.element);
+    
+    if (nextSibling) {
+      parent.insertBefore(wrapper, nextSibling);
+    } else {
+      parent.appendChild(wrapper);
+    }
+    
     this.element = wrapper;
     
+    this.setupDynamicOptionHandler();
     this.setupSelectCompatibility();
   }
   
+  setupDynamicOptionHandler() {
+    this.cleanupObserver = new MutationObserver((mutations) => {
+      let optionsDetected = false;
+      
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'OPTION') {
+            optionsDetected = true;
+            this._pendingOptionsBuffer.push(node);
+          }
+        });
+      });
+      
+      if (optionsDetected) {
+        if (this._optionProcessTimeout) {
+          clearTimeout(this._optionProcessTimeout);
+        }
+        
+        this._optionProcessTimeout = setTimeout(() => {
+          this.processPendingOptions();
+        }, 50);
+      }
+    });
+    
+    this.cleanupObserver.observe(this.element, {
+      childList: true,
+      subtree: true
+    });
+  }
+  
+  processPendingOptions() {
+    if (this._pendingOptionsBuffer.length === 0) return;
+    
+    const allOptions = Array.from(this.element.querySelectorAll('option'));
+    
+    if (allOptions.length === 0) {
+      this._pendingOptionsBuffer = [];
+      return;
+    }
+    
+    const newData = [];
+    let newPlaceholder = null;
+    
+    allOptions.forEach(option => {
+      const value = (option.value || '').trim();
+      const text = (option.textContent || '').trim();
+      
+      if (!value || value === '') {
+        if (text && !newPlaceholder) {
+          newPlaceholder = text;
+        }
+      } else {
+        newData.push({
+          [this.config.valueField]: value,
+          [this.config.labelField]: text
+        });
+      }
+      
+      option.remove();
+    });
+    
+    if (newPlaceholder && this.searchInput) {
+      this.searchInput.placeholder = newPlaceholder;
+      this.config.placeholder = newPlaceholder;
+    }
+    
+    if (newData.length > 0) {
+      this.setData(newData);
+    }
+    
+    this._pendingOptionsBuffer = [];
+  }
+  
   setupSelectCompatibility() {
-    // Make element behave like a <select> element
     Object.defineProperty(this.element, 'value', {
       get: () => this.getValue(),
       set: (val) => {
@@ -172,13 +296,10 @@ class CustomDropdown {
       configurable: true
     });
     
-    // Add name property that returns the hidden input's name
     Object.defineProperty(this.element, 'name', {
       get: () => this.hiddenInput ? this.hiddenInput.name : '',
       set: (val) => {
-        if (this.hiddenInput) {
-          this.hiddenInput.name = val;
-        }
+        if (this.hiddenInput) this.hiddenInput.name = val;
       },
       enumerable: true,
       configurable: true
@@ -194,12 +315,17 @@ class CustomDropdown {
       get: () => this.searchInput ? this.searchInput.disabled : false,
       set: (val) => {
         if (this.searchInput) {
-          this.searchInput.disabled = val;
+          this.searchInput.disabled = !!val;
+          if (this.hiddenInput) {
+            this.hiddenInput.disabled = !!val;
+          }
           if (val) {
             this.element.classList.add('opacity-50', 'cursor-not-allowed');
+            this.searchInput.classList.add('cursor-not-allowed');
             this.close();
           } else {
             this.element.classList.remove('opacity-50', 'cursor-not-allowed');
+            this.searchInput.classList.remove('cursor-not-allowed');
           }
         }
       },
@@ -207,6 +333,58 @@ class CustomDropdown {
       configurable: true
     });
     
+    Object.defineProperty(this.element, 'hidden', {
+      get: () => this.element.style.display === 'none' || this.element.hasAttribute('hidden'),
+      set: (val) => {
+        if (val) {
+          this.element.style.display = 'none';
+          this.element.setAttribute('hidden', '');
+        } else {
+          this.element.style.display = '';
+          this.element.removeAttribute('hidden');
+        }
+      },
+      enumerable: true,
+      configurable: true
+    });
+    
+    Object.defineProperty(this.element, 'required', {
+      get: () => this.hiddenInput ? this.hiddenInput.required : false,
+      set: (val) => {
+        if (this.hiddenInput) {
+          this.hiddenInput.required = !!val;
+        }
+        if (this.searchInput) {
+          this.searchInput.required = !!val;
+        }
+      },
+      enumerable: true,
+      configurable: true
+    });
+    
+    Object.defineProperty(this.element, 'readOnly', {
+      get: () => this.searchInput ? this.searchInput.readOnly : false,
+      set: (val) => {
+        if (this.searchInput) {
+          this.searchInput.readOnly = !!val;
+        }
+      },
+      enumerable: true,
+      configurable: true
+    });
+    
+    Object.defineProperty(this.element, 'tabIndex', {
+      get: () => this.searchInput ? this.searchInput.tabIndex : -1,
+      set: (val) => {
+        if (this.searchInput) {
+          this.searchInput.tabIndex = val;
+        }
+      },
+      enumerable: true,
+      configurable: true
+    });
+    
+    // FIX: Proper options property that works with .selectedIndex
     Object.defineProperty(this.element, 'options', {
       get: () => {
         const options = this.data.map((item, index) => ({
@@ -250,159 +428,45 @@ class CustomDropdown {
       configurable: true
     });
     
-    // Add setCustomValidity method
     this.element.setCustomValidity = (message) => {
       this.validationMessage = message || '';
-      if (this.searchInput) {
-        this.searchInput.setCustomValidity(message || '');
-      }
-      if (this.hiddenInput) {
-        this.hiddenInput.setCustomValidity(message || '');
-      }
+      if (this.searchInput) this.searchInput.setCustomValidity(message || '');
+      if (this.hiddenInput) this.hiddenInput.setCustomValidity(message || '');
     };
     
-    // Add checkValidity method
     this.element.checkValidity = () => {
       return this.searchInput ? this.searchInput.checkValidity() : true;
     };
     
-    // Add reportValidity method
     this.element.reportValidity = () => {
       return this.searchInput ? this.searchInput.reportValidity() : true;
     };
     
-    // Add validationMessage property
     Object.defineProperty(this.element, 'validationMessage', {
       get: () => this.validationMessage,
       enumerable: true,
       configurable: true
     });
     
-    // Add validity property
     Object.defineProperty(this.element, 'validity', {
       get: () => this.searchInput ? this.searchInput.validity : { valid: true },
       enumerable: true,
       configurable: true
     });
     
-    this.element._customDropdown = this;
-    
-    const originalAddEventListener = this.element.addEventListener.bind(this.element);
-    this.element.addEventListener = (type, listener, options) => {
-      originalAddEventListener(type, listener, options);
-    };
-    
-    this.element.appendChild = (option) => {
-      if (option && option.tagName === 'OPTION') {
-        const itemData = {
-          [this.config.valueField]: option.value,
-          [this.config.labelField]: option.textContent
-        };
-        this.data.push(itemData);
-        this.renderItems(this.data);
-      }
-    };
-    
-    this.element.remove = (index) => {
-      if (typeof index === 'number') {
-        this.data.splice(index, 1);
-        this.renderItems(this.data);
-      } else {
-        if (this.element.parentNode) {
-          this.element.parentNode.removeChild(this.element);
-        }
-      }
-    };
-    
-    Object.defineProperty(this.element, 'innerHTML', {
-      set: (html) => {
-        console.log('📝 [innerHTML setter] Called for:', this.element.id);
-        
-        // Store current value to restore after data loads
-        const currentValue = this.selectedValue || this.pendingValue;
-        console.log('  💾 Current value to restore:', currentValue);
-        
-        this.data = [];
-        this.selectedValue = null;
-        this.selectedText = null;
-        
-        if (html && html.includes('<option')) {
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = html;
-          const options = tempDiv.querySelectorAll('option');
-          
-          console.log('  📊 Found', options.length, 'options');
-          
-          let detectedPlaceholder = null;
-          
-          options.forEach(option => {
-            const value = (option.value || '').trim();
-            const text = (option.textContent || '').trim();
-            
-            // Check if this is a placeholder option (empty value)
-            if (!value || value === '') {
-              // Update placeholder
-              if (text && this.searchInput) {
-                this.searchInput.placeholder = text;
-                this.config.placeholder = text;
-                detectedPlaceholder = text;
-              }
-            } else {
-              // Only add options with actual values
-              const itemData = {
-                [this.config.valueField]: value,
-                [this.config.labelField]: text
-              };
-              this.data.push(itemData);
-            }
-          });
-          
-          console.log('  ✅ Loaded', this.data.length, 'items');
-          console.log('  📋 Detected placeholder:', detectedPlaceholder);
-          
-          // Clear the visible input
-          if (this.searchInput) {
-            this.searchInput.value = '';
-          }
-          if (this.hiddenInput) {
-            this.hiddenInput.value = '';
-          }
-          
-          // Render items
-          this.renderItems(this.data);
-          
-          // Restore value if we have one AND data is loaded
-          if (currentValue && this.data.length > 0) {
-            console.log('  🔄 Attempting to restore value:', currentValue);
-            queueMicrotask(() => {
-              const success = this._setValueInternal(currentValue, false);
-              if (success) {
-                console.log('  ✅ Value restored successfully');
-              } else {
-                console.log('  ⚠️ Value not found in data, storing as pending');
-                this.pendingValue = currentValue;
-              }
-            });
-          } else if (currentValue) {
-            console.log('  ⏳ Data not ready, storing as pending:', currentValue);
-            this.pendingValue = currentValue;
-          }
-          
-          // Trigger data loaded callbacks
-          this.triggerDataLoaded();
-        }
-      },
-      get: () => {
-        // Include placeholder as first option
-        let html = `<option value="">${this.config.placeholder}</option>`;
-        html += this.data.map(item => 
-          `<option value="${item[this.config.valueField]}">${item[this.config.labelField]}</option>`
-        ).join('');
-        return html;
-      },
+    Object.defineProperty(this.element, 'form', {
+      get: () => this.hiddenInput ? this.hiddenInput.form : null,
       enumerable: true,
       configurable: true
     });
+    
+    this.element.focus = () => {
+      if (this.searchInput) this.searchInput.focus();
+    };
+    
+    this.element.blur = () => {
+      if (this.searchInput) this.searchInput.blur();
+    };
     
     Object.defineProperty(this.element, 'length', {
       get: () => this.data.length,
@@ -416,7 +480,79 @@ class CustomDropdown {
       configurable: true
     });
     
-    // Override getAttribute to support name queries
+    Object.defineProperty(this.element, 'innerHTML', {
+      set: (html) => {
+        if (!html || !html.includes('<option')) {
+          return;
+        }
+        
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const options = tempDiv.querySelectorAll('option');
+        
+        const nonPlaceholderOptions = Array.from(options).filter(opt => opt.value && opt.value.trim() !== '');
+        
+        if (nonPlaceholderOptions.length === 0) {
+          return;
+        }
+        
+        const currentValue = this.selectedValue || this.pendingValue;
+        
+        this.data = [];
+        this.selectedValue = null;
+        this.selectedText = null;
+        
+        let detectedPlaceholder = null;
+        
+        options.forEach(option => {
+          const value = (option.value || '').trim();
+          const text = (option.textContent || '').trim();
+          
+          if (!value || value === '') {
+            if (text && this.searchInput) {
+              this.searchInput.placeholder = text;
+              this.config.placeholder = text;
+              detectedPlaceholder = text;
+            }
+          } else {
+            const itemData = {
+              [this.config.valueField]: value,
+              [this.config.labelField]: text
+            };
+            this.data.push(itemData);
+          }
+        });
+        
+        // FIX: Clear input only if no value will be set
+        if (!currentValue) {
+          if (this.searchInput) this.searchInput.value = '';
+        }
+        if (this.hiddenInput) this.hiddenInput.value = '';
+        
+        if (this.dropdownItems) {
+          this.dropdownItems.innerHTML = '';
+        }
+        
+        if (currentValue && this.data.length > 0) {
+          queueMicrotask(() => {
+            const success = this._setValueInternal(currentValue, false);
+            if (!success) {
+              this.pendingValue = currentValue;
+            }
+          });
+        } else if (currentValue) {
+          this.pendingValue = currentValue;
+        }
+        
+        this.triggerDataLoaded();
+      },
+      get: () => {
+        return '';
+      },
+      enumerable: true,
+      configurable: true
+    });
+    
     const originalGetAttribute = this.element.getAttribute.bind(this.element);
     this.element.getAttribute = (attr) => {
       if (attr === 'name') {
@@ -425,7 +561,6 @@ class CustomDropdown {
       return originalGetAttribute(attr);
     };
     
-    // Override setAttribute to support name setting
     const originalSetAttribute = this.element.setAttribute.bind(this.element);
     this.element.setAttribute = (attr, value) => {
       if (attr === 'name' && this.hiddenInput) {
@@ -433,22 +568,28 @@ class CustomDropdown {
       }
       return originalSetAttribute(attr, value);
     };
+    
+    this.element._customDropdown = this;
   }
   
   bindEvents() {
-    // Click to toggle for non-searchable
     if (!this.config.searchEnabled) {
-      this.searchInput.addEventListener('click', () => {
-        if (this.isOpen) {
-          this.close();
-        } else {
-          this.open();
+      this.searchInput.addEventListener('mousedown', (e) => {
+        if (!this.searchInput.disabled && !this.element.disabled) {
+          e.preventDefault();
+        }
+      });
+      
+      this.searchInput.addEventListener('click', (e) => {
+        if (!this.searchInput.disabled && !this.element.disabled) {
+          e.preventDefault();
+          this.toggle();
         }
       });
     }
     
     this.searchInput.addEventListener('focus', () => {
-      if (!this.isOpen) {
+      if (!this.isOpen && !this.searchInput.disabled && !this.element.disabled) {
         this.open();
       }
     });
@@ -456,25 +597,20 @@ class CustomDropdown {
     if (this.config.searchEnabled) {
       this.searchInput.addEventListener('input', (e) => {
         this.filterItems(e.target.value);
-        if (!this.isOpen) {
-          this.open();
-        }
+        if (!this.isOpen) this.open();
       });
     }
     
-    // Arrow click handler
     if (this.arrow) {
       this.arrow.style.pointerEvents = 'auto';
       this.arrow.style.cursor = 'pointer';
       this.arrow.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (this.isOpen) {
-          this.close();
-        } else {
-          this.open();
+        if (!this.searchInput.disabled && !this.element.disabled) {
+          this.toggle();
+          this.searchInput.focus();
         }
-        this.searchInput.focus();
       });
     }
     
@@ -491,19 +627,27 @@ class CustomDropdown {
       }
     });
     
-    // Reposition on scroll/resize
     const reposition = () => {
-      if (this.isOpen) {
-        this.positionDropdown();
-      }
+      if (this.isOpen) this.positionDropdown();
     };
     window.addEventListener('scroll', reposition, true);
     window.addEventListener('resize', reposition);
-    
-    this.element._originalAddEventListener = this.element.addEventListener;
+  }
+  
+  toggle() {
+    if (this.isOpen) {
+      this.close();
+    } else {
+      this.open();
+    }
   }
   
   async fetchData() {
+    if (this.config.cacheData && this._cachedData && this._cachedData.length > 0) {
+      this.setData(this._cachedData);
+      return;
+    }
+    
     if (this.isLoading) return;
     
     this.isLoading = true;
@@ -513,6 +657,7 @@ class CustomDropdown {
       const token = window.storageAvailable ? localStorage.getItem('token') : null;
       const headers = {
         'Authorization': token ? `Bearer ${token}` : '',
+        'Content-Type': 'application/json',
         ...this.config.fetchHeaders
       };
       
@@ -521,13 +666,26 @@ class CustomDropdown {
         headers: headers
       });
       
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const result = await response.json();
       
-      if (result.success) {
-        this.setData(result.data);
-      } else {
-        this.showError();
+      let dataArray = [];
+      if (Array.isArray(result)) {
+        dataArray = result;
+      } else if (result.success && Array.isArray(result.data)) {
+        dataArray = result.data;
+      } else if (result.data && Array.isArray(result.data)) {
+        dataArray = result.data;
       }
+      
+      if (this.config.cacheData) {
+        this._cachedData = dataArray;
+      }
+      
+      this.setData(dataArray);
     } catch (error) {
       console.error('CustomDropdown fetch error:', error);
       this.showError();
@@ -537,43 +695,43 @@ class CustomDropdown {
   }
   
   setData(data) {
-    console.log('📊 [setData] Called with', data.length, 'items for:', this.element.id);
+    if (!Array.isArray(data)) {
+      console.warn('CustomDropdown.setData: data must be an array');
+      data = [];
+    }
     
     this.data = data;
-    this.renderItems(data);
     
-    // Restore pending value after data loads
+    // FIX: Don't clear input if value exists
+    if (this.searchInput && !this.selectedValue && !this.pendingValue) {
+      this.searchInput.value = '';
+    }
+    
+    if (this.dropdownItems) {
+      this.dropdownItems.innerHTML = '';
+    }
+    
     if (this.pendingValue && this.data.length > 0) {
-      console.log('  🔄 Restoring pending value:', this.pendingValue);
       queueMicrotask(() => {
         const success = this._setValueInternal(this.pendingValue, false);
         if (success) {
-          console.log('  ✅ Pending value restored successfully');
           this.pendingValue = null;
-        } else {
-          console.log('  ⚠️ Pending value not found in data');
         }
       });
     }
     
-    // Trigger data loaded callbacks
     this.triggerDataLoaded();
   }
   
-  // Method to register callback for when data is loaded
   onDataLoaded(callback) {
     if (this.data.length > 0) {
-      // Data already loaded, call immediately
       callback();
     } else {
-      // Store for later
       this.dataLoadedCallbacks.push(callback);
     }
   }
   
-  // Trigger all registered data loaded callbacks
   triggerDataLoaded() {
-    console.log('📢 [triggerDataLoaded] Firing', this.dataLoadedCallbacks.length, 'callbacks');
     while (this.dataLoadedCallbacks.length > 0) {
       const callback = this.dataLoadedCallbacks.shift();
       try {
@@ -594,7 +752,6 @@ class CustomDropdown {
       return;
     }
     
-    // PERFORMANCE: Use innerHTML string concatenation - much faster than DOM manipulation
     let html = '';
     
     items.forEach(item => {
@@ -603,7 +760,6 @@ class CustomDropdown {
         ? this.config.labelFormat(item) 
         : item[this.config.labelField];
       
-      // Escape HTML to prevent XSS
       const escapedLabel = String(label).replace(/[&<>"']/g, (char) => {
         const escapeMap = {
           '&': '&amp;',
@@ -621,7 +777,6 @@ class CustomDropdown {
     
     this.dropdownItems.innerHTML = html;
     
-    // PERFORMANCE: Use event delegation instead of individual listeners
     this.dropdownItems.onclick = (e) => {
       const itemEl = e.target.closest('.custom-dropdown-item');
       if (!itemEl) return;
@@ -639,8 +794,6 @@ class CustomDropdown {
   }
   
   selectItem(value, text, fullData) {
-    console.log('✅ [selectItem] Selecting:', value, text);
-    
     this.selectedValue = value;
     this.selectedText = text;
     this.searchInput.value = text;
@@ -651,22 +804,16 @@ class CustomDropdown {
     
     this.close();
     
-    // Re-render to show selected state
-    this.renderItems(this.data);
-    
     if (this.config.onSelect) {
       this.config.onSelect(value, text, fullData);
     }
     
-    // Dispatch change event (most compatible with native select)
     const changeEvent = new Event('change', { bubbles: true, cancelable: true });
     this.element.dispatchEvent(changeEvent);
     
-    // Dispatch input event
     const inputEvent = new Event('input', { bubbles: true, cancelable: true });
     this.element.dispatchEvent(inputEvent);
     
-    // Dispatch custom event with data
     const customEvent = new CustomEvent('dropdown:change', {
       detail: { value, text, data: fullData },
       bubbles: true,
@@ -698,17 +845,13 @@ class CustomDropdown {
     const spaceAbove = inputRect.top;
     const dropdownHeight = parseInt(this.config.maxHeight);
     
-    // Set width to match input
     this.dropdownList.style.width = inputRect.width + 'px';
     
-    // Smart positioning
     if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
-      // Open upward
       this.dropdownList.style.bottom = (viewportHeight - inputRect.top + 4) + 'px';
       this.dropdownList.style.top = 'auto';
       this.dropdownList.style.left = inputRect.left + 'px';
     } else {
-      // Open downward
       this.dropdownList.style.top = (inputRect.bottom + 4) + 'px';
       this.dropdownList.style.bottom = 'auto';
       this.dropdownList.style.left = inputRect.left + 'px';
@@ -716,14 +859,29 @@ class CustomDropdown {
   }
   
   open() {
-    if (this.data.length === 0 && this.config.apiUrl) {
-      this.fetchData();
+    if (this.element.disabled || this.searchInput.disabled) {
+      return;
     }
     
-    this.dropdownList.classList.remove('hidden');
+    if (!this.hasLoadedData && this.config.apiUrl) {
+      this.fetchData();
+      return;
+    }
+    
+    if (this.data.length === 0) {
+      this.dropdownItems.innerHTML = `
+        <div class="px-3 py-4 text-center text-gray-500">
+          ${this.config.noResultsText}
+        </div>
+      `;
+    } else {
+      this.renderItems(this.data);
+    }
+    
+    this.dropdownList.style.display = 'block';
+    this.dropdownList.style.visibility = 'visible';
     this.positionDropdown();
     
-    // SVG arrow flip using scaleY
     if (this.arrow) {
       this.arrow.style.transform = 'scaleY(-1)';
     }
@@ -732,17 +890,28 @@ class CustomDropdown {
   }
   
   close() {
-    this.dropdownList.classList.add('hidden');
+    if (this.dropdownList) {
+      this.dropdownList.style.display = 'none';
+      this.dropdownList.style.visibility = 'hidden';
+    }
     
-    // Flip arrow back
     if (this.arrow) {
       this.arrow.style.transform = 'scaleY(1)';
     }
     
     this.isOpen = false;
+    
+    if (this.dropdownItems && !this.isLoading) {
+      this.dropdownItems.innerHTML = '';
+    }
   }
   
   showLoading() {
+    this.dropdownList.style.display = 'block';
+    this.dropdownList.style.visibility = 'visible';
+    this.positionDropdown();
+    this.isOpen = true;
+    
     this.dropdownItems.innerHTML = `
       <div class="px-3 py-4 text-center text-gray-500">
         <svg class="animate-spin h-5 w-5 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -770,42 +939,19 @@ class CustomDropdown {
     return this.selectedText;
   }
   
-  /**
-   * Internal setValue that returns success/failure
-   * @param {*} value - The value to set (can be value field OR text field)
-   * @param {boolean} fireEvents - Whether to fire change events (default: true)
-   * @returns {boolean} - True if value was found and set, false otherwise
-   */
   _setValueInternal(value, fireEvents = true) {
-    console.log('🔧 [_setValueInternal] Setting value:', value, 'Fire events:', fireEvents);
-    
-    // Simple validation
     if (value === null || value === undefined || value === '') {
-      console.log('  🚫 Empty value, ignoring');
       return false;
     }
     
-    // If data not loaded yet, store as pending
     if (this.data.length === 0) {
-      console.log('  ⏳ Data not loaded, storing as pending');
       this.pendingValue = value;
       return false;
     }
     
-    let item = null;
-    
-    // FIRST: Try to find by LABEL/TEXT field (most common case from API)
-    item = this.data.find(i => i[this.config.labelField] == value);
-    if (item) {
-      console.log('  ✅ Found by label field');
-    }
-    
-    // FALLBACK: Try to find by VALUE field
+    let item = this.data.find(i => i[this.config.labelField] == value);
     if (!item) {
       item = this.data.find(i => i[this.config.valueField] == value);
-      if (item) {
-        console.log('  ✅ Found by value field');
-      }
     }
     
     if (item) {
@@ -814,60 +960,44 @@ class CustomDropdown {
         ? this.config.labelFormat(item) 
         : item[this.config.labelField];
       
-      // Set the values
       this.selectedValue = actualValue;
       this.selectedText = text;
+      // FIX: Always show the value text, not placeholder
       this.searchInput.value = text;
       
       if (this.hiddenInput) {
         this.hiddenInput.value = actualValue;
       }
-      
-      // Re-render to show selected state
-      this.renderItems(this.data);
-      
-      // Fire events if requested
+
       if (fireEvents) {
         if (this.config.onSelect) {
           this.config.onSelect(actualValue, text, item);
         }
         
-        const changeEvent = new Event('change', { bubbles: true, cancelable: true });
-        this.element.dispatchEvent(changeEvent);
-        
-        const inputEvent = new Event('input', { bubbles: true, cancelable: true });
-        this.element.dispatchEvent(inputEvent);
-        
-        const customEvent = new CustomEvent('dropdown:change', {
+        this.element.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
+        this.element.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+        this.element.dispatchEvent(new CustomEvent('dropdown:change', {
           detail: { value: actualValue, text, data: item },
           bubbles: true,
           cancelable: true
-        });
-        this.element.dispatchEvent(customEvent);
+        }));
       }
       
       return true;
     }
     
-    console.log('  ❌ Not found');
     return false;
   }
   
   setValue(value, fireEvents = true) {
-    console.log('📝 [setValue] Called with:', value);
-    
     const success = this._setValueInternal(value, fireEvents);
     
     if (!success) {
-      // Value not found, store as pending for when data loads
       this.pendingValue = value;
-      console.log('  💾 Stored as pending value');
     }
   }
   
   clear() {
-    console.log('🧹 [clear] Clearing selection');
-    
     this.selectedValue = null;
     this.selectedText = null;
     if (this.searchInput) {
@@ -877,12 +1007,10 @@ class CustomDropdown {
       this.hiddenInput.value = '';
     }
     
-    // Fast re-render
-    if (this.data.length > 0) {
-      this.renderItems(this.data);
+    if (this.dropdownItems) {
+      this.dropdownItems.innerHTML = '';
     }
     
-    // Dispatch change event
     this.element.dispatchEvent(new Event('change', { bubbles: true }));
     this.element.dispatchEvent(new Event('input', { bubbles: true }));
     this.element.dispatchEvent(new CustomEvent('dropdown:change', {
@@ -892,13 +1020,23 @@ class CustomDropdown {
   }
   
   refresh() {
+    this._cachedData = null;
+    this.hasLoadedData = false;
+    this.data = [];
+    
     if (this.config.apiUrl) {
-      this.data = [];
       this.fetchData();
     }
   }
   
   destroy() {
+    this.close();
+    if (this.cleanupObserver) {
+      this.cleanupObserver.disconnect();
+    }
+    if (this._optionProcessTimeout) {
+      clearTimeout(this._optionProcessTimeout);
+    }
     this.element.remove();
   }
 }
@@ -914,26 +1052,63 @@ window.storageAvailable = (() => {
   }
 })();
 
+
 // ============================================
-// OPTIMIZED AUTO-INITIALIZATION
+// AUTO-INITIALIZATION SYSTEM
 // ============================================
 
 (function() {
-  const originalGetElementById = Document.prototype.getElementById;
-  const originalQuerySelector = Document.prototype.querySelector;
-  const originalQuerySelectorAll = Document.prototype.querySelectorAll;
+  const convertedElements = new WeakMap();
+  const elementIdMap = new Map();
   
-  const convertedSelects = new WeakMap();
-  const selectIdMap = new Map();
+  const style = document.createElement('style');
+  style.textContent = `
+    select:not([data-native]), iselect { 
+      opacity: 0; 
+      transition: opacity 0.1s; 
+    }
+    .custom-dropdown-wrapper { 
+      opacity: 1 !important; 
+    }
+    .custom-dropdown-list {
+      display: none !important;
+      visibility: hidden !important;
+    }
+    .custom-dropdown-list[style*="visibility: visible"] {
+      display: block !important;
+      visibility: visible !important;
+    }
+    .custom-dropdown-items {
+      min-height: 0;
+      box-sizing: border-box;
+    }
+    .custom-dropdown-items::-webkit-scrollbar {
+      width: 8px;
+    }
+    .custom-dropdown-items::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+    .custom-dropdown-items::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+    .custom-dropdown-items::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .custom-dropdown-search:focus {
+      border-color: #eab308 !important;
+      outline: none;
+    }
+  `;
+  document.head.appendChild(style);
   
   function getDropdownConfig() {
-    console.log('🔍 [getDropdownConfig] Checking for configs...');
-    console.log('  window.dropdownConfig exists?', !!window.dropdownConfig);
-    console.log('  window.customDropdownConfig exists?', !!window.customDropdownConfig);
-    
-    // IMPORTANT: Check EVERY TIME, don't cache, because dropdownConfig might be created after script loads
     if (window.dropdownConfig) {
-      console.log('✅ [getDropdownConfig] Using structured dropdownConfig:', Object.keys(window.dropdownConfig));
       return {
         searchEnabled: true,
         configs: window.dropdownConfig,
@@ -941,155 +1116,182 @@ window.storageAvailable = (() => {
       };
     }
     
-    const simpleConfig = window.customDropdownConfig || {
+    return window.customDropdownConfig || {
       searchEnabled: true,
       searchable: [],
       type: 'simple'
     };
-    console.log('⚠️ [getDropdownConfig] Using simple config:', simpleConfig);
-    return simpleConfig;
   }
   
-  function getSearchableConfig(selectElement, config) {
-    console.log('🔎 [getSearchableConfig] Checking searchable for:', selectElement.id);
-    
-    // Check data attribute first (highest priority)
-    if (selectElement.hasAttribute('data-searchable')) {
-      const result = selectElement.getAttribute('data-searchable') !== 'false';
-      console.log('  ✓ data-searchable attribute found:', result);
-      return result;
+  function getSearchableConfig(element, config) {
+    if (element.hasAttribute('data-searchable')) {
+      return element.getAttribute('data-searchable') !== 'false';
     }
     
-    // Check if using structured config with specific field mappings
-    if (config.type === 'structured' && config.configs && selectElement.id) {
-      console.log('  📋 Checking structured config...');
-      // For structured config, search through all field names to find matching ID
-      for (const [fieldName, fieldConfig] of Object.entries(config.configs)) {
-        const expectedId = `field-${fieldName.replace(/\s+/g, '-').toLowerCase()}`;
-        console.log(`    Comparing "${selectElement.id}" with "${expectedId}"`);
-        if (selectElement.id === expectedId) {
-          console.log('    ✅ Match found! Field:', fieldName, 'Config:', fieldConfig);
-          // Found matching field, default to searchable for structured configs
-          return true;
-        }
-      }
-      console.log('  ⚠️ No match in structured config, checking if it\'s a non-Step1 field');
-      // For non-Step1 fields (like entry_mode, exittype, etc.), check if they should be searchable
-      // Default to true for all selects when using structured config
+    if (element.hasAttribute('searchable')) {
       return true;
     }
     
-    // Check searchable array from simple config
+    if (config.type === 'structured' && config.configs && element.id) {
+      for (const [fieldName, fieldConfig] of Object.entries(config.configs)) {
+        const expectedId = `field-${fieldName.replace(/\s+/g, '-').toLowerCase()}`;
+        if (element.id === expectedId) {
+          return true;
+        }
+      }
+      return true;
+    }
+    
     if (config.searchable && Array.isArray(config.searchable)) {
-      console.log('  📋 Checking searchable array:', config.searchable);
-      if (selectElement.id && config.searchable.includes(selectElement.id)) {
-        console.log('    ✅ Found in searchable array');
+      if (element.id && config.searchable.includes(element.id)) {
         return true;
-      } else if (selectElement.id && config.searchable.length > 0) {
-        console.log('    ❌ Not in searchable array, returning false');
+      } else if (element.id && config.searchable.length > 0) {
         return false;
       }
     }
     
-    // Default behavior - searchable by default
-    const defaultResult = config.searchEnabled !== false;
-    console.log('  🔄 Using default searchEnabled:', defaultResult);
-    return defaultResult;
+    return config.searchEnabled !== false;
   }
   
-  function convertSelectToDropdown(selectElement) {
-    console.log('🔄 [convertSelectToDropdown] START for:', selectElement.id || selectElement.name || 'unnamed');
-    
-    if (convertedSelects.has(selectElement)) {
-      console.log('  ⏭️ Already converted, returning cached');
-      return convertedSelects.get(selectElement);
+  function getElementDropdownConfig(element, config) {
+    if (config.type !== 'structured' || !config.configs || !element.id) {
+      return null;
     }
     
-    if (!selectElement || selectElement.tagName !== 'SELECT') {
-      console.log('  ❌ Not a select element, skipping');
-      return selectElement;
+    for (const [fieldName, fieldConfig] of Object.entries(config.configs)) {
+      const expectedId = `field-${fieldName.replace(/\s+/g, '-').toLowerCase()}`;
+      if (element.id === expectedId) {
+        return {
+          apiUrl: fieldConfig.endpoint ? `/reference/${fieldConfig.endpoint}` : null,
+          valueField: fieldConfig.value || fieldConfig.valueField || 'id',
+          labelField: fieldConfig.text || fieldConfig.labelField || 'name',
+          placeholder: `Select ${fieldName}`
+        };
+      }
     }
     
-    const existingOptions = Array.from(selectElement.options).map(opt => ({
+    return null;
+  }
+  
+  function convertElement(element) {
+    if (convertedElements.has(element)) {
+      return convertedElements.get(element);
+    }
+    
+    if (element.hasAttribute('data-native')) {
+      return element;
+    }
+    
+    const tagName = element.tagName.toLowerCase();
+    
+    if (tagName === 'iselect') {
+      const select = document.createElement('select');
+      
+      Array.from(element.attributes).forEach(attr => {
+        select.setAttribute(attr.name, attr.value);
+      });
+      
+      while (element.firstChild) {
+        select.appendChild(element.firstChild);
+      }
+      
+      element.parentNode.replaceChild(select, element);
+      element = select;
+    }
+    
+    if (element.tagName !== 'SELECT') {
+      return element;
+    }
+    
+    const existingOptions = Array.from(element.options).map(opt => ({
       value: (opt.value || '').trim(),
       name: (opt.textContent || '').trim()
-    }));
-    console.log('  📊 Extracted', existingOptions.length, 'options');
+    })).filter(opt => opt.value !== '');
     
     let placeholder = 'Select...';
-    const firstOption = selectElement.options[0];
+    const firstOption = element.options[0];
     if (firstOption && (!firstOption.value || firstOption.value === '')) {
       placeholder = (firstOption.textContent || '').trim() || 'Select...';
     }
-    console.log('  📝 Placeholder:', placeholder);
     
-    // Get config FRESH every time (don't cache)
-    const config = getDropdownConfig();
-    const searchEnabled = getSearchableConfig(selectElement, config);
-    console.log('  🔍 Final searchEnabled:', searchEnabled);
+    const globalConfig = getDropdownConfig();
+    const searchEnabled = getSearchableConfig(element, globalConfig);
+    const elementConfig = getElementDropdownConfig(element, globalConfig);
     
-    const dropdown = new CustomDropdown(selectElement, {
+    const isDisabled = element.disabled || element.hasAttribute('disabled');
+    
+    const dropdownOptions = {
       placeholder: placeholder,
       searchEnabled: searchEnabled,
       data: existingOptions,
       valueField: 'value',
       labelField: 'name'
-    });
+    };
     
-    convertedSelects.set(selectElement, dropdown.element);
-    
-    if (selectElement.id) {
-      selectIdMap.set(selectElement.id, dropdown.element);
-      console.log('  💾 Stored in ID map:', selectElement.id);
+    if (elementConfig) {
+      Object.assign(dropdownOptions, elementConfig);
     }
     
-    console.log('✅ [convertSelectToDropdown] COMPLETE for:', selectElement.id);
+    const dropdown = new CustomDropdown(element, dropdownOptions);
+    
+    if (isDisabled) {
+      dropdown.element.disabled = true;
+    }
+    
+    convertedElements.set(element, dropdown.element);
+    
+    if (element.id) {
+      elementIdMap.set(element.id, dropdown.element);
+    }
+    
     return dropdown.element;
   }
   
-  function convertAll() {
-    console.log('🚀 [convertAll] START - Searching for unconverted selects...');
-    const selects = document.querySelectorAll('select:not([data-dropdown-converted])');
-    console.log(`  📋 Found ${selects.length} select(s) to convert`);
+  function convertAllInBatches() {
+    const selectors = 'select:not([data-dropdown-converted]):not([data-native]), iselect:not([data-dropdown-converted])';
+    const elements = document.querySelectorAll(selectors);
     
-    if (selects.length > 0) {
-      const batchSize = 20;
-      let index = 0;
+    if (elements.length === 0) return;
+    
+    const BATCH_SIZE = 10;
+    let index = 0;
+    
+    function processBatch() {
+      const end = Math.min(index + BATCH_SIZE, elements.length);
       
-      function convertBatch() {
-        const end = Math.min(index + batchSize, selects.length);
-        console.log(`  🔄 Converting batch ${index}-${end} of ${selects.length}`);
-        
-        for (let i = index; i < end; i++) {
-          selects[i].setAttribute('data-dropdown-converted', 'true');
-          convertSelectToDropdown(selects[i]);
-        }
-        
-        index = end;
-        
-        if (index < selects.length) {
-          requestAnimationFrame(convertBatch);
-        } else {
-          console.log('✅ [convertAll] COMPLETE - All selects converted');
-        }
+      for (let i = index; i < end; i++) {
+        elements[i].setAttribute('data-dropdown-converted', 'true');
+        convertElement(elements[i]);
       }
       
-      convertBatch();
-    } else {
-      console.log('  ℹ️ No selects to convert');
+      index = end;
+      
+      if (index < elements.length) {
+        if (window.requestIdleCallback) {
+          requestIdleCallback(processBatch, { timeout: 100 });
+        } else {
+          setTimeout(processBatch, 0);
+        }
+      }
     }
+    
+    processBatch();
   }
   
+  const originalGetElementById = Document.prototype.getElementById;
+  const originalQuerySelector = Document.prototype.querySelector;
+  const originalQuerySelectorAll = Document.prototype.querySelectorAll;
+  
   Document.prototype.getElementById = function(id) {
-    if (selectIdMap.has(id)) {
-      return selectIdMap.get(id);
+    if (elementIdMap.has(id)) {
+      return elementIdMap.get(id);
     }
     
     const element = originalGetElementById.call(this, id);
-    if (element?.tagName === 'SELECT') {
-      const converted = convertSelectToDropdown(element);
+    if (element && (element.tagName === 'SELECT' || element.tagName === 'ISELECT')) {
+      const converted = convertElement(element);
       if (id) {
-        selectIdMap.set(id, converted);
+        elementIdMap.set(id, converted);
       }
       return converted;
     }
@@ -1098,18 +1300,23 @@ window.storageAvailable = (() => {
   
   Document.prototype.querySelector = function(selector) {
     const element = originalQuerySelector.call(this, selector);
-    if (element?.tagName === 'SELECT') {
-      return convertSelectToDropdown(element);
+    if (element && (element.tagName === 'SELECT' || element.tagName === 'ISELECT')) {
+      return convertElement(element);
     }
     return element;
   };
   
   Document.prototype.querySelectorAll = function(selector) {
     const elements = originalQuerySelectorAll.call(this, selector);
-    if (selector.toLowerCase().includes('select')) {
-      return Array.from(elements).map(el => 
-        el.tagName === 'SELECT' ? convertSelectToDropdown(el) : el
-      );
+    const selectorLower = selector.toLowerCase();
+    
+    if (selectorLower.includes('select') || selectorLower.includes('iselect')) {
+      return Array.from(elements).map(el => {
+        if (el.tagName === 'SELECT' || el.tagName === 'ISELECT') {
+          return convertElement(el);
+        }
+        return el;
+      });
     }
     return elements;
   };
@@ -1117,23 +1324,23 @@ window.storageAvailable = (() => {
   let mutationTimer;
   const observer = new MutationObserver(() => {
     clearTimeout(mutationTimer);
-    mutationTimer = setTimeout(convertAll, 50);
+    mutationTimer = setTimeout(convertAllInBatches, 50);
   });
   
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      convertAll();
+      convertAllInBatches();
       if (document.body) {
         observer.observe(document.body, { childList: true, subtree: true });
       }
     });
   } else {
-    convertAll();
+    convertAllInBatches();
     if (document.body) {
       observer.observe(document.body, { childList: true, subtree: true });
     }
   }
   
-  window.convertSelectToDropdown = convertSelectToDropdown;
-  window.convertAllSelects = convertAll;
+  window.convertSelectToDropdown = convertElement;
+  window.convertAllSelects = convertAllInBatches;
 })();

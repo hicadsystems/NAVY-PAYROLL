@@ -98,6 +98,7 @@ class MenuHighlighter {
       
       // Utilities menu items
       'emolument-form-processing': 'utilities',
+      'ippis-payments': 'utilities',
       'database-backup': 'utilities',
       'database-restore': 'utilities',
       
@@ -117,6 +118,7 @@ class MenuHighlighter {
       'salary-summary': 'reports',
       //'analysis-of-normal-hours': 'reports',
       'salary-reconciliation': 'reports',
+      'salary-history': 'reports',
       'control-sheet': 'reports',
       'payment-statistics': 'reports',
       'personnel-reports': 'reports',
@@ -127,7 +129,8 @@ class MenuHighlighter {
       'changes-in-personal-details': 'audit-trail',
       'variation-input-listings': 'audit-trail',
       'overpayment': 'audit-trail',
-      'duplicate-account-number': 'audit-trail'
+      'duplicate-account-number': 'audit-trail',
+      'outof-range-payments': 'audit-trail'
     };
   }
 

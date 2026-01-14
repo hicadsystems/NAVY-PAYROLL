@@ -1,6 +1,7 @@
 const dotenv = require('dotenv');
 const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env.local";
 const { notificationMiddleware } = require('./middware/notifications');
+const seamlessWrapper = require('./services/helpers/historicalReportWrapper');
 const express = require('express');
 const app = express();
 const session = require('express-session');
@@ -76,9 +77,21 @@ app.use(session({
 
 app.use(notificationMiddleware);
 
-// mount routes
-require('./routes')(app);
+async function startServer() {
+  await seamlessWrapper.initialize();
 
+  // mount routes
+  require('./routes')(app);
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
+}
+
+startServer().catch(err => {
+  console.error('❌ Failed to start server:', err);
+  process.exit(1);
+});
 
 
 // static files and directory listing
@@ -95,8 +108,4 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   console.error(err.stack || err);
   res.status(500).json({ error: 'Internal Server Error' });
-});
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

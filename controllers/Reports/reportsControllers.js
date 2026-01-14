@@ -239,7 +239,7 @@ class ReportController {
   // ==========================================================================
   async generatePayslips(req, res) {
     const {
-      empno1, empno2, branch, optall, optrange, optbank, optloc, optindividual, wxdate
+      empno1, empno2, branch, optall, optrange, optbank, optloc, optindividual, wxdate, year, month
     } = req.query;
 
     const station = req.user_fullname;
@@ -252,7 +252,7 @@ class ReportController {
     }
 
     const params = {
-      empno1, empno2, branch, optall, optrange, optbank, optloc, optindividual, wxdate, station
+      empno1, empno2, branch, optall, optrange, optbank, optloc, optindividual, wxdate, station, year, month
     };
 
     try {
@@ -288,56 +288,56 @@ class ReportController {
   // GENERATE PAYSLIP PDF - JSREPORT VERSION
   // ==========================================================================
   async generatePayslipPDFEnhanced(req, res) {
-      const mappedData = req.body.data || [];
+    const mappedData = req.body.data || [];
 
-      if (mappedData.length === 0) {
-        return res.status(404).json({ 
-          success: false, 
-          error: "No payslip data provided for PDF generation." 
-        });
-      }
-
-      if (!this.jsreportReady) {
-        return res.status(500).json({
-          success: false,
-          error: "Enhanced PDF generation service not ready. Please try again."
-        });
-      }
-
-      try {
-        const templatePath = path.join(__dirname, '../../templates/payslip-template.html');
-        const templateContent = fs.readFileSync(templatePath, 'utf8');
-
-        const result = await jsreport.render({
-          template: {
-            content: templateContent,
-            engine: 'handlebars',
-            recipe: 'chrome-pdf',
-            chrome: {
-              displayHeaderFooter: false,
-              printBackground: true,
-              format: 'A5'
-            },
-            helpers: this._getCommonHelpers()
-          },
-          data: {
-            employees: mappedData,
-            payDate: new Date()
-          }
-        });
-
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'attachment; filename=payslips_enhanced.pdf');
-        res.send(result.content);
-
-      } catch (error) {
-        console.error('JSReport PDF generation error:', error);
-        return res.status(500).json({ 
-          success: false, 
-          error: error.message || "An error occurred during PDF generation." 
-        });
-      }
+    if (mappedData.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: "No payslip data provided for PDF generation." 
+      });
     }
+
+    if (!this.jsreportReady) {
+      return res.status(500).json({
+        success: false,
+        error: "Enhanced PDF generation service not ready. Please try again."
+      });
+    }
+
+    try {
+      const templatePath = path.join(__dirname, '../../templates/payslip-template.html');
+      const templateContent = fs.readFileSync(templatePath, 'utf8');
+
+      const result = await jsreport.render({
+        template: {
+          content: templateContent,
+          engine: 'handlebars',
+          recipe: 'chrome-pdf',
+          chrome: {
+            displayHeaderFooter: false,
+            printBackground: true,
+            format: 'A5'
+          },
+          helpers: this._getCommonHelpers()
+        },
+        data: {
+          employees: mappedData,
+          payDate: new Date()
+        }
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=payslips_enhanced.pdf');
+      res.send(result.content);
+
+    } catch (error) {
+      console.error('JSReport PDF generation error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message || "An error occurred during PDF generation." 
+      });
+    }
+  }
 
   // ==========================================================================
   // GENERATE PAYSLIP EXCEL

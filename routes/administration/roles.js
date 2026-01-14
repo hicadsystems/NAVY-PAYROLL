@@ -11,7 +11,7 @@ const router = express.Router();
 // Get all roles
 router.get("/roles", verifyToken, async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT name, description FROM roles ORDER BY name ASC");
+    const [rows] = await pool.query("SELECT id, name, description FROM roles ORDER BY name ASC");
     res.json(rows);
   } catch (err) {
     console.error("❌ Failed to fetch roles:", err.message);

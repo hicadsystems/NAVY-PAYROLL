@@ -321,11 +321,11 @@ class VarianceAnalysisService {
     try {
       const query = `
         SELECT DISTINCT 
-          mpd.his_type as code,
-          COALESCE(et.elmDesc, mpd.his_type) as description
-        FROM py_masterpayded mpd
-        LEFT JOIN py_elementType et ON et.PaymentType = mpd.his_type
-        ORDER BY mpd.his_type
+          ph.his_type as code,
+          COALESCE(et.elmDesc, ph.his_type) as description
+        FROM py_payhistory ph
+        LEFT JOIN py_elementType et ON et.PaymentType = ph.his_type
+        ORDER BY ph.his_type
       `;
       
       const [rows] = await pool.query(query, []);

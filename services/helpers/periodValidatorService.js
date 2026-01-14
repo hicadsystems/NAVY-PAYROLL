@@ -5,19 +5,30 @@ class PeriodValidatorService {
   
   /**
    * Validate period and determine data source
-   * Returns: { 
-   *   isValid: boolean, 
-   *   dataSource: 'current' | 'history',
-   *   errorMessage: string | null,
-   *   period: { year, month, status }
-   * }
    */
-  async validateAndGetDataSource(year, month, database = null) {
+  async validateAndGetDataSource(year, month, database = null) {  // ⬅️ Add database parameter
+    console.log('\n🔍 [VALIDATOR] Starting validation...');
+    console.log(`   Requested: ${month}/${year}`);
+    
+    // ⬅️ Set database context if provided
+    if (database) {
+      try {
+        const sessionContext = pool._getSessionContext();
+        const sessionId = sessionContext ? sessionContext.getStore() : 'default';
+        pool.useDatabase(database, sessionId);
+        console.log(`   📊 Using database: ${database} for session: ${sessionId}`);
+      } catch (err) {
+        console.error(`   ⚠️ Could not set database context: ${err.message}`);
+      }
+    }
+    
     try {
       // Get current period from BT05
-      const currentPeriod = await this.getCurrentPeriod(database);
+      const currentPeriod = await this.getCurrentPeriod();
+      console.log(`   Current Period: ${currentPeriod?.month}/${currentPeriod?.year} (Status: ${currentPeriod?.status})`);
       
       if (!currentPeriod) {
+        console.log('   ❌ No current period found');
         return {
           isValid: false,
           dataSource: null,
@@ -34,6 +45,7 @@ class PeriodValidatorService {
       // Check if requesting future period
       if (requestedYear > currentYear || 
           (requestedYear === currentYear && requestedMonth > currentMonth)) {
+        console.log('   ❌ Future period requested');
         return {
           isValid: false,
           dataSource: null,
@@ -44,8 +56,11 @@ class PeriodValidatorService {
 
       // Check if requesting current period
       if (requestedYear === currentYear && requestedMonth === currentMonth) {
+        console.log('   📍 Current period requested');
+        
         // Current period - check calculation status
         if (currentPeriod.status !== 999) {
+          console.log(`   ❌ Calculation incomplete (Status: ${currentPeriod.status})`);
           return {
             isValid: false,
             dataSource: 'current',
@@ -55,8 +70,11 @@ class PeriodValidatorService {
         }
 
         // Check if data exists
-        const hasData = await this.checkCurrentPeriodData(requestedYear, requestedMonth, database);
+        const hasData = await this.checkCurrentPeriodData(requestedYear, requestedMonth);
+        console.log(`   Data exists: ${hasData}`);
+        
         if (!hasData) {
+          console.log('   ❌ No current period data found');
           return {
             isValid: false,
             dataSource: 'current',
@@ -65,6 +83,7 @@ class PeriodValidatorService {
           };
         }
 
+        console.log('   ✅ Using CURRENT period data');
         return {
           isValid: true,
           dataSource: 'current',
@@ -74,8 +93,12 @@ class PeriodValidatorService {
       }
 
       // Previous period - check if data exists in history
-      const hasHistoryData = await this.checkHistoryData(requestedYear, requestedMonth, database);
+      console.log('   📜 Historical period requested');
+      const hasHistoryData = await this.checkHistoryData(requestedYear, requestedMonth);
+      console.log(`   Historical data exists: ${hasHistoryData}`);
+      
       if (!hasHistoryData) {
+        console.log('   ❌ No historical data found');
         return {
           isValid: false,
           dataSource: 'history',
@@ -84,6 +107,7 @@ class PeriodValidatorService {
         };
       }
 
+      console.log('   ✅ Using HISTORICAL data');
       return {
         isValid: true,
         dataSource: 'history',
@@ -92,7 +116,7 @@ class PeriodValidatorService {
       };
 
     } catch (error) {
-      console.error('Period validation error:', error);
+      console.error('❌ [VALIDATOR] Error:', error.message);
       return {
         isValid: false,
         dataSource: null,
@@ -105,15 +129,15 @@ class PeriodValidatorService {
   /**
    * Get current period from BT05
    */
-  async getCurrentPeriod(database = null) {
-    const db = database || process.env.DB_OFFICERS;
+  async getCurrentPeriod() {
     const query = `
       SELECT ord AS year, mth AS month, pmth AS prev_month, sun AS status
-      FROM ${db}.py_stdrate
+      FROM py_stdrate
       WHERE type = 'BT05'
       LIMIT 1
     `;
     
+    console.log(`   🔍 Querying BT05 from py_stdrate`);
     const [rows] = await pool.query(query);
     return rows[0] || null;
   }
@@ -121,15 +145,15 @@ class PeriodValidatorService {
   /**
    * Check if current period has data
    */
-  async checkCurrentPeriodData(year, month, database = null) {
-    const db = database || process.env.DB_OFFICERS;
+  async checkCurrentPeriodData(year, month) {
     const query = `
       SELECT COUNT(*) as count
-      FROM ${db}.py_mastercum
+      FROM py_mastercum
       WHERE his_type = ?
       LIMIT 1
     `;
     
+    console.log(`   🔍 Checking current data in py_mastercum (month=${month})`);
     const [rows] = await pool.query(query, [month]);
     return rows[0].count > 0;
   }
@@ -137,35 +161,30 @@ class PeriodValidatorService {
   /**
    * Check if historical data exists
    */
-  async checkHistoryData(year, month, database = null) {
-    const db = database || process.env.DB_OFFICERS;
+  async checkHistoryData(year, month) {
     const monthColumn = `amtthismth${month}`;
     
     const query = `
       SELECT COUNT(*) as count
-      FROM ${db}.py_payhistory
+      FROM py_payhistory
       WHERE his_year = ?
         AND his_type = 'PY01'
         AND ${monthColumn} > 0
       LIMIT 1
     `;
     
+    console.log(`   🔍 Checking historical data: py_payhistory (year=${year}, column=${monthColumn})`);
     const [rows] = await pool.query(query, [year]);
     return rows[0].count > 0;
   }
 
-  /**
-   * Get month name
-   */
+
   getMonthName(month) {
     const months = ['', 'January', 'February', 'March', 'April', 'May', 'June',
                     'July', 'August', 'September', 'October', 'November', 'December'];
     return months[parseInt(month)] || `Month ${month}`;
   }
 
-  /**
-   * Get status message
-   */
   getStatusMessage(status) {
     const statusMap = {
       0: 'Data Entry Open',
@@ -178,14 +197,8 @@ class PeriodValidatorService {
     return statusMap[status] || `Unknown Status (${status})`;
   }
 
-  /**
-   * Build history query helper - SIMPLIFIED
-   * py_payhistory has ALL data from py_masterpayded
-   * Just use different column names: amtthismth → amtthismth{N}
-   */
   getHistoryColumns(month) {
     return {
-      // All columns from py_masterpayded, just with month suffix
       amountThisMonth: `amtthismth${month}`,
       totalAmountPayable: `totamtpayable${month}`,
       totalPaidToDate: `totpaidtodate${month}`,
@@ -199,10 +212,6 @@ class PeriodValidatorService {
     };
   }
 
-  /**
-   * Build simple history query for ANY payment type
-   * Works for NHF, Tax, Pension, Loans, Allowances, EVERYTHING!
-   */
   buildHistoryQuery(year, month, paymentType, alias = 'ph') {
     const cols = this.getHistoryColumns(month);
     
@@ -217,10 +226,6 @@ class PeriodValidatorService {
     };
   }
 
-  /**
-   * Get breakdown query - for summary reports
-   * Groups by his_type prefix (BP/BT, PT, PR, PL)
-   */
   buildHistoryBreakdownQuery(year, month, empnoField = 'his_empno') {
     const amtCol = `amtthismth${month}`;
     
@@ -287,10 +292,6 @@ class PeriodValidatorService {
     };
   }
 
-  /**
-   * Get payment elements - ALL types from history
-   * Returns JSON array like current period does
-   */
   buildHistoryPaymentElementsQuery(year, month, empnoField = 'his_empno') {
     const amtCol = `amtthismth${month}`;
     const payindicCol = `payindic${month}`;

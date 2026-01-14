@@ -8,7 +8,6 @@ if (!SECRET) {
 }
 
 const verifyToken = (req, res, next) => {
-  // 1. Attempt to get the token from the Authorization header (Standard)
   const bearerHeader = req.headers['authorization'];
   let token = null;
 
@@ -16,17 +15,14 @@ const verifyToken = (req, res, next) => {
     token = bearerHeader.split(' ')[1];
   } 
 
-  // 2. Fallback: Check the query parameter 'token'
   if (!token && req.query.token) {
     token = req.query.token;
   }
 
-  // 3. Reject if no token is found
   if (!token) {
     return res.status(403).json({ message: 'No token provided' });
   }
 
-  // 4. Verify the token
   jwt.verify(token, SECRET, (err, decoded) => {
     if (err) {
         if (err.name === 'TokenExpiredError') {
@@ -43,38 +39,44 @@ const verifyToken = (req, res, next) => {
     req.current_class = decoded.current_class;
 
     // Set database context based on user's current class
-    try {
-        if (decoded.current_class) {
+    if (decoded.current_class) {
+        try {
             const pool = require('../config/db');
-            const { AsyncLocalStorage } = require('async_hooks');
-            
-            // Get the sessionContext from pool
-            const sessionContext = pool._getSessionContext ? pool._getSessionContext() : null;
             
             const databaseName = decoded.current_class;
             const sessionId = decoded.user_id.toString();
             
+            // ⬅️ Set on request object FIRST
+            req.current_database = databaseName;
+            req.session_id = sessionId;
+            
+            // Get session context
+            const sessionContext = pool._getSessionContext ? pool._getSessionContext() : null;
+            
             if (sessionContext) {
-                // 🔧 FIX: Run the rest of the request in the user's session context
-                sessionContext.run(sessionId, () => {
-                    pool.useDatabase(databaseName, sessionId);
-                    req.current_database = databaseName;
-                    console.log(`🔄 DB set to: ${databaseName} for user: ${decoded.user_id}`);
-                    next();
+                // Run entire request chain in this context
+                return sessionContext.run(sessionId, () => {
+                    try {
+                        pool.useDatabase(databaseName, sessionId);
+                        console.log(`🔄 DB set to: ${databaseName} for user: ${decoded.user_id}`);
+                        next();
+                    } catch (dbError) {
+                        console.error('❌ Database context error:', dbError);
+                        return res.status(500).json({ message: 'Database context error' });
+                    }
                 });
             } else {
-                // Fallback if sessionContext not available
+                // Fallback without sessionContext
                 pool.useDatabase(databaseName, sessionId);
-                req.current_database = databaseName;
                 console.log(`🔄 DB set to: ${databaseName} for user: ${decoded.user_id}`);
-                next();
+                return next();
             }
-        } else {
-            next();
+        } catch (dbError) {
+            console.error('❌ Database context error:', dbError);
+            return res.status(500).json({ message: 'Database context error' });
         }
-    } catch (dbError) {
-        console.error('❌ Database context error:', dbError);
-        return res.status(500).json({ message: 'Database context error' });
+    } else {
+        return next();
     }
   });
 };

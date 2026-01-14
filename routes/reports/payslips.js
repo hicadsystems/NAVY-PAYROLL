@@ -1,17 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const verifyToken = require('../../middware/authentication');
+const historicalReportMiddleware = require('../../middware/historicalReportsmiddleware');
 
 const reportsController = require('../../controllers/Reports/reportsControllers');
 
 // PAYSLIP REPORT - DATA GENERATION (Returns JSON data)
-router.get('/generate', verifyToken, reportsController.generatePayslips.bind(reportsController));
+router.get('/generate', verifyToken, historicalReportMiddleware, reportsController.generatePayslips.bind(reportsController));
 
 // PAYSLIP REPORT - PDF EXPORT (Receives data in body, returns PDF file)
-router.post('/export/pdf', verifyToken, reportsController.generatePayslipPDFEnhanced.bind(reportsController));
+router.post('/export/pdf', verifyToken, historicalReportMiddleware, reportsController.generatePayslipPDFEnhanced.bind(reportsController));
 
 // PAYSLIP REPORT - EXCEL EXPORT (Receives data in body, returns Excel file)
-router.post('/export/excel', verifyToken, reportsController.generatePayslipExcel.bind(reportsController));
+router.post('/export/excel', verifyToken, historicalReportMiddleware, reportsController.generatePayslipExcel.bind(reportsController));
 
 // PAYSLIP REPORT - FILTER OPTIONS (Returns JSON data for filters)
 router.get('/filter-options', verifyToken, reportsController.getFilterOptions.bind(reportsController));

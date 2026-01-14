@@ -21,7 +21,9 @@ class PayslipGenerationService {
       optloc,           // Option: By location
       optindividual,    // Option: Individual employee
       wxdate,           // Processing date
-      station           // Workstation/user ID (from req.user_fullname)
+      station,           // Workstation/user ID (from req.user_fullname)
+      year,
+      month
     } = params;
 
     if (!station) {
@@ -33,9 +35,9 @@ class PayslipGenerationService {
       await this.clearTempData(station);
 
       // Step 2: Get current period
-      const period = await this.getCurrentPeriod();
+      const period = await this.getCurrentPeriod(year, month);
       if (!period) {
-        throw new Error('Current period not set (BT05)');
+        throw new Error('Current period not set (BT05) or invalid year/month provided');
       }
 
       // Step 3: Get employees based on options
@@ -449,7 +451,37 @@ class PayslipGenerationService {
   // ==========================================================================
   // Get current period
   // ==========================================================================
-  async getCurrentPeriod() {
+  async getCurrentPeriod(manualYear = null, manualMonth = null) {
+    // If manual year and month provided, use those instead of BT05
+    if (manualYear && manualMonth) {
+      console.log(`📅 Using manual period: Year=${manualYear}, Month=${manualMonth}`);
+      
+      // Validate that the manual period exists in py_stdrate
+      const validateQuery = `
+        SELECT ord, mth, pmth
+        FROM py_stdrate
+        WHERE type = 'BT05'
+          AND ord = ?
+          AND mth = ?
+        LIMIT 1
+      `;
+      
+      const [rows] = await pool.query(validateQuery, [manualYear, manualMonth]);
+      
+      if (rows.length > 0) {
+        return rows[0];
+      } else {
+        // If not found in py_stdrate, create a period object anyway
+        console.warn(`⚠️ Manual period ${manualYear}-${manualMonth} not found in py_stdrate, using provided values`);
+        return {
+          ord: manualYear,
+          mth: manualMonth,
+          pmth: null
+        };
+      }
+    }
+    
+    // Default: Get current period from BT05
     const query = `
       SELECT ord, mth, pmth
       FROM py_stdrate
@@ -458,6 +490,11 @@ class PayslipGenerationService {
     `;
 
     const [rows] = await pool.query(query);
+    
+    if (rows.length > 0) {
+      console.log(`📅 Using BT05 period: Year=${rows[0].ord}, Month=${rows[0].mth}`);
+    }
+    
     return rows[0] || null;
   }
 

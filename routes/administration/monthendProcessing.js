@@ -108,13 +108,10 @@ router.post('/process-monthend', verifyToken, async (req, res) => {
     }
     
     // Step 2: Check if already processed for this period
-    const monthColumn = `amtthismth${currentPeriod.month}`;
     const [existingProcess] = await pool.query(
-      `SELECT COUNT(*) as count FROM ${currentDb}.py_payhistory
-       WHERE his_year = ? 
-         AND his_type = 'PY01'
-         AND ${monthColumn} > 0`,
-      [currentPeriod.year]
+      `SELECT COUNT(*) as count FROM ${currentDb}.py_monthend
+       WHERE process_year = ? AND process_month = ?`,
+      [currentPeriod.year, currentPeriod.month]
     );
     
     if (existingProcess[0].count > 0) {
@@ -122,7 +119,7 @@ router.post('/process-monthend', verifyToken, async (req, res) => {
         success: false,
         error: `Month-end for ${getMonthName(currentPeriod.month)} ${currentPeriod.year} has already been processed`,
         details: {
-          message: 'Data already exists in py_payhistory for this period'
+          message: 'Data already exists in py_monthend for this period'
         }
       });
     }
@@ -149,18 +146,59 @@ router.post('/process-monthend', verifyToken, async (req, res) => {
       
       console.log('✅ Stored procedure completed successfully');
       
-      // Step 6: Calculate next month and year
+      // Step 6: Get processing statistics from py_performance_logs
+      const [extractRecLog] = await connection.query(
+        `SELECT records_processed 
+         FROM py_performance_log 
+         WHERE procedure_name = 'sp_extractrec_optimized'
+           AND process_year = ? 
+           AND process_month = ?
+           AND status = 'SUCCESS'
+         ORDER BY completed_at DESC 
+         LIMIT 1`,
+        [currentPeriod.year, currentPeriod.month]
+      );
+      
+      const [monthendLog] = await connection.query(
+        `SELECT records_processed, execution_time_ms
+         FROM py_performance_log 
+         WHERE procedure_name = 'py_py37Monthend'
+           AND process_year = ? 
+           AND process_month = ?
+           AND status = 'SUCCESS'
+         ORDER BY completed_at DESC 
+         LIMIT 1`,
+        [currentPeriod.year, currentPeriod.month]
+      );
+      
+      const employeesProcessed = extractRecLog.length > 0 ? extractRecLog[0].records_processed : 0;
+      const recordsProcessed = monthendLog.length > 0 ? monthendLog[0].records_processed : 0;
+      const executionTime = monthendLog.length > 0 ? monthendLog[0].execution_time_ms : 0;
+      
+      console.log(`📊 Statistics: Employees=${employeesProcessed}, Records=${recordsProcessed}`);
+      
+      // Step 7: Insert into py_monthend table
+      await connection.query(
+        `INSERT INTO py_monthend 
+         (employees_processed, records_processed, process_year, process_month, datecreated, createdby)
+         VALUES (?, ?, ?, ?, NOW(), ?)`,
+        [employeesProcessed, recordsProcessed, currentPeriod.year, currentPeriod.month, userFullname]
+      );
+      
+      console.log('✅ Month-end record inserted into py_monthend');
+      
+      // Step 8: Calculate next month and year
       let nextMonth = currentPeriod.month + 1;
       let nextYear = currentPeriod.year;
       
       if (nextMonth > 12) {
-        nextMonth = 1;
-        nextYear = currentPeriod.year + 1;
+        nextMonth = 12;
+        nextYear = currentPeriod.year;
       }
       
       console.log(`📅 Moving period: ${currentPeriod.month}/${currentPeriod.year} → ${nextMonth}/${nextYear}`);
       
-      // Step 7: Update BT05 status - advance to next period and reset status to 0
+      // Step 9: Update BT05 status - advance to next period and reset status to 0
       const [updateResult] = await connection.query(
         `UPDATE py_stdrate 
          SET mth = ?, 
@@ -178,21 +216,8 @@ router.post('/process-monthend', verifyToken, async (req, res) => {
       
       console.log('✅ BT05 status updated: sun=0 (Data Entry Open), period advanced');
       
-      // Step 8: Commit transaction
+      // Step 10: Commit transaction
       await connection.commit();
-      
-      // Step 9: Get processing statistics from performance log
-      const [logDetails] = await connection.query(
-        `SELECT * FROM py_performance_log 
-         WHERE procedure_name = 'py_py37Monthend'
-           AND process_year = ? 
-           AND process_month = ?
-         ORDER BY started_at DESC 
-         LIMIT 1`,
-        [currentPeriod.year, currentPeriod.month]
-      );
-      
-      const log = logDetails[0] || {};
       
       console.log('✅ Month-end processing completed successfully');
       
@@ -211,8 +236,9 @@ router.post('/process-monthend', verifyToken, async (req, res) => {
             monthName: getMonthName(nextMonth)
           },
           statistics: {
-            recordsProcessed: log.records_processed || 0,
-            executionTime: log.execution_time_ms ? `${(log.execution_time_ms / 1000).toFixed(2)}s` : 'N/A'
+            recordsProcessed: recordsProcessed,
+            employeesProcessed: employeesProcessed,
+            executionTime: executionTime ? `${(executionTime / 1000).toFixed(2)}s` : 'N/A'
           },
           processedBy: userFullname,
           timestamp: new Date().toISOString(),
@@ -245,145 +271,22 @@ router.post('/process-monthend', verifyToken, async (req, res) => {
   }
 });
 
-// ==================== GET PROCESSING LOGS (FROM py_payhistory) ====================
+// ==================== GET PROCESSING LOGS (FROM py_monthend) ====================
 router.get('/processing-logs', verifyToken, async (req, res) => {
   try {
     const currentDb = req.current_class;
     const limit = parseInt(req.query.limit) || 10;
     
-    // Get all unique year/month combinations from py_payhistory
     const [logs] = await pool.query(
-      `SELECT DISTINCT
-         his_year AS year,
-         1 AS month,
-         MAX(CASE WHEN amtthismth1 > 0 THEN datecreated END) AS start_time,
-         COUNT(CASE WHEN amtthismth1 > 0 THEN 1 END) AS record_count
-       FROM ${currentDb}.py_payhistory
-       WHERE his_type = 'PY01' AND amtthismth1 > 0
-       GROUP BY his_year
-       
-       UNION ALL
-       
-       SELECT DISTINCT
-         his_year AS year,
-         2 AS month,
-         MAX(CASE WHEN amtthismth2 > 0 THEN datecreated END) AS start_time,
-         COUNT(CASE WHEN amtthismth2 > 0 THEN 1 END) AS record_count
-       FROM ${currentDb}.py_payhistory
-       WHERE his_type = 'PY01' AND amtthismth2 > 0
-       GROUP BY his_year
-       
-       UNION ALL
-       
-       SELECT DISTINCT
-         his_year AS year,
-         3 AS month,
-         MAX(CASE WHEN amtthismth3 > 0 THEN datecreated END) AS start_time,
-         COUNT(CASE WHEN amtthismth3 > 0 THEN 1 END) AS record_count
-       FROM ${currentDb}.py_payhistory
-       WHERE his_type = 'PY01' AND amtthismth3 > 0
-       GROUP BY his_year
-       
-       UNION ALL
-       
-       SELECT DISTINCT
-         his_year AS year,
-         4 AS month,
-         MAX(CASE WHEN amtthismth4 > 0 THEN datecreated END) AS start_time,
-         COUNT(CASE WHEN amtthismth4 > 0 THEN 1 END) AS record_count
-       FROM ${currentDb}.py_payhistory
-       WHERE his_type = 'PY01' AND amtthismth4 > 0
-       GROUP BY his_year
-       
-       UNION ALL
-       
-       SELECT DISTINCT
-         his_year AS year,
-         5 AS month,
-         MAX(CASE WHEN amtthismth5 > 0 THEN datecreated END) AS start_time,
-         COUNT(CASE WHEN amtthismth5 > 0 THEN 1 END) AS record_count
-       FROM ${currentDb}.py_payhistory
-       WHERE his_type = 'PY01' AND amtthismth5 > 0
-       GROUP BY his_year
-       
-       UNION ALL
-       
-       SELECT DISTINCT
-         his_year AS year,
-         6 AS month,
-         MAX(CASE WHEN amtthismth6 > 0 THEN datecreated END) AS start_time,
-         COUNT(CASE WHEN amtthismth6 > 0 THEN 1 END) AS record_count
-       FROM ${currentDb}.py_payhistory
-       WHERE his_type = 'PY01' AND amtthismth6 > 0
-       GROUP BY his_year
-       
-       UNION ALL
-       
-       SELECT DISTINCT
-         his_year AS year,
-         7 AS month,
-         MAX(CASE WHEN amtthismth7 > 0 THEN datecreated END) AS start_time,
-         COUNT(CASE WHEN amtthismth7 > 0 THEN 1 END) AS record_count
-       FROM ${currentDb}.py_payhistory
-       WHERE his_type = 'PY01' AND amtthismth7 > 0
-       GROUP BY his_year
-       
-       UNION ALL
-       
-       SELECT DISTINCT
-         his_year AS year,
-         8 AS month,
-         MAX(CASE WHEN amtthismth8 > 0 THEN datecreated END) AS start_time,
-         COUNT(CASE WHEN amtthismth8 > 0 THEN 1 END) AS record_count
-       FROM ${currentDb}.py_payhistory
-       WHERE his_type = 'PY01' AND amtthismth8 > 0
-       GROUP BY his_year
-       
-       UNION ALL
-       
-       SELECT DISTINCT
-         his_year AS year,
-         9 AS month,
-         MAX(CASE WHEN amtthismth9 > 0 THEN datecreated END) AS start_time,
-         COUNT(CASE WHEN amtthismth9 > 0 THEN 1 END) AS record_count
-       FROM ${currentDb}.py_payhistory
-       WHERE his_type = 'PY01' AND amtthismth9 > 0
-       GROUP BY his_year
-       
-       UNION ALL
-       
-       SELECT DISTINCT
-         his_year AS year,
-         10 AS month,
-         MAX(CASE WHEN amtthismth10 > 0 THEN datecreated END) AS start_time,
-         COUNT(CASE WHEN amtthismth10 > 0 THEN 1 END) AS record_count
-       FROM ${currentDb}.py_payhistory
-       WHERE his_type = 'PY01' AND amtthismth10 > 0
-       GROUP BY his_year
-       
-       UNION ALL
-       
-       SELECT DISTINCT
-         his_year AS year,
-         11 AS month,
-         MAX(CASE WHEN amtthismth11 > 0 THEN datecreated END) AS start_time,
-         COUNT(CASE WHEN amtthismth11 > 0 THEN 1 END) AS record_count
-       FROM ${currentDb}.py_payhistory
-       WHERE his_type = 'PY01' AND amtthismth11 > 0
-       GROUP BY his_year
-       
-       UNION ALL
-       
-       SELECT DISTINCT
-         his_year AS year,
-         12 AS month,
-         MAX(CASE WHEN amtthismth12 > 0 THEN datecreated END) AS start_time,
-         COUNT(CASE WHEN amtthismth12 > 0 THEN 1 END) AS record_count
-       FROM ${currentDb}.py_payhistory
-       WHERE his_type = 'PY01' AND amtthismth12 > 0
-       GROUP BY his_year
-       
-       ORDER BY year DESC, month DESC
+      `SELECT 
+         process_year AS year,
+         process_month AS month,
+         employees_processed,
+         records_processed,
+         datecreated AS processed_on,
+         createdby AS processed_by
+       FROM ${currentDb}.py_monthend
+       ORDER BY process_year DESC, process_month DESC
        LIMIT ?`,
       [limit]
     );
@@ -393,12 +296,12 @@ router.get('/processing-logs', verifyToken, async (req, res) => {
       year: log.year,
       month: log.month,
       status: 'SUCCESS',
-      start_time: log.start_time,
-      end_time: log.start_time,
+      start_time: log.processed_on,
+      end_time: log.processed_on,
       duration_seconds: 0,
-      payments_processed: log.record_count,
-      employees_processed: log.record_count,
-      processed_by: ''
+      payments_processed: log.records_processed,
+      employees_processed: log.employees_processed,
+      processed_by: log.processed_by || 'System'
     }));
     
     res.json({
@@ -465,11 +368,11 @@ function getMonthName(month) {
 }
 
 
-// year-end processing
+// ==================== YEAR-END PROCESSING ====================
 router.post('/process-yearend', verifyToken, async (req, res) => {
   const { year } = req.body;
   
-  if (!year || year < 2020 || year > new Date().getFullYear()) {
+  if (!year || year < 2020 || year > new Date().getFullYear() + 1) {
     return res.status(400).json({
       success: false,
       error: 'Invalid year'
@@ -477,61 +380,190 @@ router.post('/process-yearend', verifyToken, async (req, res) => {
   }
   
   const currentDb = req.current_class;
-  const userId = req.user_id;
+  const userFullname = req.user_fullname || 'System';
   
   let connection = null;
   
   try {
-    // Check if already processed
-    const [existingProcess] = await pool.query(
-      `SELECT * FROM py_yearend_processing_log 
-       WHERE year = ? AND database_name = ? AND status = 'COMPLETED'`,
-      [year, currentDb],
-      req.requestId
+    console.log(`🎯 Starting year-end processing: ${year} for ${currentDb}`);
+    console.log(`   User: ${userFullname}`);
+
+    // Validate company
+    const [companyRows] = await pool.query(
+      `SELECT comp_code, comp_name FROM ${currentDb}.py_paysystem;`
     );
-    
-    if (existingProcess.length > 0) {
+
+    if (companyRows.length === 0) {
       return res.status(400).json({
         success: false,
-        error: `Year-end for ${year} has already been processed`,
-        details: existingProcess[0]
+        error: 'No company found. Year-end processing requires a valid company.'
       });
     }
     
-    console.log(`🎯 Starting year-end processing: ${year} for ${currentDb}`);
+    const companyName = companyRows[0].comp_name;
+    const isNavyCompany = companyName === 'NAVY';
     
-    connection = await pool.getConnection();
-    await connection.query(`USE \`${currentDb}\``);
-    
-    await connection.query(
-      `CALL sp_yearend_processing(?, ?, ?, @status, @message)`,
-      [year, userId, currentDb]
+    // Step 1: Get current period from py_stdrate
+    const [periodRows] = await pool.query(
+      `SELECT mth AS month, pmth AS prev_month, ord AS year
+       FROM ${currentDb}.py_stdrate 
+       WHERE type = 'BT05' 
+       LIMIT 1`
     );
     
-    const [[output]] = await connection.query('SELECT @status AS status, @message AS message');
+    if (periodRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Payroll period not found. Please initialize BT05 in py_stdrate.'
+      });
+    }
     
-    connection.release();
+    const currentPeriod = periodRows[0];
     
-    if (output.status === 'SUCCESS') {
+    // Step 2: Validate that previous month is December (12)
+    if (currentPeriod.month !== 12 || currentPeriod.prev_month !== 12) {
+      return res.status(400).json({
+        success: false,
+        error: 'Year-end can only be processed when in December',
+        details: {
+          currentMonth: currentPeriod.month,
+          previousMonth: currentPeriod.prev_month,
+          message: `Current period: Month ${currentPeriod.month}, Previous Month ${currentPeriod.prev_month}`
+        }
+      });
+    }
+    
+    // Step 3: Validate year matches
+    if (currentPeriod.year !== parseInt(year)) {
+      return res.status(400).json({
+        success: false,
+        error: `Year mismatch. Expected ${currentPeriod.year} but got ${year}`,
+        details: {
+          expectedYear: currentPeriod.year,
+          providedYear: year
+        }
+      });
+    }
+    
+    console.log('✅ Validation passed: Month=1, Previous Month=12, Year matches');
+    
+    // Step 4: Get database connection and start transaction
+    connection = await pool.getConnection();
+    await connection.query(`USE \`${currentDb}\``);
+    await connection.beginTransaction();
+    
+    try {
+      // Step 5: Update py_stdrate - increment ord (year) by 1
+      console.log('📝 Incrementing year (ord) by 1...');
+      
+      const [yearUpdateResult] = await connection.query(
+        `UPDATE py_stdrate 
+         SET ord = ord + 1, mth = 1, pmth = 0
+         WHERE type = 'BT05'`
+      );
+      
+      console.log(`✅ Updated year from ${currentPeriod.year} to ${currentPeriod.year + 1}`);
+      
+      // Step 6: Update hr_employees emolumentform (NAVY only)
+      let employeesUpdated = 0;
+      
+      if (isNavyCompany) {
+        console.log('📝 Updating emolumentform to "No" (NAVY company)...');
+        
+        const [updateResult] = await connection.query(
+          `UPDATE hr_employees 
+           SET emolumentform = 'No'
+           WHERE emolumentform IS NOT NULL OR emolumentform != 'No'`
+        );
+        
+        employeesUpdated = updateResult.affectedRows;
+        console.log(`✅ Updated ${employeesUpdated} employee records`);
+      } else {
+        console.log(`ℹ️  Skipping emolumentform update (Company: ${companyName}, not NAVY)`);
+      }
+      
+      // Step 7: Commit transaction
+      await connection.commit();
+      
+      console.log('✅ Year-end processing completed successfully');
+      
       res.json({
         success: true,
-        message: output.message,
-        data: { year, database: currentDb, processedBy: userId }
+        message: `Year-end processed successfully for ${year}`,
+        data: {
+          year: year,
+          newYear: currentPeriod.year + 1,
+          employeesUpdated: employeesUpdated,
+          emolumentFormUpdated: isNavyCompany,
+          companyName: companyName,
+          processedBy: userFullname,
+          timestamp: new Date().toISOString()
+        }
       });
-    } else {
-      res.status(500).json({
-        success: false,
-        error: output.message
-      });
+      
+    } catch (procError) {
+      // Rollback transaction on error
+      await connection.rollback();
+      console.error('❌ Year-end processing failed, transaction rolled back:', procError);
+      throw procError;
     }
     
   } catch (error) {
-    if (connection) connection.release();
-    console.error('❌ Year-end error:', error);
+    console.error('❌ Year-end processing error:', error);
+    
     res.status(500).json({
       success: false,
       error: 'Year-end processing failed',
-      message: error.message
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+    
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+});
+
+// ==================== GET YEAR-END STATUS (for autofill) ====================
+router.get('/yearend-status', verifyToken, async (req, res) => {
+  try {
+    const currentDb = req.current_class;
+    
+    const [rows] = await pool.query(
+      `SELECT ord AS year, mth AS month, pmth AS prev_month 
+       FROM ${currentDb}.py_stdrate 
+       WHERE type = 'BT05' 
+       LIMIT 1`
+    );
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Payroll period not found' 
+      });
+    }
+    
+    const period = rows[0];
+    const canProcessYearEnd = period.month === 12 && period.prev_month === 12;
+    
+    res.json({
+      success: true,
+      year: period.year,
+      month: period.month,
+      prevMonth: period.prev_month,
+      canProcessYearEnd: canProcessYearEnd,
+      blockReason: canProcessYearEnd 
+        ? null 
+        : `Year-end can only be processed with previous month December (12).Previous Month ${period.prev_month}`
+    });
+    
+  } catch (error) {
+    console.error('Error fetching year-end status:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch year-end status',
+      message: error.message 
     });
   }
 });

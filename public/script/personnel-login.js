@@ -1,3 +1,5 @@
+
+
 tailwind.config = {
   theme: {
     extend: {
@@ -33,7 +35,7 @@ const AlertModal = {
   show(options = {}) {
     return new Promise((resolve) => {
       this.resolve = resolve;
-      
+
       const type = options.type || 'info';
       const title = options.title || this.getDefaultTitle(type);
       const message = options.message || '';
@@ -91,17 +93,26 @@ const AlertModal = {
 // Initialize alert modal
 AlertModal.init();
 
+function toSlug(str) {
+  return str
+    .toLowerCase()
+    .trim()
+    .replace(/\//g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+}
+
 async function loadPayrollClasses() {
   try {
     const res = await fetch("/classes");
     const classes = await res.json();
 
     const select = document.getElementById("payroll-class");
-
     classes.forEach(cls => {
       const opt = document.createElement("option");
-      opt.value = cls.id;   // backend DB id (e.g. hicaddata3)
+      opt.value = toSlug(cls.name);   // OFFICERS, W/OFFICERS, RATE A === officers, w-officers, rate-a
       opt.textContent = cls.name; // label (e.g. RATINGS A)
+      console.log(opt)
       select.appendChild(opt);
     });
   } catch (err) {
@@ -112,7 +123,7 @@ async function loadPayrollClasses() {
 document.addEventListener("DOMContentLoaded", loadPayrollClasses);
 
 
-document.getElementById('login-form').addEventListener('submit', async function(e) {
+document.getElementById('login-form').addEventListener('submit', async function (e) {
   e.preventDefault();
 
   const formData = new FormData(this);
@@ -183,7 +194,7 @@ const eyeClosed = document.getElementById("eyeClosed");
 togglePassword.addEventListener("click", () => {
   const isPassword = passwordInput.type === "password";
   passwordInput.type = isPassword ? "text" : "password";
-  
+
   // Toggle SVG display
   eyeOpen.style.display = isPassword ? "none" : "inline";
   eyeClosed.style.display = isPassword ? "inline" : "none";
@@ -229,14 +240,14 @@ const ForgotPasswordManager = {
 
     // Password toggle
     document.querySelectorAll('.toggle-password-reset').forEach(toggle => {
-      toggle.addEventListener('click', function() {
+      toggle.addEventListener('click', function () {
         const targetId = this.getAttribute('data-target');
         const input = document.getElementById(targetId);
         if (!input) return;
-        
+
         const isPassword = input.type === 'password';
         input.type = isPassword ? 'text' : 'password';
-        
+
         const eyeOpen = this.querySelector('.eye-open');
         const eyeClosed = this.querySelector('.eye-closed');
         if (eyeOpen && eyeClosed) {
@@ -270,7 +281,7 @@ const ForgotPasswordManager = {
     this.verifyStep.classList.remove('hidden');
     this.resetStep.classList.add('hidden');
     document.body.style.overflow = 'hidden';
-    
+
     // Reset forms
     document.getElementById('verify-identity-form')?.reset();
     document.getElementById('reset-password-form')?.reset();
@@ -296,15 +307,15 @@ const ForgotPasswordManager = {
     const password = document.getElementById('new-password')?.value || '';
     const confirm = document.getElementById('confirm-new-password')?.value || '';
     const msg = document.getElementById('password-match-msg');
-    
+
     if (!msg) return true;
-    
+
     if (confirm === '') {
       msg.textContent = '';
       msg.className = 'text-xs';
       return true;
     }
-    
+
     if (password === confirm) {
       msg.textContent = '✓ Passwords match';
       msg.className = 'text-xs text-green-600';
@@ -318,7 +329,7 @@ const ForgotPasswordManager = {
 
   async verifyIdentity(e) {
     e.preventDefault();
-    
+
     const btn = document.getElementById('verify-btn');
     btn.disabled = true;
     btn.textContent = 'Verifying...';
@@ -343,7 +354,7 @@ const ForgotPasswordManager = {
       if (res.ok) {
         // Store verified data
         this.verifiedData = data;
-        
+
         // Populate hidden fields in reset form
         document.getElementById('reset-user-id').value = data.user_id;
         document.getElementById('reset-full-name').value = data.full_name;
@@ -422,7 +433,7 @@ const ForgotPasswordManager = {
       if (res.ok) {
         // Close forgot password modal
         this.close();
-        
+
         // Show success modal
         this.successModal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';

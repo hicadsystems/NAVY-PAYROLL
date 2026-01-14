@@ -11,8 +11,6 @@ const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-//const jsreport = require('jsreport-core')();
-//const multer = require("multer");
 const PORT = process.env.PORT || 5500;
 
 

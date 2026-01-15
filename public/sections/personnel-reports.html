@@ -1,61 +1,125 @@
 <section class="items border rounded-lg m-6 max-w-4xl mr-auto p-6 mx-auto">
-
   <!-- Report Title -->
   <div class="hidden mb-6 text-center">
     <h2 class="text-2xl font-bold text-blue-700">Personnel Report</h2>
-    <p class="text-sm text-gray-600 mt-1">Generate comprehensive personnel reports with customizable filters</p>
+    <p class="text-sm text-gray-600 mt-1">
+      Generate comprehensive personnel reports with customizable filters
+    </p>
   </div>
 
   <!-- Radio Selection -->
   <div class="mb-6 bg-blue-50 p-4 rounded-lg">
-    <span class="text-blue-600 font-semibold text-lg block mb-3">Select Report Scope:</span>
+    <span class="text-blue-600 font-semibold text-lg block mb-3"
+      >Select Report Scope:</span
+    >
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <label class="flex items-center cursor-pointer">
-        <input type="radio" name="personnelScope" value="all" class="text-blue-600 w-4 h-4" checked>
+        <input
+          type="radio"
+          name="personnelScope"
+          value="all"
+          class="text-blue-600 w-4 h-4"
+          checked
+        />
         <span class="ml-2 font-medium">All Personnel</span>
       </label>
       <label class="flex items-center cursor-pointer">
-        <input type="radio" name="personnelScope" value="rank" class="text-blue-600 w-4 h-4">
+        <input
+          type="radio"
+          name="personnelScope"
+          value="rank"
+          class="text-blue-600 w-4 h-4"
+        />
         <span class="ml-2 font-medium">By Rank</span>
       </label>
       <label class="flex items-center cursor-pointer">
-        <input type="radio" name="personnelScope" value="location" class="text-blue-600 w-4 h-4">
+        <input
+          type="radio"
+          name="personnelScope"
+          value="location"
+          class="text-blue-600 w-4 h-4"
+        />
         <span class="ml-2 font-medium">By Location</span>
       </label>
       <label class="flex items-center cursor-pointer">
-        <input type="radio" name="personnelScope" value="pfa" class="text-blue-600 w-4 h-4">
+        <input
+          type="radio"
+          name="personnelScope"
+          value="pfa"
+          class="text-blue-600 w-4 h-4"
+        />
         <span class="ml-2 font-medium">By PFA</span>
       </label>
       <label class="flex items-center cursor-pointer">
-        <input type="radio" name="personnelScope" value="gradetype" class="text-blue-600 w-4 h-4">
+        <input
+          type="radio"
+          name="personnelScope"
+          value="gradetype"
+          class="text-blue-600 w-4 h-4"
+        />
         <span class="ml-2 font-medium">By Grade Type</span>
       </label>
       <label class="flex items-center cursor-pointer">
-        <input type="radio" name="personnelScope" value="gradelevel" class="text-blue-600 w-4 h-4">
+        <input
+          type="radio"
+          name="personnelScope"
+          value="gradelevel"
+          class="text-blue-600 w-4 h-4"
+        />
         <span class="ml-2 font-medium">By Grade Level</span>
       </label>
       <label class="flex items-center cursor-pointer">
-        <input type="radio" name="personnelScope" value="bank" class="text-blue-600 w-4 h-4">
+        <input
+          type="radio"
+          name="personnelScope"
+          value="bank"
+          class="text-blue-600 w-4 h-4"
+        />
         <span class="ml-2 font-medium">By Bank Branch</span>
       </label>
       <label class="flex items-center cursor-pointer">
-        <input type="radio" name="personnelScope" value="state" class="text-blue-600 w-4 h-4">
+        <input
+          type="radio"
+          name="personnelScope"
+          value="state"
+          class="text-blue-600 w-4 h-4"
+        />
         <span class="ml-2 font-medium">By State</span>
       </label>
       <label class="flex items-center cursor-pointer">
-        <input type="radio" name="personnelScope" value="emolument" class="text-blue-600 w-4 h-4">
+        <input
+          type="radio"
+          name="personnelScope"
+          value="emolument"
+          class="text-blue-600 w-4 h-4"
+        />
         <span class="ml-2 font-medium">Emolument Form</span>
       </label>
       <label class="flex items-center cursor-pointer">
-        <input type="radio" name="personnelScope" value="rent" class="text-blue-600 w-4 h-4">
+        <input
+          type="radio"
+          name="personnelScope"
+          value="rent"
+          class="text-blue-600 w-4 h-4"
+        />
         <span class="ml-2 font-medium">Rent Subsidy</span>
       </label>
       <label class="flex items-center cursor-pointer">
-        <input type="radio" name="personnelScope" value="taxed" class="text-blue-600 w-4 h-4">
+        <input
+          type="radio"
+          name="personnelScope"
+          value="taxed"
+          class="text-blue-600 w-4 h-4"
+        />
         <span class="ml-2 font-medium">Tax Status</span>
       </label>
       <label class="flex items-center cursor-pointer">
-        <input type="radio" name="personnelScope" value="oldemployees" class="text-blue-600 w-4 h-4">
+        <input
+          type="radio"
+          name="personnelScope"
+          value="oldemployees"
+          class="text-blue-600 w-4 h-4"
+        />
         <span class="ml-2 font-medium">Employment Status</span>
       </label>
     </div>
@@ -63,7 +127,6 @@
 
   <!-- Dynamic Form Fields -->
   <div id="personnelForm" class="space-y-5">
-
     <!-- Conditional Filters with Export Format on Same Line -->
     <div id="rankWrapper" class="hidden bg-blue-50 p-4 rounded-lg">
       <div class="grid md:grid-cols-2 gap-4 items-end">
@@ -71,7 +134,10 @@
           <label class="block text-sm font-medium text-gray-900 mb-2">
             <i class="fas fa-star text-blue-600 mr-2"></i>Select Rank/Title
           </label>
-          <select id="rankSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          <select
+            id="rankSelect"
+            class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
             <option value="">-- Choose Rank --</option>
           </select>
         </div>
@@ -83,9 +149,13 @@
       <div class="grid md:grid-cols-2 gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-900 mb-2">
-            <i class="fas fa-map-marker-alt text-green-600 mr-2"></i>Select Location
+            <i class="fas fa-map-marker-alt text-green-600 mr-2"></i>Select
+            Location
           </label>
-          <select id="locationSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500">
+          <select
+            id="locationSelect"
+            class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+          >
             <option value="">-- Choose Location --</option>
           </select>
         </div>
@@ -99,7 +169,10 @@
           <label class="block text-sm font-medium text-gray-900 mb-2">
             <i class="fas fa-piggy-bank text-purple-600 mr-2"></i>Select PFA
           </label>
-          <select id="pfaSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+          <select
+            id="pfaSelect"
+            class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+          >
             <option value="">-- Choose PFA --</option>
           </select>
         </div>
@@ -111,9 +184,13 @@
       <div class="grid md:grid-cols-2 gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-900 mb-2">
-            <i class="fas fa-layer-group text-orange-600 mr-2"></i>Select Grade Type
+            <i class="fas fa-layer-group text-orange-600 mr-2"></i>Select Grade
+            Type
           </label>
-          <select id="gradetypeSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+          <select
+            id="gradetypeSelect"
+            class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+          >
             <option value="">-- Choose Grade Type --</option>
           </select>
         </div>
@@ -125,9 +202,13 @@
       <div class="grid md:grid-cols-2 gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-900 mb-2">
-            <i class="fas fa-sort-numeric-up text-pink-600 mr-2"></i>Select Grade Level
+            <i class="fas fa-sort-numeric-up text-pink-600 mr-2"></i>Select
+            Grade Level
           </label>
-          <select id="gradelevelSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+          <select
+            id="gradelevelSelect"
+            class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+          >
             <option value="">-- Choose Grade Level --</option>
           </select>
         </div>
@@ -139,9 +220,13 @@
       <div class="grid md:grid-cols-2 gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-900 mb-2">
-            <i class="fas fa-university text-indigo-600 mr-2"></i>Select Bank Branch
+            <i class="fas fa-university text-indigo-600 mr-2"></i>Select Bank
+            Branch
           </label>
-          <select id="bankSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <select
+            id="bankSelect"
+            class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          >
             <option value="">-- Choose Bank Branch --</option>
           </select>
         </div>
@@ -155,7 +240,10 @@
           <label class="block text-sm font-medium text-gray-900 mb-2">
             <i class="fas fa-map text-teal-600 mr-2"></i>Select State of Origin
           </label>
-          <select id="stateSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+          <select
+            id="stateSelect"
+            class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+          >
             <option value="">-- Choose State --</option>
           </select>
         </div>
@@ -167,9 +255,13 @@
       <div class="grid md:grid-cols-2 gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-900 mb-2">
-            <i class="fas fa-file-invoice text-yellow-600 mr-2"></i>Emolument Form Status
+            <i class="fas fa-file-invoice text-yellow-600 mr-2"></i>Emolument
+            Form Status
           </label>
-          <select id="emolumentSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+          <select
+            id="emolumentSelect"
+            class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+          >
             <option value="">-- Choose Status --</option>
           </select>
         </div>
@@ -183,7 +275,10 @@
           <label class="block text-sm font-medium text-gray-900 mb-2">
             <i class="fas fa-home text-red-600 mr-2"></i>Rent Subsidy Status
           </label>
-          <select id="rentSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500">
+          <select
+            id="rentSelect"
+            class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+          >
             <option value="">-- Choose Status --</option>
           </select>
         </div>
@@ -197,7 +292,10 @@
           <label class="block text-sm font-medium text-gray-900 mb-2">
             <i class="fas fa-receipt text-cyan-600 mr-2"></i>Tax Status
           </label>
-          <select id="taxedSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500">
+          <select
+            id="taxedSelect"
+            class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+          >
             <option value="">-- Choose Status --</option>
           </select>
         </div>
@@ -211,7 +309,10 @@
           <label class="block text-sm font-medium text-gray-900 mb-2">
             <i class="fas fa-users text-gray-600 mr-2"></i>Employment Status
           </label>
-          <select id="oldemployeesSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500">
+          <select
+            id="oldemployeesSelect"
+            class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
+          >
             <option value="">-- Choose Status --</option>
           </select>
         </div>
@@ -226,15 +327,31 @@
       </label>
       <div class="flex gap-4">
         <label class="flex items-center cursor-pointer">
-          <input type="radio" name="exportFormat" value="pdf" class="text-blue-600 w-4 h-4" checked>
+          <input
+            type="radio"
+            name="exportFormat"
+            value="pdf"
+            class="text-blue-600 w-4 h-4"
+            checked
+          />
           <span class="ml-2">PDF</span>
         </label>
         <label class="flex items-center cursor-pointer">
-          <input type="radio" name="exportFormat" value="excel" class="text-blue-600 w-4 h-4">
+          <input
+            type="radio"
+            name="exportFormat"
+            value="excel"
+            class="text-blue-600 w-4 h-4"
+          />
           <span class="ml-2">Excel (.xlsx)</span>
         </label>
         <label class="hidden flex items-center cursor-pointer">
-          <input type="radio" name="exportFormat" value="json" class="text-blue-600 w-4 h-4">
+          <input
+            type="radio"
+            name="exportFormat"
+            value="json"
+            class="text-blue-600 w-4 h-4"
+          />
           <span class="ml-2">JSON</span>
         </label>
       </div>
@@ -242,11 +359,17 @@
 
     <!-- Action Buttons -->
     <div class="flex justify-end gap-3 pt-4 border-t">
-      <button id="cancelPersonnel" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition-colors">
+      <button
+        id="cancelPersonnel"
+        class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition-colors"
+      >
         <i class="fas fa-times mr-2"></i>Clear
       </button>
 
-      <button id="generatePersonnel" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-lg hover:shadow-xl">
+      <button
+        id="generatePersonnel"
+        class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-lg hover:shadow-xl"
+      >
         <i class="fas fa-file-alt mr-2"></i>Generate Report
       </button>
     </div>
@@ -254,18 +377,26 @@
 </section>
 
 <!-- Loading Modal -->
-<div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+<div
+  id="loadingModal"
+  class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+>
   <div class="bg-white rounded-lg shadow-lg p-8 text-center">
     <div class="mb-4">
       <i class="fas fa-spinner fa-spin text-4xl text-blue-600"></i>
     </div>
     <h3 class="text-lg font-semibold mb-2">Generating Report...</h3>
-    <p class="text-gray-600">Please wait while we prepare your personnel report.</p>
+    <p class="text-gray-600">
+      Please wait while we prepare your personnel report.
+    </p>
   </div>
 </div>
 
 <!-- Reusable Modal -->
-<div id="personnelModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+<div
+  id="personnelModal"
+  class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+>
   <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
     <div class="flex items-start mb-4">
       <div id="personnelModalIcon" class="mr-3 text-2xl"></div>
@@ -275,14 +406,22 @@
       </div>
     </div>
     <div class="flex justify-end">
-      <button id="personnelModalCloseBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">OK</button>
+      <button
+        id="personnelModalCloseBtn"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+      >
+        OK
+      </button>
     </div>
   </div>
 </div>
 
 <script>
-  const personnelRadios = document.querySelectorAll('input[name="personnelScope"]');
-  
+  const auth = window.authService;
+  const personnelRadios = document.querySelectorAll(
+    'input[name="personnelScope"]'
+  );
+
   // All wrapper elements
   const wrappers = {
     rank: document.getElementById("rankWrapper"),
@@ -295,10 +434,12 @@
     emolument: document.getElementById("emolumentWrapper"),
     rent: document.getElementById("rentWrapper"),
     taxed: document.getElementById("taxedWrapper"),
-    oldemployees: document.getElementById("oldemployeesWrapper")
+    oldemployees: document.getElementById("oldemployeesWrapper"),
   };
 
-  const exportFormatStandalone = document.getElementById("exportFormatStandalone");
+  const exportFormatStandalone = document.getElementById(
+    "exportFormatStandalone"
+  );
 
   // Export format HTML template
   const exportFormatHTML = `
@@ -335,7 +476,7 @@
     emolument: document.getElementById("emolumentSelect"),
     rent: document.getElementById("rentSelect"),
     taxed: document.getElementById("taxedSelect"),
-    oldemployees: document.getElementById("oldemployeesSelect")
+    oldemployees: document.getElementById("oldemployeesSelect"),
   };
 
   const generatePersonnelBtn = document.getElementById("generatePersonnel");
@@ -343,9 +484,13 @@
 
   const personnelModal = document.getElementById("personnelModal");
   const personnelModalTitle = document.getElementById("personnelModalTitle");
-  const personnelModalMessage = document.getElementById("personnelModalMessage");
+  const personnelModalMessage = document.getElementById(
+    "personnelModalMessage"
+  );
   const personnelModalIcon = document.getElementById("personnelModalIcon");
-  const personnelModalCloseBtn = document.getElementById("personnelModalCloseBtn");
+  const personnelModalCloseBtn = document.getElementById(
+    "personnelModalCloseBtn"
+  );
   const loadingModal = document.getElementById("loadingModal");
 
   let filterOptions = null;
@@ -353,17 +498,20 @@
   // Load filter options on page load
   async function loadFilterOptions() {
     try {
-      const token = localStorage.getItem('token') || '';
-      const response = await fetch('/personnel-report/filter-options', {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      const token = localStorage.getItem("token") || "";
+      const response = await auth.fetchWithAuth(
+        "/personnel-report/filter-options",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
+      );
       const result = await response.json();
-      
+
       if (result.success) {
         filterOptions = result.data;
-        
+
         // Populate all dropdowns
         populateDropdown(selects.rank, filterOptions.titles);
         populateDropdown(selects.location, filterOptions.locations);
@@ -375,20 +523,27 @@
         populateDropdown(selects.emolument, filterOptions.emolumentForms);
         populateDropdown(selects.rent, filterOptions.rentSubsidy);
         populateDropdown(selects.taxed, filterOptions.taxedStatus);
-        populateDropdown(selects.oldemployees, filterOptions.oldEmployeesOptions);
+        populateDropdown(
+          selects.oldemployees,
+          filterOptions.oldEmployeesOptions
+        );
       }
     } catch (error) {
-      console.error('Error loading filter options:', error);
-      showPersonnelModal('Error', 'Failed to load filter options. Please refresh the page.', true);
+      console.error("Error loading filter options:", error);
+      showPersonnelModal(
+        "Error",
+        "Failed to load filter options. Please refresh the page.",
+        true
+      );
     }
   }
 
   // Generic function to populate dropdowns
   function populateDropdown(selectElement, data) {
     if (!data || data.length === 0) return;
-    
-    data.forEach(item => {
-      const option = document.createElement('option');
+
+    data.forEach((item) => {
+      const option = document.createElement("option");
       option.value = item.code;
       option.textContent = item.description;
       selectElement.appendChild(option);
@@ -399,7 +554,7 @@
   function showPersonnelModal(title, message, isError = false) {
     personnelModalTitle.textContent = title;
     personnelModalMessage.textContent = message;
-    personnelModalIcon.innerHTML = isError 
+    personnelModalIcon.innerHTML = isError
       ? '<i class="fas fa-exclamation-circle text-red-500"></i>'
       : '<i class="fas fa-check-circle text-green-500"></i>';
     personnelModal.classList.remove("hidden");
@@ -409,18 +564,20 @@
 
   // Hide all wrappers
   function hideAllWrappers() {
-    Object.values(wrappers).forEach(wrapper => wrapper.classList.add("hidden"));
+    Object.values(wrappers).forEach((wrapper) =>
+      wrapper.classList.add("hidden")
+    );
     exportFormatStandalone.classList.remove("hidden");
   }
 
   // Show export format in wrapper or standalone
   function updateExportFormatDisplay(scope) {
     // Clear all export format sections in wrappers
-    document.querySelectorAll('.exportFormatSection').forEach(section => {
-      section.innerHTML = '';
+    document.querySelectorAll(".exportFormatSection").forEach((section) => {
+      section.innerHTML = "";
     });
 
-    if (scope === 'all') {
+    if (scope === "all") {
       // Show standalone export format
       exportFormatStandalone.classList.remove("hidden");
     } else {
@@ -428,7 +585,9 @@
       exportFormatStandalone.classList.add("hidden");
       const activeWrapper = wrappers[scope];
       if (activeWrapper) {
-        const exportSection = activeWrapper.querySelector('.exportFormatSection');
+        const exportSection = activeWrapper.querySelector(
+          ".exportFormatSection"
+        );
         if (exportSection) {
           exportSection.innerHTML = exportFormatHTML;
         }
@@ -437,15 +596,15 @@
   }
 
   // Radio change event
-  personnelRadios.forEach(radio => {
-    radio.addEventListener('change', () => {
+  personnelRadios.forEach((radio) => {
+    radio.addEventListener("change", () => {
       hideAllWrappers();
-      
+
       const scope = radio.value;
-      if (scope !== 'all' && wrappers[scope]) {
+      if (scope !== "all" && wrappers[scope]) {
         wrappers[scope].classList.remove("hidden");
       }
-      
+
       // Update export format display
       updateExportFormatDisplay(scope);
     });
@@ -453,39 +612,51 @@
 
   // Generate button
   generatePersonnelBtn.onclick = async () => {
-    const selectedScope = document.querySelector('input[name="personnelScope"]:checked')?.value;
-    const exportFormat = document.querySelector('input[name="exportFormat"]:checked')?.value || 'pdf';
+    const selectedScope = document.querySelector(
+      'input[name="personnelScope"]:checked'
+    )?.value;
+    const exportFormat =
+      document.querySelector('input[name="exportFormat"]:checked')?.value ||
+      "pdf";
 
     // Validation
     if (!selectedScope) {
-      return showPersonnelModal("Validation Error", "Please select a report scope!", true);
+      return showPersonnelModal(
+        "Validation Error",
+        "Please select a report scope!",
+        true
+      );
     }
 
     // Build query parameters
     let queryParams = `format=${exportFormat}`;
 
     // Add conditional filters based on scope
-    if (selectedScope !== 'all') {
+    if (selectedScope !== "all") {
       const filterValue = selects[selectedScope]?.value;
       if (!filterValue) {
-        return showPersonnelModal("Validation Error", "Please select a value for the chosen filter!", true);
+        return showPersonnelModal(
+          "Validation Error",
+          "Please select a value for the chosen filter!",
+          true
+        );
       }
-      
+
       // Map scope to query parameter name
       const paramMap = {
-        rank: 'title',
-        location: 'location',
-        pfa: 'pfa',
-        gradetype: 'gradetype',
-        gradelevel: 'gradelevel',
-        bank: 'bankBranch',
-        state: 'stateOfOrigin',
-        emolument: 'emolumentForm',
-        rent: 'rentSubsidy',
-        taxed: 'taxed',
-        oldemployees: 'oldEmployees'
+        rank: "title",
+        location: "location",
+        pfa: "pfa",
+        gradetype: "gradetype",
+        gradelevel: "gradelevel",
+        bank: "bankBranch",
+        state: "stateOfOrigin",
+        emolument: "emolumentForm",
+        rent: "rentSubsidy",
+        taxed: "taxed",
+        oldemployees: "oldEmployees",
       };
-      
+
       const paramName = paramMap[selectedScope];
       queryParams += `&${paramName}=${encodeURIComponent(filterValue)}`;
     }
@@ -494,29 +665,36 @@
     loadingModal.classList.remove("hidden");
 
     try {
-      const token = localStorage.getItem('token') || '';
-      const response = await fetch(`/personnel-report?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      const token = localStorage.getItem("token") || "";
+      const response = await auth.fetchWithAuth(
+        `/personnel-report?${queryParams}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
-      
+      );
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      if (exportFormat === 'json') {
+      if (exportFormat === "json") {
         const result = await response.json();
         loadingModal.classList.add("hidden");
-        
+
         if (result.success) {
           showPersonnelModal(
-            "Success", 
+            "Success",
             `Report generated successfully! Found ${result.data.length} personnel records.`
           );
-          console.log('Report data:', result);
+          console.log("Report data:", result);
         } else {
-          showPersonnelModal("Error", result.error || "Failed to generate report", true);
+          showPersonnelModal(
+            "Error",
+            result.error || "Failed to generate report",
+            true
+          );
         }
       } else {
         // Handle file download for Excel/PDF
@@ -524,28 +702,31 @@
         const url = window.URL.createObjectURL(blob);
 
         // Open PDF in new tab
-        if (exportFormat === 'pdf') {
-          window.open(url, '_blank');
+        if (exportFormat === "pdf") {
+          window.open(url, "_blank");
         }
 
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
-        a.download = `personnel_report_${new Date().toISOString().split('T')[0]}.${exportFormat === 'excel' ? 'xlsx' : 'pdf'}`;
+        a.download = `personnel_report_${
+          new Date().toISOString().split("T")[0]
+        }.${exportFormat === "excel" ? "xlsx" : "pdf"}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        
+
         loadingModal.classList.add("hidden");
-        showPersonnelModal(
-          "Success", 
-          `Report downloaded successfully!`
-        );
+        showPersonnelModal("Success", `Report downloaded successfully!`);
       }
     } catch (error) {
       loadingModal.classList.add("hidden");
-      console.error('Error generating report:', error);
-      showPersonnelModal("Error", `Failed to generate report: ${error.message}`, true);
+      console.error("Error generating report:", error);
+      showPersonnelModal(
+        "Error",
+        `Failed to generate report: ${error.message}`,
+        true
+      );
     }
   };
 
@@ -555,21 +736,25 @@
     hideAllWrappers();
 
     // Reset all select fields
-    Object.values(selects).forEach(select => {
+    Object.values(selects).forEach((select) => {
       select.value = "";
     });
-    
+
     // Reset radio to "all"
-    document.querySelector('input[name="personnelScope"][value="all"]').checked = true;
-    
+    document.querySelector(
+      'input[name="personnelScope"][value="all"]'
+    ).checked = true;
+
     // Reset export format to PDF
-    document.querySelector('input[name="exportFormat"][value="pdf"]').checked = true;
-    
+    document.querySelector(
+      'input[name="exportFormat"][value="pdf"]'
+    ).checked = true;
+
     // Update export format display
-    updateExportFormatDisplay('all');
+    updateExportFormatDisplay("all");
   };
 
   // Initialize
   loadFilterOptions();
-  updateExportFormatDisplay('all');
+  updateExportFormatDisplay("all");
 </script>

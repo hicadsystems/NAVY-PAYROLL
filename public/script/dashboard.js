@@ -1,80 +1,85 @@
+const auth = window.authService;
+
 tailwind.config = {
   theme: {
     extend: {
       //darkMode: 'class',
-      maxWidth: { 'layout': '1440px' },
+      maxWidth: { layout: "1440px" },
       colors: {
-      'navy': '#1e40af',
-      'warning': '#f6b409',
-      'success': '#047014'
+        navy: "#1e40af",
+        warning: "#f6b409",
+        success: "#047014",
       },
       screens: {
-      'xs': '640px',   // triggers at 640px
-      'custom': '766px' // triggers at 766px
+        xs: "640px", // triggers at 640px
+        custom: "766px", // triggers at 766px
       },
       boxShadow: {
-      'custom': '0 2px 5px 0 rgba(0,0,0,0.08)',
+        custom: "0 2px 5px 0 rgba(0,0,0,0.08)",
       },
       keyframes: {
         "grow-up": { "0%": { height: "0" }, "100%": { height: "100%" } },
-        "grow-down": { "0%": { height: "0", bottom: "0" }, "100%": { height: "100%" } },
-        "expand": { "0%": { width: "0" }, "100%": { width: "100%" } },
+        "grow-down": {
+          "0%": { height: "0", bottom: "0" },
+          "100%": { height: "100%" },
+        },
+        expand: { "0%": { width: "0" }, "100%": { width: "100%" } },
       },
       animation: {
         "grow-up": "grow-up 0.8s ease-out forwards",
         "grow-down": "grow-down 0.8s ease-out forwards",
-        "expand": "expand 0.8s ease-out forwards",
-      }
-    }
-  }
+        expand: "expand 0.8s ease-out forwards",
+      },
+    },
+  },
 };
 
-(function() {
+(function () {
   // Prevent any rendering until state is ready
   const width = window.innerWidth;
-  
-  window.addEventListener('DOMContentLoaded', function() {
+
+  window.addEventListener("DOMContentLoaded", function () {
     const body = document.body;
-    const sidebar = document.getElementById('sidebar');
-    
+    const sidebar = document.getElementById("sidebar");
+
     // Set sidebar state immediately
     if (width <= 1200 && width >= 1024) {
-      sidebar?.classList.add('desktop-hidden');
-      body.classList.add('sidebar-closed');
+      sidebar?.classList.add("desktop-hidden");
+      body.classList.add("sidebar-closed");
     } else if (width > 1200) {
-      body.classList.add('sidebar-open');
+      body.classList.add("sidebar-open");
     }
-    
+
     // Hide dashboard content if we have a hash (navigating to section)
     const hash = window.location.hash;
     if (hash && hash.length > 1) {
-      const mainContent = document.querySelector('main');
+      const mainContent = document.querySelector("main");
       if (mainContent) {
-        mainContent.style.display = 'none'; // Hide dashboard immediately
+        mainContent.style.display = "none"; // Hide dashboard immediately
       }
     }
-    
+
     // Make visible with single animation
     requestAnimationFrame(() => {
-      document.documentElement.classList.add('ready');
-      body.classList.add('initialized');
+      document.documentElement.classList.add("ready");
+      body.classList.add("initialized");
     });
   });
 })();
 
 // keep sidebar toggle for small screens (does not change layout structure on lg)
-const btn = document.getElementById('menu-toggle');
-const sidebarEl = document.getElementById('sidebar');
-const mainContainer = document.querySelector('main'); // or your main content container
+const btn = document.getElementById("menu-toggle");
+const sidebarEl = document.getElementById("sidebar");
+const mainContainer = document.querySelector("main"); // or your main content container
 
 let sidebarOverlay = null;
 
 function createSidebarOverlay() {
   if (sidebarOverlay) return sidebarOverlay;
-  sidebarOverlay = document.createElement('div');
-  sidebarOverlay.className = 'sidebar-overlay';
-  sidebarOverlay.style.zIndex = '30'; // Lower than submenu overlay (40)
-  sidebarOverlay.addEventListener('click', closeSidebar);
+  sidebarOverlay = document.createElement("div");
+  sidebarOverlay.className = "sidebar-overlay";
+  sidebarOverlay.style.zIndex = "30"; // Lower than submenu overlay (40)
+  sidebarOverlay.addEventListener("click", closeSidebar);
   return sidebarOverlay;
 }
 
@@ -88,252 +93,249 @@ function removeSidebarOverlay() {
 function closeSidebar() {
   if (window.innerWidth < 1024) {
     // Mobile behavior
-    sidebarEl.classList.remove('sidebar-visible');
+    sidebarEl.classList.remove("sidebar-visible");
     removeSidebarOverlay();
-    document.body.classList.remove('no-scroll');
+    document.body.classList.remove("no-scroll");
   } else {
     // Desktop behavior - just hide sidebar and add centering class
-    sidebarEl.classList.add('desktop-hidden');
-    document.body.classList.add('sidebar-closed');
-    document.body.classList.remove('sidebar-open');
+    sidebarEl.classList.add("desktop-hidden");
+    document.body.classList.add("sidebar-closed");
+    document.body.classList.remove("sidebar-open");
   }
 }
 
 function openSidebar() {
   if (window.innerWidth < 1024) {
     // Mobile behavior
-    sidebarEl.classList.add('sidebar-visible');
+    sidebarEl.classList.add("sidebar-visible");
     document.body.appendChild(createSidebarOverlay());
-    document.body.classList.add('no-scroll');
+    document.body.classList.add("no-scroll");
   } else {
     // Desktop behavior - show sidebar and remove centering
-    sidebarEl.classList.remove('desktop-hidden');
-    document.body.classList.add('sidebar-open');
-    document.body.classList.remove('sidebar-closed');
+    sidebarEl.classList.remove("desktop-hidden");
+    document.body.classList.add("sidebar-open");
+    document.body.classList.remove("sidebar-closed");
   }
 }
 
 // Save sidebar state (lg screens only)
 async function saveSidebarState() {
   if (window.innerWidth < 1200) return; // Only save on lg screens
-  
-  const isCollapsed = sidebarEl.classList.contains('desktop-hidden');
-  
+
+  const isCollapsed = sidebarEl.classList.contains("desktop-hidden");
+
   try {
-    const token = localStorage.getItem('token');
-    await fetch('/preferences/sidebar/save', {
-      method: 'POST',
+    const token = localStorage.getItem("token");
+    await auth.fetchWithAuth("/preferences/sidebar/save", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ sidebarCollapsed: isCollapsed })
+      body: JSON.stringify({ sidebarCollapsed: isCollapsed }),
     });
   } catch (error) {
-    console.error('Failed to save sidebar state:', error);
+    console.error("Failed to save sidebar state:", error);
   }
 }
 
 // Load sidebar state on page load
 async function loadSidebarState() {
   const width = window.innerWidth;
-  
+
   // Only apply saved state on full desktop (>= 1200px)
   if (width < 1200) {
-    console.log('Not full desktop - skipping saved state');
-    
+    console.log("Not full desktop - skipping saved state");
+
     if (width >= 1024) {
       // Icon mode: force collapsed
-      sidebarEl.classList.add('desktop-hidden');
-      document.body.classList.add('sidebar-closed');
-      document.body.classList.remove('sidebar-open');
+      sidebarEl.classList.add("desktop-hidden");
+      document.body.classList.add("sidebar-closed");
+      document.body.classList.remove("sidebar-open");
     }
     return;
   }
-  
+
   try {
-    const token = localStorage.getItem('token');
-    const response = await fetch('/preferences/sidebar', {
-      method: 'GET',
+    const token = localStorage.getItem("token");
+    const response = await auth.fetchWithAuth("/preferences/sidebar", {
+      method: "GET",
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     });
-    
+
     const data = await response.json();
-    console.log('Loaded sidebar state:', data);
-    
+    console.log("Loaded sidebar state:", data);
+
     if (data.success) {
       if (data.sidebarCollapsed) {
         // User prefers collapsed
-        sidebarEl.classList.add('desktop-hidden');
-        document.body.classList.add('sidebar-closed');
-        document.body.classList.remove('sidebar-open');
-        console.log('✅ Applied collapsed state');
+        sidebarEl.classList.add("desktop-hidden");
+        document.body.classList.add("sidebar-closed");
+        document.body.classList.remove("sidebar-open");
+        console.log("✅ Applied collapsed state");
       } else {
         // User prefers expanded
-        sidebarEl.classList.remove('desktop-hidden');
-        document.body.classList.add('sidebar-open');
-        document.body.classList.remove('sidebar-closed');
-        console.log('✅ Applied expanded state');
+        sidebarEl.classList.remove("desktop-hidden");
+        document.body.classList.add("sidebar-open");
+        document.body.classList.remove("sidebar-closed");
+        console.log("✅ Applied expanded state");
       }
     } else {
       // No saved state: default to expanded on 1200+
-      sidebarEl.classList.remove('desktop-hidden');
-      document.body.classList.add('sidebar-open');
-      document.body.classList.remove('sidebar-closed');
+      sidebarEl.classList.remove("desktop-hidden");
+      document.body.classList.add("sidebar-open");
+      document.body.classList.remove("sidebar-closed");
     }
   } catch (error) {
-    console.error('Failed to load sidebar state:', error);
+    console.error("Failed to load sidebar state:", error);
   }
 }
 
 // Modify toggleSidebar to save state:
 function toggleSidebar() {
-  const isOpen = window.innerWidth < 1024 
-    ? sidebarEl.classList.contains('sidebar-visible')
-    : !sidebarEl.classList.contains('desktop-hidden');
-    
+  const isOpen =
+    window.innerWidth < 1024
+      ? sidebarEl.classList.contains("sidebar-visible")
+      : !sidebarEl.classList.contains("desktop-hidden");
+
   if (isOpen) {
     closeSidebar();
   } else {
     openSidebar();
   }
-  
+
   // Save state for lg screens only
   if (window.innerWidth >= 1200) {
     saveSidebarState();
   }
 }
 
-btn?.addEventListener('click', toggleSidebar);
+btn?.addEventListener("click", toggleSidebar);
 
 // Handle window resize with debouncing
 let resizeTimeout;
 let previousWidth = window.innerWidth;
 
-window.addEventListener('resize', () => {
+window.addEventListener("resize", () => {
   clearTimeout(resizeTimeout);
   resizeTimeout = setTimeout(async () => {
     const currentWidth = window.innerWidth;
     const wasLargeScreen = previousWidth >= 1200;
-    const isLargeScreen = currentWidth >= 1200;  
+    const isLargeScreen = currentWidth >= 1200;
     const wasIconMode = previousWidth >= 1024 && previousWidth < 1200;
     const isIconMode = currentWidth >= 1024 && currentWidth < 1200;
-    
+
     removeSidebarOverlay();
-    document.body.classList.remove('no-scroll');
-    
+    document.body.classList.remove("no-scroll");
+
     if (previousWidth < 1024 && currentWidth >= 1024) {
       // Moving FROM mobile TO desktop (1024+)
-      console.log('Transitioning from mobile to desktop');
-      sidebarEl.classList.remove('sidebar-visible');
-      
+      console.log("Transitioning from mobile to desktop");
+      sidebarEl.classList.remove("sidebar-visible");
+
       if (currentWidth < 1200) {
         // Entering icon mode (1024-1199)
-        console.log('Entering icon mode (1024-1199)');
-        sidebarEl.classList.add('desktop-hidden');
-        document.body.classList.add('sidebar-closed');
-        document.body.classList.remove('sidebar-open');
+        console.log("Entering icon mode (1024-1199)");
+        sidebarEl.classList.add("desktop-hidden");
+        document.body.classList.add("sidebar-closed");
+        document.body.classList.remove("sidebar-open");
       } else {
         // Entering full desktop (1200+)
         await loadSidebarState();
       }
-      
     } else if (previousWidth >= 1024 && currentWidth < 1024) {
       // Moving FROM desktop TO mobile
-      console.log('Transitioning from desktop to mobile');
-      
+      console.log("Transitioning from desktop to mobile");
+
       // Reset desktop classes
-      sidebarEl.classList.remove('desktop-hidden');
-      document.body.classList.remove('sidebar-closed', 'sidebar-open');
-      sidebarEl.classList.remove('sidebar-visible');
-      
+      sidebarEl.classList.remove("desktop-hidden");
+      document.body.classList.remove("sidebar-closed", "sidebar-open");
+      sidebarEl.classList.remove("sidebar-visible");
     } else if (!wasLargeScreen && isLargeScreen) {
       // Moving FROM icon mode (1024-1199) TO full desktop (1200+)
-      console.log('Transitioning from icon mode to full desktop');
+      console.log("Transitioning from icon mode to full desktop");
       await loadSidebarState();
-      
     } else if (wasLargeScreen && !isLargeScreen && isIconMode) {
       // Moving FROM full desktop (1200+) TO icon mode (1024-1199)
-      console.log('Transitioning from full desktop to icon mode');
-      
+      console.log("Transitioning from full desktop to icon mode");
+
       // Force icon mode
-      sidebarEl.classList.add('desktop-hidden');
-      document.body.classList.add('sidebar-closed');
-      document.body.classList.remove('sidebar-open');
-      
+      sidebarEl.classList.add("desktop-hidden");
+      document.body.classList.add("sidebar-closed");
+      document.body.classList.remove("sidebar-open");
     } else if (isLargeScreen) {
       // Staying on full desktop (1200+) - maintain current state
-      const isCollapsed = sidebarEl.classList.contains('desktop-hidden');
-      
+      const isCollapsed = sidebarEl.classList.contains("desktop-hidden");
+
       if (isCollapsed) {
-        document.body.classList.add('sidebar-closed');
-        document.body.classList.remove('sidebar-open');
+        document.body.classList.add("sidebar-closed");
+        document.body.classList.remove("sidebar-open");
       } else {
-        document.body.classList.add('sidebar-open');
-        document.body.classList.remove('sidebar-closed');
+        document.body.classList.add("sidebar-open");
+        document.body.classList.remove("sidebar-closed");
       }
     } else if (isIconMode) {
       // Staying in icon mode (1024-1199) - always collapsed
-      sidebarEl.classList.add('desktop-hidden');
-      document.body.classList.add('sidebar-closed');
-      document.body.classList.remove('sidebar-open');
+      sidebarEl.classList.add("desktop-hidden");
+      document.body.classList.add("sidebar-closed");
+      document.body.classList.remove("sidebar-open");
     }
-    
+
     previousWidth = currentWidth;
   }, 150);
 });
 
 // Initialize sidebar state on page load
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const width = window.innerWidth;
-  
+
   if (width >= 1200) {
     // Full desktop: load saved state
     await loadSidebarState();
   } else if (width >= 1024) {
     // Icon mode: force collapsed
-    sidebarEl?.classList.add('desktop-hidden');
-    document.body.classList.add('sidebar-closed');
-    document.body.classList.remove('sidebar-open');
+    sidebarEl?.classList.add("desktop-hidden");
+    document.body.classList.add("sidebar-closed");
+    document.body.classList.remove("sidebar-open");
   } else {
     // Mobile/tablet: ensure sidebar is hidden
-    sidebarEl?.classList.remove('sidebar-visible');
-    document.body.classList.remove('sidebar-closed', 'sidebar-open');
+    sidebarEl?.classList.remove("sidebar-visible");
+    document.body.classList.remove("sidebar-closed", "sidebar-open");
   }
-  
+
   // Store initial width
   previousWidth = width;
 });
 
 // Toggle submenu on click (touch support) and close when clicking outside.
-const submenuButtons = document.querySelectorAll('.has-submenu');
-const sidebar = document.getElementById('sidebar');
+const submenuButtons = document.querySelectorAll(".has-submenu");
+const sidebar = document.getElementById("sidebar");
 
 let overlay = null;
-function createOverlay(){
+function createOverlay() {
   if (overlay && document.body.contains(overlay)) return overlay;
-  overlay = document.createElement('div');
-  overlay.id = 'submenu-overlay';
+  overlay = document.createElement("div");
+  overlay.id = "submenu-overlay";
   Object.assign(overlay.style, {
-    position: 'fixed',
-    inset: '0',
-    background: 'rgba(0,0,0,0.5)',
+    position: "fixed",
+    inset: "0",
+    background: "rgba(0,0,0,0.5)",
     zIndex: 40,
-    cursor: 'pointer'
+    cursor: "pointer",
   });
-  overlay.addEventListener('click', closeAll);
+  overlay.addEventListener("click", closeAll);
   return overlay;
 }
-function removeOverlay(){
+function removeOverlay() {
   if (overlay) {
     overlay.remove();
   }
 }
 
-function calcBaseLeft(){
+function calcBaseLeft() {
   if (sidebar) {
     const sRect = sidebar.getBoundingClientRect();
     return Math.round(sRect.right + 3);
@@ -341,11 +343,11 @@ function calcBaseLeft(){
   return 8;
 }
 
-function positionSubmenu(btn, submenu){
-  submenu.style.position = 'fixed';
+function positionSubmenu(btn, submenu) {
+  submenu.style.position = "fixed";
   submenu.style.zIndex = 50;
-  submenu.style.maxWidth = '320px';
-  submenu.style.whiteSpace = 'nowrap';
+  submenu.style.maxWidth = "320px";
+  submenu.style.whiteSpace = "nowrap";
 
   // Make sure submenu is attached to body for correct z-index
   if (submenu.parentNode !== document.body) {
@@ -353,26 +355,26 @@ function positionSubmenu(btn, submenu){
   }
 
   const rect = btn.getBoundingClientRect();
-  
+
   if (window.innerWidth < 768) {
     // Mobile: scrollable submenu
-    submenu.style.left = '80px';
-    submenu.style.top = (rect.bottom - 5) + 'px';
-    submenu.style.maxWidth = (window.innerWidth - 90) + 'px';
-    submenu.style.maxHeight = '35vh';
-    submenu.style.overflowY = 'auto';
-    submenu.style.overflowX = 'hidden';
-    submenu.style.whiteSpace = 'normal';
-    submenu.style.background = 'white';
+    submenu.style.left = "80px";
+    submenu.style.top = rect.bottom - 5 + "px";
+    submenu.style.maxWidth = window.innerWidth - 90 + "px";
+    submenu.style.maxHeight = "35vh";
+    submenu.style.overflowY = "auto";
+    submenu.style.overflowX = "hidden";
+    submenu.style.whiteSpace = "normal";
+    submenu.style.background = "white";
     return;
   }
 
   // Desktop/tablet: clean up mobile styles
-  submenu.style.maxHeight = '';
-  submenu.style.overflowY = '';
-  submenu.style.overflowX = '';
-  submenu.style.whiteSpace = 'nowrap';
-  submenu.style.background = '';
+  submenu.style.maxHeight = "";
+  submenu.style.overflowY = "";
+  submenu.style.overflowX = "";
+  submenu.style.whiteSpace = "nowrap";
+  submenu.style.background = "";
 
   // Desktop/tablet positioning (to the side)
   let left = calcBaseLeft();
@@ -380,14 +382,14 @@ function positionSubmenu(btn, submenu){
 
   // Pre-calculate height without making visible
   const tempDiv = submenu.cloneNode(true);
-  tempDiv.style.position = 'absolute';
-  tempDiv.style.left = '-9999px';
-  tempDiv.style.top = '-9999px';
-  tempDiv.style.visibility = 'hidden';
-  tempDiv.classList.remove('opacity-0', 'invisible', 'hidden');
-  tempDiv.classList.add('opacity-100', 'visible', 'block');
+  tempDiv.style.position = "absolute";
+  tempDiv.style.left = "-9999px";
+  tempDiv.style.top = "-9999px";
+  tempDiv.style.visibility = "hidden";
+  tempDiv.classList.remove("opacity-0", "invisible", "hidden");
+  tempDiv.classList.add("opacity-100", "visible", "block");
   document.body.appendChild(tempDiv);
-  
+
   const submenuHeight = tempDiv.offsetHeight;
   document.body.removeChild(tempDiv);
 
@@ -397,142 +399,149 @@ function positionSubmenu(btn, submenu){
   }
 
   // Set final position
-  submenu.style.left = left + 'px';
-  submenu.style.top = top + 'px';
+  submenu.style.left = left + "px";
+  submenu.style.top = top + "px";
 }
 
-function showSubmenu(btn, submenu, openedBy='hover'){
+function showSubmenu(btn, submenu, openedBy = "hover") {
   btn.dataset.openedBy = openedBy;
   positionSubmenu(btn, submenu);
 
-  submenu.classList.remove('opacity-0','invisible','hidden');
-  submenu.classList.add('opacity-100','visible','block');
+  submenu.classList.remove("opacity-0", "invisible", "hidden");
+  submenu.classList.add("opacity-100", "visible", "block");
 
-  btn.setAttribute('aria-expanded','true');
-  btn.querySelector('img')?.classList.add('rotate-180');
+  btn.setAttribute("aria-expanded", "true");
+  btn.querySelector("img")?.classList.add("rotate-180");
 
-  if (openedBy === 'click') {
+  if (openedBy === "click") {
     const ov = createOverlay();
     document.body.appendChild(ov);
-    document.body.classList.add('no-scroll'); // Lock scroll
+    document.body.classList.add("no-scroll"); // Lock scroll
   }
 }
 
-function hideSubmenu(btn, submenu){
-  if (btn.dataset.openedBy === 'click') {
+function hideSubmenu(btn, submenu) {
+  if (btn.dataset.openedBy === "click") {
     removeOverlay();
-    document.body.classList.remove('no-scroll'); // Unlock scroll
+    document.body.classList.remove("no-scroll"); // Unlock scroll
   }
 
-  submenu.classList.add('opacity-0','invisible','hidden');
-  submenu.classList.remove('opacity-100','visible','block');
-  submenu.style.left = '';
-  submenu.style.top  = '';
-  submenu.style.zIndex = '';
+  submenu.classList.add("opacity-0", "invisible", "hidden");
+  submenu.classList.remove("opacity-100", "visible", "block");
+  submenu.style.left = "";
+  submenu.style.top = "";
+  submenu.style.zIndex = "";
 
-  btn.setAttribute('aria-expanded','false');
-  btn.querySelector('img')?.classList.remove('rotate-180');
+  btn.setAttribute("aria-expanded", "false");
+  btn.querySelector("img")?.classList.remove("rotate-180");
   delete btn.dataset.openedBy;
 }
 
-function closeAll(){
-  document.querySelectorAll('.has-submenu[aria-expanded="true"]').forEach(b=>{
-    const s = document.body.querySelector('.submenu.opacity-100');
-    if (s) {
-      hideSubmenu(b, s);
-    }
-  });
+function closeAll() {
+  document
+    .querySelectorAll('.has-submenu[aria-expanded="true"]')
+    .forEach((b) => {
+      const s = document.body.querySelector(".submenu.opacity-100");
+      if (s) {
+        hideSubmenu(b, s);
+      }
+    });
 }
 
-submenuButtons.forEach(btn=>{
-  const li = btn.closest('li');
-  const submenu = li.querySelector('.submenu');
+submenuButtons.forEach((btn) => {
+  const li = btn.closest("li");
+  const submenu = li.querySelector(".submenu");
   if (!submenu) return;
 
-  btn.classList.add('cursor-pointer');
-  submenu.classList.add('cursor-pointer');
+  btn.classList.add("cursor-pointer");
+  submenu.classList.add("cursor-pointer");
 
-  submenu.addEventListener('click', e => e.stopPropagation());
+  submenu.addEventListener("click", (e) => e.stopPropagation());
 
-  btn.addEventListener('click', e=>{
-    e.preventDefault(); e.stopPropagation();
-    const isOpen = btn.getAttribute('aria-expanded') === 'true';
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const isOpen = btn.getAttribute("aria-expanded") === "true";
     const openedBy = btn.dataset.openedBy;
 
-    if (isOpen && openedBy === 'hover') {
-      btn.dataset.openedBy = 'click';
+    if (isOpen && openedBy === "hover") {
+      btn.dataset.openedBy = "click";
       const ov = createOverlay();
       document.body.appendChild(ov);
-      document.body.classList.add('no-scroll');
+      document.body.classList.add("no-scroll");
       return;
     }
-    if (isOpen && openedBy === 'click') {
+    if (isOpen && openedBy === "click") {
       hideSubmenu(btn, submenu);
       return;
     }
     closeAll();
-    showSubmenu(btn, submenu, 'click');
+    showSubmenu(btn, submenu, "click");
   });
 
   // Hover open
-  li.addEventListener('mouseenter', ()=>{
-    if (window.matchMedia('(hover: hover)').matches) {
-      if (btn.dataset.openedBy !== 'click') showSubmenu(btn, submenu, 'hover');
+  li.addEventListener("mouseenter", () => {
+    if (window.matchMedia("(hover: hover)").matches) {
+      if (btn.dataset.openedBy !== "click") showSubmenu(btn, submenu, "hover");
     }
   });
 
   // Hover leave
-  const maybeCloseHover = ()=>{
-    if (!window.matchMedia('(hover: hover)').matches) return;
-    setTimeout(()=>{
-      if (btn.dataset.openedBy === 'click') return;
-      if (!li.matches(':hover') && !submenu.matches(':hover')) hideSubmenu(btn, submenu);
+  const maybeCloseHover = () => {
+    if (!window.matchMedia("(hover: hover)").matches) return;
+    setTimeout(() => {
+      if (btn.dataset.openedBy === "click") return;
+      if (!li.matches(":hover") && !submenu.matches(":hover"))
+        hideSubmenu(btn, submenu);
     }, 200); // Increased timeout for better user experience
   };
-  li.addEventListener('mouseleave', maybeCloseHover);
-  submenu.addEventListener('mouseleave', maybeCloseHover);
+  li.addEventListener("mouseleave", maybeCloseHover);
+  submenu.addEventListener("mouseleave", maybeCloseHover);
 });
 
-document.addEventListener('click', e=>{
-  if (!e.target.closest('.submenu') && !e.target.closest('.has-submenu')) closeAll();
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".submenu") && !e.target.closest(".has-submenu"))
+    closeAll();
 });
-document.addEventListener('keydown', e=>{
-  if (e.key === 'Escape') closeAll();
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeAll();
 });
 
 let t;
-function repositionOpen(){
-  document.querySelectorAll('.has-submenu[aria-expanded="true"]').forEach(b=>{
-    const s = document.body.querySelector('.submenu.opacity-100');
-    if (s) positionSubmenu(b, s);
-  });
+function repositionOpen() {
+  document
+    .querySelectorAll('.has-submenu[aria-expanded="true"]')
+    .forEach((b) => {
+      const s = document.body.querySelector(".submenu.opacity-100");
+      if (s) positionSubmenu(b, s);
+    });
 }
-window.addEventListener('resize', ()=>{ 
-  clearTimeout(t); 
+window.addEventListener("resize", () => {
+  clearTimeout(t);
   t = setTimeout(() => {
     repositionOpen();
-    
+
     // Clean up mobile-specific submenu styles on larger screens
     if (window.innerWidth >= 768) {
-      document.querySelectorAll('.submenu').forEach(submenu => {
-        submenu.style.maxHeight = '';
-        submenu.style.overflowY = '';
-        submenu.style.overflowX = '';
-        submenu.style.whiteSpace = '';
-        submenu.style.background = '';
+      document.querySelectorAll(".submenu").forEach((submenu) => {
+        submenu.style.maxHeight = "";
+        submenu.style.overflowY = "";
+        submenu.style.overflowX = "";
+        submenu.style.whiteSpace = "";
+        submenu.style.background = "";
       });
     }
-  }, 150); 
+  }, 150);
 });
-window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
+window.addEventListener("scroll", () => repositionOpen(), { passive: true });
 
 // Figure out the current time of day
 function getTimeOfDay() {
   const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return 'Morning';
-  if (hour >= 12 && hour < 16) return 'Afternoon';
-  if (hour >= 16 && hour < 21) return 'Evening';
-  return 'Night';
+  if (hour >= 5 && hour < 12) return "Morning";
+  if (hour >= 12 && hour < 16) return "Afternoon";
+  if (hour >= 16 && hour < 21) return "Evening";
+  return "Night";
 }
 
 // Get logged-in user from JWT token
@@ -546,29 +555,29 @@ function getLoggedInUser() {
         full_name: localStorage.getItem("full_name"),
         role: localStorage.getItem("role"),
         primary_class: localStorage.getItem("class"),
-        current_class: localStorage.getItem("class")
+        current_class: localStorage.getItem("class"),
       };
     }
 
     // ✅ Decode JWT token to get user info including current_class
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    
+    const payload = JSON.parse(atob(token.split(".")[1]));
+
     return {
       user_id: payload.user_id,
       full_name: payload.full_name,
       role: payload.role,
       primary_class: payload.primary_class,
-      current_class: payload.current_class || payload.primary_class // ✅ Use current_class from token
+      current_class: payload.current_class || payload.primary_class, // ✅ Use current_class from token
     };
   } catch (error) {
-    console.error('Error decoding token:', error);
+    console.error("Error decoding token:", error);
     // Fallback to localStorage
     return {
       user_id: localStorage.getItem("user_id"),
       full_name: localStorage.getItem("full_name"),
       role: localStorage.getItem("role"),
       primary_class: localStorage.getItem("class"),
-      current_class: localStorage.getItem("class")
+      current_class: localStorage.getItem("class"),
     };
   }
 }
@@ -579,35 +588,34 @@ let classMapping = {};
 // Load class mappings from backend endpoint
 async function loadClassMappings() {
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
 
-    const response = await fetch('/dbclasses', {
+    const response = await auth.fetchWithAuth("/dbclasses", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-    }); 
+    });
 
     const data = await response.json();
 
     // ✅ Create mapping from db_name → display_name
     classMapping = {};
-    data.classes.forEach(cls => {
+    data.classes.forEach((cls) => {
       classMapping[cls.dbName] = cls.display;
     });
 
-    console.log('✅ Class mappings loaded:', classMapping);
-
+    console.log("✅ Class mappings loaded:", classMapping);
   } catch (error) {
-    console.error('❌ Failed to load class mappings:', error);
+    console.error("❌ Failed to load class mappings:", error);
   }
 }
 
 // Update greeting message
 function updateGreeting() {
-  const greetingElement = document.getElementById('dynamicGreeting');
-  const workingClassElement = document.getElementById('payrollClassName');
+  const greetingElement = document.getElementById("dynamicGreeting");
+  const workingClassElement = document.getElementById("payrollClassName");
   if (!greetingElement && !workingClassElement) return; // Only run if element exists
 
   const user = getLoggedInUser();
@@ -615,45 +623,46 @@ function updateGreeting() {
 
   // ✅ Use current_class from JWT token (the database they switched to)
   const effectiveClass = user.current_class;
-  const userClass = classMapping[effectiveClass] || effectiveClass || 'OFFICERS';
+  const userClass =
+    classMapping[effectiveClass] || effectiveClass || "OFFICERS";
 
   // Default to "User" if no login info
-  const userName = user?.full_name || user?.user_id || 'User';
+  const userName = user?.full_name || user?.user_id || "User";
 
   const greeting = `Good ${timeOfDay} ${userName}, welcome to ${userClass} payroll`;
   greetingElement.textContent = greeting;
   workingClassElement.textContent = userClass;
 
-  console.log('📊 Dashboard greeting updated:', {
+  console.log("📊 Dashboard greeting updated:", {
     user: userName,
     primaryClass: user.primary_class,
     currentClass: user.current_class,
-    displayClass: userClass
+    displayClass: userClass,
   });
 }
 
 // Update current time display
 function updateCurrentTime() {
-  const timeElement = document.getElementById('currentTime');
+  const timeElement = document.getElementById("currentTime");
   if (!timeElement) return;
 
   const now = new Date();
-  const timeString = now.toLocaleString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
+  const timeString = now.toLocaleString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
   });
   timeElement.textContent = timeString;
 }
 
 // ✅ Update function for when payroll class is switched
-window.updateDashboardGreeting = function(newClassName) {
-  console.log('🔄 Updating dashboard greeting for new class:', newClassName);
-  
+window.updateDashboardGreeting = function (newClassName) {
+  console.log("🔄 Updating dashboard greeting for new class:", newClassName);
+
   // Reload user info from updated token
   const user = getLoggedInUser();
   if (user) {
@@ -662,148 +671,159 @@ window.updateDashboardGreeting = function(newClassName) {
 };
 
 // ✅ Listen for payroll class switch events
-document.addEventListener('payrollClassFocused', (event) => {
-  console.log('🎯 Payroll class focused event received:', event.detail);
+document.addEventListener("payrollClassFocused", (event) => {
+  console.log("🎯 Payroll class focused event received:", event.detail);
   updateGreeting();
 });
 
 // Get current payroll period from database
 async function getCurrentPayrollPeriod() {
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     const user = getLoggedInUser();
     const dbName = user.current_class;
-    
-    const response = await fetch('/payroll-period', {
-      method: 'GET',
+
+    const response = await auth.fetchWithAuth("/payroll-period", {
+      method: "GET",
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     });
-    
+
     const data = await response.json();
-    
+
     if (data.success) {
       // Update the payroll period display
-      const periodElement = document.querySelector('#current-payroll-period');
+      const periodElement = document.querySelector("#current-payroll-period");
       if (periodElement) {
-        const monthNames = ['Jan', 'Feb', 'March', 'April', 'May', 'June',
-                           'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
-        const monthName = monthNames[data.month - 1] || 'Unknown';
+        const monthNames = [
+          "Jan",
+          "Feb",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "Aug",
+          "Sept",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
+        const monthName = monthNames[data.month - 1] || "Unknown";
         periodElement.textContent = `${monthName} ${data.year}`;
       }
-      
+
       return { month: data.month, year: data.year };
     }
   } catch (error) {
-    console.error('Failed to load payroll period:', error);
+    console.error("Failed to load payroll period:", error);
   }
 }
 
 // Init only on dashboard pages
 (async function initDashboard() {
-  if (document.getElementById('dynamicGreeting')) {
-    await loadClassMappings();   // ✅ wait for mapping to load
+  if (document.getElementById("dynamicGreeting")) {
+    await loadClassMappings(); // ✅ wait for mapping to load
     updateGreeting();
     updateCurrentTime();
 
-    setInterval(updateCurrentTime, 1000);  // Update time every second
-    setInterval(updateGreeting, 60000);    // Refresh greeting every minute (to catch token updates)
-    await getCurrentPayrollPeriod();  // Load current payroll period
+    setInterval(updateCurrentTime, 1000); // Update time every second
+    setInterval(updateGreeting, 60000); // Refresh greeting every minute (to catch token updates)
+    await getCurrentPayrollPeriod(); // Load current payroll period
   }
 })();
 
-
 // SIMPLE SUBSUBMENU FUNCTIONALITY - Direct approach
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOM loaded, setting up subsubmenus...');
-  
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("DOM loaded, setting up subsubmenus...");
+
   // Wait a bit to ensure all other scripts have loaded
-  setTimeout(function() {
+  setTimeout(function () {
     setupSubsubmenus();
   }, 100);
 });
 
 function setupSubsubmenus() {
-  console.log('Setting up subsubmenus...');
-  
+  console.log("Setting up subsubmenus...");
+
   // Find all toggle buttons
-  const toggleButtons = document.querySelectorAll('.toggle-subsubmenu');
-  console.log('Found toggle buttons:', toggleButtons.length);
-  
+  const toggleButtons = document.querySelectorAll(".toggle-subsubmenu");
+  console.log("Found toggle buttons:", toggleButtons.length);
+
   toggleButtons.forEach((button, index) => {
     console.log(`Setting up button ${index + 1}`);
-    
+
     // Remove any existing listeners
     const newButton = button.cloneNode(true);
     button.parentNode.replaceChild(newButton, button);
-    
+
     // Add click listener to the new button
-    newButton.addEventListener('click', function(e) {
-      console.log('Subsubmenu button clicked!');
+    newButton.addEventListener("click", function (e) {
+      console.log("Subsubmenu button clicked!");
       e.preventDefault();
       e.stopPropagation();
-      
-      const li = this.closest('.has-subsubmenu');
-      const subsubmenu = li.querySelector('.subsubmenu');
-      
+
+      const li = this.closest(".has-subsubmenu");
+      const subsubmenu = li.querySelector(".subsubmenu");
+
       if (subsubmenu) {
-        const isHidden = subsubmenu.classList.contains('hidden');
-        console.log('Current state - hidden:', isHidden);
-        
+        const isHidden = subsubmenu.classList.contains("hidden");
+        console.log("Current state - hidden:", isHidden);
+
         if (isHidden) {
-          subsubmenu.classList.remove('hidden');
-          this.textContent = '▾';
-          console.log('Opened subsubmenu');
+          subsubmenu.classList.remove("hidden");
+          this.textContent = "▾";
+          console.log("Opened subsubmenu");
         } else {
-          subsubmenu.classList.add('hidden');
-          this.textContent = '▸';
-          console.log('Closed subsubmenu');
+          subsubmenu.classList.add("hidden");
+          this.textContent = "▸";
+          console.log("Closed subsubmenu");
         }
       } else {
-        console.log('No subsubmenu found');
+        console.log("No subsubmenu found");
       }
     });
   });
-  
+
   // Also handle clicking on the div container (not just the button)
-  const containers = document.querySelectorAll('.has-subsubmenu > div');
-  console.log('Found containers:', containers.length);
-  
+  const containers = document.querySelectorAll(".has-subsubmenu > div");
+  console.log("Found containers:", containers.length);
+
   containers.forEach((container, index) => {
     console.log(`Setting up container ${index + 1}`);
-    
-    container.addEventListener('click', function(e) {
+
+    container.addEventListener("click", function (e) {
       // Only handle if we didn't click the button directly
-      if (!e.target.classList.contains('toggle-subsubmenu')) {
-        console.log('Container clicked!');
+      if (!e.target.classList.contains("toggle-subsubmenu")) {
+        console.log("Container clicked!");
         e.preventDefault();
         e.stopPropagation();
-        
-        const li = this.closest('.has-subsubmenu');
-        const subsubmenu = li.querySelector('.subsubmenu');
-        const button = li.querySelector('.toggle-subsubmenu');
-        
+
+        const li = this.closest(".has-subsubmenu");
+        const subsubmenu = li.querySelector(".subsubmenu");
+        const button = li.querySelector(".toggle-subsubmenu");
+
         if (subsubmenu && button) {
-          const isHidden = subsubmenu.classList.contains('hidden');
-          console.log('Current state - hidden:', isHidden);
-          
+          const isHidden = subsubmenu.classList.contains("hidden");
+          console.log("Current state - hidden:", isHidden);
+
           if (isHidden) {
-            subsubmenu.classList.remove('hidden');
-            button.textContent = '▾';
-            console.log('Opened subsubmenu via container');
+            subsubmenu.classList.remove("hidden");
+            button.textContent = "▾";
+            console.log("Opened subsubmenu via container");
           } else {
-            subsubmenu.classList.add('hidden');
-            button.textContent = '▸';
-            console.log('Closed subsubmenu via container');
+            subsubmenu.classList.add("hidden");
+            button.textContent = "▸";
+            console.log("Closed subsubmenu via container");
           }
         }
       }
     });
   });
-  
-  console.log('Subsubmenu setup complete');
+
+  console.log("Subsubmenu setup complete");
 }
 
 /*const rolePermissions = {
@@ -983,7 +1003,6 @@ function switchRole(newRole) {
   setUserRole(newRole);
 }*/
 
-
 // Navigation handler for submenu items
 class NavigationSystem {
   constructor() {
@@ -1002,78 +1021,89 @@ class NavigationSystem {
   }
 
   setupSubmenuNavigation() {
-    document.querySelectorAll('.submenu ul li a[data-section]').forEach(link => {
-      link.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const sectionId = link.getAttribute('data-section');
-        const sectionName = link.textContent.trim();
-        
-        if (sectionId) {
-          // CHECK EDIT MODE BEFORE SHOWING LOADING STATE
-          const isEditMode = localStorage.getItem('isEditMode') === 'true';
-          const currentHash = window.location.hash.substring(1);
-          
-          // If clicking add-personnel while already in edit mode, keep edit mode
-          if (sectionId === 'add-personnel' && isEditMode && currentHash === 'add-personnel') {
-            // Already on add-personnel in edit mode, do nothing
-            return;
-          }
-          
-          if (isEditMode && currentHash === 'add-personnel' && sectionId !== 'add-personnel') {
-            const confirmed = confirm(
-              'You are currently editing a personnel record. ' +
-              'Any unsaved changes will be lost. Do you want to continue?'
-            );
-            
-            if (!confirmed) {
-              console.log('Navigation cancelled by user');
+    document
+      .querySelectorAll(".submenu ul li a[data-section]")
+      .forEach((link) => {
+        link.addEventListener("click", async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const sectionId = link.getAttribute("data-section");
+          const sectionName = link.textContent.trim();
+
+          if (sectionId) {
+            // CHECK EDIT MODE BEFORE SHOWING LOADING STATE
+            const isEditMode = localStorage.getItem("isEditMode") === "true";
+            const currentHash = window.location.hash.substring(1);
+
+            // If clicking add-personnel while already in edit mode, keep edit mode
+            if (
+              sectionId === "add-personnel" &&
+              isEditMode &&
+              currentHash === "add-personnel"
+            ) {
+              // Already on add-personnel in edit mode, do nothing
               return;
             }
-            
-            // User confirmed, clean up edit state
-            localStorage.removeItem('editing_employee_id');
-            localStorage.removeItem('isEditMode');
-            localStorage.removeItem('navigatedFromCurrentPersonnel');
-            
-            if (window.PersonnelAPI?.setCreateMode) {
-              window.PersonnelAPI.setCreateMode();
+
+            if (
+              isEditMode &&
+              currentHash === "add-personnel" &&
+              sectionId !== "add-personnel"
+            ) {
+              const confirmed = confirm(
+                "You are currently editing a personnel record. " +
+                  "Any unsaved changes will be lost. Do you want to continue?"
+              );
+
+              if (!confirmed) {
+                console.log("Navigation cancelled by user");
+                return;
+              }
+
+              // User confirmed, clean up edit state
+              localStorage.removeItem("editing_employee_id");
+              localStorage.removeItem("isEditMode");
+              localStorage.removeItem("navigatedFromCurrentPersonnel");
+
+              if (window.PersonnelAPI?.setCreateMode) {
+                window.PersonnelAPI.setCreateMode();
+              }
             }
+
+            // Close all submenus
+            if (typeof closeAll === "function") {
+              closeAll();
+            }
+
+            // Hide mobile menu
+            this.hideMobileMenu();
+
+            // Show loading state (use "Edit Personnel" if in edit mode and going to add-personnel)
+            const displayName =
+              sectionId === "add-personnel" && isEditMode
+                ? "Edit Personnel"
+                : sectionName;
+            this.showLoadingState(displayName);
+
+            // Navigate to section
+            await this.navigateToSection(sectionId, displayName);
           }
-          
-          // Close all submenus
-          if (typeof closeAll === 'function') {
-            closeAll();
-          }
-          
-          // Hide mobile menu
-          this.hideMobileMenu();
-          
-          // Show loading state (use "Edit Personnel" if in edit mode and going to add-personnel)
-          const displayName = (sectionId === 'add-personnel' && isEditMode) 
-            ? 'Edit Personnel' 
-            : sectionName;
-          this.showLoadingState(displayName);
-          
-          // Navigate to section
-          await this.navigateToSection(sectionId, displayName);
-        }
+        });
       });
-    });
   }
 
   async hideMobileMenu(link) {
     if (window.innerWidth <= 1023) {
-      const sidebar = document.querySelector('#sidebar');
+      const sidebar = document.querySelector("#sidebar");
 
       if (link) {
-        const sectionId = link.getAttribute('data-section');
+        const sectionId = link.getAttribute("data-section");
         const sectionName = link.textContent.trim();
 
         if (sectionId) {
           // Close all submenus first
-          if (typeof closeAll === 'function') {
+          if (typeof closeAll === "function") {
             closeAll();
           }
 
@@ -1100,16 +1130,16 @@ class NavigationSystem {
   }
 
   showLoadingState(sectionName) {
-    const mainContent = document.querySelector('main');
+    const mainContent = document.querySelector("main");
     if (mainContent) {
       // Prevent flicker by checking if already showing loading
-      const isAlreadyLoading = mainContent.querySelector('.animate-grow-up');
+      const isAlreadyLoading = mainContent.querySelector(".animate-grow-up");
       if (isAlreadyLoading) return;
-      
+
       // Hide immediately
-      mainContent.style.opacity = '0';
-      mainContent.style.transition = 'none';
-      
+      mainContent.style.opacity = "0";
+      mainContent.style.transition = "none";
+
       mainContent.innerHTML = `
         <div class="mt-6">
           <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
@@ -1127,14 +1157,14 @@ class NavigationSystem {
           </div>
         </div>
       `;
-            
-      window.scrollTo({ top: 0, behavior: 'instant' });
-      
+
+      window.scrollTo({ top: 0, behavior: "instant" });
+
       // Fade in the loading state
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          mainContent.style.transition = 'opacity 0.2s ease';
-          mainContent.style.opacity = '1';
+          mainContent.style.transition = "opacity 0.2s ease";
+          mainContent.style.opacity = "1";
         });
       });
     }
@@ -1143,7 +1173,7 @@ class NavigationSystem {
   async navigateToSection(sectionId, sectionName, state = {}) {
     // Prevent duplicate navigation
     if (this.isNavigating) {
-      console.log('Navigation already in progress');
+      console.log("Navigation already in progress");
       return;
     }
 
@@ -1153,19 +1183,21 @@ class NavigationSystem {
       // Check if content exists on current page
       const existingElement = document.querySelector(`#${sectionId}`);
       if (existingElement) {
-        existingElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        existingElement.scrollIntoView({ behavior: "smooth", block: "start" });
         return;
       }
 
       // Store current section in history before navigating
       if (this.currentSection && this.currentSection !== sectionId) {
         // Get the section name from history state or derive it
-        const currentSectionName = this.getSectionNameFromId(this.currentSection);
+        const currentSectionName = this.getSectionNameFromId(
+          this.currentSection
+        );
         this.navigationHistory.push({
           sectionId: this.currentSection,
-          sectionName: currentSectionName
+          sectionName: currentSectionName,
         });
-        console.log('Added to history:', this.currentSection);
+        console.log("Added to history:", this.currentSection);
       }
 
       // Store the navigation state
@@ -1178,15 +1210,14 @@ class NavigationSystem {
       this.currentSection = sectionId;
 
       // Initialize any dynamic behavior based on state
-      if (sectionId === 'add-personnel' && state.isEditMode) {
-        const batchButton = document.getElementById('tab-batch');
+      if (sectionId === "add-personnel" && state.isEditMode) {
+        const batchButton = document.getElementById("tab-batch");
         if (batchButton) {
           batchButton.disabled = true;
-          batchButton.classList.add('opacity-50', 'cursor-not-allowed');
-          batchButton.classList.remove('hover:bg-blue-600');
+          batchButton.classList.add("opacity-50", "cursor-not-allowed");
+          batchButton.classList.remove("hover:bg-blue-600");
         }
       }
-
     } catch (error) {
       this.showErrorState(sectionName, error);
     } finally {
@@ -1201,13 +1232,11 @@ class NavigationSystem {
     }
 
     // Try to load from multiple possible locations
-    const possiblePaths = [
-      `sections/${sectionId}.html`
-    ];
+    const possiblePaths = [`sections/${sectionId}.html`];
 
     for (const path of possiblePaths) {
       try {
-        const response = await fetch(path);
+        const response = await auth.fetchWithAuth(path);
         if (response.ok) {
           const content = await response.text();
           // Cache the content
@@ -1247,12 +1276,12 @@ class NavigationSystem {
   }
 
   renderSection(sectionName, content) {
-    const mainContent = document.querySelector('main');
+    const mainContent = document.querySelector("main");
     if (mainContent) {
       // Show main if it was hidden
-      mainContent.style.display = 'block';
-      mainContent.style.opacity = '0';
-      
+      mainContent.style.display = "block";
+      mainContent.style.opacity = "0";
+
       mainContent.innerHTML = `
         <div class="mt-6">
           <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
@@ -1275,27 +1304,34 @@ class NavigationSystem {
         </div>
       `;
 
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      window.scrollTo({ top: 0, behavior: "instant" });
       this.initializeLoadedScripts();
 
       // Smooth fade-in with animation
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          mainContent.style.transition = 'opacity 0.3s ease';
-          mainContent.style.opacity = '1';
+          mainContent.style.transition = "opacity 0.3s ease";
+          mainContent.style.opacity = "1";
 
           // Apply the fade-up animation
-          const container = mainContent.querySelector('.mt-6');
+          const container = mainContent.querySelector(".mt-6");
           if (container) {
-            container.classList.add('animate-fade-up');
+            container.classList.add("animate-fade-up");
 
             // Remove fade-up transform after animation completes
-            container.addEventListener('animationend', (e) => {
-              if (e.animationName === 'fadeInUp' || e.animationName === 'fadeInUpInner') {
-                container.classList.remove('animate-fade-up');
-                container.style.transform = 'none'; // ensure no transform remains
-              }
-            }, { once: true });
+            container.addEventListener(
+              "animationend",
+              (e) => {
+                if (
+                  e.animationName === "fadeInUp" ||
+                  e.animationName === "fadeInUpInner"
+                ) {
+                  container.classList.remove("animate-fade-up");
+                  container.style.transform = "none"; // ensure no transform remains
+                }
+              },
+              { once: true }
+            );
           }
         });
       });
@@ -1304,18 +1340,21 @@ class NavigationSystem {
 
   // New method to go back to previous section
   goBack() {
-    console.log('Going back, history length:', this.navigationHistory.length);
-    
+    console.log("Going back, history length:", this.navigationHistory.length);
+
     if (this.navigationHistory.length > 0) {
       // Get the last section from history
       const previousSection = this.navigationHistory.pop();
-      console.log('Returning to:', previousSection);
-      
+      console.log("Returning to:", previousSection);
+
       // Navigate back to previous section (don't add to history again)
-      this.navigateToSectionWithoutHistory(previousSection.sectionId, previousSection.sectionName);
+      this.navigateToSectionWithoutHistory(
+        previousSection.sectionId,
+        previousSection.sectionName
+      );
     } else {
       // No history, return to dashboard
-      console.log('No history, returning to dashboard');
+      console.log("No history, returning to dashboard");
       this.returnToDashboard();
     }
   }
@@ -1323,7 +1362,7 @@ class NavigationSystem {
   // Navigate without adding to history (for back navigation)
   async navigateToSectionWithoutHistory(sectionId, sectionName, state = {}) {
     if (this.isNavigating) {
-      console.log('Navigation already in progress');
+      console.log("Navigation already in progress");
       return;
     }
 
@@ -1345,11 +1384,10 @@ class NavigationSystem {
       }
 
       // DISPATCH EVENT FOR MENU HIGHLIGHTER
-      const event = new CustomEvent('sectionLoaded', {
-        detail: { sectionId, sectionName }
+      const event = new CustomEvent("sectionLoaded", {
+        detail: { sectionId, sectionName },
       });
       document.dispatchEvent(event);
-
     } catch (error) {
       this.showErrorState(sectionName, error);
     } finally {
@@ -1357,14 +1395,13 @@ class NavigationSystem {
     }
   }
 
-
   initializeLoadedScripts() {
     // Execute any scripts in the newly loaded content
-    const scripts = document.querySelectorAll('main script');
-    scripts.forEach(script => {
+    const scripts = document.querySelectorAll("main script");
+    scripts.forEach((script) => {
       if (script.src) {
         // External script
-        const newScript = document.createElement('script');
+        const newScript = document.createElement("script");
         newScript.src = script.src;
         newScript.onload = () => console.log(`Loaded script: ${script.src}`);
         document.head.appendChild(newScript);
@@ -1373,14 +1410,14 @@ class NavigationSystem {
         try {
           eval(script.textContent);
         } catch (error) {
-          console.error('Error executing inline script:', error);
+          console.error("Error executing inline script:", error);
         }
       }
     });
   }
 
   showErrorState(sectionName, error) {
-    const mainContent = document.querySelector('main');
+    const mainContent = document.querySelector("main");
     if (mainContent) {
       mainContent.innerHTML = `
         <div class="mt-6">
@@ -1422,7 +1459,7 @@ class NavigationSystem {
   returnToDashboard() {
     // Clear current section
     this.currentSection = null;
-    
+
     // Clear navigation history
     this.navigationHistory = [];
 
@@ -1430,12 +1467,12 @@ class NavigationSystem {
     if (window.menuHighlighter) {
       window.menuHighlighter.clearAllActiveStates();
     }
-    
+
     // Update URL to remove hash
-    window.history.pushState({}, '', window.location.pathname);
-    
+    window.history.pushState({}, "", window.location.pathname);
+
     // Clear main content or redirect to dashboard
-    const mainContent = document.querySelector('main');
+    const mainContent = document.querySelector("main");
     if (mainContent) {
       mainContent.innerHTML = `
         <div class="mt-6">
@@ -1445,33 +1482,33 @@ class NavigationSystem {
           </div>
         </div>
       `;
-     window.location.href = 'dashboard.html';
+      window.location.href = "dashboard.html";
     }
-    
+
     // Update page title
-    document.title = 'HICAD — Dashboard';
+    document.title = "HICAD — Dashboard";
   }
 
   updateHistory(sectionId, sectionName) {
     document.title = `HICAD — ${sectionName}`;
     // Store both sectionId and original sectionName in history state
     window.history.pushState(
-      { 
-        section: sectionName, 
-        sectionId: sectionId 
-      }, 
-      '', 
+      {
+        section: sectionName,
+        sectionId: sectionId,
+      },
+      "",
       `#${sectionId}`
     );
   }
 
   setupHistoryHandler() {
-    window.addEventListener('popstate', (event) => {
+    window.addEventListener("popstate", (event) => {
       if (event.state && event.state.section && event.state.sectionId) {
         // Use the original section name stored in history state
         this.navigateToSectionWithoutHistory(
-          event.state.sectionId, 
-          event.state.section  // Use original section name, not converted from ID
+          event.state.sectionId,
+          event.state.section // Use original section name, not converted from ID
         );
       } else {
         // Handle back to dashboard
@@ -1485,27 +1522,29 @@ class NavigationSystem {
     const hash = window.location.hash;
     if (hash && hash.length > 1) {
       const sectionId = hash.substring(1);
-      
+
       // Hide dashboard content IMMEDIATELY before any rendering
-      const mainContent = document.querySelector('main');
+      const mainContent = document.querySelector("main");
       if (mainContent) {
-        mainContent.style.opacity = '0';
-        mainContent.style.display = 'none';
+        mainContent.style.opacity = "0";
+        mainContent.style.display = "none";
       }
-      
+
       // Get section name
       let sectionName = null;
       if (window.history.state && window.history.state.section) {
         sectionName = window.history.state.section;
       } else {
-        const linkElement = document.querySelector(`a[data-section="${sectionId}"]`);
+        const linkElement = document.querySelector(
+          `a[data-section="${sectionId}"]`
+        );
         if (linkElement) {
           sectionName = linkElement.textContent.trim();
         } else {
           sectionName = this.getSectionNameFromId(sectionId);
         }
       }
-      
+
       // Load section immediately
       this.navigateToSection(sectionId, sectionName);
     }
@@ -1514,40 +1553,40 @@ class NavigationSystem {
   getSectionNameFromId(sectionId) {
     // Convert kebab-case to Title Case
     return sectionId
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   }
 
   // Public method to clear cache
   clearCache() {
     this.cache.clear();
-    console.log('Navigation cache cleared');
+    console.log("Navigation cache cleared");
   }
 
   // Public method to preload sections
   async preloadSections(sectionIds) {
-    const loadPromises = sectionIds.map(sectionId => 
+    const loadPromises = sectionIds.map((sectionId) =>
       this.loadSectionContent(sectionId, this.getSectionNameFromId(sectionId))
     );
-    
+
     try {
       await Promise.all(loadPromises);
-      console.log('Sections preloaded:', sectionIds);
+      console.log("Sections preloaded:", sectionIds);
     } catch (error) {
-      console.warn('Some sections failed to preload:', error);
+      console.warn("Some sections failed to preload:", error);
     }
   }
 }
 
 // Initialize navigation system when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
   // Make navigation system globally accessible
   window.navigation = new NavigationSystem();
 });
 
 // Export for module systems
-if (typeof module !== 'undefined' && module.exports) {
+if (typeof module !== "undefined" && module.exports) {
   module.exports = NavigationSystem;
 }
 
@@ -1555,28 +1594,29 @@ if (typeof module !== 'undefined' && module.exports) {
 async function updateDashboardStats() {
   try {
     // Get payroll status
-    const response = await fetch('stats/2025/10', {
-      method: 'GET',
+    const response = await auth.fetchWithAuth("stats/2025/10", {
+      method: "GET",
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
     });
 
     const result = await response.json();
-    
+
     if (result.success) {
       // Update stats cards
-      document.getElementById('pendingApproval').textContent = result.data.total_employees || '0';
-      document.getElementById('nominalProcessed').textContent = result.data.total_employees || '0';
-      
+      document.getElementById("pendingApproval").textContent =
+        result.data.total_employees || "0";
+      document.getElementById("nominalProcessed").textContent =
+        result.data.total_employees || "0";
+
       // Update notifications based on status
       updateNotifications(result.data);
     }
   } catch (error) {
-    console.error('Error updating dashboard:', error);
+    console.error("Error updating dashboard:", error);
   }
 }
-
 
 // ==================== QUICK ACCESS MANAGEMENT SYSTEM ==================== //
 
@@ -1591,264 +1631,269 @@ class QuickAccessManager {
     this.isActuallyDragging = false;
     this.longPressActivated = false;
     this.touchStartPos = null;
-    
+
     // Define position-based colors (these stay fixed per position)
     this.positionColors = [
-      'bg-[#8CB5F8]/20',  // Position 0 - Blue
-      'bg-[#FBBF24]/20',  // Position 1 - Yellow
-      'bg-[#FBBF24]/20',  // Position 2 - Yellow
-      'bg-[#8CB5F8]/20',  // Position 3 - Blue
-      'bg-[#8CB5F8]/20',  // Position 4 - Blue
-      'bg-[#FBBF24]/20'   // Position 5 - Yellow
+      "bg-[#8CB5F8]/20", // Position 0 - Blue
+      "bg-[#FBBF24]/20", // Position 1 - Yellow
+      "bg-[#FBBF24]/20", // Position 2 - Yellow
+      "bg-[#8CB5F8]/20", // Position 3 - Blue
+      "bg-[#8CB5F8]/20", // Position 4 - Blue
+      "bg-[#FBBF24]/20", // Position 5 - Yellow
     ];
-    
+
     // Define all available quick access options
     this.availableOptions = {
-      'database-backup': {
-        id: 'database-backup',
-        label: 'Database Backup',
-        section: 'database-backup',
-        title: 'Database Backup'
+      "database-backup": {
+        id: "database-backup",
+        label: "Database Backup",
+        section: "database-backup",
+        title: "Database Backup",
       },
-      'save-payroll-files': {
-        id: 'save-payroll-files',
-        label: 'Save Payroll Files',
-        section: 'save-payroll-files',
-        title: 'Save Payroll Files'
+      "save-payroll-files": {
+        id: "save-payroll-files",
+        label: "Save Payroll Files",
+        section: "save-payroll-files",
+        title: "Save Payroll Files",
       },
-      'add-personnel': {
-        id: 'add-personnel',
-        label: 'Add New Personnel',
-        section: 'add-personnel',
-        title: 'Add New Personnel'
+      "add-personnel": {
+        id: "add-personnel",
+        label: "Add New Personnel",
+        section: "add-personnel",
+        title: "Add New Personnel",
       },
-      'monthly-yearly-processing': {
-        id: 'monthly-yearly-processing',
-        label: 'Process Month End',
-        section: 'monthly-yearly-processing',
-        title: 'Month End Processing'
+      "monthly-yearly-processing": {
+        id: "monthly-yearly-processing",
+        label: "Process Month End",
+        section: "monthly-yearly-processing",
+        title: "Month End Processing",
       },
-      'pay-slips': {
-        id: 'pay-slips',
-        label: 'Pay Slips',
-        section: 'pay-slips',
-        title: 'Pay Slips'
+      "pay-slips": {
+        id: "pay-slips",
+        label: "Pay Slips",
+        section: "pay-slips",
+        title: "Pay Slips",
       },
-      'payments-deductions': {
-        id: 'payments-deductions',
-        label: 'Payment/Deduction',
-        section: 'payments-deductions',
-        title: 'Payments/Deductions'
+      "payments-deductions": {
+        id: "payments-deductions",
+        label: "Payment/Deduction",
+        section: "payments-deductions",
+        title: "Payments/Deductions",
       },
-      'current-personnel': {
-        id: 'current-personnel',
-        label: 'Current Personnel',
-        section: 'current-personnel',
-        title: 'Current Personnel'
+      "current-personnel": {
+        id: "current-personnel",
+        label: "Current Personnel",
+        section: "current-personnel",
+        title: "Current Personnel",
       },
-      'payroll-calculations': {
-        id: 'payroll-calculations',
-        label: 'Payroll Calculations',
-        section: 'payroll-calculations',
-        title: 'Payroll Calculations'
+      "payroll-calculations": {
+        id: "payroll-calculations",
+        label: "Payroll Calculations",
+        section: "payroll-calculations",
+        title: "Payroll Calculations",
       },
-      'payments-by-bank': {
-        id: 'payments-by-bank',
-        label: 'Payments by Bank',
-        section: 'payments-by-bank',
-        title: 'Payments by Bank'
+      "payments-by-bank": {
+        id: "payments-by-bank",
+        label: "Payments by Bank",
+        section: "payments-by-bank",
+        title: "Payments by Bank",
       },
-      'master-file-update': {
-        id: 'master-file-update',
-        label: 'Master File Update',
-        section: 'master-file-update',
-        title: 'Master File Update'
+      "master-file-update": {
+        id: "master-file-update",
+        label: "Master File Update",
+        section: "master-file-update",
+        title: "Master File Update",
       },
-      'role-management': {
-        id: 'role-management',
-        label: 'Role Management',
-        section: 'role-management',
-        title: 'Role Management'
+      "role-management": {
+        id: "role-management",
+        label: "Role Management",
+        section: "role-management",
+        title: "Role Management",
       },
-      'create-user': {
-        id: 'create-user',
-        label: 'Create User',
-        section: 'create-user',
-        title: 'Create User'
+      "create-user": {
+        id: "create-user",
+        label: "Create User",
+        section: "create-user",
+        title: "Create User",
       },
-      'control-user': {
-        id: 'control-user',
-        label: 'Control User',
-        section: 'control-user',
-        title: 'Control User'
+      "control-user": {
+        id: "control-user",
+        label: "Control User",
+        section: "control-user",
+        title: "Control User",
       },
-      'old-personnel': {
-        id: 'old-personnel',
-        label: 'Old Personnel',
-        section: 'old-personnel',
-        title: 'Old Personnel'
+      "old-personnel": {
+        id: "old-personnel",
+        label: "Old Personnel",
+        section: "old-personnel",
+        title: "Old Personnel",
       },
-      'calculation-reports': {
-        id: 'calculation-reports',
-        label: 'Calculation Reports',
-        section: 'calculation-reports',
-        title: 'Calculation Reports'
+      "calculation-reports": {
+        id: "calculation-reports",
+        label: "Calculation Reports",
+        section: "calculation-reports",
+        title: "Calculation Reports",
       },
-      'company-profile': {
-        id: 'company-profile',
-        label: 'Company Profile',
-        section: 'company-profile',
-        title: 'Company Profile'
-      }
+      "company-profile": {
+        id: "company-profile",
+        label: "Company Profile",
+        section: "company-profile",
+        title: "Company Profile",
+      },
     };
-    
+
     // Define default quick access items per role
     this.roleDefaults = {
-      'admin': [
-        'role-management',
-        'create-user',
-        'database-backup',
-        'monthly-yearly-processing',
-        'payroll-calculations',
-        'pay-slips'
+      admin: [
+        "role-management",
+        "create-user",
+        "database-backup",
+        "monthly-yearly-processing",
+        "payroll-calculations",
+        "pay-slips",
       ],
-      'manager': [
-        'pay-slips',
-        'monthly-yearly-processing',
-        'payroll-calculations',
-        'payments-by-bank',
-        'current-personnel',
-        'add-personnel'
+      manager: [
+        "pay-slips",
+        "monthly-yearly-processing",
+        "payroll-calculations",
+        "payments-by-bank",
+        "current-personnel",
+        "add-personnel",
       ],
-      'accountant': [
-        'payments-deductions',
-        'pay-slips',
-        'payments-by-bank',
-        'payroll-calculations',
-        'save-payroll-files',
-        'monthly-yearly-processing'
+      accountant: [
+        "payments-deductions",
+        "pay-slips",
+        "payments-by-bank",
+        "payroll-calculations",
+        "save-payroll-files",
+        "monthly-yearly-processing",
       ],
-      'hr': [
-        'add-personnel',
-        'current-personnel',
-        'payments-deductions',
-        'pay-slips',
-        'master-file-update',
-        'save-payroll-files'
+      hr: [
+        "add-personnel",
+        "current-personnel",
+        "payments-deductions",
+        "pay-slips",
+        "master-file-update",
+        "save-payroll-files",
       ],
-      'user': [
-        'pay-slips',
-        'current-personnel',
-        'payments-deductions',
-        'save-payroll-files',
-        'payroll-calculations',
-        'payments-by-bank'
-      ]
+      user: [
+        "pay-slips",
+        "current-personnel",
+        "payments-deductions",
+        "save-payroll-files",
+        "payroll-calculations",
+        "payments-by-bank",
+      ],
     };
-    
+
     // Define which sections each role can access
     this.rolePermissions = {
-      'HICAD': 'all',
-      'manager': [
-        'pay-slips',
-        'monthly-yearly-processing',
-        'payroll-calculations',
-        'payments-by-bank',
-        'current-personnel',
-        'add-personnel',
-        'old-personnel',
-        'payments-deductions',
-        'calculation-reports',
-        'save-payroll-files',
-        'master-file-update'
+      HICAD: "all",
+      manager: [
+        "pay-slips",
+        "monthly-yearly-processing",
+        "payroll-calculations",
+        "payments-by-bank",
+        "current-personnel",
+        "add-personnel",
+        "old-personnel",
+        "payments-deductions",
+        "calculation-reports",
+        "save-payroll-files",
+        "master-file-update",
       ],
-      'accountant': [
-        'payments-deductions',
-        'pay-slips',
-        'payments-by-bank',
-        'payroll-calculations',
-        'save-payroll-files',
-        'monthly-yearly-processing',
-        'calculation-reports',
-        'current-personnel',
-        'master-file-update'
+      accountant: [
+        "payments-deductions",
+        "pay-slips",
+        "payments-by-bank",
+        "payroll-calculations",
+        "save-payroll-files",
+        "monthly-yearly-processing",
+        "calculation-reports",
+        "current-personnel",
+        "master-file-update",
       ],
-      'hr': [
-        'add-personnel',
-        'current-personnel',
-        'old-personnel',
-        'payments-deductions',
-        'pay-slips',
-        'master-file-update',
-        'save-payroll-files',
-        'company-profile'
+      hr: [
+        "add-personnel",
+        "current-personnel",
+        "old-personnel",
+        "payments-deductions",
+        "pay-slips",
+        "master-file-update",
+        "save-payroll-files",
+        "company-profile",
       ],
-      'user': [
-        'pay-slips',
-        'current-personnel',
-        'payments-deductions',
-        'save-payroll-files',
-        'payroll-calculations',
-        'payments-by-bank'
-      ]
+      user: [
+        "pay-slips",
+        "current-personnel",
+        "payments-deductions",
+        "save-payroll-files",
+        "payroll-calculations",
+        "payments-by-bank",
+      ],
     };
-    
+
     this.init();
   }
-  
+
   getUserId() {
-    return localStorage.getItem('user_id') || 'default';
+    return localStorage.getItem("user_id") || "default";
   }
 
   getUserRole() {
-    return localStorage.getItem('user_role') || 'HICAD';
+    return localStorage.getItem("user_role") || "HICAD";
   }
-  
+
   getAvailableOptionsForRole() {
     const permissions = this.rolePermissions[this.userRole];
-    
-    if (permissions === 'all') {
+
+    if (permissions === "all") {
       return this.availableOptions;
     }
-    
+
     const filtered = {};
     Object.entries(this.availableOptions).forEach(([id, option]) => {
       if (permissions.includes(id)) {
         filtered[id] = option;
       }
     });
-    
+
     return filtered;
   }
-  
+
   async init() {
     await this.loadQuickAccess();
     this.render();
     this.createModal();
   }
-  
+
   async loadQuickAccess() {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
         this.useRoleDefaults();
         return;
       }
-      
-      const response = await fetch('/preferences', {
-        method: 'GET',
+
+      const response = await auth.fetchWithAuth("/preferences", {
+        method: "GET",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
-        
-        if (data.success && data.quickAccess && Array.isArray(data.quickAccess) && data.quickAccess.length === 6) {
+
+        if (
+          data.success &&
+          data.quickAccess &&
+          Array.isArray(data.quickAccess) &&
+          data.quickAccess.length === 6
+        ) {
           this.quickAccessItems = data.quickAccess;
-          console.log('📂 Loaded custom quick access from backend');
+          console.log("📂 Loaded custom quick access from backend");
         } else {
           this.useRoleDefaults();
         }
@@ -1856,45 +1901,47 @@ class QuickAccessManager {
         this.useRoleDefaults();
       }
     } catch (error) {
-      console.error('Failed to load quick access:', error);
+      console.error("Failed to load quick access:", error);
       this.useRoleDefaults();
     }
   }
-  
+
   useRoleDefaults() {
-    const defaults = this.roleDefaults[this.userRole] || this.roleDefaults['user'];
+    const defaults =
+      this.roleDefaults[this.userRole] || this.roleDefaults["user"];
     this.quickAccessItems = [...defaults];
     console.log(`🎯 Using default quick access for role: ${this.userRole}`);
   }
-  
+
   async saveQuickAccess() {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) return;
-      
-      const response = await fetch('/preferences/save', {
-        method: 'POST',
+
+      const response = await auth.fetchWithAuth("/preferences/save", {
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          quickAccess: this.quickAccessItems
-        })
+          quickAccess: this.quickAccessItems,
+        }),
       });
-      
+
       if (response.ok) {
-        console.log('💾 Saved quick access preferences to backend');
+        console.log("💾 Saved quick access preferences to backend");
       }
     } catch (error) {
-      console.error('Failed to save quick access:', error);
+      console.error("Failed to save quick access:", error);
     }
   }
-  
+
   createModal() {
-    const modal = document.createElement('div');
-    modal.id = 'quickAccessModal';
-    modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50';
+    const modal = document.createElement("div");
+    modal.id = "quickAccessModal";
+    modal.className =
+      "fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50";
     modal.innerHTML = `
       <div class="bg-white rounded-xl shadow-2xl max-w-xl w-full mx-4">
         <div class="bg-navy p-4 text-white flex items-center justify-between rounded-t-xl">
@@ -1925,15 +1972,16 @@ class QuickAccessManager {
       </div>
     `;
     document.body.appendChild(modal);
-    
+
     // Create custom alert modal
     this.createAlertModal();
   }
-  
+
   createAlertModal() {
-    const alertModal = document.createElement('div');
-    alertModal.id = 'quickAccessAlertModal';
-    alertModal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50';
+    const alertModal = document.createElement("div");
+    alertModal.id = "quickAccessAlertModal";
+    alertModal.className =
+      "fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50";
     alertModal.innerHTML = `
       <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
         <div class="p-6">
@@ -1961,88 +2009,93 @@ class QuickAccessManager {
     `;
     document.body.appendChild(alertModal);
   }
-  
-  showAlert(message, title = 'Confirm') {
+
+  showAlert(message, title = "Confirm") {
     return new Promise((resolve) => {
       this.alertResolve = resolve;
-      const modal = document.getElementById('quickAccessAlertModal');
-      const titleEl = document.getElementById('alertModalTitle');
-      const messageEl = document.getElementById('alertModalMessage');
-      
+      const modal = document.getElementById("quickAccessAlertModal");
+      const titleEl = document.getElementById("alertModalTitle");
+      const messageEl = document.getElementById("alertModalMessage");
+
       if (modal && titleEl && messageEl) {
         titleEl.textContent = title;
         messageEl.textContent = message;
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
       }
     });
   }
-  
+
   closeAlertModal(result) {
-    const modal = document.getElementById('quickAccessAlertModal');
+    const modal = document.getElementById("quickAccessAlertModal");
     if (modal) {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
     }
     if (this.alertResolve) {
       this.alertResolve(result);
       this.alertResolve = null;
     }
   }
-  
+
   openModal() {
-    const modal = document.getElementById('quickAccessModal');
+    const modal = document.getElementById("quickAccessModal");
     if (!modal) return;
-    
+
     this.renderModalContent();
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
   }
-  
+
   closeModal() {
-    const modal = document.getElementById('quickAccessModal');
+    const modal = document.getElementById("quickAccessModal");
     if (!modal) return;
-    
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-    
+
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+
     this.loadQuickAccess().then(() => this.render());
   }
-  
+
   async saveAndClose() {
     await this.saveQuickAccess();
-    const modal = document.getElementById('quickAccessModal');
+    const modal = document.getElementById("quickAccessModal");
     if (modal) {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
     }
     this.render();
   }
-  
+
   renderModalContent() {
-    const grid = document.getElementById('modalQuickAccessGrid');
+    const grid = document.getElementById("modalQuickAccessGrid");
     if (!grid) return;
-    
-    grid.innerHTML = this.quickAccessItems.map((itemId, index) => {
-      const option = this.availableOptions[itemId];
-      if (!option) return '';
-      
-      return this.renderModalItem(option, index);
-    }).join('');
+
+    grid.innerHTML = this.quickAccessItems
+      .map((itemId, index) => {
+        const option = this.availableOptions[itemId];
+        if (!option) return "";
+
+        return this.renderModalItem(option, index);
+      })
+      .join("");
   }
-  
+
   renderModalItem(option, index) {
     const color = this.positionColors[index];
     const roleOptions = this.getAvailableOptionsForRole();
-    
+
     const availableForSwap = Object.entries(roleOptions)
       .filter(([id]) => !this.quickAccessItems.includes(id) || id === option.id)
-      .map(([id, opt]) => `
-        <option value="${id}" ${id === option.id ? 'selected' : ''}>
+      .map(
+        ([id, opt]) => `
+        <option value="${id}" ${id === option.id ? "selected" : ""}>
           ${opt.label}
         </option>
-      `).join('');
-    
+      `
+      )
+      .join("");
+
     return `
       <div 
         class="relative ${color} p-3 rounded-lg shadow-sm border-2 border-transparent hover:border-blue-400 cursor-move transition-all modal-drag-item"
@@ -2069,81 +2122,81 @@ class QuickAccessManager {
       </div>
     `;
   }
-  
+
   // ========== FIXED DASHBOARD DRAG HANDLERS ==========
-  
+
   clearLongPressTimer() {
     if (this.longPressTimer) {
       clearTimeout(this.longPressTimer);
       this.longPressTimer = null;
     }
   }
-  
+
   resetDragState() {
     this.clearLongPressTimer();
     this.isDraggingEnabled = false;
     this.isActuallyDragging = false;
     this.draggedIndex = null;
-    
+
     // Reset all button styles
-    document.querySelectorAll('.quick-access-btn').forEach(btn => {
-      btn.setAttribute('draggable', 'false');
-      btn.style.cursor = '';
-      btn.style.opacity = '';
-      btn.style.transform = '';
-      btn.style.borderColor = '';
-      btn.style.borderWidth = '';
-      btn.style.borderStyle = '';
+    document.querySelectorAll(".quick-access-btn").forEach((btn) => {
+      btn.setAttribute("draggable", "false");
+      btn.style.cursor = "";
+      btn.style.opacity = "";
+      btn.style.transform = "";
+      btn.style.borderColor = "";
+      btn.style.borderWidth = "";
+      btn.style.borderStyle = "";
     });
   }
-  
+
   // ========== LONG PRESS HANDLERS (SIMPLIFIED) ==========
-  
+
   handleMouseDown(index, event) {
     const button = event.currentTarget;
-    
+
     // Clear any existing timer
     this.clearLongPressTimer();
-    
-    console.log('🖱️ Mouse/Touch down on button', index);
-    
+
+    console.log("🖱️ Mouse/Touch down on button", index);
+
     // Start long press timer
     this.longPressTimer = setTimeout(() => {
-      console.log('⏰ Long press activated for button', index);
-      
+      console.log("⏰ Long press activated for button", index);
+
       this.isDraggingEnabled = true;
       this.draggedIndex = index;
-      
+
       // Enable draggable attribute (this is the key!)
-      button.setAttribute('draggable', 'true');
-      
+      button.setAttribute("draggable", "true");
+
       // Visual feedback
-      button.style.cursor = 'grabbing';
-      button.style.opacity = '0.7';
-      button.style.transform = 'scale(1.05)';
-      
+      button.style.cursor = "grabbing";
+      button.style.opacity = "0.7";
+      button.style.transform = "scale(1.05)";
+
       // Haptic feedback
       if (navigator.vibrate) {
         navigator.vibrate(50);
       }
-      
-      console.log('✅ Button is now draggable - drag it to another position');
+
+      console.log("✅ Button is now draggable - drag it to another position");
     }, 500);
   }
-  
+
   handleMouseUp(event) {
-    console.log('🖱️ Mouse/Touch up');
-    
+    console.log("🖱️ Mouse/Touch up");
+
     // Clear the timer
     this.clearLongPressTimer();
-    
+
     // If drag was enabled, prevent the click
     if (this.isDraggingEnabled && !this.isActuallyDragging) {
       event.preventDefault();
       event.stopPropagation();
-      console.log('🚫 Click prevented - drag mode was enabled');
+      console.log("🚫 Click prevented - drag mode was enabled");
     }
-    
+
     // Small delay before resetting
     setTimeout(() => {
       if (!this.isActuallyDragging) {
@@ -2151,9 +2204,9 @@ class QuickAccessManager {
       }
     }, 150);
   }
-  
+
   // ========== DASHBOARD DRAG HANDLERS (SIMPLIFIED - MODAL STYLE) ==========
-  
+
   handleDashboardDragStart(index, event) {
     // For dashboard, we need long press first
     if (!this.isDraggingEnabled || this.draggedIndex !== index) {
@@ -2161,168 +2214,169 @@ class QuickAccessManager {
       event.stopPropagation();
       return false;
     }
-    
-    console.log('✅ Dashboard drag starting for button', index);
+
+    console.log("✅ Dashboard drag starting for button", index);
     this.isActuallyDragging = true;
     this.draggedIndex = index;
-    event.dataTransfer.effectAllowed = 'move';
-    event.currentTarget.style.opacity = '0.4';
+    event.dataTransfer.effectAllowed = "move";
+    event.currentTarget.style.opacity = "0.4";
   }
-  
+
   handleDashboardDragOver(event) {
     // Allow drop only when dragging is active
     if (!this.isActuallyDragging) return;
-    
+
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-    event.currentTarget.style.borderColor = '#3B82F6';
-    event.currentTarget.style.borderWidth = '2px';
-    event.currentTarget.style.borderStyle = 'dashed';
+    event.dataTransfer.dropEffect = "move";
+    event.currentTarget.style.borderColor = "#3B82F6";
+    event.currentTarget.style.borderWidth = "2px";
+    event.currentTarget.style.borderStyle = "dashed";
   }
-  
+
   handleDashboardDragLeave(event) {
-    event.currentTarget.style.borderColor = '';
-    event.currentTarget.style.borderWidth = '';
-    event.currentTarget.style.borderStyle = '';
+    event.currentTarget.style.borderColor = "";
+    event.currentTarget.style.borderWidth = "";
+    event.currentTarget.style.borderStyle = "";
   }
-  
+
   handleDashboardDrop(targetIndex, event) {
     event.preventDefault();
-    event.currentTarget.style.borderColor = '';
-    event.currentTarget.style.borderWidth = '';
-    event.currentTarget.style.borderStyle = '';
-    
+    event.currentTarget.style.borderColor = "";
+    event.currentTarget.style.borderWidth = "";
+    event.currentTarget.style.borderStyle = "";
+
     if (this.draggedIndex === null || this.draggedIndex === targetIndex) {
       this.draggedIndex = null;
       return;
     }
-    
-    console.log('📦 Swapping:', this.draggedIndex, '<->', targetIndex);
-    
+
+    console.log("📦 Swapping:", this.draggedIndex, "<->", targetIndex);
+
     // Proper array swap (same as modal)
     const items = [...this.quickAccessItems];
     const temp = items[this.draggedIndex];
     items[this.draggedIndex] = items[targetIndex];
     items[targetIndex] = temp;
-    
+
     this.quickAccessItems = items;
     this.draggedIndex = null;
-    
+
     // Save and re-render
     this.saveQuickAccess();
     this.render();
   }
-  
+
   handleDashboardDragEnd(event) {
-    console.log('🏁 Dashboard drag ended');
-    event.currentTarget.style.opacity = '1';
-    
+    console.log("🏁 Dashboard drag ended");
+    event.currentTarget.style.opacity = "1";
+
     // Clean up all buttons
-    document.querySelectorAll('.quick-access-btn').forEach(el => {
-      el.style.borderColor = '';
-      el.style.borderWidth = '';
-      el.style.borderStyle = '';
-      el.style.opacity = '';
+    document.querySelectorAll(".quick-access-btn").forEach((el) => {
+      el.style.borderColor = "";
+      el.style.borderWidth = "";
+      el.style.borderStyle = "";
+      el.style.opacity = "";
     });
-    
+
     // Reset drag state
     setTimeout(() => {
       this.resetDragState();
     }, 100);
   }
-  
+
   handleButtonClick(section, title, event) {
     // Only navigate if drag mode wasn't active
     if (this.isDraggingEnabled || this.isActuallyDragging) {
-      console.log('🚫 Navigation blocked - drag mode was active');
+      console.log("🚫 Navigation blocked - drag mode was active");
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
-    
-    console.log('🔗 Navigating to:', section);
+
+    console.log("🔗 Navigating to:", section);
     if (window.navigation && window.navigation.navigateToSection) {
       window.navigation.navigateToSection(section, title);
     }
     return true;
   }
-  
+
   // ========== MODAL DRAG HANDLERS (unchanged) ==========
-  
+
   handleModalDragStart(event, index) {
     this.draggedIndex = index;
-    event.dataTransfer.effectAllowed = 'move';
-    event.currentTarget.style.opacity = '0.4';
+    event.dataTransfer.effectAllowed = "move";
+    event.currentTarget.style.opacity = "0.4";
   }
-  
+
   handleModalDragOver(event) {
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-    event.currentTarget.style.borderColor = '#3B82F6';
-    event.currentTarget.style.borderWidth = '2px';
+    event.dataTransfer.dropEffect = "move";
+    event.currentTarget.style.borderColor = "#3B82F6";
+    event.currentTarget.style.borderWidth = "2px";
   }
-  
+
   handleModalDragLeave(event) {
-    event.currentTarget.style.borderColor = 'transparent';
+    event.currentTarget.style.borderColor = "transparent";
   }
-  
+
   handleModalDragEnd(event) {
-    event.currentTarget.style.opacity = '1';
-    document.querySelectorAll('.modal-drag-item').forEach(el => {
-      el.style.borderColor = 'transparent';
+    event.currentTarget.style.opacity = "1";
+    document.querySelectorAll(".modal-drag-item").forEach((el) => {
+      el.style.borderColor = "transparent";
     });
   }
-  
+
   handleModalDrop(event, targetIndex) {
     event.preventDefault();
-    event.currentTarget.style.borderColor = 'transparent';
-    
+    event.currentTarget.style.borderColor = "transparent";
+
     if (this.draggedIndex === null || this.draggedIndex === targetIndex) {
       this.draggedIndex = null;
       return;
     }
-    
+
     const items = [...this.quickAccessItems];
     const temp = items[this.draggedIndex];
     items[this.draggedIndex] = items[targetIndex];
     items[targetIndex] = temp;
-    
+
     this.quickAccessItems = items;
     this.draggedIndex = null;
-    
+
     this.renderModalContent();
   }
-  
+
   async replaceItemInModal(index, newItemId) {
     if (index < 0 || index >= 6) return;
-    
+
     this.quickAccessItems[index] = newItemId;
     this.renderModalContent();
   }
-  
+
   async resetToDefaults() {
     const confirmed = await this.showAlert(
-      'Reset to default quick access items for your role?',
-      'Reset Quick Access'
+      "Reset to default quick access items for your role?",
+      "Reset Quick Access"
     );
-    
+
     if (confirmed) {
       this.useRoleDefaults();
       this.renderModalContent();
     }
   }
-  
+
   render() {
-    const container = document.querySelector('.frame-3');
+    const container = document.querySelector(".frame-3");
     if (!container) return;
-    
-    const items = this.quickAccessItems.map((itemId, index) => {
-      const option = this.availableOptions[itemId];
-      if (!option) return '';
-      
-      const color = this.positionColors[index];
-      
-      return `
+
+    const items = this.quickAccessItems
+      .map((itemId, index) => {
+        const option = this.availableOptions[itemId];
+        if (!option) return "";
+
+        const color = this.positionColors[index];
+
+        return `
         <button 
           class="quick-access-btn ${color} py-3 rounded-lg shadow-custom font-semibold hover:shadow-lg transition-all select-none cursor-pointer"
           data-index="${index}"
@@ -2331,8 +2385,9 @@ class QuickAccessManager {
           ${option.label}
         </button>
       `;
-    }).join('');
-    
+      })
+      .join("");
+
     container.innerHTML = `
       <div class="flex items-center justify-center gap-3 mb-6">
         <h4 class="text-xl font-bold text-navy">Quick Access</h4>
@@ -2347,61 +2402,79 @@ class QuickAccessManager {
         ${items}
       </div>
     `;
-    
+
     // Attach event listeners after render
     this.attachEventListeners();
   }
-  
+
   attachEventListeners() {
-    const buttons = document.querySelectorAll('.quick-access-btn');
-    
+    const buttons = document.querySelectorAll(".quick-access-btn");
+
     buttons.forEach((button, index) => {
       const option = this.availableOptions[this.quickAccessItems[index]];
       if (!option) return;
-      
+
       // Remove any existing listeners by cloning
       const newButton = button.cloneNode(true);
       button.parentNode.replaceChild(newButton, button);
-      
+
       // Long press for enabling drag
-      newButton.addEventListener('mousedown', (e) => this.handleMouseDown(index, e));
-      newButton.addEventListener('mouseup', (e) => this.handleMouseUp(e));
-      newButton.addEventListener('mouseleave', (e) => this.handleMouseUp(e));
-      
-      newButton.addEventListener('touchstart', (e) => this.handleMouseDown(index, e), { passive: true });
-      newButton.addEventListener('touchend', (e) => this.handleMouseUp(e));
-      newButton.addEventListener('touchcancel', (e) => this.handleMouseUp(e));
-      
+      newButton.addEventListener("mousedown", (e) =>
+        this.handleMouseDown(index, e)
+      );
+      newButton.addEventListener("mouseup", (e) => this.handleMouseUp(e));
+      newButton.addEventListener("mouseleave", (e) => this.handleMouseUp(e));
+
+      newButton.addEventListener(
+        "touchstart",
+        (e) => this.handleMouseDown(index, e),
+        { passive: true }
+      );
+      newButton.addEventListener("touchend", (e) => this.handleMouseUp(e));
+      newButton.addEventListener("touchcancel", (e) => this.handleMouseUp(e));
+
       // Standard drag events (work after long press enables draggable)
-      newButton.addEventListener('dragstart', (e) => this.handleDashboardDragStart(index, e));
-      newButton.addEventListener('dragover', (e) => this.handleDashboardDragOver(e));
-      newButton.addEventListener('dragleave', (e) => this.handleDashboardDragLeave(e));
-      newButton.addEventListener('drop', (e) => this.handleDashboardDrop(index, e));
-      newButton.addEventListener('dragend', (e) => this.handleDashboardDragEnd(e));
-      
+      newButton.addEventListener("dragstart", (e) =>
+        this.handleDashboardDragStart(index, e)
+      );
+      newButton.addEventListener("dragover", (e) =>
+        this.handleDashboardDragOver(e)
+      );
+      newButton.addEventListener("dragleave", (e) =>
+        this.handleDashboardDragLeave(e)
+      );
+      newButton.addEventListener("drop", (e) =>
+        this.handleDashboardDrop(index, e)
+      );
+      newButton.addEventListener("dragend", (e) =>
+        this.handleDashboardDragEnd(e)
+      );
+
       // Click for navigation
-      newButton.addEventListener('click', (e) => this.handleButtonClick(option.section, option.title, e));
+      newButton.addEventListener("click", (e) =>
+        this.handleButtonClick(option.section, option.title, e)
+      );
     });
   }
 }
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   window.quickAccessManager = new QuickAccessManager();
-  console.log('✅ Quick Access Manager initialized');
+  console.log("✅ Quick Access Manager initialized");
 });
 
-
-function logout() {
-  // Clear user session data
+async function logout() {
+  // Clear user session data && Call logout API (but don't wait for response)
+  auth.logout().catch((err) => console.error("Logout API error:", err));
   sessionStorage.clear();
   localStorage.clear();
 
   // Redirect to login page
-  window.location.href = 'personnel-login.html';
+  window.location.href = "personnel-login.html";
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
   // Make logout function globally accessible
   window.logout = logout;
 });

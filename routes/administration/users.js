@@ -10,25 +10,297 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_SECRET;
 const verifyToken = require("../../middware/authentication");
 const { toSlug } = require("../../utils/helper");
-const tokenManager = require('../../config/redis');
+const tokenManager = require("../../config/redis");
+
+const PAYROLL_MAPPING = {
+  OFFICERS: process.env.MYSQL_DB_OFFICERS,
+  "W/OFFICER": process.env.MYSQL_DB_WOFFICERS,
+  "RATE A": process.env.MYSQL_DB_RATINGS,
+  "RATE B": process.env.MYSQL_DB_RATINGS_A,
+  "RATE C": process.env.MYSQL_DB_RATINGS_B,
+  TRAINEE: process.env.MYSQL_DB_JUNIOR_TRAINEE,
+};
 
 const jwtSign = ({ data, secret, time }) => {
-
   return jwt.sign(data, secret, { expiresIn: time });
 };
 
 const jwtVerify = ({ token, secret }) => {
-  jwt.verify(token, SECRET, (err, decoded) => {
+  return jwt.verify(token, secret, (err, decoded) => {
     if (err) {
-      if (err.name === 'TokenExpiredError') {
-        return { message: 'Token has expired' };
+      if (err.name === "TokenExpiredError") {
+        return { message: "Token has expired", decoded: "" };
       }
-      return { message: 'Invalid token' }
+      return { message: "Invalid token", decoded: "" };
     }
-    return decoded
-  })
-}
 
+    return { decoded, message: "" };
+  });
+};
+
+//old login
+// router.post("/login", async (req, res) => {
+//   const { user_id, password, payroll_class } = req.body;
+//   // payroll_class comes from frontend as: 'hicaddata', 'hicaddata1' (db_name)
+
+//   try {
+//     const userCandidates = []; // Store all found user instances
+
+//     // Get list of all available databases to search AND create a mapping of db_name <-> classname
+//     let databasesToSearch = [];
+//     let dbClassMapping = {}; // { 'hicaddata': 'OFFICERS', 'OFFICERS': 'hicaddata' }
+
+//     try {
+//       // Try to get all db_classes from officers database
+//       pool.useDatabase(process.env.DB_OFFICERS);
+//       const [dbClasses] = await pool.query(
+//         "SELECT db_name, classname FROM py_payrollclass"
+//       );
+
+//       // Build list: officers first, then all other databases
+//       const otherDatabases = dbClasses
+//         .map((row) => row.db_name)
+//         .filter((db) => db !== process.env.DB_OFFICERS);
+//       databasesToSearch = [process.env.DB_OFFICERS, ...otherDatabases];
+
+//       // Create bidirectional mapping
+//       dbClasses.forEach((row) => {
+//         dbClassMapping[row.db_name] = row.classname; // 'hicaddata' -> 'OFFICERS'
+//         dbClassMapping[row.classname] = row.db_name; // 'OFFICERS' -> 'hicaddata'
+//       });
+
+//       console.log("📋 Databases to search:", databasesToSearch);
+//       console.log("🔗 Class mapping created:", dbClassMapping);
+//     } catch (err) {
+//       // If db_classes table doesn't exist, fallback to searching common databases
+//       console.log("⚠️ Could not fetch db_classes, using fallback list");
+//       databasesToSearch = [
+//         process.env.DB_OFFICERS,
+//         process.env.DB_WOFFICERS,
+//         process.env.DB_RATINGS,
+//         process.env.DB_RATINGS_A,
+//         process.env.DB_RATINGS_B,
+//         process.env.DB_JUNIOR_TRAINEE,
+//       ];
+//     }
+
+//     // Search for user in ALL databases and collect all instances
+//     for (const dbName of databasesToSearch) {
+//       if (!dbName) continue; // Skip null/undefined entries
+
+//       try {
+//         console.log(`🔍 Searching for user ${user_id} in database: ${dbName}`);
+//         pool.useDatabase(dbName);
+
+//         const [rows] = await pool.query(
+//           "SELECT * FROM users WHERE user_id = ?",
+//           [user_id]
+//         );
+
+//         if (rows.length > 0) {
+//           const foundUser = rows[0];
+//           userCandidates.push({
+//             user: foundUser,
+//             database: dbName,
+//           });
+//           console.log(`✅ User found in database: ${dbName}`);
+//           console.log(
+//             `   👤 Name: ${foundUser.full_name}, Primary Class: ${foundUser.primary_class}`
+//           );
+//           console.log(
+//             `   🔐 Password: "${
+//               foundUser.password
+//             }" (type: ${typeof foundUser.password})`
+//           );
+//         }
+//       } catch (err) {
+//         // If database doesn't exist or has no users table, continue to next
+//         console.log(`❌ Error searching database ${dbName}:`, err.message);
+//         continue;
+//       }
+//     }
+
+//     // If user not found in ANY database
+//     if (userCandidates.length === 0) {
+//       console.log(`❌ User ${user_id} not found in any database`);
+//       return res.status(401).json({ error: "Invalid User ID or password" });
+//     }
+
+//     console.log(
+//       `\n📊 Found ${userCandidates.length} instance(s) of user ${user_id}`
+//     );
+
+//     // Now validate password and find matching user
+//     let authenticatedUser = null;
+//     let authenticatedDatabase = null;
+
+//     for (const candidate of userCandidates) {
+//       const { user, database } = candidate;
+
+//       console.log(`\n🔐 Checking credentials for user in ${database}:`);
+//       console.log(
+//         `   Stored password: "${user.password}" (${typeof user.password})`
+//       );
+//       console.log(`   Provided password: "${password}" (${typeof password})`);
+//       console.log(`   Match: ${user.password === password}`);
+//       console.log(`   Status: ${user.status}`);
+//       console.log(`   Expiry date: ${user.expiry_date}`);
+//       console.log(`   Primary class (stored): ${user.primary_class}`);
+//       console.log(`   Requested class (from login): ${payroll_class}`);
+
+//       // Check expiry date if set
+//       let isExpired = false;
+//       if (user.expiry_date) {
+//         const expiryDate = new Date(user.expiry_date);
+//         const today = new Date();
+//         today.setHours(0, 0, 0, 0); // Reset to start of day for fair comparison
+//         isExpired = expiryDate < today;
+//         console.log(`   Account expired: ${isExpired}`);
+//       }
+
+//       // Normalize the primary_class comparison
+//       // The user.primary_class might be classname(OFFICERS) or db_name (hicaddata)
+//       // The payroll_class from frontend is always db_name (hicaddata)
+
+//       let userPrimaryDbName = user.primary_class;
+
+//       // If primary_class looks like a classname(all caps, no numbers), convert it to db_name
+//       if (dbClassMapping[user.primary_class]) {
+//         userPrimaryDbName = dbClassMapping[user.primary_class];
+//         console.log(
+//           `   🔄 Converted classname "${user.primary_class}" to db_name "${userPrimaryDbName}"`
+//         );
+//       }
+
+//       const classMatches = userPrimaryDbName === payroll_class;
+//       console.log(
+//         `   Class match: ${classMatches} (user: ${userPrimaryDbName}, requested: ${payroll_class})`
+//       );
+
+//       // Check if password matches, status is active, not expired, and primary_class matches
+//       if (
+//         user.password === password &&
+//         user.status === "active" &&
+//         !isExpired &&
+//         classMatches
+//       ) {
+//         authenticatedUser = user;
+//         authenticatedDatabase = database;
+//         console.log(`✅ Valid credentials found in ${database}!`);
+//         break; // Found valid match, stop searching
+//       } else {
+//         console.log(`❌ Invalid credentials in ${database}:`);
+//         if (user.password !== password) console.log(`   - Password mismatch`);
+//         if (user.status !== "active")
+//           console.log(`   - Account status: ${user.status}`);
+//         if (isExpired)
+//           console.log(`   - Account expired on ${user.expiry_date}`);
+//         if (!classMatches)
+//           console.log(
+//             `   - Class mismatch (has: ${userPrimaryDbName}, wants: ${payroll_class})`
+//           );
+//       }
+//     }
+
+//     // If no valid match found after checking all instances
+//     if (!authenticatedUser) {
+//       console.log(
+//         `\n❌ No valid credentials found for user ${user_id} across all databases`
+//       );
+
+//       // Provide specific error message
+//       const hasPasswordMatch = userCandidates.some(
+//         (c) => c.user.password === password
+//       );
+//       const hasInactiveAccount = userCandidates.some(
+//         (c) => c.user.status !== "active"
+//       );
+//       const hasExpiredAccount = userCandidates.some((c) => {
+//         if (!c.user.expiry_date) return false;
+//         const expiryDate = new Date(c.user.expiry_date);
+//         const today = new Date();
+//         today.setHours(0, 0, 0, 0);
+//         return expiryDate < today;
+//       });
+//       const hasClassMismatch = userCandidates.some((c) => {
+//         let userPrimaryDbName = c.user.primary_class;
+//         if (dbClassMapping[c.user.primary_class]) {
+//           userPrimaryDbName = dbClassMapping[c.user.primary_class];
+//         }
+//         return userPrimaryDbName !== payroll_class;
+//       });
+
+//       if (hasExpiredAccount && hasPasswordMatch) {
+//         return res
+//           .status(403)
+//           .json({
+//             error: "Account has expired. Please contact administrator.",
+//           });
+//       } else if (hasInactiveAccount && hasPasswordMatch) {
+//         return res
+//           .status(403)
+//           .json({ error: "Account is inactive or suspended" });
+//       } else if (hasClassMismatch && hasPasswordMatch) {
+//         return res.status(403).json({
+//           error:
+//             "Unauthorized payroll class selection. You can only login to your assigned class.",
+//         });
+//       } else {
+//         return res.status(401).json({ error: "Invalid User ID or password" });
+//       }
+//     }
+
+//     // Switch to user's assigned database (their primary_class)
+//     pool.useDatabase(payroll_class);
+
+//     const token = signToken({
+//       data: {
+//         user_id: authenticatedUser.user_id,
+//         full_name: authenticatedUser.full_name,
+//         role: authenticatedUser.user_role,
+//         primary_class: authenticatedUser.primary_class,
+//         current_class: payroll_class,
+//         created_in: authenticatedDatabase,
+//       },
+//       secret: JWT_SECRET,
+//       time: "8h",
+//     });
+//     const refresh_token = signToken({
+//       data: {
+//         user_id: authenticatedUser.user_id,
+//         full_name: authenticatedUser.full_name,
+//         role: authenticatedUser.user_role,
+//         primary_class: authenticatedUser.primary_class,
+//         current_class: payroll_class,
+//         created_in: authenticatedDatabase,
+//       },
+//       secret: REFRESH_SECRET,
+//       time: "7d",
+//     });
+
+//     console.log(
+//       `\n✅ Login successful for user ${user_id} from ${authenticatedDatabase}`
+//     );
+
+//     res.json({
+//       message: "✅ Login successful",
+//       token,
+//       refresh_token,
+//       user: {
+//         user_id: authenticatedUser.user_id,
+//         full_name: authenticatedUser.full_name,
+//         email: authenticatedUser.email,
+//         role: authenticatedUser.user_role,
+//         status: authenticatedUser.status,
+//         primary_class: authenticatedUser.primary_class,
+//         current_class: payroll_class,
+//       },
+//     });
+//   } catch (err) {
+//     console.error("❌ Login error:", err);
+//     res.status(500).json({ error: "Server error" });
+//   }
+// });
 // User login - searches across all databases
 router.post("/login", async (req, res) => {
   const { user_id, password, payroll_class } = req.body;
@@ -94,9 +366,7 @@ router.post("/login", async (req, res) => {
     const requestedDb = dbClassMapping[payroll_class];
 
     if (!requestedDb) {
-      return res
-        .status(400)
-        .json({ error: "Invalid payroll class selected" });
+      return res.status(400).json({ error: "Invalid payroll class selected" });
     }
 
     /* ----------------------------------------------------
@@ -126,9 +396,7 @@ router.post("/login", async (req, res) => {
       }
     }
     if (!userCandidates.length) {
-      return res
-        .status(401)
-        .json({ error: "Invalid User ID or password" });
+      return res.status(401).json({ error: "Invalid User ID or password" });
     }
 
     /* ----------------------------------------------------
@@ -136,7 +404,6 @@ router.post("/login", async (req, res) => {
     ---------------------------------------------------- */
     let authenticatedUser = null;
     let authenticatedDatabase = null;
-
 
     for (const { user, database } of userCandidates) {
       let isExpired = false;
@@ -189,19 +456,19 @@ router.post("/login", async (req, res) => {
       role: authenticatedUser.user_role,
       primary_class: authenticatedUser.primary_class,
       current_class: dbClassMapping[requestedDb],
-      created_in: authenticatedDatabase,
+      created_in: dbClassMapping[authenticatedDatabase],
     };
 
     const token = jwtSign({
       data: tokenPayload,
       secret: JWT_SECRET,
-      time: "8h",
+      time: "5m",
     });
 
     const refresh_token = jwtSign({
       data: tokenPayload,
       secret: REFRESH_SECRET,
-      time: "7d",
+      time: "1d",
     });
 
     /* ----------------------------------------------------
@@ -228,67 +495,64 @@ router.post("/login", async (req, res) => {
 });
 
 // User Logout
-router.post('/logout', async (req, res) => {
-
+router.post("/logout", async (req, res) => {
   try {
     //  Fetch Access Token(T)
-    const bearerHeader = req.headers['authorization'];
+    const bearerHeader = req.headers["authorization"];
     let token = null;
 
-    if (bearerHeader && bearerHeader.startsWith('Bearer ')) {
-      token = bearerHeader.split(' ')[1];
+    if (bearerHeader && bearerHeader.startsWith("Bearer ")) {
+      token = bearerHeader.split(" ")[1];
     }
 
     if (!token && req.query.token) {
       token = req.query.token;
     }
     if (!token) {
-      return res.status(403).json({ message: 'No token provided' });
+      return res.status(403).json({ message: "No token provided" });
     }
-    await tokenManager.blacklistToken(token)
+    await tokenManager.blacklistToken(token);
 
     // Fetch Refresh Token(if defined)
-    const { refresh_token } = req.body
+    const { refresh_token } = req.body;
 
     if (refresh_token) {
-      await tokenManager.blacklistToken(refresh_token)
-
+      await tokenManager.blacklistToken(refresh_token);
     }
-    return res.status(204).json()
+    return res.status(204).json();
   } catch (err) {
     console.error("❌ Logout error:", err);
     res.status(500).json({ error: "Server error" });
   }
-
-
-
-})
+});
 
 // Refresh Token
 
-router.post('/refresh', async (req, res) => {
+router.post("/refresh", async (req, res) => {
   try {
-
     // Fetch Refresh Token()
-    const { refresh_token } = req.body
+    const { refresh_token } = req.body;
 
     if (!refresh_token) {
-      return res.status(400).json({ message: 'Please Log In' })
+      return res.status(400).json({ message: "Please Log In" });
     }
-    const isBlacklisted = tokenManager.isTokenBlacklisted(refresh_token)
+    const isBlacklisted = await tokenManager.isTokenBlacklisted(refresh_token);
 
     if (isBlacklisted) {
-      return res.status(400).json({ message: 'Please Log in' })
+      return res.status(400).json({ message: "Please Log in" });
     }
 
-    const { message, decoded } = jwtVerify({ token: refresh_token, secret: REFRESH_SECRET })
+    const { message, decoded } = jwtVerify({
+      token: refresh_token,
+      secret: REFRESH_SECRET,
+    });
 
     if (message || !decoded) {
-      return res.status(400).json({ message })
+      return res.status(400).json({ message });
     }
 
     // pool.useDatabase(decoded.current_class)
-    pool.useDatabase(decoded.created_in)
+    pool.useDatabase(PAYROLL_MAPPING[decoded.created_in]);
     const [userRows] = await pool.query(
       "SELECT * FROM users WHERE user_id = ?",
       [decoded.user_id]
@@ -297,7 +561,7 @@ router.post('/refresh', async (req, res) => {
     if (userRows.length === 0) {
       await tokenManager.blacklistToken(refresh_token);
       return res.status(404).json({
-        message: 'User not Found'
+        message: "User not Found",
       });
     }
 
@@ -312,45 +576,39 @@ router.post('/refresh', async (req, res) => {
       isExpired = expiry < today;
     }
 
-    if (isExpired || user.status !== 'active') {
+    if (isExpired || user.status !== "active") {
       await tokenManager.blacklistToken(refresh_token);
       return res.status(401).json({
-        message: "Please Log In."
+        message: "Please Log In.",
       });
     }
-
 
     const tokenPayload = {
       user_id: user.user_id,
       full_name: user.full_name,
       role: user.user_role,
       primary_class: user.primary_class,
-      current_class: tokenData.current_class,
-      created_in: tokenData.created_in
+      current_class: decoded.current_class,
+      created_in: decoded.created_in,
     };
-
 
     const token = jwtSign({
       data: tokenPayload,
       secret: JWT_SECRET,
-      time: "8h",
+      time: "5m",
     });
-
 
     console.log(`🔄 Access token refreshed for user: ${user.user_id}`);
 
-
     res.status(200).json({
-      message: 'Token Refreshed',
-      token
-    })
-
+      message: "Token Refreshed",
+      token,
+    });
   } catch (err) {
     console.error("❌ Refresh error:", err);
     res.status(500).json({ error: "Server error" });
   }
-
-})
+});
 
 //  Get all users
 router.get("/", verifyToken, async (req, res) => {
@@ -404,12 +662,10 @@ router.post("/", verifyToken, async (req, res) => {
   try {
     // Required field validation
     if (!user_id || !fullName || !email || !role || !payroll_class) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "User ID, Payroll Class, full name, email, and role are required",
-        });
+      return res.status(400).json({
+        error:
+          "User ID, Payroll Class, full name, email, and role are required",
+      });
     }
 
     // Status validation
@@ -681,7 +937,8 @@ router.post("/verify-identity", async (req, res) => {
 
       console.log(`\n🔐 Verifying identity for user in ${database}:`);
       console.log(
-        `   Provided - Name: ${full_name}, Email: ${email}, Class: ${primary_class || "not provided"
+        `   Provided - Name: ${full_name}, Email: ${email}, Class: ${
+          primary_class || "not provided"
         }`
       );
       console.log(

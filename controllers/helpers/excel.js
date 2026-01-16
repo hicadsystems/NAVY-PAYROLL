@@ -6,7 +6,7 @@ const ExcelJS = require('exceljs');
 const EXCEL_CONFIG = {
   company: {
     name: 'Nigerian Navy (Naval Headquarters)',
-    address: '123 Business Street, City, Country'
+    address: 'CENTRAL PAY OFFICE, 23 POINT ROAD APAPA'
   },
   colors: {
     primary: '1e40af',        // Blue for headers
@@ -49,6 +49,7 @@ class GenericExcelExporter {
       title,
       subtitle,
       period,
+      className,
       columns,
       data,
       totals,
@@ -79,7 +80,7 @@ class GenericExcelExporter {
     let currentRow = 1;
 
     // Add header section
-    currentRow = this.addHeaderSection(worksheet, title, subtitle, period, columns.length);
+    currentRow = this.addHeaderSection(worksheet, title, subtitle, period, className, columns.length);
 
     // Add column headers with freeze
     const headerRow = currentRow;
@@ -116,7 +117,7 @@ class GenericExcelExporter {
   /**
    * Add header section (company name, title, period)
    */
-  addHeaderSection(worksheet, title, subtitle, period, columnCount) {
+  addHeaderSection(worksheet, title, subtitle, period, className, columnCount) {
     let row = 1;
 
     // Company name
@@ -152,6 +153,16 @@ class GenericExcelExporter {
       periodCell.value = `Period: ${this.getMonthName(period.month)} ${period.year}`;
       periodCell.font = { size: 10, italic: true };
       periodCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      row++;
+    }
+
+    if(className) {
+      // Class/Database information
+      worksheet.mergeCells(row, 1, row, columnCount);
+      const classCell = worksheet.getCell(row, 1);
+      classCell.value = `Class: ${className}`;
+      classCell.font = { size: 10, italic: true };
+      classCell.alignment = { horizontal: 'center', vertical: 'middle' };
       row++;
     }
 
@@ -352,6 +363,140 @@ class GenericExcelExporter {
     await workbook.xlsx.write(res);
     res.end();
   }
+
+    /**
+   * Create workbook with grouped data (each group gets its own sheet with frozen headers)
+   * @param {Object} options - Export configuration
+   * @param {string} options.title - Report title
+   * @param {string} options.subtitle - Report subtitle (optional)
+   * @param {Object} options.period - Period info { year, month }
+   * @param {string} options.groupBy - Field to group by
+   * @param {Array} options.columns - Column definitions
+   * @param {Array} options.data - Data rows
+   * @param {Function} options.groupHeaderFormatter - Function to format group header (receives group info)
+   * @param {string} options.summarySheetName - Name for summary sheet (optional)
+   * @returns {ExcelJS.Workbook}
+   */
+  async createGroupedWorkbook(options) {
+    const {
+      title,
+      subtitle,
+      period,
+      className,
+      groupBy,
+      columns,
+      data,
+      groupHeaderFormatter,
+      summarySheetName = 'Summary'
+    } = options;
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Payroll System';
+    workbook.created = new Date();
+
+    // Group the data
+    const groups = {};
+    data.forEach(row => {
+      const groupKey = typeof groupBy === 'function' ? groupBy(row) : row[groupBy];
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push(row);
+    });
+
+    const sheetNameTracker = {};
+    
+    // Create a sheet for each group
+    Object.entries(groups).forEach(([groupKey, groupData], groupIdx) => {
+      const sheetName = this._getUniqueSheetName(groupKey, sheetNameTracker);
+      const worksheet = workbook.addWorksheet(sheetName);
+
+      // Set column widths
+      columns.forEach((col, idx) => {
+        worksheet.getColumn(idx + 1).width = col.width || 15;
+      });
+
+      let row = 1;
+
+      // Company name
+      worksheet.mergeCells(row, 1, row, columns.length);
+      const companyCell = worksheet.getCell(row, 1);
+      companyCell.value = this.config.company.name;
+      companyCell.font = { size: 14, bold: true, color: { argb: this.config.colors.primary } };
+      companyCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      row++;
+
+      // Report title
+      worksheet.mergeCells(row, 1, row, columns.length);
+      const titleCell = worksheet.getCell(row, 1);
+      titleCell.value = title;
+      titleCell.font = { size: 12, bold: true };
+      titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      row++;
+
+      // Subtitle
+      if (subtitle) {
+        worksheet.mergeCells(row, 1, row, columns.length);
+        const subtitleCell = worksheet.getCell(row, 1);
+        subtitleCell.value = subtitle;
+        subtitleCell.font = { size: 10, italic: true };
+        subtitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        row++;
+      }
+
+      // Group header (custom formatted)
+      if (groupHeaderFormatter) {
+        worksheet.mergeCells(row, 1, row, columns.length);
+        const groupHeaderCell = worksheet.getCell(row, 1);
+        groupHeaderCell.value = groupHeaderFormatter(groupKey, groupData);
+        groupHeaderCell.font = { bold: true, size: 11, color: { argb: this.config.colors.primary } };
+        groupHeaderCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E8E8E8' } };
+        groupHeaderCell.alignment = { horizontal: 'left', vertical: 'middle' };
+        row++;
+      }
+
+      row++; // Empty row
+
+      // Column headers (frozen)
+      const headerRowNum = row;
+      this.addColumnHeaders(worksheet, columns, headerRowNum);
+      row++;
+
+      // Freeze panes at header
+      worksheet.views = [{ 
+        state: 'frozen', 
+        ySplit: headerRowNum,
+        topLeftCell: `A${headerRowNum + 1}`,
+        activeCell: `A${headerRowNum + 1}`
+      }];
+
+      // Add data rows
+      this.addDataRows(worksheet, groupData, columns, row);
+    });
+
+    return workbook;
+  }
+
+  _getUniqueSheetName(baseName, tracker) {
+    // Sanitize the name first
+    let sanitized = baseName.replace(/[\*\?\:\\\/\[\]]/g, '-');
+    sanitized = sanitized.substring(0, 31);
+    sanitized = sanitized.replace(/[\s\-]+$/, '');
+    
+    // Check if name exists and add counter if needed
+    let finalName = sanitized;
+    let counter = 1;
+    
+    while (tracker[finalName]) {
+      const suffix = ` (${counter})`;
+      const maxBase = 31 - suffix.length;
+      finalName = sanitized.substring(0, maxBase) + suffix;
+      counter++;
+    }
+    
+    tracker[finalName] = true;
+    return finalName;
+  }
 }
 
 // ============================================
@@ -390,6 +535,7 @@ async function exportEmployeeChangeHistory(req, res, data, period) {
       title: 'EMPLOYEE CHANGE HISTORY REPORT',
       subtitle: 'Changes in Personnel Details',
       period: period,
+      className: className,
       columns: columns,
       data: dataWithSN,
       totals: {
@@ -437,6 +583,7 @@ async function exportSimpleReport(req, res, data, period) {
     const workbook = await exporter.createWorkbook({
       title: 'PAYROLL REPORT',
       period: period,
+      className: className,
       columns: columns,
       data: data,
       sheetName: 'Payroll'

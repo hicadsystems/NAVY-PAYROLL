@@ -1,4 +1,6 @@
 const varianceAnalysisService = require('../../services/audit-trail/varianceAnalysisService');
+const { GenericExcelExporter } = require('../helpers/excel');
+const companySettings = require('../helpers/companySettings');
 const ExcelJS = require('exceljs');
 const jsreport = require('jsreport-core')();
 const fs = require('fs');
@@ -142,7 +144,7 @@ class VarianceAnalysisController {
       console.log('Salary Variance Report Data rows:', result.data.length);
 
       if (format === 'excel') {
-        return this.generateSalaryVarianceExcel(result, res);
+        return this.generateSalaryVarianceExcel(result, req, res);
       } else if (format === 'pdf') {
         return this.generateSalaryVariancePDF(result, req, res);
       }
@@ -189,7 +191,7 @@ class VarianceAnalysisController {
       console.log('Overpayment Report Data rows:', result.data.length);
 
       if (format === 'excel') {
-        return this.generateOverpaymentExcel(result, res);
+        return this.generateOverpaymentExcel(result, req, res);
       } else if (format === 'pdf') {
         console.log('🔄 Starting PDF generation...');
         return this.generateOverpaymentPDF(result, req, res);
@@ -206,213 +208,296 @@ class VarianceAnalysisController {
   // ==========================================================================
   // SALARY VARIANCE - EXCEL GENERATION
   // ==========================================================================
-  async generateSalaryVarianceExcel(result, res) {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Salary Variance Analysis');
-    const data = result.data;
+  async generateSalaryVarianceExcel(result, req, res) {
+    try {
+      const exporter = new GenericExcelExporter();
+      const data = result.data;
+      const className = this.getDatabaseNameFromRequest(req);
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'Payroll System';
+      workbook.created = new Date();
 
-    // Title
-    worksheet.mergeCells('A1:G1');
-    const titleCell = worksheet.getCell('A1');
-    titleCell.value = 'NIGERIAN NAVY - SALARY VARIANCE ANALYSIS';
-    titleCell.font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } };
-    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-    titleCell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF1F4E78' }
-    };
+      const sheetNameTracker = {};
+      const subtitle = `${varianceAnalysisService.formatPeriod(result.period)} | ${result.comparisonInfo}`;
 
-    // Period info
-    worksheet.mergeCells('A2:G2');
-    const periodCell = worksheet.getCell('A2');
-    periodCell.value = `Period: ${varianceAnalysisService.formatPeriod(result.period)} | ${result.comparisonInfo}`;
-    periodCell.font = { size: 11, italic: true };
-    periodCell.alignment = { horizontal: 'center' };
-    periodCell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFE7E6E6' }
-    };
+      const columns = [
+        { header: 'S/N', key: 'sn', width: 8, align: 'center' },
+        { header: 'Svc No.', key: 'employee_id', width: 15 },
+        { header: 'Rank', key: 'Title', width: 10 },
+        { header: 'Full Name', key: 'full_name', width: 30 },
+        { header: 'Old Amount', key: 'old_amount', width: 16, align: 'right', numFmt: '₦#,##0.00' },
+        { header: 'New Amount', key: 'new_amount', width: 16, align: 'right', numFmt: '₦#,##0.00' },
+        { header: 'Variance', key: 'variance', width: 16, align: 'right', numFmt: '₦#,##0.00' }
+      ];
 
-    worksheet.addRow([]);
+      // Group data by pay_type and description
+      const varianceGroups = {};
+      data.forEach(row => {
+        const groupKey = `${row.pay_type}_${row.pay_type_description}`;
+        if (!varianceGroups[groupKey]) {
+          varianceGroups[groupKey] = {
+            pay_type: row.pay_type,
+            pay_type_description: row.pay_type_description,
+            variances: []
+          };
+        }
+        varianceGroups[groupKey].variances.push(row);
+      });
 
-    // Define columns
-    worksheet.columns = [
-      { header: 'Employee ID', key: 'employee_id', width: 15 },
-      { header: 'Title', key: 'title', width: 10 },
-      { header: 'Full Name', key: 'full_name', width: 30 },
-      { header: 'Pay Type', key: 'pay_type', width: 12 },
-      { header: 'Description', key: 'pay_type_description', width: 30 },
-      { header: 'Old Amount', key: 'old_amount', width: 16 },
-      { header: 'New Amount', key: 'new_amount', width: 16 },
-      { header: 'Variance', key: 'variance', width: 16 }
-    ];
+      let globalSN = 1;
 
-    // Style header row
-    const headerRow = worksheet.getRow(4);
-    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
-    headerRow.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF0070C0' }
-    };
-    headerRow.height = 25;
-    headerRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      // Create a sheet for each pay type
+      Object.values(varianceGroups).forEach(group => {
+        const sheetName = this._getUniqueSheetName(`${group.pay_type}-${group.pay_type_description}`, sheetNameTracker);
+        const worksheet = workbook.addWorksheet(sheetName);
 
-    // Add data with conditional formatting
-    data.forEach((row, index) => {
-      const addedRow = worksheet.addRow(row);
+        // Set column widths
+        columns.forEach((col, idx) => {
+          worksheet.getColumn(idx + 1).width = col.width || 15;
+        });
 
-      // Alternate row colors
-      if (index % 2 === 0) {
-        addedRow.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFF2F2F2' }
-        };
-      }
+        let row = 1;
 
-      // Highlight negative variance in red
-      const varianceCell = addedRow.getCell('H');
-      if (parseFloat(row.variance) < 0) {
-        varianceCell.font = { color: { argb: 'FFFF0000' }, bold: true };
-        varianceCell.value = `(${Math.abs(row.variance).toFixed(2)})`;
-      }
-    });
+        // Company Header
+        worksheet.mergeCells(row, 1, row, columns.length);
+        worksheet.getCell(row, 1).value = exporter.config.company.name;
+        worksheet.getCell(row, 1).font = { size: 14, bold: true, color: { argb: exporter.config.colors.primary } };
+        worksheet.getCell(row, 1).alignment = { horizontal: 'center', vertical: 'middle' };
+        row++;
 
-    // Format currency columns
-    ['F', 'G', 'H'].forEach(col => {
-      worksheet.getColumn(col).numFmt = '₦#,##0.00';
-      worksheet.getColumn(col).alignment = { horizontal: 'right' };
-    });
+        // Report Title
+        worksheet.mergeCells(row, 1, row, columns.length);
+        worksheet.getCell(row, 1).value = 'SALARY VARIANCE ANALYSIS';
+        worksheet.getCell(row, 1).font = { size: 12, bold: true };
+        worksheet.getCell(row, 1).alignment = { horizontal: 'center', vertical: 'middle' };
+        row++;
 
-    // Add borders
-    worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber >= 4) {
-        row.eachCell((cell) => {
+        // Subtitle
+        worksheet.mergeCells(row, 1, row, columns.length);
+        worksheet.getCell(row, 1).value = `${subtitle} | Class: ${className}`;
+        worksheet.getCell(row, 1).font = { size: 10, italic: true };
+        worksheet.getCell(row, 1).alignment = { horizontal: 'center', vertical: 'middle' };
+        row++;
+
+        // Pay Type Header
+        worksheet.mergeCells(row, 1, row, columns.length);
+        const groupHeader = worksheet.getCell(row, 1);
+        groupHeader.value = `Pay Type: ${group.pay_type} | Description: ${group.pay_type_description} | Employees: ${group.variances.length}`;
+        groupHeader.font = { bold: true, size: 11, color: { argb: exporter.config.colors.primary } };
+        groupHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E8E8E8' } };
+        groupHeader.alignment = { horizontal: 'left', vertical: 'middle' };
+        row++;
+
+        row++; // Empty row
+
+        // Column headers (frozen)
+        const headerRowNum = row;
+        const headerRow = worksheet.getRow(headerRowNum);
+        columns.forEach((col, idx) => {
+          const cell = headerRow.getCell(idx + 1);
+          cell.value = col.header;
+          cell.fill = { 
+            type: 'pattern', 
+            pattern: 'solid', 
+            fgColor: { argb: exporter.config.colors.headerBg } 
+          };
+          cell.font = { 
+            bold: true, 
+            color: { argb: exporter.config.colors.primary }, 
+            size: 10 
+          };
+          cell.alignment = { 
+            horizontal: col.align || 'left', 
+            vertical: 'middle' 
+          };
           cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
+            top: { style: 'thin', color: { argb: 'd1d5db' } },
+            bottom: { style: 'thin', color: { argb: 'd1d5db' } },
+            left: { style: 'thin', color: { argb: 'd1d5db' } },
+            right: { style: 'thin', color: { argb: 'd1d5db' } }
           };
         });
+        headerRow.height = 22;
+        row++;
+
+        // FREEZE PANES at header
+        worksheet.views = [{ 
+          state: 'frozen', 
+          ySplit: headerRowNum,
+          topLeftCell: `A${headerRowNum + 1}`,
+          activeCell: `A${headerRowNum + 1}`
+        }];
+
+        // Variance data rows
+        group.variances.forEach((variance, varIdx) => {
+          const dataRow = worksheet.getRow(row);
+          
+          dataRow.getCell(1).value = globalSN++;
+          dataRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+          dataRow.getCell(2).value = variance.employee_id;
+          dataRow.getCell(3).value = variance.Title;
+          dataRow.getCell(4).value = variance.full_name;
+          dataRow.getCell(5).value = parseFloat(variance.old_amount || 0);
+          dataRow.getCell(5).numFmt = '₦#,##0.00';
+          dataRow.getCell(5).alignment = { horizontal: 'right', vertical: 'middle' };
+          dataRow.getCell(6).value = parseFloat(variance.new_amount || 0);
+          dataRow.getCell(6).numFmt = '₦#,##0.00';
+          dataRow.getCell(6).alignment = { horizontal: 'right', vertical: 'middle' };
+          dataRow.getCell(7).value = parseFloat(variance.variance || 0);
+          dataRow.getCell(7).numFmt = '₦#,##0.00';
+          dataRow.getCell(7).alignment = { horizontal: 'right', vertical: 'middle' };
+
+          // Highlight negative variances in red
+          if (parseFloat(variance.variance || 0) < 0) {
+            dataRow.getCell(7).font = { color: { argb: 'FFFF0000' }, bold: true };
+          }
+
+          // Borders and alternating colors
+          for (let i = 1; i <= columns.length; i++) {
+            const cell = dataRow.getCell(i);
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'E5E7EB' } },
+              bottom: { style: 'thin', color: { argb: 'E5E7EB' } }
+            };
+            
+            if (varIdx % 2 === 0) {
+              cell.fill = { 
+                type: 'pattern', 
+                pattern: 'solid', 
+                fgColor: { argb: exporter.config.colors.altRow } 
+              };
+            }
+          }
+          
+          dataRow.height = 18;
+          row++;
+        });
+      });
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=salary_variance_${result.period}.xlsx`);
+      await workbook.xlsx.write(res);
+      res.end();
+
+    } catch (error) {
+      console.error('Salary Variance Export error:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, error: error.message });
       }
-    });
+    }
+  }
 
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=salary_variance_${result.period}.xlsx`);
-
-    await workbook.xlsx.write(res);
-    res.end();
+  _getUniqueSheetName(baseName, tracker) {
+    // Sanitize the name first
+    let sanitized = baseName.replace(/[\*\?\:\\\/\[\]]/g, '-');
+    sanitized = sanitized.substring(0, 31);
+    sanitized = sanitized.replace(/[\s\-]+$/, '');
+    
+    // Check if name exists and add counter if needed
+    let finalName = sanitized;
+    let counter = 1;
+    
+    while (tracker[finalName]) {
+      // Add counter and ensure still within 31 char limit
+      const suffix = ` (${counter})`;
+      const maxBase = 31 - suffix.length;
+      finalName = sanitized.substring(0, maxBase) + suffix;
+      counter++;
+    }
+    
+    tracker[finalName] = true;
+    return finalName;
   }
 
   // ==========================================================================
   // OVERPAYMENT - EXCEL GENERATION
   // ==========================================================================
-  async generateOverpaymentExcel(result, res) {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Overpayment Analysis');
-    const data = result.data;
+  async generateOverpaymentExcel(result, req, res) {
+    try {
+      const exporter = new GenericExcelExporter();
+      const data = result.data;
 
-    // Title
-    worksheet.mergeCells('A1:H1');
-    const titleCell = worksheet.getCell('A1');
-    titleCell.value = 'NIGERIAN NAVY - OVERPAYMENT ANALYSIS';
-    titleCell.font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } };
-    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-    titleCell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF1F4E78' }
-    };
+      const className = this.getDatabaseNameFromRequest(req);
 
-    // Info row
-    worksheet.mergeCells('A2:H2');
-    const infoCell = worksheet.getCell('A2');
-    infoCell.value = `Period: ${varianceAnalysisService.formatPeriod(result.period)} | Threshold: ${result.threshold_percentage}% | Pay Element: ${result.pay_element}`;
-    infoCell.font = { size: 11, italic: true };
-    infoCell.alignment = { horizontal: 'center' };
-    infoCell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFFFE699' }
-    };
+      const columns = [
+        { header: 'S/N', key: 'sn', width: 8, align: 'center' },
+        { header: 'Svc No.', key: 'employee_id', width: 15 },
+        { header: 'Rank', key: 'Title', width: 10 },
+        { header: 'Full Name', key: 'full_name', width: 30 },
+        //{ header: 'Pay Element', key: 'pay_element_description', width: 25 },
+        { header: 'Previous Net', key: 'previous_net', width: 16, align: 'right', numFmt: '₦#,##0.00' },
+        { header: 'Current Net', key: 'current_net', width: 16, align: 'right', numFmt: '₦#,##0.00' },
+        { header: 'Variance Amount', key: 'variance_amount', width: 16, align: 'right', numFmt: '₦#,##0.00' },
+        { header: 'Variance %', key: 'variance_percentage', width: 12, align: 'right', numFmt: '0.00"%"' }
+      ];
 
-    worksheet.addRow([]);
+      // Add S/N
+      const dataWithSN = data.map((item, idx) => ({
+        ...item,
+        sn: idx + 1
+      }));
 
-    // Define columns
-    worksheet.columns = [
-      { header: 'Employee ID', key: 'employee_id', width: 15 },
-      { header: 'Title', key: 'title', width: 10 },
-      { header: 'Full Name', key: 'full_name', width: 30 },
-      { header: 'Pay Element', key: 'pay_element_description', width: 25 },
-      { header: 'Previous Net', key: 'previous_net', width: 16 },
-      { header: 'Current Net', key: 'current_net', width: 16 },
-      { header: 'Variance Amount', key: 'variance_amount', width: 16 },
-      { header: 'Variance %', key: 'variance_percentage', width: 12 }
-    ];
+      const subtitle = `Period: ${varianceAnalysisService.formatPeriod(result.monthName)} | Threshold: ${result.threshold_percentage}% | Pay Element: ${result.pay_element}`;
 
-    // Style header row
-    const headerRow = worksheet.getRow(4);
-    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
-    headerRow.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFDC143C' }
-    };
-    headerRow.height = 25;
-    headerRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      const workbook = await exporter.createWorkbook({
+        title: 'NIGERIAN NAVY - OVERPAYMENT ANALYSIS',
+        subtitle: subtitle,
+        className: className,
+        columns: columns,
+        data: dataWithSN,
+        sheetName: 'Overpayment Analysis'
+      });
 
-    // Add data with highlighting
-    data.forEach((row, index) => {
-      const addedRow = worksheet.addRow(row);
+      // Apply conditional formatting for high variance percentages
+      const worksheet = workbook.worksheets[0];
+      const dataStartRow = 5;
+      
+      // Change header color to red for overpayment alert
+      const headerRow = worksheet.getRow(4);
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFDC143C' } // Red
+      };
 
-      // Alternate row colors
-      if (index % 2 === 0) {
-        addedRow.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFFFF0F0' }
-        };
-      }
+      // Highlight high variance rows
+      dataWithSN.forEach((row, index) => {
+        const rowNum = dataStartRow + index;
+        const variancePercentCell = worksheet.getCell(`I${rowNum}`);
+        
+        if (parseFloat(row.variance_percentage) > result.threshold_percentage * 2) {
+          variancePercentCell.font = { color: { argb: 'FFFF0000' }, bold: true };
+        }
 
-      // Highlight high variance percentage
-      if (parseFloat(row.variance_percentage) > result.threshold_percentage * 2) {
-        addedRow.getCell('H').font = { color: { argb: 'FFFF0000' }, bold: true };
-      }
-    });
-
-    // Format currency columns
-    ['E', 'F', 'G'].forEach(col => {
-      worksheet.getColumn(col).numFmt = '₦#,##0.00';
-      worksheet.getColumn(col).alignment = { horizontal: 'right' };
-    });
-
-    // Format percentage column
-    worksheet.getColumn('H').numFmt = '0.00"%"';
-    worksheet.getColumn('H').alignment = { horizontal: 'right' };
-
-    // Add borders
-    worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber >= 4) {
-        row.eachCell((cell) => {
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
+        // Light red background for all data rows
+        if (index % 2 === 0) {
+          worksheet.getRow(rowNum).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFF0F0' }
           };
-        });
+        }
+      });
+
+      // Auto-shrink: Set print scaling to 70% for better fit (9 columns is very wide)
+      worksheet.pageSetup = {
+        ...worksheet.pageSetup,
+        fitToPage: true,
+        fitToWidth: 1,
+        fitToHeight: 0,
+        scale: 70, // Shrink to 70% for 9+ column tables
+        orientation: 'landscape',
+        paperSize: 9 // A4
+      };
+
+      await exporter.exportToResponse(workbook, res, `overpayment_analysis_${result.period}.xlsx`);
+
+    } catch (error) {
+      console.error('Overpayment Export error:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, error: error.message });
       }
-    });
-
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=overpayment_analysis_${result.period}.xlsx`);
-
-    await workbook.xlsx.write(res);
-    res.end();
+    }
   }
 
   // ==========================================================================
@@ -429,6 +514,9 @@ class VarianceAnalysisController {
     try {
       const templatePath = path.join(__dirname, '../../templates/salary-variance.html');
       const templateContent = fs.readFileSync(templatePath, 'utf8');
+
+      //Load image
+      const image = await companySettings.getSettingsFromFile('./public/photos/logo.png');    
 
       const pdfResult = await jsreport.render({
         template: {
@@ -452,7 +540,8 @@ class VarianceAnalysisController {
           reportDate: new Date(),
           period: varianceAnalysisService.formatPeriod(result.period),
           comparisonInfo: result.comparisonInfo,
-          className: this.getDatabaseNameFromRequest(req)
+          className: this.getDatabaseNameFromRequest(req),
+          ...image
         }
       });
 
@@ -481,6 +570,9 @@ class VarianceAnalysisController {
       const templatePath = path.join(__dirname, '../../templates/overpayment-analysis.html');
       const templateContent = fs.readFileSync(templatePath, 'utf8');
 
+      //Load image
+      const image = await companySettings.getSettingsFromFile('./public/photos/logo.png');    
+
       const pdfResult = await jsreport.render({
         template: {
           content: templateContent,
@@ -504,7 +596,8 @@ class VarianceAnalysisController {
           period: result.monthName,
           threshold: result.threshold_percentage,
           payElement: result.pay_element,
-          className: this.getDatabaseNameFromRequest(req)
+          className: this.getDatabaseNameFromRequest(req),
+          ...image
         }
       });
 

@@ -6,6 +6,22 @@
     @page { size: A4 landscape; margin: 0.5mm; background-color: #f8fbff; }
     body { font-family: Helvetica, Arial, sans-serif; font-size: 8pt; }
 
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('{{{logoDataUrl}}}');
+      background-size: auto 100%;
+      background-repeat: no-repeat;
+      background-position: center center;
+      opacity: 0.02;
+      z-index: -1;
+      pointer-events: none;
+    }
+
     .header-wrapper {
         display: flex;
         align-items: flex-start;
@@ -144,6 +160,11 @@
       font-weight: bold;
     }
 
+    .highlight-exit {
+      color: #FF8C00;
+      font-weight: bold;
+    }
+
     .page-break {
       page-break-after: always;
     }
@@ -152,6 +173,22 @@
       body {
         print-color-adjust: exact;
         -webkit-print-color-adjust: exact;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('{{{logoDataUrl}}}');
+        background-size: auto 100%;
+        background-repeat: no-repeat;
+        background-position: center center;
+        opacity: 0.02;
+        z-index: -1;
+        pointer-events: none;
       }
     }
   </style>
@@ -169,7 +206,7 @@
 
   <div class="header-info">
     <div class="left">
-      <strong>PERSONNEL REPORT</strong>
+      <strong>PERSONNEL REPORT {{#if showingExitedEmployees}}(EXITED){{/if}}</strong>
     </div>
     <div class="center">
       <span>PRODUCED ON</span> 
@@ -182,30 +219,6 @@
       <span>PERSONNEL</span>
     </div>
   </div>
-
-  <!-- Statistics Summary Box 
-  <div class="summary-box">
-    <div class="summary-item">
-      <div class="label">Total Personnel</div>
-      <div class="value">{{statistics.total_employees}}</div>
-    </div>
-    <div class="summary-item highlight">
-      <div class="label">Active</div>
-      <div class="value">{{statistics.active_employees}}</div>
-    </div>
-    <div class="summary-item">
-      <div class="label">Separated</div>
-      <div class="value">{{statistics.separated_employees}}</div>
-    </div>
-    <div class="summary-item">
-      <div class="label">Avg Age</div>
-      <div class="value">{{statistics.avg_age}} yrs</div>
-    </div>
-    <div class="summary-item">
-      <div class="label">Avg Service</div>
-      <div class="value">{{statistics.avg_years_of_service}} yrs</div>
-    </div>
-  </div>-->
 
   <!-- Filter Information -->
   {{#if filters}}
@@ -226,11 +239,17 @@
         <th>Grade Type</th>
         <th style="width: 8%;">PFA</th>
         <th style="width: 8%;">RSA(PEN) Code</th>
+        {{#unless showingExitedEmployees}}
         <th style="width: 5%;">Emol.form</th>
+        {{/unless}}
         <th style="width: 4%;" class="text-center">Age</th>
-        <th style="width: 5%;" class="text-center">YrsOf Service</th>
-        <th style="width: 8%;">DateOf 1st Appiontment</th>
-        <th style="width: 5%;" class="text-center">YrsSince Promotion</th>
+        <th style="width: 5%;" class="text-center">{{#if showingExitedEmployees}}Yrs Served{{else}}Yrs Of Service{{/if}}</th>
+        <th style="width: 8%;">Date Of 1st Appointment</th>
+        <th style="width: 8%;">{{#if showingExitedEmployees}}Date Left{{else}}Date Promoted{{/if}}</th>
+        <th style="width: 6%;" class="text-center">{{#if showingExitedEmployees}}Exit Reason{{else}}Yrs Since Promotion{{/if}}</th>
+        {{#if showingExitedEmployees}}
+        <th style="width: 5%;" class="text-center">Yrs Since Exit</th>
+        {{/if}}
         <th style="width: 8%;">State</th>
       </tr>
     </thead>
@@ -245,15 +264,39 @@
           <td style="white-space: nowrap;">{{this.gradetype_code}}</td>
           <td>{{this.pfa}}</td>
           <td>{{this.nsitf_code}}</td>
+          {{#unless ../showingExitedEmployees}}
           <td class="text-center">{{this.emolumentform}}</td>
+          {{/unless}}
           <td class="text-center {{#if (gt this.age 55)}}highlight-age{{/if}}">
             {{this.age}}yrs
           </td>
-          <td class="text-center {{#if (gt this.years_of_service 30)}}highlight-service{{/if}}">
-            {{this.years_of_service}}yrs
+          <td class="text-center {{#if (gte this.years_of_service 30)}}highlight-service{{/if}}">
+            {{#if ../showingExitedEmployees}}
+              {{this.years_served_formatted}}
+            {{else}}
+              {{this.years_of_service}}yrs
+            {{/if}}
           </td>
           <td style="font-size: 7px;">{{this.date_employed_formatted}}</td>
-          <td class="text-center">{{this.years_since_promotion}}yrs</td>
+          <td style="font-size: 7px; white-space: nowrap;">
+            {{#if ../showingExitedEmployees}}
+              {{this.date_left_formatted}}
+            {{else}}
+              {{this.date_promoted_formatted}}
+            {{/if}}
+          </td>
+          <td class="text-center">
+            {{#if ../showingExitedEmployees}}
+              {{this.exittype}}
+            {{else}}
+              {{this.years_since_promotion}}yrs
+            {{/if}}
+          </td>
+          {{#if ../showingExitedEmployees}}
+          <td class="text-center {{#if (lt this.years_since_exit 2)}}highlight-exit{{/if}}">
+            {{this.years_since_exit}}yrs
+          </td>
+          {{/if}}
           <td>{{this.state_of_origin}}</td>
         </tr>
       {{/each}}
@@ -268,6 +311,14 @@
     // Helper functions for Handlebars
     Handlebars.registerHelper('gt', function(a, b) {
       return parseFloat(a) > parseFloat(b);
+    });
+
+    Handlebars.registerHelper('gte', function(a, b) {
+      return parseFloat(a) >= parseFloat(b);
+    });
+
+    Handlebars.registerHelper('lt', function(a, b) {
+      return parseFloat(a) < parseFloat(b);
     });
 
     Handlebars.registerHelper('eq', function(a, b) {

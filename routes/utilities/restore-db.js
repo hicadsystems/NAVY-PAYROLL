@@ -179,7 +179,7 @@ router.get("/status", verifyToken, async (req, res) => {
     let connection;
         try {
             connection = await mysql.createConnection(dbConfig);
-            await connection.execute('SELECT 1'); // Simple connectivity test
+            await connection.ping(); // Simple connectivity test
             res.json({ status: "connected", engine: "mysql" });
         } catch (err) {
         console.error("DB connection failed:", err.message);

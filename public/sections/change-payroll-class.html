@@ -1,30 +1,32 @@
 <div class="p-6 max-w-4xl mx-auto">
-  <h2 class="text-gray-600 font-semibold mb-6 lg:text-lg">
+  <h2 class="text-2xl font-semibold text-blue-800">
     Select migration type and assign personnel to a new payroll class.
   </h2>
 
-  <div class="space-y-4">
+  <div class="space-y-2">
     <!-- Migration Type Selection -->
-    <div class="p-4">
-      <h3 class="font-semibold text-gray-700 mb-3">Migration Type</h3>
-      <div class="space-y-2">
-        <label class="flex items-center space-x-3 cursor-pointer">
-          <input type="radio" name="migrationType" value="individual" checked
-            class="w-4 h-4 text-blue-600 focus:ring-blue-500">
-          <span class="text-gray-700">Individual Personnel</span>
-        </label>
-        <label class="flex items-center space-x-3 cursor-pointer">
-          <input type="radio" name="migrationType" value="all"
-            class="w-4 h-4 text-blue-600 focus:ring-blue-500">
-          <span class="text-gray-700">All Personnel (Bulk Migration)</span>
-        </label>
-        <label class="flex items-center space-x-3 cursor-pointer">
-          <input type="radio" name="migrationType" value="range"
-            class="w-4 h-4 text-blue-600 focus:ring-blue-500">
-          <span class="text-gray-700">Range of Personnel</span>
-        </label>
-      </div>
+    <div class="p-4 flex items-center space-x-6">
+      <h3 class="font-semibold text-gray-700">Migration Type</h3>
+
+      <label class="flex items-center space-x-2 cursor-pointer">
+        <input type="radio" name="migrationType" value="individual" checked
+          class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+        <span class="text-gray-700">Individual Personnel</span>
+      </label>
+
+      <label class="flex items-center space-x-2 cursor-pointer">
+        <input type="radio" name="migrationType" value="all"
+          class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+        <span class="text-gray-700">All Personnel (Bulk Migration)</span>
+      </label>
+
+      <label class="flex items-center space-x-2 cursor-pointer">
+        <input type="radio" name="migrationType" value="range"
+          class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+        <span class="text-gray-700">Range of Personnel</span>
+      </label>
     </div>
+
 
     <form id="changesForm" class="space-y-4">
       <!-- Individual Form -->
@@ -104,16 +106,25 @@
         </select>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="flex flex-wrap gap-2 justify-end">
-        <button type="button" id="changeButton"
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-          Migrate Personnel
-        </button>
-        <button type="button" id="clearButton"
-          class="px-6 py-2 bg-gray-300 rounded-lg shadow hover:bg-gray-400 transition">
-          Clear
-        </button>
+      <div class="flex flex-wrap justify-between items-start">
+        <!-- Selection Display -->
+        <div id="selectionDisplay" class="hidden">
+          <h3 class="font-semibold text-gray-700">Current Selection:</h3>
+          <p id="selectionText" class="text-gray-600"></p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-2 justify-end">
+          <button type="button" id="changeButton"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+            Migrate Personnel
+          </button>
+
+          <button type="button" id="clearButton"
+            class="px-6 py-2 bg-gray-300 rounded-lg shadow hover:bg-gray-400 transition">
+            Clear
+          </button>
+        </div>
       </div>
     </form>
   </div>

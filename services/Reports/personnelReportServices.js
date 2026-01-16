@@ -82,7 +82,7 @@ class PersonnelReportService {
             ELSE NULL
           END as age,
           
-          -- Calculate Years of Service
+          -- Calculate Years of Service (from employment to exit or current date)
           CASE 
             WHEN h.DateEmpl IS NOT NULL AND h.DateEmpl != '' AND LENGTH(h.DateEmpl) = 8
             THEN TIMESTAMPDIFF(YEAR, 
@@ -94,6 +94,40 @@ class PersonnelReportService {
               END)
             ELSE NULL
           END as years_of_service,
+          
+          -- Calculate detailed service breakdown for periods < 1 year
+          CASE 
+            WHEN h.DateEmpl IS NOT NULL AND h.DateEmpl != '' AND LENGTH(h.DateEmpl) = 8
+            THEN TIMESTAMPDIFF(MONTH, 
+              STR_TO_DATE(h.DateEmpl, '%Y%m%d'), 
+              CASE 
+                WHEN h.DateLeft IS NOT NULL AND h.DateLeft != '' AND LENGTH(h.DateLeft) = 8
+                THEN STR_TO_DATE(h.DateLeft, '%Y%m%d')
+                ELSE CURDATE()
+              END)
+            ELSE NULL
+          END as total_months_of_service,
+          
+          CASE 
+            WHEN h.DateEmpl IS NOT NULL AND h.DateEmpl != '' AND LENGTH(h.DateEmpl) = 8
+            THEN TIMESTAMPDIFF(DAY, 
+              STR_TO_DATE(h.DateEmpl, '%Y%m%d'), 
+              CASE 
+                WHEN h.DateLeft IS NOT NULL AND h.DateLeft != '' AND LENGTH(h.DateLeft) = 8
+                THEN STR_TO_DATE(h.DateLeft, '%Y%m%d')
+                ELSE CURDATE()
+              END)
+            ELSE NULL
+          END as total_days_of_service,
+          
+          -- Calculate Years Since Exit (only for exited employees)
+          CASE 
+            WHEN h.DateLeft IS NOT NULL AND h.DateLeft != '' AND LENGTH(h.DateLeft) = 8
+            THEN TIMESTAMPDIFF(YEAR, 
+              STR_TO_DATE(h.DateLeft, '%Y%m%d'), 
+              CURDATE())
+            ELSE NULL
+          END as years_since_exit,
           
           -- Calculate Years Since Promotion
           CASE 
@@ -121,7 +155,13 @@ class PersonnelReportService {
             WHEN h.datepmted IS NOT NULL AND h.datepmted != '' AND LENGTH(h.datepmted) = 8
             THEN DATE_FORMAT(STR_TO_DATE(h.datepmted, '%Y%m%d'), '%d-%b-%Y')
             ELSE NULL
-          END as date_promoted_formatted
+          END as date_promoted_formatted,
+          
+          CASE 
+            WHEN h.DateLeft IS NOT NULL AND h.DateLeft != '' AND LENGTH(h.DateLeft) = 8
+            THEN DATE_FORMAT(STR_TO_DATE(h.DateLeft, '%Y%m%d'), '%d-%b-%Y')
+            ELSE NULL
+          END as date_left_formatted
           
         FROM hr_employees h
         LEFT JOIN ac_costcentre cc ON cc.unitcode = h.Location

@@ -1,5 +1,7 @@
 const payPeriodReportService = require('../../services/audit-trail/inputVariationServices');
-const ExcelJS = require('exceljs');
+const companySettings = require('../helpers/companySettings');
+const { GenericExcelExporter } = require('../helpers/excel');
+//const ExcelJS = require('exceljs');
 const jsreport = require('jsreport-core')();
 const fs = require('fs');
 const path = require('path');
@@ -160,146 +162,100 @@ class PayPeriodReportController {
   // EXCEL GENERATION
   // ==========================================================================
   async generatePayPeriodReportExcel(data, res, filters, statistics) {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Pay Period Report');
+    try {
+      const exporter = new GenericExcelExporter();
 
-    // Title
-    worksheet.mergeCells('A1:P1');
-    const titleCell = worksheet.getCell('A1');
-    titleCell.value = 'NIGERIAN NAVY - INPUT VARIATION REPORT';
-    titleCell.font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } };
-    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-    titleCell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF1F4E78' }
-    };
+      const columns = [
+        { header: 'S/N', key: 'sn', width: 8, align: 'center' },
+        { header: 'Pay Period', key: 'pay_period', width: 12, align: 'center' },
+        { header: 'Svc No.', key: 'employee_id', width: 15 },
+        { header: 'Rank', key: 'Title', width: 10 },
+        { header: 'Full Name', key: 'full_name', width: 30 },
+        { header: 'Pay Element', key: 'pay_element_type', width: 12 },
+        { header: 'Description', key: 'pay_element_description', width: 35 },
+        { header: 'MAK1', key: 'mak1', width: 10, align: 'center' },
+        { header: 'Amount Payable', key: 'amount_primary', width: 16, align: 'right', numFmt: '₦#,##0.00' },
+        { header: 'MAK2', key: 'mak2', width: 10, align: 'center' },
+        //{ header: 'Amount Secondary', key: 'amount_secondary', width: 16, align: 'right', numFmt: '₦#,##0.00' },
+        //{ header: 'Amount Additional', key: 'amount_additional', width: 16, align: 'right', numFmt: '₦#,##0.00' },
+        { header: 'Amount To Date', key: 'amount_to_date', width: 16, align: 'right', numFmt: '₦#,##0.00' },
+        { header: 'Pay Indicator', key: 'payment_indicator', width: 12, align: 'center' },
+        { header: 'Tenor', key: 'number_of_months', width: 12, align: 'center' }
+      ];
 
-    // Filter info
-    worksheet.mergeCells('A2:P2');
-    const filterCell = worksheet.getCell('A2');
-    let filterText = 'Filters: ';
-    if (filters.fromPeriod || filters.toPeriod) {
-      filterText += `Period: ${filters.fromPeriod || 'All'} to ${filters.toPeriod || 'All'}`;
+      // Add S/N
+      const dataWithSN = data.map((item, idx) => ({
+        ...item,
+        sn: idx + 1
+      }));
+
+      // Build filter description for subtitle
+      let filterText = [];
+      if (filters.fromPeriod || filters.toPeriod) {
+        filterText.push(`Period: ${filters.fromPeriod || 'All'} to ${filters.toPeriod || 'All'}`);
+      }
+      if (filters.emplId) filterText.push(`Employee: ${filters.emplId}`);
+      if (filters.createdBy) filterText.push(`Operator: ${filters.createdBy}`);
+      if (filters.payType) filterText.push(`Pay Type: ${filters.payType}`);
+      
+      const filterDescription = filterText.length > 0 ? filterText.join(' | ') : 'All Records';
+
+      // Calculate totals
+      const totalAmountPrimary = data.reduce((sum, item) => sum + parseFloat(item.amount_primary || 0), 0);
+      const totalAmountSecondary = data.reduce((sum, item) => sum + parseFloat(item.amount_secondary || 0), 0);
+      const totalAmountAdditional = data.reduce((sum, item) => sum + parseFloat(item.amount_additional || 0), 0);
+      const totalAmountToDate = data.reduce((sum, item) => sum + parseFloat(item.amount_to_date || 0), 0);
+
+      const workbook = await exporter.createWorkbook({
+        title: 'NIGERIAN NAVY - INPUT VARIATION REPORT',
+        subtitle: filterDescription,
+        columns: columns,
+        data: dataWithSN,
+        totals: {
+          label: 'GRAND TOTALS:',
+          values: {
+            9: totalAmountPrimary,
+            11: totalAmountSecondary,
+            12: totalAmountAdditional,
+            13: totalAmountToDate
+          }
+        },
+        sheetName: 'Pay Period Report'
+      });
+
+      // Apply conditional formatting
+      const worksheet = workbook.worksheets[0];
+      const dataStartRow = 5; // After title, subtitle, blank row, and header
+
+      dataWithSN.forEach((row, index) => {
+        const rowNum = dataStartRow + index;
+        
+        // Highlight high amounts (> 1,000,000)
+        if (parseFloat(row.amount_primary) > 1000000) {
+          const amountCell = worksheet.getCell(`I${rowNum}`);
+          amountCell.font = { bold: true, color: { argb: 'FF006100' } };
+        }
+      });
+
+      // Auto-shrink: Set print scaling to 65% for better fit (15 columns is very wide)
+      worksheet.pageSetup = {
+        ...worksheet.pageSetup,
+        fitToPage: true,
+        fitToWidth: 1,
+        fitToHeight: 0,
+        scale: 65, // Shrink to 65% for 15+ column tables
+        orientation: 'landscape',
+        paperSize: 9 // A4
+      };
+
+      await exporter.exportToResponse(workbook, res, `pay_period_report_${filters.fromPeriod || 'all'}_${filters.toPeriod || 'all'}.xlsx`);
+
+    } catch (error) {
+      console.error('Pay Period Report Export error:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, error: error.message });
+      }
     }
-    if (filters.emplId) filterText += ` | Employee: ${filters.emplId}`;
-    if (filters.createdBy) filterText += ` | Operator: ${filters.createdBy}`;
-    if (filters.payType) filterText += ` | Pay Type: ${filters.payType}`;
-    
-    filterCell.value = filterText;
-    filterCell.font = { size: 11, italic: true };
-    filterCell.alignment = { horizontal: 'center' };
-    filterCell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFE7E6E6' }
-    };
-
-    // Statistics row
-    worksheet.mergeCells('A3:P3');
-    const statsCell = worksheet.getCell('A3');
-    statsCell.value = `Records: ${statistics.total_records} | Employees: ${statistics.total_employees} | Periods: ${statistics.total_periods} | Pay Elements: ${statistics.total_pay_elements}`;
-    statsCell.font = { size: 10, bold: true };
-    statsCell.alignment = { horizontal: 'center' };
-    statsCell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFFFD966' }
-    };
-
-    worksheet.addRow([]);
-
-    // Define columns
-    worksheet.columns = [
-      { header: 'Pay Period', key: 'pay_period', width: 12 },
-      { header: 'Employee ID', key: 'employee_id', width: 15 },
-      { header: 'Title', key: 'title', width: 10 },
-      { header: 'Full Name', key: 'full_name', width: 30 },
-      { header: 'Pay Element', key: 'pay_element_type', width: 12 },
-      { header: 'Description', key: 'pay_element_description', width: 35 },
-      { header: 'MAK1', key: 'mak1', width: 10 },
-      { header: 'Amount Primary', key: 'amount_primary', width: 16 },
-      { header: 'MAK2', key: 'mak2', width: 10 },
-      { header: 'Amount Secondary', key: 'amount_secondary', width: 16 },
-      { header: 'Amount Additional', key: 'amount_additional', width: 16 },
-      { header: 'Amount To Date', key: 'amount_to_date', width: 16 },
-      { header: 'Pay Indicator', key: 'payment_indicator', width: 12 },
-      { header: 'No. of Months', key: 'number_of_months', width: 12 }
-    ];
-
-    // Style header row (row 5)
-    const headerRow = worksheet.getRow(5);
-    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
-    headerRow.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF0070C0' }
-    };
-    headerRow.height = 30;
-    headerRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-
-    // Add data with alternating colors
-    data.forEach((row, index) => {
-      const addedRow = worksheet.addRow(row);
-
-      if (index % 2 === 0) {
-        addedRow.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFF2F2F2' }
-        };
-      }
-
-      // Highlight high amounts
-      if (parseFloat(row.amount_primary) > 1000000) {
-        addedRow.getCell('H').font = { bold: true, color: { argb: 'FF006100' } };
-      }
-    });
-
-    // Format currency columns
-    ['H', 'J', 'K', 'L'].forEach(col => {
-      worksheet.getColumn(col).numFmt = '₦#,##0.00';
-      worksheet.getColumn(col).alignment = { horizontal: 'right' };
-    });
-
-    // Add grand totals
-    const totalRow = worksheet.lastRow.number + 2;
-    worksheet.getCell(`G${totalRow}`).value = 'GRAND TOTALS:';
-    worksheet.getCell(`G${totalRow}`).font = { bold: true, size: 11 };
-    worksheet.getCell(`G${totalRow}`).alignment = { horizontal: 'right' };
-
-    ['H', 'J', 'K', 'L'].forEach(col => {
-      worksheet.getCell(`${col}${totalRow}`).value = {
-        formula: `SUM(${col}6:${col}${totalRow - 2})`
-      };
-      worksheet.getCell(`${col}${totalRow}`).font = { bold: true, size: 11 };
-      worksheet.getCell(`${col}${totalRow}`).numFmt = '₦#,##0.00';
-      worksheet.getCell(`${col}${totalRow}`).fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFFFE699' }
-      };
-    });
-
-    // Add borders to all cells
-    worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber >= 5) {
-        row.eachCell((cell) => {
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
-          };
-        });
-      }
-    });
-
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=pay_period_report_${filters.fromPeriod || 'all'}_${filters.toPeriod || 'all'}.xlsx`);
-
-    await workbook.xlsx.write(res);
-    res.end();
   }
 
   // ==========================================================================
@@ -322,6 +278,9 @@ class PayPeriodReportController {
 
       const templatePath = path.join(__dirname, '../../templates/variation-input-listing.html');
       const templateContent = fs.readFileSync(templatePath, 'utf8');
+
+      //Load image
+      const image = await companySettings.getSettingsFromFile('./public/photos/logo.png');        
 
       // Format filter description
       let filterDescription = '';
@@ -356,7 +315,8 @@ class PayPeriodReportController {
           filters: filterDescription,
           className: this.getDatabaseNameFromRequest(req),
           fromPeriod: payPeriodReportService.formatPeriod(filters.fromPeriod),
-          toPeriod: payPeriodReportService.formatPeriod(filters.toPeriod)
+          toPeriod: payPeriodReportService.formatPeriod(filters.toPeriod),
+          ...image
         }
       });
 

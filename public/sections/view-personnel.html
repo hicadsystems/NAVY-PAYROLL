@@ -258,7 +258,7 @@ class ViewPersonnelManager {
     const endpoints = [
       'location', 'branch', 'state', 'lga', 'command', 'title', 'religion', 'pfa', 
       'salarygrade', 'salarygroup', 'country', 'payrollclass', 'relationship', 'marital', 
-      'exittype', 'sex',
+      'exittype', 'sex', 'bankbranch', 'bankcode'
     ];
     
     const token = localStorage.getItem('token');
@@ -299,24 +299,48 @@ class ViewPersonnelManager {
 
   getValueField(endpoint) {
     const fieldMap = {
-      'location': 'unitcode', 'branch': 'busline', 'state': 'Statecode',
-      'lga': 'Lgcode', 'command': 'navalcmd', 'title': 'Titlecode',
-      'religion': 'ReligionCode', 'pfa': 'pfacode', 'relationship': 'RShipcode',
-      'marital': 'MaritalCode', 'exittype': 'Name', 'salarygrade': 'grade_no',
-      'salarygroup': 'groupcode', 'country': 'countrycode', 'payrollclass': 'classcode',
-      'sex': 'sex_code',     
+      'location': 'unitcode',
+      'branch': 'busline',
+      'state': 'Statecode',
+      'lga': 'Lgcode',
+      'command': 'navalcmd',
+      'title': 'Titlecode',
+      'religion': 'ReligionCode',
+      'pfa': 'pfacode',
+      'relationship': 'RShipcode',
+      'marital': 'MaritalCode',
+      'exittype': 'Name',
+      'salarygrade': 'grade_no',
+      'salarygroup': 'groupcode',
+      'country': 'countrycode',
+      'payrollclass': 'classcode',
+      'sex': 'sex_code',
+      'bankbranch': 'branchcode',
+      'bankcode': 'bankcode',
     };
     return fieldMap[endpoint] || 'code';
   }
 
   getTextField(endpoint) {
     const fieldMap = {
-      'location': 'unitdesc', 'branch': 'busdesc', 'state': 'Statename',
-      'lga': 'Lgname', 'command': 'name', 'title': 'Description',
-      'religion': 'ReligionName', 'pfa': 'pfadesc', 'relationship': 'Relationship',
-      'marital': 'MaritalStatus', 'exittype': 'Description', 'salarygrade': 'grade_desc',
-      'salarygroup': 'grpdesc', 'country': 'Countryname', 'payrollclass': 'classname',
+      'location': 'unitdesc', 
+      'branch': 'busdesc',
+      'state': 'Statename',
+      'lga': 'Lgname',
+      'command': 'name',
+      'title': 'Description',
+      'religion': 'ReligionName',
+      'pfa': 'pfadesc',
+      'relationship': 'Relationship',
+      'marital': 'MaritalStatus',
+      'exittype': 'Description',
+      'salarygrade': 'grade_desc',
+      'salarygroup': 'grpdesc',
+      'country': 'Countryname',
+      'payrollclass': 'classname',
       'sex': 'sex_desc',
+      'bankbranch': 'branchname',
+      'bankcode': 'bankname',
     };
     return fieldMap[endpoint] || 'name';
   }
@@ -455,8 +479,8 @@ class ViewPersonnelManager {
             <div class="${cardClass} space-y-2">
                 <h4 class="${sectionTitleClass.replace('text-xl font-bold', 'text-lg font-semibold')}">Banking Details</h4>
                 <dl>
-                    <div class="${detailItemClass}"><dt class="${dtClass}">Bank:</dt><dd class="${ddClass}">${this.escape(emp.Bankcode || 'N/A')}</dd></div>
-                    <div class="${detailItemClass}"><dt class="${dtClass}">Bank Branch:</dt><dd class="${ddClass}">${this.escape(emp.bankbranch || 'N/A')}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Bank:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.Bankcode, 'bankcode'))}</dd></div>
+                    <div class="${detailItemClass}"><dt class="${dtClass}">Bank Branch:</dt><dd class="${ddClass}">${this.escape(this.resolveName(emp.bankbranch, 'bankbranch'))}</dd></div>
                     <div class="${detailItemClass}"><dt class="${dtClass}">Bank AC Number:</dt><dd class="${ddClass}">${this.escape(emp.BankACNumber || 'N/A')}</dd></div>
                     <div class="${detailItemClass}"><dt class="${dtClass}">Internal AC No:</dt><dd class="${ddClass}">${this.escape(emp.InternalACNo || 'N/A')}</dd></div>
                 </dl>
@@ -558,7 +582,28 @@ class ViewPersonnelManager {
 }
 
   renderNOKDetails() {
-    const nokList = this.employeeData.nextOfKin || [];
+    let nokList = this.employeeData.nextOfKin || [];
+    
+    // Fallback: If no NOK records exist, check employee table for fallback data
+    if (nokList.length === 0) {
+      const emp = this.employeeData.employee;
+      if (emp.nok_name || emp.nokphone || emp.nok_addr || emp.nok_relation) {
+        // Create a fallback NOK record from employee table
+        nokList = [{
+          FirstName: emp.nok_name || '',
+          LastName: '',
+          RShipcode: emp.nok_relation || '',
+          NextofkinType: 'Main',
+          MobileNumber: emp.nokphone || '',
+          EmailAddress: '',
+          dateofbirth: null,
+          FullAddress: emp.nok_addr || '',
+          HomeNumber: '',
+          PlaceOfWork: '',
+          _isFallback: true
+        }];
+      }
+    }
     
     if (nokList.length === 0) {
       return '<div class="text-center py-12 text-gray-500 text-lg">No Next of Kin records found.</div>';
@@ -619,7 +664,30 @@ class ViewPersonnelManager {
   }
 
   renderSpouseDetails() {
-    const spouseList = this.employeeData.spouse || [];
+    let spouseList = this.employeeData.spouse || [];
+    
+    // Fallback: Check if NOK relationship is "wife" and no spouse records exist
+    if (spouseList.length === 0) {
+      const emp = this.employeeData.employee;
+      const nokRelation = (emp.nok_relation || '').toLowerCase();
+      
+      if ((nokRelation === 'wife' || nokRelation === 'husband') || (nokRelation === 'WIFE' || nokRelation === 'HUSBAND') && emp.nok_name) {
+        // Create a fallback spouse record from employee NOK data
+        spouseList = [{
+          spname: emp.nok_name || '',
+          spphone: emp.nokphone || '',
+          spemail: '',
+          dateofbirth: null,
+          marrieddate: null,
+          Statecode: null,
+          Lgcode: null,
+          sptown: '',
+          spstreet: emp.nok_addr || '',
+          sppobox: '',
+          _isFallback: true
+        }];
+      }
+    }
     
     if (spouseList.length === 0) {
       return '<div class="text-center py-12 text-gray-500 text-lg">No spouse records found.</div>';
@@ -684,7 +752,33 @@ class ViewPersonnelManager {
   }
 
   renderChildrenDetails() {
-    const childrenList = this.employeeData.children || [];
+    let childrenList = this.employeeData.children || [];
+    
+    // Fallback: Check if NOK relationship is "son" or "daughter" and no children records exist
+    if (childrenList.length === 0) {
+      const emp = this.employeeData.employee;
+      const nokRelation = (emp.nok_relation || '').toLowerCase();
+      
+      if ((nokRelation === 'son' || nokRelation === 'daughter') && emp.nok_name) {
+        // Create a fallback child record from employee NOK data
+        childrenList = [{
+          chname: emp.nok_name || '',
+          Sex: nokRelation === 'son' ? 'Male' : nokRelation === 'daughter' ? 'Female' : '',
+          dateofbirth: null,
+          chphone: emp.nokphone || '',
+          chemail: '',
+          chpobox: '',
+          chschool: '',
+          occupation: '',
+          officeaddress: '',
+          chstreet: emp.nok_addr || '',
+          chtown: '',
+          Statecode: null,
+          Lgcode: null,
+          _isFallback: true
+        }];
+      }
+    }
     
     if (childrenList.length === 0) {
       return '<div class="text-center py-12 text-gray-500 text-lg">No children records found.</div>';

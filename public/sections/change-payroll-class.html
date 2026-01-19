@@ -271,6 +271,7 @@ let currentPage = 0;
 const pageSize = 50;
 let totalEmployeeCount = 0;
 let isLoadingMore = false;
+let searchTimeout;
 
 // DOM elements
 const migrationTypeRadios = document.querySelectorAll('input[name="migrationType"]');
@@ -628,29 +629,52 @@ function updateRangeSelection() {
 }
 
 function filterDropdown(searchText, container, type) {
-  if (allEmployees.length === 0) return;
+  clearTimeout(searchTimeout);
   
-  const searchTerm = searchText.toLowerCase();
-  
-  if (!searchTerm) {
-    renderDropdown(allEmployees, container, type);
-  } else {
-    const filtered = allEmployees.filter(emp => {
-      const id = (emp.Empl_ID || emp.EMPL_ID || emp.id || '').toString().toLowerCase();
-      const surname = (emp.Surname || emp.surname || '').toLowerCase();
-      const otherName = (emp.OtherName || emp.otherName || '').toLowerCase();
-      const name = `${surname} ${otherName}`.toLowerCase();
-      
-      return id.includes(searchTerm) || 
-             surname.includes(searchTerm) || 
-             otherName.includes(searchTerm) ||
-             name.includes(searchTerm);
-    });
+  searchTimeout = setTimeout(async () => {
+    const searchTerm = searchText.trim();
     
-    renderDropdown(filtered, container, type);
+    if (!searchTerm) {
+      // If search is cleared, reload initial data
+      await loadPersonnel(false);
+      container.classList.remove('hidden');
+    } else {
+      // Perform server-side search
+      await searchEmployees(searchTerm, container, type);
+    }
+  }, 300); // Debounce for 300ms
+}
+
+async function searchEmployees(searchTerm, container, type) {
+  try {
+    container.innerHTML = `
+      <div class="py-1">
+        <div class="px-3 py-4 text-center text-gray-500">
+          <svg class="animate-spin h-5 w-5 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Searching...
+        </div>
+      </div>
+    `;
+    
+    const result = await apiRequest(`${API_BASE}/active-employees?limit=100&offset=0&search=${encodeURIComponent(searchTerm)}`);
+    const employees = result.data || [];
+    
+    renderDropdown(employees, container, type);
+    container.classList.remove('hidden');
+    
+  } catch (error) {
+    console.error('Error searching employees:', error);
+    container.innerHTML = `
+      <div class="py-1">
+        <div class="px-3 py-4 text-center text-red-500">
+          Search failed<br><span class="text-xs">${error.message}</span>
+        </div>
+      </div>
+    `;
   }
-  
-  container.classList.remove('hidden');
 }
 
 async function loadPayrollClasses() {

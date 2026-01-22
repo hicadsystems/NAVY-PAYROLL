@@ -1,4 +1,5 @@
 const reconciliationService = require('../../services/Reports/reconciliationService');
+const companySettings = require('../helpers/companySettings');
 const jsreport = require('jsreport-core')();
 const fs = require('fs');
 const path = require('path');
@@ -304,6 +305,9 @@ class ReconciliationController {
       const templatePath = path.join(__dirname, '../../templates/salary-reconciliation.html');
       const templateContent = fs.readFileSync(templatePath, 'utf8');
 
+      //Load image
+      const image = await companySettings.getSettingsFromFile('./public/photos/logo.png');    
+
       // Format period for display
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                         'July', 'August', 'September', 'October', 'November', 'December'];
@@ -342,7 +346,8 @@ class ReconciliationController {
           year: filters.year,
           month: filters.month,
           className: this.getDatabaseNameFromRequest(req),
-          showErrorsOnly: showErrorsOnly
+          showErrorsOnly: showErrorsOnly,
+          ...image
         }
       });
 

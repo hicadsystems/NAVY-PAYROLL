@@ -425,25 +425,32 @@
     });
   }
 
-  async function generateReport() {
-    const now = new Date();
-    const dateStr = `${String(now.getDate()).padStart(2, "0")}-${String(
-      now.getMonth() + 1
-    ).padStart(2, "0")}-${now.getFullYear()}`;
-    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(
-      now.getMinutes()
-    ).padStart(2, "0")}`;
+async function generateReport() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  const timeStr = now.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
 
-    // Fetch MFP separately
-    let mfpData = null;
-    try {
-      const res = await auth.fetchWithAuth(`${API_URL}/999`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) mfpData = await res.json();
-    } catch (err) {
-      console.warn("MFP not found");
-    }
+  // Fetch MFP separately
+  let mfpData = null;
+  try {
+    const res = await fetch(`${API_URL}/999`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (res.ok) mfpData = await res.json();
+  } catch (err) {
+    console.warn("MFP not found");
+  }
+
+  const generatedBy = localStorage.getItem("full_name") || "System User";
 
     const printWindow = window.open("", "_blank");
 
@@ -451,94 +458,270 @@
     <!DOCTYPE html>
     <html>
     <head>
+      <meta charset="utf-8">
       <title>Tax Table Configuration Report</title>
       <style>
+        @page { 
+          size: A4 portrait; 
+          margin: 0.5mm; 
+          background-color: #f8fbff; 
+        }
+        
         body { 
-          font-family: Arial, sans-serif;
-          margin: 20px;
+          font-family: Helvetica, Arial, sans-serif; 
+          font-size: 8pt;
+          margin: 40px;
+          position: relative;
           color: #333;
         }
-        .report-header {
-          text-align: center;
-          margin-bottom: 20px;
-          padding-bottom: 10px;
-          border-bottom: 2px solid #1a56db;
+
+        /* Faint logo overlay */
+        body::before {
+          content: "";
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-image: url('photos/logo.png');
+          background-size: auto 100%;
+          background-repeat: no-repeat;
+          background-position: center center;
+          opacity: 0.02;
+          z-index: -1;
+          pointer-events: none;
         }
-        .report-title {
-          font-size: 24px;
-          color: #1a56db;
-          margin: 10px 0;
-        }
-        .date-time {
-          font-size: 14px;
-          color: #666;
-          margin: 10px 0;
-        }
-        .section-title {
-          font-size: 16px;
-          color: #1a56db;
-          margin: 20px 0 10px 0;
+
+        .header-wrapper {
+          display: flex;
+          align-items: flex-start;
+          margin-bottom: 8px;
+          border-bottom: 2px solid #1a1a1a;
           padding-bottom: 5px;
-          border-bottom: 1px solid #e5e7eb;
         }
-        .tax-table {
+
+        .header {
+          flex-grow: 1;
+          text-align: center;
+        }
+        
+        .header h1 {
+          font-size: 13pt;
+          font-weight: bold;
+          margin-bottom: 2px;
+          letter-spacing: 1.5px;
+          color: #1e40af;
+          font-family: 'Libre Baskerville', Georgia, serif;
+        }
+        
+        .header h2 {
+          font-size: 10pt;
+          font-weight: normal;
+          margin-top: 2px;
+          color: #4a4a4a;
+          font-family: 'Libre Baskerville', Georgia, serif;
+        }
+
+        .header-info {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin: 10px 0;
+          font-size: 9pt;
+        }
+
+        .summary-box {
+          border-top: 1.5px solid #0070C0;
+          border-bottom: 1.5px solid #0070C0;
+          padding: 8px 0;
+          margin-bottom: 15px;
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+        }
+
+        .summary-item {
+          text-align: center;
+          padding: 0 15px;
+          background: none;
+          border: none;
+          border-right: 1px solid #ddd;
+          flex-grow: 1;
+        }
+
+        .summary-item:last-child {
+          border-right: none;
+        }
+
+        .summary-item .label {
+          font-size: 8px;
+          color: #666;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 2px;
+        }
+
+        .summary-item .value {
+          font-size: 12px;
+          font-weight: bold;
+          color: #1F4E78;
+        }
+
+        .section-title {
+          font-size: 10pt;
+          color: #1e40af;
+          margin: 20px 0 10px 0;
+          padding: 10px;
+          font-weight: bold;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        table.tax-table {
           width: 100%;
           border-collapse: collapse;
           margin-bottom: 20px;
-          font-size: 12px;
+          font-size: 8pt;
         }
+
         .tax-table th {
-          background-color: #f3f4f6;
-          padding: 8px;
+          color: #1e40af;
+          padding: 10px 6px;
           text-align: left;
-          border: 1px solid #e5e7eb;
           font-weight: bold;
+          font-size: 8pt;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+          border-bottom: 1px solid #0056A0;
+          background-color: transparent;
         }
+
         .tax-table td {
-          padding: 8px;
-          border: 1px solid #e5e7eb;
+          padding: 8px 6px;
+          border: none;
+          vertical-align: middle;
+          border-bottom: 0.5px solid #e5e7eb;
         }
-        .tax-table tr:nth-child(even) {
-          background-color: #fafafa;
+
+        .tax-table tr:hover {
+          background-color: rgba(30, 64, 175, 0.05);
         }
+
         .amount {
-          text-align: right;
-          font-family: monospace;
+          font-family: 'Courier New', monospace;
+          font-weight: 600;
         }
+
+        .text-center {
+          text-align: center;
+        }
+
         .mfp-section {
           background: #f9fafb;
           padding: 15px;
-          border: 1px solid #e5e7eb;
+          border: 1px solid #d1d5db;
           border-radius: 5px;
           margin: 20px 0;
         }
-        .report-footer {
-          margin-top: 20px;
+
+        .highlight-value {
+          color: #006100;
+          font-weight: bold;
+        }
+
+        .print-footer {
+          padding-top: 10px;
+          border-top: 0.5px solid #1a1a1a;
           text-align: center;
-          font-size: 12px;
-          color: #666;
-          border-top: 1px solid #e5e7eb;
-          padding-top: 15px;
+          font-size: 8pt;
+          color: #64748b;
+          margin-top: 20px;
+        }
+
+        .print-footer p {
+          margin: 3px 0;
+        }
+
+        @media print {
+          body {
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
+          
+          /* Faint logo overlay */
+          body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('photos/logo.png');
+            background-size: auto 100%;
+            background-repeat: no-repeat;
+            background-position: center center;
+            opacity: 0.02;
+            z-index: -1;
+            pointer-events: none;
+          }
         }
       </style>
     </head>
     <body>
-      <div class="report-header">
-        <div class="report-title">Tax Table Configuration Report</div>
-        <div class="date-time">Generated on: ${dateStr} at ${timeStr}</div>
+      <div class="header-wrapper">
+        <div class="header">
+          <h1>Nigerian Navy (Naval Headquarters)</h1>
+          <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+        </div>
       </div>
 
-      <!-- Bands -->
-      <div class="section-title">Tax Bands Configuration</div>
+      <div class="header-info">
+        <div class="left">
+          <strong>TAX TABLE CONFIGURATION REPORT</strong>
+        </div>
+        <div class="center">
+          <span>PRODUCED ON</span> 
+          <strong>${dateStr}</strong> 
+          <span>AT</span> 
+          <strong>${timeStr}</strong>
+        </div>
+        <div class="right">
+          <strong>${bandData.length}</strong>
+          <span>TAX BANDS</span>
+        </div>
+      </div>
+
+      <!-- Statistics Summary Box 
+      <div class="summary-box">
+        <div class="summary-item">
+          <div class="label">Total Tax Bands</div>
+          <div class="value">${bandData.length}</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Min Free Pay</div>
+          <div class="value highlight-value">₦${mfpData?.val?.toLocaleString('en-NG') || '0'}</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">MFP Percentage</div>
+          <div class="value">${mfpData?.perc || 0}%</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Generated By</div>
+          <div class="value">${generatedBy}</div>
+        </div>
+      </div> -->
+
+      <!-- Tax Bands Section -->
+      <div class="section-title"></div>
       <table class="tax-table">
         <thead>
           <tr>
-            <th>S/N</th>
-            <th>Interval</th>
-            <th>Value (₦)</th>
-            <th>Percentage (%)</th>
-            <th>Cumulative (₦)</th>
-            <th>Lower Bound (₦)</th>
+            <th style="width: 8%;" class="text-center">S/N</th>
+            <th style="width: 20%;">Interval</th>
+            <th style="width: 15%;" class="amount">Value (₦)</th>
+            <th style="width: 12%;" class="text-center">Tax Rate (%)</th>
+            <th style="width: 18%;" class="amount">Cumulative (₦)</th>
+            <th style="width: 18%;" class="amount">Lower Bound (₦)</th>
           </tr>
         </thead>
         <tbody>
@@ -546,54 +729,42 @@
             .map(
               (item, index) => `
             <tr>
-              <td style="text-align:center">${index + 1}</td>
-              <td>${item.INTER}</td>
-              <td class="amount">${
-                item.val?.toLocaleString("en-NG") || "-"
-              }</td>
-              <td style="text-align:center">${item.perc}%</td>
-              <td class="amount">${
-                item.cumval?.toLocaleString("en-NG") || "-"
-              }</td>
-              <td class="amount">${
-                item.lowbound?.toLocaleString("en-NG") || "-"
-              }</td>
-            </tr>`
-            )
-            .join("")}
+              <td class="text-center"><strong>${index + 1}</strong></td>
+              <td><strong>${item.INTER}</strong></td>
+              <td class="amount">${item.val?.toLocaleString('en-NG', {minimumFractionDigits: 2}) || '-'}</td>
+              <td class="text-center"><strong>${item.perc}%</strong></td>
+              <td class="amount">${item.cumval?.toLocaleString('en-NG', {minimumFractionDigits: 2}) || '-'}</td>
+              <td class="amount">${item.lowbound?.toLocaleString('en-NG', {minimumFractionDigits: 2}) || '-'}</td>
+            </tr>`).join("")}
         </tbody>
       </table>
 
-      <!-- MFP -->
+      <!-- MFP Section -->
       <div class="mfp-section">
-        <div class="section-title">Minimum Free Pay Configuration</div>
+        <div class="section-title" style="margin-top: 0;">Minimum Free Pay Configuration</div>
         <table class="tax-table">
           <thead>
             <tr>
-              <th>Description</th>
-              <th>Value (₦)</th>
-              <th>Percentage (%)</th>
+              <th style="width: 50%;">Description</th>
+              <th style="width: 30%;" class="amount">Value (₦)</th>
+              <th style="width: 20%;" class="text-center">Percentage (%)</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>Minimum Free Pay</td>
-              <td class="amount">${
-                mfpData?.val?.toLocaleString("en-NG") || "0"
-              }</td>
-              <td style="text-align:center">${mfpData?.perc || 0}%</td>
+              <td><strong>Minimum Free Pay (MFP)</strong></td>
+              <td class="amount highlight-value" style="font-size: 10pt;">₦${mfpData?.val?.toLocaleString('en-NG', {minimumFractionDigits: 2}) || '0.00'}</td>
+              <td class="text-center"><strong>${mfpData?.perc || 0}%</strong></td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Footer -->
-      <div class="report-footer">
-        <p>Total Tax Bands: ${bandData.length}</p>
-        <p>Generated by: ${
-          localStorage.getItem("full_name") || "System User"
-        }</p>
-        <p>*** End of Report ***</p>
+      <div class="print-footer">
+        <p><strong>Total Tax Bands: ${bandData.length}</strong></p>
+        <p>Generated by: ${generatedBy}</p>
+        <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
       </div>
     </body>
     </html>

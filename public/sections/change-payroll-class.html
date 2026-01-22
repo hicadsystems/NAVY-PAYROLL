@@ -1,43 +1,32 @@
 <div class="p-6 max-w-4xl mx-auto">
-  <h2 class="text-gray-600 font-semibold mb-6 lg:text-lg">
+  <h2 class="text-2xl font-semibold text-blue-800">
     Select migration type and assign personnel to a new payroll class.
   </h2>
 
-  <div class="space-y-4">
+  <div class="space-y-2">
     <!-- Migration Type Selection -->
-    <div class="p-4">
-      <h3 class="font-semibold text-gray-700 mb-3">Migration Type</h3>
-      <div class="space-y-2">
-        <label class="flex items-center space-x-3 cursor-pointer">
-          <input
-            type="radio"
-            name="migrationType"
-            value="individual"
-            checked
-            class="w-4 h-4 text-blue-600 focus:ring-blue-500"
-          />
-          <span class="text-gray-700">Individual Personnel</span>
-        </label>
-        <label class="flex items-center space-x-3 cursor-pointer">
-          <input
-            type="radio"
-            name="migrationType"
-            value="all"
-            class="w-4 h-4 text-blue-600 focus:ring-blue-500"
-          />
-          <span class="text-gray-700">All Personnel (Bulk Migration)</span>
-        </label>
-        <label class="flex items-center space-x-3 cursor-pointer">
-          <input
-            type="radio"
-            name="migrationType"
-            value="range"
-            class="w-4 h-4 text-blue-600 focus:ring-blue-500"
-          />
-          <span class="text-gray-700">Range of Personnel</span>
-        </label>
-      </div>
+    <div class="p-4 flex items-center space-x-6">
+      <h3 class="font-semibold text-gray-700">Migration Type</h3>
+
+      <label class="flex items-center space-x-2 cursor-pointer">
+        <input type="radio" name="migrationType" value="individual" checked
+          class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+        <span class="text-gray-700">Individual Personnel</span>
+      </label>
+
+      <label class="flex items-center space-x-2 cursor-pointer">
+        <input type="radio" name="migrationType" value="all"
+          class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+        <span class="text-gray-700">All Personnel (Bulk Migration)</span>
+      </label>
+
+      <label class="flex items-center space-x-2 cursor-pointer">
+        <input type="radio" name="migrationType" value="range"
+          class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+        <span class="text-gray-700">Range of Personnel</span>
+      </label>
     </div>
+
 
     <form id="changesForm" class="space-y-4">
       <!-- Individual Form -->
@@ -156,22 +145,25 @@
         </select>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="flex flex-wrap gap-2 justify-end">
-        <button
-          type="button"
-          id="changeButton"
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Migrate Personnel
-        </button>
-        <button
-          type="button"
-          id="clearButton"
-          class="px-6 py-2 bg-gray-300 rounded-lg shadow hover:bg-gray-400 transition"
-        >
-          Clear
-        </button>
+      <div class="flex flex-wrap justify-between items-start">
+        <!-- Selection Display -->
+        <div id="selectionDisplay" class="hidden">
+          <h3 class="font-semibold text-gray-700">Current Selection:</h3>
+          <p id="selectionText" class="text-gray-600"></p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-2 justify-end">
+          <button type="button" id="changeButton"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+            Migrate Personnel
+          </button>
+
+          <button type="button" id="clearButton"
+            class="px-6 py-2 bg-gray-300 rounded-lg shadow hover:bg-gray-400 transition">
+            Clear
+          </button>
+        </div>
       </div>
     </form>
   </div>
@@ -376,11 +368,12 @@
   let isLoading = false;
   let migrationStartTime = null;
 
-  // Dropdown Managemant
-  let currentPage = 0;
-  const pageSize = 50;
-  let totalEmployeeCount = 0;
-  let isLoadingMore = false;
+// Dropdown Managemant
+let currentPage = 0;
+const pageSize = 50;
+let totalEmployeeCount = 0;
+let isLoadingMore = false;
+let searchTimeout;
 
   // DOM elements
   const migrationTypeRadios = document.querySelectorAll(
@@ -775,35 +768,54 @@
     }
   }
 
-  function filterDropdown(searchText, container, type) {
-    if (allEmployees.length === 0) return;
-
-    const searchTerm = searchText.toLowerCase();
-
+function filterDropdown(searchText, container, type) {
+  clearTimeout(searchTimeout);
+  
+  searchTimeout = setTimeout(async () => {
+    const searchTerm = searchText.trim();
+    
     if (!searchTerm) {
-      renderDropdown(allEmployees, container, type);
+      // If search is cleared, reload initial data
+      await loadPersonnel(false);
+      container.classList.remove('hidden');
     } else {
-      const filtered = allEmployees.filter((emp) => {
-        const id = (emp.Empl_ID || emp.EMPL_ID || emp.id || "")
-          .toString()
-          .toLowerCase();
-        const surname = (emp.Surname || emp.surname || "").toLowerCase();
-        const otherName = (emp.OtherName || emp.otherName || "").toLowerCase();
-        const name = `${surname} ${otherName}`.toLowerCase();
-
-        return (
-          id.includes(searchTerm) ||
-          surname.includes(searchTerm) ||
-          otherName.includes(searchTerm) ||
-          name.includes(searchTerm)
-        );
-      });
-
-      renderDropdown(filtered, container, type);
+      // Perform server-side search
+      await searchEmployees(searchTerm, container, type);
     }
+  }, 300); // Debounce for 300ms
+}
 
-    container.classList.remove("hidden");
+async function searchEmployees(searchTerm, container, type) {
+  try {
+    container.innerHTML = `
+      <div class="py-1">
+        <div class="px-3 py-4 text-center text-gray-500">
+          <svg class="animate-spin h-5 w-5 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Searching...
+        </div>
+      </div>
+    `;
+    
+    const result = await apiRequest(`${API_BASE}/active-employees?limit=100&offset=0&search=${encodeURIComponent(searchTerm)}`);
+    const employees = result.data || [];
+    
+    renderDropdown(employees, container, type);
+    container.classList.remove('hidden');
+    
+  } catch (error) {
+    console.error('Error searching employees:', error);
+    container.innerHTML = `
+      <div class="py-1">
+        <div class="px-3 py-4 text-center text-red-500">
+          Search failed<br><span class="text-xs">${error.message}</span>
+        </div>
+      </div>
+    `;
   }
+}
 
   async function loadPayrollClasses() {
     try {

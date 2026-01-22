@@ -1,24 +1,16 @@
 <div class="p-6">
-  <!-- Connection Status -->
-  <div class="mb-6">
-    <div id="connectionStatus">
-      <div class="flex items-center flex-wrap gap-2 justify-between">
-        <div class="flex items-center">
-          <div
-            id="statusIndicator"
-            class="w-3 h-3 rounded-full bg-yellow-500 mr-3"
-          ></div>
-          <span id="statusText" class="text-blue-600 font-bold"
-            >Connecting to server...</span
-          >
-        </div>
-        <div class="flex gap-2 items-center">
-          <button
-            onclick="window.navigation.navigateToSection('database-backup', 'Database Backup')"
-            class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded text-white transition-colors"
-          >
-            <i class="fas fa-database text-white mr-2"></i> DB Backup
-          </button>
+    <!-- Connection Status -->
+    <div class="mb-6">
+        <div id="connectionStatus">
+            <div class="flex items-center flex-wrap gap-2 justify-between">
+                <div class="flex items-center">
+                    <div id="statusIndicator" class="w-3 h-3 rounded-full bg-yellow-500 mr-3"></div>
+                    <span id="statusText" class="text-blue-600 font-bold">Connecting to server...</span>
+                </div>
+                <div class="flex gap-2 items-center">
+                  <button onclick="window.navigation.navigateToSection('database-backup', 'Payroll Class Backup')"  class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded text-white transition-colors">
+                    <i class="fas fa-database text-white mr-2"></i> Class Backup
+                  </button>
 
           <button
             id="refreshConnection"

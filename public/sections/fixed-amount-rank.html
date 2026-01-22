@@ -1116,199 +1116,280 @@
       });
     });
 
-    //generate report functionality
-    function generateReport() {
-      const now = new Date();
-      const dateStr = `${String(now.getDate()).padStart(2, "0")}-${String(
-        now.getMonth() + 1
-      ).padStart(2, "0")}-${now.getFullYear()}`;
-      const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(
-        now.getMinutes()
-      ).padStart(2, "0")}`;
+//generate report functionality
+function generateReport() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+  });
+  const timeStr = now.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+  });
+  
+  const generatedBy = localStorage.getItem('full_name') || 'System User';
+  
+  const printWindow = window.open('', '_blank');
 
-      const printWindow = window.open("", "_blank");
+  // Group ranks by category
+  const rankGroups = {
+      'Non-Commissioned Officers': ['trainee', 'os', 'sm', 'ab', 'ls', 'po', 'wo', 'mwo'],
+      'Cadets': ['cadet', 'nwo', 'midshipman'],
+      'Junior Officers': ['slt', 'lt', 'ltcdr'],
+      'Senior Officers': ['cdr', 'capt', 'cdre'],
+      'Flag Officers': ['radm', 'vadm', 'adm'],
+      'Special Categories': ['contract', 'rtdofficers']
+  };
 
-      // Group ranks by category
-      const rankGroups = {
-        "Non-Commissioned Officers": [
-          "trainee",
-          "os",
-          "sm",
-          "ab",
-          "ls",
-          "po",
-          "wo",
-          "mwo",
-        ],
-        Cadets: ["cadet", "nwo", "midshipman"],
-        "Junior Officers": ["slt", "lt", "ltcdr"],
-        "Senior Officers": ["cdr", "capt", "cdre"],
-        "Flag Officers": ["radm", "vadm", "adm"],
-        "Special Categories": ["contract", "rtdofficers"],
-      };
+  const formatCurrency = (amount) => {
+      if (!amount) return '-';
+      return new Intl.NumberFormat('en-NG', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+      }).format(amount);
+  };
 
-      const formatCurrency = (amount) => {
-        return new Intl.NumberFormat("en-NG", {
-          style: "currency",
-          currency: "NGN",
-        }).format(amount || 0);
-      };
+  const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <meta charset="utf-8">
+          <title>Fixed Amount by Rank Report</title>
+          <style>
+              @page { 
+                  size: A4 ; 
+                  margin: 5mm;
+                  background-color: #f8fbff;
+              }
+              
+              body { 
+                  font-family: Helvetica, Arial, sans-serif; 
+                  font-size: 12pt;
+                  margin: 0;
+                  padding: 0;
+                  position: relative;
+                  color: #333;
+              }
 
-      const printContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Fixed Amount by Rank Report</title>
-      <style>
-        body { 
-          font-family: Arial, sans-serif;
-          margin: 20px;
-          color: #333;
-        }
-        .report-header {
-          text-align: center;
-          margin-bottom: 20px;
-          padding-bottom: 10px;
-          border-bottom: 2px solid #1a56db;
-        }
-        .date-time {
-          font-size: 14px;
-          color: #666;
-          margin: 10px 0;
-        }
-        .report-title {
-          font-size: 24px;
-          color: #1a56db;
-          margin: 10px 0;
-        }
-        .element-section {
-          margin-bottom: 20px;
-          border: 1px solid #e5e7eb;
-          padding: 15px;
-          border-radius: 5px;
-        }
-        .element-title {
-          font-size: 18px;
-          color: #1a56db;
-          margin-bottom: 15px;
-          padding-bottom: 5px;
-          border-bottom: 1px solid #e5e7eb;
-        }
-        .rank-group {
-          margin-bottom: 15px;
-        }
-        .group-title {
-          font-size: 14px;
-          font-weight: bold;
-          color: #4b5563;
-          margin: 10px 0;
-          background-color: #f9fafb;
-          padding: 5px;
-        }
-        .rank-table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-bottom: 10px;
-          font-size: 11px;
-        }
-        .rank-table th {
-          background-color: #f3f4f6;
-          padding: 6px;
-          text-align: left;
-          border: 1px solid #e5e7eb;
-        }
-        .rank-table td {
-          padding: 6px;
-          border: 1px solid #e5e7eb;
-        }
-        .amount {
-          text-align: right;
-          font-family: monospace;
-        }
-        .report-footer {
-          margin-top: 20px;
-          text-align: center;
-          font-size: 12px;
-          color: #666;
-          border-top: 1px solid #e5e7eb;
-          padding-top: 15px;
-        }
-        @media print {
-          .rank-table th {
-            background-color: #f3f4f6 !important;
-            -webkit-print-color-adjust: exact;
-          }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="report-header">
-        <div class="report-title">Fixed Amount by Rank Report</div>
-        <div class="date-time">Generated on: ${dateStr} at ${timeStr}</div>
-      </div>
+              /* Faint logo overlay */
+              body::before {
+                  content: "";
+                  position: fixed;
+                  top: 0;
+                  left: 0;
+                  width: 100%;
+                  height: 100%;
+                  background-image: url('photos/logo.png');
+                  background-size: auto 100%;
+                  background-repeat: no-repeat;
+                  background-position: center center;
+                  opacity: 0.02;
+                  z-index: -1;
+                  pointer-events: none;
+              }
 
-      ${data
-        .map(
-          (item) => `
-        <div class="element-section">
-          <div class="element-title">
-            ${getElmDesc(item.one_type)}
+              .header-wrapper {
+                  display: flex;
+                  align-items: flex-start;
+                  margin-bottom: 8px;
+                  border-bottom: 2px solid #1a1a1a;
+                  padding-bottom: 5px;
+              }
+
+              .header {
+                  flex-grow: 1;
+                  text-align: center;
+              }
+              
+              .header h1 {
+                  font-size: 13pt;
+                  font-weight: bold;
+                  margin-bottom: 2px;
+                  letter-spacing: 1.5px;
+                  color: #1e40af;
+                  font-family: 'Libre Baskerville', Georgia, serif;
+              }
+              
+              .header h2 {
+                  font-size: 10pt;
+                  font-weight: normal;
+                  margin-top: 2px;
+                  color: #4a4a4a;
+                  font-family: 'Libre Baskerville', Georgia, serif;
+              }
+
+              .header-info {
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin: 8px 0;
+                  font-size: 9pt;
+              }
+
+              .element-section {
+                  margin-bottom: 15px;
+                  page-break-inside: avoid;
+              }
+
+              .element-title {
+                  font-size: 11pt;
+                  font-weight: bold;
+                  color: #1e40af;
+                  margin: 8px 0 6px 0;
+                  padding-bottom: 3px;
+                  border-bottom: 1px solid #0056A0;
+              }
+
+              .rank-group {
+                  margin-bottom: 10px;
+                  page-break-inside: avoid;
+              }
+
+              .group-title {
+                  font-size: 8pt;
+                  font-weight: bold;
+                  color: #1e40af;
+                  margin: 6px 0 3px 0;
+                  background-color: #eff6ff;
+                  padding: 3px 5px;
+                  text-transform: uppercase;
+                  letter-spacing: 0.3px;
+              }
+
+              .rank-table {
+                  width: 100%;
+                  border-collapse: collapse;
+                  margin-bottom: 8px;
+                  font-size: 12pt;
+              }
+
+              .rank-table th {
+                  color: #1e40af;
+                  padding: 4px 6px;
+                  text-align: left;
+                  border-bottom: 1px solid #1e40af;
+                  font-weight: bold;
+                  text-transform: uppercase;
+                  letter-spacing: 0.3px;
+                  font-size: 7.5pt;
+              }
+
+              .rank-table td {
+                  padding: 3px 6px;
+                  border: none;
+              }
+
+              .amount {
+                  font-family: 'Courier New', monospace;
+                  font-size: 12pt;
+              }
+
+              .footer {
+                  margin-top: 15px;
+                  padding-top: 8px;
+                  border-top: 0.5px solid #1a1a1a;
+                  text-align: center;
+                  font-size: 8pt;
+                  color: #64748b;
+              }
+
+              @media print {
+                  body {
+                      print-color-adjust: exact;
+                      -webkit-print-color-adjust: exact;
+                  }
+                  
+                  body::before {
+                      position: fixed;
+                      display: block;
+                      content: "";
+                      width: 100%;
+                      height: 100%;
+                      top: 0;
+                      left: 0;
+                      background-image: url('photos/logo.png');
+                      background-size: auto 100%;
+                      background-repeat: no-repeat;
+                      background-position: center center;
+                      opacity: 0.02;
+                      z-index: -1;
+                  }
+              }
+          </style>
+      </head>
+      <body>
+          <div class="header-wrapper">
+              <div class="header">
+                  <h1>Nigerian Navy (Naval Headquarters)</h1>
+                  <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+              </div>
           </div>
-          
-          ${Object.entries(rankGroups)
-            .map(
-              ([groupName, ranks]) => `
-            <div class="rank-group">
-              <div class="group-title">${groupName}</div>
-              <table class="rank-table">
-                <thead>
-                  <tr>
-                    <th width="60%">Rank</th>
-                    <th width="40%">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${ranks
-                    .map(
-                      (rank) => `
-                    <tr>
-                      <td>${rank.toUpperCase()}</td>
-                      <td class="amount">${formatCurrency(
-                        item.ranks[rank]
-                      )}</td>
-                    </tr>
-                  `
-                    )
-                    .join("")}
-                </tbody>
-              </table>
-            </div>
-          `
-            )
-            .join("")}
-        </div>
-      `
-        )
-        .join("")}
 
-      <div class="report-footer">
-        <p>Total Records: ${data.length}</p>
-        <p>Generated by: ${
-          localStorage.getItem("full_name") || "System User"
-        }</p>
-        <p>*** End of Report ***</p>
-      </div>
-    </body>
-    </html>
+          <div class="header-info">
+              <div class="left">
+                  <strong>FIXED AMOUNT BY RANK REPORT</strong>
+              </div>
+              <div class="center">
+                  <span>PRODUCED ON</span> 
+                  <strong>${dateStr}</strong> 
+                  <span>AT</span> 
+                  <strong>${timeStr}</strong>
+              </div>
+              <div class="right">
+                  <strong>${data.length}</strong>
+                  <span>ELEMENTS</span>
+              </div>
+          </div>
+
+          ${data.map(item => `
+              <div class="element-section">
+                  <div class="element-title">
+                      ${getElmDesc(item.one_type)}
+                  </div>
+                  
+                  ${Object.entries(rankGroups).map(([groupName, ranks]) => `
+                      <div class="rank-group">
+                          <div class="group-title">${groupName}</div>
+                          <table class="rank-table">
+                              <thead>
+                                  <tr>
+                                      <th width="60%">Rank</th>
+                                      <th width="40%">Amount</th>
+                                  </tr>
+                              </thead>
+                              <tbody>
+                                  ${ranks.map(rank => `
+                                      <tr>
+                                          <td>${rank.toUpperCase()}</td>
+                                          <td class="amount">${formatCurrency(item.ranks[rank])}</td>
+                                      </tr>
+                                  `).join('')}
+                              </tbody>
+                          </table>
+                      </div>
+                  `).join('')}
+              </div>
+          `).join('')}
+
+          <div class="footer">
+              <p>Generated by: <strong>${generatedBy}</strong></p>
+              <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+          </div>
+      </body>
+      </html>
   `;
 
       printWindow.document.write(printContent);
       printWindow.document.close();
 
-      printWindow.onload = function () {
-        printWindow.print();
-      };
-    }
+  printWindow.onload = function() {
+      printWindow.print();
+  };
+}
 
     // Add event listener to generate report button
     document

@@ -784,41 +784,202 @@
       showSuccessModal(message, true);
     }
 
-    function printSelected() {
-      if (!docNameId.value) {
-        showError("Please select an employee first");
-        return;
-      }
-
-      const selectedEmployee = allEmployees.find(
-        (e) => e.Empl_ID === docNameId.value
-      );
-      if (!selectedEmployee) return;
-
-      const printWindow = window.open("", "_blank");
-      const htmlContent = `
+function printSelected() {
+    if (!docNameId.value) {
+      showError("Please select an employee first");
+      return;
+    }
+    
+    const selectedEmployee = allEmployees.find(e => e.Empl_ID === docNameId.value);
+    if (!selectedEmployee) return;
+    
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    const timeStr = now.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+    
+    const generatedBy = localStorage.getItem('full_name') || 'System User';
+    
+    const printWindow = window.open('', '_blank');
+    const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="utf-8">
           <title>Documentation - ${selectedEmployee.Surname} ${selectedEmployee.OtherName}</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            h2 { color: #1e40af; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f3f4f6; }
+            @page { 
+              size: A4 portrait; 
+              margin: 0.5mm; 
+              background-color: #f8fbff;
+            }
+            
+            body { 
+              font-family: Helvetica, Arial, sans-serif; 
+              font-size: 10pt;
+              margin: 40px;
+              position: relative;
+              color: #333;
+            }
+
+            /* Faint logo overlay */
+            body::before {
+              content: "";
+              position: fixed;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background-image: url('photos/logo.png');
+              background-size: auto 100%;
+              background-repeat: no-repeat;
+              background-position: center center;
+              opacity: 0.02;
+              z-index: -1;
+              pointer-events: none;
+            }
+
+            .header-wrapper {
+              display: flex;
+              align-items: flex-start;
+              margin-bottom: 8px;
+              border-bottom: 2px solid #1a1a1a;
+              padding-bottom: 5px;
+            }
+
+            .header {
+              flex-grow: 1;
+              text-align: center;
+            }
+            
+            .header h1 {
+              font-size: 13pt;
+              font-weight: bold;
+              margin-bottom: 2px;
+              letter-spacing: 1.5px;
+              color: #1e40af;
+              font-family: 'Libre Baskerville', Georgia, serif;
+            }
+            
+            .header h2 {
+              font-size: 10pt;
+              font-weight: normal;
+              margin-top: 2px;
+              color: #4a4a4a;
+              font-family: 'Libre Baskerville', Georgia, serif;
+            }
+
+            .header-info {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin: 10px 0 20px 0;
+              font-size: 9pt;
+            }
+
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+              font-size: 10pt;
+            }
+
+            th {
+              color: #1e40af;
+              padding: 12px 8px;
+              text-align: left;
+              font-weight: bold;
+              font-size: 10pt;
+              text-transform: uppercase;
+              letter-spacing: 0.3px;
+              border-bottom: 1px solid #0056A0;
+              width: 30%;
+            }
+
+            td {
+              padding: 12px 8px;
+              border: none;
+              vertical-align: middle;
+              border-bottom: 0.5px solid #e5e7eb;
+            }
+
+            .footer {
+              padding-top: 10px;
+              border-top: 0.5px solid #1a1a1a;
+              text-align: center;
+              font-size: 8pt;
+              color: #64748b;
+              margin-top: 30px;
+            }
+
+            @media print {
+              body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+              }
+              
+              body::before {
+                position: fixed;
+                display: block;
+                content: "";
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                background-image: url('photos/logo.png');
+                background-size: auto 100%;
+                background-repeat: no-repeat;
+                background-position: center center;
+                opacity: 0.02;
+                z-index: -1;
+              }
+            }
           </style>
         </head>
         <body>
-          <h2>Documentation Record</h2>
+          <div class="header-wrapper">
+            <div class="header">
+              <h1>Nigerian Navy (Naval Headquarters)</h1>
+              <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+            </div>
+          </div>
+
+          <div class="header-info">
+            <div class="left">
+              <strong>DOCUMENTATION RECORD</strong>
+            </div>
+            <div class="center">
+              <span>PRODUCED ON</span> 
+              <strong>${dateStr}</strong> 
+              <span>AT</span> 
+              <strong>${timeStr}</strong>
+            </div>
+            <div class="right">
+              <strong>SINGLE RECORD</strong>
+            </div>
+          </div>
+
           <table>
-            <tr><th>Service No</th><td>${docNameId.value}</td></tr>
-            <tr><th>Name</th><td>${selectedEmployee.Surname} ${selectedEmployee.OtherName}</td></tr>
+            <tr><th>Service No</th><td><strong>${docNameId.value}</strong></td></tr>
+            <tr><th>Name</th><td><strong>${selectedEmployee.Surname} ${selectedEmployee.OtherName}</strong></td></tr>
             <tr><th>Year</th><td>${docYear.value}</td></tr>
             <tr><th>Month</th><td>${docMonth.value}</td></tr>
             <tr><th>Reference No</th><td>${docRef.value}</td></tr>
             <tr><th>Comments</th><td>${docComments.value}</td></tr>
           </table>
+
+          <div class="footer">
+            <p>Generated by: ${generatedBy}</p>
+            <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+          </div>
         </body>
       </html>
     `;
@@ -831,31 +992,44 @@
       };
     }
 
-    function printAll() {
-      if (allDocumentation.length === 0) {
-        showError("No records to print");
-        return;
+  function printAll() {
+    if (allDocumentation.length === 0) {
+      showError("No records to print");
+      return;
+    }
+    
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    const timeStr = now.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+    
+    const generatedBy = localStorage.getItem('full_name') || 'System User';
+    
+    const printWindow = window.open('', '_blank');
+    let tableRows = '';
+    
+    allDocumentation.forEach(doc => {
+      const employee = allEmployees.find(e => e.Empl_ID === doc.doc_numb);
+      const empName = employee ? `${employee.Surname} ${employee.OtherName}` : 'N/A';
+      
+      let monthValue = doc.doc_month || '';
+      if (monthValue.length === 2 && monthMap[monthValue]) {
+        monthValue = monthMap[monthValue];
       }
-
-      const printWindow = window.open("", "_blank");
-      let tableRows = "";
-
-      allDocumentation.forEach((doc) => {
-        const employee = allEmployees.find((e) => e.Empl_ID === doc.doc_numb);
-        const empName = employee
-          ? `${employee.Surname} ${employee.OtherName}`
-          : "N/A";
-
-        let monthValue = doc.doc_month || "";
-        if (monthValue.length === 2 && monthMap[monthValue]) {
-          monthValue = monthMap[monthValue];
-        }
-
-        tableRows += `
+      
+      tableRows += `
         <tr>
-          <td>${doc.doc_numb}</td>
-          <td>${empName}</td>
-          <td>${doc.doc_year || ""}</td>
+          <td><strong>${doc.doc_numb}</strong></td>
+          <td style="white-space: nowrap;"><strong>${empName}</strong></td>
+          <td>${doc.doc_year || ''}</td>
           <td>${monthValue}</td>
           <td>${doc.doc_ref || ""}</td>
           <td>${doc.doc_remark || ""}</td>
@@ -867,32 +1041,183 @@
       <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="utf-8">
           <title>All Documentation Records</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            h2 { color: #1e40af; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
-            th { background-color: #f3f4f6; }
+            @page { 
+              size: A4 ; 
+              margin: 5mm; 
+              background-color: #f8fbff;
+            }
+            
+            body { 
+              font-family: Helvetica, Arial, sans-serif; 
+              font-size: 9pt;
+              margin: 0;
+              padding: 0;
+              position: relative;
+              color: #333;
+            }
+
+            /* Faint logo overlay */
+            body::before {
+              content: "";
+              position: fixed;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background-image: url('photos/logo.png');
+              background-size: auto 100%;
+              background-repeat: no-repeat;
+              background-position: center center;
+              opacity: 0.02;
+              z-index: -1;
+              pointer-events: none;
+            }
+
+            .header-wrapper {
+              display: flex;
+              align-items: flex-start;
+              margin-bottom: 8px;
+              border-bottom: 2px solid #1a1a1a;
+              padding-bottom: 5px;
+            }
+
+            .header {
+              flex-grow: 1;
+              text-align: center;
+            }
+            
+            .header h1 {
+              font-size: 13pt;
+              font-weight: bold;
+              margin-bottom: 2px;
+              letter-spacing: 1.5px;
+              color: #1e40af;
+              font-family: 'Libre Baskerville', Georgia, serif;
+            }
+            
+            .header h2 {
+              font-size: 10pt;
+              font-weight: normal;
+              margin-top: 2px;
+              color: #4a4a4a;
+              font-family: 'Libre Baskerville', Georgia, serif;
+            }
+
+            .header-info {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin: 10px 0;
+              font-size: 9pt;
+            }
+
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+              font-size: 11px;
+            }
+
+            th {
+              color: #1e40af;
+              padding: 8px 4px;
+              text-align: left;
+              font-weight: bold;
+              font-size: 12px;
+              text-transform: uppercase;
+              letter-spacing: 0.3px;
+              border-bottom: 1px solid #0056A0;
+            }
+
+            td {
+              padding: 6px 4px;
+              border: none;
+              vertical-align: middle;
+            }
+
+            .text-center {
+              text-align: center;
+            }
+
+            .footer {
+              padding-top: 10px;
+              border-top: 0.5px solid #1a1a1a;
+              text-align: center;
+              font-size: 8pt;
+              color: #64748b;
+              margin-top: 20px;
+            }
+
+            @media print {
+              body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+              }
+              
+              body::before {
+                position: fixed;
+                display: block;
+                content: "";
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                background-image: url('photos/logo.png');
+                background-size: auto 100%;
+                background-repeat: no-repeat;
+                background-position: center center;
+                opacity: 0.02;
+                z-index: -1;
+              }
+            }
           </style>
         </head>
         <body>
-          <h2>All Documentation Records</h2>
+          <div class="header-wrapper">
+            <div class="header">
+              <h1>Nigerian Navy (Naval Headquarters)</h1>
+              <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+            </div>
+          </div>
+
+          <div class="header-info">
+            <div class="left">
+              <strong>DOCUMENTATION RECORDS</strong>
+            </div>
+            <div class="center">
+              <span>PRODUCED ON</span> 
+              <strong>${dateStr}</strong> 
+              <span>AT</span> 
+              <strong>${timeStr}</strong>
+            </div>
+            <div class="right">
+              <strong>${allDocumentation.length}</strong>
+              <span>RECORDS</span>
+            </div>
+          </div>
+
           <table>
             <thead>
               <tr>
-                <th>Service No</th>
-                <th>Name</th>
-                <th>Year</th>
-                <th>Month</th>
-                <th>Reference No</th>
-                <th>Comments</th>
+                <th style="width: 12%;">Service No</th>
+                <th style="width: 25%;">Name</th>
+                <th style="width: 8%;">Year</th>
+                <th style="width: 10%;">Month</th>
+                <th style="width: 15%;">Ref. No</th>
+                <th style="width: 30%;">Comments</th>
               </tr>
             </thead>
             <tbody>
               ${tableRows}
             </tbody>
           </table>
+
+          <div class="footer">
+            <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+          </div>
         </body>
       </html>
     `;

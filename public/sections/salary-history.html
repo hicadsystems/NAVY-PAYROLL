@@ -53,56 +53,42 @@
       </div>
     </div>
 
-    <!-- Payroll Class with Year and Month on Same Line -->
-    <div>
-      <label for="payrollClass" class="block text-sm font-medium mb-1"
-        >Payroll Class</label
-      >
-      <div class="grid grid-cols-3 gap-3">
-        <div class="col-span-1">
-          <select
-            id="payrollClass"
-            name="payrollClass"
-            class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          ></select>
-        </div>
-
-        <div class="col-span-1">
-          <input
-            type="number"
-            id="year"
-            name="year"
-            placeholder="Year"
-            class="w-full border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            min="2000"
-            max="2100"
-            value="2024"
-          />
-        </div>
-
-        <div class="col-span-1">
-          <select
-            id="month"
-            name="month"
-            class="w-full border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="">Month</option>
-            <option value="01">January</option>
-            <option value="02">February</option>
-            <option value="03">March</option>
-            <option value="04">April</option>
-            <option value="05">May</option>
-            <option value="06">June</option>
-            <option value="07">July</option>
-            <option value="08">August</option>
-            <option value="09">September</option>
-            <option value="10">October</option>
-            <option value="11">November</option>
-            <option value="12">December</option>
-          </select>
+      <!-- Payroll Class with Year and Month on Same Line -->
+      <div>
+        <label for="payrollClass" class="block text-sm font-medium mb-1">Payroll Class</label>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="col-span-1">
+            <select id="payrollClass" name="payrollClass"
+              class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </select>
+          </div>
+          
+          <div class="col-span-1">
+            <input type="number" id="year" name="year" placeholder="Year"
+              class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+              min="2000" max="2100" value="" />
+          </div>
+          
+          <div class="col-span-1">
+            <select id="month" name="month"
+              class="w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option value="">Month</option>
+              <option value="01">January</option>
+              <option value="02">February</option>
+              <option value="03">March</option>
+              <option value="04">April</option>
+              <option value="05">May</option>
+              <option value="06">June</option>
+              <option value="07">July</option>
+              <option value="08">August</option>
+              <option value="09">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+          </div>
         </div>
       </div>
-    </div>
 
     <!-- Output Format -->
     <div>

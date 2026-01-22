@@ -1,8 +1,11 @@
 const nhfReportService = require('../../services/Reports/nhfReportService');
-const ExcelJS = require('exceljs');
+const companySettings = require('../helpers/companySettings');
+const { GenericExcelExporter } = require('../helpers/excel');
+//const ExcelJS = require('exceljs');
 const jsreport = require('jsreport-core')();
 const fs = require('fs');
 const path = require('path');
+
 
 class NHFReportController {
 
@@ -122,7 +125,7 @@ class NHFReportController {
       console.log('NHF Report Sample row:', data[0]); // DEBUG
 
       if (format === 'excel') {
-        return this.generateNHFReportExcel(data, res, filters.summaryOnly);
+        return this.generateNHFReportExcel(data, req, res, filters.summaryOnly);
       } else if (format === 'pdf') {
         return this.generateNHFReportPDF(data, req, res);
       }
@@ -179,160 +182,119 @@ class NHFReportController {
   // ==========================================================================
   // EXCEL GENERATION
   // ==========================================================================
-  async generateNHFReportExcel(data, res, isSummary = false) {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('NHF Report');
+  async generateNHFReportExcel(data, req, res, isSummary = false) {
+    try {
+      const exporter = new GenericExcelExporter();
 
-    // Title
-    const titleColspan = isSummary ? 'A1:J1' : 'A1:P1';
-    worksheet.mergeCells(titleColspan);
-    const titleCell = worksheet.getCell('A1');
-    titleCell.value = 'NIGERIAN NAVY - NATIONAL HOUSING FUND REPORT';
-    titleCell.font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } };
-    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-    titleCell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF1F4E78' }
-    };
+      // Extract period from data
+      const period = data.length > 0 ? {
+        year: data[0].year,
+        month: data[0].month
+      } : { year: new Date().getFullYear(), month: new Date().getMonth() + 1 };
 
-    // Period info
-    if (data.length > 0) {
-      worksheet.mergeCells(titleColspan.replace('1', '2'));
-      const periodCell = worksheet.getCell('A2');
-      periodCell.value = `Period: ${this.getMonthName(data[0].month)} ${data[0].year}`;
-      periodCell.font = { size: 12, bold: true };
-      periodCell.alignment = { horizontal: 'center' };
-      periodCell.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFE7E6E6' }
-      };
+      const className = this.getDatabaseNameFromRequest(req);
+
+      if (isSummary) {
+        // ==========================================================================
+        // SUMMARY REPORT
+        // ==========================================================================
+        const columns = [
+          { header: 'Total Records', key: 'employee_count', width: 18, align: 'center' },
+          { header: 'Total NHF This Month', key: 'total_nhf_this_month', width: 22, align: 'right', numFmt: '₦#,##0.00' },
+          { header: 'Average NHF This Month', key: 'avg_nhf_this_month', width: 22, align: 'right', numFmt: '₦#,##0.00' },
+          { header: 'Min NHF This Month', key: 'min_nhf_this_month', width: 20, align: 'right', numFmt: '₦#,##0.00' },
+          { header: 'Max NHF This Month', key: 'max_nhf_this_month', width: 20, align: 'right', numFmt: '₦#,##0.00' },
+          { header: 'Total NHF To Date', key: 'total_nhf_to_date', width: 22, align: 'right', numFmt: '₦#,##0.00' },
+          { header: 'Average NHF To Date', key: 'avg_nhf_to_date', width: 22, align: 'right', numFmt: '₦#,##0.00' },
+          //{ header: 'Total Net Pay', key: 'total_net_pay', width: 20, align: 'right', numFmt: '₦#,##0.00' }
+        ];
+
+        const workbook = await exporter.createWorkbook({
+          title: 'NATIONAL HOUSING FUND REPORT - SUMMARY',
+          subtitle: 'Aggregated NHF Statistics',
+          period: period,
+          className: className,
+          columns: columns,
+          data: data,
+          sheetName: 'NHF Summary'
+        });
+
+        const filename = `nhf_summary_${period.year}_${period.month}.xlsx`;
+        await exporter.exportToResponse(workbook, res, filename);
+
+      } else {
+        // ==========================================================================
+        // DETAILED REPORT
+        // ==========================================================================
+        const columns = [
+          { header: 'S/N', key: 'sn', width: 8, align: 'center' },
+          { header: 'Svc No.', key: 'employee_id', width: 15 },
+          { header: 'Rank', key: 'Title', width: 12 },
+          { header: 'Full Name', key: 'full_name', width: 40 },
+          { header: 'DateOf 1st APpointment', key: 'date_employed', width: 18, align: 'center' },
+          { header: 'NSITF Code', key: 'nsitf_code', width: 19 },
+          { header: 'Grade Type', key: 'grade_type', width: 12, align: 'center' },
+          { header: 'Grade Level', key: 'grade_level', width: 12, align: 'center' },
+          { header: 'YearsSince Promotion', key: 'years_in_level', width: 15, align: 'center' },
+          { header: 'Location', key: 'location_name', width: 25 },
+          { header: 'NHF This Month', key: 'nhf_contribution', width: 18, align: 'right', numFmt: '₦#,##0.00' },
+          { header: 'NHF To Date', key: 'nhf_paid_todate', width: 18, align: 'right', numFmt: '₦#,##0.00' },
+          //{ header: 'Net Pay', key: 'net_pay', width: 18, align: 'right', numFmt: '₦#,##0.00' },
+          //{ header: 'Bank', key: 'Bankcode', width: 20 },
+          //{ header: 'Account Number', key: 'BankACNumber', width: 20 }
+        ];
+
+        // Add serial numbers
+        const dataWithSN = data.map((item, idx) => ({
+          ...item,
+          sn: idx + 1
+        }));
+
+        // Calculate totals
+        const totalNHFThisMonth = data.reduce((sum, item) => sum + parseFloat(item.nhf_contribution || 0), 0);
+        const totalNHFToDate = data.reduce((sum, item) => sum + parseFloat(item.nhf_paid_todate || 0), 0);
+        const totalNetPay = data.reduce((sum, item) => sum + parseFloat(item.net_pay || 0), 0);
+        const avgNHFThisMonth = totalNHFThisMonth / data.length;
+        const maxNHFThisMonth = Math.max(...data.map(item => parseFloat(item.nhf_contribution || 0)));
+        const minNHFThisMonth = Math.min(...data.map(item => parseFloat(item.nhf_contribution || 0)));
+
+        const workbook = await exporter.createWorkbook({
+          title: 'NATIONAL HOUSING FUND REPORT - DETAILED',
+          period: period,
+          className: className,
+          columns: columns,
+          data: dataWithSN,
+          totals: {
+            label: 'GRAND TOTALS:',
+            values: {
+              11: totalNHFThisMonth,   // Column 11: NHF This Month
+              12: totalNHFToDate,       // Column 12: NHF To Date
+              //13: totalNetPay           // Column 13: Net Pay
+            }
+          },
+          summary: {
+            //title: 'REPORT SUMMARY',
+            /*items: [
+              { label: 'Total Employees', value: data.length },
+              { label: 'Total NHF This Month', value: totalNHFThisMonth, numFmt: '₦#,##0.00' },
+              { label: 'Average NHF This Month', value: avgNHFThisMonth, numFmt: '₦#,##0.00' },
+              { label: 'Maximum NHF This Month', value: maxNHFThisMonth, numFmt: '₦#,##0.00' },
+              { label: 'Minimum NHF This Month', value: minNHFThisMonth, numFmt: '₦#,##0.00' },
+              { label: 'Total NHF To Date', value: totalNHFToDate, numFmt: '₦#,##0.00' },
+              { label: 'Total Net Pay', value: totalNetPay, numFmt: '₦#,##0.00' }
+            ]*/
+          },
+          sheetName: 'NHF Detailed'
+        });
+
+        const filename = `nhf_detailed_${period.year}_${period.month}.xlsx`;
+        await exporter.exportToResponse(workbook, res, filename);
+      }
+
+    } catch (error) {
+      console.error('NHF Report Export error:', error);
+      res.status(500).json({ success: false, error: error.message });
     }
-
-    worksheet.addRow([]);
-
-    if (isSummary) {
-      // Summary columns
-      worksheet.columns = [
-        { header: 'Employee Count', key: 'employee_count', width: 18 },
-        { header: 'Total NHF This Month', key: 'total_nhf_this_month', width: 22 },
-        { header: 'Average NHF This Month', key: 'avg_nhf_this_month', width: 22 },
-        { header: 'Min NHF This Month', key: 'min_nhf_this_month', width: 20 },
-        { header: 'Max NHF This Month', key: 'max_nhf_this_month', width: 20 },
-        { header: 'Total NHF To Date', key: 'total_nhf_to_date', width: 22 },
-        { header: 'Average NHF To Date', key: 'avg_nhf_to_date', width: 22 },
-        { header: 'Total Net Pay', key: 'total_net_pay', width: 20 }
-      ];
-
-      // Style header row (row 4)
-      const headerRow = worksheet.getRow(4);
-      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-      headerRow.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FF0070C0' }
-      };
-      headerRow.height = 25;
-      headerRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-
-      // Add data
-      data.forEach((row, index) => {
-        const addedRow = worksheet.addRow(row);
-
-        // Alternate row colors
-        if (index % 2 === 0) {
-          addedRow.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFF2F2F2' }
-          };
-        }
-      });
-
-      // Format currency columns
-      ['B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach(col => {
-        worksheet.getColumn(col).numFmt = '₦#,##0.00';
-        worksheet.getColumn(col).alignment = { horizontal: 'right' };
-      });
-
-    } else {
-      // Detailed columns
-      worksheet.columns = [
-        { header: 'Employee ID', key: 'employee_id', width: 15 },
-        { header: 'Title', key: 'title', width: 12 },
-        { header: 'Full Name', key: 'full_name', width: 35 },
-        { header: 'Date Employed', key: 'date_employed', width: 15 },
-        { header: 'NSITF Code', key: 'nsitf_code', width: 15 },
-        { header: 'Grade Type', key: 'grade_type', width: 12 },
-        { header: 'Grade Level', key: 'grade_level', width: 12 },
-        { header: 'Years in Level', key: 'years_in_level', width: 15 },
-        { header: 'Location', key: 'location_name', width: 25 },
-        { header: 'NHF This Month', key: 'nhf_this_month', width: 18 },
-        { header: 'NHF To Date', key: 'nhf_to_date', width: 18 },
-        { header: 'Net Pay', key: 'net_pay', width: 18 },
-        { header: 'Bank', key: 'Bankcode', width: 20 },
-        { header: 'Account Number', key: 'BankACNumber', width: 20 }
-      ];
-
-      // Style header row (row 4)
-      const headerRow = worksheet.getRow(4);
-      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-      headerRow.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FF0070C0' }
-      };
-      headerRow.height = 25;
-      headerRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-
-      // Add data with alternating colors
-      data.forEach((row, index) => {
-        const addedRow = worksheet.addRow(row);
-
-        if (index % 2 === 0) {
-          addedRow.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFF2F2F2' }
-          };
-        }
-
-        // Highlight high NHF contributions
-        if (parseFloat(row.nhf_this_month) > 20000) {
-          addedRow.getCell('J').font = { bold: true, color: { argb: 'FF006100' } };
-        }
-      });
-
-      // Format currency columns
-      ['J', 'K', 'L'].forEach(col => {
-        worksheet.getColumn(col).numFmt = '₦#,##0.00';
-        worksheet.getColumn(col).alignment = { horizontal: 'right' };
-      });
-
-      // Add grand totals
-      const totalRow = worksheet.lastRow.number + 2;
-      worksheet.getCell(`I${totalRow}`).value = 'GRAND TOTALS:';
-      worksheet.getCell(`I${totalRow}`).font = { bold: true, size: 12 };
-
-      ['J', 'K', 'L'].forEach(col => {
-        worksheet.getCell(`${col}${totalRow}`).value = {
-          formula: `SUM(${col}5:${col}${totalRow - 2})`
-        };
-        worksheet.getCell(`${col}${totalRow}`).font = { bold: true };
-        worksheet.getCell(`${col}${totalRow}`).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFFFE699' }
-        };
-      });
-    }
-
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=nhf_report.xlsx');
-
-    await workbook.xlsx.write(res);
-    res.end();
   }
 
   // ==========================================================================
@@ -359,8 +321,13 @@ class NHFReportController {
       // Calculate totals
       const summary = this.calculateSummary(data, isSummary);
 
+      //Load image
+      const image = await companySettings.getSettingsFromFile('./public/photos/logo.png');
+
       const templatePath = path.join(__dirname, '../../templates/nhf-report.html');
       const templateContent = fs.readFileSync(templatePath, 'utf8');
+
+      console.log('🔍 Template contains {{{logoDataUrl}}}?', templateContent.includes('{{{logoDataUrl}}}'));
 
       const result = await jsreport.render({
         template: {
@@ -387,7 +354,8 @@ class NHFReportController {
             `${this.getMonthName(data[0].month)} ${data[0].year}` : 
             'N/A',
           isSummary: isSummary,
-          className: this.getDatabaseNameFromRequest(req)
+          className: this.getDatabaseNameFromRequest(req),
+          ...image
         }
       });
 

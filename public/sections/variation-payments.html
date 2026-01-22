@@ -969,6 +969,7 @@
 
       const data = fullData;
 
+<<<<<<< HEAD
       const now = new Date();
       const dateStr = `${String(now.getDate()).padStart(2, "0")}-${String(
         now.getMonth() + 1
@@ -976,6 +977,30 @@
       const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(
         now.getMinutes()
       ).padStart(2, "0")}`;
+=======
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    const timeStr = now.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
+    
+    const printWindow = window.open('', '_blank');
+    
+    const formatCurrency = (amount) => {
+      if (!amount) return '-';
+      return new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency: 'NGN'
+      }).format(amount);
+    };
+>>>>>>> upstream/master
 
       const printWindow = window.open("", "_blank");
 
@@ -991,59 +1016,174 @@
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Variations to Payments/Deductions Report</title>
-        <style>
-          body { 
-            font-family: Arial, sans-serif;
-            margin: 40px; 
-          }
-          .print-table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-bottom: 20px; 
-          }
-          .print-table th { 
-            background-color: #f3f4f6; 
-            color: #1f2937;
-            padding: 12px;
-            text-align: left;
-            border: 1px solid #e5e7eb;
-          }
-          .print-table td { 
-            padding: 12px;
-            border: 1px solid #e5e7eb;
-          }
-          .print-header { 
-            text-align: center; 
-            margin-bottom: 20px; 
-          }
-          .date-generated {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 30px;
-          }
-          .print-footer { 
-            text-align: center; 
-            margin-top: 20px; 
-            font-size: 12px;
-            border-top: 1px solid #eee;
-            padding-top: 20px;
-          }
-        </style>
+          <meta charset="utf-8">
+          <title>Payments/Deductions Report</title>
+          <style>
+              @page { 
+                  size: A4; 
+                  margin: 5mm; 
+                  background-color: #f8fbff;
+              }
+              
+              body { 
+                  font-family: Helvetica, Arial, sans-serif; 
+                  font-size: 10pt;
+                  margin: 0;
+                  padding: 0;
+                  position: relative;
+                  color: #333;
+              }
+
+              /* Faint logo overlay */
+              body::before {
+                  content: "";
+                  position: fixed;
+                  top: 0;
+                  left: 0;
+                  width: 100%;
+                  height: 100%;
+                  background-image: url('photos/logo.png');
+                  background-size: auto 100%;
+                  background-repeat: no-repeat;
+                  background-position: center center;
+                  opacity: 0.02;
+                  z-index: -1;
+                  pointer-events: none;
+              }
+
+              .header-wrapper {
+                  display: flex;
+                  align-items: flex-start;
+                  margin-bottom: 8px;
+                  border-bottom: 2px solid #1a1a1a;
+                  padding-bottom: 5px;
+              }
+
+              .header {
+                  flex-grow: 1;
+                  text-align: center;
+              }
+              
+              .header h1 {
+                  font-size: 13pt;
+                  font-weight: bold;
+                  margin-bottom: 2px;
+                  letter-spacing: 1.5px;
+                  color: #1e40af;
+                  font-family: 'Libre Baskerville', Georgia, serif;
+              }
+              
+              .header h2 {
+                  font-size: 10pt;
+                  font-weight: normal;
+                  margin-top: 2px;
+                  color: #4a4a4a;
+                  font-family: 'Libre Baskerville', Georgia, serif;
+              }
+
+              .header-info {
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin: 10px 0;
+                  font-size: 9pt;
+              }
+
+              table {
+                  width: 100%;
+                  border-collapse: collapse;
+                  margin-bottom: 20px;
+                  font-size: 12px;
+              }
+
+              th {
+                  color: #1e40af;
+                  padding: 8px 4px;
+                  text-align: left;
+                  font-weight: bold;
+                  font-size: 12px;
+                  text-transform: uppercase;
+                  letter-spacing: 0.3px;
+                  border-bottom: 1px solid #0056A0;
+              }
+
+              td {
+                  padding: 6px 4px;
+                  border: none;
+                  vertical-align: middle;
+              }
+
+              .text-right {
+              }
+
+              .text-center {
+                  text-align: center;
+              }
+
+              .footer {
+                  padding-top: 10px;
+                  border-top: 0.5px solid #1a1a1a;
+                  text-align: center;
+                  font-size: 8pt;
+                  color: #64748b;
+                  margin-top: 20px;
+              }
+
+              @media print {
+                  body {
+                      print-color-adjust: exact;
+                      -webkit-print-color-adjust: exact;
+                  }
+                  
+                  body::before {
+                      position: fixed;
+                      display: block;
+                      content: "";
+                      width: 100%;
+                      height: 100%;
+                      top: 0;
+                      left: 0;
+                      background-image: url('photos/logo.png');
+                      background-size: auto 100%;
+                      background-repeat: no-repeat;
+                      background-position: center center;
+                      opacity: 0.02;
+                      z-index: -1;
+                  }
+              }
+          </style>
       </head>
       <body>
-        <div class="print-header">
-          <div class="report-title">Variations to Payments/Deductions Report</div>
-          <div class="date-time">Generated on: ${dateStr} at ${timeStr}</div>
-        </div>
+          <div class="header-wrapper">
+              <div class="header">
+                  <h1>Nigerian Navy (Naval Headquarters)</h1>
+                  <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+              </div>
+          </div>
+
+          <div class="header-info">
+              <div class="left">
+                  <strong>VARIATION TO PAYMENTS/DEDUCTIONS REPORT</strong>
+              </div>
+              <div class="center">
+                  <span>PRODUCED ON</span> 
+                  <strong>${dateStr}</strong> 
+                  <span>AT</span> 
+                  <strong>${timeStr}</strong>
+              </div>
+              <div class="right">
+                  <strong>${data.length}</strong>
+                  <span>RECORDS</span>
+              </div>
+          </div>
       
-        <table class="print-table" style="width: 100%;">
+        <table>
           <thead>
             <tr>
               <th>No.</th>
               <th>Service No</th>
               <th>Type</th>
-              <th>Action Type</th>
+              <th>Action</th>
               <th>Amount</th>
             </tr>
           </thead>
@@ -1066,12 +1206,18 @@
           </tbody>
         </table>
 
+<<<<<<< HEAD
         <div class="print-footer">
           <p>Total Records: ${data.length}</p>
           <p>Generated by: ${
             localStorage.getItem("full_name") || "System User"
           }</p>
           <p>*** End of Report ***</p>
+=======
+        <div class="footer">
+          <p>Generated by: ${localStorage.getItem('full_name') || 'System User'}</p>
+          <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+>>>>>>> upstream/master
         </div>
       </body>
       </html>

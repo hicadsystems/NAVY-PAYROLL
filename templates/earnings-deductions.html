@@ -5,6 +5,23 @@
     <style>
         @page { size: A4; margin: 5mm; background-color: #f8fbff; }
         body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #1a1a1a; }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('{{{logoDataUrl}}}');
+            background-size: auto 100%;    /* 80% of height */
+            background-repeat: no-repeat;
+            background-position: center center;
+            opacity: 0.02;
+            z-index: -1;
+            pointer-events: none;
+        }
+
         .header-wrapper {
             display: flex;
             align-items: flex-start;
@@ -177,6 +194,29 @@
             text-align: center;
             font-size: 8pt;
             color: #64748b;
+        }
+
+        @media print {
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            body::before {
+                content: "";
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-image: url('{{{logoDataUrl}}}');
+                background-size: auto 100%;    /* 80% of height */
+                background-repeat: no-repeat;
+                background-position: center center;
+                opacity: 0.02;
+                z-index: -1;
+                pointer-events: none;
+            }
         }
     </style>
 </head>

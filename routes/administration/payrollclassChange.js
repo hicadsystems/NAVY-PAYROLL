@@ -14,6 +14,27 @@ const DATABASE_MAP = {
   [process.env.DB_JUNIOR_TRAINEE || 'hicaddata5']: { name: 'TRAINEE', code: '6' }
 };
 
+/**
+ * Maps database name to payroll class number
+ * @param {string} dbName - Current database name
+ * @returns {string} Payroll class (1-6)
+ */
+function getPayrollClassFromDb(dbName) {
+  // Use environment variables for dynamic mapping
+  const classMapping = {
+    [process.env.DB_OFFICERS]: '1',
+    [process.env.DB_WOFFICERS]: '2',
+    [process.env.DB_RATINGS]: '3',
+    [process.env.DB_RATINGS_A]: '4',
+    [process.env.DB_RATINGS_B]: '5',
+    [process.env.DB_JUNIOR_TRAINEE]: '6'
+  };
+  
+  const result = classMapping[dbName] || '1';
+  console.log('🔍 Database:', dbName, '→ Payroll Class:', result);
+  return result;
+}
+
 const PAYROLL_CLASS_TO_DB_MAP = {
   '1': process.env.DB_OFFICERS || 'hicaddata',
   '2': process.env.DB_WOFFICERS || 'hicaddata1',
@@ -313,38 +334,62 @@ async function checkDatabaseExists(dbName) {
 // ==================== GET ALL EMPLOYEES ====================
 router.get('/active-employees', verifyToken, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 1000; // Default to 1000 if not specified
-    const offset = parseInt(req.query.offset) || 0;
+    const currentDb = pool.getCurrentDatabase(req.user_id.toString());
+    const payrollClass = getPayrollClassFromDb(currentDb);
 
-    // Get total count
+    const limit = parseInt(req.query.limit) || 1000;
+    const offset = parseInt(req.query.offset) || 0;
+    const search = req.query.search || ''; // Add search parameter
+
+    // Build WHERE clause with search
+    let whereClause = `
+      WHERE (DateLeft IS NULL OR DateLeft = '')
+        AND (exittype IS NULL OR exittype = '')
+        AND payrollclass = ?
+    `;
+    
+    const queryParams = [payrollClass];
+    
+    if (search) {
+      whereClause += ` AND (
+        Empl_ID LIKE ? OR 
+        Surname LIKE ? OR 
+        OtherName LIKE ? OR
+        CONCAT(Surname, ' ', OtherName) LIKE ?
+      )`;
+      const searchParam = `%${search}%`;
+      queryParams.push(searchParam, searchParam, searchParam, searchParam);
+    }
+
+    // Get total count with search
     const [countResult] = await pool.query(`
       SELECT COUNT(*) as total
       FROM hr_employees
-      WHERE (DateLeft IS NULL OR DateLeft = '')
-        AND (exittype IS NULL OR exittype = '');
-    `);
+      ${whereClause}
+    `, queryParams);
     const total = countResult[0].total;
 
-    // Get paginated results
+    // Get paginated results with search
     const query = `
-      SELECT *
+      SELECT Empl_ID, Title, Surname, OtherName, payrollclass
       FROM hr_employees
-      WHERE (DateLeft IS NULL OR DateLeft = '')
-        AND (exittype IS NULL OR exittype = '')
-      ORDER BY Empl_ID
+      ${whereClause}
+      ORDER BY Empl_ID ASC
       LIMIT ? OFFSET ?;
     `;
 
-    const [rows] = await pool.query(query, [limit, offset]);
+    const [rows] = await pool.query(query, [...queryParams, limit, offset]);
 
     res.status(200).json({
       message: 'Employees retrieved successfully',
       data: rows,
+      payrollClass,
       count: rows.length,
       total: total,
       limit: limit,
       offset: offset,
-      hasMore: (offset + rows.length) < total
+      hasMore: (offset + rows.length) < total,
+      search: search
     });
 
   } catch (error) {

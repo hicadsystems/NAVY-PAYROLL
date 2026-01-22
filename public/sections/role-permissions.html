@@ -1,0 +1,277 @@
+<div class="p-6 max-w-7xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center justify-between p-6 border-b">
+    <div>
+      <h2 class="text-2xl font-bold text-blue-800">Configure which menu items each role can access</h2>
+      <p class="text-sm text-gray-600 mt-1"></p>
+    </div>
+    <button id="saveBtn" 
+      class="px-2 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium flex items-center gap-2">
+      <span> <i class="fas fa-save mr-2"></i>Save Permissions</span>
+    </button>
+  </div>
+
+  <!-- Role Selection -->
+  <div class="p-6 border-b">
+    <label class="block text-sm font-medium text-gray-700 mb-2">Select Role:</label>
+    <select id="roleSelect" class="w-full md:w-96 border border-blue-500 rounded px-4 py-2 focus:ring-2 focus:ring-blue-500">
+      <option value="">Loading roles...</option>
+    </select>
+  </div>
+
+  <!-- Permissions Grid -->
+  <div id="permissionsContainer" class="p-6">
+    <p class="text-gray-500 text-center py-8">Select a role to configure permissions</p>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden items-center justify-center z-50">
+  <div class="bg-white rounded-lg p-8 max-w-sm w-full mx-4 text-center">
+    <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+    </div>
+    <p class="text-gray-700 font-medium text-lg">Permissions Saved!</p>
+  </div>
+</div>
+
+<script>
+  const roleSelect = document.getElementById('roleSelect');
+  const permissionsContainer = document.getElementById('permissionsContainer');
+  const saveBtn = document.getElementById('saveBtn');
+  const successModal = document.getElementById('successModal');
+  
+  let allMenuItems = [];
+  let currentRoleId = null;
+  let selectedPermissions = new Set();
+
+  // Fetch roles
+  async function fetchRoles() {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/roles', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      const roles = await res.json();
+      
+      roleSelect.innerHTML = '<option value="">-- Select a Role --</option>';
+      roles.forEach(role => {
+        const option = document.createElement('option');
+        option.value = role.id;
+        option.textContent = `${role.name} - ${role.description}`;
+        roleSelect.appendChild(option);
+      });
+    } catch (err) {
+      console.error('Failed to fetch roles:', err);
+    }
+  }
+
+  // Fetch all menu items
+  async function fetchMenuItems() {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/roles/menu-items', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      allMenuItems = await res.json();
+    } catch (err) {
+      console.error('Failed to fetch menu items:', err);
+    }
+  }
+
+  // Fetch role permissions
+  async function fetchRolePermissions(roleId) {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/roles/role-permissions/${roleId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      const permissions = await res.json();
+      selectedPermissions = new Set(permissions);
+      renderPermissions();
+    } catch (err) {
+      console.error('Failed to fetch permissions:', err);
+    }
+  }
+
+  // Build menu hierarchy
+  function buildMenuHierarchy() {
+    const menuMap = new Map();
+    const rootMenus = [];
+    
+    // Create menu map
+    allMenuItems.forEach(item => {
+      menuMap.set(item.id, { ...item, children: [] });
+    });
+    
+    // Build hierarchy
+    allMenuItems.forEach(item => {
+      if (item.parent_id === null) {
+        rootMenus.push(menuMap.get(item.id));
+      } else {
+        const parent = menuMap.get(item.parent_id);
+        if (parent) {
+          parent.children.push(menuMap.get(item.id));
+        }
+      }
+    });
+    
+    return rootMenus;
+  }
+
+  // Render permissions UI
+  function renderPermissions() {
+    const hierarchy = buildMenuHierarchy();
+    
+    if (!currentRoleId) {
+      permissionsContainer.innerHTML = '<p class="text-gray-500 text-center py-8">Select a role to configure permissions</p>';
+      return;
+    }
+    
+    let html = '<div class="space-y-6">';
+    
+    hierarchy.forEach(menu => {
+      html += renderMenu(menu, 0);
+    });
+    
+    html += '</div>';
+    permissionsContainer.innerHTML = html;
+    
+    // Add event listeners
+    document.querySelectorAll('.menu-checkbox').forEach(cb => {
+      cb.addEventListener('change', handleCheckboxChange);
+    });
+  }
+
+  // Render individual menu
+  function renderMenu(menu, level) {
+    const indent = level * 24;
+    const isChecked = selectedPermissions.has(menu.id);
+    const hasChildren = menu.children && menu.children.length > 0;
+    
+    let html = `
+      <div class="border border-gray-200 rounded-lg p-4" style="margin-left: ${indent}px">
+        <div class="flex items-center gap-3">
+          <input 
+            type="checkbox" 
+            id="menu-${menu.id}" 
+            class="menu-checkbox w-5 h-5 text-blue-600 rounded"
+            data-menu-id="${menu.id}"
+            ${isChecked ? 'checked' : ''}
+          >
+          <label for="menu-${menu.id}" class="flex-1 cursor-pointer">
+            <span class="font-medium text-gray-800">${menu.menu_name}</span>
+            <span class="text-xs text-gray-500 ml-2">(${menu.menu_type})</span>
+          </label>
+        </div>
+    `;
+    
+    if (hasChildren) {
+      html += '<div class="mt-3 space-y-2">';
+      menu.children.forEach(child => {
+        html += renderMenu(child, level + 1);
+      });
+      html += '</div>';
+    }
+    
+    html += '</div>';
+    return html;
+  }
+
+  // Handle checkbox change
+  function handleCheckboxChange(e) {
+    const menuId = parseInt(e.target.dataset.menuId);
+    
+    if (e.target.checked) {
+      selectedPermissions.add(menuId);
+      // Auto-select parent if exists
+      const menu = allMenuItems.find(m => m.id === menuId);
+      if (menu && menu.parent_id) {
+        selectedPermissions.add(menu.parent_id);
+        const parentCheckbox = document.querySelector(`[data-menu-id="${menu.parent_id}"]`);
+        if (parentCheckbox) parentCheckbox.checked = true;
+      }
+    } else {
+      selectedPermissions.delete(menuId);
+      // Auto-deselect children
+      deselectChildren(menuId);
+    }
+  }
+
+  // Deselect all children of a menu
+  function deselectChildren(parentId) {
+    const children = allMenuItems.filter(m => m.parent_id === parentId);
+    children.forEach(child => {
+      selectedPermissions.delete(child.id);
+      const checkbox = document.querySelector(`[data-menu-id="${child.id}"]`);
+      if (checkbox) checkbox.checked = false;
+      deselectChildren(child.id); // Recursive
+    });
+  }
+
+  // Save permissions
+  async function savePermissions() {
+    if (!currentRoleId) {
+      alert('Please select a role first');
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/roles/role-permissions/${currentRoleId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          menuItemIds: Array.from(selectedPermissions)
+        })
+      });
+      
+      if (res.ok) {
+        showSuccess();
+      } else {
+        const error = await res.json();
+        alert('Error: ' + (error.error || 'Failed to save'));
+      }
+    } catch (err) {
+      console.error('Failed to save permissions:', err);
+      alert('Failed to save permissions');
+    }
+  }
+
+  // Show success modal
+  function showSuccess() {
+    successModal.classList.remove('hidden');
+    successModal.classList.add('flex');
+    setTimeout(() => {
+      successModal.classList.add('hidden');
+      successModal.classList.remove('flex');
+    }, 2000);
+  }
+
+  // Event listeners
+  roleSelect.addEventListener('change', (e) => {
+    currentRoleId = e.target.value;
+    if (currentRoleId) {
+      fetchRolePermissions(currentRoleId);
+    } else {
+      selectedPermissions.clear();
+      renderPermissions();
+    }
+  });
+
+  saveBtn.addEventListener('click', savePermissions);
+
+  // Initialize
+  (async () => {
+    await fetchRoles();
+    await fetchMenuItems();
+  })();
+</script>

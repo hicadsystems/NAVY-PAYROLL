@@ -8,10 +8,8 @@
   </div>
 
   <!-- Radio Selection -->
-  <div class="mb-6 bg-red-50 p-4 rounded-lg">
-    <span class="text-red-600 font-semibold text-lg block mb-3"
-      >Select Report Scope:</span
-    >
+  <div class="mb-2 border-b border-red-500 p-4 rounded-lg">
+    <span class="text-red-600 font-semibold text-lg block mb-3">Select Report Scope:</span>
     <div class="flex gap-6">
       <label class="flex items-center cursor-pointer">
         <input
@@ -37,16 +35,14 @@
   </div>
 
   <!-- Dynamic Form Fields -->
-  <div id="dupForm" class="space-y-5">
+  <div id="dupForm" class="space-y-2">
+
     <!-- Bank Select (Hidden by default) -->
-    <div id="bankSelectWrapper" class="hidden bg-blue-50 p-4 rounded-lg">
+    <div id="bankSelectWrapper" class="hidden border-b border-blue-500 p-4 rounded-lg">
       <label class="block text-sm font-medium text-gray-900 mb-2">
         <i class="fas fa-university text-blue-600 mr-2"></i>Select Bank
       </label>
-      <select
-        id="bankSelect"
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300"
-      >
+      <select id="bankSelect" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300">
         <!--<option value="">-- Choose Bank --</option>-->
       </select>
     </div>

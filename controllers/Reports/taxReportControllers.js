@@ -1,4 +1,5 @@
 const taxReportService = require('../../services/Reports/taxReportServices');
+const companySettings = require('../helpers/companySettings');
 const ExcelJS = require('exceljs');
 const jsreport = require('jsreport-core')();
 const fs = require('fs');
@@ -444,6 +445,9 @@ class TaxReportController {
       const templatePath = path.join(__dirname, '../../templates/tax-report.html');
       const templateContent = fs.readFileSync(templatePath, 'utf8');
 
+      //Load image
+      const image = await companySettings.getSettingsFromFile('./public/photos/logo.png');      
+
       const result = await jsreport.render({
         template: {
           content: templateContent,
@@ -469,7 +473,8 @@ class TaxReportController {
             `${this.getMonthName(data[0].month)} ${data[0].year}` : 
             'N/A',
           className: this.getDatabaseNameFromRequest(req),  
-          isSummary: isSummary
+          isSummary: isSummary,
+          ...image
         }
       });
 

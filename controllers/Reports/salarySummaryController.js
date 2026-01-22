@@ -1,4 +1,5 @@
 const salarySummaryService = require('../../services/Reports/salarySummaryService');
+const companySettings = require('../helpers/companySettings');
 const ExcelJS = require('exceljs');
 const jsreport = require('jsreport-core')();
 const fs = require('fs');
@@ -165,6 +166,9 @@ class SalarySummaryController {
       const templatePath = path.join(__dirname, '../../templates/salary-summary.html');
       const templateContent = fs.readFileSync(templatePath, 'utf8');
 
+      //Load image
+      const image = await companySettings.getSettingsFromFile('./public/photos/logo.png');
+
       const period = filteredData.length > 0 ? 
         `${filteredData[0].month_name}, ${filteredData[0].year}` : 
         'N/A';
@@ -193,7 +197,8 @@ class SalarySummaryController {
           period: period,
           year: filters.year,
           month: filters.month,
-          className: this.getDatabaseNameFromRequest(req)
+          className: this.getDatabaseNameFromRequest(req),
+          ...image
         }
       });
 

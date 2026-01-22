@@ -11,6 +11,8 @@ const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const fs = require('fs');
+const https = require('https');
 //const jsreport = require('jsreport-core')();
 //const multer = require("multer");
 const PORT = process.env.PORT || 5500;
@@ -77,15 +79,62 @@ app.use(session({
 
 app.use(notificationMiddleware);
 
+// Configuration via environment variable
+// Usage: SERVER_MODE=localhost node server.js
+const SERVER_MODE = process.env.SERVER_MODE || 'auto'; // Default to 'auto'
+
 async function startServer() {
   await seamlessWrapper.initialize();
 
   // mount routes
   require('./routes')(app);
 
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-  });
+  const options = {
+    key: fs.readFileSync(path.join(__dirname, 'key.pem')),
+    cert: fs.readFileSync(path.join(__dirname, 'cert.pem')),
+  };
+
+  switch (SERVER_MODE) {
+    case 'network':
+      https.createServer(options, app).listen(PORT, '0.0.0.0', () => {
+        console.log(`🔒 HTTPS server running on https://192.168.0.194:${PORT}`);
+      });
+      break;
+
+    case 'localhost':
+      https.createServer(options, app).listen(PORT, 'localhost', () => {
+        console.log(`🔒 HTTPS server running on https://localhost:${PORT}`);
+      });
+      break;
+
+    case 'auto':
+    default:
+      const server = https.createServer(options, app);
+
+      server.listen(PORT, '0.0.0.0', () => {
+        console.log(`🔒 HTTPS server running on https://192.168.0.194:${PORT}`);
+      });
+
+      server.on('error', (err) => {
+        if (err.code === 'EADDRNOTAVAIL' || err.code === 'EADDRINUSE') {
+          console.warn('⚠️  Network interface unavailable, falling back to localhost');
+          
+          const fallbackServer = https.createServer(options, app);
+          fallbackServer.listen(PORT, 'localhost', () => {
+            console.log(`🔒 HTTPS server running on https://localhost:${PORT}`);
+          });
+
+          fallbackServer.on('error', (fallbackErr) => {
+            console.error('❌ Failed to start fallback server:', fallbackErr);
+            process.exit(1);
+          });
+        } else {
+          console.error('❌ Server error:', err);
+          process.exit(1);
+        }
+      });
+      break;
+  }
 }
 
 startServer().catch(err => {

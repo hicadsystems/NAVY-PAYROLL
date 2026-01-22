@@ -1,4 +1,5 @@
 const duplicateAccountService = require('../../services/audit-trail/duplicateAccnoService');
+const companySettings = require('../helpers/companySettings');
 const ExcelJS = require('exceljs');
 const jsreport = require('jsreport-core')();
 const fs = require('fs');
@@ -211,7 +212,7 @@ class DuplicateAccountController {
 
       // Column headers
       const headerRow = worksheet.getRow(currentRow);
-      ['Employee ID', 'Full Name', 'Title', 'Grade Level', 'Location', 'Bank Branch', 'Date Employed', 'Status'].forEach((header, idx) => {
+      ['Svc No.', 'Full Name', 'Title', 'Grade Level', 'Location', 'Bank Branch', 'Date Employed', 'Status'].forEach((header, idx) => {
         const cell = headerRow.getCell(idx + 1);
         cell.value = header;
         cell.font = { bold: true, size: 10 };
@@ -317,6 +318,8 @@ class DuplicateAccountController {
       console.log('📄 Generating PDF with', data.length, 'duplicate accounts');
 
       const templatePath = path.join(__dirname, '../../templates/duplicate-accounts.html');
+      //Load image
+      const image = await companySettings.getSettingsFromFile('./public/photos/logo.png');   
       
       if (!fs.existsSync(templatePath)) {
         console.error('❌ Template file not found:', templatePath);
@@ -350,7 +353,8 @@ class DuplicateAccountController {
           statistics: statistics,
           reportDate: new Date(),
           filters: filterDescription,
-          className: this.getDatabaseNameFromRequest(req)
+          className: this.getDatabaseNameFromRequest(req),
+          ...image
         }
       });
 

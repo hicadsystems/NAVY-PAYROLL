@@ -91,7 +91,7 @@
 
 
 <script>
-  // Old Personnel Management Script - BACKEND FILTER ALIGNED VERSION
+// Old Personnel Management
 const API_BASE = '/personnel';
 const API_HEADERS = {
   'Content-Type': 'application/json',
@@ -120,7 +120,6 @@ class FilterStateManager {
 
     try {
       const data = JSON.parse(saved);
-      // Verify it's from the same session
       if (data.sessionId !== this.getSessionId()) {
         this.clear();
         return null;
@@ -137,18 +136,15 @@ class FilterStateManager {
   }
 
   getSessionId() {
-    // Use token as session identifier
     return localStorage.getItem('token') || 'no-session';
   }
 
   setupLogoutListener() {
-    // Listen for logout events
     window.addEventListener('logout', () => {
       console.log('🚪 Logout detected, clearing filter state');
       this.clear();
     });
 
-    // Also clear on storage changes (logout from another tab)
     window.addEventListener('storage', (e) => {
       if (e.key === 'token' && !e.newValue) {
         console.log('🚪 Token removed, clearing filter state');
@@ -333,29 +329,81 @@ class PersonnelManager {
     //this.showLoadingState();
     
     try {
-      // Build URL with filters from state if needed
-      let url = `${API_BASE}/employees-old-pages?page=${page}&limit=10`;
-      
       // Get current filter values
       const search = document.getElementById('old-personnel-search')?.value.trim() || '';
       const rank = document.getElementById('rank-filter')?.value || '';
+
+      let result;
       
-      // Add filters to API request (backend handles filtering)
+      // Use search endpoint if search query exists
       if (search) {
-        url += `&search=${encodeURIComponent(search)}`;
-      }
-      if (rank) {
-        url += `&rank=${encodeURIComponent(rank)}`;
-      }
+        console.log('🔍 Using search endpoint with query:', search);
+        const token = localStorage.getItem('token');
+        const searchUrl = `/personnel/employees-old/search?q=${encodeURIComponent(search)}`;
+        
+        console.log('🔗 Search URL:', searchUrl);
+        
+        const response = await fetch(searchUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
 
-      console.log('🔗 API URL:', url);
+        if (!response.ok) {
+          throw new Error(`Search failed: ${response.status}`);
+        }
 
-      const result = await this.apiRequest(url);
+        result = await response.json();
+        console.log('✅ Search response:', result);
+        
+        // For search results, handle pagination locally
+        let searchData = result.data || result;
+        if (!Array.isArray(searchData)) {
+          searchData = [];
+        }
+        
+        // Apply rank filter locally if needed
+        if (rank) {
+          searchData = searchData.filter(p => p.Title === rank);
+        }
+        
+        // Paginate locally
+        const limit = 10;
+        const totalRecords = searchData.length;
+        const totalPages = Math.ceil(totalRecords / limit);
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        
+        this.personnel = searchData.slice(startIndex, endIndex);
+        this.paginationInfo = {
+          currentPage: page,
+          totalPages: totalPages,
+          totalRecords: totalRecords,
+          limit: limit,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1
+        };
+        
+        console.log(`✅ Search results: ${this.personnel.length} of ${totalRecords} total`);
+        
+      } else {
+        // Use regular pagination endpoint
+        let url = `${API_BASE}/employees-old-pages?page=${page}&limit=10`;
+        
+        if (rank) {
+          url += `&rank=${encodeURIComponent(rank)}`;
+        }
+
+        console.log('🔗 API URL:', url);
+        result = await this.apiRequest(url);
+        
+        this.personnel = result.data || [];
+        this.paginationInfo = result.pagination || {};
+      }
       
-      // Backend already filtered, just use the data as-is
-      this.personnel = result.data || [];
-      this.filteredPersonnel = [...this.personnel]; // No frontend filtering needed
-      this.paginationInfo = result.pagination || {};
+      this.filteredPersonnel = [...this.personnel];
       this.currentPage = page;
 
       console.log(`✅ Loaded ${this.personnel.length} records`);
@@ -372,7 +420,8 @@ class PersonnelManager {
       console.error('❌ Failed to load personnel:', error);
       this.personnel = [];
       this.filteredPersonnel = [];
-      this.showErrorState('Failed to load data');
+      this.paginationInfo = {};
+      this.showErrorState('Failed to load data: ' + error.message);
     }
   }
 
@@ -483,7 +532,7 @@ class PersonnelManager {
     // Save filter state
     this.filterStateManager.save({ search, rank });
 
-    // Reload from backend with filters (backend does the filtering)
+    // Reload from page 1 with filters
     await this.loadPersonnelData(this.personnelType, 1, false);
   }
 
@@ -543,15 +592,22 @@ class PersonnelManager {
         
         // If empty, apply immediately
         if (!e.target.value.trim()) {
+          console.log('🧹 Search cleared, reloading...');
           this.applyFilters();
           return;
         }
         
         // Otherwise debounce
+        console.log('⏱️ Search debouncing...', e.target.value);
         this.filterDebounceTimer = setTimeout(() => {
+          console.log('🔍 Executing search:', e.target.value);
           this.applyFilters();
         }, 500);
       });
+      
+      console.log('✅ Search debounce setup complete');
+    } else {
+      console.warn('⚠️ Search input not found');
     }
   }
 
@@ -560,8 +616,12 @@ class PersonnelManager {
     
     if (rankFilter) {
       rankFilter.addEventListener('change', () => {
+        console.log('🎯 Rank filter changed:', rankFilter.value);
         this.applyFilters();
       });
+      console.log('✅ Rank filter listener setup complete');
+    } else {
+      console.warn('⚠️ Rank filter not found');
     }
   }
 
@@ -580,7 +640,7 @@ class PersonnelManager {
         return;
       }
 
-      const pageData = this.personnel; // Use data as-is from backend
+      const pageData = this.personnel;
 
       console.log(`📋 Rendering ${pageData.length} records`);
 
@@ -643,7 +703,6 @@ class PersonnelManager {
     const pageInfo = this.paginationInfo || {};
     const currentRecords = this.personnel.length;
     
-    // Calculate display values from backend pagination info
     const start = currentRecords > 0 ? ((pageInfo.currentPage || 1) - 1) * (pageInfo.limit || 10) + 1 : 0;
     const end = start + currentRecords - 1;
     const total = pageInfo.totalRecords || currentRecords;
@@ -709,7 +768,7 @@ class PersonnelManager {
   }
 
   async viewEmployee(id) {
-    this.saveFilterState(); // Save current filter state
+    this.saveFilterState();
     this.currentViewId = id;
     localStorage.setItem('pendingEmployeeView', id);
     localStorage.setItem('oldPersonnelPage', this.currentPage);
@@ -744,7 +803,7 @@ class PersonnelManager {
 
   async editEmployee(id) {
     try {
-      this.saveFilterState(); // Save current filter state
+      this.saveFilterState();
       localStorage.setItem('oldPersonnelPage', this.currentPage);
       localStorage.setItem('oldPersonnelType', this.personnelType);
       localStorage.setItem('navigatedFromOldPersonnel', 'true');
@@ -782,7 +841,6 @@ class PersonnelManager {
           const safeId = this.deleteId.replace(/\//g, '_SLASH_');
           await this.apiRequest(`${API_BASE}/employees/${safeId}`, { method: 'DELETE' });
           
-          // Reload current page to refresh data
           await this.loadPersonnelData(this.personnelType, this.currentPage, false);
           
           this.showSuccess("Personnel deleted successfully");
@@ -834,7 +892,6 @@ async function initializePersonnelManager(sectionType = null) {
       personnelManager = window.personnelManager;
     }
 
-    // Check if returning from another view
     const isReturning = localStorage.getItem('navigatedFromOldPersonnel');
     const savedPage = localStorage.getItem('oldPersonnelPage');
     const savedType = localStorage.getItem('oldPersonnelType');
@@ -846,12 +903,10 @@ async function initializePersonnelManager(sectionType = null) {
       localStorage.removeItem('oldPersonnelPage');
       localStorage.removeItem('oldPersonnelType');
       
-      // Restore with filters
       await personnelManager.loadPersonnelData(savedType, parseInt(savedPage), true);
       return;
     }
 
-    // Normal initialization with filter restoration
     const type = sectionType || 'old';
     console.log(`📂 Loading ${type} personnel (page 1)`);
     await personnelManager.loadPersonnelData(type, 1, true);
@@ -861,18 +916,11 @@ async function initializePersonnelManager(sectionType = null) {
   }
 }
 
-// Add logout function if not already present
 window.triggerLogout = function() {
   console.log('🚪 Logout triggered');
-  
-  // Dispatch logout event
   window.dispatchEvent(new Event('logout'));
-  
-  // Clear all auth data
   localStorage.removeItem('token');
   sessionStorage.clear();
-  
-  // Redirect to login
   window.location.href = '/login';
 };
 

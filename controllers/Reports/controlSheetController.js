@@ -1,5 +1,7 @@
 const controlSheetService = require('../../services/Reports/controlSheetService');
-const ExcelJS = require('exceljs');
+const companySettings = require('../helpers/companySettings');
+const { GenericExcelExporter } = require('../helpers/excel');
+//const ExcelJS = require('exceljs');
 const jsreport = require('jsreport-core')();
 const fs = require('fs');
 const path = require('path');
@@ -122,7 +124,7 @@ class ControlSheetController {
       console.log('Control Sheet Totals:', result.totals); // DEBUG
 
       if (format === 'excel') {
-        return this.generateControlSheetExcel(result, res);
+        return this.generateControlSheetExcel(result, req, res);
       } else if (format === 'pdf') {
         return this.generateControlSheetPDF(result, req, res);
       }
@@ -141,129 +143,77 @@ class ControlSheetController {
   // ==========================================================================
   // EXCEL GENERATION
   // ==========================================================================
-  async generateControlSheetExcel(result, res) {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Control Sheet');
-    const data = result.details;
+  async generateControlSheetExcel(result, req, res) {
+    try {
+      const exporter = new GenericExcelExporter();
+      const data = result.details;
+      const className = this.getDatabaseNameFromRequest(req);
 
-    // Title
-    worksheet.mergeCells('A1:F1');
-    const titleCell = worksheet.getCell('A1');
-    titleCell.value = 'NIGERIAN NAVY - PAYROLL CONTROL SHEET';
-    titleCell.font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } };
-    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-    titleCell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF1F4E78' }
-    };
+      const columns = [
+        { header: 'S/N', key: 'sn', width: 8, align: 'center' },
+        { header: 'Payment Type', key: 'payment_type', width: 15 },
+        { header: 'Payment Description', key: 'payment_description', width: 35 },
+        { header: 'DR', key: 'dr_amount', width: 18, align: 'right', numFmt: '₦#,##0.00' },
+        { header: 'CR', key: 'cr_amount', width: 18, align: 'right', numFmt: '₦#,##0.00' },
+        { header: 'Ledger Codes', key: 'ledger_code', width: 20 }
+      ];
 
-    // Period info
-    if (data.length > 0) {
-      worksheet.mergeCells('A2:F2');
-      const periodCell = worksheet.getCell('A2');
-      periodCell.value = `FOR PERIOD: ${data[0].month_name}, ${data[0].year} | Recordcount = ${data[0].recordcount}`;
-      periodCell.font = { size: 12, bold: true };
-      periodCell.alignment = { horizontal: 'center' };
-      periodCell.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFE7E6E6' }
+      // Add S/N and handle missing ledger codes
+      const dataWithSN = data.map((item, idx) => ({
+        ...item,
+        sn: idx + 1,
+        ledger_code: item.ledger_code && item.ledger_code.trim() !== '' 
+          ? item.ledger_code 
+          : 'No LegCode'
+      }));
+
+      // Build subtitle with period info
+      let subtitle = 'Payroll Control Sheet';
+      if (data.length > 0) {
+        subtitle += ` - ${data[0].month_name}, ${data[0].year} | Records: ${data[0].recordcount}`;
+      }
+
+      const workbook = await exporter.createWorkbook({
+        title: 'NIGERIAN NAVY - PAYROLL CONTROL SHEET',
+        subtitle: subtitle,
+        columns: columns,
+        className: className,
+        data: dataWithSN,
+        totals: {
+          label: 'GRAND TOTALS:',
+          values: {
+            4: result.totals.dr_total,
+            5: result.totals.cr_total
+          }
+        },
+        sheetName: 'Control Sheet'
+      });
+
+      // Add balance status note after totals
+      const worksheet = workbook.worksheets[0];
+      const lastRow = worksheet.lastRow.number + 1;
+      
+      worksheet.mergeCells(`A${lastRow}:F${lastRow}`);
+      const statusCell = worksheet.getCell(`A${lastRow}`);
+      statusCell.value = result.totals.balanced 
+        ? '✓ CONTROL SHEET BALANCED' 
+        : '✗ WARNING: CONTROL SHEET NOT BALANCED';
+      statusCell.font = { 
+        bold: true, 
+        size: 12,
+        color: { argb: result.totals.balanced ? 'FF006100' : 'FFFF0000' }
       };
+      statusCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      worksheet.getRow(lastRow).height = 25;
+
+      await exporter.exportToResponse(workbook, res, 'control_sheet.xlsx');
+
+    } catch (error) {
+      console.error('Control Sheet Export error:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, error: error.message });
+      }
     }
-
-    worksheet.addRow([]);
-
-    // Column headers
-    worksheet.columns = [
-      { header: 'Payment Type', key: 'payment_type', width: 15 },
-      { header: 'Payment Description', key: 'payment_description', width: 35 },
-      { header: 'DR', key: 'dr_amount', width: 18 },
-      { header: 'CR', key: 'cr_amount', width: 18 },
-      { header: 'Ledger Codes', key: 'ledger_code', width: 20 }
-    ];
-
-    // Style header row (row 4)
-    const headerRow = worksheet.getRow(4);
-    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    headerRow.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF1e40af' }
-    };
-    headerRow.height = 25;
-    headerRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-
-    // Add data
-    data.forEach((row, index) => {
-      const addedRow = worksheet.addRow(row);
-
-      // Alternate row colors
-      if (index % 2 === 0) {
-        addedRow.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFF2F2F2' }
-        };
-      }
-
-      // Highlight rows with missing ledger codes
-      if (!row.ledger_code || row.ledger_code.trim() === '') {
-        addedRow.getCell('E').value = 'No LegCode';
-        addedRow.getCell('E').font = { color: { argb: 'FFFF0000' }, italic: true };
-      }
-    });
-
-    // Format currency columns
-    worksheet.getColumn('C').numFmt = '₦#,##0.00';
-    worksheet.getColumn('C').alignment = { horizontal: 'right' };
-    worksheet.getColumn('D').numFmt = '₦#,##0.00';
-    worksheet.getColumn('D').alignment = { horizontal: 'right' };
-
-    // Add grand totals
-    const totalRow = worksheet.lastRow.number + 2;
-    
-    worksheet.getCell(`A${totalRow}`).value = 'Grand Total';
-    worksheet.getCell(`A${totalRow}`).font = { bold: true, size: 12 };
-    worksheet.mergeCells(`A${totalRow}:B${totalRow}`);
-    
-    worksheet.getCell(`C${totalRow}`).value = result.totals.dr_total;
-    worksheet.getCell(`C${totalRow}`).font = { bold: true };
-    worksheet.getCell(`C${totalRow}`).numFmt = '₦#,##0.00';
-    worksheet.getCell(`C${totalRow}`).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFFFE699' }
-    };
-    
-    worksheet.getCell(`D${totalRow}`).value = result.totals.cr_total;
-    worksheet.getCell(`D${totalRow}`).font = { bold: true };
-    worksheet.getCell(`D${totalRow}`).numFmt = '₦#,##0.00';
-    worksheet.getCell(`D${totalRow}`).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFFFE699' }
-    };
-
-    // Add balance status
-    const statusRow = totalRow + 1;
-    worksheet.mergeCells(`A${statusRow}:E${statusRow}`);
-    const statusCell = worksheet.getCell(`A${statusRow}`);
-    statusCell.value = result.totals.balanced ? 
-      '✓ CONTROL SHEET BALANCED' : 
-      '✗ WARNING: CONTROL SHEET NOT BALANCED';
-    statusCell.font = { 
-      bold: true, 
-      size: 12,
-      color: { argb: result.totals.balanced ? 'FF006100' : 'FFFF0000' }
-    };
-    statusCell.alignment = { horizontal: 'center' };
-
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=control_sheet.xlsx');
-
-    await workbook.xlsx.write(res);
-    res.end();
   }
 
   // ==========================================================================
@@ -286,6 +236,9 @@ class ControlSheetController {
 
       console.log('Control Sheet PDF - Data rows:', data.length);
       console.log('Control Sheet PDF - Balanced:', result.totals.balanced);
+
+      //Load image
+      const image = await companySettings.getSettingsFromFile('./public/photos/logo.png');
 
       const templatePath = path.join(__dirname, '../../templates/control-sheet.html');
       const templateContent = fs.readFileSync(templatePath, 'utf8');
@@ -315,6 +268,7 @@ class ControlSheetController {
             `${data[0].month_name}, ${data[0].year}` : 
             'N/A',
           className: this.getDatabaseNameFromRequest(req),
+          ...image,
           recordcount: data.length > 0 ? data[0].recordcount : 0
         }
       });

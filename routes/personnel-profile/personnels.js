@@ -50,7 +50,7 @@ router.get('/employees-current', verifyToken, async (req, res) => {
 
     // Get employees filtered by payroll class
     const [rows] = await pool.query(`
-      SELECT * 
+      SELECT Empl_ID, Title, Surname, OtherName
       FROM hr_employees 
       WHERE (DateLeft IS NULL OR DateLeft = '')
         AND (exittype IS NULL OR exittype = '')
@@ -123,7 +123,7 @@ router.get('/employees-current-pages', verifyToken, async (req, res) => {
     
     // Get paginated employees with payroll class filter
     const [rows] = await pool.query(`
-      SELECT * 
+      SELECT Empl_ID, Title, Surname, OtherName 
       FROM hr_employees 
       WHERE (DateLeft IS NULL OR DateLeft = '')
         AND (exittype IS NULL OR exittype = '')
@@ -188,7 +188,7 @@ router.get('/employees-current/search', verifyToken, async (req, res) => {
     console.log('🔎 Search term:', searchTerm);
     
     let query = `
-      SELECT * 
+      SELECT Empl_ID, Title, Surname, OtherName
       FROM hr_employees 
       WHERE (DateLeft IS NULL OR DateLeft = '')
         AND (exittype IS NULL OR exittype = '')
@@ -273,13 +273,14 @@ router.get('/employees-old', verifyToken, async (req, res) => {
     
     // Get employees with payroll class filter
     const [rows] = await pool.query(`
-      SELECT * 
+      SELECT Empl_ID, Title, Surname, OtherName
       FROM hr_employees 
-      WHERE ((DateLeft IS NOT NULL AND DateLeft <> '')
-        OR (exittype IS NOT NULL AND TRIM(exittype) <> ''))
+      WHERE (NULLIF(TRIM(DateLeft), '') IS NOT NULL
+        OR NULLIF(TRIM(exittype), '') IS NOT NULL)
         AND payrollclass = ?
       ORDER BY Empl_ID ASC
-    `, [payrollClass]);
+      `, [payrollClass]
+    );
 
     // Add counts to each employee
     for (let employee of rows) {
@@ -330,8 +331,8 @@ router.get('/employees-old-pages', verifyToken, async (req, res) => {
     const [countResult] = await pool.query(`
       SELECT COUNT(*) as total
       FROM hr_employees 
-      WHERE ((DateLeft IS NOT NULL AND DateLeft <> '')
-        OR (exittype IS NOT NULL AND TRIM(exittype) <> ''))
+      WHERE (NULLIF(TRIM(DateLeft), '') IS NOT NULL
+        OR NULLIF(TRIM(exittype), '') IS NOT NULL)
         AND payrollclass = ?
     `, [payrollClass]);
     
@@ -340,10 +341,10 @@ router.get('/employees-old-pages', verifyToken, async (req, res) => {
     
     // Get paginated employees with payroll class filter
     const [rows] = await pool.query(`
-      SELECT * 
+      SELECT Empl_ID, Title, Surname, OtherName
       FROM hr_employees 
-      WHERE ((DateLeft IS NOT NULL AND DateLeft <> '0000-00-00')
-         OR (exittype IS NOT NULL AND TRIM(exittype) <> ''))
+      WHERE (NULLIF(TRIM(DateLeft), '') IS NOT NULL
+        OR NULLIF(TRIM(exittype), '') IS NOT NULL)
         AND payrollclass = ?
       ORDER BY Empl_ID ASC
       LIMIT ? OFFSET ?
@@ -405,10 +406,10 @@ router.get('/employees-old/search', verifyToken, async (req, res) => {
     console.log('🔎 Search term:', searchTerm);
     
     let query = `
-      SELECT * 
+      SELECT Empl_ID, Title, Surname, OtherName
       FROM hr_employees 
-      WHERE ((DateLeft IS NOT NULL AND DateLeft <> '')
-        OR (exittype IS NOT NULL AND TRIM(exittype) <> ''))
+      WHERE (NULLIF(TRIM(DateLeft), '') IS NOT NULL
+        OR NULLIF(TRIM(exittype), '') IS NOT NULL)
         AND payrollclass = ?
     `;
     

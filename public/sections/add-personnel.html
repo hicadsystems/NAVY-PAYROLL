@@ -723,8 +723,8 @@ function handleSpouseTabVisibility() {
 
 async function loadAllDropdowns() {
   const promises = [
-    loadDropdown("bankbranch", "bankbranch", "branchname", "branchname", "Select Bank Branch"),
-    loadDropdown("bankcode", "bankcode", "bankcode", "bankcode", "Select Bank Code"),
+    loadDropdown("bankbranch", "bankbranch", "branchcode", "branchname", "Select Bank Branch"),
+    loadDropdown("bankcode", "bankcode", "bankcode", "bankname", "Select Bank Code"),
     loadDropdown("state", "state", "Statecode", "Statename", "Select State"),
     loadDropdown("country", "country", "countrycode", "Countryname", "Select Country"),
     loadDropdown("command", "command", "navalcmd", "name", "Select Command"),
@@ -1290,10 +1290,11 @@ const submitBtn = document.querySelector('#personnelForm button[type="button"]:l
 submitBtn?.addEventListener('click', submitPersonnelFormWithValidation);
 
 function actionBtns(type, id) {
+  // Add quotes around the id to handle string IDs like 'fallback-nok-1'
   return `
-    <button onclick="viewFamilyRecord('${type}', ${id})" class="px-2 text-blue-600 hover:underline">View</button>
-    <button onclick="editRow('${type}', ${id})" class="px-2 text-green-600 hover:underline">Edit</button>
-    <button onclick="deleteRow(this, '${type}', ${id})" class="px-2 text-red-600 hover:underline">Delete</button>
+    <button onclick="viewFamilyRecord('${type}', '${id}')" class="px-2 text-blue-600 hover:underline">View</button>
+    <button onclick="editRow('${type}', '${id}')" class="px-2 text-green-600 hover:underline">Edit</button>
+    <button onclick="deleteRow(this, '${type}', '${id}')" class="px-2 text-red-600 hover:underline">Delete</button>
   `;
 }
 
@@ -1307,30 +1308,10 @@ window.viewFamilyRecord = async function(type, id) {
     if (type === 'Spouse') data = pendingFamilyData.spouse.find(s => s._tempId === id);
     if (type === 'Child') data = pendingFamilyData.children.find(c => c._tempId === id);
   } else {
-    // In edit mode, fetch from API
-    if (!currentEmployeeId) {
-      showError('No employee selected');
-      return;
-    }
-    
-    try {
-      const safeId = currentEmployeeId.replace(/\//g, '_SLASH_');
-      let result;
-      
-      if (type === 'NOK') {
-        result = await apiRequest(`${API_BASE}/employees/${safeId}`);
-        data = result.data.nextOfKin.find(n => n.nok_id == id);
-      } else if (type === 'Spouse') {
-        result = await apiRequest(`${API_BASE}/employees/${safeId}`);
-        data = result.data.spouse.find(s => s.spouse_id == id);
-      } else if (type === 'Child') {
-        result = await apiRequest(`${API_BASE}/employees/${safeId}`);
-        data = result.data.children.find(c => c.child_id == id);
-      }
-    } catch (error) {
-      showError('Failed to load record details');
-      return;
-    }
+    // In edit mode, search in pendingFamilyData (which now includes fallback)
+    if (type === 'NOK') data = pendingFamilyData.nok.find(n => (n._tempId && n._tempId == id) || (n.nok_id && n.nok_id == id));
+    if (type === 'Spouse') data = pendingFamilyData.spouse.find(s => (s._tempId && s._tempId == id) || (s.spouse_id && s.spouse_id == id));
+    if (type === 'Child') data = pendingFamilyData.children.find(c => (c._tempId && c._tempId == id) || (c.child_id && c.child_id == id));
   }
   
   if (!data) {
@@ -1410,7 +1391,13 @@ document.getElementById('deleteConfirmBtn').onclick = async () => {
   }
 
   try {
+    console.log('Delete clicked:', { type: deleteTargetType, id: deleteTargetId, formMode });
+    
+    // Check if this is a fallback record (string ID starting with 'fallback-')
+    const isFallbackRecord = String(deleteTargetId).startsWith('fallback-');
+    
     if (formMode === 'create') {
+      // In create mode, just remove from pendingFamilyData
       if (deleteTargetType === 'NOK') {
         pendingFamilyData.nok = pendingFamilyData.nok.filter(n => n._tempId !== deleteTargetId);
       } else if (deleteTargetType === 'Spouse') {
@@ -1418,20 +1405,55 @@ document.getElementById('deleteConfirmBtn').onclick = async () => {
       } else if (deleteTargetType === 'Child') {
         pendingFamilyData.children = pendingFamilyData.children.filter(c => c._tempId !== deleteTargetId);
       }
+      
+      console.log('Removed from pendingFamilyData (create mode)');
+    } else if (isFallbackRecord) {
+      // In edit mode, if it's a fallback record, just remove from pendingFamilyData
+      // (Don't make API call because it doesn't exist in the database yet)
+      if (deleteTargetType === 'NOK') {
+        pendingFamilyData.nok = pendingFamilyData.nok.filter(n => n._tempId !== deleteTargetId);
+      } else if (deleteTargetType === 'Spouse') {
+        pendingFamilyData.spouse = pendingFamilyData.spouse.filter(s => s._tempId !== deleteTargetId);
+      } else if (deleteTargetType === 'Child') {
+        pendingFamilyData.children = pendingFamilyData.children.filter(c => c._tempId !== deleteTargetId);
+      }
+      
+      console.log('Removed fallback record from pendingFamilyData (edit mode)');
+      
+      // Show info message that this was fallback data
+      showPopup("Record deleted successfully");
     } else {
+      // In edit mode with a real database record, call the API to delete
+      console.log('Calling API to delete real record');
       await deleteRecord(deleteTargetType, deleteTargetId);
+      
+      // Also remove from pendingFamilyData
+      if (deleteTargetType === 'NOK') {
+        pendingFamilyData.nok = pendingFamilyData.nok.filter(n => n.nok_id != deleteTargetId && n._tempId !== deleteTargetId);
+      } else if (deleteTargetType === 'Spouse') {
+        pendingFamilyData.spouse = pendingFamilyData.spouse.filter(s => s.spouse_id != deleteTargetId && s._tempId !== deleteTargetId);
+      } else if (deleteTargetType === 'Child') {
+        pendingFamilyData.children = pendingFamilyData.children.filter(c => c.child_id != deleteTargetId && c._tempId !== deleteTargetId);
+      }
+      
+      showPopup("Record deleted successfully");
     }
     
+    // Remove the row from the table
     deleteTargetRow.remove();
+    
+    // Check if table is now empty and add empty row
     const tableBody = deleteTargetRow.closest('tbody');
     if (tableBody && tableBody.children.length === 0) {
       tableBody.appendChild(getEmptyRow(deleteTargetType));
     }
-    showPopup("Record deleted successfully");
+    
   } catch (error) {
-    // Error handled
+    console.error('Delete failed:', error);
+    showError('Failed to delete record: ' + error.message);
   }
   
+  // Clear delete state
   deleteTargetRow = null;
   deleteTargetType = null;
   deleteTargetId = null;
@@ -1467,7 +1489,6 @@ const editStates = {
   Child: { id: null, row: null }
 };
 
-// Edit functionality - FIXED WITH SEPARATE EDIT STATES
 window.editRow = async function(type, id) {
   let data;
   
@@ -1477,30 +1498,10 @@ window.editRow = async function(type, id) {
     if (type === 'Spouse') data = pendingFamilyData.spouse.find(s => s._tempId === id);
     if (type === 'Child') data = pendingFamilyData.children.find(c => c._tempId === id);
   } else {
-    // In edit mode, fetch from API
-    if (!currentEmployeeId) {
-      showError('No employee selected');
-      return;
-    }
-    
-    try {
-      const safeId = currentEmployeeId.replace(/\//g, '_SLASH_');
-      let result;
-      
-      if (type === 'NOK') {
-        result = await apiRequest(`${API_BASE}/employees/${safeId}`);
-        data = result.data.nextOfKin.find(n => n.nok_id == id);
-      } else if (type === 'Spouse') {
-        result = await apiRequest(`${API_BASE}/employees/${safeId}`);
-        data = result.data.spouse.find(s => s.spouse_id == id);
-      } else if (type === 'Child') {
-        result = await apiRequest(`${API_BASE}/employees/${safeId}`);
-        data = result.data.children.find(c => c.child_id == id);
-      }
-    } catch (error) {
-      showError('Failed to load record for editing');
-      return;
-    }
+    // In edit mode, get from pendingFamilyData first (includes fallback data)
+    if (type === 'NOK') data = pendingFamilyData.nok.find(n => n._tempId === id || n.nok_id == id);
+    if (type === 'Spouse') data = pendingFamilyData.spouse.find(s => s._tempId === id || s.spouse_id == id);
+    if (type === 'Child') data = pendingFamilyData.children.find(c => c._tempId === id || c.child_id == id);
   }
   
   if (!data) {
@@ -1540,17 +1541,26 @@ window.editRow = async function(type, id) {
     return value;
   };
 
+  // Helper to set select value and add option if missing
+  const setSelectValue = (elementId, value) => {
+    const element = document.getElementById(elementId);
+    if (element && element.tagName === 'SELECT') {
+      addMissingOptionIfNeeded(element, value);
+    }
+    if (element) element.value = value || '';
+  };
+
   if (type === "NOK") {
     document.getElementById('nokFirst').value = data.FirstName || '';
     document.getElementById('nokLast').value = data.LastName || '';
-    document.getElementById('nokRelationship').value = data.RShipcode || '';
+    setSelectValue('nokRelationship', data.RShipcode);
     document.getElementById('nokMobile').value = data.MobileNumber || '';
     document.getElementById('nokEmail').value = data.EmailAddress || '';
     document.getElementById('nokDob').value = formatDate(data.dateofbirth || data.DateOfBirth || '');
     document.getElementById('nokAddress').value = data.FullAddress || '';
     document.getElementById('nokHome').value = data.HomeNumber || '';
     document.getElementById('nokWork').value = data.PlaceOfWork || '';
-    document.getElementById('nokType').value = data.NextofkinType || 'Main';
+    setSelectValue('nokType', data.NextofkinType || 'Main');
 
     const wrap = document.getElementById('nokFormWrap');
     const btn = document.getElementById('nokToggleBtn');
@@ -1566,8 +1576,8 @@ window.editRow = async function(type, id) {
     document.getElementById('spouseDom').value = formatDate(data.marrieddate || '');
     document.getElementById('spouseStreet').value = data.spstreet || '';
     document.getElementById('spouseTown').value = data.sptown || '';
-    document.getElementById('spouseState').value = data.Statecode || '';
-    document.getElementById('spouseLga').value = data.Lgcode || '';
+    setSelectValue('spouseState', data.Statecode);
+    setSelectValue('spouseLga', data.Lgcode);
     document.getElementById('spousePoBox').value = data.sppobox || '';
 
     const wrap = document.getElementById('spouseFormWrap');
@@ -1578,14 +1588,14 @@ window.editRow = async function(type, id) {
     }
   } else if (type === "Child") {
     document.getElementById('childName').value = data.chname || '';
-    document.getElementById('childSex').value = data.Sex || '';
+    setSelectValue('childSex', data.Sex);
     document.getElementById('childDob').value = formatDate(data.dateofbirth || '');
     document.getElementById('childPhone').value = data.chphone || '';
     document.getElementById('childEmail').value = data.chemail || '';
     document.getElementById('childStreet').value = data.chstreet || '';
     document.getElementById('childTown').value = data.chtown || '';
-    document.getElementById('childState').value = data.Statecode || '';
-    document.getElementById('childLga').value = data.Lgcode || '';
+    setSelectValue('childState', data.Statecode);
+    setSelectValue('childLga', data.Lgcode);
     document.getElementById('childPoBox').value = data.chpobox || '';
     document.getElementById('childSchool').value = data.chschool || '';
     document.getElementById('childOffice').value = data.officeaddress || '';
@@ -2021,16 +2031,220 @@ function setEditMode(employeeId, employeeData) {
   if (submitBtn) submitBtn.textContent = 'Update Personnel';
 }
 
+
+// Load NOK records with fallback from employee table
+function loadNOKRecords(nextOfKin, employee) {
+  let nokList = nextOfKin || [];
+  
+  // Clear existing NOK data
+  pendingFamilyData.nok = [];
+  
+  // Fallback: If no NOK records exist, check employee table for fallback data
+  if (nokList.length === 0 && employee) {
+    const nokRelation = (employee.nok_relation || '').toLowerCase().trim();
+    
+    // Only add to NOK if relationship is NOT wife, son, or daughter
+    if (nokRelation !== 'wife' && nokRelation !== 'son' && nokRelation !== 'daughter') {
+      if (employee.nok_name || employee.nokphone || employee.nok_addr || employee.nok_relation) {
+        nokList = [{
+          FirstName: employee.nok_name || '',
+          LastName: '',
+          RShipcode: employee.nok_relation || '',
+          NextofkinType: 'Main',
+          MobileNumber: employee.nokphone || '',
+          EmailAddress: '',
+          dateofbirth: null,
+          FullAddress: employee.nok_addr || '',
+          HomeNumber: '',
+          PlaceOfWork: '',
+          _isFallback: true,
+          nok_id: 'fallback-nok-1'
+        }];
+      }
+    }
+  }
+  
+  // Clear and render table
+  const nokListElement = document.getElementById('nokList');
+  if (!nokListElement) return;
+  
+  nokListElement.innerHTML = '';
+  
+  if (nokList.length === 0) {
+    nokListElement.innerHTML = '<tr id="nokEmpty"><td colspan="5" class="py-4 text-gray-500">No NOKs yet.</td></tr>';
+  } else {
+    nokList.forEach((nok, index) => {
+      const id = nok.nok_id || nok._tempId || `temp-nok-${Date.now()}-${index}`;
+      
+      // Add to pendingFamilyData
+      pendingFamilyData.nok.push({
+        ...nok,
+        _tempId: id
+      });
+      
+      nokListElement.insertAdjacentHTML('beforeend', `
+        <tr data-type="NOK" data-id="${id}" class="hover:bg-yellow-50">
+          <td class="border px-3 py-2">${escapeHtml(nok.FirstName || '')} ${escapeHtml(nok.LastName || '')}</td>
+          <td class="border px-3 py-2">${escapeHtml(nok.RShipcode || '')}</td>
+          <td class="border px-3 py-2">${escapeHtml(nok.MobileNumber || '')}</td>
+          <td class="border px-3 py-2">${escapeHtml(nok.EmailAddress || '')}</td>
+          <td class="border px-3 py-2">${actionBtns('NOK', id)}</td>
+        </tr>`);
+    });
+  }
+}
+
+// Load Spouse records with fallback from employee table
+function loadSpouseRecords(spouse, employee) {
+  let spouseList = spouse || [];
+  
+  // Clear existing spouse data
+  pendingFamilyData.spouse = [];
+  
+  // Fallback: Check if NOK relationship is "wife" and no spouse records exist
+  if (spouseList.length === 0 && employee) {
+    const nokRelation = (employee.nok_relation || '').toLowerCase().trim();
+    
+    if (nokRelation === 'wife' && employee.nok_name) {
+      spouseList = [{
+        spname: employee.nok_name || '',
+        spphone: employee.nokphone || '',
+        spemail: '',
+        dateofbirth: null,
+        marrieddate: null,
+        Statecode: null,
+        Lgcode: null,
+        sptown: '',
+        spstreet: employee.nok_addr || '',
+        sppobox: '',
+        _isFallback: true,
+        spouse_id: 'fallback-spouse-1'
+      }];
+    }
+  }
+  
+  // Clear and render table
+  const spouseListElement = document.getElementById('spouseList');
+  if (!spouseListElement) return;
+  
+  spouseListElement.innerHTML = '';
+  
+  if (spouseList.length === 0) {
+    spouseListElement.innerHTML = '<tr id="spouseEmpty"><td colspan="4" class="py-4 text-gray-500">No spouse records yet.</td></tr>';
+  } else {
+    spouseList.forEach((sp, index) => {
+      const id = sp.spouse_id || sp._tempId || `temp-spouse-${Date.now()}-${index}`;
+      
+      // Add to pendingFamilyData
+      pendingFamilyData.spouse.push({
+        ...sp,
+        _tempId: id
+      });
+      
+      spouseListElement.insertAdjacentHTML('beforeend', `
+        <tr data-type="Spouse" data-id="${id}" class="hover:bg-yellow-50">
+          <td class="border px-3 py-2">${escapeHtml(sp.spname || '')}</td>
+          <td class="border px-3 py-2">${escapeHtml(sp.spphone || '')}</td>
+          <td class="border px-3 py-2">${escapeHtml(sp.spemail || '')}</td>
+          <td class="border px-3 py-2">${actionBtns('Spouse', id)}</td>
+        </tr>`);
+    });
+  }
+}
+
+// Load Children records with fallback from employee table
+function loadChildrenRecords(children, employee) {
+  let childrenList = children || [];
+  
+  // Clear existing children data
+  pendingFamilyData.children = [];
+  
+  // Fallback: Check if NOK relationship is "son" or "daughter" and no children records exist
+  if (childrenList.length === 0 && employee) {
+    const nokRelation = (employee.nok_relation || '').toLowerCase().trim();
+    
+    if ((nokRelation === 'son' || nokRelation === 'daughter') && employee.nok_name) {
+      childrenList = [{
+        chname: employee.nok_name || '',
+        Sex: nokRelation === 'son' ? 'Male' : nokRelation === 'daughter' ? 'Female' : '',
+        dateofbirth: null,
+        chphone: employee.nokphone || '',
+        chemail: '',
+        chpobox: '',
+        chschool: '',
+        occupation: '',
+        officeaddress: '',
+        chstreet: employee.nok_addr || '',
+        chtown: '',
+        Statecode: null,
+        Lgcode: null,
+        _isFallback: true,
+        child_id: 'fallback-child-1'
+      }];
+    }
+  }
+  
+  // Clear and render table
+  const childListElement = document.getElementById('childList');
+  if (!childListElement) return;
+  
+  childListElement.innerHTML = '';
+  
+  if (childrenList.length === 0) {
+    childListElement.innerHTML = '<tr id="childEmpty"><td colspan="5" class="py-4 text-gray-500">No children yet.</td></tr>';
+  } else {
+    childrenList.forEach((child, index) => {
+      const id = child.child_id || child._tempId || `temp-child-${Date.now()}-${index}`;
+      
+      // Add to pendingFamilyData
+      pendingFamilyData.children.push({
+        ...child,
+        _tempId: id
+      });
+      
+      childListElement.insertAdjacentHTML('beforeend', `
+        <tr data-type="Child" data-id="${id}" class="hover:bg-yellow-50">
+          <td class="border px-3 py-2">${escapeHtml(child.chname || '')}</td>
+          <td class="border px-3 py-2">${escapeHtml(child.Sex || '')}</td>
+          <td class="border px-3 py-2">${escapeHtml(child.dateofbirth || '')}</td>
+          <td class="border px-3 py-2">${escapeHtml(child.chphone || '')}</td>
+          <td class="border px-3 py-2">${actionBtns('Child', id)}</td>
+        </tr>`);
+    });
+  }
+}
+
 // Load Employee for Edit
 async function loadEmployeeDataForEdit(employeeId) {
   try {
+    console.log('=== loadEmployeeDataForEdit START ===');
+    console.log('Employee ID:', employeeId);
+    
     const safeId = employeeId.replace(/\//g, '_SLASH_');
     const result = await apiRequest(`${API_BASE}/employees/${safeId}`);
     
+    console.log('API Response:', result);
+    
     const { employee, children, nextOfKin, spouse } = result.data;
+    
+    console.log('Employee data:', employee);
+    console.log('NOK from API:', nextOfKin);
+    console.log('Spouse from API:', spouse);
+    console.log('Children from API:', children);
+    console.log('Employee NOK fields:', {
+      nok_name: employee.nok_name,
+      nok_relation: employee.nok_relation,
+      nokphone: employee.nokphone,
+      nok_addr: employee.nok_addr
+    });
     
     setEditMode(employeeId, employee);
     toggleStep(1);
+
+    // IMPORTANT: Clear pendingFamilyData before loading new data
+    console.log('Clearing pendingFamilyData...');
+    pendingFamilyData = { nok: [], spouse: [], children: [] };
+    console.log('pendingFamilyData after clear:', pendingFamilyData);
 
     await initializeDropdowns();
     await loadAllDropdowns(employee);
@@ -2040,9 +2254,18 @@ async function loadEmployeeDataForEdit(employeeId) {
       handleSpouseTabVisibility();
     }, 500);
     
-    loadNOKRecords(nextOfKin);
-    loadSpouseRecords(spouse);
-    loadChildrenRecords(children);
+    // Load with fallback data from employee table
+    console.log('Calling loadNOKRecords...');
+    loadNOKRecords(nextOfKin, employee);
+    
+    console.log('Calling loadSpouseRecords...');
+    loadSpouseRecords(spouse, employee);
+    
+    console.log('Calling loadChildrenRecords...');
+    loadChildrenRecords(children, employee);
+    
+    console.log('Final pendingFamilyData:', pendingFamilyData);
+    console.log('=== loadEmployeeDataForEdit END ===');
     
     showPopup("Employee data loaded for editing");
   } catch (error) {
@@ -2101,6 +2324,10 @@ function populatePersonnelForm(employee) {
               element.value = value.split('T')[0];
             }
           }
+        } else if (element.tagName === 'SELECT') {
+          // Handle select elements - add missing option if value doesn't exist
+          addMissingOptionIfNeeded(element, value);
+          element.value = value;
         } else {
           // All other inputs - wrapper handles CustomDropdown vs native
           element.value = value;
@@ -2108,6 +2335,24 @@ function populatePersonnelForm(employee) {
       }
     }
   });
+}
+
+// Helper function to add missing option to select if value doesn't exist
+function addMissingOptionIfNeeded(selectElement, value) {
+  if (!value) return;
+  
+  // Check if the value exists in current options
+  const optionExists = Array.from(selectElement.options).some(opt => opt.value == value);
+  
+  if (!optionExists) {
+    // Add the missing option with value as both value and text
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = value;
+    option.style.fontStyle = 'italic';
+    option.style.color = '#666';
+    selectElement.appendChild(option);
+  }
 }
 
 // Convert file input to avatar preview with change button
@@ -2228,67 +2473,6 @@ window.viewPassportFull = function(base64Data) {
   };
   
   document.body.appendChild(modal);
-}
-
-
-// Load Family Records
-function loadNOKRecords(nokRecords) {
-  const nokList = document.getElementById('nokList');
-  nokList.innerHTML = '';
-  
-  if (nokRecords.length === 0) {
-    nokList.innerHTML = '<tr id="nokEmpty"><td colspan="5" class="py-4 text-gray-500">No NOKs yet.</td></tr>';
-  } else {
-    nokRecords.forEach(nok => {
-      nokList.insertAdjacentHTML('beforeend', `
-        <tr data-type="NOK" data-id="${nok.nok_id}" class="hover:bg-yellow-50">
-          <td class="border px-3 py-2">${escapeHtml(nok.FirstName)} ${escapeHtml(nok.LastName || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(nok.RShipcode || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(nok.MobileNumber || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(nok.EmailAddress || '')}</td>
-          <td class="border px-3 py-2">${actionBtns('NOK', nok.nok_id)}</td>
-        </tr>`);
-    });
-  }
-}
-
-function loadSpouseRecords(spouseRecords) {
-  const spouseList = document.getElementById('spouseList');
-  spouseList.innerHTML = '';
-  
-  if (spouseRecords.length === 0) {
-    spouseList.innerHTML = '<tr id="spouseEmpty"><td colspan="4" class="py-4 text-gray-500">No spouse records yet.</td></tr>';
-  } else {
-    spouseRecords.forEach(spouse => {
-      spouseList.insertAdjacentHTML('beforeend', `
-        <tr data-type="Spouse" data-id="${spouse.spouse_id}" class="hover:bg-yellow-50">
-          <td class="border px-3 py-2">${escapeHtml(spouse.spname || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(spouse.spphone || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(spouse.spemail || '')}</td>
-          <td class="border px-3 py-2">${actionBtns('Spouse', spouse.spouse_id)}</td>
-        </tr>`);
-    });
-  }
-}
-
-function loadChildrenRecords(childrenRecords) {
-  const childList = document.getElementById('childList');
-  childList.innerHTML = '';
-  
-  if (childrenRecords.length === 0) {
-    childList.innerHTML = '<tr id="childEmpty"><td colspan="5" class="py-4 text-gray-500">No children yet.</td></tr>';
-  } else {
-    childrenRecords.forEach(child => {
-      childList.insertAdjacentHTML('beforeend', `
-        <tr data-type="Child" data-id="${child.child_id}" class="hover:bg-yellow-50">
-          <td class="border px-3 py-2">${escapeHtml(child.chname || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(child.Sex || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(child.dateofbirth || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(child.chphone || '')}</td>
-          <td class="border px-3 py-2">${actionBtns('Child', child.child_id)}</td>
-        </tr>`);
-    });
-  }
 }
 
 // Helper function to clean form data

@@ -1,5 +1,6 @@
 const employeeChangeHistoryService = require('../../services/audit-trail/changesPersonnelDetailsServices');
 const ExcelJS = require('exceljs');
+const companySettings = require('../helpers/companySettings');
 const jsreport = require('jsreport-core')();
 const fs = require('fs');
 const path = require('path');
@@ -365,6 +366,9 @@ class EmployeeChangeHistoryController {
       const periodDesc = `${filters.fromYear}/${filters.fromMonth.toString().padStart(2, '0')} to ${filters.toYear}/${filters.toMonth.toString().padStart(2, '0')}`;
       const filterDescription = filters.emplId ? `Period: ${periodDesc} | Employee: ${filters.emplId}` : `Period: ${periodDesc}`;
 
+      //Load image
+      const image = await companySettings.getSettingsFromFile('./public/photos/logo.png');  
+
       const result = await jsreport.render({
         template: {
           content: templateContent,
@@ -387,7 +391,8 @@ class EmployeeChangeHistoryController {
           statistics: statistics,
           reportDate: new Date(),
           filters: filterDescription,
-          className: this.getDatabaseNameFromRequest(req)
+          className: this.getDatabaseNameFromRequest(req),
+          ...image
         }
       });
 

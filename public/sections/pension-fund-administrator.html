@@ -51,11 +51,8 @@
     </form>
 
     <!-- PFA List -->
-    <div class="rounded-lg shadow">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-xl font-semibold text-gray-800">PFA List</h2>
-        </div>
-        <div class="p-6 overflow-x-auto">
+    <div>
+        <div class="pt-3 overflow-x-auto">
             <table class="min-w-full border border-gray-200 rounded-lg text-sm">
                 <thead class="bg-blue-100 text-blue-900">
                     <tr>
@@ -591,10 +588,19 @@
 
         generateReport() {
             const now = new Date();
-            const day = String(now.getDate()).padStart(2, '0');
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const year = now.getFullYear();
-            const dateStr = `${day}-${month}-${year}`;
+            const dateStr = now.toLocaleDateString('en-GB', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            const timeStr = now.toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            const generatedBy = localStorage.getItem('full_name') || 'System User';
             
             const printWindow = window.open('', '_blank');
             
@@ -602,89 +608,191 @@
                 <!DOCTYPE html>
                 <html>
                 <head>
+                    <meta charset="utf-8">
                     <title>PFA Management Report</title>
                     <style>
+                        @page { 
+                            size: A4; 
+                            margin: 5mm; 
+                            background-color: #f8fbff;
+                        }
+                        
                         body { 
-                            font-family: Arial, sans-serif;
-                            margin: 40px;
+                            font-family: Helvetica, Arial, sans-serif; 
+                            font-size: 10pt;
+                            margin: 0;
+                            padding: 0;
+                            position: relative;
                             color: #333;
                         }
-                        .report-header {
+
+                        /* Faint logo overlay */
+                        body::before {
+                            content: "";
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background-image: url('photos/logo.png');
+                            background-size: auto 100%;
+                            background-repeat: no-repeat;
+                            background-position: center center;
+                            opacity: 0.02;
+                            z-index: -1;
+                            pointer-events: none;
+                        }
+
+                        .header-wrapper {
+                            display: flex;
+                            align-items: flex-start;
+                            margin-bottom: 8px;
+                            border-bottom: 2px solid #1a1a1a;
+                            padding-bottom: 5px;
+                        }
+
+                        .header {
+                            flex-grow: 1;
                             text-align: center;
-                            margin-bottom: 30px;
-                            border-bottom: 2px solid #1a56db;
-                            padding-bottom: 10px;
                         }
-                        .date-generated {
-                            color: #666;
-                            font-size: 14px;
-                            margin: 10px 0 20px;
+                        
+                        .header h1 {
+                            font-size: 13pt;
+                            font-weight: bold;
+                            margin-bottom: 2px;
+                            letter-spacing: 1.5px;
+                            color: #1e40af;
+                            font-family: 'Libre Baskerville', Georgia, serif;
                         }
-                        .report-table {
+                        
+                        .header h2 {
+                            font-size: 10pt;
+                            font-weight: normal;
+                            margin-top: 2px;
+                            color: #4a4a4a;
+                            font-family: 'Libre Baskerville', Georgia, serif;
+                        }
+
+                        .header-info {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin: 10px 0;
+                            font-size: 9pt;
+                        }
+
+                        table {
                             width: 100%;
                             border-collapse: collapse;
-                            margin: 20px 0;
+                            margin-bottom: 20px;
+                            font-size: 10px;
                         }
-                        .report-table th {
-                            background-color: #f3f4f6;
-                            color: #1f2937;
-                            padding: 12px;
+
+                        th {
+                            color: #1e40af;
+                            padding: 8px 4px;
                             text-align: left;
-                            border: 1px solid #e5e7eb;
+                            font-weight: bold;
+                            font-size: 10px;
+                            text-transform: uppercase;
+                            letter-spacing: 0.3px;
+                            border-bottom: 1px solid #0056A0;
                         }
-                        .report-table td {
-                            padding: 10px;
-                            border: 1px solid #e5e7eb;
+
+                        td {
+                            padding: 6px 4px;
+                            border: none;
+                            vertical-align: middle;
                         }
-                        .report-footer {
-                            margin-top: 30px;
+
+                        .text-center {
                             text-align: center;
-                            font-size: 12px;
-                            color: #666;
-                            border-top: 1px solid #e5e7eb;
-                            padding-top: 20px;
                         }
+
+                        .footer {
+                            padding-top: 10px;
+                            border-top: 0.5px solid #1a1a1a;
+                            text-align: center;
+                            font-size: 8pt;
+                            color: #64748b;
+                            margin-top: 20px;
+                        }
+
                         @media print {
-                            .report-table th {
-                                background-color: #f3f4f6 !important;
+                            body {
+                                print-color-adjust: exact;
                                 -webkit-print-color-adjust: exact;
+                            }
+                            
+                            body::before {
+                                position: fixed;
+                                display: block;
+                                content: "";
+                                width: 100%;
+                                height: 100%;
+                                top: 0;
+                                left: 0;
+                                background-image: url('photos/logo.png');
+                                background-size: auto 100%;
+                                background-repeat: no-repeat;
+                                background-position: center center;
+                                opacity: 0.02;
+                                z-index: -1;
                             }
                         }
                     </style>
                 </head>
                 <body>
-                    <div class="report-header">
-                        <h1>PFA Management Report</h1>
-                        <p class="date-generated">Generated on: ${dateStr}</p>
+                    <div class="header-wrapper">
+                        <div class="header">
+                            <h1>Nigerian Navy (Naval Headquarters)</h1>
+                            <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+                        </div>
                     </div>
-                    
-                    <table class="report-table">
+
+                    <div class="header-info">
+                        <div class="left">
+                            <strong>PFA MANAGEMENT REPORT</strong>
+                        </div>
+                        <div class="center">
+                            <span>PRODUCED ON</span> 
+                            <strong>${dateStr}</strong> 
+                            <span>AT</span> 
+                            <strong>${timeStr}</strong>
+                        </div>
+                        <div class="right">
+                            <strong>${this.allPFAs.length}</strong>
+                            <span>RECORDS</span>
+                        </div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <table>
                         <thead>
                             <tr>
-                                <th>No.</th>
-                                <th>PFA Code</th>
-                                <th>Description</th>
-                                <th>PFC Name</th>
-                                <th>PFC Code</th>
+                                <th style="width: 8%;">No.</th>
+                                <th style="width: 12%;">PFA Code</th>
+                                <th style="width: 35%;">Description</th>
+                                <th style="width: 33%;">PFC Name</th>
+                                <th style="width: 12%;">PFC Code</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${this.allPFAs.map((pfa, index) => `
                                 <tr>
-                                    <td>${index + 1}</td>
-                                    <td>${pfa.pfacode}</td>
-                                    <td>${pfa.pfadesc || ''}</td>
-                                    <td>${pfa.pfapfcname || ''}</td>
-                                    <td>${pfa.pfapfc || ''}</td>
+                                    <td class="text-center"><strong>${index + 1}</strong></td>
+                                    <td><strong>${pfa.pfacode}</strong></td>
+                                    <td>${pfa.pfadesc || '-'}</td>
+                                    <td>${pfa.pfapfcname || '-'}</td>
+                                    <td>${pfa.pfapfc || '-'}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
-                    
-                    <div class="report-footer">
-                        <p>Total Records: ${this.allPFAs.length}</p>
-                        <p>Generated by: ${localStorage.getItem('full_name') || 'System User'}</p>
-                        <p>*** End of Report ***</p>
+
+                    <div class="footer">
+                        <p>Generated by: <strong>${generatedBy}</strong></p>
+                        <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
                     </div>
                 </body>
                 </html>

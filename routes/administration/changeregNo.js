@@ -4,17 +4,44 @@ const verifyToken = require('../../middware/authentication');
 const pool = require('../../config/db'); // mysql2 pool
 
 
+/**
+ * Maps database name to payroll class number
+ * @param {string} dbName - Current database name
+ * @returns {string} Payroll class (1-6)
+ */
+function getPayrollClassFromDb(dbName) {
+  // Use environment variables for dynamic mapping
+  const classMapping = {
+    [process.env.DB_OFFICERS]: '1',
+    [process.env.DB_WOFFICERS]: '2',
+    [process.env.DB_RATINGS]: '3',
+    [process.env.DB_RATINGS_A]: '4',
+    [process.env.DB_RATINGS_B]: '5',
+    [process.env.DB_JUNIOR_TRAINEE]: '6'
+  };
+  
+  const result = classMapping[dbName] || '1';
+  console.log('🔍 Database:', dbName, '→ Payroll Class:', result);
+  return result;
+}
+
+
 // ==================== GET ALL EMPLOYEES ====================
 router.get('/employees', verifyToken, async (req, res) => {
   try {
+    // Get database from pool using user_id as session
+    const currentDb = pool.getCurrentDatabase(req.user_id.toString());
+    const payrollClass = getPayrollClassFromDb(currentDb);
+
     const query = `
-      SELECT *
+      SELECT Empl_ID, Title, Surname, OtherName
       FROM hr_employees
       WHERE (DateLeft IS NULL OR DateLeft = '')
-        AND (exittype IS NULL OR exittype = '');
+        AND (exittype IS NULL OR exittype = '')
+        AND payrollclass = ?
     `;
 
-    const [rows] = await pool.query(query);
+    const [rows] = await pool.query(query, [payrollClass]);
 
     res.status(200).json({
       message: 'Employees retrieved successfully',

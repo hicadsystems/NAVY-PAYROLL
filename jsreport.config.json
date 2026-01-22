@@ -23,7 +23,7 @@
     }
   },
   "trustUserCode": false,
-  "reportTimeout": 60000,
+  "reportTimeout": 120000,
   "workers": {
     "numberOfWorkers": 2
   },
@@ -38,6 +38,18 @@
     },
     "sample-template": {
       "createSamples": true
+    },
+    "chrome-pdf": {
+      "timeout": 120000,
+      "launchOptions": {
+        "args": [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu"
+        ]
+      },
+      "strategy": "dedicated-process"
     }
   }
 }

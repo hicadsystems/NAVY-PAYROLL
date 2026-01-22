@@ -56,6 +56,8 @@ const MASTER_TABLES = new Set([
   
   // System Tables
   'roles',
+  'menu_items',
+  'role_menu_permissions',
   'users'
 ]);
 

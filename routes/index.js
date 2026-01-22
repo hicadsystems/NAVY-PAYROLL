@@ -54,6 +54,7 @@ const calculationReportsRoutes = require('./payroll-calculations/calculationRepo
 //utilities
 const backupRoutes = require('./utilities/backup-db');
 const restoreRoutes = require('./utilities/restore-db');
+const ippisRoutes = require('./utilities/ippis-payment');
 
 
 
@@ -100,6 +101,7 @@ const overpaymentRoutes = require('./audit-trail/overpayment');
 const personalDetailsRecordRoutes = require('./audit-trail/personalDetailsRecord');
 const salaryVarianceRoutes = require('./audit-trail/salaryVariance');
 const variationInputRoutes = require('./audit-trail/variationInput');
+const rangePaymentRoutes = require('./audit-trail/rangePayments');
 
 
 
@@ -165,6 +167,7 @@ module.exports = (app) => {
     //utilities
     app.use('/api/backup-db', backupRoutes);
     app.use("/api/restore-db", restoreRoutes);
+    app.use("/ippis", ippisRoutes);
 
 
 
@@ -209,6 +212,7 @@ module.exports = (app) => {
     app.use('/personalrecord', personalDetailsRecordRoutes);
     app.use('/salaryvariance', salaryVarianceRoutes);
     app.use('/variationinput', variationInputRoutes);
+    app.use('/rangepayments', rangePaymentRoutes);
     
 
 

@@ -27,9 +27,9 @@ class QuickAccessManager {
     this.availableOptions = {
       'database-backup': {
         id: 'database-backup',
-        label: 'Database Backup',
+        label: 'Payroll Class Backup',
         section: 'database-backup',
-        title: 'Database Backup'
+        title: 'Payroll Class Backup'
       },
       'save-payroll-files': {
         id: 'save-payroll-files',
@@ -135,9 +135,9 @@ class QuickAccessManager {
       },*/
       'database-restore': {
         id: 'database-restore',
-        label: 'Database Restore',
+        label: 'Payroll Class Restore',
         section: 'database-restore',
-        title: 'Database Restore'
+        title: 'Payroll Class Restore'
       },
       'payroll-class-setup': {
         id: 'payroll-class-setup',

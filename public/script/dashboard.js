@@ -1135,8 +1135,15 @@ class NavigationSystem {
       const previousSection = this.navigationHistory.pop();
       console.log('Returning to:', previousSection);
       
+      // Get the proper section name from the link element or derive it
+      let sectionName = previousSection.sectionName;
+      const linkElement = document.querySelector(`a[data-section="${previousSection.sectionId}"]`);
+      if (linkElement) {
+        sectionName = linkElement.textContent.trim();
+      }
+      
       // Navigate back to previous section (don't add to history again)
-      this.navigateToSectionWithoutHistory(previousSection.sectionId, previousSection.sectionName);
+      this.navigateToSectionWithoutHistory(previousSection.sectionId, sectionName);
     } else {
       // No history, return to dashboard
       console.log('No history, returning to dashboard');

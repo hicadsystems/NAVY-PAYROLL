@@ -1,9 +1,10 @@
 <section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
-
   <!-- Report Title -->
   <div class="hidden mb-6 text-center">
     <h2 class="text-2xl font-bold text-red-700">Duplicate Account Numbers</h2>
-    <p class="text-sm text-gray-600 mt-1">Detect and manage duplicate bank account numbers</p>
+    <p class="text-sm text-gray-600 mt-1">
+      Detect and manage duplicate bank account numbers
+    </p>
   </div>
 
   <!-- Radio Selection -->
@@ -11,12 +12,23 @@
     <span class="text-red-600 font-semibold text-lg block mb-3">Select Report Scope:</span>
     <div class="flex gap-6">
       <label class="flex items-center cursor-pointer">
-        <input type="radio" name="dupScope" value="all" class="text-red-600 w-4 h-4" checked>
+        <input
+          type="radio"
+          name="dupScope"
+          value="all"
+          class="text-red-600 w-4 h-4"
+          checked
+        />
         <span class="ml-2 font-medium">All Banks</span>
       </label>
 
       <label class="flex items-center cursor-pointer">
-        <input type="radio" name="dupScope" value="specific" class="text-red-600 w-4 h-4">
+        <input
+          type="radio"
+          name="dupScope"
+          value="specific"
+          class="text-red-600 w-4 h-4"
+        />
         <span class="ml-2 font-medium">Specific Bank</span>
       </label>
     </div>
@@ -38,12 +50,19 @@
     <!-- Include Inactive Toggle -->
     <div class="bg-gray-50 p-4 rounded-lg">
       <label class="flex items-center cursor-pointer">
-        <input type="checkbox" id="includeInactive" class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+        <input
+          type="checkbox"
+          id="includeInactive"
+          class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+        />
         <span class="ml-2 text-sm font-medium text-gray-900">
-          <i class="fas fa-user-slash text-gray-600 mr-2"></i>Include Inactive/Separated Employees
+          <i class="fas fa-user-slash text-gray-600 mr-2"></i>Include
+          Inactive/Separated Employees
         </span>
       </label>
-      <p class="text-xs text-gray-500 mt-1 ml-6">Check this to include employees who have left the service</p>
+      <p class="text-xs text-gray-500 mt-1 ml-6">
+        Check this to include employees who have left the service
+      </p>
     </div>
 
     <!-- Export Format Selection -->
@@ -53,15 +72,31 @@
       </label>
       <div class="flex gap-4">
         <label class="flex items-center cursor-pointer">
-          <input type="radio" name="exportFormat" value="pdf" class="text-blue-600 w-4 h-4" checked>
+          <input
+            type="radio"
+            name="exportFormat"
+            value="pdf"
+            class="text-blue-600 w-4 h-4"
+            checked
+          />
           <span class="ml-2">PDF</span>
         </label>
         <label class="flex items-center cursor-pointer">
-          <input type="radio" name="exportFormat" value="excel" class="text-blue-600 w-4 h-4">
+          <input
+            type="radio"
+            name="exportFormat"
+            value="excel"
+            class="text-blue-600 w-4 h-4"
+          />
           <span class="ml-2">Excel (.xlsx)</span>
         </label>
         <label class="hidden flex items-center cursor-pointer">
-          <input type="radio" name="exportFormat" value="json" class="text-blue-600 w-4 h-4">
+          <input
+            type="radio"
+            name="exportFormat"
+            value="json"
+            class="text-blue-600 w-4 h-4"
+          />
           <span class="ml-2">JSON</span>
         </label>
       </div>
@@ -69,11 +104,17 @@
 
     <!-- Action Buttons -->
     <div class="flex justify-end gap-3 pt-4 border-t">
-      <button id="cancelDup" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition-colors">
+      <button
+        id="cancelDup"
+        class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition-colors"
+      >
         <i class="fas fa-times mr-2"></i>Clear
       </button>
 
-      <button id="generateDup" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-lg hover:shadow-xl">
+      <button
+        id="generateDup"
+        class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-lg hover:shadow-xl"
+      >
         <i class="fas fa-search mr-2"></i>Scan for Duplicates
       </button>
     </div>
@@ -81,7 +122,10 @@
 </section>
 
 <!-- Loading Modal -->
-<div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+<div
+  id="loadingModal"
+  class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+>
   <div class="bg-white rounded-lg shadow-lg p-8 text-center">
     <div class="mb-4">
       <i class="fas fa-spinner fa-spin text-4xl text-red-600"></i>
@@ -92,7 +136,10 @@
 </div>
 
 <!-- Reusable Modal -->
-<div id="dupModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+<div
+  id="dupModal"
+  class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+>
   <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
     <div class="flex items-start mb-4">
       <div id="dupModalIcon" class="mr-3 text-2xl"></div>
@@ -102,17 +149,23 @@
       </div>
     </div>
     <div class="flex justify-end">
-      <button id="dupModalCloseBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">OK</button>
+      <button
+        id="dupModalCloseBtn"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+      >
+        OK
+      </button>
     </div>
   </div>
 </div>
 
 <script>
+  const auth = window.authService;
   const dupRadios = document.querySelectorAll('input[name="dupScope"]');
   const bankSelectWrapper = document.getElementById("bankSelectWrapper");
   const bankSelect = document.getElementById("bankSelect");
   const includeInactiveCheckbox = document.getElementById("includeInactive");
-  
+
   const generateDupBtn = document.getElementById("generateDup");
   const cancelDupBtn = document.getElementById("cancelDup");
 
@@ -128,21 +181,21 @@
   // Load filter options on page load
   async function loadFilterOptions() {
     try {
-      const token = localStorage.getItem('token') || '';
-      const response = await fetch('/duplicate/filter-options', {
+      const token = localStorage.getItem("token") || "";
+      const response = await auth.fetchWithAuth("/duplicate/filter-options", {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       const result = await response.json();
-      
+
       if (result.success) {
         filterOptions = result.data;
-        
+
         // Populate banks
         if (filterOptions.banks && filterOptions.banks.length > 0) {
-          filterOptions.banks.forEach(bank => {
-            const option = document.createElement('option');
+          filterOptions.banks.forEach((bank) => {
+            const option = document.createElement("option");
             option.value = bank.code;
             option.textContent = `${bank.code} - ${bank.description}`;
             bankSelect.appendChild(option);
@@ -150,8 +203,12 @@
         }
       }
     } catch (error) {
-      console.error('Error loading filter options:', error);
-      showDupModal('Error', 'Failed to load filter options. Please refresh the page.', true);
+      console.error("Error loading filter options:", error);
+      showDupModal(
+        "Error",
+        "Failed to load filter options. Please refresh the page.",
+        true
+      );
     }
   }
 
@@ -159,7 +216,7 @@
   function showDupModal(title, message, isError = false) {
     dupModalTitle.textContent = title;
     dupModalMessage.textContent = message;
-    dupModalIcon.innerHTML = isError 
+    dupModalIcon.innerHTML = isError
       ? '<i class="fas fa-exclamation-circle text-red-500"></i>'
       : '<i class="fas fa-check-circle text-green-500"></i>';
     dupModal.classList.remove("hidden");
@@ -168,8 +225,8 @@
   dupModalCloseBtn.onclick = () => dupModal.classList.add("hidden");
 
   // Radio change event
-  dupRadios.forEach(radio => {
-    radio.addEventListener('change', () => {
+  dupRadios.forEach((radio) => {
+    radio.addEventListener("change", () => {
       bankSelectWrapper.classList.add("hidden");
 
       if (radio.value === "specific") {
@@ -180,13 +237,21 @@
 
   // Generate button
   generateDupBtn.onclick = async () => {
-    const selectedScope = document.querySelector('input[name="dupScope"]:checked')?.value;
+    const selectedScope = document.querySelector(
+      'input[name="dupScope"]:checked'
+    )?.value;
     const includeInactive = includeInactiveCheckbox.checked;
-    const exportFormat = document.querySelector('input[name="exportFormat"]:checked')?.value || 'excel';
+    const exportFormat =
+      document.querySelector('input[name="exportFormat"]:checked')?.value ||
+      "excel";
 
     // Validation
     if (!selectedScope) {
-      return showDupModal("Validation Error", "Please select a report scope!", true);
+      return showDupModal(
+        "Validation Error",
+        "Please select a report scope!",
+        true
+      );
     }
 
     // Build query parameters
@@ -205,69 +270,77 @@
     loadingModal.classList.remove("hidden");
 
     try {
-      const token = localStorage.getItem('token') || '';
-      const response = await fetch(`/duplicate?${queryParams}`, {
+      const token = localStorage.getItem("token") || "";
+      const response = await auth.fetchWithAuth(`/duplicate?${queryParams}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        throw new Error(
+          errorData.error || `HTTP error! status: ${response.status}`
+        );
       }
 
-      if (exportFormat === 'json') {
+      if (exportFormat === "json") {
         const result = await response.json();
         loadingModal.classList.add("hidden");
-        
+
         if (result.success) {
           if (result.data && result.data.length > 0) {
             showDupModal(
-              "Duplicates Found!", 
+              "Duplicates Found!",
               `Found ${result.statistics.total_duplicate_accounts} duplicate account numbers affecting ${result.statistics.total_affected_employees} employees.`,
               true
             );
-            console.log('Report data:', result);
+            console.log("Report data:", result);
           } else {
             showDupModal(
-              "No Duplicates Found", 
+              "No Duplicates Found",
               result.message || "All account numbers are unique!"
             );
           }
         } else {
-          showDupModal("Error", result.error || "Failed to generate report", true);
+          showDupModal(
+            "Error",
+            result.error || "Failed to generate report",
+            true
+          );
         }
       } else {
         // Handle file download for Excel/PDF
         const blob = await response.blob();
-        
+
         // Check if response is actually JSON (error response)
-        if (blob.type === 'application/json') {
+        if (blob.type === "application/json") {
           const text = await blob.text();
           const errorData = JSON.parse(text);
-          throw new Error(errorData.error || 'Failed to generate report');
+          throw new Error(errorData.error || "Failed to generate report");
         }
-        
+
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
-        a.download = `duplicate_accounts_${new Date().toISOString().split('T')[0]}.${exportFormat === 'excel' ? 'xlsx' : 'pdf'}`;
+        a.download = `duplicate_accounts_${
+          new Date().toISOString().split("T")[0]
+        }.${exportFormat === "excel" ? "xlsx" : "pdf"}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        
+
         loadingModal.classList.add("hidden");
         showDupModal(
-          "Report Downloaded", 
+          "Report Downloaded",
           `Duplicate account report has been downloaded successfully!`
         );
       }
     } catch (error) {
       loadingModal.classList.add("hidden");
-      console.error('Error generating report:', error);
-      showDupModal("Error", error.message || 'Failed to generate report', true);
+      console.error("Error generating report:", error);
+      showDupModal("Error", error.message || "Failed to generate report", true);
     }
   };
 
@@ -279,12 +352,16 @@
     // Reset all form fields
     document.getElementById("bankSelect").value = "";
     document.getElementById("includeInactive").checked = false;
-    
+
     // Reset radio to "all"
-    document.querySelector('input[name="dupScope"][value="all"]').checked = true;
-    
+    document.querySelector(
+      'input[name="dupScope"][value="all"]'
+    ).checked = true;
+
     // Reset export format to PDF
-    document.querySelector('input[name="exportFormat"][value="pdf"]').checked = true;
+    document.querySelector(
+      'input[name="exportFormat"][value="pdf"]'
+    ).checked = true;
   };
 
   // Initialize

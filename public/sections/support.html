@@ -1,0 +1,272 @@
+<section class="p-8 bg-gray-50 min-h-screen relative">
+  <!-- Help Text with F7 Hint -->
+  <div class="absolute top-5 left-5 text-sm text-gray-600 bg-white px-3 py-2 rounded shadow-md">
+    Press <kbd class="bg-[#003DA5] text-white px-2 py-1 rounded text-xs font-bold">F7</kbd> for System Flow Guide
+  </div>
+
+  <!-- Main Content -->
+  <div class="text-center mb-8 mt-10">
+    <h2 class="text-[#003DA5] text-4xl font-bold mb-2">Help & Support</h2>
+    <p class="text-gray-600 text-lg">Select a support contact to start chatting</p>
+  </div>
+
+  <!-- Contact Selector Dropdown -->
+  <div class="max-w-lg mx-auto mb-8 bg-white p-5 rounded-lg shadow-md">
+    <label for="contactSelect" class="block mb-3 font-semibold text-gray-700">Choose Support Contact:</label>
+    <select id="contactSelect" class="w-full p-3 border-2 border-gray-300 rounded-md text-base cursor-pointer focus:outline-none focus:border-[#003DA5] transition-colors">
+      <option value="">-- Select Contact --</option>
+      <option value="admin" data-phone="+234-xxx-xxx-1">Admin Support</option>
+      <option value="payroll" data-phone="+234-xxx-xxx-2">Payroll Support</option>
+      <option value="technical" data-phone="+234-xxx-xxx-3">Technical Support</option>
+      <option value="general" data-phone="+234-xxx-xxx-4">General Inquiries</option>
+    </select>
+  </div>
+
+  <!-- Chat Modal Overlay -->
+  <div id="chatModalOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 items-center justify-center">
+    <!-- Chat Interface Modal -->
+    <div id="chatInterface" class="w-full max-w-3xl mx-4 bg-white rounded-xl shadow-2xl flex flex-col h-[600px] max-h-[90vh]">
+      <div class="bg-[#003DA5] text-white p-4 flex justify-between items-center rounded-t-xl">
+        <div class="flex items-center gap-3">
+          <div id="chatAvatar" class="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-lg"></div>
+          <div>
+            <h3 id="chatContactName" class="text-lg font-semibold m-0">Support</h3>
+            <span id="chatContactPhone" class="text-xs opacity-90"></span>
+          </div>
+        </div>
+        <button id="closeChat" class="bg-transparent border-none text-white text-3xl cursor-pointer leading-none p-0 w-8 h-8 hover:opacity-80">&times;</button>
+      </div>
+
+      <div id="chatMessages" class="flex-1 overflow-y-auto p-5 bg-gray-50 flex flex-col gap-3">
+        <!-- Messages will be dynamically inserted here -->
+      </div>
+
+      <div class="p-4 bg-white border-t border-gray-200 flex gap-3 rounded-b-xl">
+        <input 
+          type="text" 
+          id="messageInput" 
+          class="flex-1 p-3 border-2 border-gray-200 rounded-full text-base focus:outline-none focus:border-[#003DA5] transition-colors" 
+          placeholder="Type your message..."
+        />
+        <button id="sendMessage" class="bg-[#F39C12] text-white border-none rounded-full w-12 h-12 flex items-center justify-center cursor-pointer hover:bg-[#E67E22] transition-colors">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Flow Slide-in Panel -->
+  <div id="systemFlowPanel" class="fixed -right-[400px] top-0 w-[400px] h-screen bg-white shadow-2xl transition-all duration-300 ease-in-out z-50 flex flex-col">
+    <div class="bg-[#003DA5] text-white p-5 flex justify-between items-center">
+      <h3 class="m-0 text-xl font-semibold">System Flow Guide</h3>
+      <button id="closePanel" class="bg-transparent border-none text-white text-3xl cursor-pointer leading-none p-0 w-8 h-8 hover:opacity-80">&times;</button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-5">
+      <div class="mb-6 p-4 bg-gray-50 border-l-4 border-[#003DA5] rounded">
+        <h4 class="text-[#003DA5] m-0 mb-2 text-base font-semibold">1. How to Add New Entry</h4>
+        <p class="m-0 text-gray-600 leading-relaxed">Click the "+ Add New" button → Fill in required fields → Submit</p>
+      </div>
+      <div class="mb-6 p-4 bg-gray-50 border-l-4 border-[#003DA5] rounded">
+        <h4 class="text-[#003DA5] m-0 mb-2 text-base font-semibold">2. How to Generate Reports</h4>
+        <p class="m-0 text-gray-600 leading-relaxed">Click "Generate Report" button → Select date range → Choose format → Download</p>
+      </div>
+      <div class="mb-6 p-4 bg-gray-50 border-l-4 border-[#003DA5] rounded">
+        <h4 class="text-[#003DA5] m-0 mb-2 text-base font-semibold">3. How to Edit Records</h4>
+        <p class="m-0 text-gray-600 leading-relaxed">Find record in table → Click "Edit" → Modify fields → Save changes</p>
+      </div>
+      <div class="mb-6 p-4 bg-gray-50 border-l-4 border-[#003DA5] rounded">
+        <h4 class="text-[#003DA5] m-0 mb-2 text-base font-semibold">4. How to Delete Records</h4>
+        <p class="m-0 text-gray-600 leading-relaxed">Find record in table → Click "Delete" → Confirm deletion</p>
+      </div>
+      <div class="mb-6 p-4 bg-gray-50 border-l-4 border-[#003DA5] rounded">
+        <h4 class="text-[#003DA5] m-0 mb-2 text-base font-semibold">5. Navigation</h4>
+        <p class="m-0 text-gray-600 leading-relaxed">Use sidebar menu to access different sections → Dashboard, Administration, Payroll, etc.</p>
+      </div>
+      <div class="mb-6 p-4 bg-gray-50 border-l-4 border-[#003DA5] rounded">
+        <h4 class="text-[#003DA5] m-0 mb-2 text-base font-semibold">6. File Updates</h4>
+        <p class="m-0 text-gray-600 leading-relaxed">Go to File Update section → Upload file → Verify data → Process update</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+@keyframes messageSlide {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message {
+  animation: messageSlide 0.3s ease;
+}
+
+#systemFlowPanel.active {
+  right: 0 !important;
+}
+</style>
+
+<script>
+// State management
+let currentContact = null;
+let messageCount = 0;
+
+// DOM Elements
+const contactSelect = document.getElementById('contactSelect');
+const chatModalOverlay = document.getElementById('chatModalOverlay');
+const chatInterface = document.getElementById('chatInterface');
+const chatAvatar = document.getElementById('chatAvatar');
+const chatContactName = document.getElementById('chatContactName');
+const chatContactPhone = document.getElementById('chatContactPhone');
+const chatMessages = document.getElementById('chatMessages');
+const messageInput = document.getElementById('messageInput');
+const sendMessage = document.getElementById('sendMessage');
+const closeChat = document.getElementById('closeChat');
+const systemFlowPanel = document.getElementById('systemFlowPanel');
+const closePanel = document.getElementById('closePanel');
+
+// Contact data
+const contacts = {
+  admin: { name: 'Admin Support', phone: '+234-xxx-xxx-1', avatar: 'AS', color: '#667eea' },
+  payroll: { name: 'Payroll Support', phone: '+234-xxx-xxx-2', avatar: 'PS', color: '#f093fb' },
+  technical: { name: 'Technical Support', phone: '+234-xxx-xxx-3', avatar: 'TS', color: '#4facfe' },
+  general: { name: 'General Inquiries', phone: '+234-xxx-xxx-4', avatar: 'GI', color: '#43e97b' }
+};
+
+// Handle contact selection
+contactSelect.addEventListener('change', function() {
+  const selectedValue = this.value;
+  if (selectedValue) {
+    currentContact = contacts[selectedValue];
+    openChatInterface();
+  }
+});
+
+// Open chat interface
+function openChatInterface() {
+  chatModalOverlay.classList.remove('hidden');
+  chatModalOverlay.classList.add('flex');
+  chatAvatar.textContent = currentContact.avatar;
+  chatAvatar.style.background = currentContact.color;
+  chatContactName.textContent = currentContact.name;
+  chatContactPhone.textContent = currentContact.phone;
+  chatMessages.innerHTML = '';
+  
+  // Add welcome message
+  addMessage('Hello! How can we help you today?', 'received');
+}
+
+// Close chat
+closeChat.addEventListener('click', function() {
+  chatModalOverlay.classList.add('hidden');
+  chatModalOverlay.classList.remove('flex');
+  contactSelect.value = '';
+  currentContact = null;
+});
+
+// Close modal when clicking overlay
+chatModalOverlay.addEventListener('click', function(e) {
+  if (e.target === chatModalOverlay) {
+    chatModalOverlay.classList.add('hidden');
+    chatModalOverlay.classList.remove('flex');
+    contactSelect.value = '';
+    currentContact = null;
+  }
+});
+
+// Send message
+function sendMessageHandler() {
+  const text = messageInput.value.trim();
+  if (text && currentContact) {
+    addMessage(text, 'sent');
+    messageInput.value = '';
+    
+    // Simulate sending to backend/WhatsApp
+    sendToWhatsApp(currentContact.phone, text);
+    
+    // Simulate response (in real app, this would come from backend)
+    setTimeout(() => {
+      addMessage('Thank you for your message. We will get back to you shortly.', 'received');
+    }, 1500);
+  }
+}
+
+sendMessage.addEventListener('click', sendMessageHandler);
+messageInput.addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    sendMessageHandler();
+  }
+});
+
+// Add message to chat
+function addMessage(text, type) {
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message max-w-[70%] p-3 rounded-xl break-words ${
+    type === 'sent' 
+      ? 'self-end bg-[#003DA5] text-white rounded-br-sm' 
+      : 'self-start bg-white text-gray-800 border border-gray-200 rounded-bl-sm'
+  }`;
+  
+  const now = new Date();
+  const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  
+  messageDiv.innerHTML = `
+    ${text}
+    <span class="block text-[11px] opacity-70 mt-1">${timeString}</span>
+  `;
+  
+  chatMessages.appendChild(messageDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Send to WhatsApp (backend integration placeholder)
+function sendToWhatsApp(phone, message) {
+  // In production, this would call your backend API
+  // which handles WhatsApp Business API integration
+  console.log('Sending to WhatsApp:', { phone, message });
+  
+  // Example backend call:
+  // fetch('/api/whatsapp/send', {
+  //   method: 'POST',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify({ phone, message })
+  // });
+}
+
+// F7 key handler for system flow panel
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'F7') {
+    e.preventDefault();
+    systemFlowPanel.classList.toggle('active');
+  }
+});
+
+// Close panel
+closePanel.addEventListener('click', function() {
+  systemFlowPanel.classList.remove('active');
+});
+
+// Close panel when clicking outside
+document.addEventListener('click', function(e) {
+  if (systemFlowPanel.classList.contains('active') && 
+      !systemFlowPanel.contains(e.target) && 
+      e.target !== systemFlowPanel) {
+    systemFlowPanel.classList.remove('active');
+  }
+});
+
+// Simulate receiving messages from WhatsApp (for demo)
+// In production, this would be handled by WebSocket or polling
+function simulateIncomingMessage(contactType, message) {
+  if (currentContact && contacts[contactType] === currentContact) {
+    addMessage(message, 'received');
+  }
+}
+</script>

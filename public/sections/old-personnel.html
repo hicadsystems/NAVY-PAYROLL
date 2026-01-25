@@ -20,11 +20,18 @@
   <!-- Search and Filter -->
   <div class="mb-6 flex flex-wrap justify-between">
     <div class="flex-1">
-      <input type="text" id="old-personnel-search" placeholder="Search by name, PersonnelNo. or Phone..." 
-        class="w-2/3 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+      <input
+        type="text"
+        id="old-personnel-search"
+        placeholder="Search by name, PersonnelNo. or Phone..."
+        class="w-2/3 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+      />
     </div>
     <div class="flex flex-end gap-2">
-      <select id="rank-filter" class="px-3 py-2 border border-gray-300 rounded-md">
+      <select
+        id="rank-filter"
+        class="px-3 py-2 border border-gray-300 rounded-md"
+      >
         <option value="">All Ranks</option>
       </select>
       <!--<select id="status-filter" class="px-3 py-2 border border-gray-300 rounded-md">
@@ -41,11 +48,21 @@
     <table class="w-full border-collapse border border-gray-300">
       <thead class="bg-gray-50">
         <tr>
-          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Personnel No.</th>
-          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Full Name</th>
-          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Rank</th>
-          <th class="border border-gray-300 px-4 py-3 text-left font-medium">Status</th>
-          <th class="border border-gray-300 px-4 py-3 text-center font-medium">Actions</th>
+          <th class="border border-gray-300 px-4 py-3 text-left font-medium">
+            Personnel No.
+          </th>
+          <th class="border border-gray-300 px-4 py-3 text-left font-medium">
+            Full Name
+          </th>
+          <th class="border border-gray-300 px-4 py-3 text-left font-medium">
+            Rank
+          </th>
+          <th class="border border-gray-300 px-4 py-3 text-left font-medium">
+            Status
+          </th>
+          <th class="border border-gray-300 px-4 py-3 text-center font-medium">
+            Actions
+          </th>
         </tr>
       </thead>
       <tbody id="personnel-table-body">
@@ -57,38 +74,71 @@
   <!-- Pagination -->
   <div class="mt-6 flex justify-between items-center">
     <div class="text-sm text-gray-600">
-      Showing <span id="showing-start">1</span>-<span id="showing-end">10</span> of <span id="total-records">0</span> records
+      Showing <span id="showing-start">1</span>-<span id="showing-end">10</span>
+      of <span id="total-records">0</span> records
     </div>
     <div class="flex gap-2">
-      <button id="prev-page" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Previous</button>
+      <button
+        id="prev-page"
+        class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50"
+      >
+        Previous
+      </button>
       <span id="page-numbers" class="flex gap-1">
         <!-- Page numbers will be inserted here -->
       </span>
-      <button id="next-page" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Next</button>
+      <button
+        id="next-page"
+        class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50"
+      >
+        Next
+      </button>
     </div>
   </div>
 
   <!-- Delete Employee Modal -->
-  <div id="deleteEmployeeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+  <div
+    id="deleteEmployeeModal"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden"
+  >
     <div class="bg-white rounded-lg shadow-lg p-6 w-96">
       <h3 class="text-lg font-semibold mb-4 text-gray-800">Confirm Delete</h3>
-      <p class="text-gray-600 mb-6">Are you sure you want to delete this Personnel?</p>
+      <p class="text-gray-600 mb-6">
+        Are you sure you want to delete this Personnel?
+      </p>
       <div class="flex justify-end space-x-3">
-        <button onclick="window.personnelManager.closeDeleteEmployee()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
-        <button id="confirmDeleteEmployeeBtn" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+        <button
+          onclick="window.personnelManager.closeDeleteEmployee()"
+          class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+        >
+          Cancel
+        </button>
+        <button
+          id="confirmDeleteEmployeeBtn"
+          class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+        >
+          Delete
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Success Popup -->
-  <div id="actionPopup" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
+  <div
+    id="actionPopup"
+    class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50"
+  >
     <div class="bg-white p-6 rounded-2xl shadow-xl text-center w-64">
-      <div id="popupIcon" class="mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
-      <p id="popupText" class="mt-4 text-lg font-semibold text-gray-700">Processing...</p>
+      <div
+        id="popupIcon"
+        class="mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"
+      ></div>
+      <p id="popupText" class="mt-4 text-lg font-semibold text-gray-700">
+        Processing...
+      </p>
     </div>
   </div>
 </div>
-
 
 <script>
 // Old Personnel Management
@@ -98,25 +148,25 @@ const API_HEADERS = {
   'Authorization': `Bearer ${localStorage.getItem('token')}`
 };
 
-// Filter State Manager - Clears on logout
-class FilterStateManager {
-  constructor(key) {
-    this.key = key;
-    this.setupLogoutListener();
-  }
+  // Filter State Manager - Clears on logout
+  class FilterStateManager {
+    constructor(key) {
+      this.key = key;
+      this.setupLogoutListener();
+    }
 
-  save(state) {
-    const data = {
-      ...state,
-      timestamp: Date.now(),
-      sessionId: this.getSessionId()
-    };
-    sessionStorage.setItem(this.key, JSON.stringify(data));
-  }
+    save(state) {
+      const data = {
+        ...state,
+        timestamp: Date.now(),
+        sessionId: this.getSessionId(),
+      };
+      sessionStorage.setItem(this.key, JSON.stringify(data));
+    }
 
-  load() {
-    const saved = sessionStorage.getItem(this.key);
-    if (!saved) return null;
+    load() {
+      const saved = sessionStorage.getItem(this.key);
+      if (!saved) return null;
 
     try {
       const data = JSON.parse(saved);
@@ -131,9 +181,9 @@ class FilterStateManager {
     }
   }
 
-  clear() {
-    sessionStorage.removeItem(this.key);
-  }
+    clear() {
+      sessionStorage.removeItem(this.key);
+    }
 
   getSessionId() {
     return localStorage.getItem('token') || 'no-session';
@@ -154,172 +204,186 @@ class FilterStateManager {
   }
 }
 
-class PersonnelManager {
-  constructor() {
-    this.currentPage = 1;
-    this.recordsPerPage = 10;
-    this.personnel = [];
-    this.filteredPersonnel = [];
-    this.currentViewId = null;
-    this.personnelType = 'old';
-    this.currentView = 'old';
-    this.lookupMaps = {};
-    this.lookupsLoaded = false;
-    this.isInitializing = false;
-    this.paginationInfo = {};
-    this.eventListenersAttached = false;
-    this.isRendering = false;
-    this.filterDebounceTimer = null;
-    this.filterStateManager = new FilterStateManager('old_personnel_filters');
-  }
-
-  async init() {
-    if (this.isInitializing) {
-      console.log('⚠️ Already initializing, skipping...');
-      return;
-    }
-    this.isInitializing = true;
-
-    try {
-      console.log('🔄 Starting initialization...');
-      await this.loadLookupData();
-      this.lookupsLoaded = true;
-      await this.loadAllDropdowns();
-      this.setupEventListeners();
-      this.setupSearchDebounce();
-      this.setupFilterListeners();
-      console.log('✅ Initialization complete');
-    } catch (error) {
-      console.error('❌ Initialization failed:', error);
-    } finally {
+  class PersonnelManager {
+    constructor() {
+      this.currentPage = 1;
+      this.recordsPerPage = 10;
+      this.personnel = [];
+      this.filteredPersonnel = [];
+      this.currentViewId = null;
+      this.personnelType = "old";
+      this.currentView = "old";
+      this.lookupMaps = {};
+      this.lookupsLoaded = false;
       this.isInitializing = false;
+      this.paginationInfo = {};
+      this.eventListenersAttached = false;
+      this.isRendering = false;
+      this.filterDebounceTimer = null;
+      this.filterStateManager = new FilterStateManager("old_personnel_filters");
     }
-  }
 
-  async apiRequest(url, options = {}) {
-    try {
-      const response = await fetch(url, {
-        ...options,
-        headers: { ...API_HEADERS, ...options.headers }
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || `HTTP ${response.status}`);
+    async init() {
+      if (this.isInitializing) {
+        console.log("⚠️ Already initializing, skipping...");
+        return;
       }
-      
-      return data;
-    } catch (error) {
-      console.error('API Request failed:', error);
-      this.showError(error.message);
-      throw error;
-    }
-  }
+      this.isInitializing = true;
 
-  async loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/reference/${endpoint}`, {   
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` 
-        }
-      });
-      
-      if (!response.ok) {
-        console.warn(`Failed to load ${endpoint}: ${response.status}`);
-        return [];
-      }
-      
-      const data = await response.json();
-      const dropdown = document.getElementById(elementId);
-      
-      if (!dropdown) {
-        console.warn(`Dropdown ${elementId} not found`);
-        return data;
-      }
-      
-      dropdown.innerHTML = `<option value="">${placeholder}</option>`;
-      data.forEach(item => {
-        const option = document.createElement("option");
-        option.value = item[valueField];
-        option.textContent = item[textField];
-        dropdown.appendChild(option);
-      });
-      
-      return data;
-    } catch (err) {
-      console.error(`Failed to load ${endpoint}:`, err);
-      return [];
-    }
-  }
-
-  async loadAllDropdowns() {
-    const promises = [
-      this.loadDropdown("title", "rank-filter", "Titlecode", "Description", "All Ranks"),
-    ];
-    await Promise.all(promises);
-  }
-
-  async loadLookupData() {
-    const endpoints = ['title'];
-    const token = localStorage.getItem('token');
-    
-    await Promise.all(endpoints.map(async endpoint => {
       try {
-        const res = await fetch(`/reference/${endpoint}`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
+        console.log("🔄 Starting initialization...");
+        await this.loadLookupData();
+        this.lookupsLoaded = true;
+        await this.loadAllDropdowns();
+        this.setupEventListeners();
+        this.setupSearchDebounce();
+        this.setupFilterListeners();
+        console.log("✅ Initialization complete");
+      } catch (error) {
+        console.error("❌ Initialization failed:", error);
+      } finally {
+        this.isInitializing = false;
+      }
+    }
+
+    async apiRequest(url, options = {}) {
+      try {
+        const response = await auth.fetchWithAuth(url, {
+          ...options,
+          headers: { ...API_HEADERS, ...options.headers },
         });
-        
-        if (!res.ok) {
-          console.warn(`Failed to fetch ${endpoint}: ${res.status}`);
-          this.lookupMaps[endpoint] = {};
-          return;
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || `HTTP ${response.status}`);
         }
-        
-        const result = await res.json();
-        let data = result.data || result;
-        
-        if (!Array.isArray(data)) {
-          console.warn(`${endpoint} did not return an array`);
-          this.lookupMaps[endpoint] = {};
-          return;
+
+        return data;
+      } catch (error) {
+        console.error("API Request failed:", error);
+        this.showError(error.message);
+        throw error;
+      }
+    }
+
+    async loadDropdown(
+      endpoint,
+      elementId,
+      valueField,
+      textField,
+      placeholder
+    ) {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          console.warn(`Failed to load ${endpoint}: ${response.status}`);
+          return [];
         }
-        
-        const valueField = this.getValueField(endpoint);
-        const textField = this.getTextField(endpoint);
-        
-        this.lookupMaps[endpoint] = Object.fromEntries(
-          data.map(item => [item[valueField], item[textField]])
-        );
-        
-        console.log(`✅ Loaded ${data.length} ${endpoint} records`);
+
+        const data = await response.json();
+        const dropdown = document.getElementById(elementId);
+
+        if (!dropdown) {
+          console.warn(`Dropdown ${elementId} not found`);
+          return data;
+        }
+
+        dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+        data.forEach((item) => {
+          const option = document.createElement("option");
+          option.value = item[valueField];
+          option.textContent = item[textField];
+          dropdown.appendChild(option);
+        });
+
+        return data;
       } catch (err) {
         console.error(`Failed to load ${endpoint}:`, err);
-        this.lookupMaps[endpoint] = {};
+        return [];
       }
-    }));
-  }
+    }
 
-  getValueField(endpoint) {
-    const fieldMap = {'title': 'Titlecode'};
-    return fieldMap[endpoint] || 'code';
-  }
+    async loadAllDropdowns() {
+      const promises = [
+        this.loadDropdown(
+          "title",
+          "rank-filter",
+          "Titlecode",
+          "Description",
+          "All Ranks"
+        ),
+      ];
+      await Promise.all(promises);
+    }
 
-  getTextField(endpoint) {
-    const fieldMap = {'title': 'Description'};
-    return fieldMap[endpoint] || 'name';
-  }
+    async loadLookupData() {
+      const endpoints = ["title"];
+      const token = localStorage.getItem("token");
 
-  resolveName(code, endpoint) {
-    if (!code) return 'N/A';
-    return this.lookupMaps[endpoint]?.[code] || code;
-  }
+      await Promise.all(
+        endpoints.map(async (endpoint) => {
+          try {
+            const res = await auth.fetchWithAuth(`/reference/${endpoint}`, {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            if (!res.ok) {
+              console.warn(`Failed to fetch ${endpoint}: ${res.status}`);
+              this.lookupMaps[endpoint] = {};
+              return;
+            }
+
+            const result = await res.json();
+            let data = result.data || result;
+
+            if (!Array.isArray(data)) {
+              console.warn(`${endpoint} did not return an array`);
+              this.lookupMaps[endpoint] = {};
+              return;
+            }
+
+            const valueField = this.getValueField(endpoint);
+            const textField = this.getTextField(endpoint);
+
+            this.lookupMaps[endpoint] = Object.fromEntries(
+              data.map((item) => [item[valueField], item[textField]])
+            );
+
+            console.log(`✅ Loaded ${data.length} ${endpoint} records`);
+          } catch (err) {
+            console.error(`Failed to load ${endpoint}:`, err);
+            this.lookupMaps[endpoint] = {};
+          }
+        })
+      );
+    }
+
+    getValueField(endpoint) {
+      const fieldMap = { title: "Titlecode" };
+      return fieldMap[endpoint] || "code";
+    }
+
+    getTextField(endpoint) {
+      const fieldMap = { title: "Description" };
+      return fieldMap[endpoint] || "name";
+    }
+
+    resolveName(code, endpoint) {
+      if (!code) return "N/A";
+      return this.lookupMaps[endpoint]?.[code] || code;
+    }
 
   async loadPersonnelData(type = 'old', page = 1, restoreFilters = false) {
     console.log(`📥 Loading ${type} personnel, page ${page}`);
@@ -406,13 +470,13 @@ class PersonnelManager {
       this.filteredPersonnel = [...this.personnel];
       this.currentPage = page;
 
-      console.log(`✅ Loaded ${this.personnel.length} records`);
-      console.log('📊 Pagination:', this.paginationInfo);
+        console.log(`✅ Loaded ${this.personnel.length} records`);
+        console.log("📊 Pagination:", this.paginationInfo);
 
-      // Restore filter UI state if needed
-      if (restoreFilters && page === 1) {
-        this.restoreFilterState();
-      }
+        // Restore filter UI state if needed
+        if (restoreFilters && page === 1) {
+          this.restoreFilterState();
+        }
 
       await this.renderTable();
 
@@ -425,10 +489,10 @@ class PersonnelManager {
     }
   }
 
-  showLoadingState() {
-    const tbody = document.getElementById('personnel-table-body');
-    if (tbody) {
-      tbody.innerHTML = `
+    showLoadingState() {
+      const tbody = document.getElementById("personnel-table-body");
+      if (tbody) {
+        tbody.innerHTML = `
         <tr>
           <td colspan="5" class="text-center py-8">
             <div class="flex flex-col items-center gap-2">
@@ -438,13 +502,13 @@ class PersonnelManager {
           </td>
         </tr>
       `;
+      }
     }
-  }
 
-  showErrorState(message) {
-    const tbody = document.getElementById('personnel-table-body');
-    if (tbody) {
-      tbody.innerHTML = `
+    showErrorState(message) {
+      const tbody = document.getElementById("personnel-table-body");
+      if (tbody) {
+        tbody.innerHTML = `
         <tr>
           <td colspan="5" class="text-center py-8">
             <div class="text-red-600">
@@ -459,127 +523,129 @@ class PersonnelManager {
           </td>
         </tr>
       `;
-    }
-    this.updatePaginationInfo();
-  }
-
-  nextPage() {
-    console.log('➡️ Next page requested');
-    
-    if (this.paginationInfo.hasNextPage) {
-      this.loadPersonnelData(this.personnelType, this.currentPage + 1, false);
-    } else {
-      console.log('⚠️ No next page available');
-    }
-  }
-
-  prevPage() {
-    console.log('⬅️ Previous page requested');
-    
-    if (this.paginationInfo.hasPreviousPage) {
-      this.loadPersonnelData(this.personnelType, this.currentPage - 1, false);
-    } else {
-      console.log('⚠️ No previous page available');
-    }
-  }
-    
-  setupEventListeners() {
-    if (this.eventListenersAttached) {
-      console.log('⚠️ Event listeners already attached, skipping...');
-      return;
+      }
+      this.updatePaginationInfo();
     }
 
-    console.log('🔗 Setting up event listeners...');
+    nextPage() {
+      console.log("➡️ Next page requested");
 
-    const prevPageBtn = document.getElementById('prev-page');
-    const nextPageBtn = document.getElementById('next-page');
-
-    if (prevPageBtn) {
-      const newPrevBtn = prevPageBtn.cloneNode(true);
-      prevPageBtn.parentNode.replaceChild(newPrevBtn, prevPageBtn);
-      newPrevBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this.prevPage();
-      });
+      if (this.paginationInfo.hasNextPage) {
+        this.loadPersonnelData(this.personnelType, this.currentPage + 1, false);
+      } else {
+        console.log("⚠️ No next page available");
+      }
     }
 
-    if (nextPageBtn) {
-      const newNextBtn = nextPageBtn.cloneNode(true);
-      nextPageBtn.parentNode.replaceChild(newNextBtn, nextPageBtn);
-      newNextBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this.nextPage();
-      });
+    prevPage() {
+      console.log("⬅️ Previous page requested");
+
+      if (this.paginationInfo.hasPreviousPage) {
+        this.loadPersonnelData(this.personnelType, this.currentPage - 1, false);
+      } else {
+        console.log("⚠️ No previous page available");
+      }
     }
 
-    this.eventListenersAttached = true;
-    console.log('✅ Event listeners attached');
-  }
+    setupEventListeners() {
+      if (this.eventListenersAttached) {
+        console.log("⚠️ Event listeners already attached, skipping...");
+        return;
+      }
 
-  async applyFilters() {
-    // Clear existing debounce timer
-    if (this.filterDebounceTimer) {
-      clearTimeout(this.filterDebounceTimer);
+      console.log("🔗 Setting up event listeners...");
+
+      const prevPageBtn = document.getElementById("prev-page");
+      const nextPageBtn = document.getElementById("next-page");
+
+      if (prevPageBtn) {
+        const newPrevBtn = prevPageBtn.cloneNode(true);
+        prevPageBtn.parentNode.replaceChild(newPrevBtn, prevPageBtn);
+        newPrevBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.prevPage();
+        });
+      }
+
+      if (nextPageBtn) {
+        const newNextBtn = nextPageBtn.cloneNode(true);
+        nextPageBtn.parentNode.replaceChild(newNextBtn, nextPageBtn);
+        newNextBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.nextPage();
+        });
+      }
+
+      this.eventListenersAttached = true;
+      console.log("✅ Event listeners attached");
     }
 
-    const search = document.getElementById('old-personnel-search')?.value.trim() || '';
-    const rank = document.getElementById('rank-filter')?.value || '';
+    async applyFilters() {
+      // Clear existing debounce timer
+      if (this.filterDebounceTimer) {
+        clearTimeout(this.filterDebounceTimer);
+      }
 
-    console.log('🔍 Applying filters:', { search, rank });
+      const search =
+        document.getElementById("old-personnel-search")?.value.trim() || "";
+      const rank = document.getElementById("rank-filter")?.value || "";
 
-    // Save filter state
-    this.filterStateManager.save({ search, rank });
+      console.log("🔍 Applying filters:", { search, rank });
+
+      // Save filter state
+      this.filterStateManager.save({ search, rank });
 
     // Reload from page 1 with filters
     await this.loadPersonnelData(this.personnelType, 1, false);
   }
 
-  clearFilters() {
-    console.log('🧹 Clearing filters');
-    
-    const searchInput = document.getElementById('old-personnel-search');
-    const rankFilter = document.getElementById('rank-filter');
-    
-    if (searchInput) searchInput.value = '';
-    if (rankFilter) rankFilter.value = '';
-    
-    this.filterStateManager.clear();
-    
-    // Reload without filters
-    this.loadPersonnelData(this.personnelType, 1, false);
-  }
+    clearFilters() {
+      console.log("🧹 Clearing filters");
 
-  saveFilterState() {
-    const search = document.getElementById('old-personnel-search')?.value.trim() || '';
-    const rank = document.getElementById('rank-filter')?.value || '';
-    
-    this.filterStateManager.save({ search, rank });
-  }
+      const searchInput = document.getElementById("old-personnel-search");
+      const rankFilter = document.getElementById("rank-filter");
 
-  restoreFilterState() {
-    const state = this.filterStateManager.load();
-    
-    if (state) {
-      console.log('📥 Restoring filter state:', state);
-      
-      const searchInput = document.getElementById('old-personnel-search');
-      const rankFilter = document.getElementById('rank-filter');
-      
-      if (searchInput && state.search) {
-        searchInput.value = state.search;
-      }
-      
-      if (rankFilter && state.rank) {
-        rankFilter.value = state.rank;
-      }
-      
-      return true;
+      if (searchInput) searchInput.value = "";
+      if (rankFilter) rankFilter.value = "";
+
+      this.filterStateManager.clear();
+
+      // Reload without filters
+      this.loadPersonnelData(this.personnelType, 1, false);
     }
-    
-    return false;
-  }
+
+    saveFilterState() {
+      const search =
+        document.getElementById("old-personnel-search")?.value.trim() || "";
+      const rank = document.getElementById("rank-filter")?.value || "";
+
+      this.filterStateManager.save({ search, rank });
+    }
+
+    restoreFilterState() {
+      const state = this.filterStateManager.load();
+
+      if (state) {
+        console.log("📥 Restoring filter state:", state);
+
+        const searchInput = document.getElementById("old-personnel-search");
+        const rankFilter = document.getElementById("rank-filter");
+
+        if (searchInput && state.search) {
+          searchInput.value = state.search;
+        }
+
+        if (rankFilter && state.rank) {
+          rankFilter.value = state.rank;
+        }
+
+        return true;
+      }
+
+      return false;
+    }
 
   setupSearchDebounce() {
     const searchInput = document.getElementById('old-personnel-search');
@@ -625,79 +691,100 @@ class PersonnelManager {
     }
   }
 
-  async renderTable() {
-    if (this.isRendering) {
-      console.log('⚠️ Already rendering, skipping...');
-      return;
-    }
-
-    this.isRendering = true;
-
-    try {
-      const tbody = document.getElementById('personnel-table-body');
-      if (!tbody) {
-        console.error('❌ Table body not found');
+    async renderTable() {
+      if (this.isRendering) {
+        console.log("⚠️ Already rendering, skipping...");
         return;
       }
 
+      this.isRendering = true;
+
+      try {
+        const tbody = document.getElementById("personnel-table-body");
+        if (!tbody) {
+          console.error("❌ Table body not found");
+          return;
+        }
+
       const pageData = this.personnel;
 
-      console.log(`📋 Rendering ${pageData.length} records`);
+        console.log(`📋 Rendering ${pageData.length} records`);
 
-      if (pageData.length === 0) {
-        const hasFilters = this.hasActiveFilters();
-        tbody.innerHTML = `
+        if (pageData.length === 0) {
+          const hasFilters = this.hasActiveFilters();
+          tbody.innerHTML = `
           <tr>
             <td colspan="5" class="text-center py-8 text-gray-500">
               <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
               </svg>
               <p class="font-medium">No personnel found</p>
-              ${hasFilters ? '<p class="text-sm mt-1">Try adjusting your filters or <button onclick="personnelManager.clearFilters()" class="text-blue-600 underline">clear filters</button></p>' : ''}
+              ${
+                hasFilters
+                  ? '<p class="text-sm mt-1">Try adjusting your filters or <button onclick="personnelManager.clearFilters()" class="text-blue-600 underline">clear filters</button></p>'
+                  : ""
+              }
             </td>
           </tr>
         `;
-        this.updatePaginationInfo();
-        return;
-      }
+          this.updatePaginationInfo();
+          return;
+        }
 
-      tbody.innerHTML = pageData.map(person => `
+        tbody.innerHTML = pageData
+          .map(
+            (person) => `
         <tr class="hover:bg-gray-50 transition-colors">
-          <td class="border border-gray-300 px-4 py-2">${this.escapeHtml(person.Empl_ID || '')}</td>
-          <td class="border border-gray-300 px-4 py-2 font-medium">${this.escapeHtml(person.Surname || '')} ${this.escapeHtml(person.OtherName || '')}</td>
-          <td class="border border-gray-300 px-4 py-2">${this.escapeHtml(this.resolveName(person.Title, 'title'))}</td>
+          <td class="border border-gray-300 px-4 py-2">${this.escapeHtml(
+            person.Empl_ID || ""
+          )}</td>
+          <td class="border border-gray-300 px-4 py-2 font-medium">${this.escapeHtml(
+            person.Surname || ""
+          )} ${this.escapeHtml(person.OtherName || "")}</td>
+          <td class="border border-gray-300 px-4 py-2">${this.escapeHtml(
+            this.resolveName(person.Title, "title")
+          )}</td>
           <td class="border border-gray-300 px-4 py-2">
-            <span class="px-2 py-1 rounded-full text-xs font-medium ${this.getStatusClass(person.Status || 'INACTIVE')}">
-              ${this.capitalizeFirst(person.Status || 'INACTIVE')}
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${this.getStatusClass(
+              person.Status || "INACTIVE"
+            )}">
+              ${this.capitalizeFirst(person.Status || "INACTIVE")}
             </span>
           </td>
           <td class="border border-gray-300 px-4 py-2 text-center">
             <div class="flex gap-1 justify-center">
-              <button onclick="personnelManager.viewEmployee('${person.Empl_ID}')" 
+              <button onclick="personnelManager.viewEmployee('${
+                person.Empl_ID
+              }')" 
                       class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors">View</button>
-              <button onclick="personnelManager.editEmployee('${person.Empl_ID}')" 
+              <button onclick="personnelManager.editEmployee('${
+                person.Empl_ID
+              }')" 
                       class="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors">Edit</button>
-              <button onclick="personnelManager.deleteEmployee('${person.Empl_ID}')" 
+              <button onclick="personnelManager.deleteEmployee('${
+                person.Empl_ID
+              }')" 
                       class="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors">Delete</button>
             </div>
           </td>
         </tr>
-      `).join('');
+      `
+          )
+          .join("");
 
-      this.updatePaginationInfo();
-      console.log('✅ Table rendered successfully');
-
-    } finally {
-      this.isRendering = false;
+        this.updatePaginationInfo();
+        console.log("✅ Table rendered successfully");
+      } finally {
+        this.isRendering = false;
+      }
     }
-  }
-  
-  getStatusClass(status) {
-    const s = status?.toUpperCase();
-    if (s === 'ACTIVE' || s === '1') return 'bg-green-100 text-green-800';
-    if (s === 'INACTIVE' || s === '0') return 'bg-red-100 text-red-800';
-    return 'bg-yellow-100 text-yellow-800';
-  }
+
+    getStatusClass(status) {
+      const s = status?.toUpperCase();
+      if (s === "ACTIVE" || s === "1") return "bg-green-100 text-green-800";
+      if (s === "INACTIVE" || s === "0") return "bg-red-100 text-red-800";
+      return "bg-yellow-100 text-yellow-800";
+    }
 
   updatePaginationInfo() {
     const pageInfo = this.paginationInfo || {};
@@ -707,65 +794,72 @@ class PersonnelManager {
     const end = start + currentRecords - 1;
     const total = pageInfo.totalRecords || currentRecords;
 
-    const showingStart = document.getElementById('showing-start');
-    const showingEnd = document.getElementById('showing-end');
-    const totalRecords = document.getElementById('total-records');
+      const showingStart = document.getElementById("showing-start");
+      const showingEnd = document.getElementById("showing-end");
+      const totalRecords = document.getElementById("total-records");
 
-    if (showingStart) showingStart.textContent = start;
-    if (showingEnd) showingEnd.textContent = end;
-    if (totalRecords) totalRecords.textContent = total;
+      if (showingStart) showingStart.textContent = start;
+      if (showingEnd) showingEnd.textContent = end;
+      if (totalRecords) totalRecords.textContent = total;
 
-    const prevBtn = document.getElementById('prev-page');
-    const nextBtn = document.getElementById('next-page');
+      const prevBtn = document.getElementById("prev-page");
+      const nextBtn = document.getElementById("next-page");
 
-    if (prevBtn) {
-      prevBtn.disabled = !pageInfo.hasPreviousPage;
-      prevBtn.classList.toggle('opacity-50', !pageInfo.hasPreviousPage);
-      prevBtn.classList.toggle('cursor-not-allowed', !pageInfo.hasPreviousPage);
+      if (prevBtn) {
+        prevBtn.disabled = !pageInfo.hasPreviousPage;
+        prevBtn.classList.toggle("opacity-50", !pageInfo.hasPreviousPage);
+        prevBtn.classList.toggle(
+          "cursor-not-allowed",
+          !pageInfo.hasPreviousPage
+        );
+      }
+
+      if (nextBtn) {
+        nextBtn.disabled = !pageInfo.hasNextPage;
+        nextBtn.classList.toggle("opacity-50", !pageInfo.hasNextPage);
+        nextBtn.classList.toggle("cursor-not-allowed", !pageInfo.hasNextPage);
+      }
+
+      console.log(
+        `📊 Pagination: ${start}-${end} of ${total} (Page ${pageInfo.currentPage}/${pageInfo.totalPages})`
+      );
     }
 
-    if (nextBtn) {
-      nextBtn.disabled = !pageInfo.hasNextPage;
-      nextBtn.classList.toggle('opacity-50', !pageInfo.hasNextPage);
-      nextBtn.classList.toggle('cursor-not-allowed', !pageInfo.hasNextPage);
+    hasActiveFilters() {
+      const searchInput = document.getElementById("old-personnel-search");
+      const rankFilter = document.getElementById("rank-filter");
+      return searchInput?.value?.trim() || rankFilter?.value;
     }
 
-    console.log(`📊 Pagination: ${start}-${end} of ${total} (Page ${pageInfo.currentPage}/${pageInfo.totalPages})`);
-  }
+    showSuccess(message) {
+      const popup = document.getElementById("actionPopup");
+      const icon = document.getElementById("popupIcon");
+      const text = document.getElementById("popupText");
 
-  hasActiveFilters() {
-    const searchInput = document.getElementById('old-personnel-search');
-    const rankFilter = document.getElementById('rank-filter');
-    return (searchInput?.value?.trim()) || (rankFilter?.value);
-  }
+      if (!popup || !icon || !text) return;
 
-  showSuccess(message) {
-    const popup = document.getElementById('actionPopup');
-    const icon = document.getElementById('popupIcon');
-    const text = document.getElementById('popupText');
+      icon.className =
+        "mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin";
+      text.textContent = message;
+      popup.classList.remove("hidden");
 
-    if (!popup || !icon || !text) return;
-
-    icon.className = "mx-auto h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin";
-    text.textContent = message;
-    popup.classList.remove('hidden');
-
-    setTimeout(() => {
-      icon.className = "mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-green-500 text-white";
-      icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      setTimeout(() => {
+        icon.className =
+          "mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-green-500 text-white";
+        icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                         </svg>`;
-      text.textContent = "Success!";
-      setTimeout(() => {
-        popup.classList.add('hidden');
-        icon.innerHTML = "";
-      }, 1000);
-    }, 1500);
-  }
+        text.textContent = "Success!";
+        setTimeout(() => {
+          popup.classList.add("hidden");
+          icon.innerHTML = "";
+        }, 1000);
+      }, 1500);
+    }
 
-  showError(message) {
-    alert(`Error: ${message}`);
-  }
+    showError(message) {
+      alert(`Error: ${message}`);
+    }
 
   async viewEmployee(id) {
     this.saveFilterState();
@@ -775,31 +869,34 @@ class PersonnelManager {
     localStorage.setItem('oldPersonnelType', this.personnelType);
     localStorage.setItem('navigatedFromOldPersonnel', 'true');
 
-    try {
-      if (window.navigation?.navigateToSection) {
-        await window.navigation.navigateToSection('view-personnel', 'View Personnel');
-        await new Promise(resolve => setTimeout(resolve, 150));
-        
-        if (!window.ViewPersonnel) {
-          window.ViewPersonnel = new ViewPersonnelManager();
+      try {
+        if (window.navigation?.navigateToSection) {
+          await window.navigation.navigateToSection(
+            "view-personnel",
+            "View Personnel"
+          );
+          await new Promise((resolve) => setTimeout(resolve, 150));
+
+          if (!window.ViewPersonnel) {
+            window.ViewPersonnel = new ViewPersonnelManager();
+          }
+
+          let attempts = 0;
+          while (!window.ViewPersonnel?.loadEmployee && attempts < 10) {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            attempts++;
+          }
+
+          if (window.ViewPersonnel?.loadEmployee) {
+            await window.ViewPersonnel.loadEmployee(id);
+            localStorage.removeItem("pendingEmployeeView");
+          }
         }
-        
-        let attempts = 0;
-        while (!window.ViewPersonnel?.loadEmployee && attempts < 10) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-          attempts++;
-        }
-        
-        if (window.ViewPersonnel?.loadEmployee) {
-          await window.ViewPersonnel.loadEmployee(id);
-          localStorage.removeItem('pendingEmployeeView');
-        }
+      } catch (error) {
+        console.error("Error navigating to view personnel:", error);
+        this.showError("Failed to open personnel view");
       }
-    } catch (error) {
-      console.error('Error navigating to view personnel:', error);
-      this.showError('Failed to open personnel view');
     }
-  }
 
   async editEmployee(id) {
     try {
@@ -810,20 +907,23 @@ class PersonnelManager {
       localStorage.setItem('editingEmployeeId', id);
       localStorage.setItem('isEditMode', 'true');
 
-      if (window.navigation?.navigateToSection) {
-        window.navigation.navigateToSection('add-personnel', 'Edit Personnel', { isEditMode: true });
-      }
-
-      setTimeout(async () => {
-        if (window.PersonnelAPI?.loadEmployeeDataForEdit) {
-          await window.PersonnelAPI.loadEmployeeDataForEdit(id);
+        if (window.navigation?.navigateToSection) {
+          window.navigation.navigateToSection(
+            "add-personnel",
+            "Edit Personnel",
+            { isEditMode: true }
+          );
         }
-      }, 100);
 
-    } catch (error) {
-      this.showError('Failed to load employee for editing: ' + error.message);
+        setTimeout(async () => {
+          if (window.PersonnelAPI?.loadEmployeeDataForEdit) {
+            await window.PersonnelAPI.loadEmployeeDataForEdit(id);
+          }
+        }, 100);
+      } catch (error) {
+        this.showError("Failed to load employee for editing: " + error.message);
+      }
     }
-  }
 
   deleteEmployee(id) {
     this.deleteId = id;
@@ -852,45 +952,59 @@ class PersonnelManager {
     }
   }
 
-  closeDeleteEmployee() {
-    this.deleteId = null;
-    document.getElementById("deleteEmployeeModal")?.classList.add("hidden");
-  }
-
-  escapeHtml(str) {
-    if (!str) return '';
-    return String(str).replace(/[&<>"']/g, m => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
-    }[m]));
-  }
-
-  capitalizeFirst(str) {
-    if (!str) return '';
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-  }
-
-  async refresh() {
-    console.log('🔄 Refreshing data...');
-    await this.loadPersonnelData(this.personnelType, this.currentPage, false);
-  }
-}
-
-// Initialize
-let personnelManager;
-
-async function initializePersonnelManager(sectionType = null) {
-  try {
-    console.log('🚀 initializePersonnelManager called for:', sectionType || 'old');
-    
-    if (!window.personnelManager || !(window.personnelManager instanceof PersonnelManager)) {
-      console.log('🆕 Creating new PersonnelManager instance');
-      personnelManager = new PersonnelManager();
-      window.personnelManager = personnelManager;
-      await personnelManager.init();
-    } else {
-      console.log('♻️ Reusing existing PersonnelManager instance');
-      personnelManager = window.personnelManager;
+    closeDeleteEmployee() {
+      this.deleteId = null;
+      document.getElementById("deleteEmployeeModal")?.classList.add("hidden");
     }
+
+    escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(
+        /[&<>"']/g,
+        (m) =>
+          ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;",
+          }[m])
+      );
+    }
+
+    capitalizeFirst(str) {
+      if (!str) return "";
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+
+    async refresh() {
+      console.log("🔄 Refreshing data...");
+      await this.loadPersonnelData(this.personnelType, this.currentPage, false);
+    }
+  }
+
+  // Initialize
+  let personnelManager;
+
+  async function initializePersonnelManager(sectionType = null) {
+    try {
+      console.log(
+        "🚀 initializePersonnelManager called for:",
+        sectionType || "old"
+      );
+
+      if (
+        !window.personnelManager ||
+        !(window.personnelManager instanceof PersonnelManager)
+      ) {
+        console.log("🆕 Creating new PersonnelManager instance");
+        personnelManager = new PersonnelManager();
+        window.personnelManager = personnelManager;
+        await personnelManager.init();
+      } else {
+        console.log("♻️ Reusing existing PersonnelManager instance");
+        personnelManager = window.personnelManager;
+      }
 
     const isReturning = localStorage.getItem('navigatedFromOldPersonnel');
     const savedPage = localStorage.getItem('oldPersonnelPage');
@@ -924,16 +1038,16 @@ window.triggerLogout = function() {
   window.location.href = '/login';
 };
 
-window.initializePersonnelManager = initializePersonnelManager;
+  window.initializePersonnelManager = initializePersonnelManager;
 
-// Auto-initialize on DOM ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log('📄 DOM loaded, initializing...');
-    initializePersonnelManager('old');
-  });
-} else {
-  console.log('📄 DOM already loaded, initializing immediately...');
-  initializePersonnelManager('old');
-}
+  // Auto-initialize on DOM ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("📄 DOM loaded, initializing...");
+      initializePersonnelManager("old");
+    });
+  } else {
+    console.log("📄 DOM already loaded, initializing immediately...");
+    initializePersonnelManager("old");
+  }
 </script>

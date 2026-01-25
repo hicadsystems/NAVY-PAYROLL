@@ -1,21 +1,20 @@
-const express = require("express");
-const router = express.Router();
 const jwt = require("jsonwebtoken");
-const redisTokenManager = require("../config/redis");
+const config = require("../config");
+const pool = require("../config/db");
 
-const SECRET = process.env.JWT_SECRET;
+const SECRET = config.jwt.secret;
 if (!SECRET) {
   throw new Error("JWT_SECRET is not set in environment variables");
 }
 
 // Reverse mapping for display
 const PAYROLL_MAPPING = {
-  OFFICERS: process.env.MYSQL_DB_OFFICERS,
-  "W/OFFICER": process.env.MYSQL_DB_WOFFICERS,
-  "RATE A": process.env.MYSQL_DB_RATINGS,
-  "RATE B": process.env.MYSQL_DB_RATINGS_A,
-  "RATE C": process.env.MYSQL_DB_RATINGS_B,
-  TRAINEE: process.env.MYSQL_DB_JUNIOR_TRAINEE,
+  OFFICERS: config.databases.officers,
+  "W/OFFICER": config.databases.wofficers,
+  "RATE A": config.databases.ratings,
+  "RATE B": config.databases.ratingsA,
+  "RATE C": config.databases.ratingsB,
+  TRAINEE: config.databases.juniorTrainee,
 };
 
 const verifyToken = async (req, res, next) => {
@@ -31,19 +30,29 @@ const verifyToken = async (req, res, next) => {
   }
 
   if (!token) {
-    return res.status(403).json({ message: "No token provided" });
+    return res.status(401).json({ message: "No token provided" });
   }
 
-  if (await redisTokenManager.isTokenBlacklisted(token)) {
-    return res.status(403).json({ message: "Please Log In" });
-  }
+  // if (await redisTokenManager.isTokenBlacklisted(token)) {
+  //   return res.status(403).json({ message: "Please Log In" });
+  // }
 
-  jwt.verify(token, SECRET, (err, decoded) => {
-    if (err) {
-      if (err.name === "TokenExpiredError") {
-        return res.status(401).json({ message: "Token has expired" });
-      }
-      return res.status(401).json({ message: "Invalid token" });
+  try {
+    const decoded = jwt.verify(token, SECRET);
+
+    pool.useDatabase(config.databases.officers);
+
+    const [res] = await pool.query(
+      "SELECT token FROM users WHERE user_id = ?",
+      [decoded.user_id],
+    );
+
+    if (!res || res.length === 0) {
+      return res.status(401).json({ message: "Please Log In" });
+    }
+
+    if (res[0].token !== token) {
+      return res.status(401).json({ message: "Please Log In" });
     }
 
     // Attach user info to the request object
@@ -56,8 +65,6 @@ const verifyToken = async (req, res, next) => {
     // Set database context based on user's current class
     if (decoded.current_class) {
       try {
-        const pool = require("../config/db");
-
         const databaseName = PAYROLL_MAPPING[decoded.current_class];
         const sessionId = decoded.user_id.toString();
 
@@ -76,7 +83,7 @@ const verifyToken = async (req, res, next) => {
             try {
               pool.useDatabase(databaseName, sessionId);
               console.log(
-                `🔄 DB set to: ${databaseName} for user: ${decoded.user_id}`
+                `🔄 DB set to: ${databaseName} for user: ${decoded.user_id}`,
               );
               next();
             } catch (dbError) {
@@ -90,7 +97,7 @@ const verifyToken = async (req, res, next) => {
           // Fallback without sessionContext
           pool.useDatabase(databaseName, sessionId);
           console.log(
-            `🔄 DB set to: ${databaseName} for user: ${decoded.user_id}`
+            `🔄 DB set to: ${databaseName} for user: ${decoded.user_id}`,
           );
           return next();
         }
@@ -101,7 +108,14 @@ const verifyToken = async (req, res, next) => {
     } else {
       return next();
     }
-  });
+  } catch (err) {
+    if (err) {
+      if (err.name === "TokenExpiredError") {
+        return res.status(401).json({ message: "Token has expired" });
+      }
+      return res.status(401).json({ message: "Please Log In" });
+    }
+  }
 };
 
 module.exports = verifyToken;

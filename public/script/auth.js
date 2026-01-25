@@ -236,30 +236,7 @@
 
       //   If token expired, try refresh
       if (response.status === 401) {
-        const errorData = await response.json();
-
-        console.log(errorData.message, "error message");
-
-        if (errorData.message === "Token has expired") {
-          console.log("🔄 Token expired, refreshing...");
-
-          try {
-            accessToken = await this.refreshToken();
-
-            // Retry with new token
-            options.headers["Authorization"] = `Bearer ${accessToken}`;
-            response = await fetch(url, options);
-          } catch (error) {
-            console.error("Refresh failed, logging out");
-            await this.logout();
-            throw error;
-          }
-        } else {
-          // Token revoked or other auth error
-          console.log("auth failed");
-          await this.logout();
-          throw new Error("Authentication failed");
-        }
+        await this.logout();
       }
 
       return response;

@@ -1,24 +1,19 @@
 const express = require("express");
-const pool = require("../../config/db"); // mysql2 pool
 const router = express.Router();
-const path = require("path");
-const dotenv = require("dotenv");
-const envFile = ".env.local";
-// dotenv.config({ path: path.resolve(__dirname, envFile) });
+const pool = require("../../config/db"); // mysql2 pool
+const config = require("../../config");
 const jwt = require("jsonwebtoken");
-const JWT_SECRET = process.env.JWT_SECRET;
-const REFRESH_SECRET = process.env.REFRESH_SECRET;
 const verifyToken = require("../../middware/authentication");
 const { toSlug } = require("../../utils/helper");
-const tokenManager = require("../../config/redis");
+// const tokenManager = require("../../config/redis");
 
 const PAYROLL_MAPPING = {
-  OFFICERS: process.env.MYSQL_DB_OFFICERS,
-  "W/OFFICER": process.env.MYSQL_DB_WOFFICERS,
-  "RATE A": process.env.MYSQL_DB_RATINGS,
-  "RATE B": process.env.MYSQL_DB_RATINGS_A,
-  "RATE C": process.env.MYSQL_DB_RATINGS_B,
-  TRAINEE: process.env.MYSQL_DB_JUNIOR_TRAINEE,
+  OFFICERS: config.databases.officers,
+  "W/OFFICER": config.databases.wofficers,
+  "RATE A": config.databases.ratings,
+  "RATE B": config.databases.ratingsA,
+  "RATE C": config.databases.ratingsB,
+  TRAINEE: config.databases.juniorTrainee,
 };
 
 const jwtSign = ({ data, secret, time }) => {
@@ -328,7 +323,7 @@ router.post("/login", async (req, res) => {
       pool.useDatabase(process.env.DB_OFFICERS);
 
       const [dbClasses] = await pool.query(
-        "SELECT db_name, classname FROM py_payrollclass"
+        "SELECT db_name, classname FROM py_payrollclass",
       );
 
       const otherDatabases = dbClasses
@@ -380,7 +375,7 @@ router.post("/login", async (req, res) => {
 
         const [rows] = await pool.query(
           "SELECT * FROM users WHERE user_id = ?",
-          [user_id]
+          [user_id],
         );
 
         if (rows.length) {
@@ -443,11 +438,6 @@ router.post("/login", async (req, res) => {
     }
 
     /* ----------------------------------------------------
-       SWITCH TO USER'S PAYROLL DATABASE
-    ---------------------------------------------------- */
-    pool.useDatabase(requestedDb);
-
-    /* ----------------------------------------------------
        TOKEN GENERATION
     ---------------------------------------------------- */
     const tokenPayload = {
@@ -461,15 +451,26 @@ router.post("/login", async (req, res) => {
 
     const token = jwtSign({
       data: tokenPayload,
-      secret: JWT_SECRET,
+      secret: config.jwt.secret,
       time: "5m",
     });
+    pool.useDatabase(authenticatedDatabase);
 
-    const refresh_token = jwtSign({
-      data: tokenPayload,
-      secret: REFRESH_SECRET,
-      time: "1d",
-    });
+    await pool.query("UPDATE users SET token = ? WHERE user_id = ?", [
+      token,
+      user_id,
+    ]);
+
+    /* ----------------------------------------------------
+       SWITCH TO USER'S PAYROLL DATABASE
+    ---------------------------------------------------- */
+    pool.useDatabase(requestedDb);
+
+    // const refresh_token = jwtSign({
+    //   data: tokenPayload,
+    //   secret: REFRESH_SECRET,
+    //   time: "1d",
+    // });
 
     /* ----------------------------------------------------
        RESPONSE
@@ -477,7 +478,7 @@ router.post("/login", async (req, res) => {
     res.json({
       message: "✅ Login successful",
       token,
-      refresh_token,
+      // refresh_token,
       user: {
         user_id: authenticatedUser.user_id,
         full_name: authenticatedUser.full_name,
@@ -495,7 +496,7 @@ router.post("/login", async (req, res) => {
 });
 
 // User Logout
-router.post("/logout", async (req, res) => {
+router.post("/logout", verifyToken, async (req, res) => {
   try {
     //  Fetch Access Token(T)
     const bearerHeader = req.headers["authorization"];
@@ -511,14 +512,22 @@ router.post("/logout", async (req, res) => {
     if (!token) {
       return res.status(403).json({ message: "No token provided" });
     }
-    await tokenManager.blacklistToken(token);
+
+    pool.useDatabase(config.databases.officers);
+
+    console.log(req.user_id);
+
+    await pool.query("UPDATE users SET token = NULL WHERE user_id = ?", [
+      req.user_id,
+    ]);
+    // await tokenManager.blacklistToken(token);
 
     // Fetch Refresh Token(if defined)
-    const { refresh_token } = req.body;
+    // const { refresh_token } = req.body;
 
-    if (refresh_token) {
-      await tokenManager.blacklistToken(refresh_token);
-    }
+    // if (refresh_token) {
+    //   await tokenManager.blacklistToken(refresh_token);
+    // }
     return res.status(204).json();
   } catch (err) {
     console.error("❌ Logout error:", err);
@@ -536,7 +545,7 @@ router.post("/refresh", async (req, res) => {
     if (!refresh_token) {
       return res.status(400).json({ message: "Please Log In" });
     }
-    const isBlacklisted = await tokenManager.isTokenBlacklisted(refresh_token);
+    // const isBlacklisted = await tokenManager.isTokenBlacklisted(refresh_token);
 
     if (isBlacklisted) {
       return res.status(400).json({ message: "Please Log in" });
@@ -555,7 +564,7 @@ router.post("/refresh", async (req, res) => {
     pool.useDatabase(PAYROLL_MAPPING[decoded.created_in]);
     const [userRows] = await pool.query(
       "SELECT * FROM users WHERE user_id = ?",
-      [decoded.user_id]
+      [decoded.user_id],
     );
 
     if (userRows.length === 0) {
@@ -594,7 +603,7 @@ router.post("/refresh", async (req, res) => {
 
     const token = jwtSign({
       data: tokenPayload,
-      secret: JWT_SECRET,
+      secret: config.jwt.secret,
       time: "5m",
     });
 
@@ -631,7 +640,7 @@ router.get("/:id", verifyToken, async (req, res) => {
       SELECT * FROM users u
       WHERE u.user_id = ?
     `,
-      [req.params.id]
+      [req.params.id],
     );
 
     if (rows.length === 0) {
@@ -708,7 +717,7 @@ router.post("/", verifyToken, async (req, res) => {
         phone,
         password,
         expiryDate || null,
-      ]
+      ],
     );
 
     res.status(201).json({ message: "✅ User created", user_id });
@@ -866,7 +875,7 @@ router.post("/verify-identity", async (req, res) => {
     try {
       pool.useDatabase(process.env.DB_OFFICERS);
       const [dbClasses] = await pool.query(
-        "SELECT db_name, classname FROM py_payrollclass"
+        "SELECT db_name, classname FROM py_payrollclass",
       );
 
       const otherDatabases = dbClasses
@@ -901,7 +910,7 @@ router.post("/verify-identity", async (req, res) => {
 
         const [rows] = await pool.query(
           "SELECT * FROM users WHERE user_id = ?",
-          [user_id]
+          [user_id],
         );
 
         if (rows.length > 0) {
@@ -925,7 +934,7 @@ router.post("/verify-identity", async (req, res) => {
     }
 
     console.log(
-      `\n📊 Found ${userCandidates.length} instance(s) of user ${user_id}`
+      `\n📊 Found ${userCandidates.length} instance(s) of user ${user_id}`,
     );
 
     // Now verify identity with ALL provided fields
@@ -939,10 +948,10 @@ router.post("/verify-identity", async (req, res) => {
       console.log(
         `   Provided - Name: ${full_name}, Email: ${email}, Class: ${
           primary_class || "not provided"
-        }`
+        }`,
       );
       console.log(
-        `   Database - Name: ${user.full_name}, Email: ${user.email}, Class: ${user.primary_class}`
+        `   Database - Name: ${user.full_name}, Email: ${user.email}, Class: ${user.primary_class}`,
       );
 
       // Check all provided fields match
@@ -969,7 +978,7 @@ router.post("/verify-identity", async (req, res) => {
       }
 
       console.log(
-        `   Match Results - Name: ${nameMatches}, Email: ${emailMatches}, Class: ${classMatches}`
+        `   Match Results - Name: ${nameMatches}, Email: ${emailMatches}, Class: ${classMatches}`,
       );
 
       // All provided fields must match
@@ -1026,7 +1035,7 @@ router.post("/verify-identity", async (req, res) => {
       let errorMessage = "Identity verification failed. ";
       if (uniqueIncorrectFields.length > 0) {
         errorMessage += `Incorrect: ${uniqueIncorrectFields.join(
-          ", "
+          ", ",
         )}. Please check and try again.`;
       } else {
         errorMessage += "Please check your information and try again.";
@@ -1043,7 +1052,7 @@ router.post("/verify-identity", async (req, res) => {
     }
 
     console.log(
-      `\n✅ Identity verified for user ${user_id} in ${verifiedDatabase}`
+      `\n✅ Identity verified for user ${user_id} in ${verifiedDatabase}`,
     );
 
     // Return success with user info (but NO password!)
@@ -1090,7 +1099,7 @@ router.post("/reset-password", async (req, res) => {
     try {
       pool.useDatabase(process.env.DB_OFFICERS);
       const [dbClasses] = await pool.query(
-        "SELECT db_name, classname FROM py_payrollclass"
+        "SELECT db_name, classname FROM py_payrollclass",
       );
 
       const otherDatabases = dbClasses
@@ -1124,7 +1133,7 @@ router.post("/reset-password", async (req, res) => {
 
         const [rows] = await pool.query(
           "SELECT * FROM users WHERE user_id = ?",
-          [user_id]
+          [user_id],
         );
 
         if (rows.length > 0) {
@@ -1214,7 +1223,7 @@ router.post("/reset-password", async (req, res) => {
       let errorMessage = "Identity verification failed. ";
       if (uniqueIncorrectFields.length > 0) {
         errorMessage += `Incorrect: ${uniqueIncorrectFields.join(
-          ", "
+          ", ",
         )}. Please check and try again.`;
       } else {
         errorMessage += "Please check your information and try again.";
@@ -1228,7 +1237,7 @@ router.post("/reset-password", async (req, res) => {
 
     const [result] = await pool.query(
       "UPDATE users SET password = ? WHERE user_id = ?",
-      [new_password, user_id]
+      [new_password, user_id],
     );
 
     if (result.affectedRows === 0) {
@@ -1236,7 +1245,7 @@ router.post("/reset-password", async (req, res) => {
     }
 
     console.log(
-      `✅ Password reset successful for user ${user_id} in ${verifiedDatabase}`
+      `✅ Password reset successful for user ${user_id} in ${verifiedDatabase}`,
     );
 
     res.json({

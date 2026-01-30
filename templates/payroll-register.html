@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        @page { size: A4; margin: 0.2mm; background-color: #f8fbff; }
+        @page { size: A4 landscape; margin: 0.2mm; background-color: #f8fbff; }
         body { font-family: Helvetica, Arial, sans-serif; font-size: 8pt; }
 
         body::before {
@@ -215,9 +215,9 @@
                     <th class="amount">Tax</th>
                     <th class="amount">Net Pay</th>
                 {{else}}
-                    <th>Service No</th>
+                    <th>Svc No</th>
                     <th>Name</th>
-                    <th style="width: 7%;">Rank</th>
+                    <th style="width: 10%;">Rank</th>
                     {{#if ../includeElements}}
                     <th>Payment Elements</th>
                     {{/if}}
@@ -227,7 +227,7 @@
                     <th class="amount">Tax</th>
                     <th class="amount">Net Pay</th>
                     <th >Bank</th>
-                    <th>Account No</th>
+                    <th>Acc.No</th>
                 {{/if}}
             </tr>
             

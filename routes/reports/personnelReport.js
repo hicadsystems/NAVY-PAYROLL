@@ -3,6 +3,7 @@ const router = express.Router();
 const veriftyToken = require('../../middware/authentication');
 router.use(veriftyToken);
 const personnelReportController = require('../../controllers/Reports/personnelReportController');
+const oldPersonnelReportController = require('../../controllers/Reports/oldPersonnelReportsController')
 
 router.get(
   '/',
@@ -10,8 +11,18 @@ router.get(
 );
 
 router.get(
+  '/old',
+  oldPersonnelReportController.generatePersonnelReport.bind(personnelReportController)
+);
+
+router.get(
   '/filter-options',
   personnelReportController.getPersonnelFilterOptions.bind(personnelReportController)
+);
+
+router.get(
+  '/filter-options-old',
+  oldPersonnelReportController.getPersonnelFilterOptions.bind(personnelReportController)
 );
 
 module.exports = router;

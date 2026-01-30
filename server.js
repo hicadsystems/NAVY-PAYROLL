@@ -101,9 +101,9 @@ async function startServer() {
       });
       break;
 
-    case 'localhost':
-      https.createServer(options, app).listen(PORT, 'localhost', () => {
-        console.log(`🔒 HTTPS server running on https://localhost:${PORT}`);
+    case "localhost":
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running on http://localhost:${PORT}`);
       });
       break;
 

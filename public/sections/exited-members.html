@@ -2,8 +2,8 @@
 
   <!-- Report Title -->
   <div class="hidden mb-6 text-center">
-    <h2 class="text-2xl font-bold text-blue-700">Personnel Report</h2>
-    <p class="text-sm text-gray-600 mt-1">Generate comprehensive personnel reports with customizable filters</p>
+    <h2 class="text-2xl font-bold text-blue-700">Old Personnel Report</h2>
+    <p class="text-sm text-gray-600 mt-1">Generate comprehensive Old personnel reports with customizable filters</p>
   </div>
 
   <!-- Radio Selection -->
@@ -12,7 +12,7 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <label class="flex items-center cursor-pointer">
         <input type="radio" name="personnelScope" value="all" class="text-blue-600 w-4 h-4" checked>
-        <span class="ml-2 font-medium">All Personnel</span>
+        <span class="ml-2 font-medium">All Old Personnel</span>
       </label>
       <label class="flex items-center cursor-pointer">
         <input type="radio" name="personnelScope" value="rank" class="text-blue-600 w-4 h-4">
@@ -43,8 +43,8 @@
         <span class="ml-2 font-medium">By State</span>
       </label>
       <label class="flex items-center cursor-pointer">
-        <input type="radio" name="personnelScope" value="emolument" class="text-blue-600 w-4 h-4">
-        <span class="ml-2 font-medium">Emolument Form</span>
+        <input type="radio" name="personnelScope" value="exitreason" class="text-blue-600 w-4 h-4">
+        <span class="ml-2 font-medium">By Exit Type</span>
       </label>
       <label class="flex items-center cursor-pointer">
         <input type="radio" name="personnelScope" value="rent" class="text-blue-600 w-4 h-4">
@@ -163,13 +163,13 @@
       </div>
     </div>
 
-    <div id="emolumentWrapper" class="hidden border border-yellow-500 p-4 rounded-lg">
+    <div id="exitWrapper" class="hidden border border-yellow-500 p-4 rounded-lg">
       <div class="grid md:grid-cols-2 gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-900 mb-2">
-            <i class="fas fa-file-invoice text-yellow-600 mr-2"></i>Emolument Form Status
+            <i class="fas fa-file-invoice text-yellow-600 mr-2"></i>Exit Reason
           </label>
-          <select id="emolumentSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+          <select id="exitReason" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
             <option value="">-- Choose Status --</option>
           </select>
         </div>
@@ -292,7 +292,7 @@
     gradelevel: document.getElementById("gradelevelWrapper"),
     bank: document.getElementById("bankWrapper"),
     state: document.getElementById("stateWrapper"),
-    emolument: document.getElementById("emolumentWrapper"),
+    exitreason: document.getElementById("exitWrapper"),
     rent: document.getElementById("rentWrapper"),
     taxed: document.getElementById("taxedWrapper"),
     //oldemployees: document.getElementById("oldemployeesWrapper")
@@ -332,7 +332,7 @@
     gradelevel: document.getElementById("gradelevelSelect"),
     bank: document.getElementById("bankSelect"),
     state: document.getElementById("stateSelect"),
-    emolument: document.getElementById("emolumentSelect"),
+    exitreason: document.getElementById("exitReason"),
     rent: document.getElementById("rentSelect"),
     taxed: document.getElementById("taxedSelect"),
     //oldemployees: document.getElementById("oldemployeesSelect")
@@ -372,7 +372,7 @@
         populateDropdown(selects.gradelevel, filterOptions.gradeLevels);
         populateDropdown(selects.bank, filterOptions.bankBranches);
         populateDropdown(selects.state, filterOptions.states);
-        populateDropdown(selects.emolument, filterOptions.emolumentForms);
+        populateDropdown(selects.exitreason, filterOptions.exitTypes);
         populateDropdown(selects.rent, filterOptions.rentSubsidy);
         populateDropdown(selects.taxed, filterOptions.taxedStatus);
         //populateDropdown(selects.oldemployees, filterOptions.oldEmployeesOptions);
@@ -480,7 +480,7 @@
         gradelevel: 'gradelevel',
         bank: 'bankBranch',
         state: 'stateOfOrigin',
-        emolument: 'emolumentForm',
+        exitreason: 'exitTypes',
         rent: 'rentSubsidy',
         taxed: 'taxed',
         //oldemployees: 'oldEmployees'

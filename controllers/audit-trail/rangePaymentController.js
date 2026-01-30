@@ -1,133 +1,16 @@
 const rangePaymentServices = require('../../services/audit-trail/rangePaymentServices');
+const BaseReportController = require('../Reports/reportsFallbackController')
 const companySettings = require('../helpers/companySettings');
 const { GenericExcelExporter } = require('../helpers/excel');
 const ExcelJS = require('exceljs');
-const jsreport = require('jsreport-core')();
+//const jsreport = require('jsreport-core')();
 const fs = require('fs');
 const path = require('path');
 
-class RangePaymentController {
+class RangePaymentController extends BaseReportController {
 
   constructor() {
-    // Initialize JSReport once when controller is created
-    this.jsreportReady = false;
-    this.initJSReport();
-  }
-
-  async initJSReport() {
-    try {
-      // Register extensions before initializing
-      jsreport.use(require('jsreport-handlebars')());
-      jsreport.use(require('jsreport-chrome-pdf')());
-      
-      await jsreport.init();
-      this.jsreportReady = true;
-      console.log('✅ JSReport initialized successfully');
-    } catch (error) {
-      console.error('JSReport initialization failed:', error);
-    }
-  }
-
-  // Helper method to return common Handlebars helpers
-  _getCommonHelpers() {
-    return `
-      function formatCurrency(value) {
-        const num = parseFloat(value) || 0;
-        return num.toLocaleString('en-NG', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
-      }
-
-      function formatCurrencyWithSign(amount) {
-        const num = parseFloat(amount || 0);
-        const formatted = Math.abs(num).toLocaleString('en-NG', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
-        if (num < 0) {
-          return '(' + formatted + ')';
-        }
-        return formatted;
-      }
-      
-      function isNegative(amount) {
-        return parseFloat(amount || 0) < 0;
-      }
-      
-      function formatDate(date) {
-        const d = new Date(date || new Date());
-        return d.toLocaleDateString('en-GB', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric'
-        });
-      }
-
-      function formatTime(date) {
-        return new Date(date).toLocaleTimeString('en-GB', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        });
-      }
-
-      function formatMonth(monthNumber) {
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        return monthNames[monthNumber - 1] || 'Unknown';
-      }
-
-      function add(a, b) {
-        return (parseFloat(a) || 0) + (parseFloat(b) || 0);
-      }
-      
-      function subtract(a, b) {
-        return (parseFloat(a) || 0) - (parseFloat(b) || 0);
-      }
-      
-      function eq(a, b) {
-        return a === b;
-      }
-      
-      function gt(a, b) {
-          return parseFloat(a) > parseFloat(b);
-      }
-      
-      function sum(array, property) {
-        if (!array || !Array.isArray(array)) return 0;
-        return array.reduce((sum, item) => sum + (parseFloat(item[property]) || 0), 0);
-      }
-      
-      function groupBy(array, property) {
-        if (!array || !Array.isArray(array)) return [];
-        
-        const groups = {};
-        array.forEach(item => {
-          const key = item[property] || 'Unknown';
-          if (!groups[key]) {
-            groups[key] = [];
-          }
-          groups[key].push(item);
-        });
-        
-        return Object.keys(groups).sort().map(key => ({
-          key: key,
-          values: groups[key]
-        }));
-      }
-      
-      function sumByType(earnings, type) {
-        let total = 0;
-        if (Array.isArray(earnings)) {
-          earnings.forEach(item => {
-            if (item.type === type) {
-              total += parseFloat(item.amount) || 0;
-            }
-          });
-        }
-        return total;
-      }
-    `;
+    super(); // Initialize base class
   }
 
   _getUniqueSheetName(baseName, tracker) {
@@ -671,13 +554,6 @@ class RangePaymentController {
   }
 
   async generatePaymentsByBankInRangePDF(data, filters, amountRange, summary, failedClasses, req, res) {
-    if (!this.jsreportReady) {
-      return res.status(500).json({
-        success: false,
-        error: "PDF generation service not ready."
-      });
-    }
-
     try {
       const templatePath = path.join(__dirname, '../../templates/range-payments.html');
       const templateContent = fs.readFileSync(templatePath, 'utf8');
@@ -796,25 +672,22 @@ class RangePaymentController {
         }
       }
 
-      const result = await jsreport.render({
-        template: {
-          content: templateContent,
-          engine: 'handlebars',
-          recipe: 'chrome-pdf',
-          chrome: {
-            displayHeaderFooter: false,
-            printBackground: true,
-            format: 'A4',
-            landscape: true
-          },
-          helpers: this._getCommonHelpers()
-        },
-        data: templateData
-      });
+      const pdfBuffer = await this.generatePDFWithFallback(
+        templatePath,
+        templateData,
+        {
+          format: 'A4',
+          landscape: true,
+          marginTop: '5mm',
+          marginBottom: '5mm',
+          marginLeft: '5mm',
+          marginRight: '5mm'
+        }        
+      );
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename=payments_by_bank_in_range_${amountRange.min}_to_${amountRange.max}.pdf`);
-      res.send(result.content);
+      res.send(pdfBuffer);
 
     } catch (error) {
       console.error('PDF generation error:', error);

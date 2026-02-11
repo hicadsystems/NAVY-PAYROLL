@@ -118,7 +118,7 @@ function deduplicate(rows) {
 }
 
 router.post(
-  "/adjustments",
+  "/",
   verifyToken,
   upload.single("file"),
   async (req, res) => {
@@ -130,7 +130,7 @@ router.post(
 
       filePath = req.file.path;
       const fileExt = path.extname(req.file.originalname).toLowerCase();
-      const createdBy = req.user_id || "SYSTEM";
+      const createdBy = req.user_fullname || "SYSTEM";
 
       // Parse file
       let rawData;
@@ -145,12 +145,13 @@ router.post(
       }
       rawData = rawData?.filter((row) => Object.keys(row).length > 0);
 
-      // Cleanup, Authentication, Filtering(actual business logic)
+
 
       const { cleaned, duplicates } = deduplicate(rawData);
 
       const query =
-        "SELECT Empl_id, gradelevel FROM hr_employees WHERE DateLeft IS NULL AND exittype IS NULL";
+        `SELECT Empl_id, gradelevel FROM hr_employees WHERE (DateLeft IS NULL OR DateLeft = '')
+        AND (exittype IS NULL OR exittype = '')`;
 
       const [rows] = await pool.query(query);
 
@@ -160,11 +161,13 @@ router.post(
         activeEmployeeSet.has(row.numb?.trim()),
       );
 
+      const employeeMap = new Map(
+        rows.map(e => [e.Empl_id.trim().toLowerCase(), e.gradelevel])
+      );
+
       for (const row of filtered) {
-        const emp = rows.find((e) => e.Empl_id === row.numb?.trim());
-        if (emp) {
-          row.level = emp.gradelevel.slice(0, 2);
-        }
+        const level = employeeMap.get(row.numb?.trim().toLowerCase());
+        if (level) row.level = level.slice(0, 2);
       }
 
       const payclassMap = new Map();
@@ -176,8 +179,16 @@ router.post(
         payclassMap.get(payclass).push(row);
       }
 
-      // insert per payclass batch after processing
-      const insertRecords = [];
+
+      const results = {
+        totalUniqueRecords: cleaned.length,
+        inactive: cleaned.length - filtered.length,
+        uploaded: 0,
+        existing: 0,
+        duplicates: duplicates.length,
+      };
+
+
 
       for (const [payclass, rows] of payclassMap.entries()) {
         const db = PAYCLASS_MAPPING[payclass];
@@ -188,58 +199,117 @@ router.post(
           continue;
         }
 
-        pool.useDatabase(db);
+        let connection;
+        try {
+          const insertRecords = [];
+          const bpDescriptions = [...new Set(rows.map((r) => r.bp))];
 
-        const bpDescriptions = [...new Set(rows.map((r) => r.bp))];
+          connection = await pool.getConnection();
+          await connection.query(`USE ??`, [db]);
+          await connection.beginTransaction();
 
-        const query = `SELECT
-                    e.paymenttype,
-                    e.elmDesc,
-                    p.*
-                    FROM hicaddata.py_elementtype e
-                    LEFT JOIN hicaddata.py_payperrank p
-                    ON p.one_type = e.paymenttype
-                    WHERE e.elmDesc IN (${bpDescriptions.map(() => "?").join(",")})`;
+          const query = `
+        SELECT
+          e.PaymentType,
+          e.elmDesc,
+          e.perc,
+          e.Status,
+          p.*
+          FROM py_elementType e
+          LEFT JOIN py_payperrank p
+          ON p.one_type = e.PaymentType
+          WHERE LOWER(e.elmDesc) IN (${bpDescriptions.map(() => "?").join(",")})
+          `;
 
-        const [payperrankRows] = await pool.query(query, bpDescriptions);
+          const [payperrankRows] = await connection.query(query, bpDescriptions.map(b => b.toLowerCase().trim()));
 
-        const payperrankMap = new Map();
+          const payperrankMap = new Map();
 
-        for (const ppr of payperrankRows) {
-          const key = `${ppr.elmDesc}`.toLowerCase().trim();
-          payperrankMap.set(key, ppr);
-        }
+          for (const ppr of payperrankRows) {
+            const key = `${ppr.elmDesc}`.toLowerCase().trim();
+            payperrankMap.set(key, ppr);
+          }
 
-        for (const row of rows) {
-          const ppr = payperrankMap.get(row.bp.toLowerCase().trim());
-          if (ppr) {
-            row.code = ppr.one_type;
-            if (!row.amount) {
+          for (const row of rows) {
+            const ppr = payperrankMap.get(row.bp.toLowerCase().trim());
+
+            if (!ppr) continue;
+
+            row.code = ppr.PaymentType;
+
+            if (!row.bpm && ppr.Status.toLowerCase().trim() === 'active' && ppr.perc === 'R') {
               row.bpm = ppr[`one_amount${row.level}`] || 0;
             }
+
+
+
+            insertRecords.push([
+              row.numb,
+              row.code,
+              row.bpm,
+              "T",
+              1,
+              createdBy,
+              new Date(),
+            ])
           }
-          insertRecords.push({
-            Empl_ID: row.numb,
-            type: row.code,
-            amtp: row.bpm,
-            payind: "T",
-            nomth: 1,
-            createdby: createdBy,
-            datecreated: Date.now(),
-          });
+
+          if (insertRecords.length === 0) {
+            await connection.commit();
+            connection.release();
+            continue;
+          }
+
+          const validRecords = insertRecords.filter(r =>
+            r[0] && r[1] && !isNaN(r[2])
+          );
+          const chunkSize = 1000;
+
+
+
+          for (let i = 0; i < validRecords.length; i += chunkSize) {
+            const chunk = validRecords.slice(i, i + chunkSize);
+
+            const [result] = await connection.query(
+              `
+            INSERT IGNORE INTO py_payded
+            (Empl_ID, type, amtp, payind, nomth, createdby, datecreated)
+            VALUES ?
+            `,
+              [chunk]
+            );
+
+
+            results.uploaded += result.affectedRows;
+            results.existing += chunk.length - result.affectedRows;
+
+          }
+
+          await connection.commit()
+        } catch (err) {
+          if (connection) await connection.rollback();
+          console.error(`Rollback for payclass ${payclass}:`, err.message);
+
+          results.failed = results.failed || {};
+          results.failed[payclass] = err.message;
+        } finally {
+          if (connection) connection.release();
         }
+
       }
 
       // Clean up file
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+      // Shape of Response
+      // { totalUniqueRecords: '', inactive: 0, Uploaded:'', existing:''}
 
       return res.status(200).json({
         message: "Batch adjustment upload completed",
         summary: results,
       });
 
-      // Shape of Response
-      // { totalUniqueRecords: '', inactive: 0, Uploaded:'', existing:''}
+
     } catch (error) {
       console.error("Error processing adjustments:", error);
       res.status(500).json({
@@ -256,17 +326,15 @@ router.get("/template", verifyToken, (req, res) => {
   // Create sample data
   const sampleData = [
     {
-      "Service Number": "NN001",
-      "Payment Type": "PT330",
-      "Maker 1": "No",
-      "Amount Payable": "5000.00",
-      "Maker 2": "No",
-      Amount: "5000.00",
-      //'Amount Already Deducted': '0.00',
-      "Amount To Date": "0.00",
-      "Payment Indicator": "T",
-      "Number of Months": "12",
-      "Created By": "Admin",
+      "Numb": "NN001",
+      "title": "Lt",
+      "Surname": "Dabrinze",
+      "Other Names": "Nihinkea",
+      "BPC": "BP",
+      "BP": "REVISED CONSOLIDATED PAY",
+      "BPA": "TAXABLE PAYMENT",
+      "BPM": "237007.92",
+      "Payclass": "1",
     },
   ];
 

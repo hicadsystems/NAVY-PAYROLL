@@ -1,6 +1,5 @@
 <!-- BATCH UPLOAD SECTION -->
 <div id="section-batch" class="p-6">
-  
   <div class="flex flex-col items-center">
     <div id="batchUploadDiv" class="w-full max-w-md rounded-2xl">
       <!-- Notes -->
@@ -96,7 +95,8 @@
       >
         <p class="font-semibold mb-2">Upload Summary:</p>
         <p>
-          Total Unique Records: <span id="total-Records" class="font-medium">0</span>
+          Total Unique Records:
+          <span id="total-Records" class="font-medium">0</span>
         </p>
         <p>
           Successfully Inserted:
@@ -176,15 +176,12 @@
     // Download Template
     downloadTemplateBtn.addEventListener("click", async () => {
       try {
-        const response = await auth.fetchWithAuth(
-          `${API_BASE_URL}/template`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          }
-        );
+        const response = await auth.fetchWithAuth(`${API_BASE_URL}/template`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
 
         if (!response.ok) throw new Error("Failed to download template");
 
@@ -206,7 +203,6 @@
     // Cancel Button
     cancelBatchBtn.addEventListener("click", () => {
       batchFileInput.value = "";
-  
     });
 
     // Upload File
@@ -237,7 +233,7 @@
 
         if (!response.ok) {
           modal.classList.add("hidden");
-          
+
           if (result.details && Array.isArray(result.details)) {
             showErrors(result.details);
           } else {
@@ -251,8 +247,20 @@
 
         // Clear file input and hide form
         batchFileInput.value = "";
-   
-        
+
+        const byteCharacters = atob(result.file.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: result.file.mimetype });
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = data.file.filename;
+        a.click();
       } catch (error) {
         console.error("Upload error:", error);
         modal.classList.add("hidden");
@@ -295,12 +303,12 @@
       if (summary.failed && Object.keys(summary.failed).length > 0) {
         const failedDiv = document.getElementById("failedPayclasses");
         const failedList = document.getElementById("failedList");
-        
+
         let failedHtml = "";
         for (const [payclass, error] of Object.entries(summary.failed)) {
           failedHtml += `<p>• ${payclass}: ${error}</p>`;
         }
-        
+
         failedList.innerHTML = failedHtml;
         failedDiv.classList.remove("hidden");
       }

@@ -119,9 +119,10 @@ async function startServer() {
         if (err.code === 'EADDRNOTAVAIL' || err.code === 'EADDRINUSE') {
           console.warn('⚠️  Network interface unavailable, falling back to localhost');
           
-          const fallbackServer = https.createServer(options, app);
+          const fallbackServer = app
+          
           fallbackServer.listen(PORT, 'localhost', () => {
-            console.log(`🔒 HTTPS server running on https://localhost:${PORT}`);
+            console.log(`🔒 HTTPS server running on http://localhost:${PORT}`);
           });
 
           fallbackServer.on('error', (fallbackErr) => {

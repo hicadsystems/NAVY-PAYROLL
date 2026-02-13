@@ -56,7 +56,12 @@
             width: 100%;
             margin: 0;
             padding: 10px;
-            height: 100%;
+            min-height: 100vh;
+            page-break-after: always;
+        }
+        
+        .container:last-child {
+            page-break-after: auto;
         }
         
         /* Header Styles */
@@ -329,9 +334,9 @@
             font-weight: 600;
         }
         
-        /* Page Break */
+        /* Page Break - removed, now handled by container */
         .page-break {
-            page-break-after: always;
+            display: none;
         }
 
         @media print {
@@ -348,12 +353,12 @@
     </style>
 </head>
 <body>
-    
+    {{#each employees}}
     <div class="container">
         <!-- Header -->
         <div class="header-wrapper">
             <div class="className">
-                {{className}}
+                {{#if ../className}}{{../className}}{{/if}}
             </div>
             <div class="header">
                 <h1>Nigerian Navy (Naval Headquarters)</h1>
@@ -361,7 +366,6 @@
             </div>
         </div>
         
-        {{#each employees}}
         <div class="center-wrapper">
             <!-- Pay Period -->
             <div class="pay-period">
@@ -542,10 +546,6 @@
             <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
         </div>
     </div>
-    
-    {{#unless @last}}
-    <div class="page-break"></div>
-    {{/unless}}
     {{/each}}
 </body>
 </html>

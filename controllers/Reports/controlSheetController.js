@@ -56,6 +56,10 @@ class ControlSheetController extends BaseReportController {
   // ==========================================================================
   async generateControlSheetExcel(result, req, res) {
     try {
+      if (!result.details || result.details.length === 0) {
+        throw new Error('No data available for the selected filters');
+      }
+      
       const exporter = new GenericExcelExporter();
       const data = result.details;
       const className = this.getDatabaseNameFromRequest(req);

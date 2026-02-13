@@ -103,6 +103,10 @@ class RangePaymentController extends BaseReportController {
 
   async generatePaymentsByBankInRangeExcel(data, filters, amountRange, summary, failedClasses, req, res) {
     try {
+      if (!data || data.length === 0) {
+        throw new Error('No data available for the selected filters');
+      }
+
       const exporter = new GenericExcelExporter();
       const isMultiClass = filters.allClasses === 'true' || filters.allClasses === true;
       const isSummary = filters.summaryOnly === 'true' || filters.summaryOnly === true;
@@ -555,6 +559,10 @@ class RangePaymentController extends BaseReportController {
 
   async generatePaymentsByBankInRangePDF(data, filters, amountRange, summary, failedClasses, req, res) {
     try {
+      if (!data || data.length === 0) {
+        throw new Error('No data available for the selected filters');
+      }
+      
       const templatePath = path.join(__dirname, '../../templates/range-payments.html');
       const templateContent = fs.readFileSync(templatePath, 'utf8');
 

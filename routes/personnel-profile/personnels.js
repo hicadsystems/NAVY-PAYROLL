@@ -52,8 +52,12 @@ router.get('/employees-current', verifyToken, async (req, res) => {
     const [rows] = await pool.query(`
       SELECT Empl_ID, Title, Surname, OtherName
       FROM hr_employees 
-      WHERE (DateLeft IS NULL OR DateLeft = '')
-        AND (exittype IS NULL OR exittype = '')
+      WHERE (exittype IS NULL OR exittype = '')
+        AND (
+          DateLeft IS NULL
+          OR DateLeft = ''
+          OR STR_TO_DATE(DateLeft, '%Y%m%d') > CURDATE()
+        )
         AND payrollclass = ?
       ORDER BY Empl_ID ASC
     `, [payrollClass]);
@@ -113,8 +117,12 @@ router.get('/employees-current-pages', verifyToken, async (req, res) => {
     const [countResult] = await pool.query(`
       SELECT COUNT(*) as total
       FROM hr_employees 
-      WHERE (DateLeft IS NULL OR DateLeft = '')
-        AND (exittype IS NULL OR exittype = '')
+      WHERE (exittype IS NULL OR exittype = '')
+        AND (
+          DateLeft IS NULL
+          OR DateLeft = ''
+          OR STR_TO_DATE(DateLeft, '%Y%m%d') > CURDATE()
+        )
         AND payrollclass = ?
     `, [payrollClass]);
     
@@ -125,8 +133,12 @@ router.get('/employees-current-pages', verifyToken, async (req, res) => {
     const [rows] = await pool.query(`
       SELECT Empl_ID, Title, Surname, OtherName 
       FROM hr_employees 
-      WHERE (DateLeft IS NULL OR DateLeft = '')
-        AND (exittype IS NULL OR exittype = '')
+      WHERE (exittype IS NULL OR exittype = '')
+        AND (
+          DateLeft IS NULL
+          OR DateLeft = ''
+          OR STR_TO_DATE(DateLeft, '%Y%m%d') > CURDATE()
+        )
         AND payrollclass = ?
       ORDER BY Empl_ID ASC
       LIMIT ? OFFSET ?
@@ -179,19 +191,24 @@ router.get('/employees-current/search', verifyToken, async (req, res) => {
     const currentDb = pool.getCurrentDatabase(req.user_id.toString());
     const payrollClass = getPayrollClassFromDb(currentDb);
     
-    //console.log('🔍 Search database:', currentDb);
-    //console.log('🔍 Payroll class filter:', payrollClass);
-    //console.log('🔍 User ID:', req.user_id);
-    
     const searchTerm = req.query.q || req.query.search || '';
+    const rankFilter = req.query.rank || '';
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
     
     console.log('🔎 Search term:', searchTerm);
+    console.log('🔎 Rank filter:', rankFilter);
+    console.log('📄 Pagination - Page:', page, 'Limit:', limit, 'Offset:', offset);
     
-    let query = `
-      SELECT Empl_ID, Title, Surname, OtherName
-      FROM hr_employees 
-      WHERE (DateLeft IS NULL OR DateLeft = '')
-        AND (exittype IS NULL OR exittype = '')
+    // Base WHERE clause
+    let whereClause = `
+      WHERE (exittype IS NULL OR exittype = '')
+        AND (
+          DateLeft IS NULL
+          OR DateLeft = ''
+          OR STR_TO_DATE(DateLeft, '%Y%m%d') > CURDATE()
+        )
         AND payrollclass = ?
     `;
     
@@ -199,7 +216,7 @@ router.get('/employees-current/search', verifyToken, async (req, res) => {
     
     // Add search conditions if search term provided
     if (searchTerm) {
-      query += ` AND (
+      whereClause += ` AND (
         Empl_ID LIKE ? OR
         Surname LIKE ? OR
         OtherName LIKE ? OR
@@ -221,9 +238,33 @@ router.get('/employees-current/search', verifyToken, async (req, res) => {
       );
     }
     
-    query += ' ORDER BY Empl_ID ASC';
+    // Add rank filter if provided
+    if (rankFilter) {
+      whereClause += ` AND Title = ?`;
+      params.push(rankFilter);
+    }
     
-    const [rows] = await pool.query(query, params);
+    // Get total count with all filters
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM hr_employees 
+      ${whereClause}
+    `;
+    
+    const [countResult] = await pool.query(countQuery, params);
+    const totalRecords = countResult[0].total;
+    const totalPages = Math.ceil(totalRecords / limit);
+    
+    // Get paginated results with all filters
+    const dataQuery = `
+      SELECT Empl_ID, Title, Surname, OtherName
+      FROM hr_employees 
+      ${whereClause}
+      ORDER BY Empl_ID ASC
+      LIMIT ? OFFSET ?
+    `;
+    
+    const [rows] = await pool.query(dataQuery, [...params, limit, offset]);
     
     // Add counts to each employee
     for (let employee of rows) {
@@ -245,14 +286,22 @@ router.get('/employees-current/search', verifyToken, async (req, res) => {
       employee.spouse_count = spouse[0].count;
     }
     
-    console.log('🔍 Search returned:', rows.length, 'records');
+    console.log('🔍 Search returned:', rows.length, 'of', totalRecords, 'total records');
     
     res.json({ 
       success: true, 
       data: rows,
       payrollClass,
       searchTerm: searchTerm,
-      resultCount: rows.length
+      rankFilter: rankFilter,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalRecords: totalRecords,
+        limit: limit,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1
+      }
     });
     
   } catch (error) {
@@ -275,8 +324,12 @@ router.get('/employees-old', verifyToken, async (req, res) => {
     const [rows] = await pool.query(`
       SELECT Empl_ID, Title, Surname, OtherName
       FROM hr_employees 
-      WHERE (NULLIF(TRIM(DateLeft), '') IS NOT NULL
-        OR NULLIF(TRIM(exittype), '') IS NOT NULL)
+      WHERE ((exittype IS NOT NULL AND exittype <> '')
+          OR (
+            DateLeft IS NOT NULL
+            AND DateLeft <> ''
+            AND STR_TO_DATE(DateLeft, '%Y%m%d') <= CURDATE()
+          )) 
         AND payrollclass = ?
       ORDER BY Empl_ID ASC
       `, [payrollClass]
@@ -331,8 +384,12 @@ router.get('/employees-old-pages', verifyToken, async (req, res) => {
     const [countResult] = await pool.query(`
       SELECT COUNT(*) as total
       FROM hr_employees 
-      WHERE (NULLIF(TRIM(DateLeft), '') IS NOT NULL
-        OR NULLIF(TRIM(exittype), '') IS NOT NULL)
+      WHERE ((exittype IS NOT NULL AND exittype <> '')
+          OR (
+            DateLeft IS NOT NULL
+            AND DateLeft <> ''
+            AND STR_TO_DATE(DateLeft, '%Y%m%d') <= CURDATE()
+          )) 
         AND payrollclass = ?
     `, [payrollClass]);
     
@@ -343,8 +400,12 @@ router.get('/employees-old-pages', verifyToken, async (req, res) => {
     const [rows] = await pool.query(`
       SELECT Empl_ID, Title, Surname, OtherName
       FROM hr_employees 
-      WHERE (NULLIF(TRIM(DateLeft), '') IS NOT NULL
-        OR NULLIF(TRIM(exittype), '') IS NOT NULL)
+      WHERE ((exittype IS NOT NULL AND exittype <> '')
+          OR (
+            DateLeft IS NOT NULL
+            AND DateLeft <> ''
+            AND STR_TO_DATE(DateLeft, '%Y%m%d') <= CURDATE()
+          )) 
         AND payrollclass = ?
       ORDER BY Empl_ID ASC
       LIMIT ? OFFSET ?
@@ -397,19 +458,23 @@ router.get('/employees-old/search', verifyToken, async (req, res) => {
     const currentDb = pool.getCurrentDatabase(req.user_id.toString());
     const payrollClass = getPayrollClassFromDb(currentDb);
     
-    //console.log('🔍 Search database:', currentDb);
-    //console.log('🔍 Payroll class filter:', payrollClass);
-    //console.log('🔍 User ID:', req.user_id);
-    
     const searchTerm = req.query.q || req.query.search || '';
+    const rankFilter = req.query.rank || '';
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
     
     console.log('🔎 Search term:', searchTerm);
+    console.log('📄 Pagination - Page:', page, 'Limit:', limit, 'Offset:', offset);
     
-    let query = `
-      SELECT Empl_ID, Title, Surname, OtherName
-      FROM hr_employees 
-      WHERE (NULLIF(TRIM(DateLeft), '') IS NOT NULL
-        OR NULLIF(TRIM(exittype), '') IS NOT NULL)
+    // Base WHERE clause
+    let whereClause = `
+      WHERE ((exittype IS NOT NULL AND exittype <> '')
+          OR (
+            DateLeft IS NOT NULL
+            AND DateLeft <> ''
+            AND STR_TO_DATE(DateLeft, '%Y%m%d') <= CURDATE()
+          )) 
         AND payrollclass = ?
     `;
     
@@ -417,7 +482,7 @@ router.get('/employees-old/search', verifyToken, async (req, res) => {
     
     // Add search conditions if search term provided
     if (searchTerm) {
-      query += ` AND (
+      whereClause += ` AND (
         Empl_ID LIKE ? OR
         Surname LIKE ? OR
         OtherName LIKE ? OR
@@ -438,10 +503,34 @@ router.get('/employees-old/search', verifyToken, async (req, res) => {
         searchPattern  // Full name
       );
     }
+
+    // Add rank filter if provided
+    if (rankFilter) {
+      whereClause += ` AND Title = ?`;
+      params.push(rankFilter);
+    }
     
-    query += ' ORDER BY Empl_ID ASC';
+    // Get total count with all filters
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM hr_employees 
+      ${whereClause}
+    `;
     
-    const [rows] = await pool.query(query, params);
+    const [countResult] = await pool.query(countQuery, params);
+    const totalRecords = countResult[0].total;
+    const totalPages = Math.ceil(totalRecords / limit);
+    
+    // Get paginated results with all filters
+    const dataQuery = `
+      SELECT Empl_ID, Title, Surname, OtherName
+      FROM hr_employees 
+      ${whereClause}
+      ORDER BY Empl_ID ASC
+      LIMIT ? OFFSET ?
+    `;
+    
+    const [rows] = await pool.query(dataQuery, [...params, limit, offset]);
     
     // Add counts to each employee
     for (let employee of rows) {
@@ -463,14 +552,22 @@ router.get('/employees-old/search', verifyToken, async (req, res) => {
       employee.spouse_count = spouse[0].count;
     }
     
-    console.log('🔍 Search returned:', rows.length, 'records');
+    console.log('🔍 Search returned:', rows.length, 'of', totalRecords, 'total records');
     
     res.json({ 
       success: true, 
       data: rows,
       payrollClass,
       searchTerm: searchTerm,
-      resultCount: rows.length
+      rankFilter: rankFilter,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalRecords: totalRecords,
+        limit: limit,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1
+      }
     });
     
   } catch (error) {

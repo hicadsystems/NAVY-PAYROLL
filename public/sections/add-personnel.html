@@ -236,9 +236,7 @@
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700">Accommodation Type</label>
-          <select name="accomm_type" id="accomm_type" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
-            <option>Select Accommodation Type</option>
-          </select>
+          <input name="accomm_type" id="accomm_type" placeholder="Accommodation Type" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700">Rent Subsidy</label>
@@ -624,7 +622,7 @@ const dropdownConfig = {
   "Marital Status": { endpoint: "marital", value: "MaritalCode", text: "MaritalStatus" },
   "State Of Origin": { endpoint: "state", value: "Statecode", text: "Statename" },
   "Local Government": { endpoint: "lga", value: "Lgcode", text: "Lgname" },
-  "Rank": { endpoint: "title", value: "Titlecode", text: "Description" },
+  "Rank": { endpoint: "title", value: "Description", text: "Description" },
   "Religion": { endpoint: "religion", value: "ReligionCode", text: "ReligionName" }
 };
 
@@ -2588,6 +2586,22 @@ async function submitPersonnelForm() {
 
     let value = input.value?.trim() ?? '';
 
+    // Handle DATE fields FIRST (all date fields)
+    if (input.type === 'date') {
+      if (!value) {
+        if (DB_FIELD_MAP[fieldName]) personnelData[DB_FIELD_MAP[fieldName]] = null;
+      } else {
+        const dateObj = new Date(value);
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const year = dateObj.getFullYear();
+        const formattedDate = `${year}${month}${day}`;
+        console.log(`Date converted: ${fieldName} = ${formattedDate}`);
+        if (DB_FIELD_MAP[fieldName]) personnelData[DB_FIELD_MAP[fieldName]] = formattedDate;
+      }
+      continue;
+    }
+
     // Handle SELECT
     if (input.tagName === 'SELECT') {
       const lowerValue = value.toLowerCase();
@@ -2607,7 +2621,7 @@ async function submitPersonnelForm() {
     }
 
     // Handle dropdownConfig
-    if (input.tagName === '.custom-dropdown-wrapper' || 'DIV') {
+    if (input.classList.contains('custom-dropdown-wrapper') || input.tagName === 'DIV') {
       const lowerValue = value.toLowerCase();
       const isPlaceholder =
         lowerValue === 'select' ||
@@ -2620,19 +2634,6 @@ async function submitPersonnelForm() {
 
       if (DB_FIELD_MAP[fieldName]) {
         personnelData[DB_FIELD_MAP[fieldName]] = isPlaceholder ? null : value;
-      }
-      continue;
-    }
-
-    if (input.type === 'date') {
-      if (!value) {
-        if (DB_FIELD_MAP[fieldName]) personnelData[DB_FIELD_MAP[fieldName]] = null;
-      } else {
-        const dateObj = new Date(value);
-        const day = String(dateObj.getDate()).padStart(2, '0');
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const year = dateObj.getFullYear();
-        if (DB_FIELD_MAP[fieldName]) personnelData[DB_FIELD_MAP[fieldName]] = `${year}${month}${day}`; // YYYYMMDD
       }
       continue;
     }
@@ -2702,9 +2703,14 @@ async function submitPersonnelForm() {
       const redirectTitle = hasExited ? 'Old Personnel' : 'Current Personnel';
 
       showPopup("Personnel updated successfully", () => {
+        // Clear ALL navigation states to prevent returning to wrong section
         localStorage.removeItem('editing_employee_id');
-        //localStorage.removeItem('navigatedFromCurrentPersonnel');
-        //localStorage.removeItem('navigatedFromOldPersonnel');
+        localStorage.removeItem('navigatedFromCurrentPersonnel');
+        localStorage.removeItem('navigatedFromOldPersonnel');
+        localStorage.removeItem('currentPersonnelPage');
+        localStorage.removeItem('currentPersonnelType');
+        localStorage.removeItem('oldPersonnelPage');
+        localStorage.removeItem('oldPersonnelType');
         localStorage.removeItem('isEditMode');
 
         if (window.navigation?.navigateToSection) {
@@ -2792,6 +2798,7 @@ async function submitPersonnelForm() {
     showAlert('Failed to save employee: ' + error.message);
   }
 }
+
 
 // Capitalize first letter, keep the rest lower
 function capitalizeWords(str) {
@@ -2932,7 +2939,7 @@ if (result.summary) {
         //await loadScales();
         resetBatchUploadForm();
 
-        showPopup("Personnels Uploaded successfully", () => {
+        showPopup("Personnel Uploaded successfully", () => {
           if (window.navigation?.navigateToSection) {
             window.navigation.navigateToSection('current-personnel', 'Current Personnel');
             setTimeout(() => {
@@ -2948,7 +2955,7 @@ if (result.summary) {
       document.getElementById("batchUploadForm").reset();
       document.getElementById("batchUploadForm").classList.add("hidden");
 
-      showPopup("Personnels Uploaded successfully", () => {
+      showPopup("Personnel Uploaded successfully", () => {
         if (window.navigation?.navigateToSection) {
           window.navigation.navigateToSection('current-personnel', 'Current Personnel');
           setTimeout(() => {

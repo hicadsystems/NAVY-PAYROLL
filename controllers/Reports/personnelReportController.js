@@ -69,6 +69,10 @@ class PersonnelReportController extends BaseReportController {
   // ==========================================================================
   async generatePersonnelReportExcel(data, req, res, filters, statistics) {
     try {
+      if (!data || data.length === 0) {
+        throw new Error('No Personnel data available for the selected filters');
+      }
+      
       const exporter = new GenericExcelExporter();
       const className = this.getDatabaseNameFromRequest(req);
 
@@ -174,7 +178,7 @@ class PersonnelReportController extends BaseReportController {
   async generatePersonnelReportPDF(data, req, res, filters, statistics) {
     try {
       if (!data || data.length === 0) {
-        throw new Error('No data available for the selected filters');
+        throw new Error('No Personnel data available for the selected filters');
       }
 
       console.log('📄 Generating PDF with', data.length, 'records');

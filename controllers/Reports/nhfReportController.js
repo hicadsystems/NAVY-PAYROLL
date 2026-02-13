@@ -96,6 +96,10 @@ class NHFReportController extends BaseReportController {
     try {
       const exporter = new GenericExcelExporter();
 
+      if (!data || data.length === 0) {
+        throw new Error('No NHF contribution this month');
+      }
+
       // Extract period from data
       const period = data.length > 0 ? {
         year: data[0].year,
@@ -213,7 +217,7 @@ class NHFReportController extends BaseReportController {
   async generateNHFReportPDF(data, req, res) {
     try {
       if (!data || data.length === 0) {
-        throw new Error('No data available for the selected filters');
+        throw new Error('No NHF contribution this month');
       }
 
       const isSummary = data.length > 0 && !data[0].hasOwnProperty('employee_id');

@@ -12,7 +12,7 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <label class="flex items-center cursor-pointer">
         <input type="radio" name="personnelScope" value="all" class="text-blue-600 w-4 h-4" checked>
-        <span class="ml-2 font-medium">All Personnel</span>
+        <span class="ml-2 font-medium">All Currrent Personnel</span>
       </label>
       <label class="flex items-center cursor-pointer">
         <input type="radio" name="personnelScope" value="rank" class="text-blue-600 w-4 h-4">
@@ -54,10 +54,10 @@
         <input type="radio" name="personnelScope" value="taxed" class="text-blue-600 w-4 h-4">
         <span class="ml-2 font-medium">Tax Status</span>
       </label>
-      <!--<label class="flex items-center cursor-pointer">
+      <label class="hidden flex items-center cursor-pointer">
         <input type="radio" name="personnelScope" value="oldemployees" class="text-blue-600 w-4 h-4">
         <span class="ml-2 font-medium">Employment Status</span>
-      </label>-->
+      </label>
     </div>
   </div>
 
@@ -205,7 +205,7 @@
       </div>
     </div>
 
-    <!--<div id="oldemployeesWrapper" class="hidden border border-gray-500 p-4 rounded-lg">
+    <div id="oldemployeesWrapper" class="hidden border border-gray-500 p-4 rounded-lg">
       <div class="grid md:grid-cols-2 gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-900 mb-2">
@@ -216,7 +216,7 @@
           </select>
         </div>
         <div class="exportFormatSection"></div>
-      </div>-->
+      </div>
     </div>
 
     <!-- Export Format Selection (shown when "All Personnel" is selected) -->
@@ -295,7 +295,7 @@
     emolument: document.getElementById("emolumentWrapper"),
     rent: document.getElementById("rentWrapper"),
     taxed: document.getElementById("taxedWrapper"),
-    //oldemployees: document.getElementById("oldemployeesWrapper")
+    oldemployees: document.getElementById("oldemployeesWrapper")
   };
 
   const exportFormatStandalone = document.getElementById("exportFormatStandalone");
@@ -335,7 +335,7 @@
     emolument: document.getElementById("emolumentSelect"),
     rent: document.getElementById("rentSelect"),
     taxed: document.getElementById("taxedSelect"),
-    //oldemployees: document.getElementById("oldemployeesSelect")
+    oldemployees: document.getElementById("oldemployeesSelect")
   };
 
   const generatePersonnelBtn = document.getElementById("generatePersonnel");
@@ -375,7 +375,7 @@
         populateDropdown(selects.emolument, filterOptions.emolumentForms);
         populateDropdown(selects.rent, filterOptions.rentSubsidy);
         populateDropdown(selects.taxed, filterOptions.taxedStatus);
-        //populateDropdown(selects.oldemployees, filterOptions.oldEmployeesOptions);
+        populateDropdown(selects.oldemployees, filterOptions.oldEmployeesOptions);
       }
     } catch (error) {
       console.error('Error loading filter options:', error);
@@ -502,7 +502,8 @@
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to generate report');
       }
 
       if (exportFormat === 'json') {

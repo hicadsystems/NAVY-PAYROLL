@@ -241,6 +241,7 @@ router.post('/generate-pdf-report', verifyToken, async (req, res) => {
         format: 'A4',
         landscape: true,
         printBackground: true,
+        timeout: 60000,  // 60 seconds timeout for PDF generation
         margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
       });
 
@@ -383,6 +384,7 @@ router.post('/generate-pdf-report', verifyToken, async (req, res) => {
       format: 'A4',
       landscape: false,  // PORTRAIT orientation
       printBackground: true,
+      timeout: 60000,  // 60 seconds timeout for PDF generation
       margin: {
         top: '10mm',
         right: '10mm',
@@ -473,7 +475,7 @@ async function generateBankGroupedExcel(workbook, data, classDescription, ippis 
     }
     
     sheetNames.set(finalSheetName, true);
-    console.log(`Creating sheet: "${finalSheetName}" from bank="${group.bankname}", branch="${group.bankbranch}"`);
+    //console.log(`Creating sheet: "${finalSheetName}" from bank="${group.bankname}", branch="${group.bankbranch}"`);
     
     const worksheet = workbook.addWorksheet(finalSheetName);
 
@@ -873,13 +875,13 @@ function generatePDFHTML(groups, reportType, classDescription) {
 
   let contentHTML = '';
   
-  console.log(`📄 Generating PDF with ${groups.length} groups for reportType: ${reportType}`);
+  //console.log(`📄 Generating PDF with ${groups.length} groups for reportType: ${reportType}`);
   
   groups.forEach((group, index) => {
     // CRITICAL: First group (index === 0) must have NO page break
     const pageBreakClass = (index === 0) ? '' : 'page-break';
     
-    console.log(`  Group ${index}: pageBreakClass="${pageBreakClass}" | ${reportType === 'bank' ? group.bankname : group.one_type}`);
+    //console.log(`  Group ${index}: pageBreakClass="${pageBreakClass}" | ${reportType === 'bank' ? group.bankname : group.one_type}`);
     
     if (reportType === 'bank') {
       contentHTML += `

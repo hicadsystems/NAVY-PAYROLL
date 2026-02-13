@@ -33,6 +33,25 @@ class ReconciliationController extends BaseReportController {
       });
     } catch (error) {
       console.error('Error getting reconciliation summary:', error);
+      
+      // Check if it's a calculation incomplete error
+      if (error.message && error.message.includes('Calculation not completed')) {
+        return res.status(400).json({
+          success: false,
+          error: error.message,
+          errorType: 'CALCULATION_INCOMPLETE'
+        });
+      }
+      
+      // Check if it's a no data error
+      if (error.message && error.message.includes('No payroll data found')) {
+        return res.status(404).json({
+          success: false,
+          error: error.message,
+          errorType: 'NO_DATA'
+        });
+      }
+      
       res.status(500).json({
         success: false,
         error: 'Failed to get reconciliation summary',
@@ -61,6 +80,25 @@ class ReconciliationController extends BaseReportController {
 
     } catch (error) {
       console.error('Error getting employee reconciliation:', error);
+      
+      // Check if it's a calculation incomplete error
+      if (error.message && error.message.includes('Calculation not completed')) {
+        return res.status(400).json({
+          success: false,
+          error: error.message,
+          errorType: 'CALCULATION_INCOMPLETE'
+        });
+      }
+      
+      // Check if it's a no data error
+      if (error.message && error.message.includes('No payroll data found')) {
+        return res.status(404).json({
+          success: false,
+          error: error.message,
+          errorType: 'NO_DATA'
+        });
+      }
+      
       res.status(500).json({
         success: false,
         error: 'Failed to get employee reconciliation',
@@ -90,6 +128,25 @@ class ReconciliationController extends BaseReportController {
       });
     } catch (error) {
       console.error('Error generating reconciliation report:', error);
+      
+      // Check if it's a calculation incomplete error
+      if (error.message && error.message.includes('Calculation not completed')) {
+        return res.status(400).json({
+          success: false,
+          error: error.message,
+          errorType: 'CALCULATION_INCOMPLETE'
+        });
+      }
+      
+      // Check if it's a no data error
+      if (error.message && error.message.includes('No payroll data found')) {
+        return res.status(404).json({
+          success: false,
+          error: error.message,
+          errorType: 'NO_DATA'
+        });
+      }
+      
       res.status(500).json({
         success: false,
         error: 'Failed to generate reconciliation report',
@@ -119,6 +176,25 @@ class ReconciliationController extends BaseReportController {
       });
     } catch (error) {
       console.error('Error getting payment type analysis:', error);
+      
+      // Check if it's a calculation incomplete error
+      if (error.message && error.message.includes('Calculation not completed')) {
+        return res.status(400).json({
+          success: false,
+          error: error.message,
+          errorType: 'CALCULATION_INCOMPLETE'
+        });
+      }
+      
+      // Check if it's a no data error
+      if (error.message && error.message.includes('No payroll data found')) {
+        return res.status(404).json({
+          success: false,
+          error: error.message,
+          errorType: 'NO_DATA'
+        });
+      }
+      
       res.status(500).json({
         success: false,
         error: 'Failed to get payment type analysis',
@@ -168,7 +244,26 @@ class ReconciliationController extends BaseReportController {
 
     } catch (error) {
       console.error('❌ Export error:', error);
+      
       if (!res.headersSent) {
+        // Check if it's a calculation incomplete error
+        if (error.message && error.message.includes('Calculation not completed')) {
+          return res.status(400).json({
+            success: false,
+            error: error.message,
+            errorType: 'CALCULATION_INCOMPLETE'
+          });
+        }
+        
+        // Check if it's a no data error
+        if (error.message && error.message.includes('No payroll data found')) {
+          return res.status(404).json({
+            success: false,
+            error: error.message,
+            errorType: 'NO_DATA'
+          });
+        }
+        
         res.status(500).json({
           success: false,
           error: error.message
@@ -182,6 +277,15 @@ class ReconciliationController extends BaseReportController {
    */
   async generateSalaryReconciliationPDF(req, res, result, filters) {
     try {
+      if (!result || (!result.details && !result.all_details)) {
+        throw new Error('Control Sheet balanced no variance this month');
+      }
+      
+      // Ensure result has the expected structure
+      if (!result.details && !result.all_details) {
+        throw new Error('Invalid data structure returned from reconciliation service');
+      }
+      
       // Determine which data to use based on showErrorsOnly filter
       const showErrorsOnly = filters.showErrorsOnly !== false; // defaults to true
       const data = showErrorsOnly ? (result.details || []) : (result.all_details || []);

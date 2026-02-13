@@ -12,7 +12,7 @@ router.get(
 
 router.get(
   '/old',
-  oldPersonnelReportController.generatePersonnelReport.bind(personnelReportController)
+  oldPersonnelReportController.generateOldPersonnelReport.bind(oldPersonnelReportController)
 );
 
 router.get(
@@ -22,7 +22,7 @@ router.get(
 
 router.get(
   '/filter-options-old',
-  oldPersonnelReportController.getPersonnelFilterOptions.bind(personnelReportController)
+  oldPersonnelReportController.getOldPersonnelFilterOptions.bind(oldPersonnelReportController)
 );
 
 module.exports = router;

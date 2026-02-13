@@ -95,6 +95,10 @@ class SalarySummaryController extends BaseReportController {
   // ==========================================================================
   async generateSalarySummaryPDF(req, res, result, filters) {
     try {
+      if (!result.details || result.details.length === 0) {
+        throw new Error('No data available for the selected filters');
+      }
+
       const rawData = result.details;
       const grandTotals = result.grandTotals;
 
@@ -163,6 +167,10 @@ class SalarySummaryController extends BaseReportController {
   // GENERATE EXCEL
   // ==========================================================================
   async generateSalarySummaryExcel(res, result, filters) {
+    if (!result.details || result.details.length === 0) {
+      throw new Error('No data available for the selected filters');
+    }
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Salary Summary');
     const data = result.details;

@@ -111,6 +111,10 @@ class NSITFReportController extends BaseReportController {
   // ==========================================================================
   async generateNSITFReportExcel(data, req, res, isSummary = false) {
     try {
+      if (!data || data.length === 0) {
+        throw new Error('No NSITF contribution this month');
+      }
+
       const exporter = new GenericExcelExporter();
       const period = data.length > 0 ? { year: data[0].year, month: data[0].month } : 
                     { year: new Date().getFullYear(), month: new Date().getMonth() + 1 };
@@ -334,7 +338,7 @@ class NSITFReportController extends BaseReportController {
   async generateNSITFReportPDF(data, req, res) {
     try {
       if (!data || data.length === 0) {
-        throw new Error('No data available for the selected filters');
+        throw new Error('No NSITF contribution this month');
       }
 
       const isSummary = data.length > 0 && !data[0].hasOwnProperty('employee_id');

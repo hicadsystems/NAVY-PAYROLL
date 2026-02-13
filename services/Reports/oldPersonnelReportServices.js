@@ -32,7 +32,7 @@ class OldPersonnelReportService {
       gradelevel, 
       bankBranch, 
       stateOfOrigin, 
-      emolumentForm,
+      exitType,
       rentSubsidy,
       taxed
     } = filters;
@@ -156,9 +156,13 @@ class OldPersonnelReportService {
         FROM hr_employees h
         LEFT JOIN ac_costcentre cc ON cc.unitcode = h.Location
         LEFT JOIN py_salarygroup sg ON sg.groupcode = h.gradetype
-        WHERE h.payrollclass = ?
-          AND ((LENGTH(IFNULL(h.DateLeft, '')) > 0 AND STR_TO_DATE(h.DateLeft, '%Y%m%d') <= CURDATE()) 
-            OR LENGTH(IFNULL(h.exittype, '')) > 0)
+        WHERE ((h.exittype IS NOT NULL AND h.exittype <> '')
+            OR (
+              h.DateLeft IS NOT NULL
+              AND h.DateLeft <> ''
+              AND STR_TO_DATE(h.DateLeft, '%Y%m%d') <= CURDATE()
+            )) 
+          AND h.payrollclass = ?
           ${title ? 'AND h.Title = ?' : ''}
           ${pfa ? 'AND h.pfacode = ?' : ''}
           ${location ? 'AND h.Location = ?' : ''}
@@ -168,7 +172,7 @@ class OldPersonnelReportService {
           ${stateOfOrigin ? 'AND h.StateofOrigin = ?' : ''}
           ${rentSubsidy ? 'AND h.rent_subsidy = ?' : ''}
           ${taxed ? 'AND h.taxed = ?' : ''}
-          ${emolumentForm ? 'AND h.emolumentform = ?' : ''}
+          ${exitType ? 'AND h.exittype = ?' : ''}
         ORDER BY h.Title, h.gradelevel DESC, h.Surname
       `;
       
@@ -182,7 +186,7 @@ class OldPersonnelReportService {
       if (stateOfOrigin) params.push(stateOfOrigin);
       if (rentSubsidy) params.push(rentSubsidy);
       if (taxed) params.push(taxed);
-      if (emolumentForm) params.push(emolumentForm);
+      if (exitType) params.push(exitType);
       
       console.log('🔍 Executing query with params:', params);
       
@@ -201,7 +205,7 @@ class OldPersonnelReportService {
           stateOfOrigin: stateOfOrigin || 'All',
           rentSubsidy: rentSubsidy || 'All',
           taxed: taxed || 'All',
-          emolumentForm: emolumentForm || 'All',
+          exitType: exitType || 'All',
           employeeType: 'Old Employees Only'
         });
       } else {
@@ -233,7 +237,7 @@ class OldPersonnelReportService {
       gradelevel, 
       bankBranch, 
       stateOfOrigin, 
-      emolumentForm,
+      exitType,
       rentSubsidy,
       taxed
     } = filters;
@@ -297,9 +301,13 @@ class OldPersonnelReportService {
           SUM(CASE WHEN h.emolumentform = 'NO' THEN 1 ELSE 0 END) as emolumentform_no
           
         FROM hr_employees h
-        WHERE h.payrollclass = ?
-          AND ((LENGTH(IFNULL(h.DateLeft, '')) > 0 AND STR_TO_DATE(h.DateLeft, '%Y%m%d') <= CURDATE()) 
-            OR LENGTH(IFNULL(h.exittype, '')) > 0)
+        WHERE ((h.exittype IS NOT NULL AND h.exittype <> '')
+            OR (
+              h.DateLeft IS NOT NULL
+              AND h.DateLeft <> ''
+              AND STR_TO_DATE(h.DateLeft, '%Y%m%d') <= CURDATE()
+            )) 
+          AND h.payrollclass = ?
           ${title ? 'AND h.Title = ?' : ''}
           ${pfa ? 'AND h.pfacode = ?' : ''}
           ${location ? 'AND h.Location = ?' : ''}
@@ -309,7 +317,7 @@ class OldPersonnelReportService {
           ${stateOfOrigin ? 'AND h.StateofOrigin = ?' : ''}
           ${rentSubsidy ? 'AND h.rent_subsidy = ?' : ''}
           ${taxed ? 'AND h.taxed = ?' : ''}
-          ${emolumentForm ? 'AND h.emolumentform = ?' : ''}
+          ${exitType ? 'AND h.exittype = ?' : ''}
       `;
       
       const params = [payrollClass];
@@ -322,7 +330,7 @@ class OldPersonnelReportService {
       if (stateOfOrigin) params.push(stateOfOrigin);
       if (rentSubsidy) params.push(rentSubsidy);
       if (taxed) params.push(taxed);
-      if (emolumentForm) params.push(emolumentForm);
+      if (exitType) params.push(exitType);
       
       const [rows] = await pool.query(query, params);
       

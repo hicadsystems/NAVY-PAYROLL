@@ -99,6 +99,10 @@ class VarianceAnalysisController extends BaseReportController {
   // ==========================================================================
   async generateSalaryVarianceExcel(result, req, res) {
     try {
+      if (!result.data || result.data.length === 0) {
+        throw new Error('No variance detected for the selected filters');
+      }
+      
       const exporter = new GenericExcelExporter();
       const data = result.data;
       const className = this.getDatabaseNameFromRequest(req);
@@ -303,6 +307,10 @@ class VarianceAnalysisController extends BaseReportController {
   // ==========================================================================
   async generateOverpaymentExcel(result, req, res) {
     try {
+      if (!result.data || result.data.length === 0) {
+        throw new Error('No overpayments exceeding 0.5% threshold found for the selected month.');
+      }
+
       const exporter = new GenericExcelExporter();
       const data = result.data;
 
@@ -394,6 +402,10 @@ class VarianceAnalysisController extends BaseReportController {
   // ==========================================================================
   async generateSalaryVariancePDF(result, req, res) {
     try {
+      if (!result.data || result.data.length === 0) {
+        throw new Error('No variance detected for the selected filters');
+      }
+
       const templatePath = path.join(__dirname, '../../templates/salary-variance.html');
       const templateContent = fs.readFileSync(templatePath, 'utf8');
 
@@ -435,6 +447,10 @@ class VarianceAnalysisController extends BaseReportController {
   // ==========================================================================
   async generateOverpaymentPDF(result, req, res) {
     try {
+      if (!result.data || result.data.length === 0) {
+        throw new Error('No overpayments exceeding 0.5% threshold found for the selected period.');
+      }
+      
       const templatePath = path.join(__dirname, '../../templates/overpayment-analysis.html');
       const templateContent = fs.readFileSync(templatePath, 'utf8');
 

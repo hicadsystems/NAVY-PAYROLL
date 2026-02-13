@@ -200,6 +200,9 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
         continue;
       }
 
+      const connection = await pool.getConnection();
+      await connection.query(`USE ??`, [db]);
+
       const bpDescriptions = [...new Set(rows.map((r) => r.bp))];
 
       const query = `
@@ -243,14 +246,13 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
         }
 
         insertRecords.push({
-          Empl_ID: row.numb,
-          type: row.code,
-          amtp: row.bpm,
-          payind: "T",
-          nomth: 1,
-          createdby: createdBy,
-          datecreated: Date.now(),
-          _sourceSheet: row._sourceSheet || "Sheet1", // ADDED: Preserve sheet info
+          "Service Number": row.numb,
+          "Payment Type": row.code,
+          "Amount Payable": row.bpm,
+          "Payment Indicator": "T",
+          "Number of Months": 1,
+          "Created By": createdBy,
+          _sourceSheet: row._sourceSheet || row._sourcesheet || "Sheet1", // ADDED: Preserve sheet info
         });
       }
 

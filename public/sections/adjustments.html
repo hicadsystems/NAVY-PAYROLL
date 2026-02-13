@@ -247,8 +247,9 @@
 
         // Clear file input and hide form
         batchFileInput.value = "";
-
+        console.log("gotten res");
         const byteCharacters = atob(result.file.data);
+        console.log("gotten data");
         const byteNumbers = new Array(byteCharacters.length);
         for (let i = 0; i < byteCharacters.length; i++) {
           byteNumbers[i] = byteCharacters.charCodeAt(i);
@@ -259,7 +260,7 @@
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = data.file.filename;
+        a.download = result.file.filename;
         a.click();
       } catch (error) {
         console.error("Upload error:", error);

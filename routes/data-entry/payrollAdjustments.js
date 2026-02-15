@@ -248,11 +248,14 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
         insertRecords.push({
           "Service Number": row.numb,
           "Payment Type": row.code,
+          "Maker 1": "No",
           "Amount Payable": row.bpm,
+          "Maker 2": "No",
+          "Amount To Date": 0,
           "Payment Indicator": "T",
           "Number of Months": 1,
           "Created By": createdBy,
-          _sourceSheet: row._sourceSheet || row._sourcesheet || "Sheet1", // ADDED: Preserve sheet info
+          _sourceSheet: row._sourceSheet || row._sourcesheet || "Sheet1",
         });
       }
 

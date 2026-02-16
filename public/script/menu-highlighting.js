@@ -98,11 +98,12 @@ class MenuHighlighter {
       "local-government": "reference-tables",
 
       // Utilities menu items
-      "emolument-form-processing": "utilities",
-      "ippis-payments": "utilities",
-      "database-backup": "utilities",
-      "database-restore": "utilities",
-
+      'emolument-form-processing': 'utilities',
+      'ippis-payments': 'utilities',
+      'consolidated-payslip': 'utilities',
+      'database-backup': 'utilities',
+      'database-restore': 'utilities',
+      
       // Reports menu items
       "pay-slips": "reports",
       "payments-by-bank": "reports",

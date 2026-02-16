@@ -256,7 +256,10 @@ class ReportService {
       INNER JOIN py_wkemployees we ON we.empl_id = mp.his_empno
       LEFT JOIN py_elementType et ON et.PaymentType = mp.his_type
       LEFT JOIN py_Title tt ON tt.Titlecode = we.Title
-      WHERE LEFT(mp.his_type, 2) = 'PL'
+      WHERE (
+          LEFT(mp.his_type, 2) = 'PL'
+          -- OR (LEFT(mp.his_type, 2) = 'PR' AND mp.payindic = 'T')
+        )
         AND (mp.amtthismth > 0)
         ${year ? `AND sr.ord = ?` : ''}
         ${month ? `AND sr.mth = ?` : ''}

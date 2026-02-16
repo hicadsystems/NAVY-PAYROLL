@@ -1,6 +1,6 @@
-<div class="p-6">
+<section class="p-3">
     <!-- Connection Status -->
-    <div class="mb-6">
+    <div class="mb-3">
         <div id="connectionStatus">
             <div class="flex flex-wrap gap-2 items-center justify-between">
                 <div class="flex items-center">
@@ -147,17 +147,120 @@
       </div>
     </div>
 
-    <!-- Backup History -->
-    <div class="rounded-lg border border-slate-300">
-      <div class="p-6 border-b border-slate-300">
-        <h2 class="text-xl font-semibold text-blue-600 flex items-center">
-          <i class="fas fa-history mr-2 text-yellow-500"></i>
-          Backup History
-        </h2>
-      </div>
-      <div class="p-6">
-        <div id="backupHistory" class="space-y-3 max-h-96 overflow-y-auto">
-          <!-- Backup entries will be populated here -->
+    <div class="grid lg:grid-cols-2 gap-3">
+        <!-- Backup Configuration -->
+        <div class="rounded-lg border border-slate-300">
+            <div class="p-3 border-b border-slate-300">
+                <h2 class="text-xl text-blue-600 font-semibold flex items-center">
+                    <i class="fas fa-cog mr-2 text-black"></i>
+                    Backup Configuration
+                </h2>
+            </div>
+            <div class="p-3 space-y-2">
+                <!-- Database Selection -->
+                <div>
+                <label class="block text-sm font-medium text-gray-900 mb-2">Database</label>
+                <select id="databaseSelect"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-700 cursor-not-allowed"
+                        disabled>
+                    <option id="dbNameOption">Loading...</option>
+                </select>
+                </div>
+
+                <!-- Backup Type -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-900 mb-2">Backup Type</label>
+                    <select id="backupType" class="w-full bg-transparent border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="full">Full Backup</option>
+                        <option value="structure">Structure Only</option>
+                        <option value="data">Data Only</option>
+                    </select>
+                </div>
+
+                <!-- Compression -->
+                <div class="flex items-center">
+                    <input type="checkbox" id="compression" class="w-4 h-4 text-blue-600  border-slate-300 rounded focus:ring-blue-500">
+                    <label for="compression" class="ml-2 text-sm text-gray-900">Enable compression (GZIP)</label>
+                </div>
+
+                <!-- Schedule -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-900 mb-2">Schedule</label>
+                    <select id="scheduleSelect" class="w-full bg-transparent border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="manual">Manual</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+
+                <!-- Storage Location -->
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                    <label class="text-sm font-medium text-gray-900 whitespace-nowrap">
+                        Storage Location
+                    </label>
+
+                    <div
+                        class="flex flex-wrap items-center gap-x-4 gap-y-2"
+                    >
+                        <label class="flex items-center whitespace-nowrap">
+                            <input
+                                type="radio"
+                                name="storage"
+                                value="local"
+                                checked
+                                class="text-green-600 border-slate-300 focus:ring-green-500"
+                            />
+                            <span class="ml-2 text-sm text-gray-900">Local Server</span>
+                        </label>
+
+                        <label class="flex items-center whitespace-nowrap">
+                            <input
+                                type="radio"
+                                name="storage"
+                                value="ftp"
+                                class="text-green-600 border-slate-300 focus:ring-green-500"
+                            />
+                            <span class="ml-2 text-sm text-gray-900">FTP Server</span>
+                        </label>
+
+                        <label class="flex items-center whitespace-nowrap">
+                            <input
+                                type="radio"
+                                name="storage"
+                                value="cloud"
+                                class="text-green-600 border-slate-300 focus:ring-green-500"
+                            />
+                            <span class="ml-2 text-sm text-gray-900">Cloud Storage</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex space-x-3 pt-2">
+                    <button id="startBackup" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-play mr-2"></i>Start Backup
+                    </button>
+                    <button id="scheduleBackup" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-clock mr-2"></i>Schedule
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backup History -->
+        <div class="rounded-lg border border-slate-300 ">
+            <div class="p-3 border-b border-slate-300">
+                <h2 class="text-xl font-semibold text-blue-600 flex items-center">
+                    <i class="fas fa-history mr-2 text-yellow-500"></i>
+                    Backup History
+                </h2>
+            </div>
+            <div class="p-3">
+                <div id="backupHistory" class="space-y-3 max-h-96 overflow-y-auto">
+                    <!-- Backup entries will be populated here -->
+                </div>
+            </div>
         </div>
       </div>
     </div>
@@ -212,34 +315,7 @@
         </div>
       </div>
     </div>
-    <div class="rounded-lg border border-slate-300 p-6">
-      <div class="flex items-center">
-        <div class="p-3 bg-blue-600 rounded-full">
-          <i class="fas fa-hdd text-lg text-white"></i>
-        </div>
-        <div class="ml-4">
-          <p class="text-gray-900 font-bold text-sm">Total Storage Used</p>
-          <p id="storageUsed" class="text-2xl font-semibold text-blue-600">
-            0 MB
-          </p>
-        </div>
-      </div>
-    </div>
-    <div class="rounded-lg border border-slate-300 p-6">
-      <div class="flex items-center">
-        <div class="p-3 bg-black rounded-full">
-          <i class="fas fa-calendar text-lg text-white"></i>
-        </div>
-        <div class="ml-4">
-          <p class="text-gray-900 font-bold text-sm">Last Backup</p>
-          <p id="lastBackup" class="text-xl font-semibold text-blue-600">
-            Never
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+</section>
 
 <!-- Confirmation Modal -->
 <div

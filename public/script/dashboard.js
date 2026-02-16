@@ -533,7 +533,98 @@ window.addEventListener("resize", () => {
     }
   }, 150);
 });
-window.addEventListener("scroll", () => repositionOpen(), { passive: true });
+window.addEventListener('scroll', ()=> repositionOpen(), { passive: true });
+
+// SIMPLE SUBSUBMENU FUNCTIONALITY - Direct approach
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM loaded, setting up subsubmenus...');
+  
+  // Wait a bit to ensure all other scripts have loaded
+  setTimeout(function() {
+    setupSubsubmenus();
+  }, 100);
+});
+
+function setupSubsubmenus() {
+  console.log('Setting up subsubmenus...');
+  
+  // Find all toggle buttons
+  const toggleButtons = document.querySelectorAll('.toggle-subsubmenu');
+  console.log('Found toggle buttons:', toggleButtons.length);
+  
+  toggleButtons.forEach((button, index) => {
+    console.log(`Setting up button ${index + 1}`);
+    
+    // Remove any existing listeners
+    const newButton = button.cloneNode(true);
+    button.parentNode.replaceChild(newButton, button);
+    
+    // Add click listener to the new button
+    newButton.addEventListener('click', function(e) {
+      console.log('Subsubmenu button clicked!');
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const li = this.closest('.has-subsubmenu');
+      const subsubmenu = li.querySelector('.subsubmenu');
+      
+      if (subsubmenu) {
+        const isHidden = subsubmenu.classList.contains('hidden');
+        console.log('Current state - hidden:', isHidden);
+        
+        if (isHidden) {
+          subsubmenu.classList.remove('hidden');
+          this.textContent = '▾';
+          console.log('Opened subsubmenu');
+        } else {
+          subsubmenu.classList.add('hidden');
+          this.textContent = '▸';
+          console.log('Closed subsubmenu');
+        }
+      } else {
+        console.log('No subsubmenu found');
+      }
+    });
+  });
+  
+  // Also handle clicking on the div container (not just the button)
+  const containers = document.querySelectorAll('.has-subsubmenu > div');
+  console.log('Found containers:', containers.length);
+  
+  containers.forEach((container, index) => {
+    console.log(`Setting up container ${index + 1}`);
+    
+    container.addEventListener('click', function(e) {
+      // Only handle if we didn't click the button directly
+      if (!e.target.classList.contains('toggle-subsubmenu')) {
+        console.log('Container clicked!');
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const li = this.closest('.has-subsubmenu');
+        const subsubmenu = li.querySelector('.subsubmenu');
+        const button = li.querySelector('.toggle-subsubmenu');
+        
+        if (subsubmenu && button) {
+          const isHidden = subsubmenu.classList.contains('hidden');
+          console.log('Current state - hidden:', isHidden);
+          
+          if (isHidden) {
+            subsubmenu.classList.remove('hidden');
+            button.textContent = '▾';
+            console.log('Opened subsubmenu via container');
+          } else {
+            subsubmenu.classList.add('hidden');
+            button.textContent = '▸';
+            console.log('Closed subsubmenu via container');
+          }
+        }
+      }
+    });
+  });
+  
+  console.log('Subsubmenu setup complete');
+}
 
 // Figure out the current time of day
 function getTimeOfDay() {
@@ -614,24 +705,33 @@ async function loadClassMappings() {
 
 // Update greeting message
 function updateGreeting() {
-  const greetingElement = document.getElementById("dynamicGreeting");
-  const workingClassElement = document.getElementById("payrollClassName");
-  if (!greetingElement && !workingClassElement) return; // Only run if element exists
+  const greetingElement = document.getElementById('dynamicGreeting');
+  const workingClassElement = document.getElementById('payrollClassName');
+  
+  // Return only if BOTH elements are missing
+  if (!greetingElement && !workingClassElement) return;
 
   const user = getLoggedInUser();
   const timeOfDay = getTimeOfDay();
 
-  // ✅ Use current_class from JWT token (the database they switched to)
+  // Use current_class from JWT token (the database they switched to)
   const effectiveClass = user.current_class;
-  const userClass =
-    classMapping[effectiveClass] || effectiveClass || "OFFICERS";
+  
+  // FIX: Wait for classMapping to be populated before using it
+  const userClass = classMapping[effectiveClass] || effectiveClass || 'OFFICERS';
 
   // Default to "User" if no login info
   const userName = user?.full_name || user?.user_id || "User";
 
-  const greeting = `Good ${timeOfDay} ${userName}, welcome to ${userClass} payroll`;
-  greetingElement.textContent = greeting;
-  workingClassElement.textContent = userClass;
+  // Only update elements that exist (prevents null property error)
+  if (greetingElement) {
+    const greeting = `Good ${timeOfDay} ${userName}, welcome to ${userClass} payroll`;
+    greetingElement.textContent = greeting;
+  }
+  
+  if (workingClassElement) {
+    workingClassElement.textContent = userClass;
+  }
 
   console.log("📊 Dashboard greeting updated:", {
     user: userName,
@@ -659,10 +759,10 @@ function updateCurrentTime() {
   timeElement.textContent = timeString;
 }
 
-// ✅ Update function for when payroll class is switched
-window.updateDashboardGreeting = function (newClassName) {
-  console.log("🔄 Updating dashboard greeting for new class:", newClassName);
-
+// Update function for when payroll class is switched
+window.updateDashboardGreeting = function(newClassName) {
+  console.log('🔄 Updating dashboard greeting for new class:', newClassName);
+  
   // Reload user info from updated token
   const user = getLoggedInUser();
   if (user) {
@@ -670,9 +770,9 @@ window.updateDashboardGreeting = function (newClassName) {
   }
 };
 
-// ✅ Listen for payroll class switch events
-document.addEventListener("payrollClassFocused", (event) => {
-  console.log("🎯 Payroll class focused event received:", event.detail);
+// Listen for payroll class switch events
+document.addEventListener('payrollClassFocused', (event) => {
+  console.log('🎯 Payroll class focused event received:', event.detail);
   updateGreeting();
 });
 
@@ -724,8 +824,11 @@ async function getCurrentPayrollPeriod() {
 
 // Init only on dashboard pages
 (async function initDashboard() {
-  if (document.getElementById("dynamicGreeting")) {
-    await loadClassMappings(); // ✅ wait for mapping to load
+  if (document.getElementById('dynamicGreeting') || document.getElementById('payrollClassName')) {
+    // Wait for class mappings to load BEFORE updating greeting
+    await loadClassMappings();
+    
+    // Now update greeting with populated classMapping
     updateGreeting();
     updateCurrentTime();
 
@@ -735,96 +838,6 @@ async function getCurrentPayrollPeriod() {
   }
 })();
 
-// SIMPLE SUBSUBMENU FUNCTIONALITY - Direct approach
-document.addEventListener("DOMContentLoaded", function () {
-  console.log("DOM loaded, setting up subsubmenus...");
-
-  // Wait a bit to ensure all other scripts have loaded
-  setTimeout(function () {
-    setupSubsubmenus();
-  }, 100);
-});
-
-function setupSubsubmenus() {
-  console.log("Setting up subsubmenus...");
-
-  // Find all toggle buttons
-  const toggleButtons = document.querySelectorAll(".toggle-subsubmenu");
-  console.log("Found toggle buttons:", toggleButtons.length);
-
-  toggleButtons.forEach((button, index) => {
-    console.log(`Setting up button ${index + 1}`);
-
-    // Remove any existing listeners
-    const newButton = button.cloneNode(true);
-    button.parentNode.replaceChild(newButton, button);
-
-    // Add click listener to the new button
-    newButton.addEventListener("click", function (e) {
-      console.log("Subsubmenu button clicked!");
-      e.preventDefault();
-      e.stopPropagation();
-
-      const li = this.closest(".has-subsubmenu");
-      const subsubmenu = li.querySelector(".subsubmenu");
-
-      if (subsubmenu) {
-        const isHidden = subsubmenu.classList.contains("hidden");
-        console.log("Current state - hidden:", isHidden);
-
-        if (isHidden) {
-          subsubmenu.classList.remove("hidden");
-          this.textContent = "▾";
-          console.log("Opened subsubmenu");
-        } else {
-          subsubmenu.classList.add("hidden");
-          this.textContent = "▸";
-          console.log("Closed subsubmenu");
-        }
-      } else {
-        console.log("No subsubmenu found");
-      }
-    });
-  });
-
-  // Also handle clicking on the div container (not just the button)
-  const containers = document.querySelectorAll(".has-subsubmenu > div");
-  console.log("Found containers:", containers.length);
-
-  containers.forEach((container, index) => {
-    console.log(`Setting up container ${index + 1}`);
-
-    container.addEventListener("click", function (e) {
-      // Only handle if we didn't click the button directly
-      if (!e.target.classList.contains("toggle-subsubmenu")) {
-        console.log("Container clicked!");
-        e.preventDefault();
-        e.stopPropagation();
-
-        const li = this.closest(".has-subsubmenu");
-        const subsubmenu = li.querySelector(".subsubmenu");
-        const button = li.querySelector(".toggle-subsubmenu");
-
-        if (subsubmenu && button) {
-          const isHidden = subsubmenu.classList.contains("hidden");
-          console.log("Current state - hidden:", isHidden);
-
-          if (isHidden) {
-            subsubmenu.classList.remove("hidden");
-            button.textContent = "▾";
-            console.log("Opened subsubmenu via container");
-          } else {
-            subsubmenu.classList.add("hidden");
-            button.textContent = "▸";
-            console.log("Closed subsubmenu via container");
-          }
-        }
-      }
-    });
-  });
-
-  console.log("Subsubmenu setup complete");
-}
 
 
 // Navigation handler for submenu items
@@ -1314,11 +1327,11 @@ class NavigationSystem {
     }
 
     // Update page title
-    document.title = "HICAD — Dashboard";
+    document.title = 'NAVY — Dashboard';
   }
 
   updateHistory(sectionId, sectionName) {
-    document.title = `HICAD — ${sectionName}`;
+    document.title = `NAVY — ${sectionName}`;
     // Store both sectionId and original sectionName in history state
     window.history.pushState(
       {
@@ -1421,9 +1434,16 @@ if (typeof module !== "undefined" && module.exports) {
 // Dashboard stats update
 async function updateDashboardStats() {
   try {
-    // Get payroll status
-    const response = await auth.fetchWithAuth("stats/2025/10", {
-      method: "GET",
+    // Check if the element exists before making the API call
+    const personnelElement = document.getElementById('active-personnel');
+    if (!personnelElement) {
+      console.log('📊 Stats elements not found on this page, skipping update');
+      return;
+    }
+
+    // Get total personnel and nominal processed for current payroll period
+    const response = await auth.fetchWithAuth('/stats/total-personnels', {
+      method: 'GET',
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
@@ -1432,24 +1452,27 @@ async function updateDashboardStats() {
     const result = await response.json();
 
     if (result.success) {
-      // Update stats cards
-      document.getElementById("pendingApproval").textContent =
-        result.data.total_employees || "0";
-      document.getElementById("nominalProcessed").textContent =
-        result.data.total_employees || "0";
-
-      // Update notifications based on status
-      updateNotifications(result.data);
+      // Update stats cards (element already verified to exist)
+      personnelElement.textContent = result.data.totalPersonnels || '0';
+      
+      console.log('Dashboard stats updated:', result.data.totalPersonnels);
     }
   } catch (error) {
-    console.error("Error updating dashboard:", error);
+    console.error('❌ Error updating dashboard stats:', error);
   }
 }
 
+// Call updateDashboardStats on page load
+document.addEventListener('DOMContentLoaded', function() {
+  updateDashboardStats();
+});
 
-async function logout() {
-  // Clear user session data && Call logout API (but don't wait for response)
-  auth.logout().catch((err) => console.error("Logout API error:", err));
+// Call updateDashboardStats on page load
+document.addEventListener('DOMContentLoaded', function() {
+  updateDashboardStats();
+});
+
+function logout() {
   // Clear user session data
   sessionStorage.clear();
   localStorage.clear();

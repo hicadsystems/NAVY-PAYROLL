@@ -855,44 +855,24 @@
       const item = data.find((d) => d.PaymentType === paymentType);
       if (!item) return;
 
-      let html = "";
-      const fieldLabels = {
-        PaymentType: "Payment Type",
-        elmDesc: "Description",
-        Status: "Status",
-        perc: "Function Type",
-        std: "Standard Amount",
-        maxi: "Maximum Amount",
-        dependence: "Dependence",
-        payfreq: "Payment Frequency",
-        pmonth: "Starting Month",
-        freetax: "Tax Free Amount",
-        bpay: "Required For All",
-        yearend: "Year End Clearance",
-        Ledger: "Account Ledger",
-        ipis: "Required By IPPIS",
-        createdby: "Created By",
-        datecreated: "Date Created",
-      };
-
-      for (let key in item) {
-        if (fieldLabels[key]) {
-          let value = item[key];
-          if (key === "datecreated" && value) {
-            value = new Date(value).toLocaleString();
-          } else if (key === "perc") {
-            value = `${resolveName(value, "functiontype")} (${value || "N/A"})`;
-          } else if (key === "dependence") {
-            value = `${resolveName(value, "elementtype")} (${value || "N/A"})`;
-          } else if (key === "Ledger") {
-            value = `${resolveName(value, "accchart")} (${value || "N/A"})`;
-          }
-
-          html += `<div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
-          <dt class="font-medium text-gray-600"><strong>${
-            fieldLabels[key]
-          }:</strong></dt>
-          <dd class="col-span-2 text-gray-900">${value || "N/A"}</dd>
+    for (let key in item) {
+      if (fieldLabels[key]) {
+        let value = item[key];
+        if (key === 'datecreated' && value) {
+          value = new Date(value).toLocaleString();
+        } else if (key === "perc") {
+          value = `${resolveName(value, "functiontype")} (${value || "N/A"})`;
+        } else if (key === "dependence") {
+          value = `${resolveName(value, "elementtype")} (${value || "N/A"})`;
+        } else if (key === "Ledger") {
+          value = `${resolveName(value, "accchart")} (${value || "N/A"})`;
+        } else if (key === "payfreq") {
+          value = `${resolveName(value, "payfrequency")} (${value || "N/A"})`;
+        }
+        
+        html += `<div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
+          <dt class="font-medium text-gray-600"><strong>${fieldLabels[key]}:</strong></dt>
+          <dd class="col-span-2 text-gray-900">${value || 'N/A'}</dd>
         </div>`;
         }
       }
@@ -1334,7 +1314,7 @@
                 <td class="text-right">${formatCurrency(item.maxi)}</td>
                 <td style="white-space: nowrap;">${resolveName(item.Ledger, 'accchart')}</td>
                 <td>${resolveName(item.dependence, 'elementtype')}</td>
-                <td class="text-center">${item.payfreq || '-'}</td>
+                <td class="text-center">${resolveName(item.payfreq, 'payfrequency') || '-'}</td>
                 <td class="text-center">${item.pmonth || '-'}</td>
                 <td class="text-right">${formatCurrency(item.freetax)}</td>
                 <td class="text-center">${item.bpay || 'NO'}</td>
@@ -1364,8 +1344,22 @@
       .getElementById("generateReportBtn")
       .addEventListener("click", generateReport);
 
-    // Initialize the application
-    fetchPayElements();
-    loadAllDropdowns();
-  })();
+// Init
+  async function initializeApp() {
+    try {
+      // First load all dropdowns and wait for completion
+      await loadAllDropdowns();
+      
+      // Only after dropdowns are loaded, fetch and render data
+      await fetchPayElements();
+      
+    } catch (error) {
+      console.error('Failed to initialize app:', error);
+      showError('Failed to load application data');
+    }
+  }
+
+  // Call the initialization
+  initializeApp();
+})();
 </script>

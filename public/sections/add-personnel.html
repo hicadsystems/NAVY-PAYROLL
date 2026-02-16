@@ -133,7 +133,14 @@
       </div>
 
       <button
-        onclick="window.navigation?.navigateToSection ? window.navigation.navigateToSection('current-personnel','Current Personnel') : showAlert('Hook your navigation here.')"
+        onclick="
+          window.navigation?.navigateToSection
+            ? window.navigation.navigateToSection(
+                'current-personnel',
+                'Current Personnel',
+              )
+            : showAlert('Hook your navigation here.')
+        "
         id="currentPersonnelBtn"
         class="px-4 text-sm lg:text-lg py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
       >
@@ -477,13 +484,12 @@
           <label class="block text-sm font-medium text-gray-700"
             >Accommodation Type</label
           >
-          <select
+          <input
             name="accomm_type"
             id="accomm_type"
+            placeholder="Accommodation Type"
             class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"
-          >
-            <option>Select Accommodation Type</option>
-          </select>
+          />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700"
@@ -1171,7 +1177,7 @@
       text: "Statename",
     },
     "Local Government": { endpoint: "lga", value: "Lgcode", text: "Lgname" },
-    Rank: { endpoint: "title", value: "Titlecode", text: "Description" },
+    Rank: { endpoint: "title", value: "Description", text: "Description" },
     Religion: {
       endpoint: "religion",
       value: "ReligionCode",
@@ -1184,7 +1190,7 @@
     elementId,
     valueField,
     textField,
-    placeholder
+    placeholder,
   ) {
     try {
       const token = localStorage.getItem("token");
@@ -1221,7 +1227,7 @@
         elementId,
         cfg.value,
         cfg.text,
-        `Select ${field}`
+        `Select ${field}`,
       );
     });
     await Promise.all(promises);
@@ -1245,7 +1251,7 @@
 
           // Find the selected title's description
           const selectedTitle = data.find(
-            (item) => item.Titlecode === titleCode
+            (item) => item.Titlecode === titleCode,
           );
           if (selectedTitle) {
             // Set the TitleDesc field (assuming you have a hidden or visible field for it)
@@ -1253,7 +1259,7 @@
             if (titleDescField) {
               titleDescField.setAttribute(
                 "data-titledesc",
-                selectedTitle.Description
+                selectedTitle.Description,
               );
               console.log("TitleDesc set to:", selectedTitle.Description);
             }
@@ -1267,7 +1273,7 @@
 
   function handleSpouseTabVisibility() {
     const maritalStatusDropdown = document.getElementById(
-      "field-marital-status"
+      "field-marital-status",
     );
     const spouseTab = document.getElementById("tab-spouse");
 
@@ -1295,22 +1301,76 @@
     maritalStatusDropdown.addEventListener("change", updateSpouseTab);
   }
 
-async function loadAllDropdowns() {
-  const promises = [
-    loadDropdown("bankbranch", "bankbranch", "branchcode", "branchname", "Select Bank Branch"),
-    loadDropdown("bankcode", "bankcode", "bankcode", "bankname", "Select Bank Code"),
-    loadDropdown("state", "state", "Statecode", "Statename", "Select State"),
-    loadDropdown("country", "country", "countrycode", "Countryname", "Select Country"),
-    loadDropdown("command", "command", "navalcmd", "name", "Select Command"),
-    loadDropdown("pfa", "pfa", "pfacode", "pfadesc", "Select PFA"),
-    loadDropdown("salarygroup", "salarygroup", "groupcode", "grpdesc", "Select Salary Group"),
-    //loadDropdown("salarygrade", "salarygrade", "grade_no", "grade_desc", "Select Salary Grade"),
-    loadDropdown("exittype", "exittype", "Name", "Description", "Select Exit Type"),
-    loadDropdown("specialisation", "specialisation", "sp_desc", "sp_desc", "Select Specialisation"),
-    loadDropdown("branch", "branch", "busline", "busdesc", "Select Branch"),
-    loadDropdown("location", "step3-ship", "unitcode", "unitdesc", "Select location"),
-    loadDropdown("payrollclass", "payrollProcess", "classcode", "classname", "Select Payroll Process"),
-    loadDropdown("entrymode", "entry_mode", "entrymode", "entryname", "Select entrymode"),
+  async function loadAllDropdowns() {
+    const promises = [
+      loadDropdown(
+        "bankbranch",
+        "bankbranch",
+        "branchcode",
+        "branchname",
+        "Select Bank Branch",
+      ),
+      loadDropdown(
+        "bankcode",
+        "bankcode",
+        "bankcode",
+        "bankname",
+        "Select Bank Code",
+      ),
+      loadDropdown("state", "state", "Statecode", "Statename", "Select State"),
+      loadDropdown(
+        "country",
+        "country",
+        "countrycode",
+        "Countryname",
+        "Select Country",
+      ),
+      loadDropdown("command", "command", "navalcmd", "name", "Select Command"),
+      loadDropdown("pfa", "pfa", "pfacode", "pfadesc", "Select PFA"),
+      loadDropdown(
+        "salarygroup",
+        "salarygroup",
+        "groupcode",
+        "grpdesc",
+        "Select Salary Group",
+      ),
+      //loadDropdown("salarygrade", "salarygrade", "grade_no", "grade_desc", "Select Salary Grade"),
+      loadDropdown(
+        "exittype",
+        "exittype",
+        "Name",
+        "Description",
+        "Select Exit Type",
+      ),
+      loadDropdown(
+        "specialisation",
+        "specialisation",
+        "sp_desc",
+        "sp_desc",
+        "Select Specialisation",
+      ),
+      loadDropdown("branch", "branch", "busline", "busdesc", "Select Branch"),
+      loadDropdown(
+        "location",
+        "step3-ship",
+        "unitcode",
+        "unitdesc",
+        "Select location",
+      ),
+      loadDropdown(
+        "payrollclass",
+        "payrollProcess",
+        "classcode",
+        "classname",
+        "Select Payroll Process",
+      ),
+      loadDropdown(
+        "entrymode",
+        "entry_mode",
+        "entrymode",
+        "entryname",
+        "Select entrymode",
+      ),
 
       //spouse and child state/lga dropdowns would be populated dynamically based on selection
       loadDropdown(
@@ -1318,21 +1378,21 @@ async function loadAllDropdowns() {
         "spouseState",
         "Statecode",
         "Statename",
-        "Select State"
+        "Select State",
       ),
       loadDropdown(
         "state",
         "childState",
         "Statecode",
         "Statename",
-        "Select State"
+        "Select State",
       ),
       loadDropdown(
         "lga",
         "spouseLga",
         "Lgcode",
         "Lgname",
-        "Select State First"
+        "Select State First",
       ),
       loadDropdown("lga", "childLga", "Lgcode", "Lgname", "Select State First"),
 
@@ -1342,7 +1402,7 @@ async function loadAllDropdowns() {
         "nokRelationship",
         "RShipcode",
         "Relationship",
-        "Select Relationship"
+        "Select Relationship",
       ),
     ];
     await Promise.all(promises);
@@ -1355,7 +1415,7 @@ async function loadAllDropdowns() {
 
     if (!stateDropdown || !lgaDropdown) {
       console.error(
-        `Dropdowns not found: state=${stateFieldId}, lga=${lgaFieldId}`
+        `Dropdowns not found: state=${stateFieldId}, lga=${lgaFieldId}`,
       );
       return;
     }
@@ -1607,7 +1667,7 @@ async function loadAllDropdowns() {
           ">": "&gt;",
           '"': "&quot;",
           "'": "&#039;",
-        }[m])
+        })[m],
     );
   }
 
@@ -1683,9 +1743,7 @@ async function loadAllDropdowns() {
 
     if (missingFields.length > 0) {
       showAlert(
-        `Please fill in the following required fields:\n${missingFields.join(
-          "\n"
-        )}`
+        `Please fill in the following required fields:\n${missingFields.join("\n")}`,
       );
       return false;
     }
@@ -1703,7 +1761,7 @@ async function loadAllDropdowns() {
       // 1. Check if in edit mode and show confirmation
       if (formMode === "edit") {
         const confirmed = confirm(
-          "Are you sure you want to cancel editing? Any unsaved changes will be lost."
+          "Are you sure you want to cancel editing? Any unsaved changes will be lost.",
         );
         if (!confirmed) return;
 
@@ -1734,7 +1792,7 @@ async function loadAllDropdowns() {
         setupStateLGACascade(
           "field-state-of-origin",
           "field-local-government",
-          "Local Government"
+          "Local Government",
         );
       });
 
@@ -1747,13 +1805,13 @@ async function loadAllDropdowns() {
 
       // 6. Reset any file inputs and avatar previews
       const passportInput = document.querySelector(
-        'input[name="Passport Photograph"]'
+        'input[name="Passport Photograph"]',
       );
       if (passportInput) {
         passportInput.value = "";
         passportInput.style.display = "";
         const avatarContainer = document.querySelector(
-          ".passport-avatar-container"
+          ".passport-avatar-container",
         );
         if (avatarContainer) {
           avatarContainer.remove();
@@ -1769,7 +1827,7 @@ async function loadAllDropdowns() {
       if (localStorage.getItem("isEditMode") === "true") {
         const batchButton = document.getElementById("tab-batch");
         const currentPersonnelButton = document.getElementById(
-          "currentPersonnelBtn"
+          "currentPersonnelBtn",
         );
         localStorage.removeItem("isEditMode");
       }
@@ -1787,7 +1845,7 @@ async function loadAllDropdowns() {
         if (window.navigation?.navigateToSection) {
           window.navigation.navigateToSection(
             "current-personnel",
-            "Current Personnel"
+            "Current Personnel",
           );
         }
       }
@@ -1872,7 +1930,7 @@ async function loadAllDropdowns() {
   if (localStorage.getItem("isEditMode") === "true") {
     const batchButton = document.getElementById("tab-batch");
     const currentPersonnelButton = document.getElementById(
-      "currentPersonnelBtn"
+      "currentPersonnelBtn",
     );
 
     if (batchButton) {
@@ -1886,7 +1944,7 @@ async function loadAllDropdowns() {
       currentPersonnelButton.classList.add("opacity-50", "cursor-none");
       currentPersonnelButton.classList.remove(
         "hover:bg-green-700",
-        "cursor-not-allowed"
+        "cursor-not-allowed",
       );
     }
   }
@@ -1946,24 +2004,24 @@ async function loadAllDropdowns() {
             field,
             `<select id="${fieldId}" name="${field}" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
            <option value="">Select ${field}</option>
-         </select>`
+         </select>`,
           );
         }
         if (field === "Passport Photograph") {
           return controlWrap(
             field,
-            `<input id="${fieldId}" name="${field}" type="file" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`
+            `<input id="${fieldId}" name="${field}" type="file" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`,
           );
         }
         if (field === "Date of Birth") {
           return controlWrap(
             field,
-            `<input id="${fieldId}" name="${field}" type="date" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`
+            `<input id="${fieldId}" name="${field}" type="date" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`,
           );
         }
         return controlWrap(
           field,
-          `<input id="${fieldId}" name="${field}" type="text" placeholder="${field}" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`
+          `<input id="${fieldId}" name="${field}" type="text" placeholder="${field}" class="w-full border border-blue-500 bg-transparent rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"/>`,
         );
       })
       .join("");
@@ -1996,7 +2054,7 @@ async function loadAllDropdowns() {
   if (formTitleEl) formTitleEl.textContent = "Add New Personnel";
   renderStep1();
   toggleStep(1);
-  handleSpouseTabVisibility(),
+  (handleSpouseTabVisibility(),
     Promise.all([
       initializeDropdowns(),
       loadAllDropdowns(),
@@ -2006,9 +2064,9 @@ async function loadAllDropdowns() {
       setupStateLGACascade(
         "field-state-of-origin",
         "field-local-government",
-        "Local Government"
+        "Local Government",
       );
-    });
+    }));
 
   btnStep1?.addEventListener("click", () => toggleStep(1));
   btnStep2?.addEventListener("click", () => toggleStep(2));
@@ -2016,41 +2074,56 @@ async function loadAllDropdowns() {
   personnelCancelBtn?.addEventListener("click", cancelPersonnelForm);
 
   const submitBtn = document.querySelector(
-    '#personnelForm button[type="button"]:last-child'
+    '#personnelForm button[type="button"]:last-child',
   );
   submitBtn?.addEventListener("click", submitPersonnelFormWithValidation);
 
-function actionBtns(type, id) {
-  // Add quotes around the id to handle string IDs like 'fallback-nok-1'
-  return `
+  function actionBtns(type, id) {
+    // Add quotes around the id to handle string IDs like 'fallback-nok-1'
+    return `
     <button onclick="viewFamilyRecord('${type}', '${id}')" class="px-2 text-blue-600 hover:underline">View</button>
     <button onclick="editRow('${type}', '${id}')" class="px-2 text-green-600 hover:underline">Edit</button>
     <button onclick="deleteRow(this, '${type}', '${id}')" class="px-2 text-red-600 hover:underline">Delete</button>
   `;
   }
 
-// View Family Record Modal - FULL DATA
-window.viewFamilyRecord = async function(type, id) {
-  let data;
-  
-  if (formMode === 'create') {
-    // In create mode, get from pendingFamilyData (no API call needed)
-    if (type === 'NOK') data = pendingFamilyData.nok.find(n => n._tempId === id);
-    if (type === 'Spouse') data = pendingFamilyData.spouse.find(s => s._tempId === id);
-    if (type === 'Child') data = pendingFamilyData.children.find(c => c._tempId === id);
-  } else {
-    // In edit mode, search in pendingFamilyData (which now includes fallback)
-    if (type === 'NOK') data = pendingFamilyData.nok.find(n => (n._tempId && n._tempId == id) || (n.nok_id && n.nok_id == id));
-    if (type === 'Spouse') data = pendingFamilyData.spouse.find(s => (s._tempId && s._tempId == id) || (s.spouse_id && s.spouse_id == id));
-    if (type === 'Child') data = pendingFamilyData.children.find(c => (c._tempId && c._tempId == id) || (c.child_id && c.child_id == id));
-  }
-  
-  if (!data) {
-    showError('Record not found');
-    return;
-  }
-  
-  let content = '<div class="space-y-2 max-h-96 overflow-y-auto">';
+  // View Family Record Modal - FULL DATA
+  window.viewFamilyRecord = async function (type, id) {
+    let data;
+
+    if (formMode === "create") {
+      // In create mode, get from pendingFamilyData (no API call needed)
+      if (type === "NOK")
+        data = pendingFamilyData.nok.find((n) => n._tempId === id);
+      if (type === "Spouse")
+        data = pendingFamilyData.spouse.find((s) => s._tempId === id);
+      if (type === "Child")
+        data = pendingFamilyData.children.find((c) => c._tempId === id);
+    } else {
+      // In edit mode, search in pendingFamilyData (which now includes fallback)
+      if (type === "NOK")
+        data = pendingFamilyData.nok.find(
+          (n) => (n._tempId && n._tempId == id) || (n.nok_id && n.nok_id == id),
+        );
+      if (type === "Spouse")
+        data = pendingFamilyData.spouse.find(
+          (s) =>
+            (s._tempId && s._tempId == id) ||
+            (s.spouse_id && s.spouse_id == id),
+        );
+      if (type === "Child")
+        data = pendingFamilyData.children.find(
+          (c) =>
+            (c._tempId && c._tempId == id) || (c.child_id && c.child_id == id),
+        );
+    }
+
+    if (!data) {
+      showError("Record not found");
+      return;
+    }
+
+    let content = '<div class="space-y-2 max-h-96 overflow-y-auto">';
 
     Object.entries(data).forEach(([key, value]) => {
       if (!key.startsWith("_") && !key.includes("id") && value) {
@@ -2076,9 +2149,7 @@ window.viewFamilyRecord = async function(type, id) {
         content += `
         <div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
           <dt class="font-medium text-gray-600">${displayKey}:</dt>
-          <dd class="col-span-2 text-gray-900">${
-            escapeHtml(displayValue) || "N/A"
-          }</dd>
+          <dd class="col-span-2 text-gray-900">${escapeHtml(displayValue) || "N/A"}</dd>
         </div>`;
       }
     });
@@ -2126,75 +2197,99 @@ window.viewFamilyRecord = async function(type, id) {
       return;
     }
 
-  try {
-    console.log('Delete clicked:', { type: deleteTargetType, id: deleteTargetId, formMode });
-    
-    // Check if this is a fallback record (string ID starting with 'fallback-')
-    const isFallbackRecord = String(deleteTargetId).startsWith('fallback-');
-    
-    if (formMode === 'create') {
-      // In create mode, just remove from pendingFamilyData
-      if (deleteTargetType === 'NOK') {
-        pendingFamilyData.nok = pendingFamilyData.nok.filter(n => n._tempId !== deleteTargetId);
-      } else if (deleteTargetType === 'Spouse') {
-        pendingFamilyData.spouse = pendingFamilyData.spouse.filter(s => s._tempId !== deleteTargetId);
-      } else if (deleteTargetType === 'Child') {
-        pendingFamilyData.children = pendingFamilyData.children.filter(c => c._tempId !== deleteTargetId);
+    try {
+      console.log("Delete clicked:", {
+        type: deleteTargetType,
+        id: deleteTargetId,
+        formMode,
+      });
+
+      // Check if this is a fallback record (string ID starting with 'fallback-')
+      const isFallbackRecord = String(deleteTargetId).startsWith("fallback-");
+
+      if (formMode === "create") {
+        // In create mode, just remove from pendingFamilyData
+        if (deleteTargetType === "NOK") {
+          pendingFamilyData.nok = pendingFamilyData.nok.filter(
+            (n) => n._tempId !== deleteTargetId,
+          );
+        } else if (deleteTargetType === "Spouse") {
+          pendingFamilyData.spouse = pendingFamilyData.spouse.filter(
+            (s) => s._tempId !== deleteTargetId,
+          );
+        } else if (deleteTargetType === "Child") {
+          pendingFamilyData.children = pendingFamilyData.children.filter(
+            (c) => c._tempId !== deleteTargetId,
+          );
+        }
+
+        console.log("Removed from pendingFamilyData (create mode)");
+      } else if (isFallbackRecord) {
+        // In edit mode, if it's a fallback record, just remove from pendingFamilyData
+        // (Don't make API call because it doesn't exist in the database yet)
+        if (deleteTargetType === "NOK") {
+          pendingFamilyData.nok = pendingFamilyData.nok.filter(
+            (n) => n._tempId !== deleteTargetId,
+          );
+        } else if (deleteTargetType === "Spouse") {
+          pendingFamilyData.spouse = pendingFamilyData.spouse.filter(
+            (s) => s._tempId !== deleteTargetId,
+          );
+        } else if (deleteTargetType === "Child") {
+          pendingFamilyData.children = pendingFamilyData.children.filter(
+            (c) => c._tempId !== deleteTargetId,
+          );
+        }
+
+        console.log(
+          "Removed fallback record from pendingFamilyData (edit mode)",
+        );
+
+        // Show info message that this was fallback data
+        showPopup("Record deleted successfully");
+      } else {
+        // In edit mode with a real database record, call the API to delete
+        console.log("Calling API to delete real record");
+        await deleteRecord(deleteTargetType, deleteTargetId);
+
+        // Also remove from pendingFamilyData
+        if (deleteTargetType === "NOK") {
+          pendingFamilyData.nok = pendingFamilyData.nok.filter(
+            (n) => n.nok_id != deleteTargetId && n._tempId !== deleteTargetId,
+          );
+        } else if (deleteTargetType === "Spouse") {
+          pendingFamilyData.spouse = pendingFamilyData.spouse.filter(
+            (s) =>
+              s.spouse_id != deleteTargetId && s._tempId !== deleteTargetId,
+          );
+        } else if (deleteTargetType === "Child") {
+          pendingFamilyData.children = pendingFamilyData.children.filter(
+            (c) => c.child_id != deleteTargetId && c._tempId !== deleteTargetId,
+          );
+        }
+
+        showPopup("Record deleted successfully");
       }
-      
-      console.log('Removed from pendingFamilyData (create mode)');
-    } else if (isFallbackRecord) {
-      // In edit mode, if it's a fallback record, just remove from pendingFamilyData
-      // (Don't make API call because it doesn't exist in the database yet)
-      if (deleteTargetType === 'NOK') {
-        pendingFamilyData.nok = pendingFamilyData.nok.filter(n => n._tempId !== deleteTargetId);
-      } else if (deleteTargetType === 'Spouse') {
-        pendingFamilyData.spouse = pendingFamilyData.spouse.filter(s => s._tempId !== deleteTargetId);
-      } else if (deleteTargetType === 'Child') {
-        pendingFamilyData.children = pendingFamilyData.children.filter(c => c._tempId !== deleteTargetId);
+
+      // Remove the row from the table
+      deleteTargetRow.remove();
+
+      // Check if table is now empty and add empty row
+      const tableBody = deleteTargetRow.closest("tbody");
+      if (tableBody && tableBody.children.length === 0) {
+        tableBody.appendChild(getEmptyRow(deleteTargetType));
       }
-      
-      console.log('Removed fallback record from pendingFamilyData (edit mode)');
-      
-      // Show info message that this was fallback data
-      showPopup("Record deleted successfully");
-    } else {
-      // In edit mode with a real database record, call the API to delete
-      console.log('Calling API to delete real record');
-      await deleteRecord(deleteTargetType, deleteTargetId);
-      
-      // Also remove from pendingFamilyData
-      if (deleteTargetType === 'NOK') {
-        pendingFamilyData.nok = pendingFamilyData.nok.filter(n => n.nok_id != deleteTargetId && n._tempId !== deleteTargetId);
-      } else if (deleteTargetType === 'Spouse') {
-        pendingFamilyData.spouse = pendingFamilyData.spouse.filter(s => s.spouse_id != deleteTargetId && s._tempId !== deleteTargetId);
-      } else if (deleteTargetType === 'Child') {
-        pendingFamilyData.children = pendingFamilyData.children.filter(c => c.child_id != deleteTargetId && c._tempId !== deleteTargetId);
-      }
-      
-      showPopup("Record deleted successfully");
+    } catch (error) {
+      console.error("Delete failed:", error);
+      showError("Failed to delete record: " + error.message);
     }
-    
-    // Remove the row from the table
-    deleteTargetRow.remove();
-    
-    // Check if table is now empty and add empty row
-    const tableBody = deleteTargetRow.closest('tbody');
-    if (tableBody && tableBody.children.length === 0) {
-      tableBody.appendChild(getEmptyRow(deleteTargetType));
-    }
-    
-  } catch (error) {
-    console.error('Delete failed:', error);
-    showError('Failed to delete record: ' + error.message);
-  }
-  
-  // Clear delete state
-  deleteTargetRow = null;
-  deleteTargetType = null;
-  deleteTargetId = null;
-  document.getElementById('deleteModal').classList.add('hidden');
-};
+
+    // Clear delete state
+    deleteTargetRow = null;
+    deleteTargetType = null;
+    deleteTargetId = null;
+    document.getElementById("deleteModal").classList.add("hidden");
+  };
 
   function getEmptyRow(type) {
     const row = document.createElement("tr");
@@ -2229,126 +2324,148 @@ window.viewFamilyRecord = async function(type, id) {
     Child: { id: null, row: null },
   };
 
-window.editRow = async function(type, id) {
-  let data;
-  
-  if (formMode === 'create') {
-    // In create mode, get from pendingFamilyData (no API call needed)
-    if (type === 'NOK') data = pendingFamilyData.nok.find(n => n._tempId === id);
-    if (type === 'Spouse') data = pendingFamilyData.spouse.find(s => s._tempId === id);
-    if (type === 'Child') data = pendingFamilyData.children.find(c => c._tempId === id);
-  } else {
-    // In edit mode, get from pendingFamilyData first (includes fallback data)
-    if (type === 'NOK') data = pendingFamilyData.nok.find(n => n._tempId === id || n.nok_id == id);
-    if (type === 'Spouse') data = pendingFamilyData.spouse.find(s => s._tempId === id || s.spouse_id == id);
-    if (type === 'Child') data = pendingFamilyData.children.find(c => c._tempId === id || c.child_id == id);
-  }
-  
-  if (!data) {
-    showError('Record not found');
-    return;
-  }
-  
-  // Set edit state for THIS specific type only
-  editStates[type].id = id;
-  editStates[type].row = document.querySelector(`tr[data-type="${type}"][data-id="${id}"]`);
+  window.editRow = async function (type, id) {
+    let data;
 
-  // Helper function to format dates
-  const formatDate = (value) => {
-    if (!value) return '';
-    if (typeof value === 'string') {
-      // Handle YYYYMMDD format (8 digits)
-      if (value.match(/^\d{8}$/)) {
-        const year = value.substring(0, 4);
-        const month = value.substring(4, 6);
-        const day = value.substring(6, 8);
-        return `${year}-${month}-${day}`;
+    if (formMode === "create") {
+      // In create mode, get from pendingFamilyData (no API call needed)
+      if (type === "NOK")
+        data = pendingFamilyData.nok.find((n) => n._tempId === id);
+      if (type === "Spouse")
+        data = pendingFamilyData.spouse.find((s) => s._tempId === id);
+      if (type === "Child")
+        data = pendingFamilyData.children.find((c) => c._tempId === id);
+    } else {
+      // In edit mode, get from pendingFamilyData first (includes fallback data)
+      if (type === "NOK")
+        data = pendingFamilyData.nok.find(
+          (n) => n._tempId === id || n.nok_id == id,
+        );
+      if (type === "Spouse")
+        data = pendingFamilyData.spouse.find(
+          (s) => s._tempId === id || s.spouse_id == id,
+        );
+      if (type === "Child")
+        data = pendingFamilyData.children.find(
+          (c) => c._tempId === id || c.child_id == id,
+        );
+    }
+
+    if (!data) {
+      showError("Record not found");
+      return;
+    }
+
+    // Set edit state for THIS specific type only
+    editStates[type].id = id;
+    editStates[type].row = document.querySelector(
+      `tr[data-type="${type}"][data-id="${id}"]`,
+    );
+
+    // Helper function to format dates
+    const formatDate = (value) => {
+      if (!value) return "";
+      if (typeof value === "string") {
+        // Handle YYYYMMDD format (8 digits)
+        if (value.match(/^\d{8}$/)) {
+          const year = value.substring(0, 4);
+          const month = value.substring(4, 6);
+          const day = value.substring(6, 8);
+          return `${year}-${month}-${day}`;
+        }
+        // Handle DD-MM-YYYY format
+        if (value.match(/^\d{2}-\d{2}-\d{4}$/)) {
+          const [day, month, year] = value.split("-");
+          return `${year}-${month}-${day}`;
+        }
+        // Handle ISO format (2010-10-02T00:00:00.000Z)
+        if (value.includes("T")) {
+          return value.split("T")[0];
+        }
+        // Already in yyyy-mm-dd format
+        if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          return value;
+        }
       }
-      // Handle DD-MM-YYYY format
-      if (value.match(/^\d{2}-\d{2}-\d{4}$/)) {
-        const [day, month, year] = value.split('-');
-        return `${year}-${month}-${day}`;
+      return value;
+    };
+
+    // Helper to set select value and add option if missing
+    const setSelectValue = (elementId, value) => {
+      const element = document.getElementById(elementId);
+      if (element && element.tagName === "SELECT") {
+        addMissingOptionIfNeeded(element, value);
       }
-      // Handle ISO format (2010-10-02T00:00:00.000Z)
-      if (value.includes('T')) {
-        return value.split('T')[0];
+      if (element) element.value = value || "";
+    };
+
+    if (type === "NOK") {
+      document.getElementById("nokFirst").value = data.FirstName || "";
+      document.getElementById("nokLast").value = data.LastName || "";
+      setSelectValue("nokRelationship", data.RShipcode);
+      document.getElementById("nokMobile").value = data.MobileNumber || "";
+      document.getElementById("nokEmail").value = data.EmailAddress || "";
+      document.getElementById("nokDob").value = formatDate(
+        data.dateofbirth || data.DateOfBirth || "",
+      );
+      document.getElementById("nokAddress").value = data.FullAddress || "";
+      document.getElementById("nokHome").value = data.HomeNumber || "";
+      document.getElementById("nokWork").value = data.PlaceOfWork || "";
+      setSelectValue("nokType", data.NextofkinType || "Main");
+
+      const wrap = document.getElementById("nokFormWrap");
+      const btn = document.getElementById("nokToggleBtn");
+      if (wrap.classList.contains("hidden")) {
+        wrap.classList.remove("hidden");
+        btn.textContent = "−";
       }
-      // Already in yyyy-mm-dd format
-      if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        return value;
+    } else if (type === "Spouse") {
+      document.getElementById("spouseName").value = data.spname || "";
+      document.getElementById("spousePhone").value = data.spphone || "";
+      document.getElementById("spouseEmail").value = data.spemail || "";
+      document.getElementById("spouseDob").value = formatDate(
+        data.dateofbirth || "",
+      );
+      document.getElementById("spouseDom").value = formatDate(
+        data.marrieddate || "",
+      );
+      document.getElementById("spouseStreet").value = data.spstreet || "";
+      document.getElementById("spouseTown").value = data.sptown || "";
+      setSelectValue("spouseState", data.Statecode);
+      setSelectValue("spouseLga", data.Lgcode);
+      document.getElementById("spousePoBox").value = data.sppobox || "";
+
+      const wrap = document.getElementById("spouseFormWrap");
+      const btn = document.getElementById("spouseToggleBtn");
+      if (wrap.classList.contains("hidden")) {
+        wrap.classList.remove("hidden");
+        btn.textContent = "−";
+      }
+    } else if (type === "Child") {
+      document.getElementById("childName").value = data.chname || "";
+      setSelectValue("childSex", data.Sex);
+      document.getElementById("childDob").value = formatDate(
+        data.dateofbirth || "",
+      );
+      document.getElementById("childPhone").value = data.chphone || "";
+      document.getElementById("childEmail").value = data.chemail || "";
+      document.getElementById("childStreet").value = data.chstreet || "";
+      document.getElementById("childTown").value = data.chtown || "";
+      setSelectValue("childState", data.Statecode);
+      setSelectValue("childLga", data.Lgcode);
+      document.getElementById("childPoBox").value = data.chpobox || "";
+      document.getElementById("childSchool").value = data.chschool || "";
+      document.getElementById("childOffice").value = data.officeaddress || "";
+      document.getElementById("childOccupation").value = data.occupation || "";
+
+      const wrap = document.getElementById("childFormWrap");
+      const btn = document.getElementById("childToggleBtn");
+      if (wrap.classList.contains("hidden")) {
+        wrap.classList.remove("hidden");
+        btn.textContent = "−";
       }
     }
-    return value;
   };
-
-  // Helper to set select value and add option if missing
-  const setSelectValue = (elementId, value) => {
-    const element = document.getElementById(elementId);
-    if (element && element.tagName === 'SELECT') {
-      addMissingOptionIfNeeded(element, value);
-    }
-    if (element) element.value = value || '';
-  };
-
-  if (type === "NOK") {
-    document.getElementById('nokFirst').value = data.FirstName || '';
-    document.getElementById('nokLast').value = data.LastName || '';
-    setSelectValue('nokRelationship', data.RShipcode);
-    document.getElementById('nokMobile').value = data.MobileNumber || '';
-    document.getElementById('nokEmail').value = data.EmailAddress || '';
-    document.getElementById('nokDob').value = formatDate(data.dateofbirth || data.DateOfBirth || '');
-    document.getElementById('nokAddress').value = data.FullAddress || '';
-    document.getElementById('nokHome').value = data.HomeNumber || '';
-    document.getElementById('nokWork').value = data.PlaceOfWork || '';
-    setSelectValue('nokType', data.NextofkinType || 'Main');
-
-    const wrap = document.getElementById('nokFormWrap');
-    const btn = document.getElementById('nokToggleBtn');
-    if (wrap.classList.contains('hidden')) {
-      wrap.classList.remove('hidden');
-      btn.textContent = "−";
-    }
-  } else if (type === "Spouse") {
-    document.getElementById('spouseName').value = data.spname || '';
-    document.getElementById('spousePhone').value = data.spphone || '';
-    document.getElementById('spouseEmail').value = data.spemail || '';
-    document.getElementById('spouseDob').value = formatDate(data.dateofbirth || '');
-    document.getElementById('spouseDom').value = formatDate(data.marrieddate || '');
-    document.getElementById('spouseStreet').value = data.spstreet || '';
-    document.getElementById('spouseTown').value = data.sptown || '';
-    setSelectValue('spouseState', data.Statecode);
-    setSelectValue('spouseLga', data.Lgcode);
-    document.getElementById('spousePoBox').value = data.sppobox || '';
-
-    const wrap = document.getElementById('spouseFormWrap');
-    const btn = document.getElementById('spouseToggleBtn');
-    if (wrap.classList.contains('hidden')) {
-      wrap.classList.remove('hidden');
-      btn.textContent = "−";
-    }
-  } else if (type === "Child") {
-    document.getElementById('childName').value = data.chname || '';
-    setSelectValue('childSex', data.Sex);
-    document.getElementById('childDob').value = formatDate(data.dateofbirth || '');
-    document.getElementById('childPhone').value = data.chphone || '';
-    document.getElementById('childEmail').value = data.chemail || '';
-    document.getElementById('childStreet').value = data.chstreet || '';
-    document.getElementById('childTown').value = data.chtown || '';
-    setSelectValue('childState', data.Statecode);
-    setSelectValue('childLga', data.Lgcode);
-    document.getElementById('childPoBox').value = data.chpobox || '';
-    document.getElementById('childSchool').value = data.chschool || '';
-    document.getElementById('childOffice').value = data.officeaddress || '';
-    document.getElementById('childOccupation').value = data.occupation || '';
-    
-    const wrap = document.getElementById('childFormWrap');
-    const btn = document.getElementById('childToggleBtn');
-    if (wrap.classList.contains('hidden')) {
-      wrap.classList.remove('hidden');
-      btn.textContent = '−';
-    }
-  }
-};
 
   // NOK functionality
   const nokFormWrap = document.getElementById("nokFormWrap");
@@ -2357,7 +2474,7 @@ window.editRow = async function(type, id) {
   const nokCancelBtn = document.getElementById("nokCancel");
 
   nokToggleBtn?.addEventListener("click", () =>
-    toggleBlock(nokFormWrap, nokToggleBtn)
+    toggleBlock(nokFormWrap, nokToggleBtn),
   );
 
   nokCancelBtn?.addEventListener("click", () => {
@@ -2409,7 +2526,7 @@ window.editRow = async function(type, id) {
     if (missingFields.length > 0) {
       showAlert(
         "Please fill in the following required fields:\n" +
-          missingFields.join("\n")
+          missingFields.join("\n"),
       );
       return;
     }
@@ -2426,7 +2543,7 @@ window.editRow = async function(type, id) {
           });
         } else {
           const index = pendingFamilyData.nok.findIndex(
-            (n) => n._tempId === editStates.NOK.id
+            (n) => n._tempId === editStates.NOK.id,
           );
           if (index !== -1) {
             pendingFamilyData.nok[index] = {
@@ -2453,7 +2570,7 @@ window.editRow = async function(type, id) {
             {
               method: "POST",
               body: JSON.stringify(nokData),
-            }
+            },
           );
 
           if (empty) empty.remove();
@@ -2461,17 +2578,13 @@ window.editRow = async function(type, id) {
           list.insertAdjacentHTML(
             "beforeend",
             `
-          <tr data-type="NOK" data-id="${
-            result.nokId
-          }" class="hover:bg-yellow-50">
-            <td class="border px-3 py-2">${escapeHtml(first)} ${escapeHtml(
-              last
-            )}</td>
+          <tr data-type="NOK" data-id="${result.nokId}" class="hover:bg-yellow-50">
+            <td class="border px-3 py-2">${escapeHtml(first)} ${escapeHtml(last)}</td>
             <td class="border px-3 py-2">${escapeHtml(rel)}</td>
             <td class="border px-3 py-2">${escapeHtml(mobile)}</td>
             <td class="border px-3 py-2">${escapeHtml(email)}</td>
             <td class="border px-3 py-2">${actionBtns("NOK", result.nokId)}</td>
-          </tr>`
+          </tr>`,
           );
         } else {
           nokCounter++;
@@ -2485,14 +2598,12 @@ window.editRow = async function(type, id) {
             "beforeend",
             `
           <tr data-type="NOK" data-id="${tempId}" class="hover:bg-yellow-50">
-            <td class="border px-3 py-2">${escapeHtml(first)} ${escapeHtml(
-              last
-            )}</td>
+            <td class="border px-3 py-2">${escapeHtml(first)} ${escapeHtml(last)}</td>
             <td class="border px-3 py-2">${escapeHtml(rel)}</td>
             <td class="border px-3 py-2">${escapeHtml(mobile)}</td>
             <td class="border px-3 py-2">${escapeHtml(email)}</td>
             <td class="border px-3 py-2">${actionBtns("NOK", tempId)}</td>
-          </tr>`
+          </tr>`,
           );
         }
         showPopup("NOK saved successfully");
@@ -2512,7 +2623,7 @@ window.editRow = async function(type, id) {
   const spouseCancelBtn = document.getElementById("spouseCancel");
 
   spouseToggleBtn?.addEventListener("click", () =>
-    toggleBlock(spouseFormWrap, spouseToggleBtn)
+    toggleBlock(spouseFormWrap, spouseToggleBtn),
   );
 
   spouseCancelBtn?.addEventListener("click", () => {
@@ -2563,7 +2674,7 @@ window.editRow = async function(type, id) {
       .map((f) => f.field);
     if (missingFields.length > 0) {
       showAlert(
-        "Please fill in the required fields: " + missingFields.join(", ")
+        "Please fill in the required fields: " + missingFields.join(", "),
       );
       return;
     }
@@ -2580,7 +2691,7 @@ window.editRow = async function(type, id) {
           });
         } else {
           const index = pendingFamilyData.spouse.findIndex(
-            (s) => s._tempId === editStates.Spouse.id
+            (s) => s._tempId === editStates.Spouse.id,
           );
           if (index !== -1) {
             pendingFamilyData.spouse[index] = {
@@ -2606,7 +2717,7 @@ window.editRow = async function(type, id) {
             {
               method: "POST",
               body: JSON.stringify(spouseData),
-            }
+            },
           );
 
           if (empty) empty.remove();
@@ -2614,17 +2725,12 @@ window.editRow = async function(type, id) {
           list.insertAdjacentHTML(
             "beforeend",
             `
-          <tr data-type="Spouse" data-id="${
-            result.spouseId
-          }" class="hover:bg-yellow-50">
+          <tr data-type="Spouse" data-id="${result.spouseId}" class="hover:bg-yellow-50">
             <td class="border px-3 py-2">${escapeHtml(name)}</td>
             <td class="border px-3 py-2">${escapeHtml(phone)}</td>
             <td class="border px-3 py-2">${escapeHtml(email)}</td>
-            <td class="border px-3 py-2">${actionBtns(
-              "Spouse",
-              result.spouseId
-            )}</td>
-          </tr>`
+            <td class="border px-3 py-2">${actionBtns("Spouse", result.spouseId)}</td>
+          </tr>`,
           );
         } else {
           spouseCounter++;
@@ -2642,7 +2748,7 @@ window.editRow = async function(type, id) {
             <td class="border px-3 py-2">${escapeHtml(phone)}</td>
             <td class="border px-3 py-2">${escapeHtml(email)}</td>
             <td class="border px-3 py-2">${actionBtns("Spouse", tempId)}</td>
-          </tr>`
+          </tr>`,
           );
         }
         showPopup("Spouse saved successfully");
@@ -2662,7 +2768,7 @@ window.editRow = async function(type, id) {
   const childCancelBtn = document.getElementById("childCancel");
 
   childToggleBtn?.addEventListener("click", () =>
-    toggleBlock(childFormWrap, childToggleBtn)
+    toggleBlock(childFormWrap, childToggleBtn),
   );
 
   childCancelBtn?.addEventListener("click", () => {
@@ -2719,7 +2825,7 @@ window.editRow = async function(type, id) {
       .map((f) => f.field);
     if (missingFields.length > 0) {
       showAlert(
-        "Please fill in the required fields: " + missingFields.join(", ")
+        "Please fill in the required fields: " + missingFields.join(", "),
       );
       return;
     }
@@ -2736,7 +2842,7 @@ window.editRow = async function(type, id) {
           });
         } else {
           const index = pendingFamilyData.children.findIndex(
-            (c) => c._tempId === editStates.Child.id
+            (c) => c._tempId === editStates.Child.id,
           );
           if (index !== -1) {
             pendingFamilyData.children[index] = {
@@ -2763,7 +2869,7 @@ window.editRow = async function(type, id) {
             {
               method: "POST",
               body: JSON.stringify(childData),
-            }
+            },
           );
 
           if (empty) empty.remove();
@@ -2771,18 +2877,13 @@ window.editRow = async function(type, id) {
           list.insertAdjacentHTML(
             "beforeend",
             `
-          <tr data-type="Child" data-id="${
-            result.childId
-          }" class="hover:bg-yellow-50">
+          <tr data-type="Child" data-id="${result.childId}" class="hover:bg-yellow-50">
             <td class="border px-3 py-2">${escapeHtml(name)}</td>
             <td class="border px-3 py-2">${escapeHtml(sex)}</td>
             <td class="border px-3 py-2">${escapeHtml(dob)}</td>
             <td class="border px-3 py-2">${escapeHtml(phone)}</td>
-            <td class="border px-3 py-2">${actionBtns(
-              "Child",
-              result.childId
-            )}</td>
-          </tr>`
+            <td class="border px-3 py-2">${actionBtns("Child", result.childId)}</td>
+          </tr>`,
           );
         } else {
           childCounter++;
@@ -2801,7 +2902,7 @@ window.editRow = async function(type, id) {
             <td class="border px-3 py-2">${escapeHtml(dob)}</td>
             <td class="border px-3 py-2">${escapeHtml(phone)}</td>
             <td class="border px-3 py-2">${actionBtns("Child", tempId)}</td>
-          </tr>`
+          </tr>`,
           );
         }
         showPopup("Child saved successfully");
@@ -2822,7 +2923,7 @@ window.editRow = async function(type, id) {
     localStorage.removeItem("editing_employee");
 
     const submitBtn = document.querySelector(
-      '#personnelForm button[type="button"]:last-child'
+      '#personnelForm button[type="button"]:last-child',
     );
     if (submitBtn) submitBtn.textContent = "Submit";
   }
@@ -2833,265 +2934,306 @@ window.editRow = async function(type, id) {
     currentEmployeeId = employeeId;
     editingEmployeeData = employeeData;
 
-  //Disable Service Number
-  document.getElementById("field-service-number").disabled = true;
-  
-  // Set localStorage with explicit string
-  localStorage.setItem(EDIT_KEY, String(employeeId));
-  //console.log('Edit mode set for:', employeeId, 'Stored:', localStorage.getItem(EDIT_KEY));
-  
-  const formTitle = document.getElementById('formTitle');
-  if (formTitle) {
-    formTitle.textContent = `Edit Personnel: ${employeeData.Surname} ${employeeData.OtherName}`;
-    formTitle.classList.remove('hidden');
+    //Disable Service Number
+    document.getElementById("field-service-number").disabled = true;
+
+    // Set localStorage with explicit string
+    localStorage.setItem(EDIT_KEY, String(employeeId));
+    //console.log('Edit mode set for:', employeeId, 'Stored:', localStorage.getItem(EDIT_KEY));
+
+    const formTitle = document.getElementById("formTitle");
+    if (formTitle) {
+      formTitle.textContent = `Edit Personnel: ${employeeData.Surname} ${employeeData.OtherName}`;
+      formTitle.classList.remove("hidden");
+    }
+
+    const submitBtn = document.querySelector(
+      '#personnelForm button[type="button"]:last-child',
+    );
+    if (submitBtn) submitBtn.textContent = "Update Personnel";
   }
-  
-  const submitBtn = document.querySelector('#personnelForm button[type="button"]:last-child');
-  if (submitBtn) submitBtn.textContent = 'Update Personnel';
-}
 
+  // Load NOK records with fallback from employee table
+  function loadNOKRecords(nextOfKin, employee) {
+    let nokList = nextOfKin || [];
 
-// Load NOK records with fallback from employee table
-function loadNOKRecords(nextOfKin, employee) {
-  let nokList = nextOfKin || [];
-  
-  // Clear existing NOK data
-  pendingFamilyData.nok = [];
-  
-  // Fallback: If no NOK records exist, check employee table for fallback data
-  if (nokList.length === 0 && employee) {
-    const nokRelation = (employee.nok_relation || '').toLowerCase().trim();
-    
-    // Only add to NOK if relationship is NOT wife, son, or daughter
-    if (nokRelation !== 'wife' && nokRelation !== 'son' && nokRelation !== 'daughter') {
-      if (employee.nok_name || employee.nokphone || employee.nok_addr || employee.nok_relation) {
-        nokList = [{
-          FirstName: employee.nok_name || '',
-          LastName: '',
-          RShipcode: employee.nok_relation || '',
-          NextofkinType: 'Main',
-          MobileNumber: employee.nokphone || '',
-          EmailAddress: '',
-          dateofbirth: null,
-          FullAddress: employee.nok_addr || '',
-          HomeNumber: '',
-          PlaceOfWork: '',
-          _isFallback: true,
-          nok_id: 'fallback-nok-1'
-        }];
+    // Clear existing NOK data
+    pendingFamilyData.nok = [];
+
+    // Fallback: If no NOK records exist, check employee table for fallback data
+    if (nokList.length === 0 && employee) {
+      const nokRelation = (employee.nok_relation || "").toLowerCase().trim();
+
+      // Only add to NOK if relationship is NOT wife, son, or daughter
+      if (
+        nokRelation !== "wife" &&
+        nokRelation !== "son" &&
+        nokRelation !== "daughter"
+      ) {
+        if (
+          employee.nok_name ||
+          employee.nokphone ||
+          employee.nok_addr ||
+          employee.nok_relation
+        ) {
+          nokList = [
+            {
+              FirstName: employee.nok_name || "",
+              LastName: "",
+              RShipcode: employee.nok_relation || "",
+              NextofkinType: "Main",
+              MobileNumber: employee.nokphone || "",
+              EmailAddress: "",
+              dateofbirth: null,
+              FullAddress: employee.nok_addr || "",
+              HomeNumber: "",
+              PlaceOfWork: "",
+              _isFallback: true,
+              nok_id: "fallback-nok-1",
+            },
+          ];
+        }
       }
     }
-  }
-  
-  // Clear and render table
-  const nokListElement = document.getElementById('nokList');
-  if (!nokListElement) return;
-  
-  nokListElement.innerHTML = '';
-  
-  if (nokList.length === 0) {
-    nokListElement.innerHTML = '<tr id="nokEmpty"><td colspan="5" class="py-4 text-gray-500">No NOKs yet.</td></tr>';
-  } else {
-    nokList.forEach((nok, index) => {
-      const id = nok.nok_id || nok._tempId || `temp-nok-${Date.now()}-${index}`;
-      
-      // Add to pendingFamilyData
-      pendingFamilyData.nok.push({
-        ...nok,
-        _tempId: id
-      });
-      
-      nokListElement.insertAdjacentHTML('beforeend', `
+
+    // Clear and render table
+    const nokListElement = document.getElementById("nokList");
+    if (!nokListElement) return;
+
+    nokListElement.innerHTML = "";
+
+    if (nokList.length === 0) {
+      nokListElement.innerHTML =
+        '<tr id="nokEmpty"><td colspan="5" class="py-4 text-gray-500">No NOKs yet.</td></tr>';
+    } else {
+      nokList.forEach((nok, index) => {
+        const id =
+          nok.nok_id || nok._tempId || `temp-nok-${Date.now()}-${index}`;
+
+        // Add to pendingFamilyData
+        pendingFamilyData.nok.push({
+          ...nok,
+          _tempId: id,
+        });
+
+        nokListElement.insertAdjacentHTML(
+          "beforeend",
+          `
         <tr data-type="NOK" data-id="${id}" class="hover:bg-yellow-50">
-          <td class="border px-3 py-2">${escapeHtml(nok.FirstName || '')} ${escapeHtml(nok.LastName || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(nok.RShipcode || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(nok.MobileNumber || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(nok.EmailAddress || '')}</td>
-          <td class="border px-3 py-2">${actionBtns('NOK', id)}</td>
-        </tr>`);
-    });
-  }
-}
-
-// Load Spouse records with fallback from employee table
-function loadSpouseRecords(spouse, employee) {
-  let spouseList = spouse || [];
-  
-  // Clear existing spouse data
-  pendingFamilyData.spouse = [];
-  
-  // Fallback: Check if NOK relationship is "wife" and no spouse records exist
-  if (spouseList.length === 0 && employee) {
-    const nokRelation = (employee.nok_relation || '').toLowerCase().trim();
-    
-    if (nokRelation === 'wife' && employee.nok_name) {
-      spouseList = [{
-        spname: employee.nok_name || '',
-        spphone: employee.nokphone || '',
-        spemail: '',
-        dateofbirth: null,
-        marrieddate: null,
-        Statecode: null,
-        Lgcode: null,
-        sptown: '',
-        spstreet: employee.nok_addr || '',
-        sppobox: '',
-        _isFallback: true,
-        spouse_id: 'fallback-spouse-1'
-      }];
+          <td class="border px-3 py-2">${escapeHtml(nok.FirstName || "")} ${escapeHtml(nok.LastName || "")}</td>
+          <td class="border px-3 py-2">${escapeHtml(nok.RShipcode || "")}</td>
+          <td class="border px-3 py-2">${escapeHtml(nok.MobileNumber || "")}</td>
+          <td class="border px-3 py-2">${escapeHtml(nok.EmailAddress || "")}</td>
+          <td class="border px-3 py-2">${actionBtns("NOK", id)}</td>
+        </tr>`,
+        );
+      });
     }
   }
-  
-  // Clear and render table
-  const spouseListElement = document.getElementById('spouseList');
-  if (!spouseListElement) return;
-  
-  spouseListElement.innerHTML = '';
-  
-  if (spouseList.length === 0) {
-    spouseListElement.innerHTML = '<tr id="spouseEmpty"><td colspan="4" class="py-4 text-gray-500">No spouse records yet.</td></tr>';
-  } else {
-    spouseList.forEach((sp, index) => {
-      const id = sp.spouse_id || sp._tempId || `temp-spouse-${Date.now()}-${index}`;
-      
-      // Add to pendingFamilyData
-      pendingFamilyData.spouse.push({
-        ...sp,
-        _tempId: id
-      });
-      
-      spouseListElement.insertAdjacentHTML('beforeend', `
+
+  // Load Spouse records with fallback from employee table
+  function loadSpouseRecords(spouse, employee) {
+    let spouseList = spouse || [];
+
+    // Clear existing spouse data
+    pendingFamilyData.spouse = [];
+
+    // Fallback: Check if NOK relationship is "wife" and no spouse records exist
+    if (spouseList.length === 0 && employee) {
+      const nokRelation = (employee.nok_relation || "").toLowerCase().trim();
+
+      if (nokRelation === "wife" && employee.nok_name) {
+        spouseList = [
+          {
+            spname: employee.nok_name || "",
+            spphone: employee.nokphone || "",
+            spemail: "",
+            dateofbirth: null,
+            marrieddate: null,
+            Statecode: null,
+            Lgcode: null,
+            sptown: "",
+            spstreet: employee.nok_addr || "",
+            sppobox: "",
+            _isFallback: true,
+            spouse_id: "fallback-spouse-1",
+          },
+        ];
+      }
+    }
+
+    // Clear and render table
+    const spouseListElement = document.getElementById("spouseList");
+    if (!spouseListElement) return;
+
+    spouseListElement.innerHTML = "";
+
+    if (spouseList.length === 0) {
+      spouseListElement.innerHTML =
+        '<tr id="spouseEmpty"><td colspan="4" class="py-4 text-gray-500">No spouse records yet.</td></tr>';
+    } else {
+      spouseList.forEach((sp, index) => {
+        const id =
+          sp.spouse_id || sp._tempId || `temp-spouse-${Date.now()}-${index}`;
+
+        // Add to pendingFamilyData
+        pendingFamilyData.spouse.push({
+          ...sp,
+          _tempId: id,
+        });
+
+        spouseListElement.insertAdjacentHTML(
+          "beforeend",
+          `
         <tr data-type="Spouse" data-id="${id}" class="hover:bg-yellow-50">
-          <td class="border px-3 py-2">${escapeHtml(sp.spname || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(sp.spphone || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(sp.spemail || '')}</td>
-          <td class="border px-3 py-2">${actionBtns('Spouse', id)}</td>
-        </tr>`);
-    });
-  }
-}
-
-// Load Children records with fallback from employee table
-function loadChildrenRecords(children, employee) {
-  let childrenList = children || [];
-  
-  // Clear existing children data
-  pendingFamilyData.children = [];
-  
-  // Fallback: Check if NOK relationship is "son" or "daughter" and no children records exist
-  if (childrenList.length === 0 && employee) {
-    const nokRelation = (employee.nok_relation || '').toLowerCase().trim();
-    
-    if ((nokRelation === 'son' || nokRelation === 'daughter') && employee.nok_name) {
-      childrenList = [{
-        chname: employee.nok_name || '',
-        Sex: nokRelation === 'son' ? 'Male' : nokRelation === 'daughter' ? 'Female' : '',
-        dateofbirth: null,
-        chphone: employee.nokphone || '',
-        chemail: '',
-        chpobox: '',
-        chschool: '',
-        occupation: '',
-        officeaddress: '',
-        chstreet: employee.nok_addr || '',
-        chtown: '',
-        Statecode: null,
-        Lgcode: null,
-        _isFallback: true,
-        child_id: 'fallback-child-1'
-      }];
+          <td class="border px-3 py-2">${escapeHtml(sp.spname || "")}</td>
+          <td class="border px-3 py-2">${escapeHtml(sp.spphone || "")}</td>
+          <td class="border px-3 py-2">${escapeHtml(sp.spemail || "")}</td>
+          <td class="border px-3 py-2">${actionBtns("Spouse", id)}</td>
+        </tr>`,
+        );
+      });
     }
   }
-  
-  // Clear and render table
-  const childListElement = document.getElementById('childList');
-  if (!childListElement) return;
-  
-  childListElement.innerHTML = '';
-  
-  if (childrenList.length === 0) {
-    childListElement.innerHTML = '<tr id="childEmpty"><td colspan="5" class="py-4 text-gray-500">No children yet.</td></tr>';
-  } else {
-    childrenList.forEach((child, index) => {
-      const id = child.child_id || child._tempId || `temp-child-${Date.now()}-${index}`;
-      
-      // Add to pendingFamilyData
-      pendingFamilyData.children.push({
-        ...child,
-        _tempId: id
-      });
-      
-      childListElement.insertAdjacentHTML('beforeend', `
+
+  // Load Children records with fallback from employee table
+  function loadChildrenRecords(children, employee) {
+    let childrenList = children || [];
+
+    // Clear existing children data
+    pendingFamilyData.children = [];
+
+    // Fallback: Check if NOK relationship is "son" or "daughter" and no children records exist
+    if (childrenList.length === 0 && employee) {
+      const nokRelation = (employee.nok_relation || "").toLowerCase().trim();
+
+      if (
+        (nokRelation === "son" || nokRelation === "daughter") &&
+        employee.nok_name
+      ) {
+        childrenList = [
+          {
+            chname: employee.nok_name || "",
+            Sex:
+              nokRelation === "son"
+                ? "Male"
+                : nokRelation === "daughter"
+                  ? "Female"
+                  : "",
+            dateofbirth: null,
+            chphone: employee.nokphone || "",
+            chemail: "",
+            chpobox: "",
+            chschool: "",
+            occupation: "",
+            officeaddress: "",
+            chstreet: employee.nok_addr || "",
+            chtown: "",
+            Statecode: null,
+            Lgcode: null,
+            _isFallback: true,
+            child_id: "fallback-child-1",
+          },
+        ];
+      }
+    }
+
+    // Clear and render table
+    const childListElement = document.getElementById("childList");
+    if (!childListElement) return;
+
+    childListElement.innerHTML = "";
+
+    if (childrenList.length === 0) {
+      childListElement.innerHTML =
+        '<tr id="childEmpty"><td colspan="5" class="py-4 text-gray-500">No children yet.</td></tr>';
+    } else {
+      childrenList.forEach((child, index) => {
+        const id =
+          child.child_id ||
+          child._tempId ||
+          `temp-child-${Date.now()}-${index}`;
+
+        // Add to pendingFamilyData
+        pendingFamilyData.children.push({
+          ...child,
+          _tempId: id,
+        });
+
+        childListElement.insertAdjacentHTML(
+          "beforeend",
+          `
         <tr data-type="Child" data-id="${id}" class="hover:bg-yellow-50">
-          <td class="border px-3 py-2">${escapeHtml(child.chname || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(child.Sex || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(child.dateofbirth || '')}</td>
-          <td class="border px-3 py-2">${escapeHtml(child.chphone || '')}</td>
-          <td class="border px-3 py-2">${actionBtns('Child', id)}</td>
-        </tr>`);
-    });
+          <td class="border px-3 py-2">${escapeHtml(child.chname || "")}</td>
+          <td class="border px-3 py-2">${escapeHtml(child.Sex || "")}</td>
+          <td class="border px-3 py-2">${escapeHtml(child.dateofbirth || "")}</td>
+          <td class="border px-3 py-2">${escapeHtml(child.chphone || "")}</td>
+          <td class="border px-3 py-2">${actionBtns("Child", id)}</td>
+        </tr>`,
+        );
+      });
+    }
   }
-}
 
-// Load Employee for Edit
-async function loadEmployeeDataForEdit(employeeId) {
-  try {
-    console.log('=== loadEmployeeDataForEdit START ===');
-    console.log('Employee ID:', employeeId);
-    
-    const safeId = employeeId.replace(/\//g, '_SLASH_');
-    const result = await apiRequest(`${API_BASE}/employees/${safeId}`);
-    
-    console.log('API Response:', result);
-    
-    const { employee, children, nextOfKin, spouse } = result.data;
-    
-    console.log('Employee data:', employee);
-    console.log('NOK from API:', nextOfKin);
-    console.log('Spouse from API:', spouse);
-    console.log('Children from API:', children);
-    console.log('Employee NOK fields:', {
-      nok_name: employee.nok_name,
-      nok_relation: employee.nok_relation,
-      nokphone: employee.nokphone,
-      nok_addr: employee.nok_addr
-    });
-    
-    setEditMode(employeeId, employee);
-    toggleStep(1);
+  // Load Employee for Edit
+  async function loadEmployeeDataForEdit(employeeId) {
+    try {
+      console.log("=== loadEmployeeDataForEdit START ===");
+      console.log("Employee ID:", employeeId);
 
-    // IMPORTANT: Clear pendingFamilyData before loading new data
-    console.log('Clearing pendingFamilyData...');
-    pendingFamilyData = { nok: [], spouse: [], children: [] };
-    console.log('pendingFamilyData after clear:', pendingFamilyData);
+      const safeId = employeeId.replace(/\//g, "_SLASH_");
+      const result = await apiRequest(`${API_BASE}/employees/${safeId}`);
 
-    await initializeDropdowns();
-    await loadAllDropdowns(employee);
-    
-    setTimeout(() => {
-      populatePersonnelForm(employee);
-      handleSpouseTabVisibility();
-    }, 500);
-    
-    // Load with fallback data from employee table
-    console.log('Calling loadNOKRecords...');
-    loadNOKRecords(nextOfKin, employee);
-    
-    console.log('Calling loadSpouseRecords...');
-    loadSpouseRecords(spouse, employee);
-    
-    console.log('Calling loadChildrenRecords...');
-    loadChildrenRecords(children, employee);
-    
-    console.log('Final pendingFamilyData:', pendingFamilyData);
-    console.log('=== loadEmployeeDataForEdit END ===');
-    
-    showPopup("Employee data loaded for editing");
-  } catch (error) {
-    console.error('loadEmployeeDataForEdit ERROR:', error);
-    throw error;
+      console.log("API Response:", result);
+
+      const { employee, children, nextOfKin, spouse } = result.data;
+
+      console.log("Employee data:", employee);
+      console.log("NOK from API:", nextOfKin);
+      console.log("Spouse from API:", spouse);
+      console.log("Children from API:", children);
+      console.log("Employee NOK fields:", {
+        nok_name: employee.nok_name,
+        nok_relation: employee.nok_relation,
+        nokphone: employee.nokphone,
+        nok_addr: employee.nok_addr,
+      });
+
+      setEditMode(employeeId, employee);
+      toggleStep(1);
+
+      // IMPORTANT: Clear pendingFamilyData before loading new data
+      console.log("Clearing pendingFamilyData...");
+      pendingFamilyData = { nok: [], spouse: [], children: [] };
+      console.log("pendingFamilyData after clear:", pendingFamilyData);
+
+      await initializeDropdowns();
+      await loadAllDropdowns(employee);
+
+      setTimeout(() => {
+        populatePersonnelForm(employee);
+        handleSpouseTabVisibility();
+      }, 500);
+
+      // Load with fallback data from employee table
+      console.log("Calling loadNOKRecords...");
+      loadNOKRecords(nextOfKin, employee);
+
+      console.log("Calling loadSpouseRecords...");
+      loadSpouseRecords(spouse, employee);
+
+      console.log("Calling loadChildrenRecords...");
+      loadChildrenRecords(children, employee);
+
+      console.log("Final pendingFamilyData:", pendingFamilyData);
+      console.log("=== loadEmployeeDataForEdit END ===");
+
+      showPopup("Employee data loaded for editing");
+    } catch (error) {
+      console.error("loadEmployeeDataForEdit ERROR:", error);
+      throw error;
+    }
   }
-}
 
   // Populate Form - Step 1 with IDs, Step 2 & 3 with names
   function populatePersonnelForm(employee) {
@@ -3130,9 +3272,7 @@ async function loadEmployeeDataForEdit(employeeId) {
             "Passport Photograph",
           ].includes(formField)
         ) {
-          const elementId = `field-${formField
-            .replace(/\s+/g, "-")
-            .toLowerCase()}`;
+          const elementId = `field-${formField.replace(/\s+/g, "-").toLowerCase()}`;
           element = document.getElementById(elementId);
         }
         // Step 2 & 3 → use DB field name
@@ -3140,60 +3280,62 @@ async function loadEmployeeDataForEdit(employeeId) {
           element = document.querySelector(`[name="${dbField}"]`);
         }
 
-      if (element) {
-        // Handle file input
-        if (element.type === 'file') {
-          if (dbField === 'passport' && value) {
-            convertPassportInputToAvatar(element, value);
-          }
-          return;
-        }
-        
-        // Handle date inputs
-        if (element.type === 'date') {
-          if (typeof value === 'string') {
-            if (value.match(/^\d{8}$/))  {
-              const year = value.substring(0, 4);
-              const month = value.substring(4, 6);
-              const day = value.substring(6, 8);
-              element.value = `${year}-${month}-${day}`;
-            } else if (value.match(/^\d{2}-\d{2}-\d{4}$/)) {
-              const [day, month, year] = value.split('-');
-              element.value = `${year}-${month}-${day}`;
-            } else if (value.includes('T')) {
-              element.value = value.split('T')[0];
+        if (element) {
+          // Handle file input
+          if (element.type === "file") {
+            if (dbField === "passport" && value) {
+              convertPassportInputToAvatar(element, value);
             }
+            return;
           }
-        } else if (element.tagName === 'SELECT') {
-          // Handle select elements - add missing option if value doesn't exist
-          addMissingOptionIfNeeded(element, value);
-          element.value = value;
-        } else {
-          // All other inputs - wrapper handles CustomDropdown vs native
-          element.value = value;
+
+          // Handle date inputs
+          if (element.type === "date") {
+            if (typeof value === "string") {
+              if (value.match(/^\d{8}$/)) {
+                const year = value.substring(0, 4);
+                const month = value.substring(4, 6);
+                const day = value.substring(6, 8);
+                element.value = `${year}-${month}-${day}`;
+              } else if (value.match(/^\d{2}-\d{2}-\d{4}$/)) {
+                const [day, month, year] = value.split("-");
+                element.value = `${year}-${month}-${day}`;
+              } else if (value.includes("T")) {
+                element.value = value.split("T")[0];
+              }
+            }
+          } else if (element.tagName === "SELECT") {
+            // Handle select elements - add missing option if value doesn't exist
+            addMissingOptionIfNeeded(element, value);
+            element.value = value;
+          } else {
+            // All other inputs - wrapper handles CustomDropdown vs native
+            element.value = value;
+          }
         }
       }
-    }
-  });
-}
-
-// Helper function to add missing option to select if value doesn't exist
-function addMissingOptionIfNeeded(selectElement, value) {
-  if (!value) return;
-  
-  // Check if the value exists in current options
-  const optionExists = Array.from(selectElement.options).some(opt => opt.value == value);
-  
-  if (!optionExists) {
-    // Add the missing option with value as both value and text
-    const option = document.createElement('option');
-    option.value = value;
-    option.textContent = value;
-    option.style.fontStyle = 'italic';
-    option.style.color = '#666';
-    selectElement.appendChild(option);
+    });
   }
-}
+
+  // Helper function to add missing option to select if value doesn't exist
+  function addMissingOptionIfNeeded(selectElement, value) {
+    if (!value) return;
+
+    // Check if the value exists in current options
+    const optionExists = Array.from(selectElement.options).some(
+      (opt) => opt.value == value,
+    );
+
+    if (!optionExists) {
+      // Add the missing option with value as both value and text
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      option.style.fontStyle = "italic";
+      option.style.color = "#666";
+      selectElement.appendChild(option);
+    }
+  }
 
   // Convert file input to avatar preview with change button
   function convertPassportInputToAvatar(fileInput, base64Data) {
@@ -3237,10 +3379,10 @@ function addMissingOptionIfNeeded(selectElement, value) {
   // Function to change passport photo
   window.changePassportPhoto = function () {
     const fileInput = document.querySelector(
-      'input[name="Passport Photograph"]'
+      'input[name="Passport Photograph"]',
     );
     const avatarContainer = document.querySelector(
-      ".passport-avatar-container"
+      ".passport-avatar-container",
     );
 
     if (!fileInput) return;
@@ -3314,13 +3456,13 @@ function addMissingOptionIfNeeded(selectElement, value) {
            class="max-w-full max-h-[70vh] rounded shadow-lg mx-auto"/>
     </div>
   `;
-  
-  modal.onclick = (e) => {
-    if (e.target === modal) modal.remove();
+
+    modal.onclick = (e) => {
+      if (e.target === modal) modal.remove();
+    };
+
+    document.body.appendChild(modal);
   };
-  
-  document.body.appendChild(modal);
-}
 
   // Helper function to clean form data
   function cleanFormData(formData) {
@@ -3362,9 +3504,7 @@ function addMissingOptionIfNeeded(selectElement, value) {
     try {
       const token = localStorage.getItem("token");
 
-      let url = `${API_BASE}/employees/check/${field}/${encodeURIComponent(
-        value
-      )}`;
+      let url = `${API_BASE}/employees/check/${field}/${encodeURIComponent(value)}`;
       if (isEditing && excludeId) {
         url += `?exclude=${excludeId}`;
       }
@@ -3376,7 +3516,7 @@ function addMissingOptionIfNeeded(selectElement, value) {
 
       if (data.exists) {
         input.setCustomValidity(
-          `⚠️ This ${field} already exists, please use a different one.`
+          `⚠️ This ${field} already exists, please use a different one.`,
         );
         input.reportValidity();
 
@@ -3407,15 +3547,15 @@ function addMissingOptionIfNeeded(selectElement, value) {
     // Handle passport photograph
     let passportBase64 = null;
     const passportInput = document.querySelector(
-      'input[name="Passport Photograph"]'
+      'input[name="Passport Photograph"]',
     );
 
     if (passportInput) {
       const currentPassport = passportInput.getAttribute(
-        "data-current-passport"
+        "data-current-passport",
       );
       const passportChanged = passportInput.getAttribute(
-        "data-passport-changed"
+        "data-passport-changed",
       );
 
       if (currentPassport && !passportChanged) {
@@ -3438,7 +3578,7 @@ function addMissingOptionIfNeeded(selectElement, value) {
 
     // Collect ALL form fields
     const allInputs = document.querySelectorAll(
-      "#step1 input, #step1 select, #step1 .custom-dropdown-wrapper, #step2 input, #step2 select, #step2 .custom-dropdown-wrapper, #step3 input, #step3 select, #step3 .custom-dropdown-wrapper"
+      "#step1 input, #step1 select, #step1 .custom-dropdown-wrapper, #step2 input, #step2 select, #step2 .custom-dropdown-wrapper, #step3 input, #step3 select, #step3 .custom-dropdown-wrapper",
     );
 
     for (const input of allInputs) {
@@ -3453,6 +3593,24 @@ function addMissingOptionIfNeeded(selectElement, value) {
         continue;
 
       let value = input.value?.trim() ?? "";
+
+      // Handle DATE fields FIRST (all date fields)
+      if (input.type === "date") {
+        if (!value) {
+          if (DB_FIELD_MAP[fieldName])
+            personnelData[DB_FIELD_MAP[fieldName]] = null;
+        } else {
+          const dateObj = new Date(value);
+          const day = String(dateObj.getDate()).padStart(2, "0");
+          const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+          const year = dateObj.getFullYear();
+          const formattedDate = `${year}${month}${day}`;
+          console.log(`Date converted: ${fieldName} = ${formattedDate}`);
+          if (DB_FIELD_MAP[fieldName])
+            personnelData[DB_FIELD_MAP[fieldName]] = formattedDate;
+        }
+        continue;
+      }
 
       // Handle SELECT
       if (input.tagName === "SELECT") {
@@ -3473,7 +3631,10 @@ function addMissingOptionIfNeeded(selectElement, value) {
       }
 
       // Handle dropdownConfig
-      if (input.tagName === ".custom-dropdown-wrapper" || "DIV") {
+      if (
+        input.classList.contains("custom-dropdown-wrapper") ||
+        input.tagName === "DIV"
+      ) {
         const lowerValue = value.toLowerCase();
         const isPlaceholder =
           lowerValue === "select" ||
@@ -3486,21 +3647,6 @@ function addMissingOptionIfNeeded(selectElement, value) {
 
         if (DB_FIELD_MAP[fieldName]) {
           personnelData[DB_FIELD_MAP[fieldName]] = isPlaceholder ? null : value;
-        }
-        continue;
-      }
-
-      if (input.type === "date") {
-        if (!value) {
-          if (DB_FIELD_MAP[fieldName])
-            personnelData[DB_FIELD_MAP[fieldName]] = null;
-        } else {
-          const dateObj = new Date(value);
-          const day = String(dateObj.getDate()).padStart(2, "0");
-          const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-          const year = dateObj.getFullYear();
-          if (DB_FIELD_MAP[fieldName])
-            personnelData[DB_FIELD_MAP[fieldName]] = `${year}${month}${day}`; // YYYYMMDD
         }
         continue;
       }
@@ -3524,14 +3670,13 @@ function addMissingOptionIfNeeded(selectElement, value) {
       if (titleDescField) {
         const titleDesc = titleDescField.getAttribute("data-titledesc");
         if (titleDesc) {
-          personnelData.Titledesc = titleDesc; // Add to payload
+          personnelData.Titledesc = titleDesc;
         }
       }
     }
 
     console.log("Final personnelData keys:", Object.keys(personnelData));
     console.log("Passport included?", !!personnelData.passport);
-
     console.log("Final personnelData:", personnelData);
 
     try {
@@ -3542,11 +3687,12 @@ function addMissingOptionIfNeeded(selectElement, value) {
           await checkDuplicate(input, field);
           if (input.validationMessage) {
             showAlert(input.validationMessage);
-            return; // stop submit if any duplicate found
+            return;
           }
         }
       }
 
+      // EDIT MODE - UPDATE EXISTING EMPLOYEE
       if (formMode === "edit" && currentEmployeeId) {
         console.log("Updating employee:", currentEmployeeId);
 
@@ -3557,30 +3703,177 @@ function addMissingOptionIfNeeded(selectElement, value) {
           body: JSON.stringify(personnelData),
         });
 
-        // Redirect logic (DateLeft / ExitType)
         const dateLeftVal = personnelData.DateLeft;
         const exitTypeVal = personnelData.exittype;
-
         const hasExited =
           (dateLeftVal && dateLeftVal !== null && dateLeftVal !== "") ||
           (exitTypeVal && exitTypeVal !== null && exitTypeVal !== "");
+
+        const wasInCurrent =
+          localStorage.getItem("navigatedFromCurrentPersonnel") === "true";
+        const wasInOld =
+          localStorage.getItem("navigatedFromOldPersonnel") === "true";
+
+        const statusChanged =
+          (wasInCurrent && hasExited) || (wasInOld && !hasExited);
+
+        console.log("📊 Edit status check:", {
+          wasInCurrent,
+          wasInOld,
+          hasExited,
+          statusChanged,
+        });
 
         const redirectSection = hasExited
           ? "old-personnel"
           : "current-personnel";
         const redirectTitle = hasExited ? "Old Personnel" : "Current Personnel";
 
-        showPopup("Personnel updated successfully", () => {
+        const updatedEmployeeData = {
+          Empl_ID: currentEmployeeId,
+          Surname: personnelData.Surname,
+          OtherName: personnelData.OtherName,
+          Title: personnelData.Title,
+          DateLeft: personnelData.DateLeft,
+          exittype: personnelData.exittype,
+          email: personnelData.email,
+          gsm_number: personnelData.gsm_number,
+        };
+
+        showPopup("Personnel updated successfully", async () => {
           localStorage.removeItem("editing_employee_id");
-          //localStorage.removeItem('navigatedFromCurrentPersonnel');
-          //localStorage.removeItem('navigatedFromOldPersonnel');
           localStorage.removeItem("isEditMode");
 
-          if (window.navigation?.navigateToSection) {
-            window.navigation.navigateToSection(redirectSection, redirectTitle);
+          if (statusChanged) {
+            console.log("🔄 Status changed - removing from source section");
+
+            // Determine which section we're leaving
+            const sourceSection = wasInCurrent ? "current" : "old";
+            const sourceManager = wasInCurrent
+              ? window.personnelManager
+              : window.oldPersonnelManager;
+
+            if (sourceManager) {
+              console.log(
+                "🧹 Removing employee from ALL snapshots in",
+                sourceSection,
+                "section",
+              );
+
+              // ✅ UPDATE BOTH SNAPSHOTS (pagination AND filter)
+              // We don't know which one is active, so update both!
+
+              const snapshotKeys = [
+                `personnel_pagination_${sourceSection}`,
+                `personnel_filter_${sourceSection}`,
+              ];
+
+              let updatedCount = 0;
+
+              snapshotKeys.forEach((storageKey) => {
+                const snapshot = localStorage.getItem(storageKey);
+
+                if (snapshot) {
+                  try {
+                    const state = JSON.parse(snapshot);
+
+                    if (state.data && Array.isArray(state.data)) {
+                      const beforeLength = state.data.length;
+                      state.data = state.data.filter(
+                        (p) => p.Empl_ID !== currentEmployeeId,
+                      );
+                      const afterLength = state.data.length;
+
+                      if (beforeLength !== afterLength) {
+                        console.log(
+                          `💾 Updated ${storageKey}: ${beforeLength} → ${afterLength} records`,
+                        );
+
+                        // Update metadata
+                        if (
+                          state.paginationInfo &&
+                          state.paginationInfo.totalRecords
+                        ) {
+                          state.paginationInfo.totalRecords -= 1;
+                        }
+                        state.timestamp = Date.now();
+
+                        // Save
+                        localStorage.setItem(storageKey, JSON.stringify(state));
+                        updatedCount++;
+                      } else {
+                        console.log(`⏭️ Employee not in ${storageKey}`);
+                      }
+                    }
+                  } catch (error) {
+                    console.error(`Error updating ${storageKey}:`, error);
+                    localStorage.removeItem(storageKey);
+                  }
+                } else {
+                  console.log(`⏭️ ${storageKey} doesn't exist`);
+                }
+              });
+
+              if (updatedCount > 0) {
+                console.log(`✅ Updated ${updatedCount} snapshot(s)`);
+              } else {
+                console.warn(
+                  "⚠️ No snapshots were updated - employee may still appear in source section",
+                );
+              }
+            }
+
+            // Clear navigation states
+            localStorage.removeItem("navigatedFromCurrentPersonnel");
+            localStorage.removeItem("navigatedFromOldPersonnel");
+            localStorage.removeItem("currentPersonnelPage");
+            localStorage.removeItem("currentPersonnelType");
+            localStorage.removeItem("oldPersonnelPage");
+            localStorage.removeItem("oldPersonnelType");
+
+            // Navigate to destination
+            if (window.navigation?.navigateToSection) {
+              await window.navigation.navigateToSection(
+                redirectSection,
+                redirectTitle,
+              );
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, 200));
+
+            // Smart navigation in destination
+            if (hasExited && window.oldPersonnelManager?.handleEmployeeAdded) {
+              console.log("🎯 Smart navigation in Old Personnel");
+              await window.oldPersonnelManager.handleEmployeeAdded(
+                updatedEmployeeData,
+                "statusChange",
+              );
+            } else if (
+              !hasExited &&
+              window.personnelManager?.handleEmployeeAdded
+            ) {
+              console.log("🎯 Smart navigation in Current Personnel");
+              await window.personnelManager.handleEmployeeAdded(
+                updatedEmployeeData,
+                "statusChange",
+              );
+            }
+          } else {
+            // ✅ No status change - use existing restoration logic (don't clear states)
+            console.log("✅ Status unchanged - using restoration logic");
+
+            if (window.navigation?.navigateToSection) {
+              window.navigation.navigateToSection(
+                redirectSection,
+                redirectTitle,
+              );
+            }
           }
         });
-      } else {
+      }
+
+      // CREATE MODE - NEW EMPLOYEE
+      else {
         const serviceNo = document
           .getElementById("field-service-number")
           ?.value.trim();
@@ -3593,12 +3886,13 @@ function addMissingOptionIfNeeded(selectElement, value) {
 
         console.log("Creating new employee with service number:", serviceNo);
 
+        // Create employee
         await apiRequest(`${API_BASE}/employees`, {
           method: "POST",
           body: JSON.stringify(personnelData),
         });
 
-        // Then create family members
+        // Create family members (NOK, Spouse, Children)
         if (pendingFamilyData.nok.length > 0) {
           for (const nok of pendingFamilyData.nok) {
             delete nok._tempId;
@@ -3608,7 +3902,7 @@ function addMissingOptionIfNeeded(selectElement, value) {
               {
                 method: "POST",
                 body: JSON.stringify(nok),
-              }
+              },
             );
           }
         }
@@ -3633,35 +3927,72 @@ function addMissingOptionIfNeeded(selectElement, value) {
               {
                 method: "POST",
                 body: JSON.stringify(child),
-              }
+              },
             );
           }
         }
 
-        showPopup("Personnel and family records created successfully", () => {
-          if (window.navigation?.navigateToSection) {
-            // Redirect logic (DateLeft / ExitType)
-            const dateLeftVal = personnelData.DateLeft;
-            const exitTypeVal = personnelData.exittype;
+        // Determine redirect based on exit status
+        const dateLeftVal = personnelData.DateLeft;
+        const exitTypeVal = personnelData.exittype;
 
-            const hasExited =
-              (dateLeftVal && dateLeftVal !== null && dateLeftVal !== "") ||
-              (exitTypeVal && exitTypeVal !== null && exitTypeVal !== "");
+        const hasExited =
+          (dateLeftVal && dateLeftVal !== null && dateLeftVal !== "") ||
+          (exitTypeVal && exitTypeVal !== null && exitTypeVal !== "");
 
-            const redirectSection = hasExited
-              ? "old-personnel"
-              : "current-personnel";
-            const redirectTitle = hasExited
-              ? "Old Personnel"
-              : "Current Personnel";
-            window.navigation.navigateToSection(redirectSection, redirectTitle);
-          }
-          setTimeout(() => {
-            if (window.personnelManager?.refresh)
-              window.personnelManager.refresh();
-          }, 100);
-        });
+        const redirectSection = hasExited
+          ? "old-personnel"
+          : "current-personnel";
+        const redirectTitle = hasExited ? "Old Personnel" : "Current Personnel";
 
+        // Collect new employee data for smart navigation
+        const newEmployeeData = {
+          Empl_ID: serviceNo,
+          Surname: personnelData.Surname,
+          OtherName: personnelData.OtherName,
+          Title: personnelData.Title,
+          DateLeft: personnelData.DateLeft,
+          exittype: personnelData.exittype,
+          email: personnelData.email,
+          gsm_number: personnelData.gsm_number,
+        };
+
+        showPopup(
+          "Personnel and family records created successfully",
+          async () => {
+            // Navigate to appropriate section
+            if (window.navigation?.navigateToSection) {
+              await window.navigation.navigateToSection(
+                redirectSection,
+                redirectTitle,
+              );
+            }
+
+            // Wait for navigation to complete
+            await new Promise((resolve) => setTimeout(resolve, 200));
+
+            // ✨ NEW: Smart navigation for current personnel only
+            if (!hasExited && window.personnelManager?.handleEmployeeAdded) {
+              console.log("🎯 Triggering smart navigation after create");
+              await window.personnelManager.handleEmployeeAdded(
+                newEmployeeData,
+                "create",
+              );
+            } else if (hasExited) {
+              // For old personnel, just refresh normally
+              if (window.oldPersonnelManager?.refresh) {
+                window.oldPersonnelManager.refresh();
+              }
+            } else {
+              // Fallback refresh
+              if (window.personnelManager?.refresh) {
+                window.personnelManager.refresh();
+              }
+            }
+          },
+        );
+
+        // Reset form after successful creation
         document.getElementById("personnelForm")?.reset();
         pendingFamilyData = { nok: [], spouse: [], children: [] };
         clearAllFamilyTables();
@@ -3686,8 +4017,6 @@ function addMissingOptionIfNeeded(selectElement, value) {
 
   [
     "field-residential-address",
-    "field-surname",
-    "field-othername",
     "field-town",
     "nokFirst",
     "nokLast",
@@ -3713,6 +4042,8 @@ function addMissingOptionIfNeeded(selectElement, value) {
   [
     "field-service-number",
     "TaxCode",
+    "field-surname",
+    "field-othername",
     "NSITFcode",
     "award",
     "InternalACNo",
@@ -3758,17 +4089,16 @@ function addMissingOptionIfNeeded(selectElement, value) {
       }
 
       // Validate file input
-
       if (!file) {
         showAlert("Please select a file to upload");
         return;
       }
 
-      //  safer validation by extension
+      // Safer validation by extension
       const allowedExtensions = [".csv", ".xlsx", ".xls"];
       const fileName = file.name.toLowerCase();
       const isExcelOrCsv = allowedExtensions.some((ext) =>
-        fileName.endsWith(ext)
+        fileName.endsWith(ext),
       );
 
       if (!isExcelOrCsv) {
@@ -3776,7 +4106,7 @@ function addMissingOptionIfNeeded(selectElement, value) {
         return;
       }
 
-      //  Size validation
+      // Size validation
       if (file.size > 5 * 1024 * 1024) {
         showAlert("File size must be less than 5MB");
         return;
@@ -3818,7 +4148,7 @@ function addMissingOptionIfNeeded(selectElement, value) {
 
         console.log("Upload result:", result);
 
-        //  Handle success response
+        // Handle success response
         if (result.summary) {
           const summary = result.summary;
           let message = `Batch upload completed!\n\n`;
@@ -3847,42 +4177,267 @@ function addMissingOptionIfNeeded(selectElement, value) {
 
           showAlert(message);
 
-          if (summary.successful > 0 || summary.successful === "Processing") {
+          if (summary.successful > 0) {
             document.getElementById("batchUploadForm").reset();
             document.getElementById("batchUploadForm").classList.add("hidden");
-            //await loadScales();
             resetBatchUploadForm();
 
-            showPopup("Personnels Uploaded successfully", () => {
-              if (window.navigation?.navigateToSection) {
-                window.navigation.navigateToSection(
-                  "current-personnel",
-                  "Current Personnel"
-                );
-                setTimeout(() => {
-                  if (window.personnelManager?.refresh) {
-                    window.personnelManager.refresh();
+            showPopup(
+              `${summary.successful} personnel uploaded successfully`,
+              async () => {
+                try {
+                  console.log("🚀 BATCH UPLOAD: Starting complete refresh...");
+
+                  // ============================================================
+                  // STEP 1: NUCLEAR OPTION - Clear EVERYTHING
+                  // ============================================================
+                  console.log(
+                    "💣 NUCLEAR: Clearing all personnel-related data...",
+                  );
+
+                  // Clear all snapshots
+                  localStorage.removeItem("personnel_filter_current");
+                  localStorage.removeItem("personnel_pagination_current");
+                  localStorage.removeItem("personnel_filter_old");
+                  localStorage.removeItem("personnel_pagination_old");
+
+                  // Clear navigation states
+                  localStorage.removeItem("navigatedFromCurrentPersonnel");
+                  localStorage.removeItem("navigatedFromOldPersonnel");
+                  localStorage.removeItem("currentPersonnelPage");
+                  localStorage.removeItem("currentPersonnelType");
+                  localStorage.removeItem("oldPersonnelPage");
+                  localStorage.removeItem("oldPersonnelType");
+
+                  // If manager exists, destroy it completely
+                  if (window.personnelManager) {
+                    console.log(
+                      "💣 NUCLEAR: Destroying personnel manager instance...",
+                    );
+                    window.personnelManager.currentPage = 1;
+                    window.personnelManager.personnel = [];
+                    window.personnelManager.filteredPersonnel = [];
+                    window.personnelManager.paginationInfo = {};
+                    window.personnelManager.lastFilterParams = null;
+
+                    // Cancel any in-flight requests
+                    if (window.personnelManager.activeFilterController) {
+                      window.personnelManager.activeFilterController.abort();
+                      window.personnelManager.activeFilterController = null;
+                    }
                   }
-                }, 100);
-              }
-            });
+
+                  console.log("✅ All data cleared");
+
+                  // ============================================================
+                  // STEP 2: Navigate
+                  // ============================================================
+                  console.log("📍 Navigating to current-personnel...");
+
+                  if (window.navigation?.navigateToSection) {
+                    await window.navigation.navigateToSection(
+                      "current-personnel",
+                      "Current Personnel",
+                    );
+                  }
+
+                  // ============================================================
+                  // STEP 3: Wait for initialization to complete
+                  // ============================================================
+                  console.log("⏳ Waiting for complete initialization...");
+                  await new Promise((resolve) => setTimeout(resolve, 600)); // Even longer wait
+
+                  // ============================================================
+                  // STEP 4: Verify manager and force reload if needed
+                  // ============================================================
+                  if (!window.personnelManager) {
+                    console.error(
+                      "❌ CRITICAL: personnelManager not initialized!",
+                    );
+                    alert(
+                      "Error initializing personnel manager. Please refresh the page manually.",
+                    );
+                    return;
+                  }
+
+                  console.log("✅ Personnel manager exists");
+
+                  // Check what data was loaded
+                  const loadedCount =
+                    window.personnelManager.personnel?.length || 0;
+                  console.log("📊 Currently loaded:", loadedCount, "records");
+
+                  // ============================================================
+                  // STEP 5: Force a fresh reload regardless
+                  // ============================================================
+                  console.log("🔄 Forcing fresh reload from API...");
+
+                  // Clear UI filters
+                  const searchInput = document.getElementById(
+                    "current-personnel-search",
+                  );
+                  const rankFilter = document.getElementById("rank-filter");
+                  const statusFilter = document.getElementById("status-filter");
+
+                  if (searchInput) searchInput.value = "";
+                  if (rankFilter) rankFilter.value = "";
+                  if (statusFilter) statusFilter.value = "";
+
+                  // Reset manager state
+                  window.personnelManager.currentPage = 1;
+                  window.personnelManager.personnel = [];
+                  window.personnelManager.filteredPersonnel = [];
+                  window.personnelManager.paginationInfo = {};
+
+                  // Force fresh load
+                  if (window.personnelManager.forceNextLoad !== undefined) {
+                    window.personnelManager.forceNextLoad = true;
+                  }
+
+                  // Load page 1
+                  await window.personnelManager.loadPersonnelData("current", 1);
+
+                  // ============================================================
+                  // STEP 6: Verify new data loaded
+                  // ============================================================
+                  const newCount =
+                    window.personnelManager.personnel?.length || 0;
+                  const totalRecords =
+                    window.personnelManager.paginationInfo?.totalRecords || 0;
+
+                  console.log("📊 After reload:", {
+                    page: window.personnelManager.currentPage,
+                    loaded: newCount,
+                    total: totalRecords,
+                    hasNext:
+                      window.personnelManager.paginationInfo?.hasNextPage,
+                  });
+
+                  // ============================================================
+                  // STEP 7: Verify table rendered
+                  // ============================================================
+                  const tbody = document.getElementById("personnel-table-body");
+
+                  if (!tbody) {
+                    console.error("❌ Table body not found!");
+                    alert("Error: Table not found. Please refresh the page.");
+                    return;
+                  }
+
+                  const rows = tbody.querySelectorAll("tr");
+                  console.log("📊 Table rows:", rows.length);
+
+                  // If no rows or loading message, force render
+                  if (
+                    rows.length === 0 ||
+                    rows[0]?.textContent?.includes("Loading")
+                  ) {
+                    console.log("🔧 Force rendering table...");
+                    await window.personnelManager.renderTable();
+                  }
+
+                  // ============================================================
+                  // STEP 8: Show success banner with verification
+                  // ============================================================
+                  if (newCount > 0) {
+                    console.log("✅ SUCCESS: Data loaded and displayed");
+
+                    setTimeout(() => {
+                      const container = document.querySelector(
+                        "#personnel-table-body",
+                      )?.parentElement?.parentElement;
+                      if (container) {
+                        const existingBanner = container.querySelector(
+                          ".batch-upload-banner",
+                        );
+                        if (existingBanner) existingBanner.remove();
+
+                        const banner = document.createElement("div");
+                        banner.className =
+                          "batch-upload-banner bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4";
+                        banner.innerHTML = `
+              <div class="flex items-center justify-between">
+                <div>
+                  <strong>✅ Batch Upload Complete!</strong><br>
+                  <span class="text-sm">
+                    ${summary.successful} employees uploaded successfully | 
+                    Showing ${newCount} of ${totalRecords} total records on page 1
+                  </span>
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" class="text-green-700 hover:text-green-900 font-bold text-xl px-2">×</button>
+              </div>
+            `;
+                        container.insertBefore(banner, container.firstChild);
+
+                        setTimeout(() => banner.remove(), 8000);
+                      }
+                    }, 300);
+                  } else {
+                    // ============================================================
+                    // STEP 9: Nuclear fallback - suggest manual refresh
+                    // ============================================================
+                    console.error(
+                      "❌ CRITICAL: No data loaded after all attempts!",
+                    );
+
+                    const shouldRefresh = confirm(
+                      `Upload successful! However, the table is not refreshing automatically.\n\n` +
+                        `${summary.successful} employees were uploaded to the database.\n\n` +
+                        `Click OK to refresh the entire page, or Cancel to manually navigate to Current Personnel.`,
+                    );
+
+                    if (shouldRefresh) {
+                      console.log("🔄 User chose to refresh page");
+                      window.location.reload();
+                    }
+                  }
+                } catch (error) {
+                  console.error("❌ CRITICAL ERROR in batch upload:", error);
+
+                  const shouldRefresh = confirm(
+                    `Upload was successful, but an error occurred while displaying the data.\n\n` +
+                      `Error: ${error.message}\n\n` +
+                      `Click OK to refresh the page.`,
+                  );
+
+                  if (shouldRefresh) {
+                    window.location.reload();
+                  }
+                }
+              },
+            );
           }
         } else {
+          // No summary object (fallback for older backend responses)
           showPopup("Upload completed successfully!");
           document.getElementById("batchUploadForm").reset();
           document.getElementById("batchUploadForm").classList.add("hidden");
 
-          showPopup("Personnels Uploaded successfully", () => {
+          showPopup("Personnel Uploaded successfully", async () => {
             if (window.navigation?.navigateToSection) {
-              window.navigation.navigateToSection(
+              await window.navigation.navigateToSection(
                 "current-personnel",
-                "Current Personnel"
+                "Current Personnel",
               );
-              setTimeout(() => {
-                if (window.personnelManager?.refresh) {
-                  window.personnelManager.refresh();
-                }
-              }, 100);
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, 200));
+
+            if (window.personnelManager) {
+              window.personnelManager.clearNormalPaginationState();
+              window.personnelManager.clearFilterState();
+
+              const searchInput = document.getElementById(
+                "current-personnel-search",
+              );
+              const rankFilter = document.getElementById("rank-filter");
+              const statusFilter = document.getElementById("status-filter");
+
+              if (searchInput) searchInput.value = "";
+              if (rankFilter) rankFilter.value = "";
+              if (statusFilter) statusFilter.value = "";
+
+              await window.personnelManager.loadPersonnelData("current", 1);
             }
           });
         }
@@ -3903,7 +4458,7 @@ function addMissingOptionIfNeeded(selectElement, value) {
           {
             method: "GET",
             headers: API_HEADERS,
-          }
+          },
         );
 
         if (!response.ok) {
@@ -3935,9 +4490,7 @@ function addMissingOptionIfNeeded(selectElement, value) {
         if (file) {
           const fileInfo = document.createElement("div");
           fileInfo.className = "mt-2 text-sm text-gray-600 file-info";
-          fileInfo.textContent = `Selected: ${file.name} (${(
-            file.size / 1024
-          ).toFixed(1)} KB)`;
+          fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
 
           const existingInfo = e.target.parentNode.querySelector(".file-info");
           if (existingInfo) existingInfo.remove();

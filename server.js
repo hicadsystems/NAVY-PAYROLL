@@ -108,7 +108,7 @@ async function startServer() {
       break;
 
     case "localhost":
-      socket.listen(PORT, () => {
+      app.listen(PORT, () => {
         console.log(`🚀 Server running on http://localhost:${PORT}`);
       });
       break;
@@ -127,9 +127,10 @@ async function startServer() {
             "⚠️  Network interface unavailable, falling back to localhost",
           );
 
-          const fallbackServer = https.createServer(options, app);
+          const fallbackServer = app;
+
           fallbackServer.listen(PORT, "localhost", () => {
-            console.log(`🔒 HTTPS server running on https://localhost:${PORT}`);
+            console.log(`🔒 HTTPS server running on http://localhost:${PORT}`);
           });
 
           fallbackServer.on("error", (fallbackErr) => {

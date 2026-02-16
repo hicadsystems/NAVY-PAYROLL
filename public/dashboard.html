@@ -3,7 +3,7 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta charset="utf-8" />
-    <title>HICAD Payroll</title>
+    <title>NAVY Payroll</title>
 
     <!-- CRITICAL: Prevent ALL flickering -->
     <style>
@@ -26,6 +26,45 @@
         opacity: 1;
       }
     </style>
+
+    <!-- Favicon -->
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="photos/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="photos/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="photos/favicon-16x16.png"
+    />
+    <link rel="manifest" href="photos/site.webmanifest" />
+
+    <!-- Tailwind CDN + config -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <!-- <script src="script/choices.js"></script> -->
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"
+    />
+    <link rel="stylesheet" href="styles/dashboard.css" />
 
     <!-- Tailwind CDN + config -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -827,6 +866,14 @@
                         >Payroll Class Restore</a
                       >
                     </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="consolidated-payslip"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Consolidated Payslips</a
+                      >
+                    </li>
                   </ul>
                 </div>
               </li>
@@ -919,15 +966,8 @@
                         >Payroll Register</a
                       >
                     </li>
-                    <!--<li><a href="#" data-section="listing-of-payroll-files" class="block px-3 py-1 rounded hover:bg-amber-50">Listing of Payroll Files</a></li>-->
-                    <li>
-                      <a
-                        href="#"
-                        data-section="payment-staff-list"
-                        class="block px-3 py-1 rounded hover:bg-amber-50"
-                        >Payment Staff List</a
-                      >
-                    </li>
+                    <!--<li><a href="#" data-section="listing-of-payroll-files" class="block px-3 py-1 rounded hover:bg-amber-50">Listing of Payroll Files</a></li>
+                  <li><a href="#" data-section="payment-staff-list" class="block px-3 py-1 rounded hover:bg-amber-50">Payment Staff List</a></li>-->
                     <li>
                       <a
                         href="#"
@@ -983,7 +1023,15 @@
                         href="#"
                         data-section="personnel-reports"
                         class="block px-3 py-1 rounded hover:bg-amber-50"
-                        >Personnel Reports</a
+                        >Current Personnel Reports</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="listof-exited-members"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Exited Members</a
                       >
                     </li>
                   </ul>
@@ -1113,18 +1161,18 @@
                 <div class="p-6 flex flex-col items-center gap-4">
                   <div class="flex items-center">
                     <h3 class="text-navy font-bold">
-                      Payroll Pending Approval
+                      Current Active Personnel
                     </h3>
                     <i
-                      class="fas fa-hourglass-half font-bold text-yellow-600"
+                      class="fa-solid fa-users font-bold text-green-600"
                       style="font-size: 24px"
                     ></i>
                   </div>
                   <div
-                    id="pendingApproval"
+                    id="active-personnel"
                     class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold text-warning"
                   >
-                    1,500
+                    Loading...
                   </div>
                 </div>
 

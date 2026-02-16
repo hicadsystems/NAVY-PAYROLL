@@ -261,7 +261,7 @@
       return showModal(
         "Validation Error",
         "Please select a period for analysis!",
-        true
+        true,
       );
     }
 
@@ -279,14 +279,12 @@
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || `HTTP error! status: ${response.status}`
-        );
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to generate report");
       }
 
       if (exportFormat === "json") {
@@ -303,12 +301,12 @@
             showModal(
               "No Overpayments Detected",
               result.message ||
-                `No employees exceeded the ${result.threshold_percentage}% threshold.`
+                `No employees exceeded the ${result.threshold_percentage}% threshold.`,
             );
           } else {
             showModal(
               "Overpayments Found!",
-              `⚠️ ${result.data.length} employee(s) flagged with overpayment exceeding ${result.threshold_percentage}% threshold.`
+              `⚠️ ${result.data.length} employee(s) flagged with overpayment exceeding ${result.threshold_percentage}% threshold.`,
             );
             console.log("Overpayment Report Data:", result);
           }
@@ -316,7 +314,7 @@
           showModal(
             "Report Error",
             result.message || "Failed to generate report",
-            true
+            true,
           );
         }
       } else {
@@ -336,7 +334,7 @@
         loadingModal.classList.add("hidden");
         showModal(
           "Success",
-          `Overpayment Analysis Report downloaded successfully!`
+          `Overpayment Analysis Report downloaded successfully!`,
         );
       }
     } catch (error) {
@@ -350,13 +348,13 @@
   cancelBtn.onclick = () => {
     periodSelect.value = "";
     document.querySelector(
-      'input[name="exportFormat"][value="excel"]'
+      'input[name="exportFormat"][value="excel"]',
     ).checked = true;
 
     // Reset to default period if available
     if (filterOptions && filterOptions.currentPeriod) {
       const currentPeriod = `${filterOptions.currentPeriod.year}${String(
-        filterOptions.currentPeriod.month
+        filterOptions.currentPeriod.month,
       ).padStart(2, "0")}`;
       periodSelect.value = currentPeriod;
     }

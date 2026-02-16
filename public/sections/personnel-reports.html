@@ -8,15 +8,10 @@
   </div>
 
   <!-- Radio Selection -->
-<<<<<<< HEAD
-  <div class="mb-6 bg-blue-50 p-4 rounded-lg">
+  <div class="mb-6 border border-blue-500 p-4 rounded-lg">
     <span class="text-blue-600 font-semibold text-lg block mb-3"
       >Select Report Scope:</span
     >
-=======
-  <div class="mb-6 border  border-blue-500 p-4 rounded-lg">
-    <span class="text-blue-600 font-semibold text-lg block mb-3">Select Report Scope:</span>
->>>>>>> upstream/master
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <label class="flex items-center cursor-pointer">
         <input
@@ -26,7 +21,7 @@
           class="text-blue-600 w-4 h-4"
           checked
         />
-        <span class="ml-2 font-medium">All Personnel</span>
+        <span class="ml-2 font-medium">All Currrent Personnel</span>
       </label>
       <label class="flex items-center cursor-pointer">
         <input
@@ -118,7 +113,7 @@
         />
         <span class="ml-2 font-medium">Tax Status</span>
       </label>
-      <label class="flex items-center cursor-pointer">
+      <label class="hidden flex items-center cursor-pointer">
         <input
           type="radio"
           name="personnelScope"
@@ -150,7 +145,10 @@
       </div>
     </div>
 
-    <div id="locationWrapper" class="hidden border border-green-500 p-4 rounded-lg">
+    <div
+      id="locationWrapper"
+      class="hidden border border-green-500 p-4 rounded-lg"
+    >
       <div class="grid md:grid-cols-2 gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-900 mb-2">
@@ -185,7 +183,10 @@
       </div>
     </div>
 
-    <div id="gradetypeWrapper" class="hidden border border-orange-500 p-4 rounded-lg">
+    <div
+      id="gradetypeWrapper"
+      class="hidden border border-orange-500 p-4 rounded-lg"
+    >
       <div class="grid md:grid-cols-2 gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-900 mb-2">
@@ -203,7 +204,10 @@
       </div>
     </div>
 
-    <div id="gradelevelWrapper" class="hidden border border-pink-500 p-4 rounded-lg">
+    <div
+      id="gradelevelWrapper"
+      class="hidden border border-pink-500 p-4 rounded-lg"
+    >
       <div class="grid md:grid-cols-2 gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-900 mb-2">
@@ -221,7 +225,10 @@
       </div>
     </div>
 
-    <div id="bankWrapper" class="hidden border border-indigo-500 p-4 rounded-lg">
+    <div
+      id="bankWrapper"
+      class="hidden border border-indigo-500 p-4 rounded-lg"
+    >
       <div class="grid md:grid-cols-2 gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-900 mb-2">
@@ -256,7 +263,10 @@
       </div>
     </div>
 
-    <div id="emolumentWrapper" class="hidden border border-yellow-500 p-4 rounded-lg">
+    <div
+      id="emolumentWrapper"
+      class="hidden border border-yellow-500 p-4 rounded-lg"
+    >
       <div class="grid md:grid-cols-2 gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-900 mb-2">
@@ -308,7 +318,10 @@
       </div>
     </div>
 
-    <div id="oldemployeesWrapper" class="hidden border border-gray-500 p-4 rounded-lg">
+    <div
+      id="oldemployeesWrapper"
+      class="hidden border border-gray-500 p-4 rounded-lg"
+    >
       <div class="grid md:grid-cols-2 gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-900 mb-2">
@@ -326,7 +339,10 @@
     </div>
 
     <!-- Export Format Selection (shown when "All Personnel" is selected) -->
-    <div id="exportFormatStandalone" class="border border-gray-500 p-4 rounded-lg">
+    <div
+      id="exportFormatStandalone"
+      class="border border-gray-500 p-4 rounded-lg"
+    >
       <label class="block text-sm font-medium text-gray-900 mb-2">
         <i class="fas fa-file-export text-gray-600 mr-2"></i>Export Format
       </label>
@@ -424,7 +440,7 @@
 <script>
   const auth = window.authService;
   const personnelRadios = document.querySelectorAll(
-    'input[name="personnelScope"]'
+    'input[name="personnelScope"]',
   );
 
   // All wrapper elements
@@ -443,7 +459,7 @@
   };
 
   const exportFormatStandalone = document.getElementById(
-    "exportFormatStandalone"
+    "exportFormatStandalone",
   );
 
   // Export format HTML template
@@ -490,11 +506,11 @@
   const personnelModal = document.getElementById("personnelModal");
   const personnelModalTitle = document.getElementById("personnelModalTitle");
   const personnelModalMessage = document.getElementById(
-    "personnelModalMessage"
+    "personnelModalMessage",
   );
   const personnelModalIcon = document.getElementById("personnelModalIcon");
   const personnelModalCloseBtn = document.getElementById(
-    "personnelModalCloseBtn"
+    "personnelModalCloseBtn",
   );
   const loadingModal = document.getElementById("loadingModal");
 
@@ -510,7 +526,7 @@
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       const result = await response.json();
 
@@ -530,7 +546,7 @@
         populateDropdown(selects.taxed, filterOptions.taxedStatus);
         populateDropdown(
           selects.oldemployees,
-          filterOptions.oldEmployeesOptions
+          filterOptions.oldEmployeesOptions,
         );
       }
     } catch (error) {
@@ -538,7 +554,7 @@
       showPersonnelModal(
         "Error",
         "Failed to load filter options. Please refresh the page.",
-        true
+        true,
       );
     }
   }
@@ -570,7 +586,7 @@
   // Hide all wrappers
   function hideAllWrappers() {
     Object.values(wrappers).forEach((wrapper) =>
-      wrapper.classList.add("hidden")
+      wrapper.classList.add("hidden"),
     );
     exportFormatStandalone.classList.remove("hidden");
   }
@@ -591,7 +607,7 @@
       const activeWrapper = wrappers[scope];
       if (activeWrapper) {
         const exportSection = activeWrapper.querySelector(
-          ".exportFormatSection"
+          ".exportFormatSection",
         );
         if (exportSection) {
           exportSection.innerHTML = exportFormatHTML;
@@ -618,7 +634,7 @@
   // Generate button
   generatePersonnelBtn.onclick = async () => {
     const selectedScope = document.querySelector(
-      'input[name="personnelScope"]:checked'
+      'input[name="personnelScope"]:checked',
     )?.value;
     const exportFormat =
       document.querySelector('input[name="exportFormat"]:checked')?.value ||
@@ -629,7 +645,7 @@
       return showPersonnelModal(
         "Validation Error",
         "Please select a report scope!",
-        true
+        true,
       );
     }
 
@@ -643,7 +659,7 @@
         return showPersonnelModal(
           "Validation Error",
           "Please select a value for the chosen filter!",
-          true
+          true,
         );
       }
 
@@ -659,7 +675,7 @@
         emolument: "emolumentForm",
         rent: "rentSubsidy",
         taxed: "taxed",
-        oldemployees: "oldEmployees",
+        //oldemployees: 'oldEmployees'
       };
 
       const paramName = paramMap[selectedScope];
@@ -677,11 +693,12 @@
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to generate report");
       }
 
       if (exportFormat === "json") {
@@ -691,14 +708,14 @@
         if (result.success) {
           showPersonnelModal(
             "Success",
-            `Report generated successfully! Found ${result.data.length} personnel records.`
+            `Report generated successfully! Found ${result.data.length} personnel records.`,
           );
           console.log("Report data:", result);
         } else {
           showPersonnelModal(
             "Error",
             result.error || "Failed to generate report",
-            true
+            true,
           );
         }
       } else {
@@ -713,9 +730,7 @@
 
         const a = document.createElement("a");
         a.href = url;
-        a.download = `personnel_report_${
-          new Date().toISOString().split("T")[0]
-        }.${exportFormat === "excel" ? "xlsx" : "pdf"}`;
+        a.download = `personnel_report_${new Date().toISOString().split("T")[0]}.${exportFormat === "excel" ? "xlsx" : "pdf"}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -730,7 +745,7 @@
       showPersonnelModal(
         "Error",
         `Failed to generate report: ${error.message}`,
-        true
+        true,
       );
     }
   };
@@ -747,13 +762,12 @@
 
     // Reset radio to "all"
     document.querySelector(
-      'input[name="personnelScope"][value="all"]'
+      'input[name="personnelScope"][value="all"]',
     ).checked = true;
 
     // Reset export format to PDF
-    document.querySelector(
-      'input[name="exportFormat"][value="pdf"]'
-    ).checked = true;
+    document.querySelector('input[name="exportFormat"][value="pdf"]').checked =
+      true;
 
     // Update export format display
     updateExportFormatDisplay("all");

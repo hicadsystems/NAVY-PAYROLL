@@ -190,8 +190,8 @@
         <tr>
           <th class="border px-2 py-3 text-left">Bank Code</th>
           <th class="border px-6 py-3 text-left">Bank Name</th>
-          <th class="border px-6 py-3 text-left">Branch</th>
-          <th class="border px-6 py-3 text-left">Account No</th>
+          <th class="border px-6 py-3 text-left">Branch Name</th>
+          <th class="border px-6 py-3 text-left">Branch Code</th>
           <th class="border px-6 py-3 text-left">Actions</th>
         </tr>
       </thead>
@@ -432,7 +432,7 @@
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!res.ok) throw new Error("Failed to fetch banks");
@@ -479,15 +479,15 @@
         missingFields.push(
           field
             .replace(/([A-Z])/g, " $1")
-            .replace(/^./, (str) => str.toUpperCase())
+            .replace(/^./, (str) => str.toUpperCase()),
         );
       }
     }
     if (missingFields.length > 0) {
       showErrorModal(
         `Please fill in the following required fields: ${missingFields.join(
-          ", "
-        )}`
+          ", ",
+        )}`,
       );
       return;
     }
@@ -573,14 +573,14 @@
         <td class="border px-2 py-2 text-sm text-gray-900">${item.bankcode}</td>
         <td class="border px-2 py-2 text-sm text-gray-900">${item.bankname}</td>
         <td class="border px-2 py-2 text-sm text-gray-900">${item.branchname}</td>
-        <td class="border px-2 py-2 text-sm text-gray-900">${item.CompanyAcctNo}</td>
+        <td class="border px-2 py-2 text-sm text-gray-900">${item.branchcode}</td>
         <td class="border px-2 py-2 text-sm font-medium">
           <button onclick="viewBankRecord(${index})" class="text-blue-600 hover:text-blue-900 px-2 py-1 rounded hover:bg-blue-50 mr-2">View</button>
           <button onclick="editBankRecord(${index})" class="text-green-600 hover:text-green-900 px-2 py-1 rounded hover:bg-green-50 mr-2">Edit</button>
           <button onclick="deleteBankRecord(${index})" class="text-red-600 hover:text-red-900 px-2 py-1 rounded hover:bg-red-50">Delete</button>
         </td>
       </tr>
-    `
+    `,
       )
       .join("");
   }
@@ -676,7 +676,7 @@
   window.deleteBankRecord = async function (index) {
     pendingDeleteIndex = index;
     showConfirmModal(
-      "Are you sure you want to delete this bank record? This action cannot be undone."
+      "Are you sure you want to delete this bank record? This action cannot be undone.",
     );
   };
 
@@ -696,7 +696,7 @@
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
               },
-            }
+            },
           );
           if (!res.ok) throw new Error("Failed to delete bank");
           showSuccessModal("Bank record deleted successfully!");
@@ -824,21 +824,21 @@
   //generate reports functionality
   function generateReport() {
     const now = new Date();
-    const dateStr = now.toLocaleDateString('en-GB', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    const dateStr = now.toLocaleDateString("en-GB", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
-    const timeStr = now.toLocaleTimeString('en-GB', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
+    const timeStr = now.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
     });
-    
-    const generatedBy = localStorage.getItem('full_name') || 'System User';
-    
-    const printWindow = window.open('', '_blank');
+
+    const generatedBy = localStorage.getItem("full_name") || "System User";
+
+    const printWindow = window.open("", "_blank");
 
     const printContent = `
       <!DOCTYPE html>
@@ -1023,23 +1023,27 @@
             </tr>
           </thead>
           <tbody>
-            ${bankData.map((item, index) => `
+            ${bankData
+              .map(
+                (item, index) => `
               <tr>
                 <td class="text-center"><strong>${index + 1}</strong></td>
-                <td>${item.address || '-'}</td>
-                <td>${item.bankcode || '-'}</td>
-                <td>${item.bankname || '-'}</td>
-                <td>${item.branchname || '-'}</td>
-                <td>${item.branchcode || '-'}</td>
-                <td>${item.CompanyAcctNo || '-'}</td>
-                <td>${item.ContactMgrAccountant || '-'}</td>
-                <td>${item.telephone || '-'}</td>
-                <td>${item.email || '-'}</td>
-                <td>${item.contact || '-'}</td>
-                <td>${item.cbn_code || '-'}</td>
-                <td>${item.cbn_branch || '-'}</td>
+                <td>${item.address || "-"}</td>
+                <td>${item.bankcode || "-"}</td>
+                <td>${item.bankname || "-"}</td>
+                <td>${item.branchname || "-"}</td>
+                <td>${item.branchcode || "-"}</td>
+                <td>${item.CompanyAcctNo || "-"}</td>
+                <td>${item.ContactMgrAccountant || "-"}</td>
+                <td>${item.telephone || "-"}</td>
+                <td>${item.email || "-"}</td>
+                <td>${item.contact || "-"}</td>
+                <td>${item.cbn_code || "-"}</td>
+                <td>${item.cbn_branch || "-"}</td>
               </tr>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </tbody>
         </table>
 
@@ -1058,7 +1062,7 @@
       printWindow.print();
     };
   }
-    
+
   // Add event listener to generate report button
   document
     .getElementById("generateReportBtn")

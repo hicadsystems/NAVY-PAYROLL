@@ -512,7 +512,8 @@
 </div>
 
 <script>
-  const auth = window.authService; // Configuration
+  const auth = window.authService;
+  // Configuration
   const API_BASE = "/salaryreconcile";
   const token = localStorage.getItem("token");
 
@@ -614,7 +615,7 @@
         `/salarysummary/filter-options`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (response.ok) {
@@ -647,21 +648,38 @@
     showLoading("Loading reconciliation data...");
 
     try {
-      const periodCode = `${year}${month}`;
-
       // Load summary
       const summaryResponse = await auth.fetchWithAuth(
-        `${API_BASE}/summary?year=${year}&month=${periodCode}`,
+        `${API_BASE}/summary?year=${year}&month=${month}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       let summaryData = null;
-      if (summaryResponse.ok) {
+
+      // Check for calculation incomplete error
+      if (!summaryResponse.ok) {
+        const errorResult = await summaryResponse.json();
+
+        if (errorResult.errorType === "CALCULATION_INCOMPLETE") {
+          hideLoading();
+          showError(errorResult.error);
+          return;
+        }
+
+        if (errorResult.errorType === "NO_DATA") {
+          hideLoading();
+          showWarning(errorResult.error);
+          return;
+        }
+
+        // Other errors - continue to try loading employee data
+        console.warn("Summary load failed:", errorResult.error);
+      } else {
         const summaryResult = await summaryResponse.json();
         if (
           summaryResult.success &&
@@ -674,24 +692,40 @@
 
       // Load employee details
       const employeesResponse = await auth.fetchWithAuth(
-        `${API_BASE}/employees?year=${year}&month=${periodCode}&showErrorsOnly=${showErrorsOnly}`,
+        `${API_BASE}/employees?year=${year}&month=${month}&showErrorsOnly=${showErrorsOnly}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (!employeesResponse.ok) {
-        throw new Error("Failed to load employee reconciliation data");
+        const errorResult = await employeesResponse.json();
+
+        if (errorResult.errorType === "CALCULATION_INCOMPLETE") {
+          hideLoading();
+          showError(errorResult.error);
+          return;
+        }
+
+        if (errorResult.errorType === "NO_DATA") {
+          hideLoading();
+          showWarning(errorResult.error);
+          return;
+        }
+
+        throw new Error(
+          errorResult.error || "Failed to load employee reconciliation data",
+        );
       }
 
       const employeesResult = await employeesResponse.json();
 
       if (!employeesResult.success) {
         throw new Error(
-          employeesResult.error || "Failed to load employee data"
+          employeesResult.error || "Failed to load employee data",
         );
       }
 
@@ -701,11 +735,11 @@
         summary: summaryData,
         total_employees_checked: employeeDetails.length,
         employees_with_errors: employeeDetails.filter(
-          (e) => e.status === "ERROR"
+          (e) => e.status === "ERROR",
         ).length,
         total_error_amount: employeeDetails.reduce(
           (sum, e) => sum + Math.abs(e.error_amount || 0),
-          0
+          0,
         ),
         details: employeeDetails,
       };
@@ -727,9 +761,8 @@
 
     document.getElementById("reportDate").textContent =
       new Date().toLocaleString();
-    document.getElementById("reportPeriod").textContent = `${getMonthName(
-      month
-    )} ${year}`;
+    document.getElementById("reportPeriod").textContent =
+      `${getMonthName(month)} ${year}`;
 
     displaySummaryCards(data);
     displayOverallStatus(data.summary);
@@ -766,12 +799,7 @@
 
     <div>
       <h3 class="text-sm uppercase tracking-wide opacity-90 mb-2">Total Error Amount</h3>
-      <div class="text-4xl font-bold mb-1">₦${Math.abs(
-        totalErrorAmount
-      ).toLocaleString("en-NG", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}</div>
+      <div class="text-4xl font-bold mb-1">₦${Math.abs(totalErrorAmount).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
       <div class="text-xs opacity-80">Cumulative variance</div>
     </div>
 
@@ -798,9 +826,7 @@
     container.innerHTML = `
     <div class="flex justify-between items-center mb-4 pb-3 border-b-4 border-indigo-600">
       <h3 class="text-xl font-semibold text-gray-800">Overall Summary</h3>
-      <span class="px-4 py-2 ${statusClass} rounded-full text-xs font-bold uppercase tracking-wide">${
-      summary.status || "Unknown"
-    }</span>
+      <span class="px-4 py-2 ${statusClass} rounded-full text-xs font-bold uppercase tracking-wide">${summary.status || "Unknown"}</span>
     </div>
     <div class="overflow-x-auto rounded-lg">
       <table class="min-w-full border border-gray-200 rounded-lg">
@@ -816,26 +842,12 @@
         </thead>
         <tbody>
           <tr class="border-b hover:bg-gray-50">
-            <td class="px-4 py-3 text-sm border font-semibold">₦${formatNumber(
-              summary.total_gross
-            )}</td>
-            <td class="px-4 py-3 text-sm border font-semibold">₦${formatNumber(
-              summary.total_tax
-            )}</td>
-            <td class="px-4 py-3 text-sm border font-semibold">₦${formatNumber(
-              summary.total_net
-            )}</td>
-            <td class="px-4 py-3 text-sm border font-semibold">₦${formatNumber(
-              summary.detail_earnings
-            )}</td>
-            <td class="px-4 py-3 text-sm border font-semibold">₦${formatNumber(
-              summary.detail_deductions
-            )}</td>
-            <td class="px-4 py-3 text-sm border font-bold ${
-              Math.abs(variance) >= 0.01
-                ? "highlight-error"
-                : "highlight-success"
-            }">
+            <td class="px-4 py-3 text-sm border font-semibold">₦${formatNumber(summary.total_gross)}</td>
+            <td class="px-4 py-3 text-sm border font-semibold">₦${formatNumber(summary.total_tax)}</td>
+            <td class="px-4 py-3 text-sm border font-semibold">₦${formatNumber(summary.total_net)}</td>
+            <td class="px-4 py-3 text-sm border font-semibold">₦${formatNumber(summary.detail_earnings)}</td>
+            <td class="px-4 py-3 text-sm border font-semibold">₦${formatNumber(summary.detail_deductions)}</td>
+            <td class="px-4 py-3 text-sm border font-bold ${Math.abs(variance) >= 0.01 ? "highlight-error" : "highlight-success"}">
               ₦${formatNumber(Math.abs(variance))}
             </td>
           </tr>
@@ -857,9 +869,8 @@
 
     container.classList.remove("hidden");
     const errorCount = details.filter((d) => d.status === "ERROR").length;
-    document.getElementById("errorCount").textContent = `${errorCount} Error${
-      errorCount !== 1 ? "s" : ""
-    }`;
+    document.getElementById("errorCount").textContent =
+      `${errorCount} Error${errorCount !== 1 ? "s" : ""}`;
 
     tbody.innerHTML = details
       .map((emp, index) => {
@@ -867,17 +878,20 @@
         const breakdown = emp.payment_breakdown || [];
         const grossPay = breakdown
           .filter(
-            (p) => ["BP", "BT"].includes(p.type.substring(0, 2)) && p.amount > 0
+            (p) =>
+              ["BP", "BT"].includes(p.type.substring(0, 2)) && p.amount > 0,
           )
           .reduce((sum, p) => sum + p.amount, 0);
         const allowances = breakdown
           .filter(
-            (p) => ["PT", "PU"].includes(p.type.substring(0, 2)) && p.amount > 0
+            (p) =>
+              ["PT", "PU"].includes(p.type.substring(0, 2)) && p.amount > 0,
           )
           .reduce((sum, p) => sum + p.amount, 0);
         const deductions = breakdown
           .filter(
-            (p) => ["PR", "PL"].includes(p.type.substring(0, 2)) && p.amount > 0
+            (p) =>
+              ["PR", "PL"].includes(p.type.substring(0, 2)) && p.amount > 0,
           )
           .reduce((sum, p) => sum + p.amount, 0);
         const tax = emp.tax_from_cum || 0;
@@ -899,22 +913,14 @@
 
         return `
       <tr class="${emp.status === "ERROR" ? "error-row" : ""} border-b">
-        <td class="px-4 py-3 border font-semibold">${escapeHtml(
-          emp.employee_number
-        )}</td>
-        <td class="px-4 py-3 text-sm border border font-bold">${escapeHtml(
-          emp.employee_name
-        )}</td>
+        <td class="px-4 py-3 border font-semibold">${escapeHtml(emp.employee_number)}</td>
+        <td class="px-4 py-3 text-sm border border font-bold">${escapeHtml(emp.employee_name)}</td>
         <td class="px-4 py-3 text-sm border">₦${formatNumber(grossPay)}</td>
         <td class="px-4 py-3 text-sm border">₦${formatNumber(allowances)}</td>
         <td class="px-4 py-3 text-sm border">₦${formatNumber(deductions)}</td>
         <td class="px-4 py-3 text-sm border">₦${formatNumber(tax)}</td>
-        <td class="px-4 py-3 text-sm border font-semibold">₦${formatNumber(
-          netCum
-        )}</td>
-        <td class="px-4 py-3 text-sm border font-bold ${
-          emp.status === "ERROR" ? "highlight-error" : "highlight-success"
-        }">
+        <td class="px-4 py-3 text-sm border font-semibold">₦${formatNumber(netCum)}</td>
+        <td class="px-4 py-3 text-sm border font-bold ${emp.status === "ERROR" ? "highlight-error" : "highlight-success"}">
           ₦${formatNumber(Math.abs(variance))}
         </td>
         <td class="px-4 py-3 text-center text-sm">${statusBadge}</td>
@@ -940,19 +946,18 @@
     // Group by category - only show items with amounts > 0
     const groups = {
       "Basic Pay": breakdown.filter(
-        (p) => ["BP", "BT"].includes(p.type.substring(0, 2)) && p.amount > 0
+        (p) => ["BP", "BT"].includes(p.type.substring(0, 2)) && p.amount > 0,
       ),
       Allowances: breakdown.filter(
-        (p) => ["PT", "PU"].includes(p.type.substring(0, 2)) && p.amount > 0
+        (p) => ["PT", "PU"].includes(p.type.substring(0, 2)) && p.amount > 0,
       ),
       Deductions: breakdown.filter(
-        (p) => ["PR", "PL"].includes(p.type.substring(0, 2)) && p.amount > 0
+        (p) => ["PR", "PL"].includes(p.type.substring(0, 2)) && p.amount > 0,
       ),
     };
 
-    document.getElementById(
-      "modalTitle"
-    ).textContent = `${emp.employee_number} - ${emp.employee_name}`;
+    document.getElementById("modalTitle").textContent =
+      `${emp.employee_number} - ${emp.employee_name}`;
 
     let html = `
     <div class="space-y-6">
@@ -961,9 +966,7 @@
           <div><strong>Service Number:</strong> ${emp.employee_number}</div>
           <div><strong>Name:</strong> ${emp.employee_name}</div>
           <div><strong>Rank:</strong> ${emp.title_description || "N/A"}</div>
-          <div><strong>Period:</strong> ${getMonthName(
-            emp.period.substring(4, 6)
-          )} ${emp.period.substring(0, 4)}</div>
+          <div><strong>Period:</strong> ${getMonthName(emp.period.substring(4, 6))} ${emp.period.substring(0, 4)}</div>
         </div>
       </div>
   `;
@@ -995,11 +998,9 @@
                   <td class="px-4 py-2 text-sm">${item.type}</td>
                   <td class="px-4 py-2 text-sm">${item.type_description}</td>
                   <!--<td class="px-4 py-2 text-sm">${item.category}</td>-->
-                  <td class="px-4 py-2 text-sm text-right">₦${formatNumber(
-                    item.amount
-                  )}</td>
+                  <td class="px-4 py-2 text-sm text-right">₦${formatNumber(item.amount)}</td>
                 </tr>
-              `
+              `,
                 )
                 .join("")}
             </tbody>
@@ -1014,34 +1015,18 @@
     <div class="border-t-2 border-gray-300 pt-4 mt-4">
       <h4 class="font-semibold mb-3">Reconciliation Summary</h4>
       <div class="space-y-2 text-sm">
-        <div class="flex justify-between"><span>Total Earnings:</span><span class="font-semibold">₦${formatNumber(
-          emp.total_earnings
-        )}</span></div>
-        <div class="flex justify-between"><span>Total Deductions:</span><span class="font-semibold">₦${formatNumber(
-          emp.total_deductions
-        )}</span></div>
-        <div class="flex justify-between"><span>Tax:</span><span class="font-semibold">₦${formatNumber(
-          emp.tax_from_cum
-        )}</span></div>
-        <div class="flex justify-between"><span>Net from Cumulative:</span><span class="font-semibold">₦${formatNumber(
-          emp.net_from_cum
-        )}</span></div>
+        <div class="flex justify-between"><span>Total Earnings:</span><span class="font-semibold">₦${formatNumber(emp.total_earnings)}</span></div>
+        <div class="flex justify-between"><span>Total Deductions:</span><span class="font-semibold">₦${formatNumber(emp.total_deductions)}</span></div>
+        <div class="flex justify-between"><span>Tax:</span><span class="font-semibold">₦${formatNumber(emp.tax_from_cum)}</span></div>
+        <div class="flex justify-between"><span>Net from Cumulative:</span><span class="font-semibold">₦${formatNumber(emp.net_from_cum)}</span></div>
         <div class="flex justify-between border-t-2 pt-2 mt-2">
           <span class="font-bold">Variance:</span>
-          <span class="font-bold ${
-            emp.status === "ERROR" ? "text-red-600" : "text-green-600"
-          }">
+          <span class="font-bold ${emp.status === "ERROR" ? "text-red-600" : "text-green-600"}">
             ₦${formatNumber(Math.abs(emp.error_amount))}
           </span>
         </div>
         <div class="text-center mt-2">
-          ${
-            emp.error_amount > 0
-              ? '<span class="text-red-600 font-semibold">UNDERPAYMENT</span>'
-              : emp.error_amount < 0
-              ? '<span class="text-orange-600 font-semibold">OVERPAYMENT</span>'
-              : '<span class="text-green-600 font-semibold">BALANCED</span>'
-          }
+          ${emp.error_amount > 0 ? '<span class="text-red-600 font-semibold">UNDERPAYMENT</span>' : emp.error_amount < 0 ? '<span class="text-orange-600 font-semibold">OVERPAYMENT</span>' : '<span class="text-green-600 font-semibold">BALANCED</span>'}
         </div>
       </div>
     </div>
@@ -1073,7 +1058,7 @@
       // Build query parameters
       const params = new URLSearchParams({
         year: year,
-        month: `${year}${month}`,
+        month: `${month}`,
         showErrorsOnly: showErrorsOnly,
       });
 
@@ -1083,7 +1068,7 @@
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -1106,9 +1091,7 @@
 
       hideLoading();
       showSuccess(
-        `Report exported successfully! (${
-          showErrorsOnly ? "Errors only" : "All employees"
-        })`
+        `Report exported successfully! (${showErrorsOnly ? "Errors only" : "All employees"})`,
       );
     } catch (error) {
       console.error("Error exporting report:", error);

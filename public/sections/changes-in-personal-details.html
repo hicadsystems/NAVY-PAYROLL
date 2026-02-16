@@ -1,5 +1,4 @@
-<section class="items border-y m-6 max-w-lg mr-auto mx-auto">
-
+<section class="items border-t m-6 max-w-lg mr-auto mx-auto">
   <!-- Report Title -->
   <div class="hidden mb-6 text-center">
     <h2 class="text-2xl font-bold text-blue-700">Employee Change History</h2>
@@ -10,7 +9,9 @@
 
   <!-- Radio Selection -->
   <div class="mb-2 pb-2 border-b">
-    <span class="text-blue-600 font-semibold text-lg block mb-3">Select Report Scope:</span>
+    <span class="text-blue-600 font-semibold text-lg block mb-3"
+      >Select Report Scope:</span
+    >
     <div class="flex gap-6">
       <label class="flex items-center cursor-pointer">
         <input
@@ -39,8 +40,10 @@
   <div id="changeForm" class="space-y-5">
     <!-- Period Range Section -->
     <div class="">
-      <h3 class="text-sm font-semibold text-gray-700 mb-3">📅 Period Range (Required)</h3>
-      
+      <h3 class="text-sm font-semibold text-gray-700 mb-3">
+        📅 Period Range (Required)
+      </h3>
+
       <!-- From Period -->
       <div class="mb-3">
         <label class="block text-sm font-medium text-gray-900 mb-1"
@@ -210,7 +213,7 @@
   const auth = window.authService;
   const changeRadios = document.querySelectorAll('input[name="changeScope"]');
   const personnelSelectWrapper = document.getElementById(
-    "personnelSelectWrapper"
+    "personnelSelectWrapper",
   );
   const personnelSelect = document.getElementById("personnelSelect");
   const personnelLoading = document.getElementById("personnelLoading");
@@ -237,7 +240,7 @@
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       const result = await response.json();
 
@@ -295,7 +298,7 @@
       showChangeModal(
         "Error",
         "Failed to load filter options. Please refresh the page.",
-        true
+        true,
       );
     }
   }
@@ -326,7 +329,7 @@
   // Generate button
   generateChangeBtn.onclick = async () => {
     const selectedScope = document.querySelector(
-      'input[name="changeScope"]:checked'
+      'input[name="changeScope"]:checked',
     )?.value;
     const fromYear = document.getElementById("fromYear").value;
     const fromMonth = document.getElementById("fromMonth").value;
@@ -341,21 +344,21 @@
       return showChangeModal(
         "Validation Error",
         "Please select a report scope!",
-        true
+        true,
       );
     }
     if (!fromYear || !fromMonth) {
       return showChangeModal(
         "Validation Error",
         "Please select From period (year and month)!",
-        true
+        true,
       );
     }
     if (!toYear || !toMonth) {
       return showChangeModal(
         "Validation Error",
         "Please select To period (year and month)!",
-        true
+        true,
       );
     }
 
@@ -369,7 +372,7 @@
         return showChangeModal(
           "Validation Error",
           "Please select a personnel!",
-          true
+          true,
         );
       }
       queryParams += `&emplId=${emplId}`;
@@ -386,14 +389,12 @@
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error || `HTTP error! status: ${response.status}`
-        );
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to generate report");
       }
 
       if (exportFormat === "json") {
@@ -403,14 +404,14 @@
         if (result.success) {
           showChangeModal(
             "Success",
-            `Report generated successfully! Found ${result.data.length} employees with changes.`
+            `Report generated successfully! Found ${result.data.length} employees with changes.`,
           );
           console.log("Report data:", result);
         } else {
           showChangeModal(
             "Error",
             result.error || "Failed to generate report",
-            true
+            true,
           );
         }
       } else {
@@ -436,7 +437,7 @@
       showChangeModal(
         "Error",
         error.message || "Failed to generate report",
-        true
+        true,
       );
     }
   };
@@ -454,14 +455,12 @@
     document.getElementById("personnelSelect").value = "";
 
     // Reset radio to "all"
-    document.querySelector(
-      'input[name="changeScope"][value="all"]'
-    ).checked = true;
+    document.querySelector('input[name="changeScope"][value="all"]').checked =
+      true;
 
     // Reset export format to PDF
-    document.querySelector(
-      'input[name="exportFormat"][value="pdf"]'
-    ).checked = true;
+    document.querySelector('input[name="exportFormat"][value="pdf"]').checked =
+      true;
 
     // Reload filter options to reset defaults
     loadFilterOptions();

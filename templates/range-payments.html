@@ -311,7 +311,7 @@
                 {{#each this.bankGroups}}
                 <div class="bank-group{{#unless @first}} page-break{{/unless}}">
                     <div class="bank-header">
-                        {{bankName}} ({{branch}}) - {{employeeCount}} Personnel(s) | Total: ₦{{formatCurrency totalAmount}}
+                        {{bankName}} ({{branch}}) - {{employeeCount}} Personnel | Total: ₦{{formatCurrency totalAmount}}
                     </div>
                     <table class="details">
                         <thead>
@@ -373,7 +373,7 @@
     {{#each bankGroups}}
     <div class="bank-group{{#unless @first}} page-break{{/unless}}">
         <div class="bank-header">
-            {{bankName}} ({{branch}}) - {{employeeCount}} Personnel(s) | Total: ₦{{formatCurrency totalAmount}}
+            {{bankName}} ({{branch}}) - {{employeeCount}} Personnel | Total: ₦{{formatCurrency totalAmount}}
         </div>
         <table class="details">
             <thead>

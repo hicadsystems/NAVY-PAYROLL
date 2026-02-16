@@ -12,7 +12,7 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <label class="flex items-center cursor-pointer">
         <input type="radio" name="personnelScope" value="all" class="text-blue-600 w-4 h-4" checked>
-        <span class="ml-2 font-medium">All Personnel</span>
+        <span class="ml-2 font-medium">All Currrent Personnel</span>
       </label>
       <label class="flex items-center cursor-pointer">
         <input type="radio" name="personnelScope" value="rank" class="text-blue-600 w-4 h-4">
@@ -54,7 +54,7 @@
         <input type="radio" name="personnelScope" value="taxed" class="text-blue-600 w-4 h-4">
         <span class="ml-2 font-medium">Tax Status</span>
       </label>
-      <label class="flex items-center cursor-pointer">
+      <label class="hidden flex items-center cursor-pointer">
         <input type="radio" name="personnelScope" value="oldemployees" class="text-blue-600 w-4 h-4">
         <span class="ml-2 font-medium">Employment Status</span>
       </label>
@@ -483,7 +483,7 @@
         emolument: 'emolumentForm',
         rent: 'rentSubsidy',
         taxed: 'taxed',
-        oldemployees: 'oldEmployees'
+        //oldemployees: 'oldEmployees'
       };
       
       const paramName = paramMap[selectedScope];
@@ -502,7 +502,8 @@
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to generate report');
       }
 
       if (exportFormat === 'json') {

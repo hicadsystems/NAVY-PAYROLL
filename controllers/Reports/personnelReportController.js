@@ -1,148 +1,19 @@
+const BaseReportController = require('../Reports/reportsFallbackController');
 const personnelReportService = require('../../services/Reports/personnelReportServices');
 const companySettings = require('../helpers/companySettings');
 const { GenericExcelExporter } = require('../helpers/excel');
-//const ExcelJS = require('exceljs');
-const jsreport = require('jsreport-core')();
 const fs = require('fs');
 const path = require('path');
 const pool = require('../../config/db');
 
-class PersonnelReportController {
+class PersonnelReportController extends BaseReportController {
 
   constructor() {
-    this.jsreportReady = false;
-    this.initJSReport();
-  }
-
-  async initJSReport() {
-    try {
-      jsreport.use(require('jsreport-handlebars')());
-      jsreport.use(require('jsreport-chrome-pdf')());
-      
-      await jsreport.init();
-      this.jsreportReady = true;
-      console.log('✅ JSReport initialized for Personnel Reports');
-    } catch (error) {
-      console.error('JSReport initialization failed:', error);
-    }
-  }
-
-  // Helper method for common Handlebars helpers
-  _getCommonHelpers() {
-    return `
-      function formatCurrency(value) {
-        const num = parseFloat(value) || 0;
-        return num.toLocaleString('en-NG', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
-      }
-
-      function formatCurrencyWithSign(amount) {
-        const num = parseFloat(amount || 0);
-        const formatted = Math.abs(num).toLocaleString('en-NG', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
-        if (num < 0) {
-          return '(' + formatted + ')';
-        }
-        return formatted;
-      }
-      
-      function isNegative(amount) {
-        return parseFloat(amount || 0) < 0;
-      }
-      
-      function formatDate(date) {
-        const d = new Date(date || new Date());
-        return d.toLocaleDateString('en-GB', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric'
-        });
-      }
-
-      function formatTime(date) {
-        return new Date(date).toLocaleTimeString('en-GB', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        });
-      }
-
-      function formatMonth(monthNumber) {
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        return monthNames[monthNumber - 1] || 'Unknown';
-      }
-
-      function add(a, b) {
-        return (parseFloat(a) || 0) + (parseFloat(b) || 0);
-      }
-      
-      function subtract(a, b) {
-        return (parseFloat(a) || 0) - (parseFloat(b) || 0);
-      }
-      
-      function eq(a, b) {
-        return a === b;
-      }
-      
-      function gt(a, b) {
-        return parseFloat(a) > parseFloat(b);
-      }
-      
-      function gte(a, b) {
-        return parseFloat(a) >= parseFloat(b);
-      }
-      
-      function lt(a, b) {
-        return parseFloat(a) < parseFloat(b);
-      }
-      
-      function lte(a, b) {
-        return parseFloat(a) <= parseFloat(b);
-      }
-      
-      function sum(array, property) {
-        if (!array || !Array.isArray(array)) return 0;
-        return array.reduce((sum, item) => sum + (parseFloat(item[property]) || 0), 0);
-      }
-      
-      function groupBy(array, property) {
-        if (!array || !Array.isArray(array)) return [];
-        
-        const groups = {};
-        array.forEach(item => {
-          const key = item[property] || 'Unknown';
-          if (!groups[key]) {
-            groups[key] = [];
-          }
-          groups[key].push(item);
-        });
-        
-        return Object.keys(groups).sort().map(key => ({
-          key: key,
-          values: groups[key]
-        }));
-      }
-      
-      function sumByType(earnings, type) {
-        let total = 0;
-        if (Array.isArray(earnings)) {
-          earnings.forEach(item => {
-            if (item.type === type) {
-              total += parseFloat(item.amount) || 0;
-            }
-          });
-        }
-        return total;
-      }
-    `;
+    super(); // Initialize base class
   }
 
   // ==========================================================================
-  // PERSONNEL REPORT - MAIN ENDPOINT
+  // PERSONNEL REPORT - MAIN ENDPOINT (CURRENT EMPLOYEES)
   // ==========================================================================
   async generatePersonnelReport(req, res) {
     try {
@@ -159,7 +30,6 @@ class PersonnelReportController {
         location: filterParams.location,
         gradetype: filterParams.gradetype || filterParams.gradeType,
         gradelevel: filterParams.gradelevel || filterParams.gradeLevel,
-        oldEmployees: filterParams.oldEmployees || filterParams.old_employees,
         bankBranch: filterParams.bankBranch || filterParams.bank_branch,
         stateOfOrigin: filterParams.stateOfOrigin || filterParams.state_of_origin,
         emolumentForm: filterParams.emolumentForm || filterParams.emolument_form,
@@ -167,7 +37,7 @@ class PersonnelReportController {
         taxed: filterParams.taxed
       };
       
-      console.log('Personnel Report Filters:', filters);
+      console.log('Personnel Report Filters (Current Employees):', filters);
       
       const data = await personnelReportService.getPersonnelReport(filters, currentDb);
       const statistics = await personnelReportService.getPersonnelStatistics(filters, currentDb);
@@ -195,17 +65,18 @@ class PersonnelReportController {
   }
 
   // ==========================================================================
-  // EXCEL GENERATION
+  // EXCEL GENERATION (CURRENT EMPLOYEES)
   // ==========================================================================
   async generatePersonnelReportExcel(data, req, res, filters, statistics) {
     try {
+      if (!data || data.length === 0) {
+        throw new Error('No Personnel data available for the selected filters');
+      }
+      
       const exporter = new GenericExcelExporter();
       const className = this.getDatabaseNameFromRequest(req);
 
-      // Determine if showing exited employees
-      const showingExitedEmployees = filters.oldEmployees === 'yes';
-
-      // Define conditional columns based on oldEmployees filter
+      // Columns for current employees
       const columns = [
         { header: 'S/N', key: 'sn', width: 8, align: 'center' },
         { header: 'Svc No.', key: 'employee_id', width: 15 },
@@ -216,80 +87,20 @@ class PersonnelReportController {
         { header: 'Grade Type', key: 'gradetype', width: 20 },
         { header: 'PFA', key: 'pfa', width: 15 },
         { header: 'NSITF Code', key: 'nsitf_code', width: 15 },
-        
-        // Only show Emolument Form for active employees
-        ...(showingExitedEmployees 
-          ? []
-          : [{ header: 'Emolument Form', key: 'emolumentform', width: 15 }]
-        ),
-        
+        { header: 'Emolument Form', key: 'emolumentform', width: 15 },
         { header: 'Age', key: 'age', width: 8, align: 'center' },
-        
-        // Conditional column: Years of Service vs Years Served (formatted)
-        showingExitedEmployees 
-          ? { header: 'Years Served', key: 'years_served_formatted', width: 18, align: 'center' }
-          : { header: 'Years of Service', key: 'years_of_service', width: 15, align: 'center' },
-        
+        { header: 'Years of Service', key: 'years_of_service', width: 15, align: 'center' },
         { header: 'Date Employed', key: 'date_employed_formatted', width: 15 },
-        
-        // Conditional column: Date Promoted vs Date Left
-        showingExitedEmployees
-          ? { header: 'Date Left', key: 'date_left_formatted', width: 15 }
-          : { header: 'Date Promoted', key: 'date_promoted_formatted', width: 15 },
-        
-        // Conditional column: Years Since Promotion vs Exit Reason
-        showingExitedEmployees
-          ? { header: 'Exit Reason', key: 'exittype', width: 18, align: 'center' }
-          : { header: 'Years Since Promotion', key: 'years_since_promotion', width: 18, align: 'center' },
-        
-        // Add Years Since Exit column for exited employees
-        ...(showingExitedEmployees 
-          ? [{ header: 'Years Since Exit', key: 'years_since_exit', width: 15, align: 'center' }]
-          : []
-        ),
-        
+        { header: 'Date Promoted', key: 'date_promoted_formatted', width: 15 },
+        { header: 'Years Since Promotion', key: 'years_since_promotion', width: 18, align: 'center' },
         { header: 'State', key: 'state_of_origin', width: 15 }
       ];
 
-      // Format years served for exited employees
-      const formatYearsServed = (totalMonths, totalDays) => {
-        const years = Math.floor(totalMonths / 12);
-        const months = totalMonths % 12;
-        const days = totalDays % 30; // Approximate days in remaining month
-        
-        if (years >= 1) {
-          return years.toString();
-        } else if (months >= 1) {
-          return `${months} month${months !== 1 ? 's' : ''}`;
-        } else if (days >= 0) {
-          return `${days} day${days !== 1 ? 's' : ''}`;
-        }
-        return 'N/A';
-      };
-
-      // Add S/N and format years served
-      const dataWithSN = data.map((item, idx) => {
-        const result = {
-          ...item,
-          sn: idx + 1
-        };
-
-        // If showing exited employees, format the years served
-        if (showingExitedEmployees) {
-          const totalMonths = item.total_months_of_service || 0;
-          const totalDays = item.total_days_of_service || 0;
-          
-          if (totalMonths < 12) {
-            // Less than a year - format as months or days
-            result.years_served_formatted = formatYearsServed(totalMonths, totalDays);
-          } else {
-            // 1 year or more - show years
-            result.years_served_formatted = item.years_of_service || 0;
-          }
-        }
-
-        return result;
-      });
+      // Add S/N
+      const dataWithSN = data.map((item, idx) => ({
+        ...item,
+        sn: idx + 1
+      }));
 
       // Build filter description for subtitle
       const appliedFilters = [];
@@ -298,42 +109,26 @@ class PersonnelReportController {
       if (filters.location) appliedFilters.push(`Location: ${filters.location}`);
       if (filters.gradetype) appliedFilters.push(`Grade Type: ${filters.gradetype}`);
       if (filters.gradelevel) appliedFilters.push(`Grade Level: ${filters.gradelevel}`);
-      if (filters.oldEmployees) appliedFilters.push(`Old Employees: ${filters.oldEmployees}`);
       if (filters.bankBranch) appliedFilters.push(`Bank Branch: ${filters.bankBranch}`);
       if (filters.stateOfOrigin) appliedFilters.push(`State: ${filters.stateOfOrigin}`);
       if (filters.emolumentForm) appliedFilters.push(`Emolument Form: ${filters.emolumentForm}`);
       if (filters.rentSubsidy) appliedFilters.push(`Rent Subsidy: ${filters.rentSubsidy}`);
       if (filters.taxed) appliedFilters.push(`Taxed: ${filters.taxed}`);
       
-      const filterDescription = appliedFilters.length > 0 ? appliedFilters.join(' | ') : 'All Personnel';
+      const filterDescription = appliedFilters.length > 0 ? appliedFilters.join(' | ') : 'All Current Personnel';
 
       // Include statistics in the subtitle
       const statsInfo = `Total: ${statistics.total_employees} | Avg Age: ${statistics.avg_age || 'N/A'} yrs | Avg Service: ${statistics.avg_years_of_service || 'N/A'} yrs`;
       const fullSubtitle = `${filterDescription}\n${statsInfo}`;
 
       const workbook = await exporter.createWorkbook({
-        title: 'NIGERIAN NAVY - PERSONNEL REPORT',
+        title: 'NIGERIAN NAVY - PERSONNEL REPORT (CURRENT EMPLOYEES)',
         subtitle: fullSubtitle,
         className: className,
         columns: columns,
         data: dataWithSN,
-        summary: {/*
-          title: 'SUMMARY STATISTICS',
-          items: [
-            { label: 'Total Employees', value: statistics.total_employees },
-            { label: 'Active Employees', value: statistics.active_employees },
-            { label: 'Separated Employees', value: statistics.separated_employees },
-            { label: 'Average Age', value: statistics.avg_age ? `${statistics.avg_age} years` : 'N/A' },
-            { label: 'Average Years of Service', value: statistics.avg_years_of_service ? `${statistics.avg_years_of_service} years` : 'N/A' },
-            { label: 'Rent Subsidy - YES', value: statistics.with_rent_subsidy_yes || 0 },
-            { label: 'Rent Subsidy - NO', value: statistics.with_rent_subsidy_no || 0 },
-            { label: 'Taxed - YES', value: statistics.taxed_yes || 0 },
-            { label: 'Taxed - NO', value: statistics.taxed_no || 0 },
-            { label: 'Emolument Form - YES', value: statistics.emolumentform_yes || 0 },
-            { label: 'Emolument Form - NO', value: statistics.emolumentform_no || 0 }
-          ]*/
-        },
-        sheetName: 'Personnel Report'
+        summary: {},
+        sheetName: 'Current Personnel'
       });
 
       // Apply conditional formatting
@@ -345,33 +140,14 @@ class PersonnelReportController {
         
         // Highlight employees close to retirement (age > 55)
         if (row.age && parseInt(row.age) > 55) {
-          // Column K for both active and exited (Age column position)
           const ageCell = worksheet.getCell(`K${rowNum}`);
           ageCell.font = { bold: true, color: { argb: 'FFFF0000' } };
         }
 
-        // Conditional highlighting based on employee status
-        if (showingExitedEmployees) {
-          // For exited employees: Highlight long service (> 30 years served)
-          // Column L for exited employees (Years Served column)
-          if (row.years_of_service && parseInt(row.years_of_service) >= 30) {
-            const serviceCell = worksheet.getCell(`L${rowNum}`);
-            serviceCell.font = { bold: true, color: { argb: 'FF006100' } };
-          }
-          
-          // Highlight recent exits (< 2 years since exit)
-          // Column P for exited employees (Years Since Exit column)
-          if (row.years_since_exit && parseInt(row.years_since_exit) < 2) {
-            const exitCell = worksheet.getCell(`P${rowNum}`);
-            exitCell.font = { bold: true, color: { argb: 'FFFF8C00' } };
-          }
-        } else {
-          // For active employees: Highlight long service (> 30 years)
-          // Column L for active employees (Years of Service column)
-          if (row.years_of_service && parseInt(row.years_of_service) > 30) {
-            const serviceCell = worksheet.getCell(`L${rowNum}`);
-            serviceCell.font = { bold: true, color: { argb: 'FF006100' } };
-          }
+        // Highlight long service (> 30 years)
+        if (row.years_of_service && parseInt(row.years_of_service) > 30) {
+          const serviceCell = worksheet.getCell(`L${rowNum}`);
+          serviceCell.font = { bold: true, color: { argb: 'FF006100' } };
         }
       });
 
@@ -381,12 +157,12 @@ class PersonnelReportController {
         fitToPage: true,
         fitToWidth: 1,
         fitToHeight: 0,
-        scale: 65, // Shrink to 65% for 15+ column tables
+        scale: 65,
         orientation: 'landscape',
         paperSize: 9 // A4
       };
 
-      await exporter.exportToResponse(workbook, res, `personnel_report_${new Date().toISOString().split('T')[0]}.xlsx`);
+      await exporter.exportToResponse(workbook, res, `current_personnel_report_${new Date().toISOString().split('T')[0]}.xlsx`);
 
     } catch (error) {
       console.error('Personnel Report Export error:', error);
@@ -397,21 +173,12 @@ class PersonnelReportController {
   }
 
   // ==========================================================================
-  // PDF GENERATION
+  // PDF GENERATION (CURRENT EMPLOYEES)
   // ==========================================================================
   async generatePersonnelReportPDF(data, req, res, filters, statistics) {
-    if (!this.jsreportReady) {
-      console.error('❌ JSReport not ready');
-      return res.status(500).json({
-        success: false,
-        error: "PDF generation service not ready."
-      });
-    }
-
     try {
       if (!data || data.length === 0) {
-        console.error('❌ No data available for PDF generation');
-        throw new Error('No data available for the selected filters');
+        throw new Error('No Personnel data available for the selected filters');
       }
 
       console.log('📄 Generating PDF with', data.length, 'records');
@@ -419,68 +186,54 @@ class PersonnelReportController {
       const templatePath = path.join(__dirname, '../../templates/personnel-report.html');
       
       if (!fs.existsSync(templatePath)) {
-        console.error('❌ Template file not found:', templatePath);
         throw new Error('PDF template file not found');
       }
       
       const templateContent = fs.readFileSync(templatePath, 'utf8');
 
-      // Format filter description
       const appliedFilters = [];
       if (filters.title) appliedFilters.push(`Rank: ${filters.title}`);
       if (filters.pfa) appliedFilters.push(`PFA: ${filters.pfa}`);
       if (filters.location) appliedFilters.push(`Location: ${filters.location}`);
       if (filters.gradetype) appliedFilters.push(`Grade Type: ${filters.gradetype}`);
       if (filters.gradelevel) appliedFilters.push(`Grade Level: ${filters.gradelevel}`);
-      if (filters.oldEmployees) appliedFilters.push(`Old Employees: ${filters.oldEmployees}`);
       if (filters.bankBranch) appliedFilters.push(`Bank Branch: ${filters.bankBranch}`);
       if (filters.stateOfOrigin) appliedFilters.push(`State: ${filters.stateOfOrigin}`);
       if (filters.emolumentForm) appliedFilters.push(`Emolument Form: ${filters.emolumentForm}`);
       if (filters.rentSubsidy) appliedFilters.push(`Rent Subsidy: ${filters.rentSubsidy}`);
       if (filters.taxed) appliedFilters.push(`Taxed: ${filters.taxed}`);
       
-      const filterDescription = appliedFilters.length > 0 ? appliedFilters.join(' | ') : 'All Personnel';
+      const filterDescription = appliedFilters.length > 0 ? appliedFilters.join(' | ') : 'All Current Personnel';
   
-      //Load image
       const image = await companySettings.getSettingsFromFile('./public/photos/logo.png');
-      
-      const showingExitedEmployees = filters.oldEmployees === "yes";
 
-      const result = await jsreport.render({
-        template: {
-          content: templateContent,
-          engine: 'handlebars',
-          recipe: 'chrome-pdf',
-          chrome: {
-            displayHeaderFooter: false,
-            printBackground: true,
-            format: 'A4',
-            landscape: true,
-            marginTop: '5mm',
-            marginBottom: '5mm',
-            marginLeft: '5mm',
-            marginRight: '5mm'
-          },
-          helpers: this._getCommonHelpers()
-        },
-        data: {
-          data: data,
-          statistics: statistics,
-          reportDate: new Date(),
-          filters: filterDescription,
-          className: this.getDatabaseNameFromRequest(req),
-          showingExitedEmployees: showingExitedEmployees,
-          ...image
+      const templateData = {
+        data: data,
+        statistics: statistics,
+        reportDate: new Date(),
+        filters: filterDescription,
+        className: this.getDatabaseNameFromRequest(req),
+        ...image
+      };
+
+      const pdfBuffer = await this.generatePDFWithFallback(
+        templatePath,
+        templateData,
+        {
+          format: 'A4',
+          landscape: true,
+          marginTop: '5mm',
+          marginBottom: '5mm',
+          marginLeft: '5mm',
+          marginRight: '5mm'
         }
-      });
-
-      console.log('✅ PDF generated successfully');
+      );
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 
-        `attachment; filename=personnel_report_${new Date().toISOString().split('T')[0]}.pdf`
+        `attachment; filename=current_personnel_report_${new Date().toISOString().split('T')[0]}.pdf`
       );
-      res.send(result.content);
+      res.send(pdfBuffer);
 
     } catch (error) {
       console.error('❌ ERROR generating Personnel Report PDF:');
@@ -494,7 +247,8 @@ class PersonnelReportController {
     }
   }
 
-  // GET FILTER OPTIONS
+  // ==========================================================================
+  // GET FILTER OPTIONS (CURRENT EMPLOYEES)
   // ==========================================================================
   async getPersonnelFilterOptions(req, res) {
     try {
@@ -515,7 +269,7 @@ class PersonnelReportController {
         personnelReportService.getAvailableEmolumentForms(currentDb)
       ]);
 
-      console.log('✅ Filter options loaded:', {
+      console.log('✅ Filter options loaded (Current Employees):', {
         titles: titles.length,
         pfas: pfas.length,
         locations: locations.length,
@@ -557,11 +311,7 @@ class PersonnelReportController {
           states,
           rentSubsidy,
           taxedStatus,
-          emolumentForms,
-          oldEmployeesOptions: [
-            { code: 'yes', description: 'Separated/Left Employees' },
-            { code: 'no', description: 'Active Employees Only' }
-          ]
+          emolumentForms
         },
         warnings: warnings.length > 0 ? `No data available for: ${warnings.join(', ')}` : null
       });

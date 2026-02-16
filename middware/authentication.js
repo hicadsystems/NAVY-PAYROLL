@@ -33,9 +33,6 @@ const verifyToken = async (req, res, next) => {
     return res.status(401).json({ message: "No token provided" });
   }
 
-  // if (await redisTokenManager.isTokenBlacklisted(token)) {
-  //   return res.status(403).json({ message: "Please Log In" });
-  // }
 
   try {
     const decoded = jwt.verify(token, SECRET);

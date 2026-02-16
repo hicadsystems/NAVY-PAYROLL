@@ -193,12 +193,14 @@ router.get('/employees-current/search', verifyToken, async (req, res) => {
     
     const searchTerm = req.query.q || req.query.search || '';
     const rankFilter = req.query.rank || '';
+    const findEmployee = req.query.findEmployee || ''; // NEW: Find which page an employee is on
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     
     console.log('🔎 Search term:', searchTerm);
     console.log('🔎 Rank filter:', rankFilter);
+    console.log('🔎 Find employee:', findEmployee);
     console.log('📄 Pagination - Page:', page, 'Limit:', limit, 'Offset:', offset);
     
     // Base WHERE clause
@@ -243,6 +245,36 @@ router.get('/employees-current/search', verifyToken, async (req, res) => {
       whereClause += ` AND Title = ?`;
       params.push(rankFilter);
     }
+    
+    // ===== NEW: FIND EMPLOYEE PAGE LOGIC =====
+    if (findEmployee) {
+      console.log('🎯 Finding page for employee:', findEmployee);
+      
+      // Count how many records come BEFORE this employee (with same filters)
+      const positionQuery = `
+        SELECT COUNT(*) as position
+        FROM hr_employees 
+        ${whereClause}
+        AND Empl_ID < ?
+      `;
+      
+      const [positionResult] = await pool.query(positionQuery, [...params, findEmployee]);
+      const recordsBefore = positionResult[0].position;
+      
+      // Calculate which page this employee is on
+      const employeePage = Math.floor(recordsBefore / limit) + 1;
+      
+      console.log('📍 Employee position:', recordsBefore + 1, '→ Page:', employeePage);
+      
+      // Return just the page number
+      return res.json({
+        success: true,
+        employeePage: employeePage,
+        position: recordsBefore + 1,
+        totalRecords: recordsBefore + 1 // Will be updated with actual total if needed
+      });
+    }
+    // ===== END NEW LOGIC =====
     
     // Get total count with all filters
     const countQuery = `
@@ -460,11 +492,14 @@ router.get('/employees-old/search', verifyToken, async (req, res) => {
     
     const searchTerm = req.query.q || req.query.search || '';
     const rankFilter = req.query.rank || '';
+    const findEmployee = req.query.findEmployee || ''; // ← ADD THIS
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     
     console.log('🔎 Search term:', searchTerm);
+    console.log('🔎 Rank filter:', rankFilter);
+    console.log('🔎 Find employee:', findEmployee); // ← ADD THIS
     console.log('📄 Pagination - Page:', page, 'Limit:', limit, 'Offset:', offset);
     
     // Base WHERE clause
@@ -494,13 +529,13 @@ router.get('/employees-old/search', verifyToken, async (req, res) => {
       
       const searchPattern = `%${searchTerm}%`;
       params.push(
-        searchPattern, // Empl_ID
-        searchPattern, // Surname
-        searchPattern, // OtherName
-        searchPattern, // Title
-        searchPattern, // email
-        searchPattern, // gsm_number
-        searchPattern  // Full name
+        searchPattern,
+        searchPattern,
+        searchPattern,
+        searchPattern,
+        searchPattern,
+        searchPattern,
+        searchPattern
       );
     }
 
@@ -509,6 +544,33 @@ router.get('/employees-old/search', verifyToken, async (req, res) => {
       whereClause += ` AND Title = ?`;
       params.push(rankFilter);
     }
+    
+    // ===== ADD THIS BLOCK: FIND EMPLOYEE PAGE LOGIC =====
+    if (findEmployee) {
+      console.log('🎯 Finding page for employee:', findEmployee);
+      
+      const positionQuery = `
+        SELECT COUNT(*) as position
+        FROM hr_employees 
+        ${whereClause}
+        AND Empl_ID < ?
+      `;
+      
+      const [positionResult] = await pool.query(positionQuery, [...params, findEmployee]);
+      const recordsBefore = positionResult[0].position;
+      
+      const employeePage = Math.floor(recordsBefore / limit) + 1;
+      
+      console.log('📍 Employee position:', recordsBefore + 1, '→ Page:', employeePage);
+      
+      return res.json({
+        success: true,
+        employeePage: employeePage,
+        position: recordsBefore + 1,
+        totalRecords: recordsBefore + 1
+      });
+    }
+    // ===== END FIND EMPLOYEE PAGE LOGIC =====
     
     // Get total count with all filters
     const countQuery = `

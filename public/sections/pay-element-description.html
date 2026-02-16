@@ -656,6 +656,8 @@
           value = `${resolveName(value, "elementtype")} (${value || "N/A"})`;
         } else if (key === "Ledger") {
           value = `${resolveName(value, "accchart")} (${value || "N/A"})`;
+        } else if (key === "payfreq") {
+          value = `${resolveName(value, "payfrequency")} (${value || "N/A"})`;
         }
         
         html += `<div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
@@ -1094,7 +1096,7 @@
                 <td class="text-right">${formatCurrency(item.maxi)}</td>
                 <td style="white-space: nowrap;">${resolveName(item.Ledger, 'accchart')}</td>
                 <td>${resolveName(item.dependence, 'elementtype')}</td>
-                <td class="text-center">${item.payfreq || '-'}</td>
+                <td class="text-center">${resolveName(item.payfreq, 'payfrequency') || '-'}</td>
                 <td class="text-center">${item.pmonth || '-'}</td>
                 <td class="text-right">${formatCurrency(item.freetax)}</td>
                 <td class="text-center">${item.bpay || 'NO'}</td>

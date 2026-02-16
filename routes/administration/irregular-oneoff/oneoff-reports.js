@@ -602,7 +602,7 @@ async function generateAnalysisGroupedExcel(workbook, data, classDescription) {
     const employeeCount = group.records.length;
 
     worksheet.mergeCells('A3:D3');
-    worksheet.getCell('A3').value = `${group.one_type} - ${group.one_desc || 'N/A'} | ${employeeCount} Personnel(s) | Total: ₦${totalAmount.toLocaleString('en-NG', {minimumFractionDigits: 2})}`;
+    worksheet.getCell('A3').value = `${group.one_type} - ${group.one_desc || 'N/A'} | ${employeeCount} Personnel | Total: ₦${totalAmount.toLocaleString('en-NG', {minimumFractionDigits: 2})}`;
     worksheet.getCell('A3').font = { bold: true, size: 11 };
     worksheet.getCell('A3').fill = {
       type: 'pattern',
@@ -703,7 +703,7 @@ async function generateRemittanceExcel(workbook, data, classDescription) {
   const totalAmount = aggregatedData.reduce((sum, r) => sum + r.net, 0);
 
   worksheet.mergeCells('A3:E3');
-  worksheet.getCell('A3').value = `${aggregatedData[0]?.bankname || 'CASH'} (${aggregatedData[0]?.bankbranch || ''}) - ${aggregatedData.length} Personnel(s) | Total: ₦${totalAmount.toLocaleString('en-NG', {minimumFractionDigits: 2})}`;
+  worksheet.getCell('A3').value = `${aggregatedData[0]?.bankname || 'CASH'} (${aggregatedData[0]?.bankbranch || ''}) - ${aggregatedData.length} Personnel | Total: ₦${totalAmount.toLocaleString('en-NG', {minimumFractionDigits: 2})}`;
   worksheet.getCell('A3').font = { bold: true };
   worksheet.getCell('A3').fill = {
     type: 'pattern',
@@ -887,7 +887,7 @@ function generatePDFHTML(groups, reportType, classDescription) {
       contentHTML += `
         <div class="bank-group${pageBreakClass ? ' ' + pageBreakClass : ''}">
           <div class="bank-header">
-            ${group.bankname} (${group.bankbranch}) - ${group.records.length} Personnel(s) | Total: ₦${group.total.toLocaleString('en-NG', {minimumFractionDigits: 2})}
+            ${group.bankname} (${group.bankbranch}) - ${group.records.length} Personnel | Total: ₦${group.total.toLocaleString('en-NG', {minimumFractionDigits: 2})}
           </div>
           <table class="details">
             <thead>
@@ -917,7 +917,7 @@ function generatePDFHTML(groups, reportType, classDescription) {
       contentHTML += `
         <div class="bank-group${pageBreakClass ? ' ' + pageBreakClass : ''}">
           <div class="bank-header">
-            ${group.one_type} - ${group.one_desc || 'N/A'} | ${group.records.length} Personnel(s) | Total: ₦${group.total.toLocaleString('en-NG', {minimumFractionDigits: 2})}
+            ${group.one_type} - ${group.one_desc || 'N/A'} | ${group.records.length} Personnel | Total: ₦${group.total.toLocaleString('en-NG', {minimumFractionDigits: 2})}
           </div>
           <table class="details">
             <thead>
@@ -945,7 +945,7 @@ function generatePDFHTML(groups, reportType, classDescription) {
       contentHTML += `
         <div class="bank-group${pageBreakClass ? ' ' + pageBreakClass : ''}">
           <div class="bank-header">
-            ${group.bankname} (${group.bankbranch}) - ${group.records.length} Personnel(s) | Total: ₦${group.total.toLocaleString('en-NG', {minimumFractionDigits: 2})}
+            ${group.bankname} (${group.bankbranch}) - ${group.records.length} Personnel | Total: ₦${group.total.toLocaleString('en-NG', {minimumFractionDigits: 2})}
           </div>
           <table class="details">
             <thead>

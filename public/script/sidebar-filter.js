@@ -159,6 +159,7 @@ function getParentKey(childKey) {
     // Utilities menu items
     "emolument-form-processing": "utilities",
     "ippis-payments": "utilities",
+    "consolidated-payslip": "utilities",
     "database-backup": "utilities",
     "database-restore": "utilities",
 

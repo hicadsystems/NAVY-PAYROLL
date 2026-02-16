@@ -9,7 +9,9 @@
 
   <!-- Radio Selection -->
   <div class="mb-2 border-b border-red-500 p-4 rounded-lg">
-    <span class="text-red-600 font-semibold text-lg block mb-3">Select Report Scope:</span>
+    <span class="text-red-600 font-semibold text-lg block mb-3"
+      >Select Report Scope:</span
+    >
     <div class="flex gap-6">
       <label class="flex items-center cursor-pointer">
         <input
@@ -36,13 +38,18 @@
 
   <!-- Dynamic Form Fields -->
   <div id="dupForm" class="space-y-2">
-
     <!-- Bank Select (Hidden by default) -->
-    <div id="bankSelectWrapper" class="hidden border-b border-blue-500 p-4 rounded-lg">
+    <div
+      id="bankSelectWrapper"
+      class="hidden border-b border-blue-500 p-4 rounded-lg"
+    >
       <label class="block text-sm font-medium text-gray-900 mb-2">
         <i class="fas fa-university text-blue-600 mr-2"></i>Select Bank
       </label>
-      <select id="bankSelect" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300">
+      <select
+        id="bankSelect"
+        class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300"
+      >
         <!--<option value="">-- Choose Bank --</option>-->
       </select>
     </div>
@@ -207,7 +214,7 @@
       showDupModal(
         "Error",
         "Failed to load filter options. Please refresh the page.",
-        true
+        true,
       );
     }
   }
@@ -238,7 +245,7 @@
   // Generate button
   generateDupBtn.onclick = async () => {
     const selectedScope = document.querySelector(
-      'input[name="dupScope"]:checked'
+      'input[name="dupScope"]:checked',
     )?.value;
     const includeInactive = includeInactiveCheckbox.checked;
     const exportFormat =
@@ -250,7 +257,7 @@
       return showDupModal(
         "Validation Error",
         "Please select a report scope!",
-        true
+        true,
       );
     }
 
@@ -278,10 +285,8 @@
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error || `HTTP error! status: ${response.status}`
-        );
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to generate report");
       }
 
       if (exportFormat === "json") {
@@ -293,20 +298,20 @@
             showDupModal(
               "Duplicates Found!",
               `Found ${result.statistics.total_duplicate_accounts} duplicate account numbers affecting ${result.statistics.total_affected_employees} employees.`,
-              true
+              true,
             );
             console.log("Report data:", result);
           } else {
             showDupModal(
               "No Duplicates Found",
-              result.message || "All account numbers are unique!"
+              result.message || "All account numbers are unique!",
             );
           }
         } else {
           showDupModal(
             "Error",
             result.error || "Failed to generate report",
-            true
+            true,
           );
         }
       } else {
@@ -334,7 +339,7 @@
         loadingModal.classList.add("hidden");
         showDupModal(
           "Report Downloaded",
-          `Duplicate account report has been downloaded successfully!`
+          `Duplicate account report has been downloaded successfully!`,
         );
       }
     } catch (error) {
@@ -354,14 +359,12 @@
     document.getElementById("includeInactive").checked = false;
 
     // Reset radio to "all"
-    document.querySelector(
-      'input[name="dupScope"][value="all"]'
-    ).checked = true;
+    document.querySelector('input[name="dupScope"][value="all"]').checked =
+      true;
 
     // Reset export format to PDF
-    document.querySelector(
-      'input[name="exportFormat"][value="pdf"]'
-    ).checked = true;
+    document.querySelector('input[name="exportFormat"][value="pdf"]').checked =
+      true;
   };
 
   // Initialize

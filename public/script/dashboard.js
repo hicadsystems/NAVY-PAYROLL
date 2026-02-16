@@ -535,206 +535,6 @@ window.addEventListener("resize", () => {
 });
 window.addEventListener("scroll", () => repositionOpen(), { passive: true });
 
-// Figure out the current time of day
-function getTimeOfDay() {
-  const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return "Morning";
-  if (hour >= 12 && hour < 16) return "Afternoon";
-  if (hour >= 16 && hour < 21) return "Evening";
-  return "Night";
-}
-
-// Get logged-in user from JWT token
-function getLoggedInUser() {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      // Fallback to localStorage for backward compatibility
-      return {
-        user_id: localStorage.getItem("user_id"),
-        full_name: localStorage.getItem("full_name"),
-        role: localStorage.getItem("role"),
-        primary_class: localStorage.getItem("class"),
-        current_class: localStorage.getItem("class"),
-      };
-    }
-
-    // ✅ Decode JWT token to get user info including current_class
-    const payload = JSON.parse(atob(token.split(".")[1]));
-
-    return {
-      user_id: payload.user_id,
-      full_name: payload.full_name,
-      role: payload.role,
-      primary_class: payload.primary_class,
-      current_class: payload.current_class || payload.primary_class, // ✅ Use current_class from token
-    };
-  } catch (error) {
-    console.error("Error decoding token:", error);
-    // Fallback to localStorage
-    return {
-      user_id: localStorage.getItem("user_id"),
-      full_name: localStorage.getItem("full_name"),
-      role: localStorage.getItem("role"),
-      primary_class: localStorage.getItem("class"),
-      current_class: localStorage.getItem("class"),
-    };
-  }
-}
-
-// Cache for class mappings
-let classMapping = {};
-
-// Load class mappings from backend endpoint
-async function loadClassMappings() {
-  try {
-    const token = localStorage.getItem("token");
-
-    const response = await auth.fetchWithAuth("/dbclasses", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    // ✅ Create mapping from db_name → display_name
-    classMapping = {};
-    data.classes.forEach((cls) => {
-      classMapping[cls.dbName] = cls.display;
-    });
-
-    console.log("✅ Class mappings loaded:", classMapping);
-  } catch (error) {
-    console.error("❌ Failed to load class mappings:", error);
-  }
-}
-
-// Update greeting message
-function updateGreeting() {
-  const greetingElement = document.getElementById("dynamicGreeting");
-  const workingClassElement = document.getElementById("payrollClassName");
-  if (!greetingElement && !workingClassElement) return; // Only run if element exists
-
-  const user = getLoggedInUser();
-  const timeOfDay = getTimeOfDay();
-
-  // ✅ Use current_class from JWT token (the database they switched to)
-  const effectiveClass = user.current_class;
-  const userClass =
-    classMapping[effectiveClass] || effectiveClass || "OFFICERS";
-
-  // Default to "User" if no login info
-  const userName = user?.full_name || user?.user_id || "User";
-
-  const greeting = `Good ${timeOfDay} ${userName}, welcome to ${userClass} payroll`;
-  greetingElement.textContent = greeting;
-  workingClassElement.textContent = userClass;
-
-  console.log("📊 Dashboard greeting updated:", {
-    user: userName,
-    primaryClass: user.primary_class,
-    currentClass: user.current_class,
-    displayClass: userClass,
-  });
-}
-
-// Update current time display
-function updateCurrentTime() {
-  const timeElement = document.getElementById("currentTime");
-  if (!timeElement) return;
-
-  const now = new Date();
-  const timeString = now.toLocaleString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-  timeElement.textContent = timeString;
-}
-
-// ✅ Update function for when payroll class is switched
-window.updateDashboardGreeting = function (newClassName) {
-  console.log("🔄 Updating dashboard greeting for new class:", newClassName);
-
-  // Reload user info from updated token
-  const user = getLoggedInUser();
-  if (user) {
-    updateGreeting();
-  }
-};
-
-// ✅ Listen for payroll class switch events
-document.addEventListener("payrollClassFocused", (event) => {
-  console.log("🎯 Payroll class focused event received:", event.detail);
-  updateGreeting();
-});
-
-// Get current payroll period from database
-async function getCurrentPayrollPeriod() {
-  try {
-    const token = localStorage.getItem("token");
-    const user = getLoggedInUser();
-    const dbName = user.current_class;
-
-    const response = await auth.fetchWithAuth("/payroll-period", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      // Update the payroll period display
-      const periodElement = document.querySelector("#current-payroll-period");
-      if (periodElement) {
-        const monthNames = [
-          "Jan",
-          "Feb",
-          "March",
-          "April",
-          "May",
-          "June",
-          "July",
-          "Aug",
-          "Sept",
-          "Oct",
-          "Nov",
-          "Dec",
-        ];
-        const monthName = monthNames[data.month - 1] || "Unknown";
-        periodElement.textContent = `${monthName} ${data.year}`;
-      }
-
-      return { month: data.month, year: data.year };
-    }
-  } catch (error) {
-    console.error("Failed to load payroll period:", error);
-  }
-}
-
-// Init only on dashboard pages
-(async function initDashboard() {
-  if (document.getElementById("dynamicGreeting")) {
-    await loadClassMappings(); // ✅ wait for mapping to load
-    updateGreeting();
-    updateCurrentTime();
-
-    setInterval(updateCurrentTime, 1000); // Update time every second
-    setInterval(updateGreeting, 60000); // Refresh greeting every minute (to catch token updates)
-    await getCurrentPayrollPeriod(); // Load current payroll period
-  }
-})();
-
 // SIMPLE SUBSUBMENU FUNCTIONALITY - Direct approach
 document.addEventListener("DOMContentLoaded", function () {
   console.log("DOM loaded, setting up subsubmenus...");
@@ -823,148 +623,360 @@ function setupSubsubmenus() {
     });
   });
 
-  console.log("Subsubmenu setup complete");
-}
-
-
-// Navigation handler for submenu items
-class NavigationSystem {
-  constructor() {
-    this.currentSection = null;
-    this.cache = new Map(); // Cache loaded content
-    this.state = {}; // State for section navigation
-    this.isNavigating = false; // Prevent race conditions
-    this.navigationHistory = [];
-    this.init();
+  // Figure out the current time of day
+  function getTimeOfDay() {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return "Morning";
+    if (hour >= 12 && hour < 16) return "Afternoon";
+    if (hour >= 16 && hour < 21) return "Evening";
+    return "Night";
   }
 
-  init() {
-    this.setupSubmenuNavigation();
-    this.setupHistoryHandler();
-    this.handleInitialLoad();
+  // Get logged-in user from JWT token
+  function getLoggedInUser() {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        // Fallback to localStorage for backward compatibility
+        return {
+          user_id: localStorage.getItem("user_id"),
+          full_name: localStorage.getItem("full_name"),
+          role: localStorage.getItem("role"),
+          primary_class: localStorage.getItem("class"),
+          current_class: localStorage.getItem("class"),
+        };
+      }
+
+      // ✅ Decode JWT token to get user info including current_class
+      const payload = JSON.parse(atob(token.split(".")[1]));
+
+      return {
+        user_id: payload.user_id,
+        full_name: payload.full_name,
+        role: payload.role,
+        primary_class: payload.primary_class,
+        current_class: payload.current_class || payload.primary_class, // ✅ Use current_class from token
+      };
+    } catch (error) {
+      console.error("Error decoding token:", error);
+      // Fallback to localStorage
+      return {
+        user_id: localStorage.getItem("user_id"),
+        full_name: localStorage.getItem("full_name"),
+        role: localStorage.getItem("role"),
+        primary_class: localStorage.getItem("class"),
+        current_class: localStorage.getItem("class"),
+      };
+    }
   }
 
-  setupSubmenuNavigation() {
-    document
-      .querySelectorAll(".submenu ul li a[data-section]")
-      .forEach((link) => {
-        link.addEventListener("click", async (e) => {
-          e.preventDefault();
-          e.stopPropagation();
+  // Cache for class mappings
+  let classMapping = {};
 
+  // Load class mappings from backend endpoint
+  async function loadClassMappings() {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await auth.fetchWithAuth("/dbclasses", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      // ✅ Create mapping from db_name → display_name
+      classMapping = {};
+      data.classes.forEach((cls) => {
+        classMapping[cls.dbName] = cls.display;
+      });
+
+      console.log("✅ Class mappings loaded:", classMapping);
+    } catch (error) {
+      console.error("❌ Failed to load class mappings:", error);
+    }
+  }
+
+  // Update greeting message
+  function updateGreeting() {
+    const greetingElement = document.getElementById("dynamicGreeting");
+    const workingClassElement = document.getElementById("payrollClassName");
+
+    // Return only if BOTH elements are missing
+    if (!greetingElement && !workingClassElement) return;
+
+    const user = getLoggedInUser();
+    const timeOfDay = getTimeOfDay();
+
+    // Use current_class from JWT token (the database they switched to)
+    const effectiveClass = user.current_class;
+
+    // FIX: Wait for classMapping to be populated before using it
+    const userClass =
+      classMapping[effectiveClass] || effectiveClass || "OFFICERS";
+
+    // Default to "User" if no login info
+    const userName = user?.full_name || user?.user_id || "User";
+
+    // Only update elements that exist (prevents null property error)
+    if (greetingElement) {
+      const greeting = `Good ${timeOfDay} ${userName}, welcome to ${userClass} payroll`;
+      greetingElement.textContent = greeting;
+    }
+
+    if (workingClassElement) {
+      workingClassElement.textContent = userClass;
+    }
+
+    console.log("📊 Dashboard greeting updated:", {
+      user: userName,
+      primaryClass: user.primary_class,
+      currentClass: user.current_class,
+      displayClass: userClass,
+    });
+  }
+
+  // Update current time display
+  function updateCurrentTime() {
+    const timeElement = document.getElementById("currentTime");
+    if (!timeElement) return;
+
+    const now = new Date();
+    const timeString = now.toLocaleString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+    timeElement.textContent = timeString;
+  }
+
+  // Update function for when payroll class is switched
+  window.updateDashboardGreeting = function (newClassName) {
+    console.log("🔄 Updating dashboard greeting for new class:", newClassName);
+
+    // Reload user info from updated token
+    const user = getLoggedInUser();
+    if (user) {
+      updateGreeting();
+    }
+  };
+
+  // Listen for payroll class switch events
+  document.addEventListener("payrollClassFocused", (event) => {
+    console.log("🎯 Payroll class focused event received:", event.detail);
+    updateGreeting();
+  });
+
+  // Get current payroll period from database
+  async function getCurrentPayrollPeriod() {
+    try {
+      const token = localStorage.getItem("token");
+      const user = getLoggedInUser();
+      const dbName = user.current_class;
+
+      const response = await auth.fetchWithAuth("/payroll-period", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update the payroll period display
+        const periodElement = document.querySelector("#current-payroll-period");
+        if (periodElement) {
+          const monthNames = [
+            "Jan",
+            "Feb",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "Aug",
+            "Sept",
+            "Oct",
+            "Nov",
+            "Dec",
+          ];
+          const monthName = monthNames[data.month - 1] || "Unknown";
+          periodElement.textContent = `${monthName} ${data.year}`;
+        }
+
+        return { month: data.month, year: data.year };
+      }
+    } catch (error) {
+      console.error("Failed to load payroll period:", error);
+    }
+  }
+
+  // Init only on dashboard pages
+  (async function initDashboard() {
+    if (
+      document.getElementById("dynamicGreeting") ||
+      document.getElementById("payrollClassName")
+    ) {
+      // Wait for class mappings to load BEFORE updating greeting
+      await loadClassMappings();
+
+      // Now update greeting with populated classMapping
+      updateGreeting();
+      updateCurrentTime();
+
+      setInterval(updateCurrentTime, 1000); // Update time every second
+      setInterval(updateGreeting, 60000); // Refresh greeting every minute (to catch token updates)
+      await getCurrentPayrollPeriod(); // Load current payroll period
+    }
+  })();
+
+  // Navigation handler for submenu items
+  class NavigationSystem {
+    constructor() {
+      this.currentSection = null;
+      this.cache = new Map(); // Cache loaded content
+      this.state = {}; // State for section navigation
+      this.isNavigating = false; // Prevent race conditions
+      this.navigationHistory = [];
+      this.init();
+    }
+
+    init() {
+      this.setupSubmenuNavigation();
+      this.setupHistoryHandler();
+      this.handleInitialLoad();
+    }
+
+    setupSubmenuNavigation() {
+      document
+        .querySelectorAll(".submenu ul li a[data-section]")
+        .forEach((link) => {
+          link.addEventListener("click", async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const sectionId = link.getAttribute("data-section");
+            const sectionName = link.textContent.trim();
+
+            if (sectionId) {
+              // CHECK EDIT MODE BEFORE SHOWING LOADING STATE
+              const isEditMode = localStorage.getItem("isEditMode") === "true";
+              const currentHash = window.location.hash.substring(1);
+
+              // If clicking add-personnel while already in edit mode, keep edit mode
+              if (
+                sectionId === "add-personnel" &&
+                isEditMode &&
+                currentHash === "add-personnel"
+              ) {
+                // Already on add-personnel in edit mode, do nothing
+                return;
+              }
+
+              if (
+                isEditMode &&
+                currentHash === "add-personnel" &&
+                sectionId !== "add-personnel"
+              ) {
+                const confirmed = confirm(
+                  "You are currently editing a personnel record. " +
+                    "Any unsaved changes will be lost. Do you want to continue?",
+                );
+
+                if (!confirmed) {
+                  console.log("Navigation cancelled by user");
+                  return;
+                }
+
+                // User confirmed, clean up edit state
+                localStorage.removeItem("editing_employee_id");
+                localStorage.removeItem("isEditMode");
+                localStorage.removeItem("navigatedFromCurrentPersonnel");
+
+                if (window.PersonnelAPI?.setCreateMode) {
+                  window.PersonnelAPI.setCreateMode();
+                }
+              }
+
+              // Close all submenus
+              if (typeof closeAll === "function") {
+                closeAll();
+              }
+
+              // Hide mobile menu
+              this.hideMobileMenu();
+
+              // Show loading state (use "Edit Personnel" if in edit mode and going to add-personnel)
+              const displayName =
+                sectionId === "add-personnel" && isEditMode
+                  ? "Edit Personnel"
+                  : sectionName;
+              this.showLoadingState(displayName);
+
+              // Navigate to section
+              await this.navigateToSection(sectionId, displayName);
+            }
+          });
+        });
+    }
+
+    async hideMobileMenu(link) {
+      if (window.innerWidth <= 1023) {
+        const sidebar = document.querySelector("#sidebar");
+
+        if (link) {
           const sectionId = link.getAttribute("data-section");
           const sectionName = link.textContent.trim();
 
           if (sectionId) {
-            // CHECK EDIT MODE BEFORE SHOWING LOADING STATE
-            const isEditMode = localStorage.getItem("isEditMode") === "true";
-            const currentHash = window.location.hash.substring(1);
-
-            // If clicking add-personnel while already in edit mode, keep edit mode
-            if (
-              sectionId === "add-personnel" &&
-              isEditMode &&
-              currentHash === "add-personnel"
-            ) {
-              // Already on add-personnel in edit mode, do nothing
-              return;
-            }
-
-            if (
-              isEditMode &&
-              currentHash === "add-personnel" &&
-              sectionId !== "add-personnel"
-            ) {
-              const confirmed = confirm(
-                "You are currently editing a personnel record. " +
-                  "Any unsaved changes will be lost. Do you want to continue?"
-              );
-
-              if (!confirmed) {
-                console.log("Navigation cancelled by user");
-                return;
-              }
-
-              // User confirmed, clean up edit state
-              localStorage.removeItem("editing_employee_id");
-              localStorage.removeItem("isEditMode");
-              localStorage.removeItem("navigatedFromCurrentPersonnel");
-
-              if (window.PersonnelAPI?.setCreateMode) {
-                window.PersonnelAPI.setCreateMode();
-              }
-            }
-
-            // Close all submenus
+            // Close all submenus first
             if (typeof closeAll === "function") {
               closeAll();
             }
 
-            // Hide mobile menu
-            this.hideMobileMenu();
-
-            // Show loading state (use "Edit Personnel" if in edit mode and going to add-personnel)
-            const displayName =
-              sectionId === "add-personnel" && isEditMode
-                ? "Edit Personnel"
-                : sectionName;
-            this.showLoadingState(displayName);
+            // Show loading state
+            this.showLoadingState(sectionName);
 
             // Navigate to section
-            await this.navigateToSection(sectionId, displayName);
+            await this.navigateToSection(sectionId, sectionName);
           }
-        });
-      });
-  }
+        }
 
-  async hideMobileMenu(link) {
-    if (window.innerWidth <= 1023) {
-      const sidebar = document.querySelector("#sidebar");
+        // Finally hide sidebar
+        if (sidebar) {
+          closeSidebar();
+          removeOverlay();
+          removeSidebarOverlay();
+        }
 
-      if (link) {
-        const sectionId = link.getAttribute("data-section");
-        const sectionName = link.textContent.trim();
-
-        if (sectionId) {
-          // Close all submenus first
-          if (typeof closeAll === "function") {
-            closeAll();
-          }
-
-          // Show loading state
-          this.showLoadingState(sectionName);
-
-          // Navigate to section
-          await this.navigateToSection(sectionId, sectionName);
+        if (sidebarOverlay) {
+          removeOverlay();
+          removeSidebarOverlay();
         }
       }
-
-      // Finally hide sidebar
-      if (sidebar) {
-        closeSidebar();
-        removeOverlay();
-        removeSidebarOverlay();
-      }
-
-      if (sidebarOverlay) {
-        removeOverlay();
-        removeSidebarOverlay();
-      }
     }
-  }
 
-  showLoadingState(sectionName) {
-    const mainContent = document.querySelector("main");
-    if (mainContent) {
-      // Prevent flicker by checking if already showing loading
-      const isAlreadyLoading = mainContent.querySelector(".animate-grow-up");
-      if (isAlreadyLoading) return;
+    showLoadingState(sectionName) {
+      const mainContent = document.querySelector("main");
+      if (mainContent) {
+        // Prevent flicker by checking if already showing loading
+        const isAlreadyLoading = mainContent.querySelector(".animate-grow-up");
+        if (isAlreadyLoading) return;
 
-      // Hide immediately
-      mainContent.style.opacity = "0";
-      mainContent.style.transition = "none";
+        // Hide immediately
+        mainContent.style.opacity = "0";
+        mainContent.style.transition = "none";
 
-      mainContent.innerHTML = `
+        mainContent.innerHTML = `
         <div class="mt-6">
           <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
           <div class="bg-transparent rounded-xl shadow-sm border border-gray-100"> 
@@ -982,102 +994,105 @@ class NavigationSystem {
         </div>
       `;
 
-      window.scrollTo({ top: 0, behavior: "instant" });
+        window.scrollTo({ top: 0, behavior: "instant" });
 
-      // Fade in the loading state
-      requestAnimationFrame(() => {
+        // Fade in the loading state
         requestAnimationFrame(() => {
-          mainContent.style.transition = "opacity 0.2s ease";
-          mainContent.style.opacity = "1";
+          requestAnimationFrame(() => {
+            mainContent.style.transition = "opacity 0.2s ease";
+            mainContent.style.opacity = "1";
+          });
         });
-      });
-    }
-  }
-
-  async navigateToSection(sectionId, sectionName, state = {}) {
-    // Prevent duplicate navigation
-    if (this.isNavigating) {
-      console.log("Navigation already in progress");
-      return;
+      }
     }
 
-    try {
-      this.isNavigating = true;
-
-      // Check if content exists on current page
-      const existingElement = document.querySelector(`#${sectionId}`);
-      if (existingElement) {
-        existingElement.scrollIntoView({ behavior: "smooth", block: "start" });
+    async navigateToSection(sectionId, sectionName, state = {}) {
+      // Prevent duplicate navigation
+      if (this.isNavigating) {
+        console.log("Navigation already in progress");
         return;
       }
 
-      // Store current section in history before navigating
-      if (this.currentSection && this.currentSection !== sectionId) {
-        // Get the section name from history state or derive it
-        const currentSectionName = this.getSectionNameFromId(
-          this.currentSection
-        );
-        this.navigationHistory.push({
-          sectionId: this.currentSection,
-          sectionName: currentSectionName,
-        });
-        console.log("Added to history:", this.currentSection);
-      }
-
-      // Store the navigation state
-      this.state = state;
-
-      // Load content from file
-      const content = await this.loadSectionContent(sectionId, sectionName);
-      this.renderSection(sectionName, content);
-      this.updateHistory(sectionId, sectionName);
-      this.currentSection = sectionId;
-
-      // Initialize any dynamic behavior based on state
-      if (sectionId === "add-personnel" && state.isEditMode) {
-        const batchButton = document.getElementById("tab-batch");
-        if (batchButton) {
-          batchButton.disabled = true;
-          batchButton.classList.add("opacity-50", "cursor-not-allowed");
-          batchButton.classList.remove("hover:bg-blue-600");
-        }
-      }
-    } catch (error) {
-      this.showErrorState(sectionName, error);
-    } finally {
-      this.isNavigating = false;
-    }
-  }
-
-  async loadSectionContent(sectionId, sectionName) {
-    // Check cache first
-    if (this.cache.has(sectionId)) {
-      return this.cache.get(sectionId);
-    }
-
-    // Try to load from multiple possible locations
-    const possiblePaths = [`sections/${sectionId}.html`];
-
-    for (const path of possiblePaths) {
       try {
-        const response = await auth.fetchWithAuth(path);
-        if (response.ok) {
-          const content = await response.text();
-          // Cache the content
-          this.cache.set(sectionId, content);
-          return content;
+        this.isNavigating = true;
+
+        // Check if content exists on current page
+        const existingElement = document.querySelector(`#${sectionId}`);
+        if (existingElement) {
+          existingElement.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+          return;
+        }
+
+        // Store current section in history before navigating
+        if (this.currentSection && this.currentSection !== sectionId) {
+          // Get the section name from history state or derive it
+          const currentSectionName = this.getSectionNameFromId(
+            this.currentSection,
+          );
+          this.navigationHistory.push({
+            sectionId: this.currentSection,
+            sectionName: currentSectionName,
+          });
+          console.log("Added to history:", this.currentSection);
+        }
+
+        // Store the navigation state
+        this.state = state;
+
+        // Load content from file
+        const content = await this.loadSectionContent(sectionId, sectionName);
+        this.renderSection(sectionName, content);
+        this.updateHistory(sectionId, sectionName);
+        this.currentSection = sectionId;
+
+        // Initialize any dynamic behavior based on state
+        if (sectionId === "add-personnel" && state.isEditMode) {
+          const batchButton = document.getElementById("tab-batch");
+          if (batchButton) {
+            batchButton.disabled = true;
+            batchButton.classList.add("opacity-50", "cursor-not-allowed");
+            batchButton.classList.remove("hover:bg-blue-600");
+          }
         }
       } catch (error) {
-        console.warn(`Failed to load from ${path}:`, error);
+        this.showErrorState(sectionName, error);
+      } finally {
+        this.isNavigating = false;
       }
     }
 
-    // If no file found, return default content
-    return this.getDefaultContent(sectionId, sectionName);
-  }
+    async loadSectionContent(sectionId, sectionName) {
+      // Check cache first
+      if (this.cache.has(sectionId)) {
+        return this.cache.get(sectionId);
+      }
 
-  getDefaultContent(sectionId, sectionName) {
-    return `
+      // Try to load from multiple possible locations
+      const possiblePaths = [`sections/${sectionId}.html`];
+
+      for (const path of possiblePaths) {
+        try {
+          const response = await auth.fetchWithAuth(path);
+          if (response.ok) {
+            const content = await response.text();
+            // Cache the content
+            this.cache.set(sectionId, content);
+            return content;
+          }
+        } catch (error) {
+          console.warn(`Failed to load from ${path}:`, error);
+        }
+      }
+
+      // If no file found, return default content
+      return this.getDefaultContent(sectionId, sectionName);
+    }
+
+    getDefaultContent(sectionId, sectionName) {
+      return `
       <div class="text-center py-12">
         <div class="max-w-md mx-auto">
           <div class="mb-4">
@@ -1097,16 +1112,16 @@ class NavigationSystem {
         </div>
       </div>
     `;
-  }
+    }
 
-  renderSection(sectionName, content) {
-    const mainContent = document.querySelector("main");
-    if (mainContent) {
-      // Show main if it was hidden
-      mainContent.style.display = "block";
-      mainContent.style.opacity = "0";
+    renderSection(sectionName, content) {
+      const mainContent = document.querySelector("main");
+      if (mainContent) {
+        // Show main if it was hidden
+        mainContent.style.display = "block";
+        mainContent.style.opacity = "0";
 
-      mainContent.innerHTML = `
+        mainContent.innerHTML = `
         <div class="mt-6">
           <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
           <div class="bg-white/10 rounded-xl shadow-lg border border-gray-100"> 
@@ -1128,126 +1143,131 @@ class NavigationSystem {
         </div>
       `;
 
-      window.scrollTo({ top: 0, behavior: "instant" });
-      this.initializeLoadedScripts();
+        window.scrollTo({ top: 0, behavior: "instant" });
+        this.initializeLoadedScripts();
 
-      // Smooth fade-in with animation
-      requestAnimationFrame(() => {
+        // Smooth fade-in with animation
         requestAnimationFrame(() => {
-          mainContent.style.transition = "opacity 0.3s ease";
-          mainContent.style.opacity = "1";
+          requestAnimationFrame(() => {
+            mainContent.style.transition = "opacity 0.3s ease";
+            mainContent.style.opacity = "1";
 
-          // Apply the fade-up animation
-          const container = mainContent.querySelector(".mt-6");
-          if (container) {
-            container.classList.add("animate-fade-up");
+            // Apply the fade-up animation
+            const container = mainContent.querySelector(".mt-6");
+            if (container) {
+              container.classList.add("animate-fade-up");
 
-            // Remove fade-up transform after animation completes
-            container.addEventListener(
-              "animationend",
-              (e) => {
-                if (
-                  e.animationName === "fadeInUp" ||
-                  e.animationName === "fadeInUpInner"
-                ) {
-                  container.classList.remove("animate-fade-up");
-                  container.style.transform = "none"; // ensure no transform remains
-                }
-              },
-              { once: true }
-            );
-          }
+              // Remove fade-up transform after animation completes
+              container.addEventListener(
+                "animationend",
+                (e) => {
+                  if (
+                    e.animationName === "fadeInUp" ||
+                    e.animationName === "fadeInUpInner"
+                  ) {
+                    container.classList.remove("animate-fade-up");
+                    container.style.transform = "none"; // ensure no transform remains
+                  }
+                },
+                { once: true },
+              );
+            }
+          });
         });
-      });
-    }
-  }
-
-  // New method to go back to previous section
-  goBack() {
-    console.log("Going back, history length:", this.navigationHistory.length);
-
-    if (this.navigationHistory.length > 0) {
-      // Get the last section from history
-      const previousSection = this.navigationHistory.pop();
-      console.log('Returning to:', previousSection);
-      
-      // Get the proper section name from the link element or derive it
-      let sectionName = previousSection.sectionName;
-      const linkElement = document.querySelector(`a[data-section="${previousSection.sectionId}"]`);
-      if (linkElement) {
-        sectionName = linkElement.textContent.trim();
       }
-      
-      // Navigate back to previous section (don't add to history again)
-      this.navigateToSectionWithoutHistory(previousSection.sectionId, sectionName);
-    } else {
-      // No history, return to dashboard
-      console.log("No history, returning to dashboard");
-      this.returnToDashboard();
-    }
-  }
-
-  // Navigate without adding to history (for back navigation)
-  async navigateToSectionWithoutHistory(sectionId, sectionName, state = {}) {
-    if (this.isNavigating) {
-      console.log("Navigation already in progress");
-      return;
     }
 
-    try {
-      this.isNavigating = true;
+    // New method to go back to previous section
+    goBack() {
+      console.log("Going back, history length:", this.navigationHistory.length);
 
-      // Store the navigation state
-      this.state = state;
+      if (this.navigationHistory.length > 0) {
+        // Get the last section from history
+        const previousSection = this.navigationHistory.pop();
+        console.log("Returning to:", previousSection);
 
-      // Load content from file
-      const content = await this.loadSectionContent(sectionId, sectionName);
-      this.renderSection(sectionName, content);
-      this.updateHistory(sectionId, sectionName);
-      this.currentSection = sectionId;
-
-      // UPDATE MENU HIGHLIGHTING
-      if (window.menuHighlighter) {
-        window.menuHighlighter.setActiveSection(sectionId);
-      }
-
-      // DISPATCH EVENT FOR MENU HIGHLIGHTER
-      const event = new CustomEvent("sectionLoaded", {
-        detail: { sectionId, sectionName },
-      });
-      document.dispatchEvent(event);
-    } catch (error) {
-      this.showErrorState(sectionName, error);
-    } finally {
-      this.isNavigating = false;
-    }
-  }
-
-  initializeLoadedScripts() {
-    // Execute any scripts in the newly loaded content
-    const scripts = document.querySelectorAll("main script");
-    scripts.forEach((script) => {
-      if (script.src) {
-        // External script
-        const newScript = document.createElement("script");
-        newScript.src = script.src;
-        newScript.onload = () => console.log(`Loaded script: ${script.src}`);
-        document.head.appendChild(newScript);
-      } else {
-        // Inline script
-        try {
-          eval(script.textContent);
-        } catch (error) {
-          console.error("Error executing inline script:", error);
+        // Get the proper section name from the link element or derive it
+        let sectionName = previousSection.sectionName;
+        const linkElement = document.querySelector(
+          `a[data-section="${previousSection.sectionId}"]`,
+        );
+        if (linkElement) {
+          sectionName = linkElement.textContent.trim();
         }
-      }
-    });
-  }
 
-  showErrorState(sectionName, error) {
-    const mainContent = document.querySelector("main");
-    if (mainContent) {
-      mainContent.innerHTML = `
+        // Navigate back to previous section (don't add to history again)
+        this.navigateToSectionWithoutHistory(
+          previousSection.sectionId,
+          sectionName,
+        );
+      } else {
+        // No history, return to dashboard
+        console.log("No history, returning to dashboard");
+        this.returnToDashboard();
+      }
+    }
+
+    // Navigate without adding to history (for back navigation)
+    async navigateToSectionWithoutHistory(sectionId, sectionName, state = {}) {
+      if (this.isNavigating) {
+        console.log("Navigation already in progress");
+        return;
+      }
+
+      try {
+        this.isNavigating = true;
+
+        // Store the navigation state
+        this.state = state;
+
+        // Load content from file
+        const content = await this.loadSectionContent(sectionId, sectionName);
+        this.renderSection(sectionName, content);
+        this.updateHistory(sectionId, sectionName);
+        this.currentSection = sectionId;
+
+        // UPDATE MENU HIGHLIGHTING
+        if (window.menuHighlighter) {
+          window.menuHighlighter.setActiveSection(sectionId);
+        }
+
+        // DISPATCH EVENT FOR MENU HIGHLIGHTER
+        const event = new CustomEvent("sectionLoaded", {
+          detail: { sectionId, sectionName },
+        });
+        document.dispatchEvent(event);
+      } catch (error) {
+        this.showErrorState(sectionName, error);
+      } finally {
+        this.isNavigating = false;
+      }
+    }
+
+    initializeLoadedScripts() {
+      // Execute any scripts in the newly loaded content
+      const scripts = document.querySelectorAll("main script");
+      scripts.forEach((script) => {
+        if (script.src) {
+          // External script
+          const newScript = document.createElement("script");
+          newScript.src = script.src;
+          newScript.onload = () => console.log(`Loaded script: ${script.src}`);
+          document.head.appendChild(newScript);
+        } else {
+          // Inline script
+          try {
+            eval(script.textContent);
+          } catch (error) {
+            console.error("Error executing inline script:", error);
+          }
+        }
+      });
+    }
+
+    showErrorState(sectionName, error) {
+      const mainContent = document.querySelector("main");
+      if (mainContent) {
+        mainContent.innerHTML = `
         <div class="mt-6">
           <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">${sectionName}</h2>
           <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
@@ -1280,29 +1300,29 @@ class NavigationSystem {
           </div>
         </div>
       `;
-    }
-  }
-
-  // New method to handle return to dashboard
-  returnToDashboard() {
-    // Clear current section
-    this.currentSection = null;
-
-    // Clear navigation history
-    this.navigationHistory = [];
-
-    // CLEAR MENU HIGHLIGHTING
-    if (window.menuHighlighter) {
-      window.menuHighlighter.clearAllActiveStates();
+      }
     }
 
-    // Update URL to remove hash
-    window.history.pushState({}, "", window.location.pathname);
+    // New method to handle return to dashboard
+    returnToDashboard() {
+      // Clear current section
+      this.currentSection = null;
 
-    // Clear main content or redirect to dashboard
-    const mainContent = document.querySelector("main");
-    if (mainContent) {
-      mainContent.innerHTML = `
+      // Clear navigation history
+      this.navigationHistory = [];
+
+      // CLEAR MENU HIGHLIGHTING
+      if (window.menuHighlighter) {
+        window.menuHighlighter.clearAllActiveStates();
+      }
+
+      // Update URL to remove hash
+      window.history.pushState({}, "", window.location.pathname);
+
+      // Clear main content or redirect to dashboard
+      const mainContent = document.querySelector("main");
+      if (mainContent) {
+        mainContent.innerHTML = `
         <div class="mt-6">
           <div class="text-center py-12">
             <h2 class="text-2xl lg:text-3xl font-bold text-navy mb-4">Dashboard</h2>
@@ -1310,187 +1330,200 @@ class NavigationSystem {
           </div>
         </div>
       `;
-      window.location.href = "dashboard.html";
+        window.location.href = "dashboard.html";
+      }
+
+      // Update page title
+      document.title = "NAVY — Dashboard";
     }
 
-    // Update page title
-    document.title = "HICAD — Dashboard";
-  }
+    updateHistory(sectionId, sectionName) {
+      document.title = `NAVY — ${sectionName}`;
+      // Store both sectionId and original sectionName in history state
+      window.history.pushState(
+        {
+          section: sectionName,
+          sectionId: sectionId,
+        },
+        "",
+        `#${sectionId}`,
+      );
+    }
 
-  updateHistory(sectionId, sectionName) {
-    document.title = `HICAD — ${sectionName}`;
-    // Store both sectionId and original sectionName in history state
-    window.history.pushState(
-      {
-        section: sectionName,
-        sectionId: sectionId,
-      },
-      "",
-      `#${sectionId}`
-    );
-  }
-
-  setupHistoryHandler() {
-    window.addEventListener("popstate", (event) => {
-      if (event.state && event.state.section && event.state.sectionId) {
-        // Use the original section name stored in history state
-        this.navigateToSectionWithoutHistory(
-          event.state.sectionId,
-          event.state.section // Use original section name, not converted from ID
-        );
-      } else {
-        // Handle back to dashboard
-        this.returnToDashboard();
-      }
-    });
-  }
-
-  handleInitialLoad() {
-    // Handle initial page load with hash
-    const hash = window.location.hash;
-    if (hash && hash.length > 1) {
-      const sectionId = hash.substring(1);
-
-      // Hide dashboard content IMMEDIATELY before any rendering
-      const mainContent = document.querySelector("main");
-      if (mainContent) {
-        mainContent.style.opacity = "0";
-        mainContent.style.display = "none";
-      }
-
-      // Get section name
-      let sectionName = null;
-      if (window.history.state && window.history.state.section) {
-        sectionName = window.history.state.section;
-      } else {
-        const linkElement = document.querySelector(
-          `a[data-section="${sectionId}"]`
-        );
-        if (linkElement) {
-          sectionName = linkElement.textContent.trim();
+    setupHistoryHandler() {
+      window.addEventListener("popstate", (event) => {
+        if (event.state && event.state.section && event.state.sectionId) {
+          // Use the original section name stored in history state
+          this.navigateToSectionWithoutHistory(
+            event.state.sectionId,
+            event.state.section, // Use original section name, not converted from ID
+          );
         } else {
-          sectionName = this.getSectionNameFromId(sectionId);
+          // Handle back to dashboard
+          this.returnToDashboard();
         }
+      });
+    }
+
+    handleInitialLoad() {
+      // Handle initial page load with hash
+      const hash = window.location.hash;
+      if (hash && hash.length > 1) {
+        const sectionId = hash.substring(1);
+
+        // Hide dashboard content IMMEDIATELY before any rendering
+        const mainContent = document.querySelector("main");
+        if (mainContent) {
+          mainContent.style.opacity = "0";
+          mainContent.style.display = "none";
+        }
+
+        // Get section name
+        let sectionName = null;
+        if (window.history.state && window.history.state.section) {
+          sectionName = window.history.state.section;
+        } else {
+          const linkElement = document.querySelector(
+            `a[data-section="${sectionId}"]`,
+          );
+          if (linkElement) {
+            sectionName = linkElement.textContent.trim();
+          } else {
+            sectionName = this.getSectionNameFromId(sectionId);
+          }
+        }
+
+        // Load section immediately
+        this.navigateToSection(sectionId, sectionName);
+      }
+    }
+
+    getSectionNameFromId(sectionId) {
+      // Convert kebab-case to Title Case
+      return sectionId
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    }
+
+    // Public method to clear cache
+    clearCache() {
+      this.cache.clear();
+      console.log("Navigation cache cleared");
+    }
+
+    // Public method to preload sections
+    async preloadSections(sectionIds) {
+      const loadPromises = sectionIds.map((sectionId) =>
+        this.loadSectionContent(
+          sectionId,
+          this.getSectionNameFromId(sectionId),
+        ),
+      );
+
+      try {
+        await Promise.all(loadPromises);
+        console.log("Sections preloaded:", sectionIds);
+      } catch (error) {
+        console.warn("Some sections failed to preload:", error);
+      }
+    }
+  }
+
+  // Initialize navigation system when DOM is ready
+  document.addEventListener("DOMContentLoaded", function () {
+    // Make navigation system globally accessible
+    window.navigation = new NavigationSystem();
+  });
+
+  // Export for module systems
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = NavigationSystem;
+  }
+
+  // Dashboard stats update
+  async function updateDashboardStats() {
+    try {
+      // Check if the element exists before making the API call
+      const personnelElement = document.getElementById("active-personnel");
+      if (!personnelElement) {
+        console.log(
+          "📊 Stats elements not found on this page, skipping update",
+        );
+        return;
       }
 
-      // Load section immediately
-      this.navigateToSection(sectionId, sectionName);
-    }
-  }
+      // Get total personnel and nominal processed for current payroll period
+      const response = await auth.fetchWithAuth("/stats/total-personnels", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
-  getSectionNameFromId(sectionId) {
-    // Convert kebab-case to Title Case
-    return sectionId
-      .split("-")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  }
+      const result = await response.json();
 
-  // Public method to clear cache
-  clearCache() {
-    this.cache.clear();
-    console.log("Navigation cache cleared");
-  }
+      if (result.success) {
+        // Update stats cards (element already verified to exist)
+        personnelElement.textContent = result.data.totalPersonnels || "0";
 
-  // Public method to preload sections
-  async preloadSections(sectionIds) {
-    const loadPromises = sectionIds.map((sectionId) =>
-      this.loadSectionContent(sectionId, this.getSectionNameFromId(sectionId))
-    );
-
-    try {
-      await Promise.all(loadPromises);
-      console.log("Sections preloaded:", sectionIds);
+        console.log("Dashboard stats updated:", result.data.totalPersonnels);
+      }
     } catch (error) {
-      console.warn("Some sections failed to preload:", error);
+      console.error("❌ Error updating dashboard stats:", error);
     }
   }
-}
 
-// Initialize navigation system when DOM is ready
-document.addEventListener("DOMContentLoaded", function () {
-  // Make navigation system globally accessible
-  window.navigation = new NavigationSystem();
-});
-
-// Export for module systems
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = NavigationSystem;
-}
-
-// Dashboard stats update
-async function updateDashboardStats() {
-  try {
-    // Get payroll status
-    const response = await auth.fetchWithAuth("stats/2025/10", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      // Update stats cards
-      document.getElementById("pendingApproval").textContent =
-        result.data.total_employees || "0";
-      document.getElementById("nominalProcessed").textContent =
-        result.data.total_employees || "0";
-
-      // Update notifications based on status
-      updateNotifications(result.data);
-    }
-  } catch (error) {
-    console.error("Error updating dashboard:", error);
-  }
-}
-
-
-async function logout() {
-  // Clear user session data && Call logout API (but don't wait for response)
-  auth.logout().catch((err) => console.error("Logout API error:", err));
-  // Clear user session data
-  sessionStorage.clear();
-  localStorage.clear();
-
-  // Redirect to login page
-  window.location.href = "personnel-login.html";
-}
-
-// Inactivity timeout handler
-let inactivityTimer;
-const INACTIVITY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
-
-function resetInactivityTimer() {
-  // Clear the existing timer
-  clearTimeout(inactivityTimer);
-  
-  // Set a new timer
-  inactivityTimer = setTimeout(() => {
-    logout();
-  }, INACTIVITY_TIME);
-}
-
-// Events that indicate user activity
-const activityEvents = [
-  'mousedown',
-  'mousemove',
-  'keypress',
-  'scroll',
-  'touchstart',
-  'click'
-];
-
-document.addEventListener('DOMContentLoaded', function() {
-  // Make logout function globally accessible
-  window.logout = logout;
-  
-  // Start the inactivity timer
-  resetInactivityTimer();
-  
-  // Add event listeners for user activity
-  activityEvents.forEach(event => {
-    document.addEventListener(event, resetInactivityTimer, true);
+  // Call updateDashboardStats on page load
+  document.addEventListener("DOMContentLoaded", function () {
+    updateDashboardStats();
   });
-});
+
+  async function logout() {
+    // Clear user session data && Call logout API (but don't wait for response)
+    auth.logout().catch((err) => console.error("Logout API error:", err));
+    // Clear user session data
+    sessionStorage.clear();
+    localStorage.clear();
+
+    // Redirect to login page
+    window.location.href = "personnel-login.html";
+  }
+
+  // Inactivity timeout handler
+  let inactivityTimer;
+  const INACTIVITY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+  function resetInactivityTimer() {
+    // Clear the existing timer
+    clearTimeout(inactivityTimer);
+
+    // Set a new timer
+    inactivityTimer = setTimeout(() => {
+      logout();
+    }, INACTIVITY_TIME);
+  }
+
+  // Events that indicate user activity
+  const activityEvents = [
+    "mousedown",
+    "mousemove",
+    "keypress",
+    "scroll",
+    "touchstart",
+    "click",
+  ];
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // Make logout function globally accessible
+    window.logout = logout;
+
+    // Start the inactivity timer
+    resetInactivityTimer();
+
+    // Add event listeners for user activity
+    activityEvents.forEach((event) => {
+      document.addEventListener(event, resetInactivityTimer, true);
+    });
+  });
+}

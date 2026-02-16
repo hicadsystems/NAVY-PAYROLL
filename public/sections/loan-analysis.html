@@ -227,7 +227,7 @@
         `/salarysummary/filter-options`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (response.ok) {
@@ -271,7 +271,7 @@
     loanPrintBtn.disabled = true;
 
     const format = document.querySelector(
-      'input[name="loanFormat"]:checked'
+      'input[name="loanFormat"]:checked',
     ).value;
     const month = loanMonth.value;
     const year = loanYear.value;
@@ -293,11 +293,12 @@
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
-        throw new Error("Failed to generate report");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to generate report");
       }
 
       // Download file

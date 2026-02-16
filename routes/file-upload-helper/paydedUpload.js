@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 const csv = require('csv-parser');
 const fs = require('fs');
 const path = require('path');
@@ -41,17 +42,11 @@ const upload = multer({
 
 // Field mapping from Excel/CSV headers to database columns
 const FIELD_MAPPING = {
-  'Service Number': 'Empl_id',
+  'Svc. No.': 'Empl_id',
   'Payment Type': 'type',
-  'Maker 1': 'mak1',
   'Amount Payable': 'amtp',
-  'Maker 2': 'mak2',
-  'Amount': 'amt',
-  //'Amount Action': 'amtad',
-  'Amount To Date': 'amttd',
   'Payment Indicator': 'payind',
-  'Number of Months': 'nomth',
-  //'Created By': 'createdby'
+  'Ternor': 'nomth'
 };
 
 // Helper function to parse Excel file
@@ -59,7 +54,59 @@ function parseExcelFile(filePath) {
   const workbook = XLSX.readFile(filePath);
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
-  const data = XLSX.utils.sheet_to_json(worksheet);
+  
+  // Convert entire sheet to JSON with row arrays
+  const allData = XLSX.utils.sheet_to_json(worksheet, { 
+    header: 1,  // Return arrays instead of objects
+    defval: ''  // Default value for empty cells
+  });
+  
+  // Row 4 (index 3) contains the actual column headers
+  const headers = allData[3];
+  
+  if (!headers || headers.length === 0) {
+    throw new Error('No headers found in row 4');
+  }
+  
+  console.log('📋 Detected headers:', headers);
+  
+  // Rows 5+ (index 4+) contain the actual data
+  const dataRows = allData.slice(4);
+  
+  // Convert to objects using headers
+  const data = dataRows
+    .filter(row => {
+      // Skip completely empty rows
+      if (!row || row.length === 0) return false;
+      
+      // Skip rows where all cells are empty
+      const hasData = row.some(cell => {
+        return cell !== null && 
+               cell !== undefined && 
+               cell !== '' && 
+               cell.toString().trim() !== '';
+      });
+      
+      return hasData;
+    })
+    .map((row, rowIndex) => {
+      const obj = {};
+      headers.forEach((header, colIndex) => {
+        if (header && header.toString().trim() !== '') {
+          const cellValue = row[colIndex];
+          // Convert cell value to string and trim, or use empty string
+          obj[header.toString().trim()] = cellValue !== null && cellValue !== undefined 
+            ? cellValue.toString().trim() 
+            : '';
+        }
+      });
+      
+      console.log(`📊 Row ${rowIndex + 5}:`, obj);
+      return obj;
+    });
+  
+  console.log('✅ Parsed data rows:', data.length);
+  
   return data;
 }
 
@@ -92,7 +139,7 @@ function mapFields(row, defaultCreatedBy) {
       }
       
       // Convert numeric strings to numbers for amount fields
-      if (['amtp', 'amt', 'amttd'].includes(dbField) && value) {
+      if (dbField === 'amtp' && value) {
         value = parseFloat(value) || 0;
       }
       
@@ -106,13 +153,12 @@ function mapFields(row, defaultCreatedBy) {
   });
   
   // Set defaults
-  if (!mappedRow.mak1) mappedRow.mak1 = 'No';
-  if (!mappedRow.mak2) mappedRow.mak2 = 'No';
-  if (!mappedRow.amt && mappedRow.amtp) mappedRow.amt = 0;
-  //if (!mappedRow.amtad) mappedRow.amtad = 0;
-  if (!mappedRow.amttd) mappedRow.amttd = 0;
+  mappedRow.mak1 = '';
+  mappedRow.mak2 = '';
+  mappedRow.amt = 0;
+  mappedRow.amttd = 0;
   if (!mappedRow.nomth) mappedRow.nomth = 0;
-  if (!mappedRow.createdby) mappedRow.createdby = defaultCreatedBy;
+  mappedRow.createdby = defaultCreatedBy; // Always use the dynamic value from req.user_fullname
   
   return mappedRow;
 }
@@ -133,13 +179,9 @@ function validateRow(row, rowIndex) {
     errors.push(`Row ${rowIndex + 2}: Invalid amount payable (amtp)`);
   }
   
-  // Validate mak1 and mak2 values
-  if (row.mak1 && !['Yes', 'No'].includes(row.mak1)) {
-    errors.push(`Row ${rowIndex + 2}: Invalid mak1 value (must be Yes or No)`);
-  }
-  
-  if (row.mak2 && !['Yes', 'No'].includes(row.mak2)) {
-    errors.push(`Row ${rowIndex + 2}: Invalid mak2 value (must be Yes or No)`);
+  // Validate nomth
+  if (row.nomth && (isNaN(row.nomth) || row.nomth < 0)) {
+    errors.push(`Row ${rowIndex + 2}: Invalid ternor value (nomth)`);
   }
   
   return errors;
@@ -177,7 +219,6 @@ async function insertDeduction(data) {
     data.amtp,
     data.mak2,
     data.amt,
-    //data.amtad,
     data.amttd,
     data.payind,
     data.nomth,
@@ -200,6 +241,12 @@ router.post('/batch-upload', verifyToken, upload.single('file'), async (req, res
     const fileExt = path.extname(req.file.originalname).toLowerCase();
     const createdBy = req.user_fullname || 'SYSTEM';
 
+    // SET DATABASE CONTEXT
+    const currentDb = pool.getCurrentDatabase(req.user_id.toString());
+    console.log('📊 Using database:', currentDb);
+
+    console.log('📤 Uploaded by:', createdBy);
+
     // Parse file
     let rawData;
     if (fileExt === '.csv') {
@@ -211,6 +258,9 @@ router.post('/batch-upload', verifyToken, upload.single('file'), async (req, res
     if (!rawData || rawData.length === 0) {
       return res.status(400).json({ error: 'File is empty or invalid' });
     }
+
+    console.log('📄 First row of parsed data:', rawData[0]);
+    console.log('📊 Total rows parsed:', rawData.length);
 
     // Validate rows
     const validationErrors = [];
@@ -254,7 +304,7 @@ router.post('/batch-upload', verifyToken, upload.single('file'), async (req, res
       } catch (error) {
         results.failed++;
         results.errors.push({
-          row: i + 2,
+          row: i + 5, // +5 because data starts at row 5 in Excel
           serviceNumber: uniqueData[i].Empl_id,
           deductionType: uniqueData[i].type,
           error: error.message
@@ -299,37 +349,187 @@ router.post('/batch-upload', verifyToken, upload.single('file'), async (req, res
   }
 });
 
-// GET: Download sample template
-router.get('/batch-template', verifyToken, (req, res) => {
-  const headers = Object.keys(FIELD_MAPPING);
-  
-  // Create sample data
-  const sampleData = [{
-    'Service Number': 'NN001',
-    'Payment Type': 'PT330',
-    'Maker 1': 'No',
-    'Amount Payable': '5000.00',
-    'Maker 2': 'No',
-    'Amount': '5000.00',
-    //'Amount Already Deducted': '0.00',
-    'Amount To Date': '0.00',
-    'Payment Indicator': 'T',
-    'Number of Months': '12',
-    'Created By': 'Admin'
-  }];
-  
-  // Create workbook
-  const worksheet = XLSX.utils.json_to_sheet(sampleData);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Payment-Deductions');
-  
-  // Generate buffer
-  const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-  
-  // Send file
-  res.setHeader('Content-Disposition', 'attachment; filename=payment-deductions_template.xlsx');
-  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.send(buffer);
+// GET: Download sample template with ExcelJS
+router.get('/batch-template', verifyToken, async (req, res) => {
+  try {
+    // Create workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Payment-Deductions', {
+      views: [{ state: 'frozen', ySplit: 4 }] // Freeze first 4 rows
+    });
+    
+    // Add main header - Row 1
+    worksheet.mergeCells('A1:E1');
+    const mainHeader = worksheet.getCell('A1');
+    mainHeader.value = 'Nigerian Navy (Naval Headquarters)';
+    mainHeader.font = { name: 'Arial', size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
+    mainHeader.alignment = { horizontal: 'center', vertical: 'middle' };
+    mainHeader.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1F4E78' } // Dark navy blue
+    };
+    mainHeader.border = {
+      bottom: { style: 'thin', color: { argb: 'FF000000' } }
+    };
+    worksheet.getRow(1).height = 22;
+    
+    // Add sub header - Row 2
+    worksheet.mergeCells('A2:E2');
+    const subHeader = worksheet.getCell('A2');
+    subHeader.value = 'CENTRAL PAY OFFICE, 23 POINT ROAD, APAPA';
+    subHeader.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FF000000' } };
+    subHeader.alignment = { horizontal: 'center', vertical: 'middle' };
+    subHeader.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFD9D9D9' } // Medium gray
+    };
+    subHeader.border = {
+      bottom: { style: 'thin', color: { argb: 'FF000000' } }
+    };
+    worksheet.getRow(2).height = 18;
+    
+    // Empty row 3
+    worksheet.getRow(3).height = 5;
+    
+    // Column headers - Row 4
+    const headers = [
+      'Svc. No.',
+      'Payment Type',
+      'Amount Payable',
+      'Payment Indicator',
+      'Ternor'
+    ];
+    
+    const headerRow = worksheet.getRow(4);
+    headers.forEach((header, index) => {
+      const cell = headerRow.getCell(index + 1);
+      cell.value = header;
+      cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF2E5C8A' } // Darker blue
+      };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF000000' } },
+        left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+        right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
+      };
+    });
+    headerRow.height = 19.5;
+    
+    // Sample data - Row 5
+    const sampleData = [
+      'NN001',      // Service Number
+      'PT330',      // Payment Type
+      '5000.00',    // Amount Payable
+      'T',          // Payment Indicator
+      '12'          // Ternor
+    ];
+    
+    const dataRow = worksheet.getRow(5);
+    sampleData.forEach((value, index) => {
+      const cell = dataRow.getCell(index + 1);
+      cell.value = value;
+      cell.font = { name: 'Arial', size: 10 };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFD3D3D3' } },
+        left: { style: 'thin', color: { argb: 'FFD3D3D3' } },
+        bottom: { style: 'thin', color: { argb: 'FFD3D3D3' } },
+        right: { style: 'thin', color: { argb: 'FFD3D3D3' } }
+      };
+    });
+    dataRow.height = 22;
+    
+    // Add a few more empty rows with borders
+    for (let rowNum = 6; rowNum <= 10; rowNum++) {
+      const emptyRow = worksheet.getRow(rowNum);
+      headers.forEach((_, index) => {
+        const cell = emptyRow.getCell(index + 1);
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFD3D3D3' } },
+          left: { style: 'thin', color: { argb: 'FFD3D3D3' } },
+          bottom: { style: 'thin', color: { argb: 'FFD3D3D3' } },
+          right: { style: 'thin', color: { argb: 'FFD3D3D3' } }
+        };
+      });
+      emptyRow.height = 22;
+    }
+    
+    // Set column widths
+    worksheet.columns = [
+      { key: 'serviceNumber', width: 18 },
+      { key: 'paymentType', width: 18 },
+      { key: 'amountPayable', width: 18 },
+      { key: 'paymentIndicator', width: 18 },
+      { key: 'ternor', width: 15 }
+    ];
+    
+    // Add data validation
+    // Payment Indicator column (D)
+    worksheet.getCell('D5').dataValidation = {
+      type: 'list',
+      allowBlank: true,
+      formulae: ['"T,P"'],
+      showErrorMessage: true,
+      errorTitle: 'Invalid Payment Indicator',
+      error: 'Please select T (Temporary) or P (Permanent)'
+    };
+    
+    // Add instructions sheet
+    const instructionsSheet = workbook.addWorksheet('Instructions');
+    
+    instructionsSheet.mergeCells('A1:D1');
+    const instrHeader = instructionsSheet.getCell('A1');
+    instrHeader.value = 'INSTRUCTIONS FOR FILLING THE PAYMENT & DEDUCTIONS TEMPLATE';
+    instrHeader.font = { size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
+    instrHeader.alignment = { horizontal: 'center', vertical: 'middle' };
+    instrHeader.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1F4E78' }
+    };
+    instructionsSheet.getRow(1).height = 25;
+    instructionsSheet.getRow(2).height = 10;
+    
+    const instructions = [
+      '1. Do not modify the header rows (rows 1-4)',
+      '2. Fill data starting from row 5',
+      '3. Service Number: Employee service number (e.g., NN001)',
+      '4. Payment Type: Valid payment type code (e.g., PT330)',
+      '5. Amount Payable: Numeric value (e.g., 5000.00)',
+      '6. Payment Indicator: T (Temporary) or P (Permanent)',
+      '7. Ternor: Number of months (e.g., 12)',
+      '8. All fields are required',
+      //'9. CreatedBy field will be automatically filled with your username'
+    ];
+    
+    instructions.forEach((instruction, index) => {
+      const cell = instructionsSheet.getCell(`A${index + 3}`);
+      cell.value = instruction;
+      cell.font = { name: 'Arial', size: 11 };
+      cell.alignment = { horizontal: 'left', vertical: 'middle' };
+    });
+    
+    instructionsSheet.getColumn('A').width = 70;
+    
+    // Generate Excel file
+    const buffer = await workbook.xlsx.writeBuffer();
+    
+    // Send file
+    res.setHeader('Content-Disposition', 'attachment; filename=payment-deductions_template.xlsx');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+    
+  } catch (error) {
+    console.error('Error generating template:', error);
+    res.status(500).json({ success: false, error: 'Failed to generate template' });
+  }
 });
 
 // GET: Batch upload history

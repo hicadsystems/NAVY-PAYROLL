@@ -41,6 +41,7 @@
           </select>
         </div>
 
+<<<<<<< HEAD
         <!-- Rank Grid -->
         <div class="mb-4">
           <h3 class="text-sm lg:text-lg font-bold text-blue-700 mb-2">
@@ -308,6 +309,20 @@
               />
             </div>
           </div>
+=======
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+                <thead class="bg-green-100 text-green-900">
+                    <tr>
+                        <th class="border px-4 py-3 text-left">Code</th>
+                        <th class="border px-4 py-3 text-left">Description</th>
+                        <th class="border px-4 py-3 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="rankAmountTable" class="text-center"></tbody>
+            </table>
+>>>>>>> upstream/master
         </div>
 
         <!-- Form Buttons -->
@@ -1008,6 +1023,7 @@
           const absoluteIndex = startIndex + index;
           return `
     <tr class="hover:bg-gray-50">
+      <td class="border px-4 py-2 text-left">${item.one_type}</td>
       <td class="border px-4 py-2 text-left">${getElmDesc(item.one_type)}</td>
       <td class="border px-4 py-2 text-center">
         <button onclick="viewRow(${absoluteIndex})" class="text-blue-600 hover:text-blue-800 mr-2">View</button>

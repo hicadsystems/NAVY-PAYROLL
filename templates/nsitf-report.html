@@ -109,11 +109,23 @@
       font-size: 14px;
     }
 
+    .pfa-group {
+      margin-bottom: 25px;
+    }
+
+    .pfa-group.page-break {
+      page-break-before: always;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 20px;
       font-size: 9px;
+    }
+
+    thead {
+      display: table-header-group;
     }
 
     th {
@@ -155,6 +167,7 @@
       margin: 10px 0 5px 0;
       text-transform: uppercase;
       letter-spacing: 1px;
+      page-break-after: avoid;
     }
 
     .subtotal-row {
@@ -190,14 +203,14 @@
       margin-top: 20px;
     }
 
-    .page-break {
-      page-break-after: always;
-    }
-
     @media print {
       body {
         print-color-adjust: exact;
         -webkit-print-color-adjust: exact;
+      }
+
+      thead {
+        display: table-header-group;
       }
 
       body::before {
@@ -283,52 +296,43 @@
   {{else}}
     <!-- DETAILED VIEW - GROUPED BY PFA -->
     {{#each (groupBy data 'pfa_name')}}
-      
-      <table>
-        <thead>
-          <tr class="pfa-header">
-            <td colspan="11"><strong>PFA: {{this.key}} ({{this.values.length}} Personnel)</strong></td>
-          </tr>
-          <tr>
-            <th style="width: 8%;">File No.</th>
-            <th style="width: 6%;">Rank</th>
-            <th>Full Name</th>
-            <th style="width: 10%;">DateOF 1st Appiontment</th>
-            <th>RSA(Pension) Code</th>
-            <th>Grade Type</th>
-            <th style="width: 6%;">Grade Level</th>
-            <th style="width: 6%;">State ofOrig.</th>
-            <th style="width: 3%;">Sex</th>
-            <!--<th style="width: 6%;">Yrs</th>-->
-            <th style="width: 10%;">PFA Code</th>
-            <!--<th style="width: 16%;" class="text-right">Net Pay</th>-->
-          </tr>
-        </thead>
-        <tbody>
-          {{#each this.values}}
-            <tr>
-              <td>{{this.employee_id}}</td>
-              <td>{{this.title}} {{this.Title}}</td>
-              <td style="white-space: nowrap;">{{this.full_name}}</td>
-              <td class="text-center">{{this.date_employed}}</td>
-              <td class="text-center"  style="white-space: nowrap;">{{this.nsitf_code}}</td>
-              <td class="text-center" style="white-space: nowrap;">{{this.grade_type}}</td>
-              <td class="text-center">{{this.grade_level}}0{{this.years_in_level}}</td>
-              <!--<td class="text-center">{{this.years_in_level}}</td>-->
-              <td class="text-center">{{this.state}}</td>
-              <td class="text-center">{{this.Sex}}</td>
-              <td class="text-center">{{this.pfa_code}}</td>
-              <!--<td class="currency">₦{{formatCurrency this.net_pay}}</td>-->
+      <div class="pfa-group{{#unless @first}} page-break{{/unless}}">
+        <table>
+          <thead>
+            <tr class="pfa-header">
+              <td colspan="10"><strong>PFA: {{this.key}} ({{this.values.length}} Personnel)</strong></td>
             </tr>
-          {{/each}}
-          
-          <!-- PFA Subtotal 
-          <tr class="subtotal-row">
-            <td colspan="10"><strong>{{this.key}}   TOTAL</strong></td>
-            <td class="currency"><strong>₦{{formatCurrency (sum this.values 'net_pay')}}</strong></td>
-          </tr>-->
-        </tbody>
-      </table>
+            <tr>
+              <th style="width: 8%;">File No.</th>
+              <th style="width: 6%;">Rank</th>
+              <th>Full Name</th>
+              <th style="width: 10%;">Date Of 1st Appointment</th>
+              <th>RSA(Pension) Code</th>
+              <th>Grade Type</th>
+              <th style="width: 6%;">Grade Level</th>
+              <th style="width: 6%;">State of Orig.</th>
+              <th style="width: 3%;">Sex</th>
+              <th style="width: 10%;">PFA Code</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each this.values}}
+              <tr>
+                <td>{{this.employee_id}}</td>
+                <td>{{this.title}} {{this.Title}}</td>
+                <td style="white-space: nowrap;">{{this.full_name}}</td>
+                <td class="text-center">{{this.date_employed}}</td>
+                <td class="text-center" style="white-space: nowrap;">{{this.nsitf_code}}</td>
+                <td class="text-center" style="white-space: nowrap;">{{this.grade_type}}</td>
+                <td class="text-center">{{this.grade_level}}0{{this.years_in_level}}</td>
+                <td class="text-center">{{this.state}}</td>
+                <td class="text-center">{{this.Sex}}</td>
+                <td class="text-center">{{this.pfa_code}}</td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
     {{/each}}
 
   {{/if}}
@@ -339,16 +343,6 @@
       <div class="label">Total Personnel</div>
       <div class="value">{{summary.totalEmployees}}</div>
     </div>
-    
-    <!--<div class="summary-item highlight">
-      <div class="label">Total Net Pay</div>
-      <div class="value">₦{{formatCurrency summary.totalNetPay}}</div>
-    </div>
-    
-    <div class="summary-item">
-      <div class="label">Average Net Pay</div>
-      <div class="value">₦{{formatCurrency summary.averageNetPay}}</div>
-    </div>-->
     
     {{#if summary.pfaCount}}
     <div class="summary-item">

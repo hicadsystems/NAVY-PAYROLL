@@ -1,104 +1,14 @@
+const BaseReportController = require('../Reports/reportsFallbackController');
 const reconciliationService = require('../../services/Reports/reconciliationService');
 const companySettings = require('../helpers/companySettings');
-const jsreport = require('jsreport-core')();
+//const jsreport = require('jsreport-core')();
 const fs = require('fs');
 const path = require('path');
 
-class ReconciliationController {
+class ReconciliationController extends BaseReportController {
 
   constructor() {
-    this.jsreportReady = false;
-    this.initJSReport();
-  }
-
-  async initJSReport() {
-    try {
-      jsreport.use(require('jsreport-handlebars')());
-      jsreport.use(require('jsreport-chrome-pdf')());
-      
-      await jsreport.init();
-      this.jsreportReady = true;
-      console.log('✅ JSReport initialized for Salary Reconciliation');
-    } catch (error) {
-      console.error('JSReport initialization failed:', error);
-    }
-  }
-
-  // Helper method for common Handlebars helpers
-  _getCommonHelpers() {
-    return `
-      function formatCurrency(value) {
-        const num = parseFloat(value) || 0;
-        return num.toLocaleString('en-NG', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
-      }
-      
-      function formatDate(date) {
-        const d = new Date(date || new Date());
-        return d.toLocaleDateString('en-GB', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric'
-        });
-      }
-
-      function formatTime(date) {
-        return new Date(date).toLocaleTimeString('en-GB', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        });
-      }
-      
-      function subtract(a, b) {
-        return (parseFloat(a) || 0) - (parseFloat(b) || 0);
-      }
-      
-      function eq(a, b) {
-        return a === b;
-      }
-      
-      function gt(a, b) {
-          return parseFloat(a) > parseFloat(b);
-      }
-      
-      function sum(array, property) {
-        if (!array || !Array.isArray(array)) return 0;
-        return array.reduce((sum, item) => sum + (parseFloat(item[property]) || 0), 0);
-      }
-      
-      function groupBy(array, property) {
-        if (!array || !Array.isArray(array)) return [];
-        
-        const groups = {};
-        array.forEach(item => {
-          const key = item[property] || 'Unknown';
-          if (!groups[key]) {
-            groups[key] = [];
-          }
-          groups[key].push(item);
-        });
-        
-        return Object.keys(groups).sort().map(key => ({
-          key: key,
-          values: groups[key]
-        }));
-      }
-      
-      function sumByType(earnings, type) {
-        let total = 0;
-        if (Array.isArray(earnings)) {
-          earnings.forEach(item => {
-            if (item.type === type) {
-              total += parseFloat(item.amount) || 0;
-            }
-          });
-        }
-        return total;
-      }
-    `;
+    super(); // Initialize base class
   }
 
   
@@ -123,6 +33,25 @@ class ReconciliationController {
       });
     } catch (error) {
       console.error('Error getting reconciliation summary:', error);
+      
+      // Check if it's a calculation incomplete error
+      if (error.message && error.message.includes('Calculation not completed')) {
+        return res.status(400).json({
+          success: false,
+          error: error.message,
+          errorType: 'CALCULATION_INCOMPLETE'
+        });
+      }
+      
+      // Check if it's a no data error
+      if (error.message && error.message.includes('No payroll data found')) {
+        return res.status(404).json({
+          success: false,
+          error: error.message,
+          errorType: 'NO_DATA'
+        });
+      }
+      
       res.status(500).json({
         success: false,
         error: 'Failed to get reconciliation summary',
@@ -151,6 +80,25 @@ class ReconciliationController {
 
     } catch (error) {
       console.error('Error getting employee reconciliation:', error);
+      
+      // Check if it's a calculation incomplete error
+      if (error.message && error.message.includes('Calculation not completed')) {
+        return res.status(400).json({
+          success: false,
+          error: error.message,
+          errorType: 'CALCULATION_INCOMPLETE'
+        });
+      }
+      
+      // Check if it's a no data error
+      if (error.message && error.message.includes('No payroll data found')) {
+        return res.status(404).json({
+          success: false,
+          error: error.message,
+          errorType: 'NO_DATA'
+        });
+      }
+      
       res.status(500).json({
         success: false,
         error: 'Failed to get employee reconciliation',
@@ -180,6 +128,25 @@ class ReconciliationController {
       });
     } catch (error) {
       console.error('Error generating reconciliation report:', error);
+      
+      // Check if it's a calculation incomplete error
+      if (error.message && error.message.includes('Calculation not completed')) {
+        return res.status(400).json({
+          success: false,
+          error: error.message,
+          errorType: 'CALCULATION_INCOMPLETE'
+        });
+      }
+      
+      // Check if it's a no data error
+      if (error.message && error.message.includes('No payroll data found')) {
+        return res.status(404).json({
+          success: false,
+          error: error.message,
+          errorType: 'NO_DATA'
+        });
+      }
+      
       res.status(500).json({
         success: false,
         error: 'Failed to generate reconciliation report',
@@ -209,6 +176,25 @@ class ReconciliationController {
       });
     } catch (error) {
       console.error('Error getting payment type analysis:', error);
+      
+      // Check if it's a calculation incomplete error
+      if (error.message && error.message.includes('Calculation not completed')) {
+        return res.status(400).json({
+          success: false,
+          error: error.message,
+          errorType: 'CALCULATION_INCOMPLETE'
+        });
+      }
+      
+      // Check if it's a no data error
+      if (error.message && error.message.includes('No payroll data found')) {
+        return res.status(404).json({
+          success: false,
+          error: error.message,
+          errorType: 'NO_DATA'
+        });
+      }
+      
       res.status(500).json({
         success: false,
         error: 'Failed to get payment type analysis',
@@ -258,7 +244,26 @@ class ReconciliationController {
 
     } catch (error) {
       console.error('❌ Export error:', error);
+      
       if (!res.headersSent) {
+        // Check if it's a calculation incomplete error
+        if (error.message && error.message.includes('Calculation not completed')) {
+          return res.status(400).json({
+            success: false,
+            error: error.message,
+            errorType: 'CALCULATION_INCOMPLETE'
+          });
+        }
+        
+        // Check if it's a no data error
+        if (error.message && error.message.includes('No payroll data found')) {
+          return res.status(404).json({
+            success: false,
+            error: error.message,
+            errorType: 'NO_DATA'
+          });
+        }
+        
         res.status(500).json({
           success: false,
           error: error.message
@@ -271,11 +276,16 @@ class ReconciliationController {
    * Helper to generate PDF from report data
    */
   async generateSalaryReconciliationPDF(req, res, result, filters) {
-    if (!this.jsreportReady) {
-      throw new Error("PDF generation service not ready");
-    }
-
     try {
+      if (!result || (!result.details && !result.all_details)) {
+        throw new Error('Control Sheet balanced no variance this month');
+      }
+      
+      // Ensure result has the expected structure
+      if (!result.details && !result.all_details) {
+        throw new Error('Invalid data structure returned from reconciliation service');
+      }
+      
       // Determine which data to use based on showErrorsOnly filter
       const showErrorsOnly = filters.showErrorsOnly !== false; // defaults to true
       const data = showErrorsOnly ? (result.details || []) : (result.all_details || []);
@@ -321,24 +331,9 @@ class ReconciliationController {
         period = `${monthName}, ${filters.year}`;
       }
 
-      const pdfResult = await jsreport.render({
-        template: {
-          content: templateContent,
-          engine: 'handlebars',
-          recipe: 'chrome-pdf',
-          chrome: {
-            displayHeaderFooter: false,
-            printBackground: true,
-            format: 'A4',
-            landscape: true,
-            marginTop: '5mm',
-            marginBottom: '5mm',
-            marginLeft: '5mm',
-            marginRight: '5mm'
-          },
-          helpers: this._getCommonHelpers()
-        },
-        data: {
+      const pdfBuffer = await this.generatePDFWithFallback(
+        templatePath,
+        {
           data: data,
           grandTotals: grandTotals,
           reportDate: new Date(),
@@ -348,8 +343,16 @@ class ReconciliationController {
           className: this.getDatabaseNameFromRequest(req),
           showErrorsOnly: showErrorsOnly,
           ...image
-        }
-      });
+        },
+        {
+          format: 'A4',
+          landscape: true,
+          marginTop: '5mm',
+          marginBottom: '5mm',
+          marginLeft: '5mm',
+          marginRight: '5mm'
+        }        
+      );
 
       // Set response headers with appropriate filename
       const filterSuffix = showErrorsOnly ? 'errors_only' : 'all_employees';
@@ -357,7 +360,7 @@ class ReconciliationController {
       res.setHeader('Content-Disposition', 
         `attachment; filename=salary_reconciliation_${filterSuffix}_${filters.month}_${filters.year}.pdf`
       );
-      res.send(pdfResult.content);
+      res.send(pdfBuffer);
 
       console.log('✅ PDF generated and sent successfully');
 

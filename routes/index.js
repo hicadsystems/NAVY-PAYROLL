@@ -13,9 +13,12 @@ const payrollclassChangeRoutes = require("./administration/payrollclassChange");
 const changeregNoRoutes = require("./administration/changeregNo");
 const companyProfileRoutes = require("./administration/companyProfile");
 const monthendProcessingRoutes = require("./administration/monthendProcessing");
+//one-off/irregular payments
 const oneoffrankRoutes = require("./administration/irregular-oneoff/oneoffrank");
 const reportRequirementSetupRoutes = require("./administration/irregular-oneoff/reportRequirementSetup");
 const individualPaymentRoutes = require("./administration/irregular-oneoff/individualPayment");
+const oneOffCalculationRoutes = require("./administration/irregular-oneoff/oneoff-calculation");
+const oneOffReportsRoutes = require("./administration/irregular-oneoff/oneoff-reports");
 
 //Personnel Profile
 const personnelRoutes = require("./personnel-profile/personnels");
@@ -25,7 +28,7 @@ const paymentDeductionsRoutes = require("./data-entry/paymentDeductions");
 const arrearsCalculationsRoutes = require("./data-entry/arrearsCalculations");
 const cummulativePayrollRoutes = require("./data-entry/cummulativePayroll");
 const inputDocumentationRoutes = require("./data-entry/inputDocumentation");
-const adjustmentUploadRoutes = require('./data-entry/payrollAdjustments')
+const adjustmentUploadRoutes = require("./data-entry/payrollAdjustments");
 
 //File Update
 const inputVariableRoutes = require("./file-update/inputVariable");
@@ -44,6 +47,7 @@ const calculationReportsRoutes = require("./payroll-calculations/calculationRepo
 const backupRoutes = require("./utilities/backup-db");
 const restoreRoutes = require("./utilities/restore-db");
 const ippisRoutes = require("./utilities/ippis-payment");
+const consolidatedPayslipRoutes = require("./utilities/consolidated-payslips");
 
 //refrence tables
 const statesRoutes = require("./refrence-tables/states");
@@ -114,9 +118,12 @@ module.exports = (app) => {
   app.use("/regno", changeregNoRoutes);
   app.use("/company", companyProfileRoutes);
   app.use("/monthend", monthendProcessingRoutes);
+  //one-off/irregular payments
   app.use("/oneoffrank", oneoffrankRoutes);
   app.use("/off", reportRequirementSetupRoutes);
   app.use("/individual", individualPaymentRoutes);
+  app.use("/oneoff", oneOffCalculationRoutes);
+  app.use("/oneoffreports", oneOffReportsRoutes);
 
   //personnel profile
   app.use("/personnel", personnelRoutes);
@@ -126,7 +133,7 @@ module.exports = (app) => {
   app.use("/arrears", arrearsCalculationsRoutes);
   app.use("/cumulative", cummulativePayrollRoutes);
   app.use("/documentation", inputDocumentationRoutes);
-  app.use("/adjustments", adjustmentUploadRoutes)
+  app.use("/adjustments", adjustmentUploadRoutes);
 
   //file update
   app.use("/inputvariable", inputVariableRoutes);
@@ -145,6 +152,7 @@ module.exports = (app) => {
   app.use("/api/backup-db", backupRoutes);
   app.use("/api/restore-db", restoreRoutes);
   app.use("/ippis", ippisRoutes);
+  app.use("/consolidated", consolidatedPayslipRoutes);
 
   //refrence tables
   app.use("/", statesRoutes);

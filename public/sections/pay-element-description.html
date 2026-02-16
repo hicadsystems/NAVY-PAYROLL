@@ -416,7 +416,7 @@
       elementId,
       valueField,
       textField,
-      placeholder
+      placeholder,
     ) {
       try {
         const token = localStorage.getItem("token");
@@ -438,7 +438,7 @@
           dropdown.appendChild(option);
 
           lookupMaps[endpoint] = Object.fromEntries(
-            data.map((item) => [item[valueField], item[textField]])
+            data.map((item) => [item[valueField], item[textField]]),
           );
         });
         return data;
@@ -455,28 +455,28 @@
           "percentage",
           "funct",
           "functdesc",
-          "Select Function Type"
+          "Select Function Type",
         ),
         loadDropdown(
           "ledger",
           "accountLedger",
           "acctnumber",
           "description",
-          "Select Ledger Code"
+          "Select Ledger Code",
         ),
         loadDropdown(
           "elementtype",
           "dependence",
           "PaymentType",
           "elmDesc",
-          "Select Dependance"
+          "Select Dependance",
         ),
         loadDropdown(
           "payfrequency",
           "paymentFrequency",
           "paycode",
           "paydesc",
-          "Select pay Frequency"
+          "Select pay Frequency",
         ),
       ];
       await Promise.all(promises);
@@ -602,9 +602,7 @@
       try {
         const token = localStorage.getItem("token");
 
-        let url = `/pay/elementtypes/check/${field}/${encodeURIComponent(
-          value
-        )}`;
+        let url = `/pay/elementtypes/check/${field}/${encodeURIComponent(value)}`;
         if (excludePaymentType) {
           url += `?exclude=${excludePaymentType}`;
         }
@@ -651,7 +649,7 @@
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify(elementData),
-          }
+          },
         );
 
         if (!response.ok) {
@@ -678,7 +676,7 @@
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
 
         if (!response.ok) {
@@ -702,7 +700,7 @@
         filteredData = data.filter(
           (p) =>
             p.PaymentType.toLowerCase().includes(term) ||
-            p.elmDesc.toLowerCase().includes(term)
+            p.elmDesc.toLowerCase().includes(term),
         );
       } else {
         filteredData = [...data];
@@ -731,36 +729,20 @@
       <tr class="hover:bg-gray-50">
         <td class="border px-2 py-2 text-left">${item.PaymentType}</td>
         <td class="border px-2 py-2 text-left">${item.elmDesc || "-"}</td>
-        <td class="border px-2 py-2 text-left">${resolveName(
-          item.perc,
-          "functiontype"
-        )}</td>
-        <td class="border px-2 py-2 text-left">${resolveName(
-          item.dependence,
-          "elementtype"
-        )} (${item.dependence})</td>
+        <td class="border px-2 py-2 text-left">${resolveName(item.perc, "functiontype")}</td>
+        <td class="border px-2 py-2 text-left">${resolveName(item.dependence, "elementtype")} (${item.dependence})</td>
         <td class="border px-2 py-2 text-left">
-          <span class="px-2 py-1 rounded text-xs ${
-            item.Status === "Active"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }">
+          <span class="px-2 py-1 rounded text-xs ${item.Status === "Active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}">
             ${item.Status || "Active"}
           </span>
         </td>
         <td class="border px-2 py-2 text-center">
-          <button onclick="viewRow('${
-            item.PaymentType
-          }')" class="text-blue-600 hover:text-blue-800 mr-2 px-2 py-1 rounded hover:bg-blue-50">View</button>
-          <button onclick="editRow('${
-            item.PaymentType
-          }')" class="text-green-600 hover:text-green-800 mr-2 px-2 py-1 rounded hover:bg-green-50">Edit</button>
-          <button onclick="deleteRow('${
-            item.PaymentType
-          }')" class="text-red-600 hover:text-red-800 px-2 py-1 rounded hover:bg-red-50">Delete</button>
+          <button onclick="viewRow('${item.PaymentType}')" class="text-blue-600 hover:text-blue-800 mr-2 px-2 py-1 rounded hover:bg-blue-50">View</button>
+          <button onclick="editRow('${item.PaymentType}')" class="text-green-600 hover:text-green-800 mr-2 px-2 py-1 rounded hover:bg-green-50">Edit</button>
+          <button onclick="deleteRow('${item.PaymentType}')" class="text-red-600 hover:text-red-800 px-2 py-1 rounded hover:bg-red-50">Delete</button>
         </td>
       </tr>
-    `
+    `,
         )
         .join("");
     }
@@ -886,12 +868,12 @@
             value = `${resolveName(value, "elementtype")} (${value || "N/A"})`;
           } else if (key === "Ledger") {
             value = `${resolveName(value, "accchart")} (${value || "N/A"})`;
+          } else if (key === "payfreq") {
+            value = `${resolveName(value, "payfrequency")} (${value || "N/A"})`;
           }
 
           html += `<div class="grid grid-cols-3 gap-2 py-2 border-b border-gray-200">
-          <dt class="font-medium text-gray-600"><strong>${
-            fieldLabels[key]
-          }:</strong></dt>
+          <dt class="font-medium text-gray-600"><strong>${fieldLabels[key]}:</strong></dt>
           <dd class="col-span-2 text-gray-900">${value || "N/A"}</dd>
         </div>`;
         }
@@ -925,7 +907,7 @@
     window.deleteRow = async function (paymentType) {
       const item = data.find((d) => d.PaymentType === paymentType);
       const confirmed = await showConfirmModal(
-        "Are you sure you want to delete this record?"
+        "Are you sure you want to delete this record?",
       );
       if (!item) return;
 
@@ -962,7 +944,7 @@
       // Basic validation
       if (missingFields.length > 0) {
         showError(
-          `Please fill in all required fields: ${missingFields.join(", ")}`
+          `Please fill in all required fields: ${missingFields.join(", ")}`,
         );
         return;
       }
@@ -1101,32 +1083,32 @@
       });
     });
 
-  //generate reports functionality
-  function generateReport() {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('en-GB', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    const timeStr = now.toLocaleTimeString('en-GB', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-    
-    const generatedBy = localStorage.getItem('full_name') || 'System User';
-    
-    const printWindow = window.open('', '_blank');
-    
-    const formatCurrency = (amount) => {
-      if (!amount) return '-';
-      return new Intl.NumberFormat('en-NG', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(amount);
-    };
+    //generate reports functionality
+    function generateReport() {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("en-GB", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      const timeStr = now.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+
+      const generatedBy = localStorage.getItem("full_name") || "System User";
+
+      const printWindow = window.open("", "_blank");
+
+      const formatCurrency = (amount) => {
+        if (!amount) return "-";
+        return new Intl.NumberFormat("en-NG", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(amount);
+      };
 
       const printContent = `
       <!DOCTYPE html>
@@ -1324,23 +1306,27 @@
             </tr>
           </thead>
           <tbody>
-            ${data.map(item => `
+            ${data
+              .map(
+                (item) => `
               <tr>
                 <td><strong>${item.PaymentType}</strong></td>
-                <td style="white-space: nowrap;">${item.elmDesc || '-'}</td>
-                <td class="status-${item.Status?.toLowerCase()} text-center">${item.Status || 'Active'}</td>
-                <td>${resolveName(item.perc, 'functiontype')}</td>
+                <td style="white-space: nowrap;">${item.elmDesc || "-"}</td>
+                <td class="status-${item.Status?.toLowerCase()} text-center">${item.Status || "Active"}</td>
+                <td>${resolveName(item.perc, "functiontype")}</td>
                 <td class="text-right">${formatCurrency(item.std)}</td>
                 <td class="text-right">${formatCurrency(item.maxi)}</td>
-                <td style="white-space: nowrap;">${resolveName(item.Ledger, 'accchart')}</td>
-                <td>${resolveName(item.dependence, 'elementtype')}</td>
-                <td class="text-center">${item.payfreq || '-'}</td>
-                <td class="text-center">${item.pmonth || '-'}</td>
+                <td style="white-space: nowrap;">${resolveName(item.Ledger, "accchart")}</td>
+                <td>${resolveName(item.dependence, "elementtype")}</td>
+                <td class="text-center">${resolveName(item.payfreq, "payfrequency") || "-"}</td>
+                <td class="text-center">${item.pmonth || "-"}</td>
                 <td class="text-right">${formatCurrency(item.freetax)}</td>
-                <td class="text-center">${item.bpay || 'NO'}</td>
-                <td class="text-center">${item.yearend || 'NO'}</td>
+                <td class="text-center">${item.bpay || "NO"}</td>
+                <td class="text-center">${item.yearend || "NO"}</td>
               </tr>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </tbody>
         </table>
 
@@ -1364,8 +1350,21 @@
       .getElementById("generateReportBtn")
       .addEventListener("click", generateReport);
 
-    // Initialize the application
-    fetchPayElements();
-    loadAllDropdowns();
+    // Init
+    async function initializeApp() {
+      try {
+        // First load all dropdowns and wait for completion
+        await loadAllDropdowns();
+
+        // Only after dropdowns are loaded, fetch and render data
+        await fetchPayElements();
+      } catch (error) {
+        console.error("Failed to initialize app:", error);
+        showError("Failed to load application data");
+      }
+    }
+
+    // Call the initialization
+    initializeApp();
   })();
 </script>

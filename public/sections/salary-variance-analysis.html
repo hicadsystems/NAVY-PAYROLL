@@ -1,21 +1,33 @@
 <section class="items border rounded-lg m-6 max-w-2xl mr-auto p-6 mx-auto">
-  <h2 class="text-2xl text-center border-b font-bold text-blue-600 mb-6">Salary Variance Analysis</h2>
+  <h2 class="text-2xl text-center border-b font-bold text-blue-600 mb-6">
+    Salary Variance Analysis
+  </h2>
 
   <!-- Step 1: Select Payment Types -->
   <div id="paymentTypeSection" class="space-y-4 mb-6">
     <label class="block font-medium text-gray-900">
-      <i class="fas fa-money-bill-wave text-blue-600 mr-2"></i>Select Payment Type(s)
+      <i class="fas fa-money-bill-wave text-blue-600 mr-2"></i>Select Payment
+      Type(s)
     </label>
-    <select id="paymentTypeSelect" class="w-full bg-transparent border border-slate-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500">
+    <select
+      id="paymentTypeSelect"
+      class="w-full bg-transparent border border-slate-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
+    >
       <option value="">-- Choose Payment Type --</option>
     </select>
 
     <!-- Action Buttons -->
     <div class="flex gap-3">
-      <button id="addPaymentType" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors shadow-md">
+      <button
+        id="addPaymentType"
+        class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors shadow-md"
+      >
         <i class="fas fa-plus mr-2"></i>Add Type
       </button>
-      <button id="generatePaymentTypes" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors shadow-md">
+      <button
+        id="generatePaymentTypes"
+        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors shadow-md"
+      >
         <i class="fas fa-arrow-right mr-2"></i>Continue
       </button>
     </div>
@@ -45,13 +57,19 @@
     </h3>
 
     <div class="border border-blue-400 p-4 rounded-lg">
-      <label class="block text-sm font-medium text-gray-900 mb-2">Period (YYYYMM)</label>
-      <select id="periodSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+      <label class="block text-sm font-medium text-gray-900 mb-2"
+        >Period (YYYYMM)</label
+      >
+      <select
+        id="periodSelect"
+        class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+      >
         <option value="">-- Select Period --</option>
       </select>
       <p class="text-xs text-gray-600 mt-1">
         <i class="fas fa-info-circle mr-1"></i>
-        Current period will compare with last year. Previous periods compare with prior month.
+        Current period will compare with last year. Previous periods compare
+        with prior month.
       </p>
     </div>
 
@@ -62,25 +80,47 @@
       </label>
       <div class="flex gap-4">
         <label class="flex items-center cursor-pointer">
-          <input type="radio" name="exportFormat" value="excel" class="text-blue-600 w-4 h-4" checked>
+          <input
+            type="radio"
+            name="exportFormat"
+            value="excel"
+            class="text-blue-600 w-4 h-4"
+            checked
+          />
           <span class="ml-2">Excel</span>
         </label>
         <label class="flex items-center cursor-pointer">
-          <input type="radio" name="exportFormat" value="pdf" class="text-blue-600 w-4 h-4">
+          <input
+            type="radio"
+            name="exportFormat"
+            value="pdf"
+            class="text-blue-600 w-4 h-4"
+          />
           <span class="ml-2">PDF</span>
         </label>
         <label class="hidden flex items-center cursor-pointer">
-          <input type="radio" name="exportFormat" value="json" class="text-blue-600 w-4 h-4">
+          <input
+            type="radio"
+            name="exportFormat"
+            value="json"
+            class="text-blue-600 w-4 h-4"
+          />
           <span class="ml-2">JSON</span>
         </label>
       </div>
     </div>
 
     <div class="flex justify-end gap-3 pt-2">
-      <button id="cancelReport" class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-6 rounded-lg transition-colors">
+      <button
+        id="cancelReport"
+        class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-6 rounded-lg transition-colors"
+      >
         <i class="fas fa-times mr-2"></i>Cancel
       </button>
-      <button id="proceedReport" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg transition-colors shadow-lg">
+      <button
+        id="proceedReport"
+        class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg transition-colors shadow-lg"
+      >
         <i class="fas fa-chart-line mr-2"></i>Generate Report
       </button>
     </div>
@@ -88,7 +128,10 @@
 </section>
 
 <!-- Loading Modal -->
-<div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+<div
+  id="loadingModal"
+  class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+>
   <div class="bg-white rounded-lg shadow-lg p-8 text-center">
     <div class="mb-4">
       <i class="fas fa-spinner fa-spin text-4xl text-blue-600"></i>
@@ -99,7 +142,10 @@
 </div>
 
 <!-- Message Modal -->
-<div id="messageModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+<div
+  id="messageModal"
+  class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+>
   <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
     <div class="flex items-start mb-4">
       <div id="modalIcon" class="mr-3 text-2xl"></div>
@@ -109,17 +155,23 @@
       </div>
     </div>
     <div class="flex justify-end">
-      <button id="modalCloseBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">OK</button>
+      <button
+        id="modalCloseBtn"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+      >
+        OK
+      </button>
     </div>
   </div>
 </div>
 
 <script>
   const auth = window.authService;
-
   const paymentTypeSelect = document.getElementById("paymentTypeSelect");
   const addPaymentTypeBtn = document.getElementById("addPaymentType");
-  const generatePaymentTypesBtn = document.getElementById("generatePaymentTypes");
+  const generatePaymentTypesBtn = document.getElementById(
+    "generatePaymentTypes",
+  );
   const addedPaymentsWrapper = document.getElementById("addedPaymentsWrapper");
   const addedPaymentsTable = document.getElementById("addedPaymentsTable");
   const periodForm = document.getElementById("periodForm");
@@ -140,55 +192,62 @@
   // Load filter options on page load
   async function loadFilterOptions() {
     try {
-      const token = localStorage.getItem('token');
-      const response = await auth.fetchWithAuth('/salaryvariance/filter-options', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const token = localStorage.getItem("token");
+      const response = await auth.fetchWithAuth(
+        "/salaryvariance/filter-options",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
       const result = await response.json();
-      
-      console.log('Full API Response:', result);
-      
+
+      console.log("Full API Response:", result);
+
       if (result.success) {
         filterOptions = result.data;
-        
+
         // Populate pay types (if they exist)
         if (filterOptions.payTypes && filterOptions.payTypes.length > 0) {
-          filterOptions.payTypes.forEach(type => {
-            const option = document.createElement('option');
+          filterOptions.payTypes.forEach((type) => {
+            const option = document.createElement("option");
             option.value = type.code;
             option.textContent = `${type.code} - ${type.description}`;
             paymentTypeSelect.appendChild(option);
           });
         } else {
-          console.warn('No payTypes in response');
+          console.warn("No payTypes in response");
         }
-        
+
         // Populate periods
         if (filterOptions.periods && filterOptions.periods.length > 0) {
-          filterOptions.periods.forEach(period => {
-            const option = document.createElement('option');
+          filterOptions.periods.forEach((period) => {
+            const option = document.createElement("option");
             option.value = period.value;
             option.textContent = period.label;
             periodSelect.appendChild(option);
 
-            console.log('Added period option:', period.value, period.label);
+            console.log("Added period option:", period.value, period.label);
           });
-          
+
           // Set default to current period
           if (filterOptions.currentPeriod) {
-            const currentPeriod = `${filterOptions.currentPeriod.year}${String(filterOptions.currentPeriod.month).padStart(2, '0')}`;
+            const currentPeriod = `${filterOptions.currentPeriod.year}${String(filterOptions.currentPeriod.month).padStart(2, "0")}`;
             periodSelect.value = currentPeriod;
-            console.log('Set default period to:', currentPeriod);
+            console.log("Set default period to:", currentPeriod);
           }
         } else {
-          console.error('No periods found in response!');
+          console.error("No periods found in response!");
         }
       }
     } catch (error) {
-      console.error('Error loading filter options:', error);
-      showModal('Error', 'Failed to load filter options. Please refresh the page.', true);
+      console.error("Error loading filter options:", error);
+      showModal(
+        "Error",
+        "Failed to load filter options. Please refresh the page.",
+        true,
+      );
     }
   }
 
@@ -197,7 +256,20 @@
     if (!period || period.length !== 6) return period;
     const year = period.substring(0, 4);
     const month = period.substring(4, 6);
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     const monthName = months[parseInt(month) - 1] || month;
     return `${monthName} ${year}`;
   }
@@ -206,7 +278,7 @@
   function showModal(title, message, isError = false) {
     modalTitle.textContent = title;
     modalMessage.textContent = message;
-    modalIcon.innerHTML = isError 
+    modalIcon.innerHTML = isError
       ? '<i class="fas fa-exclamation-circle text-red-500"></i>'
       : '<i class="fas fa-check-circle text-green-500"></i>';
     messageModal.classList.remove("hidden");
@@ -217,19 +289,29 @@
   // Add Payment Type
   addPaymentTypeBtn.onclick = () => {
     const paymentType = paymentTypeSelect.value;
-    const paymentText = paymentTypeSelect.options[paymentTypeSelect.selectedIndex].text;
-    
-    if (!paymentType) return showModal("Validation Error", "Please select a payment type to add!", true);
-    if (addedPayments.some(p => p.code === paymentType)) {
-      return showModal("Duplicate Entry", "This payment type has already been added!", true);
+    const paymentText =
+      paymentTypeSelect.options[paymentTypeSelect.selectedIndex].text;
+
+    if (!paymentType)
+      return showModal(
+        "Validation Error",
+        "Please select a payment type to add!",
+        true,
+      );
+    if (addedPayments.some((p) => p.code === paymentType)) {
+      return showModal(
+        "Duplicate Entry",
+        "This payment type has already been added!",
+        true,
+      );
     }
 
     addedPayments.push({ code: paymentType, description: paymentText });
     showModal("Success", `${paymentType} added successfully!`);
     paymentTypeSelect.value = "";
-    
+
     // Update table display if visible
-    if (!addedPaymentsWrapper.classList.contains('hidden')) {
+    if (!addedPaymentsWrapper.classList.contains("hidden")) {
       updatePaymentTypesTable();
     }
   };
@@ -237,7 +319,7 @@
   // Update payment types table
   function updatePaymentTypesTable() {
     addedPaymentsTable.innerHTML = "";
-    addedPayments.forEach(pt => {
+    addedPayments.forEach((pt) => {
       const row = document.createElement("tr");
       row.className = "hover:bg-gray-50";
       row.innerHTML = `
@@ -252,7 +334,7 @@
 
       // Delete functionality
       row.querySelector(".deleteBtn").onclick = () => {
-        addedPayments = addedPayments.filter(p => p.code !== pt.code);
+        addedPayments = addedPayments.filter((p) => p.code !== pt.code);
         row.remove();
         if (addedPayments.length === 0) {
           addedPaymentsWrapper.classList.add("hidden");
@@ -265,7 +347,11 @@
   // Generate table of added payment types
   generatePaymentTypesBtn.onclick = () => {
     if (addedPayments.length === 0) {
-      return showModal("Validation Error", "Please add at least one payment type before continuing!", true);
+      return showModal(
+        "Validation Error",
+        "Please add at least one payment type before continuing!",
+        true,
+      );
     }
 
     addedPaymentsWrapper.classList.remove("hidden");
@@ -276,64 +362,80 @@
   // Proceed to generate report
   proceedReportBtn.onclick = async () => {
     const period = periodSelect.value;
-    const exportFormat = document.querySelector('input[name="exportFormat"]:checked')?.value || 'excel';
+    const exportFormat =
+      document.querySelector('input[name="exportFormat"]:checked')?.value ||
+      "excel";
 
     if (!period) {
       return showModal("Validation Error", "Please select a period!", true);
     }
 
     // Build query parameters
-    const payTypesParam = addedPayments.map(p => p.code).join(',');
+    const payTypesParam = addedPayments.map((p) => p.code).join(",");
     const queryParams = `period=${period}&payTypes=${payTypesParam}&format=${exportFormat}`;
 
     // Show loading
     loadingModal.classList.remove("hidden");
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await auth.fetchWithAuth(`/salaryvariance?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
+      const token = localStorage.getItem("token");
+      const response = await auth.fetchWithAuth(
+        `/salaryvariance?${queryParams}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to generate report');
+        throw new Error(errorData.error || "Failed to generate report");
       }
 
-      if (exportFormat === 'json') {
+      if (exportFormat === "json") {
         const result = await response.json();
         loadingModal.classList.add("hidden");
-        
+
         if (result.success) {
           if (result.data.length === 0) {
-            showModal("No Variance Found", result.message || "No salary variances detected for the selected criteria.");
+            showModal(
+              "No Variance Found",
+              result.message ||
+                "No salary variances detected for the selected criteria.",
+            );
           } else {
-            showModal("Success", `Report generated! Found ${result.data.length} employee(s) with variance.`);
-            console.log('Variance Report Data:', result);
+            showModal(
+              "Success",
+              `Report generated! Found ${result.data.length} employee(s) with variance.`,
+            );
+            console.log("Variance Report Data:", result);
           }
         } else {
-          showModal("Report Error", result.message || "Failed to generate report", true);
+          showModal(
+            "Report Error",
+            result.message || "Failed to generate report",
+            true,
+          );
         }
       } else {
         // Handle file download for Excel/PDF
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
-        a.download = `salary_variance_${period}.${exportFormat === 'excel' ? 'xlsx' : 'pdf'}`;
+        a.download = `salary_variance_${period}.${exportFormat === "excel" ? "xlsx" : "pdf"}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        
+
         loadingModal.classList.add("hidden");
         showModal("Success", `Salary Variance Report downloaded successfully!`);
       }
     } catch (error) {
       loadingModal.classList.add("hidden");
-      console.error('Error generating report:', error);
+      console.error("Error generating report:", error);
       showModal("Error", `Failed to generate report: ${error.message}`, true);
     }
   };

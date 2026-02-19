@@ -229,7 +229,7 @@
   const printBtn = document.getElementById("printBtn");
   const clearPrintBtn = document.getElementById("clearPrintBtn");
   const earningsLoadingIndicator = document.getElementById(
-    "earningsLoadingIndicator"
+    "earningsLoadingIndicator",
   );
 
   const printConfirmModal = document.getElementById("printConfirmModal");
@@ -239,7 +239,7 @@
   const printSuccessModal = document.getElementById("printSuccessModal");
   const printSuccessOkBtn = document.getElementById("printSuccessOkBtn");
   const earningsSuccessMessage = document.getElementById(
-    "earningsSuccessMessage"
+    "earningsSuccessMessage",
   );
 
   const printErrorModal = document.getElementById("printErrorModal");
@@ -254,7 +254,7 @@
         `/salarysummary/filter-options`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (response.ok) {
@@ -276,7 +276,7 @@
     elementId,
     valueField,
     textField,
-    placeholder
+    placeholder,
   ) {
     try {
       const token = localStorage.getItem("token");
@@ -291,7 +291,7 @@
 
       // BUILD THE LOOKUP MAP FIRST
       lookupMaps[endpoint] = Object.fromEntries(
-        data.map((item) => [item[valueField], item[textField]])
+        data.map((item) => [item[valueField], item[textField]]),
       );
 
       //console.log(`Loaded ${endpoint}:`, lookupMaps[endpoint]); // Debug log
@@ -322,7 +322,7 @@
         "paymentType",
         "PaymentType",
         "elmDesc",
-        "Select Payment Type"
+        "Select Payment Type",
       );
 
       //console.log('All dropdowns loaded. Final lookupMaps:', lookupMaps);
@@ -374,7 +374,7 @@
     printBtn.disabled = true;
 
     const format = document.querySelector(
-      'input[name="earningsFormat"]:checked'
+      'input[name="earningsFormat"]:checked',
     ).value;
     const month = processingMonth.value;
     const year = processingYear.value;
@@ -402,12 +402,12 @@
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to generate report');
+        throw new Error(errorData.error || "Failed to generate report");
       }
 
       // Download file

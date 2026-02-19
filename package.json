@@ -24,6 +24,7 @@
     "pdf-merger-js": "^5.1.2",
     "pdfkit": "^0.17.2",
     "puppeteer": "^24.26.1",
+    "redis": "^5.10.0",
     "puppeteer-core": "^24.36.0",
     "serve-index": "^1.9.1",
     "socket.io": "^4.8.3",

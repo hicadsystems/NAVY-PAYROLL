@@ -1,37 +1,70 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta charset="utf-8" />
-  <title>NAVY Payroll</title>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="utf-8" />
+    <title>NAVY Payroll</title>
 
-  <!-- CRITICAL: Prevent ALL flickering -->
-  <style>
-    /* Hide everything until fully initialized */
-    html {
-      visibility: hidden;
-    }
-    
-    html.ready {
-      visibility: visible;
-    }
-    
-    /* Smooth reveal after init */
-    body {
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-    
-    body.initialized {
-      opacity: 1;
-    }
-  </style>
+    <!-- CRITICAL: Prevent ALL flickering -->
+    <style>
+      /* Hide everything until fully initialized */
+      html {
+        visibility: hidden;
+      }
 
-  <!-- Favicon -->
-  <link rel="apple-touch-icon" sizes="180x180" href="photos/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="photos/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="photos/favicon-16x16.png">
-  <link rel="manifest" href="photos/site.webmanifest">
+      html.ready {
+        visibility: visible;
+      }
+
+      /* Smooth reveal after init */
+      body {
+        opacity: 0;
+        transition: opacity 0.15s ease;
+      }
+
+      body.initialized {
+        opacity: 1;
+      }
+    </style>
+
+    <!-- Favicon -->
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="photos/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="photos/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="photos/favicon-16x16.png"
+    />
+    <link rel="manifest" href="photos/site.webmanifest" />
+
+    <!-- Tailwind CDN + config -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <!-- <script src="script/choices.js"></script> -->
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"
+    />
+    <link rel="stylesheet" href="styles/dashboard.css" />
 
     <!-- Tailwind CDN + config -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -789,18 +822,61 @@
                   />
                 </a>
 
-              <!-- submenu: positioned absolutely inside the li -->
-              <div class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
-              style="position:absolute; left:100%; top:0; margin-left:3px; white-space:nowrap;">
-                <ul class="space-y-2 m-0 p-0 list-none">
-                  <li><a href="#" data-section="emolument-form-processing" class="block px-3 py-1 rounded hover:bg-amber-50">Emolument Form Processing</a></li>
-                  <li><a href="#" data-section="ippis-payments" class="block px-3 py-1 rounded hover:bg-amber-50">Pull IPPIS Payments</a></li>
-                  <li><a href="#" data-section="database-backup" class="block px-3 py-1 rounded hover:bg-amber-50">Payroll Class Backup</a></li>
-                  <li><a href="#" data-section="database-restore" class="block px-3 py-1 rounded hover:bg-amber-50">Payroll Class Restore</a></li>
-                  <li><a href="#" data-section="consolidated-payslip" class="block px-3 py-1 rounded hover:bg-amber-50">Consolidated Payslips</a></li>
-                </ul>
-              </div>
-            </li>
+                <!-- submenu: positioned absolutely inside the li -->
+                <div
+                  class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
+                  style="
+                    position: absolute;
+                    left: 100%;
+                    top: 0;
+                    margin-left: 3px;
+                    white-space: nowrap;
+                  "
+                >
+                  <ul class="space-y-2 m-0 p-0 list-none">
+                    <li>
+                      <a
+                        href="#"
+                        data-section="emolument-form-processing"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Emolument Form Processing</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="ippis-payments"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Pull IPPIS Payments</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="database-backup"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Payroll Class Backup</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="database-restore"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Payroll Class Restore</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="consolidated-payslip"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Consolidated Payslips</a
+                      >
+                    </li>
+                  </ul>
+                </div>
+              </li>
 
               <li class="relative" data-menu="reports">
                 <a
@@ -821,33 +897,146 @@
                   />
                 </a>
 
-              <!-- submenu: positioned absolutely inside the li -->
-              <div class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
-              style="position:absolute; left:100%; top:0; margin-left:3px; white-space:nowrap;">
-                <ul class="space-y-2 m-0 p-0 list-none">
-                  <li><a href="#" data-section="pay-slips" class="block px-3 py-1 rounded hover:bg-amber-50">Pay Slips</a></li>
-                  <li><a href="#" data-section="payments-by-bank" class="block px-3 py-1 rounded hover:bg-amber-50">Payments by Bank(Branch)</a></li>
-                  <li><a href="#" data-section="analysis-of-earnings" class="block px-3 py-1 rounded hover:bg-amber-50">Analysis of Earnings/Deductions</a></li>
-                  <li><a href="#" data-section="loan-analysis" class="block px-3 py-1 rounded hover:bg-amber-50">Loan Analysis</a></li>
-                  <li><a href="#" data-section="analysis-of-payments" class="block px-3 py-1 rounded hover:bg-amber-50 whitespace-normal break-words w-56">Analisis of Payments/Deductions by Bank</a></li>
-                  <li><a href="#" data-section="tax-payments-by-state" class="block px-3 py-1 rounded hover:bg-amber-50">Tax Payments By State</a></li>
-                  <!--<li><a href="#" data-section="overtime-analysis-by-dept" class="block px-3 py-1 rounded hover:bg-amber-50">Overtime Analysis by Dept</a></li>-->
-                  <li><a href="#" data-section="payroll-register" class="block px-3 py-1 rounded hover:bg-amber-50">Payroll Register</a></li>
-                  <!--<li><a href="#" data-section="listing-of-payroll-files" class="block px-3 py-1 rounded hover:bg-amber-50">Listing of Payroll Files</a></li>
+                <!-- submenu: positioned absolutely inside the li -->
+                <div
+                  class="submenu hidden opacity-0 invisible transition-all duration-150 rounded-lg p-4 shadow-lg border bg-white border-amber-100 z-50 text-sm cursor-pointer"
+                  style="
+                    position: absolute;
+                    left: 100%;
+                    top: 0;
+                    margin-left: 3px;
+                    white-space: nowrap;
+                  "
+                >
+                  <ul class="space-y-2 m-0 p-0 list-none">
+                    <li>
+                      <a
+                        href="#"
+                        data-section="pay-slips"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Pay Slips</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="payments-by-bank"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Payments by Bank(Branch)</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="analysis-of-earnings"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Analysis of Earnings/Deductions</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="loan-analysis"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Loan Analysis</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="analysis-of-payments"
+                        class="block px-3 py-1 rounded hover:bg-amber-50 whitespace-normal break-words w-56"
+                        >Analisis of Payments/Deductions by Bank</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="tax-payments-by-state"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Tax Payments By State</a
+                      >
+                    </li>
+                    <!--<li><a href="#" data-section="overtime-analysis-by-dept" class="block px-3 py-1 rounded hover:bg-amber-50">Overtime Analysis by Dept</a></li>-->
+                    <li>
+                      <a
+                        href="#"
+                        data-section="payroll-register"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Payroll Register</a
+                      >
+                    </li>
+                    <!--<li><a href="#" data-section="listing-of-payroll-files" class="block px-3 py-1 rounded hover:bg-amber-50">Listing of Payroll Files</a></li>
                   <li><a href="#" data-section="payment-staff-list" class="block px-3 py-1 rounded hover:bg-amber-50">Payment Staff List</a></li>-->
-                  <li><a href="#" data-section="national-housing-funds" class="block px-3 py-1 rounded hover:bg-amber-50">National Housing Funds</a></li>
-                  <li><a href="#" data-section="nsitf" class="block px-3 py-1 rounded hover:bg-amber-50">Pension Fund Scheme</a></li>
-                  <li><a href="#" data-section="salary-summary" class="block px-3 py-1 rounded hover:bg-amber-50">Salary Summary</a></li>
-                  <!--<li><a href="#" data-section="analysis-of-normal-hours" class="block px-3 py-1 rounded hover:bg-amber-50">Analysis of Normal Hours by Dept.</a></li>-->                  
-                  <!--<li><a href="#" data-section="payment-statistics" class="block px-3 py-1 rounded hover:bg-amber-50">Payment Statistics</a></li>-->
-                  <li><a href="#" data-section="control-sheet" class="block px-3 py-1 rounded hover:bg-amber-50">Control Sheet/Journal</a></li>
-                  <li><a href="#" data-section="salary-reconciliation" class="block px-3 py-1 rounded hover:bg-amber-50">Salary Reconcilation</a></li>
-                  <li><a href="#" data-section="salary-history" class="block px-3 py-1 rounded hover:bg-amber-50">Salary History</a></li>
-                  <li><a href="#" data-section="personnel-reports" class="block px-3 py-1 rounded hover:bg-amber-50">Current Personnel Reports</a></li>
-                  <li><a href="#" data-section="listof-exited-members" class="block px-3 py-1 rounded hover:bg-amber-50">Exited Members</a></li>
-                </ul>
-              </div>
-            </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="national-housing-funds"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >National Housing Funds</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="nsitf"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Pension Fund Scheme</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="salary-summary"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Salary Summary</a
+                      >
+                    </li>
+                    <!--<li><a href="#" data-section="analysis-of-normal-hours" class="block px-3 py-1 rounded hover:bg-amber-50">Analysis of Normal Hours by Dept.</a></li>-->
+                    <!--<li><a href="#" data-section="payment-statistics" class="block px-3 py-1 rounded hover:bg-amber-50">Payment Statistics</a></li>-->
+                    <li>
+                      <a
+                        href="#"
+                        data-section="control-sheet"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Control Sheet/Journal</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="salary-reconciliation"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Salary Reconcilation</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="salary-history"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Salary History</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="personnel-reports"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Current Personnel Reports</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        data-section="listof-exited-members"
+                        class="block px-3 py-1 rounded hover:bg-amber-50"
+                        >Exited Members</a
+                      >
+                    </li>
+                  </ul>
+                </div>
+              </li>
 
               <li class="relative" data-menu="audit-trail">
                 <a
@@ -961,17 +1150,31 @@
             ></p>
           </div>
 
-        <!-- Stats container -->
-        <section class="mt-4 flex justify-center">
-          <div class="frame-2 relative w-full sm:w-[640px] sm:h-[209px] h-auto bg-white/15 rounded-xl border border-amber-100 shadow-lg p-3">
-            <div class="grid grid-cols-1 sm:grid-cols-3 h-full rounded-lg overflow-hidden">
-              <div class="p-6 flex flex-col items-center gap-4">
-                <div class="flex items-center">
-                  <h3 class="text-navy font-bold">Current Active Personnel</h3>
-                    <i class="fa-solid fa-users font-bold text-green-600" style="font-size: 24px"></i>
+          <!-- Stats container -->
+          <section class="mt-4 flex justify-center">
+            <div
+              class="frame-2 relative w-full sm:w-[640px] sm:h-[209px] h-auto bg-white/15 rounded-xl border border-amber-100 shadow-lg p-3"
+            >
+              <div
+                class="grid grid-cols-1 sm:grid-cols-3 h-full rounded-lg overflow-hidden"
+              >
+                <div class="p-6 flex flex-col items-center gap-4">
+                  <div class="flex items-center">
+                    <h3 class="text-navy font-bold">
+                      Current Active Personnel
+                    </h3>
+                    <i
+                      class="fa-solid fa-users font-bold text-green-600"
+                      style="font-size: 24px"
+                    ></i>
+                  </div>
+                  <div
+                    id="active-personnel"
+                    class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold text-warning"
+                  >
+                    Loading...
+                  </div>
                 </div>
-                <div id="active-personnel" class="rounded-md bg-amber-50 px-4 mt-6 py-2 text-2xl font-bold text-warning">Loading...</div>
-              </div>
 
                 <div class="p-6 flex flex-col items-center gap-4">
                   <div class="flex items-center">

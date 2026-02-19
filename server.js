@@ -108,7 +108,7 @@ async function startServer() {
       break;
 
     case "localhost":
-      socket.listen(PORT, () => {
+      app.listen(PORT, () => {
         console.log(`🚀 Server running on http://localhost:${PORT}`);
       });
       break;
@@ -121,13 +121,15 @@ async function startServer() {
         console.log(`🔒 HTTPS server running on https://192.168.0.194:${PORT}`);
       });
 
-      server.on('error', (err) => {
-        if (err.code === 'EADDRNOTAVAIL' || err.code === 'EADDRINUSE') {
-          console.warn('⚠️  Network interface unavailable, falling back to localhost');
-          
-          const fallbackServer = app
-          
-          fallbackServer.listen(PORT, 'localhost', () => {
+      server.on("error", (err) => {
+        if (err.code === "EADDRNOTAVAIL" || err.code === "EADDRINUSE") {
+          console.warn(
+            "⚠️  Network interface unavailable, falling back to localhost",
+          );
+
+          const fallbackServer = app;
+
+          fallbackServer.listen(PORT, "localhost", () => {
             console.log(`🔒 HTTPS server running on http://localhost:${PORT}`);
           });
 

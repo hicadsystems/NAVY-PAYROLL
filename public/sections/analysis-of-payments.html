@@ -259,16 +259,16 @@
 
   const bankAnalysisAllBanks = document.getElementById("bankAnalysisAllBanks");
   const bankAnalysisSpecificBank = document.getElementById(
-    "bankAnalysisSpecificBank"
+    "bankAnalysisSpecificBank",
   );
   const bankAnalysisBankName = document.getElementById("bankAnalysisBankName");
 
   const bankAnalysisAllTypes = document.getElementById("bankAnalysisAllTypes");
   const bankAnalysisSpecificType = document.getElementById(
-    "bankAnalysisSpecificType"
+    "bankAnalysisSpecificType",
   );
   const bankAnalysisPaymentType = document.getElementById(
-    "bankAnalysisPaymentType"
+    "bankAnalysisPaymentType",
   );
 
   const bankAnalysisMonth = document.getElementById("bankAnalysisMonth");
@@ -276,37 +276,37 @@
   const bankAnalysisPrintBtn = document.getElementById("bankAnalysisPrintBtn");
   const bankAnalysisClearBtn = document.getElementById("bankAnalysisClearBtn");
   const bankAnalysisLoadingIndicator = document.getElementById(
-    "bankAnalysisLoadingIndicator"
+    "bankAnalysisLoadingIndicator",
   );
 
   const bankAnalysisConfirmModal = document.getElementById(
-    "bankAnalysisConfirmModal"
+    "bankAnalysisConfirmModal",
   );
   const bankAnalysisCancelBtn = document.getElementById(
-    "bankAnalysisCancelBtn"
+    "bankAnalysisCancelBtn",
   );
   const bankAnalysisContinueBtn = document.getElementById(
-    "bankAnalysisContinueBtn"
+    "bankAnalysisContinueBtn",
   );
 
   const bankAnalysisSuccessModal = document.getElementById(
-    "bankAnalysisSuccessModal"
+    "bankAnalysisSuccessModal",
   );
   const bankAnalysisSuccessOkBtn = document.getElementById(
-    "bankAnalysisSuccessOkBtn"
+    "bankAnalysisSuccessOkBtn",
   );
   const bankAnalysisSuccessMessage = document.getElementById(
-    "bankAnalysisSuccessMessage"
+    "bankAnalysisSuccessMessage",
   );
 
   const bankAnalysisErrorModal = document.getElementById(
-    "bankAnalysisErrorModal"
+    "bankAnalysisErrorModal",
   );
   const bankAnalysisErrorOkBtn = document.getElementById(
-    "bankAnalysisErrorOkBtn"
+    "bankAnalysisErrorOkBtn",
   );
   const bankAnalysisErrorMessage = document.getElementById(
-    "bankAnalysisErrorMessage"
+    "bankAnalysisErrorMessage",
   );
 
   // Set current year
@@ -317,7 +317,7 @@
         `/salarysummary/filter-options`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (response.ok) {
@@ -339,7 +339,7 @@
     elementId,
     valueField,
     textField,
-    placeholder
+    placeholder,
   ) {
     try {
       const token = localStorage.getItem("token");
@@ -354,7 +354,7 @@
 
       // BUILD THE LOOKUP MAP FIRST
       bankLookupMaps[endpoint] = Object.fromEntries(
-        data.map((item) => [item[valueField], item[textField]])
+        data.map((item) => [item[valueField], item[textField]]),
       );
 
       // THEN POPULATE THE DROPDOWN IF IT EXISTS
@@ -383,14 +383,14 @@
         "bankAnalysisPaymentType",
         "PaymentType",
         "elmDesc",
-        "Select Payment Type"
+        "Select Payment Type",
       );
       await loadBankDropdown(
         "bankcode",
         "bankAnalysisBankName",
         "bankcode",
         "bankname",
-        "Select Bank"
+        "Select Bank",
       );
     } catch (error) {
       console.error("Error loading dropdowns:", error);
@@ -448,12 +448,12 @@
     bankAnalysisPrintBtn.disabled = true;
 
     const format = document.querySelector(
-      'input[name="bankAnalysisFormat"]:checked'
+      'input[name="bankAnalysisFormat"]:checked',
     ).value;
     const month = bankAnalysisMonth.value;
     const year = bankAnalysisYear.value;
     const summary = document.getElementById(
-      "bankAnalysisSummaryReport"
+      "bankAnalysisSummaryReport",
     ).checked;
 
     try {
@@ -482,14 +482,14 @@
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to generate report');
+        throw new Error(errorData.error || "Failed to generate report");
       }
-      
+
       // Download file
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);

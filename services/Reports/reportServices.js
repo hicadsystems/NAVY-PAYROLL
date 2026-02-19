@@ -30,14 +30,7 @@ class ReportService {
         databasesToQuery = [{ name: specificClass, db: targetDb }];
       } else {
         // Database to class name mapping
-        const dbToClassMap = {
-          [process.env.DB_OFFICERS]: 'OFFICERS',
-          [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
-          [process.env.DB_RATINGS]: 'RATE A',
-          [process.env.DB_RATINGS_A]: 'RATE B',
-          [process.env.DB_RATINGS_B]: 'RATE C',
-          [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
-        };
+        const dbToClassMap = await this.getDbToClassMap();
 
         // Get all available databases including the current one
         const dbConfig = require('../../config/db-config').getConfigSync();
@@ -515,6 +508,19 @@ class ReportService {
     `;
     const [rows] = await pool.query(query);
     return rows;
+  }
+
+  async getDbToClassMap() {
+    const masterDb = pool.getMasterDb();
+    pool.useDatabase(masterDb);
+    const [dbClasses] = await pool.query('SELECT db_name, classname FROM py_payrollclass');
+    
+    const dbToClassMap = {};
+    dbClasses.forEach(row => {
+      dbToClassMap[row.db_name] = row.classname;
+    });
+    
+    return dbToClassMap;
   }
 }
 

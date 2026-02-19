@@ -23,28 +23,22 @@ router.get('/payroll-classes', verifyToken, async (req, res) => {
     const currentDb = pool.getCurrentDatabase();
     const masterDb = pool.getMasterDb();
     const isMasterDb = currentDb === masterDb;
-    
-    // Database to display name mapping
-async getDatabaseNameFromRequest(req) {
-  const currentDb = req.current_class;
-  if (!currentDb) return 'OFFICERS';
 
-  const [classInfo] = await pool.query(
-    'SELECT classname FROM py_payrollclass WHERE classcode = ?',
-    [currentDb]
-  );
-
-  return classInfo.length > 0 ? classInfo[0].classname : currentDb;
-};
+    // Fetch class names from database instead of hardcoding
+    pool.useDatabase(masterDb);
+    const [dbClasses] = await pool.query('SELECT db_name, classname FROM py_payrollclass');
     
-    // Get all available databases
+    const dbToClassMap = {};
+    dbClasses.forEach(row => {
+      dbToClassMap[row.db_name] = row.classname;
+    });
+
     const availableDatabases = pool.getAvailableDatabases();
-    
-    // Map to payroll classes with friendly names
+
     const classes = availableDatabases.map(dbName => {
       const className = pool.getPayrollClassFromDatabase(dbName);
       const isCurrent = dbName === currentDb;
-      
+
       return {
         name: className,
         database: dbName,
@@ -52,23 +46,20 @@ async getDatabaseNameFromRequest(req) {
         isCurrent: isCurrent
       };
     });
-    
+
     res.json({
       success: true,
       data: {
-        isMasterDb: isMasterDb,
+        isMasterDb,
         currentClass: pool.getPayrollClassFromDatabase(currentDb),
         currentDatabase: currentDb,
-        classes: classes
+        classes
       }
     });
-    
+
   } catch (error) {
     console.error('Error fetching payroll classes:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

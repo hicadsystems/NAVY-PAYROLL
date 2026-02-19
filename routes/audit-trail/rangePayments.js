@@ -25,14 +25,17 @@ router.get('/payroll-classes', verifyToken, async (req, res) => {
     const isMasterDb = currentDb === masterDb;
     
     // Database to display name mapping
-    const dbToClassMap = {
-      [process.env.DB_OFFICERS]: 'OFFICERS',
-      [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
-      [process.env.DB_RATINGS]: 'RATE A',
-      [process.env.DB_RATINGS_A]: 'RATE B',
-      [process.env.DB_RATINGS_B]: 'RATE C',
-      [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
-    };
+async getDatabaseNameFromRequest(req) {
+  const currentDb = req.current_class;
+  if (!currentDb) return 'OFFICERS';
+
+  const [classInfo] = await pool.query(
+    'SELECT classname FROM py_payrollclass WHERE classcode = ?',
+    [currentDb]
+  );
+
+  return classInfo.length > 0 ? classInfo[0].classname : currentDb;
+};
     
     // Get all available databases
     const availableDatabases = pool.getAvailableDatabases();

@@ -1,9 +1,7 @@
 <!-- sections/notifications.html -->
 <div class="p-6">
   <div class="flex items-center justify-between mb-6">
-    <h3 class="text-2xl font-bold text-navy">
-      View and Manage Your Notifications
-    </h3>
+    <h3 class="text-2xl font-bold text-navy">View and Manage Your Notifications</h3>
     <div class="flex gap-3 ju">
       <!--<button 
         onclick="window.syncNotifications()" 
@@ -11,10 +9,9 @@
         <i class="fas fa-sync-alt"></i>
         Sync
       </button>-->
-      <button
-        onclick="window.clearAllNotifications()"
-        class="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-      >
+      <button 
+        onclick="window.clearAllNotifications()" 
+        class="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
         <i class="fas fa-trash-alt"></i>
         Clear All
       </button>
@@ -38,37 +35,34 @@
 </div>
 
 <script>
-  const auth = window.authService; // Load all notifications
-  window.loadAllNotifications = function () {
-    if (!window.notificationSystem) {
-      console.error("Notification system not initialized");
-      return;
-    }
+  const auth = window.authService;
+// Load all notifications
+window.loadAllNotifications = function() {
+  if (!window.notificationSystem) {
+    console.error('Notification system not initialized');
+    return;
+  }
 
-    const container = document.getElementById("allNotificationsList");
-    const emptyState = document.getElementById("emptyState");
-    const notifications = window.notificationSystem.notifications;
+  const container = document.getElementById('allNotificationsList');
+  const emptyState = document.getElementById('emptyState');
+  const notifications = window.notificationSystem.notifications;
 
-    if (notifications.length === 0) {
-      container.classList.add("hidden");
-      emptyState.classList.remove("hidden");
-      return;
-    }
+  if (notifications.length === 0) {
+    container.classList.add('hidden');
+    emptyState.classList.remove('hidden');
+    return;
+  }
 
-    container.classList.remove("hidden");
-    emptyState.classList.add("hidden");
+  container.classList.remove('hidden');
+  emptyState.classList.add('hidden');
 
-    const html = notifications
-      .map((notif, index) => {
-        const icon = window.getNotificationIcon(notif.type);
-        const timeAgo = window.getTimeAgo(notif.timestamp);
-        const bgColor = window.getNotificationBg(notif.type);
-        const countBadge =
-          notif.count > 1
-            ? `<span class="inline-block ml-2 px-2 py-1 text-xs font-bold rounded-full bg-blue-500 text-white">${notif.count}x</span>`
-            : "";
+  const html = notifications.map((notif, index) => {
+    const icon = window.getNotificationIcon(notif.type);
+    const timeAgo = window.getTimeAgo(notif.timestamp);
+    const bgColor = window.getNotificationBg(notif.type);
+    const countBadge = notif.count > 1 ? `<span class="inline-block ml-2 px-2 py-1 text-xs font-bold rounded-full bg-blue-500 text-white">${notif.count}x</span>` : '';
 
-        return `
+    return `
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow ${bgColor}"
            style="animation: fadeInUp 0.3s ease-out ${index * 0.05}s both">
         <div class="flex items-start gap-4">
@@ -81,17 +75,7 @@
               ${countBadge}
             </p>
             <p class="text-xs text-gray-500 mt-1">${timeAgo}</p>
-            <!--${
-              notif.method
-                ? `<span class="inline-block mt-2 px-2 py-1 text-xs font-semibold rounded ${
-                    notif.method === "POST"
-                      ? "bg-green-100 text-green-800"
-                      : notif.method === "PUT"
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-red-100 text-red-800"
-                  }">${notif.method}</span>`
-                : ""
-            }-->
+            <!--${notif.method ? `<span class="inline-block mt-2 px-2 py-1 text-xs font-semibold rounded ${notif.method === 'POST' ? 'bg-green-100 text-green-800' : notif.method === 'PUT' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'}">${notif.method}</span>` : ''}-->
           </div>
           <button 
             onclick="window.removeNotification('${notif.id}')"
@@ -102,112 +86,110 @@
         </div>
       </div>
     `;
-      })
-      .join("");
+  }).join('');
 
-    container.innerHTML = html;
+  container.innerHTML = html;
+}
+
+window.getNotificationIcon = function(type) {
+  const icons = {
+    success: '<i class="fas fa-check-circle text-green-500 text-2xl"></i>',
+    warning: '<i class="fas fa-exclamation-triangle text-yellow-500 text-2xl"></i>',
+    error: '<i class="fas fa-times-circle text-red-500 text-2xl"></i>',
+    info: '<i class="fas fa-info-circle text-blue-500 text-2xl"></i>'
   };
+  return icons[type] || icons.info;
+}
 
-  window.getNotificationIcon = function (type) {
-    const icons = {
-      success: '<i class="fas fa-check-circle text-green-500 text-2xl"></i>',
-      warning:
-        '<i class="fas fa-exclamation-triangle text-yellow-500 text-2xl"></i>',
-      error: '<i class="fas fa-times-circle text-red-500 text-2xl"></i>',
-      info: '<i class="fas fa-info-circle text-blue-500 text-2xl"></i>',
-    };
-    return icons[type] || icons.info;
+window.getNotificationBg = function(type) {
+  const backgrounds = {
+    success: 'bg-green-50',
+    warning: 'bg-yellow-50',
+    error: 'bg-red-50',
+    info: 'bg-blue-50'
   };
+  return backgrounds[type] || '';
+}
 
-  window.getNotificationBg = function (type) {
-    const backgrounds = {
-      success: "bg-green-50",
-      warning: "bg-yellow-50",
-      error: "bg-red-50",
-      info: "bg-blue-50",
-    };
-    return backgrounds[type] || "";
-  };
+window.getTimeAgo = function(timestamp) {
+  const now = Date.now();
+  const diff = now - timestamp;
+  const mins = Math.floor(diff / 60000);
+  
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins} minute${mins > 1 ? 's' : ''} ago`;
+  
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+  
+  return new Date(timestamp).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
 
-  window.getTimeAgo = function (timestamp) {
-    const now = Date.now();
-    const diff = now - timestamp;
-    const mins = Math.floor(diff / 60000);
+window.removeNotification = async function(id) {
+  if (!window.notificationSystem) return;
+  
+  console.log('removeNotification called for:', id);
+  
+  // Call the proper delete method that makes the API call
+  await window.notificationSystem.deleteNotification(id);
+  
+  // Reload the list
+  window.loadAllNotifications();
+}
 
-    if (mins < 1) return "Just now";
-    if (mins < 60) return `${mins} minute${mins > 1 ? "s" : ""} ago`;
+window.clearAllNotifications = function() {
+  if (!confirm('Are you sure you want to clear all notifications?')) {
+    return;
+  }
+  
+  window.notify.clearAll();
+  window.loadAllNotifications();
+}
 
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
-
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days} day${days > 1 ? "s" : ""} ago`;
-
-    return new Date(timestamp).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  window.removeNotification = async function (id) {
-    if (!window.notificationSystem) return;
-
-    console.log("removeNotification called for:", id);
-
-    // Call the proper delete method that makes the API call
-    await window.notificationSystem.deleteNotification(id);
-
-    // Reload the list
-    window.loadAllNotifications();
-  };
-
-  window.clearAllNotifications = function () {
-    if (!confirm("Are you sure you want to clear all notifications?")) {
-      return;
-    }
-
-    window.notify.clearAll();
-    window.loadAllNotifications();
-  };
-
-  window.syncNotifications = async function () {
-    const loadingState = document.getElementById("loadingState");
-    const container = document.getElementById("allNotificationsList");
-    const emptyState = document.getElementById("emptyState");
-
-    // Show loading state
-    loadingState.classList.remove("hidden");
-    container.classList.add("hidden");
-    emptyState.classList.add("hidden");
-
-    try {
-      // Trigger sync
-      await window.notify.sync();
-
-      // Wait a bit for sync to complete
-      setTimeout(() => {
-        loadingState.classList.add("hidden");
-        window.loadAllNotifications();
-      }, 500);
-    } catch (error) {
-      console.error("Sync failed:", error);
-      loadingState.classList.add("hidden");
+window.syncNotifications = async function() {
+  const loadingState = document.getElementById('loadingState');
+  const container = document.getElementById('allNotificationsList');
+  const emptyState = document.getElementById('emptyState');
+  
+  // Show loading state
+  loadingState.classList.remove('hidden');
+  container.classList.add('hidden');
+  emptyState.classList.add('hidden');
+  
+  try {
+    // Trigger sync
+    await window.notify.sync();
+    
+    // Wait a bit for sync to complete
+    setTimeout(() => {
+      loadingState.classList.add('hidden');
       window.loadAllNotifications();
-    }
-  };
+    }, 500);
+  } catch (error) {
+    console.error('Sync failed:', error);
+    loadingState.classList.add('hidden');
+    window.loadAllNotifications();
+  }
+}
 
-  // Load notifications when page loads
-  document.addEventListener("DOMContentLoaded", window.loadAllNotifications);
+// Load notifications when page loads
+document.addEventListener('DOMContentLoaded', window.loadAllNotifications);
 
-  // Also load when section is navigated to
-  setTimeout(window.loadAllNotifications, 100);
+// Also load when section is navigated to
+setTimeout(window.loadAllNotifications, 100);
 
-  // Add CSS animation
-  const style = document.createElement("style");
-  style.textContent = `
+// Add CSS animation
+const style = document.createElement('style');
+style.textContent = `
   @keyframes fadeInUp {
     from {
       opacity: 0;
@@ -219,5 +201,5 @@
     }
   }
 `;
-  document.head.appendChild(style);
+document.head.appendChild(style);
 </script>

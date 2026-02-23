@@ -389,6 +389,7 @@
   </div>
 
   <script>
+  const auth = window.authService;
     // Helper functions for Handlebars
     Handlebars.registerHelper('groupBy', function(array, property) {
       if (!array || !Array.isArray(array)) return [];

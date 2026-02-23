@@ -12,9 +12,8 @@
       <div class="ml-3">
         <h3 class="text-sm font-medium text-red-800">About This Report</h3>
         <p class="text-xs text-red-700 mt-1">
-          This report identifies employees with net pay increases exceeding the
-          configured threshold by comparing current month against previous
-          month.
+          This report identifies employees with net pay increases exceeding the configured threshold 
+          by comparing current month against previous month.
         </p>
       </div>
     </div>
@@ -23,13 +22,9 @@
   <!-- Period Selection -->
   <div class="mb-6 border-b border-gray-500 p-4">
     <label class="block font-medium text-gray-900 mb-2">
-      <i class="fas fa-calendar-alt text-blue-600 mr-2"></i>Select Analysis
-      Period
+      <i class="fas fa-calendar-alt text-blue-600 mr-2"></i>Select Analysis Period
     </label>
-    <select
-      id="periodSelect"
-      class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
-    >
+    <select id="periodSelect" class="w-full border border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500">
       <option value="">-- Select Month--</option>
       <option value="1">January</option>
       <option value="2">February</option>
@@ -47,19 +42,12 @@
   </div>
 
   <!-- Threshold Display -->
-  <div
-    id="thresholdDisplay"
-    class="hidden mb-6 bg-yellow-50 border border-yellow-300 p-4 rounded-lg"
-  >
+  <div id="thresholdDisplay" class="hidden mb-6 bg-yellow-50 border border-yellow-300 p-4 rounded-lg">
     <div class="flex items-center">
       <i class="fas fa-percentage text-yellow-600 text-xl mr-3"></i>
       <div>
         <p class="text-sm font-semibold text-gray-800">Configured Threshold</p>
-        <p class="text-xs text-gray-600">
-          Employees exceeding
-          <span id="thresholdValue" class="font-bold text-red-600">--</span>
-          variance will be flagged
-        </p>
+        <p class="text-xs text-gray-600">Employees exceeding <span id="thresholdValue" class="font-bold text-red-600">--</span> variance will be flagged</p>
       </div>
     </div>
   </div>
@@ -71,31 +59,15 @@
     </label>
     <div class="flex gap-4">
       <label class="flex items-center cursor-pointer">
-        <input
-          type="radio"
-          name="exportFormat"
-          value="excel"
-          class="text-red-600 w-4 h-4"
-          checked
-        />
+        <input type="radio" name="exportFormat" value="excel" class="text-red-600 w-4 h-4" checked>
         <span class="ml-2">Excel</span>
       </label>
       <label class="flex items-center cursor-pointer">
-        <input
-          type="radio"
-          name="exportFormat"
-          value="pdf"
-          class="text-red-600 w-4 h-4"
-        />
+        <input type="radio" name="exportFormat" value="pdf" class="text-red-600 w-4 h-4">
         <span class="ml-2">PDF</span>
       </label>
       <label class="hidden flex items-center cursor-pointer">
-        <input
-          type="radio"
-          name="exportFormat"
-          value="json"
-          class="text-red-600 w-4 h-4"
-        />
+        <input type="radio" name="exportFormat" value="json" class="text-red-600 w-4 h-4">
         <span class="ml-2">JSON</span>
       </label>
     </div>
@@ -103,42 +75,28 @@
 
   <!-- Action Buttons -->
   <div class="flex justify-end gap-3 pt-4 border-t">
-    <button
-      id="cancelOverpay"
-      class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-6 rounded-lg transition-colors"
-    >
+    <button id="cancelOverpay" class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-6 rounded-lg transition-colors">
       <i class="fas fa-times mr-2"></i>Clear
     </button>
-    <button
-      id="generateOverpay"
-      class="bg-red-600 hover:bg-red-700 text-white py-2 px-6 rounded-lg transition-colors shadow-lg"
-    >
+    <button id="generateOverpay" class="bg-red-600 hover:bg-red-700 text-white py-2 px-6 rounded-lg transition-colors shadow-lg">
       <i class="fas fa-search mr-2"></i>Analyze
     </button>
   </div>
 </section>
 
 <!-- Loading Modal -->
-<div
-  id="loadingModal"
-  class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
->
+<div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg p-8 text-center">
     <div class="mb-4">
       <i class="fas fa-spinner fa-spin text-4xl text-red-600"></i>
     </div>
     <h3 class="text-lg font-semibold mb-2">Analyzing Overpayments...</h3>
-    <p class="text-gray-600">
-      Please wait while we check for payment anomalies.
-    </p>
+    <p class="text-gray-600">Please wait while we check for payment anomalies.</p>
   </div>
 </div>
 
 <!-- Message Modal -->
-<div
-  id="overpayModal"
-  class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
->
+<div id="overpayModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
     <div class="flex items-start mb-4">
       <div id="modalIcon" class="mr-3 text-2xl"></div>
@@ -148,12 +106,7 @@
       </div>
     </div>
     <div class="flex justify-end">
-      <button
-        id="overpayModalCloseBtn"
-        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
-      >
-        OK
-      </button>
+      <button id="overpayModalCloseBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">OK</button>
     </div>
   </div>
 </div>
@@ -220,20 +173,7 @@
     if (!period || period.length !== 6) return period;
     const year = period.substring(0, 4);
     const month = period.substring(4, 6);
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthName = months[parseInt(month) - 1] || month;
     return `${monthName} ${year}`;
   }
@@ -242,7 +182,7 @@
   function showModal(title, message, isError = false) {
     modalTitle.textContent = title;
     modalMessage.textContent = message;
-    modalIcon.innerHTML = isError
+    modalIcon.innerHTML = isError 
       ? '<i class="fas fa-exclamation-circle text-red-500"></i>'
       : '<i class="fas fa-check-circle text-green-500"></i>';
     modal.classList.remove("hidden");
@@ -253,16 +193,10 @@
   // Generate button
   generateBtn.onclick = async () => {
     const period = periodSelect.value;
-    const exportFormat =
-      document.querySelector('input[name="exportFormat"]:checked')?.value ||
-      "excel";
+    const exportFormat = document.querySelector('input[name="exportFormat"]:checked')?.value || 'excel';
 
     if (!period) {
-      return showModal(
-        "Validation Error",
-        "Please select a period for analysis!",
-        true,
-      );
+      return showModal("Validation Error", "Please select a period for analysis!", true);
     }
 
     // Build query parameters
@@ -272,74 +206,61 @@
     loadingModal.classList.remove("hidden");
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await auth.fetchWithAuth(
-        `/overpayment/get?${queryParams}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/overpayment/get?${queryParams}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to generate report");
+        throw new Error(errorData.error || 'Failed to generate report');
       }
 
-      if (exportFormat === "json") {
+      if (exportFormat === 'json') {
         const result = await response.json();
         loadingModal.classList.add("hidden");
-
+        
         if (result.success) {
           // Update threshold display
           if (result.threshold_percentage) {
             thresholdValue.textContent = `${result.threshold_percentage}%`;
           }
-
+          
           if (result.data.length === 0) {
             showModal(
-              "No Overpayments Detected",
-              result.message ||
-                `No employees exceeded the ${result.threshold_percentage}% threshold.`,
+              "No Overpayments Detected", 
+              result.message || `No employees exceeded the ${result.threshold_percentage}% threshold.`
             );
           } else {
             showModal(
-              "Overpayments Found!",
-              `⚠️ ${result.data.length} employee(s) flagged with overpayment exceeding ${result.threshold_percentage}% threshold.`,
+              "Overpayments Found!", 
+              `⚠️ ${result.data.length} employee(s) flagged with overpayment exceeding ${result.threshold_percentage}% threshold.`
             );
-            console.log("Overpayment Report Data:", result);
+            console.log('Overpayment Report Data:', result);
           }
         } else {
-          showModal(
-            "Report Error",
-            result.message || "Failed to generate report",
-            true,
-          );
+          showModal("Report Error", result.message || "Failed to generate report", true);
         }
       } else {
         // Handle file download for Excel/PDF
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
+        const a = document.createElement('a');
         a.href = url;
-        a.download = `overpayment_analysis_${period}.${
-          exportFormat === "excel" ? "xlsx" : "pdf"
-        }`;
+        a.download = `overpayment_analysis_${period}.${exportFormat === 'excel' ? 'xlsx' : 'pdf'}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-
+        
         loadingModal.classList.add("hidden");
-        showModal(
-          "Success",
-          `Overpayment Analysis Report downloaded successfully!`,
-        );
+        showModal("Success", `Overpayment Analysis Report downloaded successfully!`);
       }
     } catch (error) {
       loadingModal.classList.add("hidden");
-      console.error("Error generating report:", error);
+      console.error('Error generating report:', error);
       showModal("Error", `Failed to generate report: ${error.message}`, true);
     }
   };
@@ -347,15 +268,11 @@
   // Cancel button
   cancelBtn.onclick = () => {
     periodSelect.value = "";
-    document.querySelector(
-      'input[name="exportFormat"][value="excel"]',
-    ).checked = true;
-
+    document.querySelector('input[name="exportFormat"][value="excel"]').checked = true;
+    
     // Reset to default period if available
     if (filterOptions && filterOptions.currentPeriod) {
-      const currentPeriod = `${filterOptions.currentPeriod.year}${String(
-        filterOptions.currentPeriod.month,
-      ).padStart(2, "0")}`;
+      const currentPeriod = `${filterOptions.currentPeriod.year}${String(filterOptions.currentPeriod.month).padStart(2, '0')}`;
       periodSelect.value = currentPeriod;
     }
   };

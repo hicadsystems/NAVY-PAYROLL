@@ -1,8 +1,6 @@
 <!-- Payroll Control Sheet Report -->
 <section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
-  <h2 class="text-xl text-center border-b font-bold text-blue-600 mb-4">
-    Payroll Control Sheet Report
-  </h2>
+  <h2 class="text-xl text-center border-b font-bold text-blue-600 mb-4">Payroll Control Sheet Report</h2>
 
   <form id="controlSheetForm" class="space-y-4">
     <!-- Year Selection -->
@@ -36,11 +34,11 @@
       <label class="block font-medium mb-2">Output Format</label>
       <div class="flex space-x-4">
         <label class="flex text-sm items-center space-x-2">
-          <input type="radio" name="controlFormat" value="pdf" checked />
+          <input type="radio" name="controlFormat" value="pdf" checked>
           <span>PDF</span>
         </label>
         <label class="flex text-sm items-center space-x-2">
-          <input type="radio" name="controlFormat" value="excel" />
+          <input type="radio" name="controlFormat" value="excel">
           <span>Excel</span>
         </label>
       </div>
@@ -49,187 +47,107 @@
     <div class="flex justify-end items-center gap-2 mb-4">
       <!-- Buttons -->
       <div class="flex space-x-2 pt-2">
-        <button
-          type="reset"
-          id="controlClearBtn"
-          class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-        >
+        <button type="reset" id="controlClearBtn" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
           Clear
         </button>
-        <button
-          type="button"
-          id="controlGenerateBtn"
-          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
+        <button type="button" id="controlGenerateBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
           Generate
         </button>
       </div>
     </div>
 
     <!-- Loading Indicator -->
-    <div
-      id="controlLoadingIndicator"
-      class="hidden text-center text-blue-600 text-sm"
-    >
+    <div id="controlLoadingIndicator" class="hidden text-center text-blue-600 text-sm">
       <span>Generating report...</span>
     </div>
   </form>
 </section>
 
 <!-- Confirm Modal -->
-<div
-  id="controlConfirmModal"
-  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
->
+<div id="controlConfirmModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6">
     <h3 class="text-lg font-semibold mb-4">Confirm Generation</h3>
-    <p class="mb-6 text-gray-700">
-      Do you want to continue with report generation?
-    </p>
+    <p class="mb-6 text-gray-700">Do you want to continue with report generation?</p>
     <div class="flex justify-end gap-2">
-      <button
-        id="controlCancelBtn"
-        class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-      >
-        Cancel
-      </button>
-      <button
-        id="controlContinueBtn"
-        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        Continue
-      </button>
+      <button id="controlCancelBtn" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
+      <button id="controlContinueBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Continue</button>
     </div>
   </div>
 </div>
 
 <!-- Processing Modal -->
-<div
-  id="controlProcessingModal"
-  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
->
+<div id="controlProcessingModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
-    <div
-      class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"
-    ></div>
+    <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
     <p class="text-gray-700">Generating report...</p>
   </div>
 </div>
 
 <!-- Success Modal -->
-<div
-  id="controlSuccessModal"
-  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
->
+<div id="controlSuccessModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
     <h3 class="text-lg font-semibold text-green-600 mb-4">Success</h3>
-    <p class="mb-6 text-gray-700" id="controlSuccessMessage">
-      Report generated successfully!
-    </p>
+    <p class="mb-6 text-gray-700" id="controlSuccessMessage">Report generated successfully!</p>
     <div class="flex justify-center gap-2">
-      <button
-        id="controlSuccessOkBtn"
-        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        OK
-      </button>
+      <button id="controlSuccessOkBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
     </div>
   </div>
 </div>
 
 <!-- Error Modal -->
-<div
-  id="controlErrorModal"
-  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
->
+<div id="controlErrorModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
     <h3 class="text-lg font-semibold text-red-600 mb-4">Error</h3>
-    <p id="controlErrorText" class="mb-6 text-gray-700">
-      Please complete required fields.
-    </p>
-    <button
-      id="controlErrorOkBtn"
-      class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-    >
-      OK
-    </button>
+    <p id="controlErrorText" class="mb-6 text-gray-700">Please complete required fields.</p>
+    <button id="controlErrorOkBtn" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">OK</button>
   </div>
 </div>
 
 <script>
-  const auth = window.authService; // API Configuration
-  const API_BASE = "/controlsheet";
+  const auth = window.authService;
+  // API Configuration
+  const API_BASE = '/controlsheet';
 
   // Elements
-  const controlYear = document.getElementById("controlYear");
-  const controlMonth = document.getElementById("controlMonth");
-  const controlGenerateBtn = document.getElementById("controlGenerateBtn");
-  const controlClearBtn = document.getElementById("controlClearBtn");
-  const controlLoadingIndicator = document.getElementById(
-    "controlLoadingIndicator"
-  );
+  const controlYear = document.getElementById('controlYear');
+  const controlMonth = document.getElementById('controlMonth');
+  const controlGenerateBtn = document.getElementById('controlGenerateBtn');
+  const controlClearBtn = document.getElementById('controlClearBtn');
+  const controlLoadingIndicator = document.getElementById('controlLoadingIndicator');
 
-  const controlConfirmModal = document.getElementById("controlConfirmModal");
-  const controlCancelBtn = document.getElementById("controlCancelBtn");
-  const controlContinueBtn = document.getElementById("controlContinueBtn");
+  const controlConfirmModal = document.getElementById('controlConfirmModal');
+  const controlCancelBtn = document.getElementById('controlCancelBtn');
+  const controlContinueBtn = document.getElementById('controlContinueBtn');
 
-  const controlProcessingModal = document.getElementById(
-    "controlProcessingModal"
-  );
-  const controlSuccessModal = document.getElementById("controlSuccessModal");
-  const controlSuccessOkBtn = document.getElementById("controlSuccessOkBtn");
-  const controlSuccessMessage = document.getElementById(
-    "controlSuccessMessage"
-  );
+  const controlProcessingModal = document.getElementById('controlProcessingModal');
+  const controlSuccessModal = document.getElementById('controlSuccessModal');
+  const controlSuccessOkBtn = document.getElementById('controlSuccessOkBtn');
+  const controlSuccessMessage = document.getElementById('controlSuccessMessage');
 
-  const controlErrorModal = document.getElementById("controlErrorModal");
-  const controlErrorOkBtn = document.getElementById("controlErrorOkBtn");
-  const controlErrorText = document.getElementById("controlErrorText");
+  const controlErrorModal = document.getElementById('controlErrorModal');
+  const controlErrorOkBtn = document.getElementById('controlErrorOkBtn');
+  const controlErrorText = document.getElementById('controlErrorText');
 
   // Helper function to convert month name to number
   function getMonthNumber(monthName) {
-    const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
     return months.indexOf(monthName) + 1;
   }
 
   // Helper function to convert month number to name
   function getMonthName(monthNum) {
-    const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    return months[monthNum - 1] || "";
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+    return months[monthNum - 1] || '';
   }
 
   // Load current period and set default values
   async function loadCurrentPeriod() {
     try {
-      const token = localStorage.getItem("token");
-      const response = await auth.fetchWithAuth(`${API_BASE}/filter-options`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE}/filter-options`, {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (response.ok) {
@@ -241,136 +159,127 @@
         }
       }
     } catch (error) {
-      console.error("Error loading current period:", error);
+      console.error('Error loading current period:', error);
     }
   }
 
   // Open confirm modal
-  controlGenerateBtn.addEventListener("click", () => {
+  controlGenerateBtn.addEventListener('click', () => {
     // Validation before showing confirm modal
     if (!controlYear.value) {
-      controlErrorText.textContent = "Please select a year.";
-      controlErrorModal.classList.remove("hidden");
+      controlErrorText.textContent = 'Please select a year.';
+      controlErrorModal.classList.remove('hidden');
       return;
     }
 
     if (!controlMonth.value) {
-      controlErrorText.textContent = "Please select a processing month.";
-      controlErrorModal.classList.remove("hidden");
+      controlErrorText.textContent = 'Please select a processing month.';
+      controlErrorModal.classList.remove('hidden');
       return;
     }
 
-    controlConfirmModal.classList.remove("hidden");
+    controlConfirmModal.classList.remove('hidden');
   });
 
   // Cancel confirm
-  controlCancelBtn.addEventListener("click", () => {
-    controlConfirmModal.classList.add("hidden");
+  controlCancelBtn.addEventListener('click', () => {
+    controlConfirmModal.classList.add('hidden');
   });
 
   // Continue -> validate -> process
-  controlContinueBtn.addEventListener("click", async () => {
-    controlConfirmModal.classList.add("hidden");
+  controlContinueBtn.addEventListener('click', async () => {
+    controlConfirmModal.classList.add('hidden');
 
     // Validate again
     if (!controlYear.value || !controlMonth.value) {
       controlErrorText.textContent = !controlYear.value
-        ? "Please select a year."
-        : "Please select a processing month.";
-      controlErrorModal.classList.remove("hidden");
+        ? 'Please select a year.'
+        : 'Please select a processing month.';
+      controlErrorModal.classList.remove('hidden');
       return;
     }
 
     // Show processing modal
-    controlProcessingModal.classList.remove("hidden");
+    controlProcessingModal.classList.remove('hidden');
     controlGenerateBtn.disabled = true;
 
-    const format = document.querySelector(
-      'input[name="controlFormat"]:checked'
-    ).value;
+    const format = document.querySelector('input[name="controlFormat"]:checked').value;
     const monthNum = getMonthNumber(controlMonth.value);
 
     try {
-      const token = localStorage.getItem("token");
-
+      const token = localStorage.getItem('token');
+      
       // Build query parameters
       const params = new URLSearchParams({
         format: format,
         year: controlYear.value,
-        month: monthNum,
+        month: monthNum
       });
 
-      const response = await auth.fetchWithAuth(
-        `${API_BASE}/generate?${params.toString()}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const response = await fetch(`${API_BASE}/generate?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      );
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to generate report");
+        throw new Error(errorData.error || 'Failed to generate report');
       }
 
       // Download file
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-
+      
       // Open PDF in new tab
-      if (format === "pdf") {
-        window.open(url, "_blank");
+      if (format === 'pdf') {
+        window.open(url, '_blank');
       }
-
+      
       // Also trigger download
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
-      a.download = `control_sheet_${controlYear.value}_${controlMonth.value}.${
-        format === "pdf" ? "pdf" : "xlsx"
-      }`;
+      a.download = `control_sheet_${controlYear.value}_${controlMonth.value}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-
+      
       setTimeout(() => window.URL.revokeObjectURL(url), 100);
 
-      controlProcessingModal.classList.add("hidden");
+      controlProcessingModal.classList.add('hidden');
       controlGenerateBtn.disabled = false;
-      controlSuccessMessage.textContent = `Report generated successfully! Your ${format.toUpperCase()} is ${
-        format === "pdf" ? "opening in a new tab and" : ""
-      } downloading.`;
-      controlSuccessModal.classList.remove("hidden");
+      controlSuccessMessage.textContent = `Report generated successfully! Your ${format.toUpperCase()} is ${format === 'pdf' ? 'opening in a new tab and' : ''} downloading.`;
+      controlSuccessModal.classList.remove('hidden');
+
     } catch (error) {
-      controlProcessingModal.classList.add("hidden");
+      controlProcessingModal.classList.add('hidden');
       controlGenerateBtn.disabled = false;
-      controlErrorText.textContent =
-        error.message || "Failed to generate report. Please try again.";
-      controlErrorModal.classList.remove("hidden");
-      console.error("Error:", error);
+      controlErrorText.textContent = error.message || 'Failed to generate report. Please try again.';
+      controlErrorModal.classList.remove('hidden');
+      console.error('Error:', error);
     }
   });
 
   // Error OK
-  controlErrorOkBtn.addEventListener("click", () => {
-    controlErrorModal.classList.add("hidden");
+  controlErrorOkBtn.addEventListener('click', () => {
+    controlErrorModal.classList.add('hidden');
   });
 
   // Success OK - close modal
-  controlSuccessOkBtn.addEventListener("click", () => {
-    controlSuccessModal.classList.add("hidden");
+  controlSuccessOkBtn.addEventListener('click', () => {
+    controlSuccessModal.classList.add('hidden');
     // Optionally reset form here
-    document.getElementById("controlSheetForm").reset();
+    document.getElementById('controlSheetForm').reset();
     loadCurrentPeriod(); // Reload default values
   });
 
   // Reset/clear
-  controlClearBtn.addEventListener("click", () => {
+  controlClearBtn.addEventListener('click', () => {
     // Let the native reset run, then reload defaults
     setTimeout(() => {
-      controlYear.value = "";
-      controlMonth.value = "";
+      controlYear.value = '';
+      controlMonth.value = '';
       loadCurrentPeriod(); // Reload default values
     }, 0);
   });

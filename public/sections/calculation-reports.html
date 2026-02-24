@@ -430,7 +430,7 @@ function showAlert(message, type = 'error') {
   async function loadPeriodInfo() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(STATUS_API, {
+      const response = await auth.fetchWithAuth(STATUS_API, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -454,7 +454,7 @@ function showAlert(message, type = 'error') {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/${reportType}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/${reportType}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -1179,7 +1179,7 @@ function showAlert(message, type = 'error') {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/${reportType}/export/${format}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/${reportType}/export/${format}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -1229,7 +1229,7 @@ function showAlert(message, type = 'error') {
   async function checkPayrollStatus() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(STATUS_API, {
+      const response = await auth.fetchWithAuth(STATUS_API, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       

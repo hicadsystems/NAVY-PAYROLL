@@ -70,7 +70,7 @@
       options.body = JSON.stringify(body);
     }
     
-    const response = await fetch(`${endpoint}`, options);
+    const response = await auth.fetchWithAuth(`${endpoint}`, options);
     const data = await response.json();
     
     if (!response.ok) {

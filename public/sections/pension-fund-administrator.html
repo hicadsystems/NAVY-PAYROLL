@@ -253,7 +253,7 @@
                     url += `?exclude=${encodeURIComponent(this.editingCode)}`;
                 }
 
-                const response = await fetch(url, {
+                const response = await auth.fetchWithAuth(url, {
                     headers: this.getHeaders()
                 });
 
@@ -350,7 +350,7 @@
 
         async loadPFAs(preserveState = false) {
             try {
-                const response = await fetch(this.apiUrl, {
+                const response = await auth.fetchWithAuth(this.apiUrl, {
                     headers: this.getHeaders()
                 });
                 const pfas = await response.json();
@@ -454,7 +454,7 @@
                 const url = this.isEditing ? `${this.apiUrl}/${this.editingCode}` : `${this.apiUrl}/post`;
                 const method = this.isEditing ? 'PUT' : 'POST';
                 
-                const response = await fetch(url, {
+                const response = await auth.fetchWithAuth(url, {
                     method,
                     headers: this.getHeaders(),
                     body: JSON.stringify(data)
@@ -476,7 +476,7 @@
 
         async editPFA(pfacode) {
             try {
-                const response = await fetch(`${this.apiUrl}/${pfacode}`, {
+                const response = await auth.fetchWithAuth(`${this.apiUrl}/${pfacode}`, {
                     headers: this.getHeaders()
                 });
                 const pfa = await response.json();
@@ -506,7 +506,7 @@
             if (!confirm(`Are you sure you want to delete PFA ${pfacode}?`)) return;
 
             try {
-                const response = await fetch(`${this.apiUrl}/${pfacode}`, {
+                const response = await auth.fetchWithAuth(`${this.apiUrl}/${pfacode}`, {
                     method: 'DELETE',
                     headers: this.getHeaders()
                 });

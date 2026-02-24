@@ -453,7 +453,7 @@ router.post("/login", async (req, res) => {
     const token = jwtSign({
       data: tokenPayload,
       secret: config.jwt.secret,
-      time: "5m",
+      time: "8h",
     });
     pool.useDatabase(authenticatedDatabase);
 
@@ -605,7 +605,7 @@ router.post("/refresh", async (req, res) => {
     const token = jwtSign({
       data: tokenPayload,
       secret: config.jwt.secret,
-      time: "5m",
+      time: "8h",
     });
 
     console.log(`🔄 Access token refreshed for user: ${user.user_id}`);

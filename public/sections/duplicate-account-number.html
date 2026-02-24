@@ -130,7 +130,7 @@
   async function loadFilterOptions() {
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch('/duplicate/filter-options', {
+      const response = await auth.fetchWithAuth('/duplicate/filter-options', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -207,7 +207,7 @@
 
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch(`/duplicate?${queryParams}`, {
+      const response = await auth.fetchWithAuth(`/duplicate?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

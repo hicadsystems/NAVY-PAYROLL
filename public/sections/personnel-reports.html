@@ -355,7 +355,7 @@
   async function loadFilterOptions() {
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch('/personnel-report/filter-options', {
+      const response = await auth.fetchWithAuth('/personnel-report/filter-options', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -496,7 +496,7 @@
 
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch(`/personnel-report?${queryParams}`, {
+      const response = await auth.fetchWithAuth(`/personnel-report?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

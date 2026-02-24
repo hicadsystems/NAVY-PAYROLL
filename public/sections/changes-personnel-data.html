@@ -264,7 +264,7 @@
   async function loadFilterOptions() {
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch(`${API_BASE}/filter-options`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/filter-options`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -374,7 +374,7 @@
 
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch(`${API_BASE}?${queryParams}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -449,7 +449,7 @@
   async function checkPayrollStatus() {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/status-payroll', {
+      const res = await auth.fetchWithAuth('/status-payroll', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();

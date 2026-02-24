@@ -137,7 +137,7 @@
     try {
       const token = localStorage.getItem('token');
 
-      const res = await fetch("/roles", {
+      const res = await auth.fetchWithAuth("/roles", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -190,7 +190,7 @@
       const token = localStorage.getItem('token');
       const isEditing = editingRoleId !== null;
 
-      const response = await fetch(isEditing ? `/roles/${editingRoleId}` : "/roles", {
+      const response = await auth.fetchWithAuth(isEditing ? `/roles/${editingRoleId}` : "/roles", {
         method: isEditing ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
@@ -222,7 +222,7 @@
     try {
       const token = localStorage.getItem('token');
 
-      const response = await fetch(`/roles/${deleteRoleId}`, {
+      const response = await auth.fetchWithAuth(`/roles/${deleteRoleId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

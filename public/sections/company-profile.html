@@ -329,7 +329,7 @@
       const token = localStorage.getItem('token');
       
       // Fetch current data from server to ensure we have the latest values
-      const fetchResponse = await fetch(`/company/paysystem/${currentSystemId}`, {
+      const fetchResponse = await auth.fetchWithAuth(`/company/paysystem/${currentSystemId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -354,7 +354,7 @@
       // Clean the data to handle empty numeric fields
       updateData = cleanDataForUpdate(updateData);
       
-      const response = await fetch(`/company/paysystem/${currentSystemId}`, {
+      const response = await auth.fetchWithAuth(`/company/paysystem/${currentSystemId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -396,7 +396,7 @@
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/company/paysystem/${currentSystemId}`, {
+      const response = await auth.fetchWithAuth(`/company/paysystem/${currentSystemId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -450,7 +450,7 @@
   async function loadSystemData() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/company/paysystem', {
+      const response = await auth.fetchWithAuth('/company/paysystem', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -563,7 +563,7 @@
       const token = localStorage.getItem('token');
       
       // Fetch current data from server to preserve image and other fields
-      const fetchResponse = await fetch(`/company/paysystem/${currentSystemId}`, {
+      const fetchResponse = await auth.fetchWithAuth(`/company/paysystem/${currentSystemId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -591,7 +591,7 @@
       // Clean the data to handle empty numeric fields
       data = cleanDataForUpdate(data);
 
-      const response = await fetch(`/company/paysystem/${currentSystemId}`, {
+      const response = await auth.fetchWithAuth(`/company/paysystem/${currentSystemId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

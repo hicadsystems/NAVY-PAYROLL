@@ -201,7 +201,7 @@
 
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch(`${API_BASE}?format=${format}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}?format=${format}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -257,7 +257,7 @@
   async function checkPayrollStatus() {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/status-payroll', {
+      const res = await auth.fetchWithAuth('/status-payroll', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();

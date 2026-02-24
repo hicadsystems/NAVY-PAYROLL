@@ -165,7 +165,7 @@
   async function loadFilterOptions() {
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch('/personalrecord/filter-options', {
+      const response = await auth.fetchWithAuth('/personalrecord/filter-options', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -287,7 +287,7 @@
 
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch(`/personalrecord?${queryParams}`, {
+      const response = await auth.fetchWithAuth(`/personalrecord?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

@@ -287,7 +287,7 @@
   async function fetchEmployees() {
     try {
       const token = getAuthToken();
-      const response = await fetch('/personnel/employees-current', {
+      const response = await auth.fetchWithAuth('/personnel/employees-current', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -308,7 +308,7 @@
   async function fetchDocumentation() {
     try {
       const token = getAuthToken();
-      const response = await fetch(API_BASE, {
+      const response = await auth.fetchWithAuth(API_BASE, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -328,7 +328,7 @@
       const pathSegment = `${doc_numb}`;
       const encodedId = encodeURIComponent(pathSegment);
       
-      const response = await fetch(`${API_BASE}/${encodedId}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/${encodedId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -354,7 +354,7 @@
   async function createDocumentation(data) {
     try {
       const token = getAuthToken();
-      const response = await fetch(`${API_BASE}/create`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -387,7 +387,7 @@
       const pathSegment = `${doc_numb}`;
       const encodedId = encodeURIComponent(pathSegment);
       
-      const response = await fetch(`${API_BASE}/${encodedId}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/${encodedId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -251,7 +251,7 @@
   async function loadPayrollClasses() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/payslips/filter-options`, {
+      const response = await auth.fetchWithAuth(`/payslips/filter-options`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -276,7 +276,7 @@
     try {
     const token = localStorage.getItem("token");
 
-    const res = await fetch("/payslips/database",{
+    const res = await auth.fetchWithAuth("/payslips/database",{
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -376,7 +376,7 @@
       }
 
       // Generate payslips
-      const response = await fetch(`${API_BASE_URL}/generate`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_URL}/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -576,7 +576,7 @@
   async function downloadPayslips(data, format) {
     const exportEndpoint = format === 'pdf' ? `${API_BASE_URL}/export/pdf` : `${API_BASE_URL}/export/excel`;
     
-    const exportResponse = await fetch(exportEndpoint, {
+    const exportResponse = await auth.fetchWithAuth(exportEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

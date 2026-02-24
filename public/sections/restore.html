@@ -78,7 +78,7 @@
     try {
       showNotification('Restoring from backup...', 'info');
       
-      const response = await fetch('/restore', {
+      const response = await auth.fetchWithAuth('/restore', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

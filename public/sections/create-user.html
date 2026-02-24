@@ -308,7 +308,7 @@ async function fetchRoles() {
   try {
     const token = localStorage.getItem('token');
 
-    const res = await fetch("/roles", {
+    const res = await auth.fetchWithAuth("/roles", {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -359,7 +359,7 @@ async function loadPayrollClasses() {
   try {
     const token = localStorage.getItem('token');
 
-    const res = await fetch("/db_classes", {
+    const res = await auth.fetchWithAuth("/db_classes", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -487,7 +487,7 @@ document.getElementById('create-user-form').addEventListener('submit', async fun
       return;
     }
 
-    const response = await fetch(`${BASE_URL}/api/users`, {
+    const response = await auth.fetchWithAuth(`${BASE_URL}/api/users`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',

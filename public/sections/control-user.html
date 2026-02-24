@@ -226,7 +226,7 @@ async function fetchRoles() {
   try {
     const token = localStorage.getItem('token');
 
-    const res = await fetch("/roles", {
+    const res = await auth.fetchWithAuth("/roles", {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -276,7 +276,7 @@ async function loadPayrollClasses() {
   try {
     const token = localStorage.getItem('token');
 
-    const res = await fetch("/db_classes", {
+    const res = await auth.fetchWithAuth("/db_classes", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -388,7 +388,7 @@ class PersonnelManager {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch('/api/users',{   
+      const res = await auth.fetchWithAuth('/api/users',{   
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -471,7 +471,7 @@ class PersonnelManager {
       // try fetch single user
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`/api/users/${encodeURIComponent(id)}`, {
+        const res = await auth.fetchWithAuth(`/api/users/${encodeURIComponent(id)}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         
@@ -528,7 +528,7 @@ class PersonnelManager {
     if (!user) {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`/api/users/${encodeURIComponent(id)}`, {
+        const res = await auth.fetchWithAuth(`/api/users/${encodeURIComponent(id)}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         if (res.ok) user = await res.json();
@@ -642,7 +642,7 @@ class PersonnelManager {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch(`/api/users/${encodeURIComponent(this.editingUserId)}`, {
+      const res = await auth.fetchWithAuth(`/api/users/${encodeURIComponent(this.editingUserId)}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -701,7 +701,7 @@ class PersonnelManager {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch(`/api/users/${encodeURIComponent(id)}`, { 
+      const res = await auth.fetchWithAuth(`/api/users/${encodeURIComponent(id)}`, { 
         method: 'DELETE',
         headers: {
           "Content-Type": "application/json",

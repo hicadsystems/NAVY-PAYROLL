@@ -249,7 +249,7 @@
             try {
                 const token = localStorage.getItem("token");
 
-                const res = await fetch("/api/backup-db/database",{
+                const res = await auth.fetchWithAuth("/api/backup-db/database",{
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -285,7 +285,7 @@
             try {
                 const token = localStorage.getItem("token");
 
-                const response = await fetch('/api/backup-db/health',{
+                const response = await auth.fetchWithAuth('/api/backup-db/health',{
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -315,7 +315,7 @@
             try {
                 const token = localStorage.getItem("token");
 
-                const response = await fetch('/api/backup-db/backup/mysql', {
+                const response = await auth.fetchWithAuth('/api/backup-db/backup/mysql', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -358,7 +358,7 @@
             try {
                 const token = localStorage.getItem("token");
 
-                const response = await fetch('/api/backup-db/backup/schedule', {
+                const response = await auth.fetchWithAuth('/api/backup-db/backup/schedule', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -395,7 +395,7 @@
             try {
                 const token = localStorage.getItem("token");
 
-                const response = await fetch('/api/backup-db/backups',{
+                const response = await auth.fetchWithAuth('/api/backup-db/backups',{
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -470,7 +470,7 @@
             try {
                 const token = localStorage.getItem("token");
 
-                const response = await fetch(`/api/backup-db/backup/download/${filename}`,{
+                const response = await auth.fetchWithAuth(`/api/backup-db/backup/download/${filename}`,{
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -502,7 +502,7 @@
             try {
                 const token = localStorage.getItem("token");
 
-                const response = await fetch(`/api/backup-db/backup/${filename}`, {
+                const response = await auth.fetchWithAuth(`/api/backup-db/backup/${filename}`, {
                     method: 'DELETE',
                     headers: {
                         "Content-Type": "application/json",
@@ -528,7 +528,7 @@
             try {
                 const token = localStorage.getItem("token");
 
-                const response = await fetch('/api/backup-db/backup/stats',{
+                const response = await auth.fetchWithAuth('/api/backup-db/backup/stats',{
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",

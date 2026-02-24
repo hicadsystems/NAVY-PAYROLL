@@ -92,7 +92,7 @@ async function fetchEmployees() {
     
     console.log('Fetching from:', url);
     
-    const response = await fetch(url, {
+    const response = await auth.fetchWithAuth(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -408,7 +408,7 @@ async function updateRegistrationNumber() {
     
     console.log('Updating:', { oldRegNo, newRegNo });
     
-    const response = await fetch(url, {
+    const response = await auth.fetchWithAuth(url, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,

@@ -190,7 +190,7 @@ const totalRecordsSpan = document.getElementById('totalRecords');
 async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`/reference/${endpoint}`, {   
+    const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {   
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -275,7 +275,7 @@ async function fetchStates(preserveState = false) {
     // Load dropdowns first
     await loadAllDropdowns();
 
-    const res = await fetch("/states", {   
+    const res = await auth.fetchWithAuth("/states", {   
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -339,7 +339,7 @@ async function createState(item) {
   const token = localStorage.getItem("token");
 
   try {
-    const res = await fetch("/states", {
+    const res = await auth.fetchWithAuth("/states", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
@@ -387,7 +387,7 @@ async function checkDuplicate(input, field, excludeStateCode = null) {
       url += `?exclude=${excludeStateCode}`;
     }
     
-    const res = await fetch(url, {
+    const res = await auth.fetchWithAuth(url, {
       headers: { "Authorization": `Bearer ${token}` }
     });
 
@@ -422,7 +422,7 @@ async function updateState(Statecode, item) {
   const token = localStorage.getItem("token");
 
   try {
-    const res = await fetch(`/states/${Statecode}`, {
+    const res = await auth.fetchWithAuth(`/states/${Statecode}`, {
       method: "PUT",
       headers: { 
         "Content-Type": "application/json",
@@ -448,7 +448,7 @@ async function updateState(Statecode, item) {
 async function deleteStateApi(Statecode) {
   const token = localStorage.getItem("token");
   
-  await fetch(`/states/${Statecode}`, { 
+  await auth.fetchWithAuth(`/states/${Statecode}`, { 
     method: "DELETE", 
     headers: { 
       "Content-Type": "application/json",

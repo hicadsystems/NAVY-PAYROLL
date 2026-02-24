@@ -162,7 +162,7 @@ class PersonnelManager {
 
   async apiRequest(url, options = {}) {
     try {
-      const response = await fetch(url, {
+      const response = await auth.fetchWithAuth(url, {
         ...options,
         headers: { ...API_HEADERS, ...options.headers }
       });
@@ -302,7 +302,7 @@ class PersonnelManager {
       if (filters.rank) params.append('rank', filters.rank);
 
       const token = localStorage.getItem('token');
-      const response = await fetch(`/personnel/employees-current/search?${params.toString()}`, {
+      const response = await auth.fetchWithAuth(`/personnel/employees-current/search?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -659,7 +659,7 @@ class PersonnelManager {
   async loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/reference/${endpoint}`, {   
+      const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {   
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -694,7 +694,7 @@ class PersonnelManager {
     
     await Promise.all(endpoints.map(async endpoint => {
       try {
-        const res = await fetch(`/reference/${endpoint}`, {
+        const res = await auth.fetchWithAuth(`/reference/${endpoint}`, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -862,7 +862,7 @@ class PersonnelManager {
         console.log('🔍 Searching/Filtering:', { search, rank, page: this.currentPage, endpoint });
 
         const token = localStorage.getItem('token');
-        const response = await fetch(`${endpoint}?${queryString}`, {
+        const response = await auth.fetchWithAuth(`${endpoint}?${queryString}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

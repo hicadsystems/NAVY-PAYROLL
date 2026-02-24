@@ -282,7 +282,7 @@ class ApiService {
     };
 
     try {
-      const response = await fetch(url, config);
+      const response = await auth.fetchWithAuth(url, config);
       const data = await response.json();
       
       if (!response.ok) {

@@ -384,7 +384,7 @@
   // API Helper
   async function apiRequest(url, options = {}) {
       try {
-          const response = await fetch(url, {
+          const response = await auth.fetchWithAuth(url, {
               ...options,
               headers: {
                   'Content-Type': 'application/json',

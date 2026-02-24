@@ -112,7 +112,7 @@
   async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/reference/${endpoint}`, {   
+      const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {   
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -204,7 +204,7 @@
   }
 
   async function loadOverpayment() {
-    const res = await fetch(apiUrl, { 
+    const res = await auth.fetchWithAuth(apiUrl, { 
       headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
     });
     bt04 = await res.json();
@@ -263,12 +263,12 @@
     try {
       if (bt04 && bt04.basicpay) {
         // Update existing record
-        const res = await fetch(apiUrl, { method: "PUT", headers, body });
+        const res = await auth.fetchWithAuth(apiUrl, { method: "PUT", headers, body });
         if (!res.ok) throw new Error("Failed to update");
         showModal();
       } else {
         // Create new record
-        const res = await fetch(apiUrl, { method: "POST", headers, body });
+        const res = await auth.fetchWithAuth(apiUrl, { method: "POST", headers, body });
         if (!res.ok) throw new Error("Failed to create");
         showModal();
       }
@@ -284,7 +284,7 @@
   async function deleteRecord() {
     try {
       const headers = { "Authorization": `Bearer ${localStorage.getItem("token")}` };
-      const res = await fetch(apiUrl, { method: "DELETE", headers });
+      const res = await auth.fetchWithAuth(apiUrl, { method: "DELETE", headers });
       if (!res.ok) throw new Error("Failed to delete");
       showAlert("Record deleted successfully");
       bt04 = null;

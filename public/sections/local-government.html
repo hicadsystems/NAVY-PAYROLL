@@ -243,7 +243,7 @@ async function prefillStates(selectedCode = null) {
   try {
     const token = localStorage.getItem('token');
 
-    const res = await fetch("/dropdown-states", {
+    const res = await auth.fetchWithAuth("/dropdown-states", {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -278,7 +278,7 @@ async function loadLGAs(preserveLga = false) {
   try {
     const token = localStorage.getItem('token');
 
-    const res = await fetch("lg/lga", {
+    const res = await auth.fetchWithAuth("lg/lga", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -453,7 +453,7 @@ saveLgaBtn.addEventListener("click", async () => {
       const token = localStorage.getItem("token");
 
       // Update existing
-      await fetch(`lg/${lgaData[editingLgaIndex].Lgcode}`, {
+      await auth.fetchWithAuth(`lg/${lgaData[editingLgaIndex].Lgcode}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -466,7 +466,7 @@ saveLgaBtn.addEventListener("click", async () => {
       const token = localStorage.getItem("token");
 
       // Create new
-      await fetch('lg/postlga', {
+      await auth.fetchWithAuth('lg/postlga', {
         method: "POST",
         headers:{ 
           "Content-Type": "application/json",
@@ -516,7 +516,7 @@ async function checkDuplicate(input, field, excludeLgCode = null) {
       url += `?exclude=${excludeLgCode}`;
     }
     
-    const res = await fetch(url, {
+    const res = await auth.fetchWithAuth(url, {
       headers: { "Authorization": `Bearer ${token}` }
     });
 
@@ -609,7 +609,7 @@ document.getElementById("confirmAction").addEventListener("click", async () => {
     try {
       const token = localStorage.getItem("token");
 
-      await fetch(`lg/${lgaData[pendingDeleteLgaIndex].Lgcode}`, {
+      await auth.fetchWithAuth(`lg/${lgaData[pendingDeleteLgaIndex].Lgcode}`, {
         method: "DELETE",
         headers: { 
           "Content-Type": "application/json",

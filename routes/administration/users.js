@@ -11,6 +11,122 @@ const verifyToken = require('../../middware/authentication');
 
 
 
+// Pre-login — verifies User ID + Password only, no class required
+// Used by personnel-user-login.html (Login 1 / Half 1 flow)
+router.post("/pre-login", async (req, res) => {
+  const { user_id, password } = req.body;
+
+  if (!user_id || !password) {
+    return res.status(400).json({ error: "User ID and password are required" });
+  }
+
+  try {
+    let databasesToSearch = [];
+
+    // Get all databases to search — same logic as /login
+    try {
+      pool.useDatabase(process.env.DB_OFFICERS);
+      const [dbClasses] = await pool.query("SELECT db_name FROM py_payrollclass");
+      const otherDatabases = dbClasses.map(row => row.db_name).filter(db => db !== process.env.DB_OFFICERS);
+      databasesToSearch = [process.env.DB_OFFICERS, ...otherDatabases];
+    } catch (err) {
+      console.log("⚠️ Could not fetch db_classes, using fallback list");
+      databasesToSearch = [
+        process.env.DB_OFFICERS,
+        process.env.DB_WOFFICERS,
+        process.env.DB_RATINGS,
+        process.env.DB_RATINGS_A,
+        process.env.DB_RATINGS_B,
+        process.env.DB_JUNIOR_TRAINEE
+      ];
+    }
+
+    // Search all databases for the user
+    let foundUser = null;
+    let foundDatabase = null;
+
+    for (const dbName of databasesToSearch) {
+      if (!dbName) continue;
+
+      try {
+        pool.useDatabase(dbName);
+        const [rows] = await pool.query(
+          "SELECT * FROM users WHERE user_id = ?",
+          [user_id]
+        );
+
+        if (rows.length > 0) {
+          foundUser = rows[0];
+          foundDatabase = dbName;
+          console.log(`✅ User found in database: ${dbName}`);
+          break; // Found, stop searching
+        }
+      } catch (err) {
+        console.log(`❌ Error searching database ${dbName}:`, err.message);
+        continue;
+      }
+    }
+
+    if (!foundUser) {
+      return res.status(401).json({ error: "Invalid User ID or password" });
+    }
+
+    // Verify password
+    if (foundUser.password !== password) {
+      return res.status(401).json({ error: "Invalid User ID or password" });
+    }
+
+    // Check account status
+    if (foundUser.status !== "active") {
+      return res.status(403).json({ error: "Account is inactive or suspended" });
+    }
+
+    // Check expiry
+    if (foundUser.expiry_date) {
+      const expiryDate = new Date(foundUser.expiry_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (expiryDate < today) {
+        return res.status(403).json({ error: "Account has expired. Please contact administrator." });
+      }
+    }
+
+    // Generate a limited token — no class/database scope yet
+    // Class will be selected on the dashboard modal before accessing payroll
+    const token = jwt.sign(
+      {
+        user_id:       foundUser.user_id,
+        full_name:     foundUser.full_name,
+        email:         foundUser.email,
+        role:          foundUser.user_role,
+        primary_class: foundUser.primary_class,
+        created_in:    foundDatabase
+      },
+      JWT_SECRET,
+      { expiresIn: "8h" }
+    );
+
+    console.log(`✅ Pre-login successful for user ${user_id}`);
+
+    res.json({
+      message: "✅ Pre-login successful",
+      token,
+      user: {
+        user_id: foundUser.user_id,
+        full_name: foundUser.full_name,
+        email: foundUser.email,
+        role: foundUser.user_role,
+        status: foundUser.status,
+        primary_class: foundUser.primary_class
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ Pre-login error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // User login - searches across all databases
 router.post("/login", async (req, res) => {
   const { user_id, password, payroll_class } = req.body;

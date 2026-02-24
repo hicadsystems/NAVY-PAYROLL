@@ -1043,11 +1043,21 @@ class OldPersonnelManager {
           const newTotalPages   = Math.ceil(newTotalRecords / 10);
           const targetPage      = currentPage > newTotalPages ? newTotalPages : currentPage;
           console.log('📊 [OLD] Navigating to page:', targetPage || 1);
+
+          // Reset so filterPersonnel/loadPersonnelData doesn't skip as duplicate
+          this.lastFilterParams = null;
+
           if (isFiltering) { this.currentPage = targetPage || 1; await this.filterPersonnel(); }
           else              { await this.loadPersonnelData('old', targetPage || 1); }
         } else {
           console.log('✅ [OLD] Page still has data, re-rendering');
           if (this.paginationInfo.totalRecords) this.paginationInfo.totalRecords -= 1;
+          // Save updated snapshot so returning from another section shows correct data
+          if (isFiltering) {
+            this.saveFilterState(currentFilters.search, currentFilters.rank, currentFilters.status);
+          } else {
+            this.saveNormalPaginationState();
+          }
           await this.renderTable();
         }
       } catch (error) { this.showError('Failed to delete personnel: ' + error.message); }

@@ -1361,6 +1361,9 @@ class PersonnelManager {
 
             console.log('📊 Navigating to page:', targetPage || 1);
 
+            // Reset so filterPersonnel/loadPersonnelData doesn't skip as duplicate
+            this.lastFilterParams = null;
+
             if (isFiltering) {
               this.currentPage = targetPage || 1;
               await this.filterPersonnel();
@@ -1370,6 +1373,12 @@ class PersonnelManager {
           } else {
             console.log('✅ Page still has data, re-rendering');
             if (this.paginationInfo.totalRecords) this.paginationInfo.totalRecords -= 1;
+            // Save updated snapshot so returning from another section shows correct data
+            if (isFiltering) {
+              this.saveFilterState(currentFilters.search, currentFilters.rank, currentFilters.status);
+            } else {
+              this.saveNormalPaginationState();
+            }
             await this.renderTable();
           }
 
@@ -1384,14 +1393,16 @@ class PersonnelManager {
     console.log('🔄 Removing employee from snapshots:', employeeId);
 
     const sectionType = this.personnelType || 'current';
-    const snapshotKeys = [
+    const baseKeys = [
       `personnel_pagination_${sectionType}`,
       `personnel_filter_${sectionType}`
     ];
 
     let updatedCount = 0;
 
-    snapshotKeys.forEach(storageKey => {
+    baseKeys.forEach(baseKey => {
+      const storageKey = buildStateKey(baseKey);
+      console.log(`[SNAPSHOT] Looking for key: "${storageKey}"`);
       const snapshot = localStorage.getItem(storageKey);
       if (!snapshot) {
         console.log(`⏭️ ${storageKey} doesn't exist`);

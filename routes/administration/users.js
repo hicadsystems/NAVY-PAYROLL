@@ -300,7 +300,8 @@ const jwtVerify = ({ token, secret }) => {
 router.post("/login", async (req, res) => {
   const { user_id, password, payroll_class } = req.body;
   // payroll_class now comes as: officers, w-officers, rate-a, rate-b, trainee
-
+  
+  console.log(req.body)
   try {
     const userCandidates = [];
 
@@ -452,7 +453,7 @@ router.post("/login", async (req, res) => {
     const token = jwtSign({
       data: tokenPayload,
       secret: config.jwt.secret,
-      time: "5m",
+      time: "8h",
     });
     pool.useDatabase(authenticatedDatabase);
 
@@ -604,7 +605,7 @@ router.post("/refresh", async (req, res) => {
     const token = jwtSign({
       data: tokenPayload,
       secret: config.jwt.secret,
-      time: "5m",
+      time: "8h",
     });
 
     console.log(`🔄 Access token refreshed for user: ${user.user_id}`);

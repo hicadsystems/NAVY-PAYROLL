@@ -108,6 +108,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   const roleSelect = document.getElementById('roleSelect');
   const openModalBtn = document.getElementById('openModalBtn');
   const permissionsModal = document.getElementById('permissionsModal');
@@ -134,7 +135,7 @@
   async function fetchRoles() {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/roles', {
+      const res = await auth.fetchWithAuth('/roles', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -158,7 +159,7 @@
   async function fetchMenuItems() {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/roles/menu-items', {
+      const res = await auth.fetchWithAuth('/roles/menu-items', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -172,7 +173,7 @@
   async function fetchRolePermissions(roleId) {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/roles/role-permissions/${roleId}`, {
+      const res = await auth.fetchWithAuth(`/roles/role-permissions/${roleId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -411,7 +412,7 @@
     
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/roles/role-permissions/${currentRoleId}`, {
+      const res = await auth.fetchWithAuth(`/roles/role-permissions/${currentRoleId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

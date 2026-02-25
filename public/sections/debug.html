@@ -115,6 +115,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 (function() {
   const API_BASE = '/oneoff';
   const token = localStorage.getItem('token');
@@ -142,7 +143,7 @@
   async function loadPayrollClasses() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/payslips/filter-options`, {
+      const response = await auth.fetchWithAuth(`/payslips/filter-options`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -167,7 +168,7 @@
     try {
     const token = localStorage.getItem("token");
 
-    const res = await fetch("/payslips/database",{
+    const res = await auth.fetchWithAuth("/payslips/database",{
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -197,7 +198,7 @@
     singleEmployeeSection.classList.add('hidden');
 
     try {
-      const response = await fetch(`${API_BASE}/debug-payment-types`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/debug-payment-types`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -261,7 +262,7 @@
     singleEmployeeSection.classList.add('hidden');
 
     try {
-      const response = await fetch(`${API_BASE}/debug-calculation/${payrollClass}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/debug-calculation/${payrollClass}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -300,7 +301,7 @@
       try {
         // Replace / with _SLASH_ for URL
         const encodedEmpno = empno.replace(/\//g, '_SLASH_');
-        const response = await fetch(`${API_BASE}/debug-single-employee/${encodedEmpno}`, {
+        const response = await auth.fetchWithAuth(`${API_BASE}/debug-single-employee/${encodedEmpno}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -329,7 +330,7 @@
       const checks = [];
 
       // Check payment types
-      const typesResponse = await fetch(`${API_BASE}/oneofftypes`, {
+      const typesResponse = await auth.fetchWithAuth(`${API_BASE}/oneofftypes`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const types = await typesResponse.json();
@@ -340,7 +341,7 @@
       });
 
       // Check individual payments
-      const individualResponse = await fetch(`${API_BASE}/`, {
+      const individualResponse = await auth.fetchWithAuth(`${API_BASE}/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const individual = await individualResponse.json();

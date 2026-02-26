@@ -1,41 +1,25 @@
 <!-- Analysis of Normal Hours by Department -->
 <section class="p-6">
-  <h2 class="text-xl border-b font-bold text-blue-600 mb-12">
-    Select Options and Generate Analysis of Normal Hours by Department Report
-  </h2>
+  <h2 class="text-xl border-b font-bold text-blue-600 mb-12">Select Options and Generate Analysis of Normal Hours by Department Report</h2>
 
   <!-- Filters -->
   <form id="normalHoursForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
     <!-- Processing Month -->
     <div>
       <label class="block text-sm font-medium mb-1">Processing Month</label>
-      <select
-        id="nhMonth"
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300"
-      >
+      <select id="nhMonth" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
         <option value="">Select Month</option>
-        <option>January</option>
-        <option>February</option>
-        <option>March</option>
-        <option>April</option>
-        <option>May</option>
-        <option>June</option>
-        <option>July</option>
-        <option>August</option>
-        <option>September</option>
-        <option>October</option>
-        <option>November</option>
-        <option>December</option>
+        <option>January</option><option>February</option><option>March</option>
+        <option>April</option><option>May</option><option>June</option>
+        <option>July</option><option>August</option><option>September</option>
+        <option>October</option><option>November</option><option>December</option>
       </select>
     </div>
 
     <!-- Department -->
     <div>
       <label class="block text-sm font-medium mb-1">Department</label>
-      <select
-        id="nhDept"
-        class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300"
-      >
+      <select id="nhDept" class="w-full border rounded px-3 py-2 focus:ring focus:ring-blue-300">
         <option value="">All Departments</option>
         <option>Finance</option>
         <option>Human Resources</option>
@@ -48,30 +32,10 @@
 
   <!-- Buttons -->
   <div class="flex flex-wrap justify-end gap-2 mb-4">
-    <button
-      id="nhClear"
-      class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-    >
-      Clear
-    </button>
-    <button
-      id="nhGenerate"
-      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-    >
-      Generate
-    </button>
-    <button
-      id="nhPrint"
-      class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-    >
-      Print
-    </button>
-    <button
-      id="nhExport"
-      class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-    >
-      Export
-    </button>
+    <button id="nhClear" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Clear</button>
+    <button id="nhGenerate" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Generate</button>
+    <button id="nhPrint" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Print</button>
+    <button id="nhExport" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Export</button>
   </div>
 
   <!-- Table -->
@@ -98,20 +62,12 @@
 </section>
 
 <!-- Success Modal -->
-<div
-  id="nhSuccessModal"
-  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
->
+<div id="nhSuccessModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
     <h3 class="text-lg font-semibold text-green-600 mb-4">Success</h3>
     <p id="nhSuccessMessage" class="mb-6 text-gray-700">Action completed.</p>
     <div class="flex justify-center">
-      <button
-        id="nhSuccessOkBtn"
-        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-      >
-        OK
-      </button>
+      <button id="nhSuccessOkBtn" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">OK</button>
     </div>
   </div>
 </div>
@@ -127,27 +83,9 @@
 
   // Dummy data
   const nhData = [
-    {
-      id: "NN001",
-      name: "Mr. Haruna",
-      dept: "Finance",
-      hours: 160,
-      date: "2025-01-31",
-    },
-    {
-      id: "NN002",
-      name: "Mr. David",
-      dept: "IT",
-      hours: 158,
-      date: "2025-01-31",
-    },
-    {
-      id: "NN003",
-      name: "Mr. Johnson",
-      dept: "Operations",
-      hours: 162,
-      date: "2025-01-31",
-    },
+    { id: "NN001", name: "Mr. Haruna", dept: "Finance", hours: 160, date: "2025-01-31" },
+    { id: "NN002", name: "Mr. David", dept: "IT", hours: 158, date: "2025-01-31" },
+    { id: "NN003", name: "Mr. Johnson", dept: "Operations", hours: 162, date: "2025-01-31" },
   ];
 
   function showNhSuccess(msg) {
@@ -159,7 +97,7 @@
   document.getElementById("nhGenerate").onclick = () => {
     nhTableBody.innerHTML = "";
     let total = 0;
-    nhData.forEach((emp) => {
+    nhData.forEach(emp => {
       total += emp.hours;
       const row = `<tr>
         <td class="px-3 py-2 border">${emp.id}</td>
@@ -194,7 +132,7 @@
   document.getElementById("nhExport").onclick = () => {
     let csv = "Staff ID,Name,Department,Normal Hours,Date\n";
     let total = 0;
-    nhData.forEach((e) => {
+    nhData.forEach(e => {
       total += e.hours;
       csv += `${e.id},${e.name},${e.dept},${e.hours},${e.date}\n`;
     });

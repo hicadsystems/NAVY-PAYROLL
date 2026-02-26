@@ -61,11 +61,11 @@ class QuickAccessManager {
         section: 'payments-deductions',
         title: 'Payments/Deductions'
       },
-      'payments-deductions': {
+      'payments-deductions-upload': {
         id: 'payments-deductions-upload',
-        label: 'Payment/Deduction',
+        label: 'Payment/Deduction Upload',
         section: 'payments-deductions-upload',
-        title: 'Payments/Deductions'
+        title: 'Payments/Deductions Upload'
       },
       'current-personnel': {
         id: 'current-personnel',
@@ -429,7 +429,7 @@ class QuickAccessManager {
           </button>
           <button 
             onclick="window.quickAccessManager.saveAndClose()" 
-            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors">
+            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-colors">
             Save
           </button>
         </div>
@@ -448,8 +448,8 @@ class QuickAccessManager {
       <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
         <div class="p-6">
           <div class="flex items-center gap-3 mb-4">
-            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-              <i class="fa-solid fa-circle-info text-blue-600 text-xl"></i>
+            <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+              <i class="fa-solid fa-circle-info text-green-600 text-xl"></i>
             </div>
             <h3 class="text-lg font-bold text-navy" id="alertModalTitle">Confirm</h3>
           </div>
@@ -462,7 +462,7 @@ class QuickAccessManager {
             </button>
             <button 
               onclick="window.quickAccessManager.closeAlertModal(true)" 
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors">
+              class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-colors">
               Confirm
             </button>
           </div>
@@ -559,7 +559,7 @@ class QuickAccessManager {
     
     return `
       <div 
-        class="relative ${color} p-3 rounded-lg shadow-sm border-2 border-transparent hover:border-blue-400 cursor-move transition-all modal-drag-item"
+        class="relative ${color} p-3 rounded-lg shadow-sm border-2 border-transparent hover:border-green-400 cursor-move transition-all modal-drag-item"
         draggable="true"
         data-index="${index}"
         ondragstart="window.quickAccessManager.handleModalDragStart(event, ${index})"
@@ -575,7 +575,7 @@ class QuickAccessManager {
           
           <select 
             onchange="window.quickAccessManager.replaceItemInModal(${index}, this.value)"
-            class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer"
+            class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 bg-white cursor-pointer"
             onclick="event.stopPropagation()">
             ${availableForSwap}
           </select>
@@ -813,7 +813,7 @@ class QuickAccessManager {
         <h4 class="text-xl font-bold text-navy">Quick Access</h4>
         <button 
           onclick="window.quickAccessManager.openModal()" 
-          class="text-navy hover:text-blue-600 transition-colors text-sm font-semibold"
+          class="text-navy hover:text-green-600 transition-colors text-sm font-semibold"
           title="Edit">
           <i class="fa-solid fa-pen-to-square"></i>
         </button>

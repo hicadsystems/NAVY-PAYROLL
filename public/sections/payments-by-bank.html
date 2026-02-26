@@ -164,7 +164,8 @@
 </div>
 
 <script>
-const auth = window.authService;  const API_BASE = '/paymentsbank';
+  const auth = window.authService;
+  const API_BASE = '/paymentsbank';
   
   const allBanks = document.getElementById("allBanks");
   const specificBank = document.getElementById("specificBank");
@@ -368,7 +369,8 @@ const auth = window.authService;  const API_BASE = '/paymentsbank';
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate report');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to generate report');
       }
 
       // Download file and open in new tab for PDFs

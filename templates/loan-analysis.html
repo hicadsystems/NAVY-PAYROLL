@@ -93,6 +93,14 @@
       font-size: 14px;
     }
 
+    .loan-group {
+      margin-bottom: 25px;
+    }
+
+    .loan-group.page-break {
+      page-break-before: always;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -146,6 +154,7 @@
       text-transform: uppercase;
       letter-spacing: 1px;
       width: 100%;
+      page-break-after: avoid;
     }
 
     .subtotal-row {
@@ -179,10 +188,6 @@
       font-size: 8pt;
       color: #64748b;
       margin-top: 20px;
-    }
-
-    .page-break {
-      page-break-after: always;
     }
 
     @media print {
@@ -241,76 +246,81 @@
 
   <!-- Loan Groups -->
   {{#each groups}}
-    <table>
-      <thead>
-        <!-- Loan Type Header -->
-        <tr class="loan-type-header">
-          <td colspan="3">
-            <strong>{{this.loan_type}} - {{this.loan_description}}</strong> |
-            <span><strong>({{this.totals.count}} Active Loans)</strong></span>
-          </td>
-        </tr>
-        <tr>
-          <th style="width: 12%;">SVC.No</th>
-          <th>Rank</th>
-          <th style="white-space: nowrap;">Full Name</th>
-          <th class="text-right">Loan Amount</th>
-          <th class="text-right">This Month</th>
-          <th style="white-space: nowrap;" class="text-center">TERNOR</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{#each this.loans}}
-          <tr>
-            <td>{{this.employee_id}}</td>
-            <td>{{this.Title}} {{this.title}}</td>
-            <td>{{this.fullname}}</td>            
-            <td class="currency">₦{{formatCurrency this.original_loan}}</td>
-            <td class="currency">₦{{formatCurrency this.this_month_payment}}</td>
-            <td class="text-center">{{this.months_remaining}}</td>
+    <div class="loan-group{{#unless @first}} page-break{{/unless}}">
+      <table>
+        <thead>
+          <!-- Loan Type Header -->
+          <tr class="loan-type-header">
+            <td colspan="6">
+              <strong>{{this.loan_type}} - {{this.loan_description}}</strong> |
+              <span><strong>({{this.totals.count}} Active Loans)</strong></span>
+            </td>
           </tr>
-        {{/each}}
-        
-        <!-- Subtotal Row -->
-        <tr class="subtotal-row">
-          <td colspan="3"><strong>{{this.loan_description}}</strong> TOTAL</td>
-          <td class="currency"><strong>₦{{formatCurrency this.totals.original_loan}}</strong></td>
-          <td class="currency"><strong>₦{{formatCurrency this.totals.this_month_payment}}</strong></td>
-          <td></td>
-        </tr>
-        {{/each}}
-      </tbody>
-      <!-- Grand Total -->
-      <tfoot>
-        <tr class="grand-total-row">
-          <td colspan="3" style="width: 65%;"><strong>GRAND TOTAL (ALL LOANS)</strong></td>
-          <td class="currency" style="width: 15%;"><strong>₦{{formatCurrency grandTotals.original_loan}}</strong></td>
-          <td class="currency" style="width: 15%;"><strong>₦{{formatCurrency grandTotals.this_month_payment}}</strong></td>
-          <!--<td class="text-center" style="width: 10%;"><strong>{{grandTotals.count}} Loans</strong></td>-->
-        </tr>
-      </tfoot>
-    </table>
+          <tr>
+            <th style="width: 12%;">SVC.No</th>
+            <th>Rank</th>
+            <th style="white-space: nowrap;">Full Name</th>
+            <th class="text-right">Loan Amount</th>
+            <th class="text-right">This Month</th>
+            <th style="white-space: nowrap;" class="text-center">TERNOR</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each this.loans}}
+            <tr>
+              <td>{{this.employee_id}}</td>
+              <td>{{this.Title}} {{this.title}}</td>
+              <td>{{this.fullname}}</td>            
+              <td class="currency">₦{{formatCurrency this.original_loan}}</td>
+              <td class="currency">₦{{formatCurrency this.this_month_payment}}</td>
+              <td class="text-center">{{this.months_remaining}}</td>
+            </tr>
+          {{/each}}
+          
+          <!-- Subtotal Row -->
+          <tr class="subtotal-row">
+            <td colspan="3"><strong>{{this.loan_description}}</strong> TOTAL</td>
+            <td class="currency"><strong>₦{{formatCurrency this.totals.original_loan}}</strong></td>
+            <td class="currency"><strong>₦{{formatCurrency this.totals.this_month_payment}}</strong></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  {{/each}}
 
-      <!-- Summary Statistics -->
+  <!-- Grand Total -->
+  <table>
+    <tfoot>
+      <tr class="grand-total-row">
+        <td colspan="3" style="width: 65%;"><strong>GRAND TOTAL (ALL LOANS)</strong></td>
+        <td class="currency" style="width: 15%;"><strong>₦{{formatCurrency grandTotals.original_loan}}</strong></td>
+        <td class="currency" style="width: 15%;"><strong>₦{{formatCurrency grandTotals.this_month_payment}}</strong></td>
+        <td style="width: 5%;"></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- Summary Statistics -->
   <div class="summary-box">
     <div class="summary-item">
-    <div class="label">Total Active Loans</div>
-    <div class="value">{{grandTotals.count}}</div>
+      <div class="label">Total Active Loans</div>
+      <div class="value">{{grandTotals.count}}</div>
     </div>
     
     <div class="summary-item highlight">
-    <div class="label">Total Loan Amount</div>
-    <div class="value">₦{{formatCurrency grandTotals.original_loan}}</div>
+      <div class="label">Total Loan Amount</div>
+      <div class="value">₦{{formatCurrency grandTotals.original_loan}}</div>
     </div>
     
     <div class="summary-item highlight">
-    <div class="label">This Month Payment</div>
-    <div class="value">₦{{formatCurrency grandTotals.this_month_payment}}</div>
+      <div class="label">This Month Payment</div>
+      <div class="value">₦{{formatCurrency grandTotals.this_month_payment}}</div>
     </div>
     
     <div class="summary-item">
-    <div class="label">Loan Categories</div>
-    <div class="value">{{groups.length}}</div>
+      <div class="label">Loan Categories</div>
+      <div class="value">{{groups.length}}</div>
     </div>
   </div>
 

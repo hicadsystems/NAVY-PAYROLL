@@ -272,6 +272,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 (function () {
   // Configuration
   const API_BASE_URL = '/ippis'; // Adjust to match your route
@@ -322,7 +323,7 @@
   // ============================================
   async function loadMonths() {
     try {
-      const response = await fetch(`${API_BASE_URL}/months`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_URL}/months`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -349,7 +350,7 @@
   // ============================================
   async function loadPeriods() {
     try {
-      const response = await fetch(`${API_BASE_URL}/periods`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_URL}/periods`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -487,7 +488,7 @@
     showLoading('Validating file...');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/validate`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_URL}/validate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`
@@ -596,7 +597,7 @@
     showLoading('Importing data...');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/import`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_URL}/import`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`
@@ -628,7 +629,7 @@
     showLoading('Loading period details...');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/history/${period}?limit=100`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_URL}/history/${period}?limit=100`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -656,7 +657,7 @@
     showLoading('Loading period summary...');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/summary/${period}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_URL}/summary/${period}`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -809,7 +810,7 @@
   // ============================================
   async function exportPeriod(period) {
     try {
-      const response = await fetch(`${API_BASE_URL}/export/${period}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_URL}/export/${period}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -846,7 +847,7 @@
     showLoading('Deleting period...');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/period/${period}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_URL}/period/${period}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${authToken}`
@@ -1036,7 +1037,7 @@
   viewPeriodsBtn.addEventListener('click', async () => {
     showLoading('Loading periods...');
     try {
-      const response = await fetch(`${API_BASE_URL}/periods`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_URL}/periods`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }

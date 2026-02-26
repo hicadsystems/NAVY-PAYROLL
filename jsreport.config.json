@@ -23,9 +23,11 @@
     }
   },
   "trustUserCode": false,
-  "reportTimeout": 120000,
+  "reportTimeout": 300000,
   "workers": {
-    "numberOfWorkers": 2
+    "numberOfWorkers": 2,
+    "timeout": 300000,
+    "taskPingTimeout": 120000
   },
   "extensions": {
     "authentication": {
@@ -40,13 +42,14 @@
       "createSamples": true
     },
     "chrome-pdf": {
-      "timeout": 120000,
+      "timeout": 300000,
       "launchOptions": {
         "args": [
           "--no-sandbox",
           "--disable-setuid-sandbox",
           "--disable-dev-shm-usage",
-          "--disable-gpu"
+          "--disable-gpu",
+          "--disable-features=VizDisplayCompositor"
         ]
       },
       "strategy": "dedicated-process"

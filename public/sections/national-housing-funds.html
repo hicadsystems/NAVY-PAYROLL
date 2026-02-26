@@ -1,8 +1,6 @@
 <!-- National Housing Funds Report -->
 <section class="items border rounded-lg m-6 max-w-lg mr-auto p-6 mx-auto">
-  <h2 class="text-xl text-center border-b font-bold text-blue-600 mb-4">
-    National Housing Funds (NHF) Report
-  </h2>
+  <h2 class="text-xl text-center border-b font-bold text-blue-600 mb-4">National Housing Funds (NHF) Report</h2>
 
   <form id="nhfForm" class="space-y-4">
     <!-- Year Selection -->
@@ -36,11 +34,11 @@
       <label class="block font-medium mb-2">Output Format</label>
       <div class="flex space-x-4">
         <label class="flex text-sm items-center space-x-2">
-          <input type="radio" name="nhfFormat" value="pdf" checked />
+          <input type="radio" name="nhfFormat" value="pdf" checked>
           <span>PDF</span>
         </label>
         <label class="flex text-sm items-center space-x-2">
-          <input type="radio" name="nhfFormat" value="excel" />
+          <input type="radio" name="nhfFormat" value="excel">
           <span>Excel</span>
         </label>
       </div>
@@ -49,181 +47,107 @@
     <div class="flex justify-end items-center gap-2 mb-4">
       <!-- Buttons -->
       <div class="flex space-x-2 pt-2">
-        <button
-          type="reset"
-          id="nhfClearBtn"
-          class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-        >
+        <button type="reset" id="nhfClearBtn" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
           Clear
         </button>
-        <button
-          type="button"
-          id="nhfGenerateBtn"
-          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
+        <button type="button" id="nhfGenerateBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
           Generate
         </button>
       </div>
     </div>
 
     <!-- Loading Indicator -->
-    <div
-      id="nhfLoadingIndicator"
-      class="hidden text-center text-blue-600 text-sm"
-    >
+    <div id="nhfLoadingIndicator" class="hidden text-center text-blue-600 text-sm">
       <span>Generating report...</span>
     </div>
   </form>
 </section>
 
 <!-- Confirm Modal -->
-<div
-  id="nhfConfirmModal"
-  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
->
+<div id="nhfConfirmModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6">
     <h3 class="text-lg font-semibold mb-4">Confirm Generation</h3>
-    <p class="mb-6 text-gray-700">
-      Do you want to continue with report generation?
-    </p>
+    <p class="mb-6 text-gray-700">Do you want to continue with report generation?</p>
     <div class="flex justify-end gap-2">
-      <button
-        id="nhfCancelBtn"
-        class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-      >
-        Cancel
-      </button>
-      <button
-        id="nhfContinueBtn"
-        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        Continue
-      </button>
+      <button id="nhfCancelBtn" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
+      <button id="nhfContinueBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Continue</button>
     </div>
   </div>
 </div>
 
 <!-- Processing Modal -->
-<div
-  id="nhfProcessingModal"
-  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
->
+<div id="nhfProcessingModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-80 p-6 text-center">
-    <div
-      class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"
-    ></div>
+    <div class="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
     <p class="text-gray-700">Generating report...</p>
   </div>
 </div>
 
 <!-- Success Modal -->
-<div
-  id="nhfSuccessModal"
-  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
->
+<div id="nhfSuccessModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
     <h3 class="text-lg font-semibold text-green-600 mb-4">Success</h3>
-    <p class="mb-6 text-gray-700" id="nhfSuccessMessage">
-      Report generated successfully!
-    </p>
+    <p class="mb-6 text-gray-700" id="nhfSuccessMessage">Report generated successfully!</p>
     <div class="flex justify-center gap-2">
-      <button
-        id="nhfSuccessOkBtn"
-        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        OK
-      </button>
+      <button id="nhfSuccessOkBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
     </div>
   </div>
 </div>
 
 <!-- Error Modal -->
-<div
-  id="nhfErrorModal"
-  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
->
+<div id="nhfErrorModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
     <h3 class="text-lg font-semibold text-red-600 mb-4">Error</h3>
-    <p id="nhfErrorText" class="mb-6 text-gray-700">
-      Please complete required fields.
-    </p>
-    <button
-      id="nhfErrorOkBtn"
-      class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-    >
-      OK
-    </button>
+    <p id="nhfErrorText" class="mb-6 text-gray-700">Please complete required fields.</p>
+    <button id="nhfErrorOkBtn" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">OK</button>
   </div>
 </div>
 
 <script>
-  const auth = window.authService; // API Configuration
-  const API_BASE = "/nhf";
+  const auth = window.authService;
+  // API Configuration
+  const API_BASE = '/nhf';
 
   // Elements
-  const nhfYear = document.getElementById("nhfYear");
-  const nhfMonth = document.getElementById("nhfMonth");
-  const nhfGenerateBtn = document.getElementById("nhfGenerateBtn");
-  const nhfClearBtn = document.getElementById("nhfClearBtn");
-  const nhfLoadingIndicator = document.getElementById("nhfLoadingIndicator");
+  const nhfYear = document.getElementById('nhfYear');
+  const nhfMonth = document.getElementById('nhfMonth');
+  const nhfGenerateBtn = document.getElementById('nhfGenerateBtn');
+  const nhfClearBtn = document.getElementById('nhfClearBtn');
+  const nhfLoadingIndicator = document.getElementById('nhfLoadingIndicator');
 
-  const nhfConfirmModal = document.getElementById("nhfConfirmModal");
-  const nhfCancelBtn = document.getElementById("nhfCancelBtn");
-  const nhfContinueBtn = document.getElementById("nhfContinueBtn");
+  const nhfConfirmModal = document.getElementById('nhfConfirmModal');
+  const nhfCancelBtn = document.getElementById('nhfCancelBtn');
+  const nhfContinueBtn = document.getElementById('nhfContinueBtn');
 
-  const nhfProcessingModal = document.getElementById("nhfProcessingModal");
-  const nhfSuccessModal = document.getElementById("nhfSuccessModal");
-  const nhfSuccessOkBtn = document.getElementById("nhfSuccessOkBtn");
-  const nhfSuccessMessage = document.getElementById("nhfSuccessMessage");
+  const nhfProcessingModal = document.getElementById('nhfProcessingModal');
+  const nhfSuccessModal = document.getElementById('nhfSuccessModal');
+  const nhfSuccessOkBtn = document.getElementById('nhfSuccessOkBtn');
+  const nhfSuccessMessage = document.getElementById('nhfSuccessMessage');
 
-  const nhfErrorModal = document.getElementById("nhfErrorModal");
-  const nhfErrorOkBtn = document.getElementById("nhfErrorOkBtn");
-  const nhfErrorText = document.getElementById("nhfErrorText");
+  const nhfErrorModal = document.getElementById('nhfErrorModal');
+  const nhfErrorOkBtn = document.getElementById('nhfErrorOkBtn');
+  const nhfErrorText = document.getElementById('nhfErrorText');
 
   // Helper function to convert month name to number
   function getMonthNumber(monthName) {
-    const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
     return months.indexOf(monthName) + 1;
   }
 
   // Helper function to convert month number to name
   function getMonthName(monthNum) {
-    const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    return months[monthNum - 1] || "";
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+    return months[monthNum - 1] || '';
   }
 
   // Load current period and set default values
   async function loadCurrentPeriod() {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
       const response = await auth.fetchWithAuth(`${API_BASE}/filter-options`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (response.ok) {
@@ -235,136 +159,127 @@
         }
       }
     } catch (error) {
-      console.error("Error loading current period:", error);
+      console.error('Error loading current period:', error);
     }
   }
 
   // Open confirm modal
-  nhfGenerateBtn.addEventListener("click", () => {
+  nhfGenerateBtn.addEventListener('click', () => {
     // Validation before showing confirm modal
     if (!nhfYear.value) {
-      nhfErrorText.textContent = "Please select a year.";
-      nhfErrorModal.classList.remove("hidden");
+      nhfErrorText.textContent = 'Please select a year.';
+      nhfErrorModal.classList.remove('hidden');
       return;
     }
 
     if (!nhfMonth.value) {
-      nhfErrorText.textContent = "Please select a processing month.";
-      nhfErrorModal.classList.remove("hidden");
+      nhfErrorText.textContent = 'Please select a processing month.';
+      nhfErrorModal.classList.remove('hidden');
       return;
     }
 
-    nhfConfirmModal.classList.remove("hidden");
+    nhfConfirmModal.classList.remove('hidden');
   });
 
   // Cancel confirm
-  nhfCancelBtn.addEventListener("click", () => {
-    nhfConfirmModal.classList.add("hidden");
+  nhfCancelBtn.addEventListener('click', () => {
+    nhfConfirmModal.classList.add('hidden');
   });
 
   // Continue -> validate -> process
-  nhfContinueBtn.addEventListener("click", async () => {
-    nhfConfirmModal.classList.add("hidden");
+  nhfContinueBtn.addEventListener('click', async () => {
+    nhfConfirmModal.classList.add('hidden');
 
     // Validate again
     if (!nhfYear.value || !nhfMonth.value) {
       nhfErrorText.textContent = !nhfYear.value
-        ? "Please select a year."
-        : "Please select a processing month.";
-      nhfErrorModal.classList.remove("hidden");
+        ? 'Please select a year.'
+        : 'Please select a processing month.';
+      nhfErrorModal.classList.remove('hidden');
       return;
     }
 
     // Show processing modal
-    nhfProcessingModal.classList.remove("hidden");
+    nhfProcessingModal.classList.remove('hidden');
     nhfGenerateBtn.disabled = true;
 
-    const format = document.querySelector(
-      'input[name="nhfFormat"]:checked'
-    ).value;
+    const format = document.querySelector('input[name="nhfFormat"]:checked').value;
     const monthNum = getMonthNumber(nhfMonth.value);
 
     try {
-      const token = localStorage.getItem("token");
-
+      const token = localStorage.getItem('token');
+      
       // Build query parameters
       const params = new URLSearchParams({
         format: format,
         year: nhfYear.value,
-        month: monthNum,
+        month: monthNum
       });
 
-      const response = await auth.fetchWithAuth(
-        `${API_BASE}/generate?${params.toString()}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const response = await auth.fetchWithAuth(`${API_BASE}/generate?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      );
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to generate report");
+        throw new Error(errorData.error || 'Failed to generate report');
       }
 
       // Download file
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-
+      
       // Open PDF in new tab
-      if (format === "pdf") {
-        window.open(url, "_blank");
+      if (format === 'pdf') {
+        window.open(url, '_blank');
       }
-
+      
       // Also trigger download
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
-      a.download = `nhf_report_${nhfYear.value}_${nhfMonth.value}.${
-        format === "pdf" ? "pdf" : "xlsx"
-      }`;
+      a.download = `nhf_report_${nhfYear.value}_${nhfMonth.value}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-
+      
       setTimeout(() => window.URL.revokeObjectURL(url), 100);
 
-      nhfProcessingModal.classList.add("hidden");
+      nhfProcessingModal.classList.add('hidden');
       nhfGenerateBtn.disabled = false;
-      nhfSuccessMessage.textContent = `Report generated successfully! Your ${format.toUpperCase()} is ${
-        format === "pdf" ? "opening in a new tab and" : ""
-      } downloading.`;
-      nhfSuccessModal.classList.remove("hidden");
+      nhfSuccessMessage.textContent = `Report generated successfully! Your ${format.toUpperCase()} is ${format === 'pdf' ? 'opening in a new tab and' : ''} downloading.`;
+      nhfSuccessModal.classList.remove('hidden');
+
     } catch (error) {
-      nhfProcessingModal.classList.add("hidden");
+      nhfProcessingModal.classList.add('hidden');
       nhfGenerateBtn.disabled = false;
-      nhfErrorText.textContent =
-        error.message || "Failed to generate report. Please try again.";
-      nhfErrorModal.classList.remove("hidden");
-      console.error("Error:", error);
+      nhfErrorText.textContent = error.message || 'Failed to generate report. Please try again.';
+      nhfErrorModal.classList.remove('hidden');
+      console.error('Error:', error);
     }
   });
 
   // Error OK
-  nhfErrorOkBtn.addEventListener("click", () => {
-    nhfErrorModal.classList.add("hidden");
+  nhfErrorOkBtn.addEventListener('click', () => {
+    nhfErrorModal.classList.add('hidden');
   });
 
   // Success OK - close modal
-  nhfSuccessOkBtn.addEventListener("click", () => {
-    nhfSuccessModal.classList.add("hidden");
+  nhfSuccessOkBtn.addEventListener('click', () => {
+    nhfSuccessModal.classList.add('hidden');
     // Optionally reset form here
-    document.getElementById("nhfForm").reset();
+    document.getElementById('nhfForm').reset();
     loadCurrentPeriod(); // Reload default values
   });
 
   // Reset/clear
-  nhfClearBtn.addEventListener("click", () => {
+  nhfClearBtn.addEventListener('click', () => {
     // Let the native reset run, then reload defaults
     setTimeout(() => {
-      nhfYear.value = "";
-      nhfMonth.value = "";
+      nhfYear.value = '';
+      nhfMonth.value = '';
       loadCurrentPeriod(); // Reload default values
     }, 0);
   });

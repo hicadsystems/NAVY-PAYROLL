@@ -56,6 +56,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 (function () {
   const modal = document.getElementById("backupModal");
   const openBtn = document.getElementById("openBackupModalBtn");
@@ -84,7 +85,7 @@
       // Show loading
       showNotification('Processing backup...', 'info');
       
-      const response = await fetch('/backup', {
+      const response = await auth.fetchWithAuth('/backup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

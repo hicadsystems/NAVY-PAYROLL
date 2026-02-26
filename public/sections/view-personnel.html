@@ -46,6 +46,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 class ViewPersonnelManager {
   constructor() {
     this.currentEmployeeId = null;
@@ -279,7 +280,7 @@ class ViewPersonnelManager {
     
     await Promise.all(endpoints.map(async endpoint => {
       try {
-        const res = await fetch(`/reference/${endpoint}`, {
+        const res = await auth.fetchWithAuth(`/reference/${endpoint}`, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -369,7 +370,7 @@ class ViewPersonnelManager {
       const token = localStorage.getItem('token');
       const safeId = this.currentEmployeeId.replace(/\//g, '_SLASH_');
       
-      const response = await fetch(`/personnel/employees/${safeId}`, {
+      const response = await auth.fetchWithAuth(`/personnel/employees/${safeId}`, {
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`

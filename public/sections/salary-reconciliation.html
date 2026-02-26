@@ -377,6 +377,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 // Configuration
 const API_BASE = '/salaryreconcile';
 const token = localStorage.getItem('token');
@@ -452,7 +453,7 @@ function getMonthName(monthNum) {
 async function loadFilters() {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`/salarysummary/filter-options`, {
+    const response = await auth.fetchWithAuth(`/salarysummary/filter-options`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -487,7 +488,7 @@ window.loadReconciliation = async function() {
   try {
     
     // Load summary
-    const summaryResponse = await fetch(
+    const summaryResponse = await auth.fetchWithAuth(
       `${API_BASE}/summary?year=${year}&month=${month}`,
       {
         headers: {
@@ -525,7 +526,7 @@ window.loadReconciliation = async function() {
     }
 
     // Load employee details
-    const employeesResponse = await fetch(
+    const employeesResponse = await auth.fetchWithAuth(
       `${API_BASE}/employees?year=${year}&month=${month}&showErrorsOnly=${showErrorsOnly}`,
       {
         headers: {
@@ -846,7 +847,7 @@ window.exportReport = async function() {
       showErrorsOnly: showErrorsOnly
     });
 
-    const response = await fetch(
+    const response = await auth.fetchWithAuth(
       `${API_BASE}/export?${params.toString()}`,
       {
         headers: {

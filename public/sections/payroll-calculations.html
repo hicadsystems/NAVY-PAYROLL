@@ -258,6 +258,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 (function () {
   const API_BASE = '/payrollcalculation';
   const STATUS_API = '/status-payroll';
@@ -399,7 +400,7 @@
   async function loadPeriodInfo() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(STATUS_API, {
+      const response = await auth.fetchWithAuth(STATUS_API, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -425,7 +426,7 @@
       
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`${API_BASE}/results`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/results`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -491,7 +492,7 @@
     try {
       const token = localStorage.getItem('token');
 
-      const response = await fetch(API_BASE, {
+      const response = await auth.fetchWithAuth(API_BASE, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -592,7 +593,7 @@
   async function checkPayrollStatus() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(STATUS_API, {
+      const response = await auth.fetchWithAuth(STATUS_API, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       

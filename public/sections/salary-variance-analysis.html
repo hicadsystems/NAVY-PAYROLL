@@ -115,6 +115,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   const paymentTypeSelect = document.getElementById("paymentTypeSelect");
   const addPaymentTypeBtn = document.getElementById("addPaymentType");
   const generatePaymentTypesBtn = document.getElementById("generatePaymentTypes");
@@ -139,7 +140,7 @@
   async function loadFilterOptions() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/salaryvariance/filter-options', {
+      const response = await auth.fetchWithAuth('/salaryvariance/filter-options', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -289,7 +290,7 @@
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/salaryvariance?${queryParams}`, {
+      const response = await auth.fetchWithAuth(`/salaryvariance?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

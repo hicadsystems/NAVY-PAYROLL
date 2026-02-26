@@ -165,6 +165,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 // API Configuration
 const API_BASE_URL = "dept";
 
@@ -281,7 +282,7 @@ class ApiService {
     };
 
     try {
-      const response = await fetch(url, config);
+      const response = await auth.fetchWithAuth(url, config);
       const data = await response.json();
       
       if (!response.ok) {

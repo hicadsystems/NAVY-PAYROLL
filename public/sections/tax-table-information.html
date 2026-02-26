@@ -96,6 +96,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   const API_URL = "/api/tax";
   const token = localStorage.getItem("token");
   let bandData = [];
@@ -108,7 +109,7 @@
   // Load all bands (INTER<>999)
   async function loadBands() {
     try {
-      const res = await fetch(API_URL, {
+      const res = await auth.fetchWithAuth(API_URL, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error("Failed to load bands");
@@ -166,13 +167,13 @@
     try {
       let response;
       if (editingIndex !== null) {
-        response = await fetch(`${API_URL}/${payload.INTER}`, {
+        response = await auth.fetchWithAuth(`${API_URL}/${payload.INTER}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify(payload)
         });
       } else {
-        response = await fetch(`${API_URL}/create`, {
+        response = await auth.fetchWithAuth(`${API_URL}/create`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify(payload)
@@ -199,7 +200,7 @@
   window.deleteBand = async function(index) {
     const item = bandData[index];
     if (await confirmModal("Delete this band?")) {
-      await fetch(`${API_URL}/${item.INTER}`, {
+      await auth.fetchWithAuth(`${API_URL}/${item.INTER}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -215,7 +216,7 @@
   // --- Minimum Free Pay ---
   document.getElementById("configureMfpBtn").addEventListener("click", async () => {
     try {
-      const res = await fetch(`${API_URL}/999`, {
+      const res = await auth.fetchWithAuth(`${API_URL}/999`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -236,16 +237,16 @@
     const perc = document.getElementById("mfpPerc").value.trim();
     const payload = { INTER: 999, val: parseInt(val), perc: parseFloat(perc) || 0 };
     try {
-      const res = await fetch(`${API_URL}/999`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await auth.fetchWithAuth(`${API_URL}/999`, { headers: { Authorization: `Bearer ${token}` } });
       let response;
       if (res.ok) {
-        response = await fetch(`${API_URL}/999`, {
+        response = await auth.fetchWithAuth(`${API_URL}/999`, {
           method: "PUT",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify(payload)
         });
       } else {
-        response = await fetch(`${API_URL}/create`, {
+        response = await auth.fetchWithAuth(`${API_URL}/create`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify(payload)
@@ -297,7 +298,7 @@ async function generateReport() {
   // Fetch MFP separately
   let mfpData = null;
   try {
-    const res = await fetch(`${API_URL}/999`, {
+    const res = await auth.fetchWithAuth(`${API_URL}/999`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (res.ok) mfpData = await res.json();

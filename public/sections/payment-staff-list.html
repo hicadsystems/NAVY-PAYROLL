@@ -263,6 +263,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   const personnelRadios = document.querySelectorAll('input[name="personnelScope"]');
   
   // All wrapper elements
@@ -334,7 +335,7 @@
   async function loadFilterOptions() {
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch('/personnel-report/filter-options-old', {
+      const response = await auth.fetchWithAuth('/personnel-report/filter-options-old', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -473,7 +474,7 @@
 
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch(`/personnel-report/old?${queryParams}`, {
+      const response = await auth.fetchWithAuth(`/personnel-report/old?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

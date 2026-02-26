@@ -555,6 +555,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 // Complete Personnel Management Script
 const API_BASE = '/personnel';
 const API_BATCH = '/batchpersonnel';
@@ -629,7 +630,7 @@ const dropdownConfig = {
 async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`/reference/${endpoint}`, {   
+    const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {   
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -669,7 +670,7 @@ async function initializeDropdowns() {
       
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`/reference/title`, {
+        const response = await auth.fetchWithAuth(`/reference/title`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -777,7 +778,7 @@ function setupStateLGACascade(stateFieldId, lgaFieldId) {
     
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/reference/lga/${stateCode}`, {
+      const res = await auth.fetchWithAuth(`/reference/lga/${stateCode}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -1002,7 +1003,7 @@ function showError(message) {
 // API Helper
 async function apiRequest(url, options = {}) {
   try {
-    const response = await fetch(url, {
+    const response = await auth.fetchWithAuth(url, {
       ...options,
       headers: { ...API_HEADERS, ...options.headers }
     });
@@ -2518,7 +2519,7 @@ async function checkDuplicate(input, field, excludeId = null) {
       url += `?exclude=${excludeId}`;
     }
 
-    const res = await fetch(url, {
+    const res = await auth.fetchWithAuth(url, {
       headers: { "Authorization": `Bearer ${token}` }
     });
     const data = await res.json();
@@ -3020,7 +3021,7 @@ document.getElementById("uploadBatchBtn").addEventListener("click", async () => 
 
     const token = localStorage.getItem('token');
 
-    const response = await fetch(`${API_BATCH}/batch-upload`, {
+    const response = await auth.fetchWithAuth(`${API_BATCH}/batch-upload`, {
       method: 'POST',
       headers: {
         "Authorization": `Bearer ${token}`
@@ -3315,7 +3316,7 @@ document.getElementById("uploadBatchBtn").addEventListener("click", async () => 
 document.getElementById("downloadSampleBtn").addEventListener("click", async (e) => {
   e.preventDefault();
   try {
-    const response = await fetch(`${API_BATCH}/batch-template`, {
+    const response = await auth.fetchWithAuth(`${API_BATCH}/batch-template`, {
       method: 'GET',
       headers: API_HEADERS
     });

@@ -112,6 +112,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   const periodSelect = document.getElementById("periodSelect");
   const thresholdDisplay = document.getElementById("thresholdDisplay");
   const thresholdValue = document.getElementById("thresholdValue");
@@ -131,7 +132,7 @@
   /*async function loadFilterOptions() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/overpayment/filter-options', {
+      const response = await auth.fetchWithAuth('/overpayment/filter-options', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -206,7 +207,7 @@
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/overpayment/get?${queryParams}`, {
+      const response = await auth.fetchWithAuth(`/overpayment/get?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

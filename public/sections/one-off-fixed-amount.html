@@ -215,6 +215,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   let editingIndex = null;
   let data = [];
   let oneoffData = [];
@@ -229,7 +230,7 @@
   async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/reference/${endpoint}`, {   
+      const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {   
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -388,7 +389,7 @@
         url += `?exclude=${excludeType}`;
       }
       
-      const res = await fetch(url, {
+      const res = await auth.fetchWithAuth(url, {
         headers: { "Authorization": `Bearer ${token}` }
       });
 
@@ -427,7 +428,7 @@
       // Load dropdowns first
       await loadAllDropdowns();
 
-      const res = await fetch("/oneoffrank", {
+      const res = await auth.fetchWithAuth("/oneoffrank", {
         headers: { "Authorization": `Bearer ${getToken()}`}
       });
       const result = await res.json();
@@ -501,7 +502,7 @@
 
     if(confirmed){
       try {
-        await fetch(`/oneoffrank/${item.one_type}`, {
+        await auth.fetchWithAuth(`/oneoffrank/${item.one_type}`, {
           method: "DELETE",
           headers: { "Authorization": `Bearer ${getToken()}` }
         });
@@ -579,7 +580,7 @@
       if (editingIndex !== null) {
         //UPDATE
         const current = data[editingIndex];
-        const res = await fetch(`/oneoffrank/${current.one_type}`, {
+        const res = await auth.fetchWithAuth(`/oneoffrank/${current.one_type}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -595,7 +596,7 @@
 
       } else {
         // CREATE
-        const res = await fetch("/oneoffrank/oneoffrank", {
+        const res = await auth.fetchWithAuth("/oneoffrank/oneoffrank", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

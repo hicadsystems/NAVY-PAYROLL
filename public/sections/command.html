@@ -76,6 +76,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   let commandData = [];
   let originalCommandData = null;
   let editingSectionIndex = null;
@@ -106,7 +107,7 @@
 
   async function loadCommand () {
     try{
-      const res = await fetch('/cmd/command', {
+      const res = await auth.fetchWithAuth('/cmd/command', {
       method : "GET",  
       headers: getAuthHeaders() });
 
@@ -177,14 +178,14 @@
       }
 
       if(editingSectionIndex !== null){
-        await fetch(`/cmd/${commandData[editingSectionIndex].navalcmd}`, {
+        await auth.fetchWithAuth(`/cmd/${commandData[editingSectionIndex].navalcmd}`, {
           method: "PUT",
           headers: getAuthHeaders(),
           body: JSON.stringify(item)        
         });
         showSectionSuccess("Command updated successfully!");
       } else{
-        await fetch('/cmd/post-command', {
+        await auth.fetchWithAuth('/cmd/post-command', {
           method: "POST",
           headers: getAuthHeaders(),
           body: JSON.stringify(item)        
@@ -230,7 +231,7 @@
         url += `?exclude=${excludeNavalcmd}`;
       }
       
-      const res = await fetch(url, {
+      const res = await auth.fetchWithAuth(url, {
         headers: { "Authorization": `Bearer ${token}` }
       });
 
@@ -299,7 +300,7 @@
   document.getElementById("sectionConfirmAction").addEventListener("click", async () => {
     if (pendingSectionDelete !== null) {
       try {
-        await fetch(`/cmd/${commandData[pendingSectionDelete].navalcmd}`, {
+        await auth.fetchWithAuth(`/cmd/${commandData[pendingSectionDelete].navalcmd}`, {
           method: "DELETE",
           headers: getAuthHeaders()        
         });

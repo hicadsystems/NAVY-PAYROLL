@@ -110,6 +110,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
  (function() {
     console.log("✅ Profile inline script loaded");
 
@@ -137,7 +138,7 @@
 
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`/api/users/${userId}`, {
+        const res = await auth.fetchWithAuth(`/api/users/${userId}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -233,7 +234,7 @@ saveBtn.addEventListener("click", async () => {
 
   try {
     const token = localStorage.getItem("token");
-    const res = await fetch(`/api/users/${payload.user_id}`, {
+    const res = await auth.fetchWithAuth(`/api/users/${payload.user_id}`, {
       method: "PUT",
       headers: { 
         "Content-Type": "application/json",

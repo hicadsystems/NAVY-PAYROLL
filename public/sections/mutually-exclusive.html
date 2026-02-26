@@ -125,6 +125,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 let editingIndex = null;
 let data = [];
 
@@ -180,7 +181,7 @@ window.deleteRow = async function(index) {
 
   if (confirmed) {
     try {
-      await fetch(`${API_URL}/${item.typeH}/${item.typeL}`, {
+      await auth.fetchWithAuth(`${API_URL}/${item.typeH}/${item.typeL}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -216,7 +217,7 @@ function renderTable() {
 // ==== LOAD DATA ====
 async function loadData() {
   try {
-    const res = await fetch(API_URL, {
+    const res = await auth.fetchWithAuth(API_URL, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) throw new Error("Failed to fetch data");
@@ -251,7 +252,7 @@ saveBtn.addEventListener("click", async () => {
   try {
     if (editingIndex !== null) {
       const existing = data[editingIndex];
-      await fetch(`${API_URL}/${existing.typeH}/${existing.typeL}`, {
+      await auth.fetchWithAuth(`${API_URL}/${existing.typeH}/${existing.typeL}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -262,7 +263,7 @@ saveBtn.addEventListener("click", async () => {
       data[editingIndex] = payload;
       editingIndex = null;
     } else {
-      await fetch(`${API_URL}/post`, {
+      await auth.fetchWithAuth(`${API_URL}/post`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

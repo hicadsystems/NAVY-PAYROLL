@@ -138,6 +138,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   let data = [];
   let editingIndex = null;
   let dropdownData = [];
@@ -154,7 +155,7 @@
   async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`/reference/${endpoint}`, {   
+    const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {   
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -236,7 +237,7 @@
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/reference/elementtype`, {
+      const response = await auth.fetchWithAuth(`/reference/elementtype`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -369,7 +370,7 @@
   async function fetchOneOff() {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch('/off/oneofftypes', {
+      const response = await auth.fetchWithAuth('/off/oneofftypes', {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -389,7 +390,7 @@
   async function createPayElement(elementData) {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch('/off/oneofftypes', {
+      const response = await auth.fetchWithAuth('/off/oneofftypes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -413,7 +414,7 @@
   async function updatePayElement(oneType, elementData) {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/off/oneofftypes/${oneType}`, {
+      const response = await auth.fetchWithAuth(`/off/oneofftypes/${oneType}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -437,7 +438,7 @@
   async function deletePayElement(oneType) {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/off/oneofftypes/${oneType}`, {
+      const response = await auth.fetchWithAuth(`/off/oneofftypes/${oneType}`, {
         method: 'DELETE',
         headers: {
           "Content-Type": "application/json",

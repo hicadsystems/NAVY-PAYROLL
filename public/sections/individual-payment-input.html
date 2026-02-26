@@ -157,6 +157,7 @@
 
 
 <script>
+  const auth = window.authService;
 (function () {
   let allData = []; // Store all data for client-side filtering
   let filteredData = []; // Store filtered results
@@ -230,7 +231,7 @@
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/personnel/employees-current', {
+      const response = await auth.fetchWithAuth('/personnel/employees-current', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -318,7 +319,7 @@
   async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/reference/${endpoint}`, {   
+      const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {   
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -364,7 +365,7 @@
   async function loadIndividualPayments () {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/individual', {
+      const response = await auth.fetchWithAuth('/individual', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -404,7 +405,7 @@
     try {
       const token = localStorage.getItem('token');
 
-      const response = await fetch('/individual/create', {
+      const response = await auth.fetchWithAuth('/individual/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -435,7 +436,7 @@
       const hisEmpno = his_empno.replace(/\//g, '_SLASH_');
       const hisType = his_type.replace(/\//g, '_SLASH_');
 
-      const response = await fetch(`/individual/${hisEmpno}/${hisType}`, {
+      const response = await auth.fetchWithAuth(`/individual/${hisEmpno}/${hisType}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -466,7 +467,7 @@
       const hisEmpno = his_empno.replace(/\//g, '_SLASH_');
       const hisType = his_type.replace(/\//g, '_SLASH_');
 
-      const response = await fetch(`/individual/${hisEmpno}/${hisType}`, {
+      const response = await auth.fetchWithAuth(`/individual/${hisEmpno}/${hisType}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -598,7 +599,7 @@
         await fetchEmployees();
       }
 
-      const response = await fetch(`/individual/${safeEmpno}`, {
+      const response = await auth.fetchWithAuth(`/individual/${safeEmpno}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -783,7 +784,7 @@
     let fullData;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(REPORT_API_URL, {   
+      const response = await auth.fetchWithAuth(REPORT_API_URL, {   
         method: "GET",
         headers: {
           "Content-Type": "application/json",

@@ -113,6 +113,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   // API Configuration
   const API_BASE = '/salarysummary';
 
@@ -155,7 +156,7 @@
   async function loadLocations() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/filter-options`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/filter-options`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -180,7 +181,7 @@
   async function loadCurrentPeriod() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/filter-options`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/filter-options`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -254,7 +255,7 @@
         params.append('location', summaryLocation.value);
       }
 
-      const response = await fetch(`${API_BASE}/generate?${params.toString()}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/generate?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`

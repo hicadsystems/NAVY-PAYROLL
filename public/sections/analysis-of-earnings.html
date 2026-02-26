@@ -146,6 +146,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   const API_BASE = '/ernded';
   let lookupMaps = {};
   
@@ -174,7 +175,7 @@
   async function loadCurrentPeriod() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/salarysummary/filter-options`, {
+      const response = await auth.fetchWithAuth(`/salarysummary/filter-options`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -195,7 +196,7 @@
   async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/reference/${endpoint}`, {   
+      const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {   
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -302,7 +303,7 @@
         params.append('payment_type', paymentType.value);
       }
 
-      const response = await fetch(`${API_BASE}/generate?${params.toString()}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/generate?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`

@@ -193,6 +193,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   const variationRadios = document.querySelectorAll('input[name="variationScope"]');
   const payelementsWrapper = document.getElementById("payelementsWrapper");
   const payeeWrapper = document.getElementById("payeeWrapper");
@@ -219,7 +220,7 @@
   async function loadFilterOptions() {
     try {
         const token = localStorage.getItem('token') || '';
-        const response = await fetch('/variationinput/filter-options', {
+        const response = await auth.fetchWithAuth('/variationinput/filter-options', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -267,7 +268,7 @@
       payeeLoading.classList.remove('hidden');
       try {
         const token = localStorage.getItem('token') || '';
-        const response = await fetch('/variationinput/filter-options', {
+        const response = await auth.fetchWithAuth('/variationinput/filter-options', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -379,7 +380,7 @@
 
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch(`/variationinput?${queryParams}`, {
+      const response = await auth.fetchWithAuth(`/variationinput?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

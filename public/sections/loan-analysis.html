@@ -112,6 +112,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   const API_BASE = '/loan';
   
   const loanPrintBtn = document.getElementById("loanPrintBtn");
@@ -151,7 +152,7 @@
   async function loadFilters() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/salarysummary/filter-options`, {
+      const response = await auth.fetchWithAuth(`/salarysummary/filter-options`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -209,7 +210,7 @@
         year: year
       });
 
-      const response = await fetch(`${API_BASE}/generate?${params.toString()}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/generate?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`

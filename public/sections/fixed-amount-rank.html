@@ -240,6 +240,7 @@
 
 
 <script>
+  const auth = window.authService;
 (function () {
 let editingIndex = null;
 let data = [];
@@ -271,7 +272,7 @@ const totalRecordsSpan = document.getElementById('totalRecords');
 async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`/reference/${endpoint}`, {   
+    const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {   
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -453,7 +454,7 @@ async function checkDuplicate(input, field, excludeType = null) {
       url += `?exclude=${excludeType}`;
     }
     
-    const res = await fetch(url, {
+    const res = await auth.fetchWithAuth(url, {
       headers: { "Authorization": `Bearer ${token}` }
     });
 
@@ -492,7 +493,7 @@ async function loadData(preservePfa = false) {
     // Load dropdowns first
     await loadAllDropdowns();
 
-    const res = await fetch("/rank", {
+    const res = await auth.fetchWithAuth("/rank", {
       headers: { "Authorization": `Bearer ${getToken()}`}
     });
 
@@ -590,7 +591,7 @@ window.deleteRow = async function(index) {
 
   if(confirmed){
     try {
-      await fetch(`/rank/${item.one_type}`, {
+      await auth.fetchWithAuth(`/rank/${item.one_type}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${getToken()}` }
       });
@@ -638,7 +639,7 @@ saveBtn.addEventListener("click", async () => {
     if (editingIndex !== null) {
       //UPDATE
       const current = filteredData[editingIndex];
-      const res = await fetch(`/rank/${current.one_type}`, {
+      const res = await auth.fetchWithAuth(`/rank/${current.one_type}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -654,7 +655,7 @@ saveBtn.addEventListener("click", async () => {
 
     } else {
       // CREATE
-      const res = await fetch("/rank/payrank", {
+      const res = await auth.fetchWithAuth("/rank/payrank", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

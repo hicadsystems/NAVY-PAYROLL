@@ -179,6 +179,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   const peopleRadios = document.querySelectorAll('input[name="people"]');
   const startNo = document.getElementById("startNo");
   const endNo = document.getElementById("endNo");
@@ -203,7 +204,7 @@
   async function loadPayrollClasses() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/payslips/filter-options`, {
+      const response = await auth.fetchWithAuth(`/payslips/filter-options`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -228,7 +229,7 @@
     try {
     const token = localStorage.getItem("token");
 
-    const res = await fetch("/payslips/database",{
+    const res = await auth.fetchWithAuth("/payslips/database",{
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -372,7 +373,7 @@
       console.log('Debug - Final params:', params.toString()); // Debug log
       
       // Step 2: Generate payslip data
-      const dataResponse = await fetch(`/payslips/generate?${params.toString()}`, {
+      const dataResponse = await auth.fetchWithAuth(`/payslips/generate?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -565,7 +566,7 @@
   async function downloadPayslips(data, format, token) {
     const exportEndpoint = format === 'pdf' ? '/payslips/export/pdf' : '/payslips/export/excel';
     
-    const exportResponse = await fetch(exportEndpoint, {
+    const exportResponse = await auth.fetchWithAuth(exportEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

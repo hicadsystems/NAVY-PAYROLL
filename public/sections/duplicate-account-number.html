@@ -108,6 +108,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   const dupRadios = document.querySelectorAll('input[name="dupScope"]');
   const bankSelectWrapper = document.getElementById("bankSelectWrapper");
   const bankSelect = document.getElementById("bankSelect");
@@ -129,7 +130,7 @@
   async function loadFilterOptions() {
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch('/duplicate/filter-options', {
+      const response = await auth.fetchWithAuth('/duplicate/filter-options', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -206,7 +207,7 @@
 
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch(`/duplicate?${queryParams}`, {
+      const response = await auth.fetchWithAuth(`/duplicate?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

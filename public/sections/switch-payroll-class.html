@@ -28,6 +28,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 (function(){
   const confirmBtn = document.getElementById('confirmFocusBtn');
   const cancelBtn  = document.getElementById('cancelFocusBtn');
@@ -69,7 +70,7 @@
       options.body = JSON.stringify(body);
     }
     
-    const response = await fetch(`${endpoint}`, options);
+    const response = await auth.fetchWithAuth(`${endpoint}`, options);
     const data = await response.json();
     
     if (!response.ok) {

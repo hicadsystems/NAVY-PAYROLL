@@ -177,6 +177,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 (function () {
     // ============================================
     // DOM ELEMENTS
@@ -253,7 +254,7 @@
     async function fetchEmployees() {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('/personnel/employees-current', {
+            const response = await auth.fetchWithAuth('/personnel/employees-current', {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -273,7 +274,7 @@
 
     async function fetchCumulatives() {
         try {
-            const response = await fetch(API_BASE, {
+            const response = await auth.fetchWithAuth(API_BASE, {
             method: 'GET',
             headers: getAuthHeaders()
             });
@@ -305,7 +306,7 @@
 
     async function createCumulative(data) {
         try {
-            const response = await fetch(`${API_BASE}/create`, {
+            const response = await auth.fetchWithAuth(`${API_BASE}/create`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(data)
@@ -330,7 +331,7 @@
             const pathSegment = `${EmpL_ID}`;
             const encodedId = encodeURIComponent(pathSegment);
             
-            const response = await fetch(`${API_BASE}/${encodedId}`, {
+            const response = await auth.fetchWithAuth(`${API_BASE}/${encodedId}`, {
                 method: 'PUT',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(data)
@@ -355,7 +356,7 @@
             const pathSegment = `${EmpL_ID}`;
             const encodedId = encodeURIComponent(pathSegment);
             
-            const response = await fetch(`${API_BASE}/${encodedId}`, {
+            const response = await auth.fetchWithAuth(`${API_BASE}/${encodedId}`, {
                 method: 'DELETE',
                 headers: getAuthHeaders()
             });

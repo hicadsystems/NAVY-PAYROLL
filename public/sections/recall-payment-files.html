@@ -186,6 +186,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 (function () {
   const recallModal = document.getElementById("recallModal");
   const recallModalContent = document.getElementById("recallModalContent");
@@ -309,7 +310,7 @@
     while (!completed) {
       try {
         const token = localStorage.getItem('token') || 'demo-token';
-        const res = await fetch(`/logs/${logId}`, {   
+        const res = await auth.fetchWithAuth(`/logs/${logId}`, {   
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}` 
@@ -374,7 +375,7 @@
   async function loadPayrollStatus() {
     try {
       const token = localStorage.getItem('token') || 'demo-token';
-      const res = await fetch("/status-payroll", {   
+      const res = await auth.fetchWithAuth("/status-payroll", {   
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -429,7 +430,7 @@
 
     try {
       const token = localStorage.getItem('token') || 'demo-token';
-      const res = await fetch("/recallpayment", {
+      const res = await auth.fetchWithAuth("/recallpayment", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

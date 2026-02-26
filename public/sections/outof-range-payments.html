@@ -182,6 +182,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   const API_BASE_IN_RANGE = '/rangepayments';
   
   const allBanksInRange = document.getElementById("allBanksInRange");
@@ -216,7 +217,7 @@
   async function loadBanksInRange() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_IN_RANGE}/filter-options`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_IN_RANGE}/filter-options`, {
         headers: { 'Authorization': `Bearer ${token}` }
       }); 
 
@@ -241,7 +242,7 @@
   async function loadPayrollClassesInRange() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_IN_RANGE}/payroll-classes`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_IN_RANGE}/payroll-classes`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -275,7 +276,7 @@
   async function loadCurrentPeriodInRange() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_IN_RANGE}/filter-options`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_IN_RANGE}/filter-options`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -397,7 +398,7 @@
       }
 
       // Call the in-range endpoint
-      const response = await fetch(`${API_BASE_IN_RANGE}/generate?${params.toString()}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_IN_RANGE}/generate?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`

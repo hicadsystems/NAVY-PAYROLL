@@ -172,6 +172,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 (function () {
   // Configuration
   const API_BASE_URL = 'batchpayded';
@@ -248,7 +249,7 @@
   async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/reference/${endpoint}`, {   
+      const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {   
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -376,7 +377,7 @@
         url += `&search=${encodeURIComponent(currentSearchQuery)}`;
       }
 
-      const response = await fetch(url, {
+      const response = await auth.fetchWithAuth(url, {
         method: 'GET',
         headers: {
           'content-type': 'application/json',
@@ -403,7 +404,7 @@
   // Download Template
   downloadTemplateBtn.addEventListener("click", async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/batch-template`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_URL}/batch-template`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`
@@ -443,7 +444,7 @@
     showLoading();
 
     try {
-      const response = await fetch(`${API_BASE_URL}/batch-upload`, {
+      const response = await auth.fetchWithAuth(`${API_BASE_URL}/batch-upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`
@@ -750,7 +751,7 @@
     let fullData;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(REPORT_API_URL, {   
+      const response = await auth.fetchWithAuth(REPORT_API_URL, {   
         method: "GET",
         headers: {
           "Content-Type": "application/json",

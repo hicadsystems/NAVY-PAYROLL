@@ -232,6 +232,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 (function() {
   const API_BASE = '/oneoff';
   const token = localStorage.getItem('token');
@@ -294,7 +295,7 @@
   async function loadPayrollClasses() {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/payslips/filter-options`, {
+      const response = await auth.fetchWithAuth(`/payslips/filter-options`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -319,7 +320,7 @@
     try {
     const token = localStorage.getItem("token");
 
-    const res = await fetch("/payslips/database",{
+    const res = await auth.fetchWithAuth("/payslips/database",{
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -346,7 +347,7 @@
   // Load payment types for filter
   async function loadPaymentTypes() {
     try {
-      const response = await fetch(`/off/oneofftypes`, {
+      const response = await auth.fetchWithAuth(`/off/oneofftypes`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -407,7 +408,7 @@
     loadingIndicator.classList.remove('hidden');
 
     try {
-      const response = await fetch(`${API_BASE}/calculate`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/calculate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -460,7 +461,7 @@
       if (empno) url += `&empno=${encodeURIComponent(empno)}`;
       if (one_type) url += `&one_type=${encodeURIComponent(one_type)}`;
 
-      const response = await fetch(url, {
+      const response = await auth.fetchWithAuth(url, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -549,7 +550,7 @@
     }
 
     try {
-      const response = await fetch(`${API_BASE}/clear-calculation`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/clear-calculation`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

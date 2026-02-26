@@ -67,6 +67,7 @@
 
 
 <script>
+  const auth = window.authService;
 let hasOvertime = false; // track if record exists
 
 /*function updateStdfixState() {
@@ -83,7 +84,7 @@ function showModal() {
 
 async function loadForm() {
   const token = localStorage.getItem("token");
-  const res = await fetch('/overtime', {   
+  const res = await auth.fetchWithAuth('/overtime', {   
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -115,7 +116,7 @@ document.getElementById('overtimeForm').addEventListener('submit', async (e) => 
 
   const method = hasOvertime ? "PUT" : "POST";
 
-  const res = await fetch('/overtime', {
+  const res = await auth.fetchWithAuth('/overtime', {
     method,
     headers: { 
       'Content-Type': 'application/json',

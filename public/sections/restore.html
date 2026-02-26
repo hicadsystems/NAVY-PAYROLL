@@ -45,6 +45,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 (function () {
   const modal = document.getElementById("recallModal");
   const openBtn = document.getElementById("openRecallModalBtn");
@@ -77,7 +78,7 @@
     try {
       showNotification('Restoring from backup...', 'info');
       
-      const response = await fetch('/restore', {
+      const response = await auth.fetchWithAuth('/restore', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

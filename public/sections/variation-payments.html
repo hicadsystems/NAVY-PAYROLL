@@ -155,6 +155,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
 (function () {
   const API_BASE = '/payded';
 
@@ -232,7 +233,7 @@
     async function loadDropdown(endpoint, elementId, valueField, textField, placeholder) {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/reference/${endpoint}`, {   
+      const response = await auth.fetchWithAuth(`/reference/${endpoint}`, {   
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -279,7 +280,7 @@
     }
 
     try {
-      const response = await fetch(url, {
+      const response = await auth.fetchWithAuth(url, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -310,7 +311,7 @@
     try {
       const token = localStorage.getItem('token');
 
-      const response = await fetch('/personnel/employees-current',{
+      const response = await auth.fetchWithAuth('/personnel/employees-current',{
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -335,7 +336,7 @@
         return;
       }
 
-      const response = await fetch(`${API_BASE}/variation`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/variation`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -371,7 +372,7 @@
       //emplId into single path segment
       const pathSegment = `${emplId}`;
 
-      const response = await fetch(`${API_BASE}/variation/${encodeURIComponent(pathSegment)}/${type}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/variation/${encodeURIComponent(pathSegment)}/${type}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -407,7 +408,7 @@
       // Combine emplId and type into single path segment
       const pathSegment = `${emplId}`;
 
-      const response = await fetch(`${API_BASE}/${encodeURIComponent(pathSegment)}/${type}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/${encodeURIComponent(pathSegment)}/${type}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -435,7 +436,7 @@
       // Combine emplId and type into single path segment
       const pathSegment = `${emplId}`;
 
-      const response = await fetch(`${API_BASE}/${encodeURIComponent(pathSegment)}/${type}`, {
+      const response = await auth.fetchWithAuth(`${API_BASE}/${encodeURIComponent(pathSegment)}/${type}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -764,7 +765,7 @@
     let fullData;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(REPORT_API_URL, {   
+      const response = await auth.fetchWithAuth(REPORT_API_URL, {   
         method: "GET",
         headers: {
           "Content-Type": "application/json",

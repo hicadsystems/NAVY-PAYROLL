@@ -55,6 +55,7 @@
 </div>
 
 <script>
+  const auth = window.authService;
   (function () {
       // API functions
       const API = {
@@ -70,7 +71,7 @@
                   throw new Error('Authentication required');
               }
 
-              const response = await fetch(url, {
+              const response = await auth.fetchWithAuth(url, {
                   ...options,
                   headers: {
                       ...options.headers,

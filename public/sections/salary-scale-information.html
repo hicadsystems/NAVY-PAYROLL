@@ -255,6 +255,7 @@
 
 
 <script>
+  const auth = window.authService;
 // API Configuration
 const isLocal = window.location.hostname === "localhost";
 const API_BASE_URL = "api/v1";
@@ -374,7 +375,7 @@ class ApiService {
     };
 
     try {
-      const response = await fetch(url, config);
+      const response = await auth.fetchWithAuth(url, config);
       const data = await response.json();
       
       if (!response.ok) {
@@ -471,7 +472,7 @@ class ApiService {
     const url = `${API_BASE_URL}/salary-scales/batch-upload`;
     
     try {
-      const response = await fetch(url, {
+      const response = await auth.fetchWithAuth(url, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
@@ -532,7 +533,7 @@ class ApiService {
     }
     
     try {
-      const response = await fetch(url, {
+      const response = await auth.fetchWithAuth(url, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

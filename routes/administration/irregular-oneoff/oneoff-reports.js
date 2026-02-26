@@ -105,7 +105,7 @@ router.post('/generate-excel-report', verifyToken, async (req, res) => {
         const cbnCode    = bankInfo[0]?.cbn_code   || '';
         const cbnBranch  = bankInfo[0]?.cbn_branch || '';
 
-        // Get calculations with proper description from py_elementtype
+        // Get calculations with proper description from py_elementType
         let calcQuery = `
           SELECT 
             c.his_type, 
@@ -113,7 +113,7 @@ router.post('/generate-excel-report', verifyToken, async (req, res) => {
             COALESCE(et.elmdesc, ot.one_type, '') as one_desc
           FROM py_calculation c
           LEFT JOIN py_oneofftype ot ON c.his_type = ot.one_type
-          LEFT JOIN py_elementtype et ON c.his_type = et.paymenttype
+          LEFT JOIN py_elementType et ON c.his_type = et.paymenttype
           WHERE c.his_empno = ?
         `;
 
@@ -239,7 +239,7 @@ router.post('/generate-pdf-report', verifyToken, async (req, res) => {
        INNER JOIN hr_employees e ON c.his_empno = e.EMPL_ID
        LEFT JOIN py_bank b ON e.bankcode = b.bankcode AND e.bankbranch = b.branchcode
        LEFT JOIN py_oneofftype ot ON c.his_type = ot.one_type
-       LEFT JOIN py_elementtype et ON c.his_type = et.paymenttype
+       LEFT JOIN py_elementType et ON c.his_type = et.paymenttype
        WHERE e.payrollclass = ?
        ORDER BY b.bankname, b.branchname, e.EMPL_ID`,
       [payrollClass]
@@ -606,7 +606,7 @@ async function generateSummaryExcel(workbook, payrollClass, classDescription) {
       SUM(c.amtthismth) as total_amount
     FROM py_calculation c
     LEFT JOIN py_oneofftype ot ON c.his_type = ot.one_type
-    LEFT JOIN py_elementtype et ON c.his_type = et.paymenttype
+    LEFT JOIN py_elementType et ON c.his_type = et.paymenttype
     INNER JOIN hr_employees e ON c.his_empno = e.EMPL_ID
     WHERE e.payrollclass = ?
     GROUP BY c.his_type, et.elmdesc, ot.one_type
@@ -911,7 +911,7 @@ async function generateSummaryPDFHTML(payrollClass, classDescription) {
       SUM(c.amtthismth) as total_amount
     FROM py_calculation c
     LEFT JOIN py_oneofftype ot ON c.his_type = ot.one_type
-    LEFT JOIN py_elementtype et ON c.his_type = et.paymenttype
+    LEFT JOIN py_elementType et ON c.his_type = et.paymenttype
     INNER JOIN hr_employees e ON c.his_empno = e.EMPL_ID
     WHERE e.payrollclass = ?
     GROUP BY c.his_type, et.elmdesc, ot.one_type

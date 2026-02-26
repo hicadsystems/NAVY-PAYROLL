@@ -176,7 +176,7 @@ router.delete("/:id", verifyToken, async (req, res) => {
   try {
     // 1. Fetch message details
     const [msgs] = await pool.query(
-      "SELECT from_user_id, to_user_id, from_name FROM user_mails WHERE id = ?",
+      "SELECT from_user_id, to_user_id, from_name, deleted_by_receiver FROM user_mails WHERE id = ?",
       [req.params.id],
     );
 
@@ -184,9 +184,9 @@ router.delete("/:id", verifyToken, async (req, res) => {
       return res.status(404).json({ error: "Message not found" });
     }
 
-    const msg = msgs[0];
-    const isSender = msg.from_user_id === req.user_id;
-    const isReceiver = msg.to_user_id === req.user_id;
+    const msg        = msgs[0];
+    const isSender   = msg.from_user_id === req.user_id;
+    const isReceiver = msg.to_user_id   === req.user_id;
 
     if (!isSender && !isReceiver) {
       return res
@@ -206,7 +206,6 @@ router.delete("/:id", verifyToken, async (req, res) => {
     // 3. Handle sender deletion
     if (isSender) {
       if (mode === "me") {
-        // Delete for sender only
         await pool.query(
           "UPDATE user_mails SET deleted_by_sender = TRUE WHERE id = ?",
           [req.params.id],
@@ -215,31 +214,34 @@ router.delete("/:id", verifyToken, async (req, res) => {
           message: "✅ Message deleted from your sent folder",
         });
       } else if (mode === "all") {
-        // Delete for all AND notify receiver
+        // Mark deleted for both parties
         await pool.query(
           "UPDATE user_mails SET deleted_by_sender = TRUE, deleted_by_receiver = TRUE WHERE id = ?",
           [req.params.id],
         );
 
-        // Insert notification message to receiver
-        const [[toUser]] = await pool.query(
-          "SELECT full_name FROM users WHERE user_id = ?",
-          [msg.to_user_id],
-        );
+        // Only notify the receiver if they haven't already deleted the message
+        // themselves — no point notifying about a message they've already removed.
+        if (!msg.deleted_by_receiver) {
+          const [[toUser]] = await pool.query(
+            "SELECT full_name FROM users WHERE user_id = ?",
+            [msg.to_user_id],
+          );
 
-        await pool.query(
-          `INSERT INTO user_mails (from_user_id, from_name, to_user_id, to_name, subject, body, is_notification)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            req.user_id,
-            req.user_fullname,
-            msg.to_user_id,
-            toUser ? toUser.full_name : "Recipient",
-            "Message Deleted",
-            `${req.user_fullname} deleted a message from your conversation`,
-            true,
-          ],
-        );
+          await pool.query(
+            `INSERT INTO user_mails (from_user_id, from_name, to_user_id, to_name, subject, body, is_notification)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [
+              req.user_id,
+              req.user_fullname,
+              msg.to_user_id,
+              toUser ? toUser.full_name : "Recipient",
+              "Message Deleted",
+              `${req.user_fullname} deleted a message from your conversation`,
+              true,
+            ],
+          );
+        }
 
         return res.json({ message: "✅ Message deleted for all" });
       }

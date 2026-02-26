@@ -305,7 +305,7 @@ router.get('/calculation-results', verifyToken, async (req, res) => {
       FROM py_calculation c
       LEFT JOIN hr_employees e ON c.his_empno = e.EMPL_ID
       LEFT JOIN py_oneofftype ot ON c.his_type = ot.one_type
-      LEFT JOIN py_elementtype et ON ot.one_type = et.PaymentType
+      LEFT JOIN py_elementType et ON ot.one_type = et.PaymentType
       WHERE 1=1
     `;
 

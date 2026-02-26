@@ -1431,48 +1431,63 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-function logout() {
-  // Clear user session data
-  sessionStorage.clear();
-  localStorage.clear();
+// The user token is intentionally NOT preserved — the user must
+// re-authenticate via the payroll modal (_pid/_ppwd handle this).
+// ================================================
 
-  // Redirect to login page
-  window.location.href = 'personnel-login.html';
+function logout() {
+  // Save encrypted credentials
+  var pid  = sessionStorage.getItem('_pid');
+  var ppwd = sessionStorage.getItem('_ppwd');
+
+  // FIX: also save the token before wiping
+  // user-dashboard.html needs it to load normally
+  var token     = localStorage.getItem('token');
+  var userId    = localStorage.getItem('user_id');
+  var fullName  = localStorage.getItem('full_name');
+  var role      = localStorage.getItem('role');
+  var cls       = localStorage.getItem('class');
+
+  // Wipe everything
+  localStorage.clear();
+  sessionStorage.clear();
+
+  // Restore credentials for payroll modal re-auth
+  if (pid)  sessionStorage.setItem('_pid',  pid);
+  if (ppwd) sessionStorage.setItem('_ppwd', ppwd);
+
+  // FIX: Restore token + display info so user-dashboard
+  // can make API calls normally after returning
+  if (token)    localStorage.setItem('token',     token);
+  if (userId)   localStorage.setItem('user_id',   userId);
+  if (fullName) localStorage.setItem('full_name', fullName);
+  if (role)     localStorage.setItem('role',      role);
+  if (cls)      localStorage.setItem('class',     cls);
+
+  sessionStorage.setItem('_from_logout', 'true');
+  window.location.href = 'user-dashboard.html';
 }
 
-// Inactivity timeout handler
-let inactivityTimer;
-const INACTIVITY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
+// ── Inactivity timeout ─────────────────────────────────────
+var inactivityTimer;
+var INACTIVITY_TIME = 5 * 60 * 1000; // 5 minutes
 
 function resetInactivityTimer() {
-  // Clear the existing timer
   clearTimeout(inactivityTimer);
-  
-  // Set a new timer
-  inactivityTimer = setTimeout(() => {
+  inactivityTimer = setTimeout(function() {
     logout();
   }, INACTIVITY_TIME);
 }
 
-// Events that indicate user activity
-const activityEvents = [
-  'mousedown',
-  'mousemove',
-  'keypress',
-  'scroll',
-  'touchstart',
-  'click'
+var activityEvents = [
+  'mousedown', 'mousemove', 'keypress',
+  'scroll', 'touchstart', 'click'
 ];
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Make logout function globally accessible
   window.logout = logout;
-  
-  // Start the inactivity timer
   resetInactivityTimer();
-  
-  // Add event listeners for user activity
-  activityEvents.forEach(event => {
-    document.addEventListener(event, resetInactivityTimer, true);
+  activityEvents.forEach(function(evt) {
+    document.addEventListener(evt, resetInactivityTimer, true);
   });
 });

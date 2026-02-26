@@ -63,7 +63,7 @@ class QuickAccessManager {
       },
       'payments-deductions-upload': {
         id: 'payments-deductions-upload',
-        label: 'Payment/Deduction Upload',
+        label: 'Pay/ded Upload',
         section: 'payments-deductions-upload',
         title: 'Payments/Deductions Upload'
       },
@@ -99,15 +99,15 @@ class QuickAccessManager {
       },
       'create-user': {
         id: 'create-user',
-        label: 'Create User',
+        label: 'Create Payroll User',
         section: 'create-user',
-        title: 'Create User'
+        title: 'Create Payroll User'
       },
       'control-user': {
         id: 'control-user',
-        label: 'Control User',
+        label: 'Control Payroll Users',
         section: 'control-user',
-        title: 'Control User'
+        title: 'Control Payroll Users'
       },
       'old-personnel': {
         id: 'old-personnel',
@@ -205,8 +205,7 @@ class QuickAccessManager {
         'personnel-reports',
         'input-documentation',
         'add-personnel',
-        'database-backup',
-        'payments-by-bank'
+        'database-backup'
       ]
     };
     
@@ -218,7 +217,7 @@ class QuickAccessManager {
   }
 
   getUserRole() {
-    return localStorage.getItem('user_role') || 'DATA_ENTRY';
+    return localStorage.getItem('role');
   }
   
   // NEW: Fetch user's accessible menus from backend

@@ -2,6 +2,7 @@ const BaseReportController = require('../Reports/reportsFallbackController');
 const controlSheetService = require('../../services/Reports/controlSheetService');
 const companySettings = require('../helpers/companySettings');
 const { GenericExcelExporter } = require('../helpers/excel');
+const pool = require('../../config/db');
 //const ExcelJS = require('exceljs');
 //const jsreport = require('jsreport-core')();
 const fs = require('fs');
@@ -62,7 +63,7 @@ class ControlSheetController extends BaseReportController {
       
       const exporter = new GenericExcelExporter();
       const data = result.details;
-      const className = this.getDatabaseNameFromRequest(req);
+      const className = await this.getDatabaseNameFromRequest(req);
 
       const columns = [
         { header: 'S/N', key: 'sn', width: 8, align: 'center' },
@@ -161,7 +162,7 @@ class ControlSheetController extends BaseReportController {
           period: data.length > 0 ? 
             `${data[0].month_name}, ${data[0].year}` : 
             'N/A',
-          className: this.getDatabaseNameFromRequest(req),
+          className: await this.getDatabaseNameFromRequest(req),
           ...image,
           recordcount: data.length > 0 ? data[0].recordcount : 0
         },
@@ -209,21 +210,16 @@ class ControlSheetController extends BaseReportController {
     }
   }
 
-  getDatabaseNameFromRequest(req) {
-    const dbToClassMap = {
-      [process.env.DB_OFFICERS]: 'OFFICERS',
-      [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
-      [process.env.DB_RATINGS]: 'RATE A',
-      [process.env.DB_RATINGS_A]: 'RATE B',
-      [process.env.DB_RATINGS_B]: 'RATE C',
-      [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
-    };
-
-    // Get the current database from request
+  async getDatabaseNameFromRequest(req) {
     const currentDb = req.current_class;
-    
-    // Return the mapped class name, or fallback to the current_class value, or default to 'OFFICERS'
-    return dbToClassMap[currentDb] || currentDb || 'OFFICERS';
+    if (!currentDb) return 'OFFICERS';
+
+    const [classInfo] = await pool.query(
+      'SELECT classname FROM py_payrollclass WHERE db_name = ?',
+      [currentDb]
+    );
+
+    return classInfo.length > 0 ? classInfo[0].classname : currentDb;
   }
 }
 

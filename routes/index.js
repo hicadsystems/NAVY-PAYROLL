@@ -110,6 +110,11 @@ const rangePaymentRoutes = require('./audit-trail/rangePayments');
 
 
 
+//User Dashboard
+const mailSystemRoutes = require('../routes/user-dashboard/mailSystem');
+
+
+
 
 //file-upload-helper
 const salaryscaleuploadRoutes = require('./file-upload-helper/salaryscaleupload');
@@ -224,6 +229,10 @@ module.exports = (app) => {
     app.use('/salaryvariance', salaryVarianceRoutes);
     app.use('/variationinput', variationInputRoutes);
     app.use('/rangepayments', rangePaymentRoutes);
+
+
+    //user-dashboard
+    app.use('/messages', mailSystemRoutes);
     
 
 

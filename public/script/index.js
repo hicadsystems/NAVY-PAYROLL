@@ -37,6 +37,9 @@ function updateTime() {
 updateTime();
 setInterval(updateTime, 1000);
 
+// Year
+document.getElementById('year').textContent = new Date().getFullYear();
+
 
 
 // Professional Animated Canvas Background - Navy Blue Theme

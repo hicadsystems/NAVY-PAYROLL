@@ -105,7 +105,7 @@ class VarianceAnalysisController extends BaseReportController {
       
       const exporter = new GenericExcelExporter();
       const data = result.data;
-      const className = this.getDatabaseNameFromRequest(req);
+      const className = await this.getDatabaseNameFromRequest(req);
       const workbook = new ExcelJS.Workbook();
       workbook.creator = 'Payroll System';
       workbook.created = new Date();
@@ -314,7 +314,7 @@ class VarianceAnalysisController extends BaseReportController {
       const exporter = new GenericExcelExporter();
       const data = result.data;
 
-      const className = this.getDatabaseNameFromRequest(req);
+      const className = await this.getDatabaseNameFromRequest(req);
 
       const columns = [
         { header: 'S/N', key: 'sn', width: 8, align: 'center' },
@@ -419,7 +419,7 @@ class VarianceAnalysisController extends BaseReportController {
           reportDate: new Date(),
           period: varianceAnalysisService.formatPeriod(result.period),
           comparisonInfo: result.comparisonInfo,
-          className: this.getDatabaseNameFromRequest(req),
+          className: await this.getDatabaseNameFromRequest(req),
           ...image
         },
         {
@@ -465,7 +465,7 @@ class VarianceAnalysisController extends BaseReportController {
           period: result.monthName,
           threshold: result.threshold_percentage,
           payElement: result.pay_element,
-          className: this.getDatabaseNameFromRequest(req),
+          className: await this.getDatabaseNameFromRequest(req),
           ...image
         },
         {
@@ -516,18 +516,16 @@ class VarianceAnalysisController extends BaseReportController {
   // ==========================================================================
   // HELPER FUNCTION
   // ==========================================================================
-  getDatabaseNameFromRequest(req) {
-    const dbToClassMap = {
-      [process.env.DB_OFFICERS]: 'OFFICERS',
-      [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
-      [process.env.DB_RATINGS]: 'RATE A',
-      [process.env.DB_RATINGS_A]: 'RATE B',
-      [process.env.DB_RATINGS_B]: 'RATE C',
-      [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
-    };
-
+  async getDatabaseNameFromRequest(req) {
     const currentDb = req.current_class;
-    return dbToClassMap[currentDb] || currentDb || 'OFFICERS';
+    if (!currentDb) return 'OFFICERS';
+
+    const [classInfo] = await pool.query(
+      'SELECT classname FROM py_payrollclass WHERE db_name = ?',
+      [currentDb]
+    );
+
+    return classInfo.length > 0 ? classInfo[0].classname : currentDb;
   }
 }
 

@@ -2,6 +2,7 @@ const payPeriodReportService = require('../../services/audit-trail/inputVariatio
 const BaseReportController = require('../Reports/reportsFallbackController');
 const companySettings = require('../helpers/companySettings');
 const { GenericExcelExporter } = require('../helpers/excel');
+const pool = require('../../config/db');
 //const ExcelJS = require('exceljs');
 //const jsreport = require('jsreport-core')();
 const fs = require('fs');
@@ -193,7 +194,7 @@ class PayPeriodReportController extends BaseReportController {
           statistics: statistics,
           reportDate: new Date(),
           filters: filterDescription,
-          className: this.getDatabaseNameFromRequest(req),
+          className: await this.getDatabaseNameFromRequest(req),
           fromPeriod: payPeriodReportService.formatPeriod(filters.fromPeriod),
           toPeriod: payPeriodReportService.formatPeriod(filters.toPeriod),
           ...image
@@ -262,21 +263,16 @@ class PayPeriodReportController extends BaseReportController {
     return months[parseInt(month) - 1] || '';
   }
 
-  getDatabaseNameFromRequest(req) {
-    const dbToClassMap = {
-      [process.env.DB_OFFICERS]: 'OFFICERS',
-      [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
-      [process.env.DB_RATINGS]: 'RATE A',
-      [process.env.DB_RATINGS_A]: 'RATE B',
-      [process.env.DB_RATINGS_B]: 'RATE C',
-      [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
-    };
-
-    // Get the current database from request
+  async getDatabaseNameFromRequest(req) {
     const currentDb = req.current_class;
-    
-    // Return the mapped class name, or fallback to the current_class value, or default to 'OFFICERS'
-    return dbToClassMap[currentDb] || currentDb || 'OFFICERS';
+    if (!currentDb) return 'OFFICERS';
+
+    const [classInfo] = await pool.query(
+      'SELECT classname FROM py_payrollclass WHERE db_name = ?',
+      [currentDb]
+    );
+
+    return classInfo.length > 0 ? classInfo[0].classname : currentDb;
   }
 }
 

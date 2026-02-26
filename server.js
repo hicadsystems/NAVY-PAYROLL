@@ -34,9 +34,10 @@ app.use(
         "'self'",
         "https://cdn.tailwindcss.com",
         "https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js",
-        "'unsafe-eval'",   
+        "'unsafe-eval'",
+        "'unsafe-inline'",
       ],
-      scriptSrcAttr: ["'unsafe-inline'"], 
+      scriptSrcAttr: ["'unsafe-inline'"],
     },
   })
 );

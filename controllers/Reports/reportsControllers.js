@@ -4,6 +4,7 @@ const payslipGenService = require('../../services/Reports/payslipGenerationServi
 const { GenericExcelExporter } = require('../helpers/excel');
 const companySettings = require('../helpers/companySettings');
 const ExcelJS = require('exceljs');
+const pool = require('../../config/db');
 //const PDFDocument = require('pdfkit');
 //const jsreport = require('jsreport-core')();
 const fs = require('fs');
@@ -265,7 +266,7 @@ class ReportController extends BaseReportController {
 
     try {
       const exporter = new GenericExcelExporter();
-      const className = this.getDatabaseNameFromRequest(req);
+      const className = await this.getDatabaseNameFromRequest(req);
 
       const columns = [
         { header: 'S/N', key: 'sn', width: 8, align: 'center' },
@@ -403,7 +404,7 @@ class ReportController extends BaseReportController {
           `${data[0].month_name || filters.month}, ${data[0].year || filters.year}` : 
           `${filters.month}, ${filters.year}`;
 
-        const className = this.getDatabaseNameFromRequest(req) || 'All Classes';
+        const className = await this.getDatabaseNameFromRequest(req) || 'All Classes';
 
         if (isSummary) {
           // SUMMARY REPORT - use detailed summary structure
@@ -776,7 +777,7 @@ class ReportController extends BaseReportController {
         isSummary: isSummary,
         isMultiClass: isMultiClass,
         reportTitle: isSummary ? 'Summary Report' : 'Detailed Report',
-        className: this.getDatabaseNameFromRequest(req),
+        className: await this.getDatabaseNameFromRequest(req),
         ...image,
         summary: summary,
         failedClasses: failedClasses
@@ -999,7 +1000,7 @@ class ReportController extends BaseReportController {
         workbook.created = new Date();
 
         const sheetNameTracker = {};
-        const className = this.getDatabaseNameFromRequest(req);
+        const className = await this.getDatabaseNameFromRequest(req);
         const period = `${filters.month}, ${filters.year}`;
 
         // Group data by category and payment type
@@ -1353,7 +1354,7 @@ class ReportController extends BaseReportController {
           reportDate: new Date(),
           month: data[0]?.month || 'N/A',
           year: data[0]?.year || 'N/A',
-          className: this.getDatabaseNameFromRequest(req),
+          className: await this.getDatabaseNameFromRequest(req),
           isSummary: isSummary,
           ...image
         },
@@ -1406,7 +1407,7 @@ class ReportController extends BaseReportController {
       workbook.created = new Date();
 
       const sheetNameTracker = {};
-      const className = this.getDatabaseNameFromRequest(req);
+      const className = await this.getDatabaseNameFromRequest(req);
       const period = `${filters.month}, ${filters.year}`;
 
       const columns = [
@@ -1710,7 +1711,7 @@ class ReportController extends BaseReportController {
       const templateData = {
         groups: data,
         grandTotals: grandTotals,
-        className: this.getDatabaseNameFromRequest(req),
+        className: await this.getDatabaseNameFromRequest(req),
         reportDate: new Date(),
         month: filters.month || 'N/A',
         year: filters.year || 'N/A',
@@ -1985,7 +1986,7 @@ class ReportController extends BaseReportController {
           reportDate: new Date(),
           month: data[0]?.month || 'N/A',
           year: data[0]?.year || 'N/A',
-          className: this.getDatabaseNameFromRequest(req),
+          className: await this.getDatabaseNameFromRequest(req),
           isSummary: isSummary,
           ...image
         },
@@ -2054,7 +2055,7 @@ class ReportController extends BaseReportController {
         month: data[0].month
       } : { year: new Date().getFullYear(), month: new Date().getMonth() + 1 };
 
-      const className = this.getDatabaseNameFromRequest(req);
+      const className = await this.getDatabaseNameFromRequest(req);
 
       if (isSummary) {
         // SUMMARY REPORT - existing code unchanged
@@ -2599,7 +2600,7 @@ class ReportController extends BaseReportController {
           period: period,
           reportDate: new Date(),
           isSummary: isSummary,
-          className: this.getDatabaseNameFromRequest(req),
+          className: await this.getDatabaseNameFromRequest(req),
           includeElements: includeElements,
           ...image
         },
@@ -2655,21 +2656,16 @@ class ReportController extends BaseReportController {
     return months[month - 1] || '';
   }
 
-  getDatabaseNameFromRequest(req) {
-    const dbToClassMap = {
-      [process.env.DB_OFFICERS]: 'OFFICERS',
-      [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
-      [process.env.DB_RATINGS]: 'RATE A',
-      [process.env.DB_RATINGS_A]: 'RATE B',
-      [process.env.DB_RATINGS_B]: 'RATE C',
-      [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
-    };
-
-    // Get the current database from request
+  async getDatabaseNameFromRequest(req) {
     const currentDb = req.current_class;
-    
-    // Return the mapped class name, or fallback to the current_class value, or default to 'OFFICERS'
-    return dbToClassMap[currentDb] || currentDb || 'OFFICERS';
+    if (!currentDb) return 'OFFICERS';
+
+    const [classInfo] = await pool.query(
+      'SELECT classname FROM py_payrollclass WHERE db_name = ?',
+      [currentDb]
+    );
+
+    return classInfo.length > 0 ? classInfo[0].classname : currentDb;
   }
 }
 

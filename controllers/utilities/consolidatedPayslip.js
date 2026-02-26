@@ -43,6 +43,31 @@ class ConsolidatedPayslipController extends BaseReportController {
       });
     }
 
+    const inputYear = parseInt(period.substring(0, 4));
+    const inputMonth = parseInt(period.substring(4, 6));
+
+    if (isNaN(inputYear) || isNaN(inputMonth) || inputMonth < 1 || inputMonth > 12) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid period format. Expected YYYYMM (e.g., 202501)"
+      });
+    }
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 0-indexed
+
+    const isFuture =
+      inputYear > currentYear ||
+      (inputYear === currentYear && inputMonth > currentMonth);
+
+    if (isFuture) {
+      return res.status(400).json({
+        success: false,
+        error: `Period ${period} is in the future. Payslips can only be generated for the current or past months.`
+      });
+    }
+
     try {
       // ✅ Add debug logging
       const paramEmployeeFrom = employeeFrom || 'A';
@@ -96,6 +121,11 @@ class ConsolidatedPayslipController extends BaseReportController {
       );
 
       console.log('Total raw payslip records fetched:', rawPayslips.length);
+
+      if (!rawPayslips || rawPayslips.length === 0) {
+        throw new Error(`No payslip records found for period ${period} and payroll class ${payrollClass}`);
+      }
+      
       console.log('Unique employees:', [...new Set(rawPayslips.map(r => r.NUMB || r.numb))].length);
 
       // Transform data for template
@@ -149,7 +179,7 @@ class ConsolidatedPayslipController extends BaseReportController {
         logoDataUrl = `data:image/png;base64,${logoBase64}`;
       }
 
-      const className = this.getDatabaseNameFromRequest(req);
+      const className = await this.getDatabaseNameFromRequest(req);
       
       console.log(`📄 Generating consolidated payslips for ${mappedData.length} employees`);
 
@@ -461,21 +491,16 @@ class ConsolidatedPayslipController extends BaseReportController {
     `;
   }
 
-  getDatabaseNameFromRequest(req) {
-    const dbToClassMap = {
-      [process.env.DB_OFFICERS]: 'OFFICERS',
-      [process.env.DB_WOFFICERS]: 'W_OFFICERS', 
-      [process.env.DB_RATINGS]: 'RATE A',
-      [process.env.DB_RATINGS_A]: 'RATE B',
-      [process.env.DB_RATINGS_B]: 'RATE C',
-      [process.env.DB_JUNIOR_TRAINEE]: 'TRAINEE'
-    };
-
-    // Get the current database from request
+  async getDatabaseNameFromRequest(req) {
     const currentDb = req.current_class;
-    
-    // Return the mapped class name, or fallback to the current_class value, or default to 'OFFICERS'
-    return dbToClassMap[currentDb] || currentDb || 'OFFICERS';
+    if (!currentDb) return 'OFFICERS';
+
+    const [classInfo] = await pool.query(
+      'SELECT classname FROM py_payrollclass WHERE db_name = ?',
+      [currentDb]
+    );
+
+    return classInfo.length > 0 ? classInfo[0].classname : currentDb;
   }
 }
 

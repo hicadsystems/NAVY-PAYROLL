@@ -56,7 +56,7 @@
                 </svg>
                 <div>
                     <p class="text-sm text-yellow-800 font-medium">Important</p>
-                    <p class="text-sm text-yellow-700 mt-1">Year-end processing can only be done in January (Month 1) with previous month December (12). This will reset employee emolument forms.</p>
+                    <p class="text-sm text-yellow-700 mt-1">Year-end processing can only be done in January (Month 1) with previous period December (12). This will reset employee emolument forms.</p>
                 </div>
             </div>
         </div>
@@ -248,7 +248,7 @@
                 
                 banner.className = 'mb-4 p-4 rounded-lg border bg-orange-100 text-orange-700 border-orange-200';
                 statusIcon.innerHTML = '<svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>';
-                statusText.innerHTML = `Current Period: ${currentMonthDisplay}<br><span class="text-xs text-orange-600">Previous Month: ${prevMonthDisplay}</span>`;
+                statusText.innerHTML = `Current Period: ${currentMonthDisplay}<br><span class="text-xs text-orange-600">Previous Period: ${prevMonthDisplay}</span>`;
                 processButton.disabled = true;
                 //blockMessage.classList.remove('hidden');
                 blockReason.textContent = result.blockReason;
@@ -301,7 +301,7 @@
       const confirmDetails = `
           <div class="text-left space-y-2">
               <p><strong>Year:</strong> ${year}</p>
-              <p><strong>Current Period:</strong> Month ${yearEndStatus.month}, Previous Month ${yearEndStatus.prevMonth}</p>
+              <p><strong>Current Period:</strong> Month ${yearEndStatus.month}, Previous Period ${yearEndStatus.prevMonth}</p>
               <p class="text-yellow-700 mt-3">⚠️ This will:</p>
               <ul class="list-disc list-inside text-sm space-y-1 ml-2">
                   <!--<li>Reset all employee emolument forms to "No"</li>-->

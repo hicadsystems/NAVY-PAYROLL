@@ -283,6 +283,7 @@ class PayslipGenerationService {
 
     const [rows] = await pool.query(query, [empno]);
     return rows;
+    
   }
 
   // ==========================================================================
@@ -384,19 +385,14 @@ class PayslipGenerationService {
       bpc = "PT";
       bpa = "NON-TAXABLE PAYMENT";
       lbal = 0;
-    } else if (paymentType === "PR" || paymentType === "PL") {
+    }  else if (paymentType === "PR" || paymentType === "PL") {
       bpc = "PR";
       bpa = "DEDUCTION";
 
-      // Handle loans (matching legacy logic)
-      if (payment.payindic === "L") {
-        loan = payment.initialloan || 0;
-        ltenor = payment.nmth || 0;
-        lbal = payment.totamtpayable || 0;
-        lmth = payment.nmth || 0;
-      } else {
-        lbal = 0;
-      }
+      loan = payment.initialloan || 0;
+      ltenor = payment.nmth || 0;
+      lbal = payment.totamtpayable || 0;
+      lmth = payment.nmth || 0;
     }
 
     // Clean up small balances (matching legacy: If @totamtpayable<5.00)

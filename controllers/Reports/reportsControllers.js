@@ -87,6 +87,7 @@ class ReportController extends BaseReportController {
               description: p.payment_desc,
               amount: amount,
               loan_balance: p.loan_balance || 0,
+              outstanding_months: parseInt(p.loan_months) || 0,
               is_loan: (p.loan_balance > 0 || p.loan > 0)
             });
             totalDeductions += amount;

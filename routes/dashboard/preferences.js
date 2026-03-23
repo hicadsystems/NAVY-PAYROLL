@@ -13,9 +13,13 @@ if (!fs.existsSync(PREFERENCES_DIR)) {
   fs.mkdirSync(PREFERENCES_DIR, { recursive: true });
 }
 
+// Sanitize userId to be safe for use in file paths
+// Replaces all '/' with 'SL' to avoid directory traversal issues
+const sanitizeUserId = (userId) => userId.replace(/\//g, 'SL');
+
 // Get user's quick access preferences
 router.get('/', verifyToken, (req, res) => {
-  const userId = req.user_id;
+  const userId = sanitizeUserId(req.user_id);
   
   const preferencesFile = path.join(PREFERENCES_DIR, `${userId}_preferences.json`);
   
@@ -45,7 +49,7 @@ router.get('/', verifyToken, (req, res) => {
 
 // Save user's quick access preferences
 router.post('/save', verifyToken, (req, res) => {
-  const userId = req.user_id;
+  const userId = sanitizeUserId(req.user_id);
   const { quickAccess } = req.body;
   
   // Validate input
@@ -91,7 +95,7 @@ router.post('/save', verifyToken, (req, res) => {
 
 // Reset user's quick access to defaults (optional - can delete from frontend)
 router.delete('/delete', verifyToken, (req, res) => {
-  const userId = req.user_id;
+  const userId = sanitizeUserId(req.user_id);
   
   const preferencesFile = path.join(PREFERENCES_DIR, `${userId}_preferences.json`);
   
@@ -126,7 +130,7 @@ router.delete('/delete', verifyToken, (req, res) => {
 
 // Get sidebar state
 router.get('/sidebar', verifyToken, (req, res) => {
-  const userId = req.user_id;
+  const userId = sanitizeUserId(req.user_id);
   const preferencesFile = path.join(PREFERENCES_DIR, `${userId}_preferences.json`);
   
   if (!fs.existsSync(preferencesFile)) {
@@ -152,7 +156,7 @@ router.get('/sidebar', verifyToken, (req, res) => {
 
 // Save sidebar state
 router.post('/sidebar/save', verifyToken, (req, res) => {
-  const userId = req.user_id;
+  const userId = sanitizeUserId(req.user_id);
   const { sidebarCollapsed } = req.body;
   const preferencesFile = path.join(PREFERENCES_DIR, `${userId}_preferences.json`);
   

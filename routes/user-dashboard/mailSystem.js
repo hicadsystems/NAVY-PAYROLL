@@ -477,17 +477,17 @@ router.get("/sent", verifyToken, async (req, res) => {
        FROM (
          SELECT
            MIN(id)                                                      AS id,
-           ANY_VALUE(to_user_id)                                        AS to_user_id,
+           MIN(to_user_id)                                              AS to_user_id,
            GROUP_CONCAT(to_name ORDER BY id SEPARATOR ', ')             AS to_name,
            COUNT(*)                                                     AS recipient_count,
-           ANY_VALUE(subject)                                           AS subject,
-           ANY_VALUE(body)                                              AS body,
+           MIN(subject)                                                 AS subject,
+           MIN(body)                                                    AS body,
            MIN(sent_at)                                                 AS sent_at,
            MIN(delivered_at)                                            AS delivered_at,
            MIN(read_at)                                                 AS read_at,
            SUM(read_at IS NOT NULL)                                     AS read_count,
-           SUM(delivered_at IS NOT NULL)                               AS delivered_count,
-           ANY_VALUE(batch_id)                                          AS batch_id
+           SUM(delivered_at IS NOT NULL)                                AS delivered_count,
+           MIN(batch_id)                                                AS batch_id
          FROM user_mails
          WHERE from_user_id = ?
            AND deleted_by_sender = FALSE

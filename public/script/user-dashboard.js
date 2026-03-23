@@ -250,7 +250,6 @@ function showPage(id) {
 
   updateHeaderSlot(id);
 
-  // Persist the active page across refreshes
   sessionStorage.setItem("activePage", id);
 }
 
@@ -280,7 +279,9 @@ document.querySelectorAll("nav a[data-page]").forEach(function (link) {
     }
 
     e.preventDefault();
+
     if (page === "email") loadEmailPage();
+    if (page === "payslip") loadPayslipPage();
     showPage(page);
   });
 });
@@ -290,20 +291,19 @@ document.querySelectorAll("button[data-page]").forEach(function (btn) {
   btn.addEventListener("click", function () {
     var page = this.getAttribute("data-page");
     if (page === "email") loadEmailPage();
+    if (page === "payslip") loadPayslipPage();
     showPage(page);
   });
 });
 
 // ══════════════════════════════════════════════════════════
 // RESTORE PAGE ON REFRESH
-// Reads the page saved in sessionStorage and navigates back to it.
-// sessionStorage survives a refresh but is cleared on tab close /
-// logout, so it never leaks into a fresh login.
 // ══════════════════════════════════════════════════════════
 (function restoreActivePage() {
   var saved = sessionStorage.getItem("activePage");
   if (saved && saved !== "home") {
     if (saved === "email") loadEmailPage();
+    if (saved === "payslip") loadPayslipPage();
     showPage(saved);
   }
 })();
@@ -328,7 +328,26 @@ function loadEmailPage() {
 }
 
 // ══════════════════════════════════════════════════════════
-// GLOBAL EMAIL BADGE + VIBRATE — runs on every page, always
+// PAYSLIP — lazy load
+// ══════════════════════════════════════════════════════════
+var payslipPageLoaded = false;
+
+function loadPayslipPage() {
+  if (payslipPageLoaded) return;
+  fetch("pages/user-payslip.html")
+    .then((r) => r.text())
+    .then(function (html) {
+      injectWithScripts(document.getElementById("page-payslip"), html);
+      payslipPageLoaded = true;
+    })
+    .catch(function () {
+      document.getElementById("page-payslip").innerHTML =
+        '<p style="color:rgba(200,220,255,0.4);padding:40px;">Failed to load payslip. Please refresh.</p>';
+    });
+}
+
+// ══════════════════════════════════════════════════════════
+// GLOBAL EMAIL BADGE + VIBRATE
 // ══════════════════════════════════════════════════════════
 var _globalLastUnread = -1;
 var _globalPollTimer = null;
@@ -367,7 +386,6 @@ function updateGlobalBadge(count) {
   var isIncrease = _globalLastUnread >= 0 && count > _globalLastUnread;
   _globalLastUnread = count;
 
-  // ── Nav badge ──
   var navEmail = document.getElementById("nav-email");
   if (navEmail) {
     var navBadge = document.getElementById("nav-mail-badge");
@@ -384,7 +402,6 @@ function updateGlobalBadge(count) {
     navBadge.style.display = count > 0 ? "inline-block" : "none";
   }
 
-  // ── Home quick-action button badge ──
   var emailBtn = document.querySelector('button[data-page="email"]');
   if (emailBtn) {
     var btnBadge = document.getElementById("home-email-btn-badge");
@@ -403,7 +420,6 @@ function updateGlobalBadge(count) {
     btnBadge.style.display = count > 0 ? "inline-block" : "none";
   }
 
-  // ── Email page inbox tab badge (if loaded) ──
   var inboxBadge = document.getElementById("inbox-badge");
   if (inboxBadge) {
     inboxBadge.textContent = count > 99 ? "99+" : count;
@@ -559,11 +575,9 @@ const DashAlertModal = {
 DashAlertModal.init();
 
 // ══════════════════════════════════════════════════════════
-// LOGOUT — confirm modal, then wipe session
+// LOGOUT
 // ══════════════════════════════════════════════════════════
-
 function confirmLogout() {
-  // Build the modal once, reuse on subsequent calls
   var overlay = document.getElementById("logoutConfirmModal");
   if (!overlay) {
     overlay = document.createElement("div");
@@ -605,7 +619,6 @@ function confirmLogout() {
       </div>`;
     document.body.appendChild(overlay);
 
-    // Hover effects
     var cancelBtn = document.getElementById("logoutCancelBtn");
     var confirmBtn = document.getElementById("logoutConfirmBtn");
 
@@ -626,26 +639,19 @@ function confirmLogout() {
       this.style.background = "#e74c3c";
     });
 
-    // Close on Cancel
     cancelBtn.addEventListener("click", function () {
       _closeLogoutModal(overlay);
     });
-
-    // Close on backdrop click
     overlay.addEventListener("click", function (e) {
       if (e.target === overlay) _closeLogoutModal(overlay);
     });
-
-    // Confirm logout
     confirmBtn.addEventListener("click", function () {
       confirmBtn.disabled = true;
       confirmBtn.textContent = "Logging out...";
-      //_closeLogoutModal(overlay);
       logout();
     });
   }
 
-  // Show
   overlay.style.opacity = "1";
   overlay.style.pointerEvents = "all";
   var box = document.getElementById("logoutConfirmBox");
@@ -660,14 +666,13 @@ function _closeLogoutModal(overlay) {
 }
 
 function logout() {
-  // Clear sessionStorage first so activePage doesn't survive into next login
   sessionStorage.clear();
   localStorage.clear();
   window.location.href = "personnel-user-login.html";
 }
 
 // ══════════════════════════════════════════════════════════
-// PAYROLL MODAL — load + handle payroll return from logout
+// PAYROLL MODAL
 // ══════════════════════════════════════════════════════════
 fetch("pages/payroll-modal.html")
   .then((r) => r.text())
@@ -685,3 +690,245 @@ fetch("pages/payroll-modal.html")
     }
   })
   .catch((err) => console.error("Failed to load payroll modal:", err));
+
+// ══════════════════════════════════════════════════════════
+// ATTACHMENT PREVIEW LIGHTBOX — global functions
+//
+// Defined here (not inside any page IIFE) so the overlay
+// buttons in user-dashboard.html can call them via onclick
+// regardless of which lazy page has loaded.
+// email.html and user-payslip.html both rely on these.
+// ══════════════════════════════════════════════════════════
+(function () {
+  var _isFullscreen = false;
+  var _fsBarTimer = null;
+  var _fsLastMouseX = -1;
+  var _fsLastMouseY = -1;
+  var _fsMoveHandler = null;
+  var _fsClickHandler = null;
+  var _fsIgnoreNextClick = false;
+  var _previewBlobUrl = null;
+
+  // Let other scripts (payslip, email) register the active blob URL
+  // so closeAttPreview can revoke it correctly.
+  window._attSetBlobUrl = function (url) {
+    _previewBlobUrl = url;
+  };
+
+  // ── Fullscreen bar helpers ────────────────────────────────
+  function showFsBar() {
+    var bar = document.querySelector(".att-preview-bar");
+    var hint = document.getElementById("attEscHint");
+    var catcher = document.querySelector(".pdf-catcher");
+    if (bar) bar.classList.add("fs-bar-visible");
+    if (hint) hint.classList.add("fs-bar-visible");
+    if (catcher && _isFullscreen) catcher.style.pointerEvents = "none";
+    clearTimeout(_fsBarTimer);
+    _fsBarTimer = setTimeout(hideFsBar, 2000);
+  }
+
+  function hideFsBar() {
+    var bar = document.querySelector(".att-preview-bar");
+    var hint = document.getElementById("attEscHint");
+    var catcher = document.querySelector(".pdf-catcher");
+    if (bar) bar.classList.remove("fs-bar-visible");
+    if (hint) hint.classList.remove("fs-bar-visible");
+    if (catcher && _isFullscreen) {
+      setTimeout(function () {
+        catcher.style.pointerEvents = "all";
+      }, 300);
+    }
+    clearTimeout(_fsBarTimer);
+  }
+
+  function startFsBarListeners() {
+    _fsMoveHandler = function (e) {
+      if (!_isFullscreen) return;
+      var dx = e.clientX - _fsLastMouseX;
+      var dy = e.clientY - _fsLastMouseY;
+      _fsLastMouseX = e.clientX;
+      _fsLastMouseY = e.clientY;
+      if (dx === 0 && dy === 0) return;
+      showFsBar();
+    };
+    _fsClickHandler = function () {
+      if (!_isFullscreen) return;
+      if (_fsIgnoreNextClick) {
+        _fsIgnoreNextClick = false;
+        return;
+      }
+      showFsBar();
+    };
+    document.addEventListener("mousemove", _fsMoveHandler);
+    document.addEventListener("click", _fsClickHandler);
+  }
+
+  function stopFsBarListeners() {
+    if (_fsMoveHandler)
+      document.removeEventListener("mousemove", _fsMoveHandler);
+    if (_fsClickHandler) document.removeEventListener("click", _fsClickHandler);
+    _fsMoveHandler = null;
+    _fsClickHandler = null;
+    clearTimeout(_fsBarTimer);
+    _fsBarTimer = null;
+    _fsLastMouseX = -1;
+    _fsLastMouseY = -1;
+  }
+
+  function expandIcon() {
+    return (
+      '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+      '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" ' +
+      'd="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>'
+    );
+  }
+  function collapseIcon() {
+    return (
+      '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+      '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" ' +
+      'd="M9 9V4m0 5H4m5 0L3 3m12 6h5m-5 0V4m0 5l6-6M9 15v5m0-5H4m5 5l-6 6m12-6h5m-5 0v5m0-5l6 6"/></svg>'
+    );
+  }
+
+  // ── toggleAttFullscreen — global ──────────────────────────
+  window.toggleAttFullscreen = function () {
+    var overlay = document.getElementById("attPreviewOverlay");
+    var box = overlay.querySelector(".att-preview-box");
+    var expBtn = document.getElementById("attPreviewExpandBtn");
+    var hint = document.getElementById("attEscHint");
+    var catcher = document.querySelector(".pdf-catcher");
+
+    _isFullscreen = !_isFullscreen;
+
+    if (_isFullscreen) {
+      box.classList.add("fullscreen");
+      overlay.classList.add("fullscreen-mode");
+      if (expBtn) expBtn.innerHTML = collapseIcon() + " Exit Fullscreen";
+      if (hint) hint.classList.add("visible");
+      _fsLastMouseX = -1;
+      _fsLastMouseY = -1;
+      _fsIgnoreNextClick = true;
+      if (catcher) catcher.style.pointerEvents = "all";
+      startFsBarListeners();
+    } else {
+      box.classList.remove("fullscreen");
+      overlay.classList.remove("fullscreen-mode");
+      if (expBtn) expBtn.innerHTML = expandIcon() + " Expand";
+      if (hint) hint.classList.remove("visible");
+      if (catcher) catcher.style.pointerEvents = "none";
+      hideFsBar();
+      stopFsBarListeners();
+    }
+  };
+
+  // ── closeAttPreview — global ──────────────────────────────
+  window.closeAttPreview = function () {
+    var overlay = document.getElementById("attPreviewOverlay");
+    var box = overlay.querySelector(".att-preview-box");
+    var hint = document.getElementById("attEscHint");
+    var content = document.getElementById("attPreviewContent");
+
+    overlay.style.opacity = "0";
+    box.style.transform = "translateY(12px)";
+
+    setTimeout(function () {
+      overlay.classList.remove("open", "fullscreen-mode");
+      box.classList.remove("fullscreen");
+      overlay.style.opacity = "";
+      box.style.transform = "";
+      if (hint) hint.classList.remove("visible");
+      hideFsBar();
+      stopFsBarListeners();
+      _isFullscreen = false;
+      if (content) content.innerHTML = "";
+      if (_previewBlobUrl) {
+        URL.revokeObjectURL(_previewBlobUrl);
+        _previewBlobUrl = null;
+      }
+    }, 250);
+  };
+
+  // ── showAttPreview — used by email.html for attachments ───
+  window.showAttPreview = function (blobUrl, filename, mime) {
+    _previewBlobUrl = blobUrl;
+    _isFullscreen = false;
+
+    var overlay = document.getElementById("attPreviewOverlay");
+    var content = document.getElementById("attPreviewContent");
+    var expBtn = document.getElementById("attPreviewExpandBtn");
+    var hint = document.getElementById("attEscHint");
+    var box = overlay.querySelector(".att-preview-box");
+
+    box.classList.remove("fullscreen");
+    overlay.classList.remove("fullscreen-mode");
+    if (hint) hint.classList.remove("visible");
+    if (expBtn) expBtn.innerHTML = expandIcon() + " Expand";
+
+    document.getElementById("attPreviewName").textContent = filename;
+    content.innerHTML = "";
+
+    if (mime && mime.startsWith("image/")) {
+      var img = document.createElement("img");
+      img.src = blobUrl;
+      img.alt = filename;
+      content.appendChild(img);
+    } else {
+      // PDF or HTML blob (payslip preview uses text/html)
+      var wrap = document.createElement("div");
+      wrap.style.cssText =
+        "position:relative;width:100%;height:100%;flex:1;min-height:0;display:flex;flex-direction:column;";
+
+      var iframe = document.createElement("iframe");
+      iframe.src =
+        blobUrl +
+        (mime === "application/pdf" ? "#toolbar=0&navpanes=0&scrollbar=0" : "");
+      iframe.title = filename;
+      iframe.style.cssText =
+        "width:100%;height:100%;border:none;background:#fff;display:block;flex:1;min-height:0;";
+
+      var catcher = document.createElement("div");
+      catcher.className = "pdf-catcher";
+      catcher.style.cssText =
+        "position:absolute;inset:0;z-index:2;background:transparent;cursor:default;pointer-events:none;";
+      catcher.addEventListener("mousemove", function (e) {
+        document.dispatchEvent(
+          new MouseEvent("mousemove", {
+            clientX: e.clientX,
+            clientY: e.clientY,
+            bubbles: true,
+          }),
+        );
+      });
+      catcher.addEventListener("click", function (e) {
+        document.dispatchEvent(
+          new MouseEvent("click", {
+            clientX: e.clientX,
+            clientY: e.clientY,
+            bubbles: true,
+          }),
+        );
+      });
+
+      wrap.appendChild(iframe);
+      wrap.appendChild(catcher);
+      content.appendChild(wrap);
+    }
+
+    overlay.classList.add("open");
+    overlay.onclick = function (e) {
+      if (e.target === overlay) closeAttPreview();
+    };
+  };
+
+  // ── ESC key ───────────────────────────────────────────────
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    var overlay = document.getElementById("attPreviewOverlay");
+    if (!overlay || !overlay.classList.contains("open")) return;
+    if (_isFullscreen) {
+      toggleAttFullscreen();
+    } else {
+      closeAttPreview();
+    }
+  });
+})();

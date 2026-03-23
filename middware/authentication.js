@@ -74,6 +74,7 @@ const verifyToken = async (req, res, next) => {
   // ── 5. Set DB context (only when current_class is present) ─
   // Pre-login tokens have no current_class — skip DB switching for them.
   if (!decoded.current_class) {
+    pool.useDatabase(config.databases.officers);
     return next();
   }
 

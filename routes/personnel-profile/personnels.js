@@ -38,6 +38,39 @@ async function getPayrollClassFromDb(dbName) {
 // HR_EMPLOYEES CRUD OPERATIONS
 // =============================================================================
 
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER: replaces the per-employee N×3 serial COUNT queries with 3 bulk
+// queries regardless of how many employees are in the page.
+// ─────────────────────────────────────────────────────────────────────────────
+async function attachRelationshipCounts(employees) {
+  if (!employees.length) return;
+
+  const ids = employees.map(e => e.Empl_ID);
+
+  const [childrenRows] = await pool.query(
+    'SELECT Empl_ID, COUNT(*) as count FROM Children WHERE Empl_ID IN (?) AND chactive = 1 GROUP BY Empl_ID',
+    [ids]
+  );
+  const [nokRows] = await pool.query(
+    'SELECT Empl_ID, COUNT(*) as count FROM NextOfKin WHERE Empl_ID IN (?) AND IsActive = 1 GROUP BY Empl_ID',
+    [ids]
+  );
+  const [spouseRows] = await pool.query(
+    'SELECT Empl_ID, COUNT(*) as count FROM Spouse WHERE Empl_ID IN (?) AND spactive = 1 GROUP BY Empl_ID',
+    [ids]
+  );
+
+  const childrenMap = Object.fromEntries(childrenRows.map(r => [r.Empl_ID, r.count]));
+  const nokMap      = Object.fromEntries(nokRows.map(r => [r.Empl_ID, r.count]));
+  const spouseMap   = Object.fromEntries(spouseRows.map(r => [r.Empl_ID, r.count]));
+
+  for (const employee of employees) {
+    employee.children_count = childrenMap[employee.Empl_ID] ?? 0;
+    employee.nok_count      = nokMap[employee.Empl_ID]      ?? 0;
+    employee.spouse_count   = spouseMap[employee.Empl_ID]   ?? 0;
+  }
+}
+
 // GET all current employees
 router.get('/employees-current', verifyToken, async (req, res) => {
   try {
@@ -58,31 +91,13 @@ router.get('/employees-current', verifyToken, async (req, res) => {
         AND (
           DateLeft IS NULL
           OR DateLeft = ''
-          OR STR_TO_DATE(DateLeft, '%Y%m%d') > CURDATE()
+          OR DateLeft > DATE_FORMAT(CURDATE(), '%Y%m%d')
         )
         AND payrollclass = ?
       ORDER BY Empl_ID ASC
     `, [payrollClass]);
 
-    // Add counts for related data
-    for (let employee of rows) {
-      const [children] = await pool.query(
-        'SELECT COUNT(*) as count FROM Children WHERE Empl_ID = ? AND chactive = 1',
-        [employee.Empl_ID]
-      );
-      const [nok] = await pool.query(
-        'SELECT COUNT(*) as count FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1',
-        [employee.Empl_ID]
-      );
-      const [spouse] = await pool.query(
-        'SELECT COUNT(*) as count FROM Spouse WHERE Empl_ID = ? AND spactive = 1',
-        [employee.Empl_ID]
-      );
-
-      employee.children_count = children[0].count;
-      employee.nok_count = nok[0].count;
-      employee.spouse_count = spouse[0].count;
-    }
+    await attachRelationshipCounts(rows);
 
     console.log('✅ Query returned:', rows.length, 'records for payroll class', payrollClass);
 
@@ -123,7 +138,7 @@ router.get('/employees-current-pages', verifyToken, async (req, res) => {
         AND (
           DateLeft IS NULL
           OR DateLeft = ''
-          OR STR_TO_DATE(DateLeft, '%Y%m%d') > CURDATE()
+          OR DateLeft > DATE_FORMAT(CURDATE(), '%Y%m%d')
         )
         AND payrollclass = ?
     `, [payrollClass]);
@@ -139,32 +154,14 @@ router.get('/employees-current-pages', verifyToken, async (req, res) => {
         AND (
           DateLeft IS NULL
           OR DateLeft = ''
-          OR STR_TO_DATE(DateLeft, '%Y%m%d') > CURDATE()
+          OR DateLeft > DATE_FORMAT(CURDATE(), '%Y%m%d')
         )
         AND payrollclass = ?
       ORDER BY Empl_ID ASC
       LIMIT ? OFFSET ?
     `, [payrollClass, limit, offset]);
 
-    // Add counts to each employee
-    for (let employee of rows) {
-      const [children] = await pool.query(
-        'SELECT COUNT(*) as count FROM Children WHERE Empl_ID = ? AND chactive = 1',
-        [employee.Empl_ID]
-      );
-      const [nok] = await pool.query(
-        'SELECT COUNT(*) as count FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1',
-        [employee.Empl_ID]
-      );
-      const [spouse] = await pool.query(
-        'SELECT COUNT(*) as count FROM Spouse WHERE Empl_ID = ? AND spactive = 1',
-        [employee.Empl_ID]
-      );
-      
-      employee.children_count = children[0].count;
-      employee.nok_count = nok[0].count;
-      employee.spouse_count = spouse[0].count;
-    }
+    await attachRelationshipCounts(rows);
     
     console.log('🔍 Query returned:', rows.length, 'records');
     
@@ -211,7 +208,7 @@ router.get('/employees-current/search', verifyToken, async (req, res) => {
         AND (
           DateLeft IS NULL
           OR DateLeft = ''
-          OR STR_TO_DATE(DateLeft, '%Y%m%d') > CURDATE()
+          OR DateLeft > DATE_FORMAT(CURDATE(), '%Y%m%d')
         )
         AND payrollclass = ?
     `;
@@ -299,26 +296,8 @@ router.get('/employees-current/search', verifyToken, async (req, res) => {
     `;
     
     const [rows] = await pool.query(dataQuery, [...params, limit, offset]);
-    
-    // Add counts to each employee
-    for (let employee of rows) {
-      const [children] = await pool.query(
-        'SELECT COUNT(*) as count FROM Children WHERE Empl_ID = ? AND chactive = 1',
-        [employee.Empl_ID]
-      );
-      const [nok] = await pool.query(
-        'SELECT COUNT(*) as count FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1',
-        [employee.Empl_ID]
-      );
-      const [spouse] = await pool.query(
-        'SELECT COUNT(*) as count FROM Spouse WHERE Empl_ID = ? AND spactive = 1',
-        [employee.Empl_ID]
-      );
-      
-      employee.children_count = children[0].count;
-      employee.nok_count = nok[0].count;
-      employee.spouse_count = spouse[0].count;
-    }
+
+    await attachRelationshipCounts(rows);
     
     console.log('🔍 Search returned:', rows.length, 'of', totalRecords, 'total records');
     
@@ -362,32 +341,14 @@ router.get('/employees-old', verifyToken, async (req, res) => {
           OR (
             DateLeft IS NOT NULL
             AND DateLeft <> ''
-            AND STR_TO_DATE(DateLeft, '%Y%m%d') <= CURDATE()
+            AND DateLeft <= DATE_FORMAT(CURDATE(), '%Y%m%d')
           )) 
         AND payrollclass = ?
       ORDER BY Empl_ID ASC
       `, [payrollClass]
     );
 
-    // Add counts to each employee
-    for (let employee of rows) {
-      const [children] = await pool.query(
-        'SELECT COUNT(*) as count FROM Children WHERE Empl_ID = ? AND chactive = 1',
-        [employee.Empl_ID]
-      );
-      const [nok] = await pool.query(
-        'SELECT COUNT(*) as count FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1',
-        [employee.Empl_ID]
-      );
-      const [spouse] = await pool.query(
-        'SELECT COUNT(*) as count FROM Spouse WHERE Empl_ID = ? AND spactive = 1',
-        [employee.Empl_ID]
-      );
-      
-      employee.children_count = children[0].count;
-      employee.nok_count = nok[0].count;
-      employee.spouse_count = spouse[0].count;
-    }
+    await attachRelationshipCounts(rows);
     
     console.log('🔍 Query returned:', rows.length, 'records');
     
@@ -422,7 +383,7 @@ router.get('/employees-old-pages', verifyToken, async (req, res) => {
           OR (
             DateLeft IS NOT NULL
             AND DateLeft <> ''
-            AND STR_TO_DATE(DateLeft, '%Y%m%d') <= CURDATE()
+            AND DateLeft <= DATE_FORMAT(CURDATE(), '%Y%m%d')
           )) 
         AND payrollclass = ?
     `, [payrollClass]);
@@ -438,32 +399,14 @@ router.get('/employees-old-pages', verifyToken, async (req, res) => {
           OR (
             DateLeft IS NOT NULL
             AND DateLeft <> ''
-            AND STR_TO_DATE(DateLeft, '%Y%m%d') <= CURDATE()
+            AND DateLeft <= DATE_FORMAT(CURDATE(), '%Y%m%d')
           )) 
         AND payrollclass = ?
       ORDER BY Empl_ID ASC
       LIMIT ? OFFSET ?
     `, [payrollClass, limit, offset]);
 
-    // Add counts to each employee
-    for (let employee of rows) {
-      const [children] = await pool.query(
-        'SELECT COUNT(*) as count FROM Children WHERE Empl_ID = ? AND chactive = 1',
-        [employee.Empl_ID]
-      );
-      const [nok] = await pool.query(
-        'SELECT COUNT(*) as count FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1',
-        [employee.Empl_ID]
-      );
-      const [spouse] = await pool.query(
-        'SELECT COUNT(*) as count FROM Spouse WHERE Empl_ID = ? AND spactive = 1',
-        [employee.Empl_ID]
-      );
-      
-      employee.children_count = children[0].count;
-      employee.nok_count = nok[0].count;
-      employee.spouse_count = spouse[0].count;
-    }
+    await attachRelationshipCounts(rows);
     
     console.log('🔍 Query returned:', rows.length, 'records');
     
@@ -510,7 +453,7 @@ router.get('/employees-old/search', verifyToken, async (req, res) => {
           OR (
             DateLeft IS NOT NULL
             AND DateLeft <> ''
-            AND STR_TO_DATE(DateLeft, '%Y%m%d') <= CURDATE()
+            AND DateLeft <= DATE_FORMAT(CURDATE(), '%Y%m%d')
           )) 
         AND payrollclass = ?
     `;
@@ -595,26 +538,8 @@ router.get('/employees-old/search', verifyToken, async (req, res) => {
     `;
     
     const [rows] = await pool.query(dataQuery, [...params, limit, offset]);
-    
-    // Add counts to each employee
-    for (let employee of rows) {
-      const [children] = await pool.query(
-        'SELECT COUNT(*) as count FROM Children WHERE Empl_ID = ? AND chactive = 1',
-        [employee.Empl_ID]
-      );
-      const [nok] = await pool.query(
-        'SELECT COUNT(*) as count FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1',
-        [employee.Empl_ID]
-      );
-      const [spouse] = await pool.query(
-        'SELECT COUNT(*) as count FROM Spouse WHERE Empl_ID = ? AND spactive = 1',
-        [employee.Empl_ID]
-      );
-      
-      employee.children_count = children[0].count;
-      employee.nok_count = nok[0].count;
-      employee.spouse_count = spouse[0].count;
-    }
+
+    await attachRelationshipCounts(rows);
     
     console.log('🔍 Search returned:', rows.length, 'of', totalRecords, 'total records');
     

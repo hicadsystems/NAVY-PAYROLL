@@ -122,7 +122,7 @@ router.get('/nominal-processed', verifyToken, async (req, res) => {
     const { sun, ord, mth, pmth } = bt05Rows[0];
 
     // sun = 888 → use current month (mth), else use previous month (pmth)
-    const useCurrentMonth = sun == 888;
+    const useCurrentMonth = sun >= 888;
     const targetYear = ord;
     const targetMonth = useCurrentMonth ? mth : pmth;
 

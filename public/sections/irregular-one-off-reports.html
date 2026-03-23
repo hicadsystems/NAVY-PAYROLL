@@ -1,27 +1,55 @@
 <!-- One-Off Payments Report Section -->
- <style>
+<style>
   @keyframes grow-up {
-    0% { height: 0; bottom: 0; }
-    100% { height: 100%; bottom: 0; }
+    0% {
+      height: 0;
+      bottom: 0;
+    }
+
+    100% {
+      height: 100%;
+      bottom: 0;
+    }
   }
+
   @keyframes grow-down {
-    0% { height: 0; top: 0; }
-    100% { height: 100%; top: 0; }
+    0% {
+      height: 0;
+      top: 0;
+    }
+
+    100% {
+      height: 100%;
+      top: 0;
+    }
   }
+
   @keyframes expand {
-    0% { width: 0; left: 50%; transform: translate(-50%, -50%); }
-    100% { width: 100%; left: 0; transform: translateY(-50%); }
+    0% {
+      width: 0;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    100% {
+      width: 100%;
+      left: 0;
+      transform: translateY(-50%);
+    }
   }
+
   .animate-grow-up {
     animation: grow-up 0.6s ease-in-out infinite alternate;
     position: absolute;
     bottom: 0;
   }
+
   .animate-grow-down {
     animation: grow-down 0.6s ease-in-out infinite alternate;
     position: absolute;
     top: 0;
   }
+
   .animate-expand {
     animation: expand 0.6s ease-in-out infinite alternate;
   }
@@ -156,6 +184,35 @@
   </div>
 </div>
 
+<!-- Preview Modal -->
+<div id="oneoffPreviewModal"
+  class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+  <div class="bg-gray-50 rounded-lg shadow-lg w-full max-w-5xl max-h-[90vh] overflow-hidden">
+    <!-- Header -->
+    <div class="flex justify-between items-center px-6 py-4 bg-navy">
+      <h3 class="text-lg font-semibold text-white" id="oneoffPreviewTitle">One-Off Payments Report Preview</h3>
+      <button onclick="closeOneoffPreview()"
+        class="text-white hover:text-gray-300 text-2xl leading-none">&times;</button>
+    </div>
+    <!-- Body -->
+    <div class="overflow-auto bg-gray-300" style="max-height: calc(90vh - 100px);">
+      <iframe id="oneoffPreviewIframe" src="about:blank"
+        style="width: 100%; min-height: 842px; border: none; display: block;"></iframe>
+    </div>
+    <!-- Footer -->
+    <div class="flex justify-end gap-3 px-6 py-2 bg-gray-50">
+      <button onclick="closeOneoffPreview()"
+        class="px-4 py-1 bg-gray-200 hover:bg-gray-300 rounded border border-gray-300">
+        Cancel
+      </button>
+      <button onclick="downloadOneoffReport()" class="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded shadow"
+        id="oneoffDownloadBtn">
+        Download
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Success Modal -->
 <div id="reportSuccessModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
@@ -211,7 +268,6 @@
     const loadingIndicator = document.getElementById('reportLoadingIndicator');
     const loadingTitle = document.getElementById('loadingTitle');
     const loadingMessage = document.getElementById('loadingMessage');
-    //const progressBar = document.getElementById('progressBar');
     const successModal = document.getElementById('reportSuccessModal');
     const successMessage = document.getElementById('reportSuccessMessage');
     const successOkBtn = document.getElementById('reportSuccessOkBtn');
@@ -277,7 +333,6 @@
         });
 
         const data = await res.json();
-
 
         payrollClassSelect.innerHTML = ""; // clear old options
 
@@ -368,33 +423,61 @@
           throw new Error(error.message || 'Failed to generate report');
         }
 
-        loadingMessage.textContent = 'Downloading file...';
+        loadingMessage.textContent = 'Preparing preview...';
 
-        // Download file
         const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `oneoff_${reportType}_${Date.now()}.${outputFormat === 'excel' ? 'xlsx' : 'pdf'}`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
 
-        // Hide loading and show success
+        // Store blob and metadata for download
+        window.oneoffCurrentBlob = blob;
+        window.oneoffCurrentFormat = outputFormat;
+        window.oneoffCurrentReportType = reportType;
+
         loadingIndicator.classList.add('hidden');
-        successMessage.textContent = `Your ${reportType} report has been downloaded as ${outputFormat.toUpperCase()}.`;
-        successModal.classList.remove('hidden');
 
-        // Copy to history if checked
+        // Show preview modal
+        const previewModal = document.getElementById('oneoffPreviewModal');
+        const iframe = document.getElementById('oneoffPreviewIframe');
+        const previewTitle = document.getElementById('oneoffPreviewTitle');
+        const downloadBtn = document.getElementById('oneoffDownloadBtn');
+
+        const reportTypeLabels = {
+          bank: 'Bank Report',
+          analysis: 'Payment Analysis',
+          remittance: 'Remittance Advice',
+          summary: 'Summary'
+        };
+        previewTitle.textContent = `One-Off Payments — ${reportTypeLabels[reportType] || reportType} Preview`;
+
+        if (outputFormat === 'pdf') {
+          downloadBtn.textContent = 'Download PDF';
+          const blobUrl = URL.createObjectURL(blob);
+          window.oneoffCurrentBlobUrl = blobUrl;
+          iframe.style.minHeight = '842px';
+          iframe.removeAttribute('srcdoc');
+          iframe.src = blobUrl + '#toolbar=0';
+        } else {
+          downloadBtn.textContent = 'Download Excel';
+          window.oneoffCurrentBlobUrl = null;
+          iframe.style.minHeight = '300px';
+          iframe.srcdoc = `
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:280px;font-family:sans-serif;color:#374151;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="#16a34a" style="margin-bottom:16px;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              <p style="font-size:1.1rem;font-weight:600;margin-bottom:8px;">Excel Report Ready</p>
+              <p style="font-size:0.9rem;color:#6b7280;">Click <strong>Download Excel</strong> to save the file.</p>
+            </div>`;
+        }
+
+        previewModal.classList.remove('hidden');
+
+        // Copy to history if checked (fire-and-forget)
         if (copyToHistory) {
-          // TODO: Implement copy to history functionality
           console.log('Copy to history feature to be implemented');
         }
 
       } catch (error) {
         console.error('Error generating report:', error);
-        //clearInterval(progressInterval);
         loadingIndicator.classList.add('hidden');
         errorMessage.textContent = error.message || 'An error occurred while generating the report';
         errorModal.classList.remove('hidden');
@@ -416,7 +499,7 @@
       payrollClassSelect.disabled = false;
     });
 
-    // Add this near your other event listeners (after reportCancelBtn listener)
+    // Debug button
     document.getElementById('button').addEventListener('click', async () => {
       try {
         const response = await auth.fetchWithAuth(`${API_BASE}/font-diagnostic`, {
@@ -437,4 +520,36 @@
     fetchDatabaseName();
     loadPaymentTypes();
   })();
+
+  // Preview modal controls (global scope)
+  window.closeOneoffPreview = function closeOneoffPreview() {
+    const modal = document.getElementById('oneoffPreviewModal');
+    const iframe = document.getElementById('oneoffPreviewIframe');
+    if (window.oneoffCurrentBlobUrl) {
+      URL.revokeObjectURL(window.oneoffCurrentBlobUrl);
+      window.oneoffCurrentBlobUrl = null;
+    }
+    iframe.src = 'about:blank';
+    modal.classList.add('hidden');
+  }
+
+  window.downloadOneoffReport = function downloadOneoffReport() {
+    if (!window.oneoffCurrentBlob) return;
+    const format = window.oneoffCurrentFormat;
+    const reportType = window.oneoffCurrentReportType;
+    const ext = format === 'excel' ? 'xlsx' : 'pdf';
+    const url = URL.createObjectURL(window.oneoffCurrentBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `oneoff_${reportType}_${Date.now()}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    // Show success modal
+    const successMessage = document.getElementById('reportSuccessMessage');
+    successMessage.textContent = `Your ${reportType} report has been downloaded as ${format.toUpperCase()}.`;
+    document.getElementById('reportSuccessModal').classList.remove('hidden');
+  }
 </script>

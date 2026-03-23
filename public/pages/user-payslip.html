@@ -1,0 +1,1176 @@
+<!-- ================================================
+  PAYSLIP PAGE — Standalone file
+  Save as: pages/user-payslip.html
+  Loaded dynamically by user-dashboard.js
+================================================ -->
+<style>
+  /* ── PAYSLIP PAGE — scoped to .ps-wrap ── */
+  .ps-wrap {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    box-sizing: border-box;
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+
+  /* ── CARD ── */
+  .ps-card {
+    background: rgba(15, 35, 64, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 20px;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.45);
+    width: 100%;
+    max-width: 480px;
+    padding: 40px 48px;
+    box-sizing: border-box;
+    animation: psCardIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes psCardIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ── TITLE ── */
+  .ps-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.3px;
+    margin-bottom: 12px;
+  }
+
+  .ps-subtitle {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(200, 220, 255, 0.38);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 36px;
+  }
+
+  /* ── FORM FIELDS ── */
+  .ps-field {
+    margin-bottom: 20px;
+  }
+
+  .ps-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(200, 220, 255, 0.45);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+  }
+
+  /* row of selects */
+  .ps-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .ps-row .ps-field {
+    flex: 1;
+    margin-bottom: 0;
+  }
+
+  .ps-select {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 10px;
+    padding: 13px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #e8f0fe;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' viewBox='0 0 12 8'%3E%3Cpath stroke='rgba(200,220,255,0.4)' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 38px;
+  }
+
+  .ps-select:focus {
+    outline: none;
+    border-color: rgba(126, 184, 247, 0.5);
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .ps-select option {
+    background: #0d1f35;
+    color: #e8f0fe;
+  }
+
+  /* stamp toggle */
+  .ps-stamp-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    margin-bottom: 28px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .ps-stamp-row:hover {
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  .ps-stamp-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(200, 220, 255, 0.7);
+  }
+
+  .ps-stamp-label span {
+    font-size: 11px;
+    color: rgba(200, 220, 255, 0.35);
+    margin-left: 6px;
+  }
+
+  /* toggle switch */
+  .ps-toggle {
+    width: 40px;
+    height: 22px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 11px;
+    position: relative;
+    transition: background 0.25s;
+    flex-shrink: 0;
+  }
+
+  .ps-toggle.on {
+    background: #f5c842;
+  }
+
+  .ps-toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .ps-toggle.on::after {
+    transform: translateX(18px);
+  }
+
+  /* ── GENERATE BUTTON ── */
+  .ps-btn {
+    width: 100%;
+    padding: 15px;
+    background: #f5c842;
+    color: #0d1f35;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .ps-btn:hover:not(:disabled) {
+    background: #ffd95a;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 28px rgba(245, 200, 66, 0.35);
+  }
+
+  .ps-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* spinner */
+  .ps-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(13, 31, 53, 0.3);
+    border-top-color: #0d1f35;
+    border-radius: 50%;
+    animation: psSpin 0.7s linear infinite;
+    display: none;
+  }
+
+  @keyframes psSpin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* ── STATUS MESSAGE ── */
+  .ps-status {
+    margin-top: 18px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.55;
+    display: none;
+    animation: psCardIn 0.3s ease both;
+  }
+
+  .ps-status.info {
+    background: rgba(126, 184, 247, 0.10);
+    border: 1px solid rgba(126, 184, 247, 0.22);
+    color: rgba(200, 230, 255, 0.85);
+    display: block;
+  }
+
+  .ps-status.error {
+    background: rgba(231, 76, 60, 0.12);
+    border: 1px solid rgba(231, 76, 60, 0.28);
+    color: rgba(255, 160, 150, 0.9);
+    display: block;
+  }
+
+  .ps-status.success {
+    background: rgba(39, 174, 96, 0.12);
+    border: 1px solid rgba(39, 174, 96, 0.28);
+    color: rgba(130, 220, 160, 0.9);
+    display: block;
+  }
+</style>
+
+<div class="ps-wrap">
+  <div class="ps-card">
+
+    <p class="ps-title">My Payslip</p>
+    <p class="hidden ps-subtitle">View &amp; Download</p>
+
+    <!-- Month + Year -->
+    <div class="ps-row" style="margin-bottom:20px;">
+      <div class="ps-field">
+        <label class="ps-label">Month</label>
+        <select class="ps-select" id="ps-month">
+          <option value="1">January</option>
+          <option value="2">February</option>
+          <option value="3">March</option>
+          <option value="4">April</option>
+          <option value="5">May</option>
+          <option value="6">June</option>
+          <option value="7">July</option>
+          <option value="8">August</option>
+          <option value="9">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
+        </select>
+      </div>
+      <div class="ps-field">
+        <label class="ps-label">Year</label>
+        <select class="ps-select" id="ps-year"></select>
+      </div>
+    </div>
+
+    <!-- Stamp toggle -->
+    <div class="ps-stamp-row" id="ps-stamp-row">
+      <span class="ps-stamp-label">Include Official Stamp <span>(optional)</span></span>
+      <div class="ps-toggle" id="ps-stamp-toggle"></div>
+    </div>
+
+    <!-- Generate button -->
+    <button class="ps-btn" id="ps-generate-btn">
+      <div class="ps-spinner" id="ps-spinner"></div>
+      <span id="ps-btn-text">Generate Payslip</span>
+    </button>
+
+    <!-- Status -->
+    <div class="ps-status" id="ps-status"></div>
+
+  </div>
+</div>
+
+<script>
+  (function () {
+
+    // ── Populate year dropdown ──
+    var yearSel = document.getElementById('ps-year');
+    var now = new Date();
+    var curYear = now.getFullYear();
+    var curMonth = now.getMonth() + 1;
+
+    for (var y = curYear; y >= curYear - 5; y--) {
+      var opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y;
+      yearSel.appendChild(opt);
+    }
+    document.getElementById('ps-month').value = curMonth;
+
+    // ── Stamp toggle ──
+    var stampToggle = document.getElementById('ps-stamp-toggle');
+    var stampOn = false;
+    document.getElementById('ps-stamp-row').addEventListener('click', function () {
+      stampOn = !stampOn;
+      stampToggle.classList.toggle('on', stampOn);
+    });
+
+    // ── Refs ──
+    var generateBtn = document.getElementById('ps-generate-btn');
+    var btnText = document.getElementById('ps-btn-text');
+    var spinner = document.getElementById('ps-spinner');
+    var statusEl = document.getElementById('ps-status');
+
+    var lastData = null;
+    var _previewBlobUrl = null;
+
+    function setStatus(type, msg) {
+      statusEl.className = 'ps-status ' + type;
+      statusEl.textContent = msg;
+    }
+    function clearStatus() {
+      statusEl.className = 'ps-status';
+      statusEl.textContent = '';
+    }
+    function setLoading(on) {
+      generateBtn.disabled = on;
+      spinner.style.display = on ? 'block' : 'none';
+      btnText.textContent = on ? 'Please wait…' : 'Generate Payslip';
+    }
+
+    // ── GENERATE ──
+    generateBtn.addEventListener('click', function () {
+      var month = document.getElementById('ps-month').value;
+      var year  = yearSel.value;
+      var token = localStorage.getItem('token');
+  
+      // Capture human-readable month name for messages and filename
+      var monthSel   = document.getElementById('ps-month');
+      var selMonthName = monthSel.options[monthSel.selectedIndex].text; // e.g. "November"
+      var selYear    = parseInt(year);
+      var selMonth   = parseInt(month);
+  
+      if (!token) { setStatus('error', 'Session expired. Please log in again.'); return; }
+  
+      if (selYear > curYear || (selYear === curYear && selMonth > curMonth)) {
+        setStatus('error', 'Cannot generate a payslip for ' + selMonthName + ' ' + selYear + ' — this is a future period.');
+        return;
+      }
+  
+      clearStatus();
+      lastData = null;
+      setLoading(true);
+  
+      fetch('/payslip/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ year: year, month: month })
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        setLoading(false);
+        if (res.notReady) {
+          setStatus('info', 'Payslip for ' + selMonthName + ' ' + selYear + ' is not ready yet. Please check again later.');
+          return;
+        }
+        if (!res.success || !res.data) {
+          setStatus('error', (res.error || 'Unable to generate payslip') + ' (' + selMonthName + ' ' + selYear + ').');
+          return;
+        }
+        lastData = res.data;
+        // Store selected period on data for use in filename
+        lastData._selectedMonth = selMonthName;
+        lastData._selectedYear  = selYear;
+        openPayslipPreview(lastData, stampOn);
+      })
+      .catch(function () {
+        setLoading(false);
+        setStatus('error', 'A network error occurred while fetching ' + selMonthName + ' ' + selYear + ' payslip. Please try again.');
+      });
+    });
+      
+    // ══════════════════════════════════════════════════
+    // CLIENT-SIDE TEMPLATE RENDERER
+    // Processes the same Handlebars-style template the
+    // server uses, entirely in the browser.
+    // ══════════════════════════════════════════════════
+
+    function formatCurrency(n) {
+      var num = parseFloat(n) || 0;
+      return num.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      var d = new Date(dateStr);
+      if (isNaN(d)) return dateStr;
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+    }
+
+    function escHtml(s) {
+      if (s === null || s === undefined) return '';
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function renderEmployee(emp, globals) {
+      // ── Personnel info rows ──
+      var nsitfRow = emp.nsitfcode
+        ? '<div class="info-row"><span class="info-label">RSA (Pension):</span><span class="info-value">' + escHtml(emp.nsitfcode) + '</span></div>'
+        : '';
+
+      var bankInfo = escHtml(emp.bank_account_number || '') + (emp.bank_name ? ' (' + escHtml(emp.bank_name) + ')' : '');
+
+      // ── Helper: render a payment table (taxable / nontaxable) ──
+      function renderPayTable(items) {
+        if (!items || !items.length) return '';
+        return items.map(function (item) {
+          return '<tr><td>' + escHtml(item.description) + '</td>'
+            + '<td class="amount">₦' + formatCurrency(item.amount) + '</td></tr>';
+        }).join('');
+      }
+
+      // ── Helper: render deductions with L.Bal / Os.Mths ──
+      function renderDeductions(items) {
+        if (!items || !items.length) return '';
+        var leftRows = items.map(function(item) {
+          return '<tr><td>' + escHtml(item.description) + '</td>'
+            + '<td class="amount">(₦' + formatCurrency(item.amount) + ')</td></tr>';
+        }).join('');
+  
+        var rightRows = items.map(function(item) {
+          if (item.loan_balance) {
+            return '<div class="rz-row" style="min-height:13px;padding:1px 4px 1px 12px;">'
+              + '<span class="rz-lbal">' + escHtml(formatCurrency(item.loan_balance)) + '</span>'
+              + '<span class="rz-osmths">' + (item.outstanding_months && item.outstanding_months !== '-' && item.outstanding_months !== 0 ? escHtml(String(item.outstanding_months)) : '') + '</span>'
+              + '</div>';
+          }
+          return '<div class="rz-row rz-empty"></div>';
+        }).join('');
+  
+        return '<div class="full-row">'
+          + '<div class="left-zone"><table class="items-table"><colgroup><col class="col-desc"><col class="col-amount"></colgroup><tbody>'
+          + leftRows + '</tbody></table></div>'
+          + '<div class="right-zone"><div class="rz-rows">' + rightRows + '</div></div>'
+          + '</div>';
+      }
+
+      // ── IPPIS section ──
+      var ippisHtml = '';
+      if (emp.ippis) {
+        var ippis = emp.ippis;
+
+        // L.Bal / Os.Mths header row
+        ippisHtml += '<div class="lbal-header-row" style="margin-top:6px;">'
+          + '<div class="lh-spacer"><div class="source-header" style="margin-top:0;width:100%;">IPPIS</div></div>'
+          + '<div class="lh-labels"><span class="lh-col lbal">&#x20A6;L.Bal</span><span class="lh-col osmths">Os.Mths</span></div>'
+          + '</div>';
+
+        if (ippis.taxable && ippis.taxable.length) {
+          ippisHtml += '<div class="section-header">Taxable Payment</div>'
+            + '<table class="items-table" style="width:70%"><colgroup><col class="col-desc"><col class="col-amount"></colgroup><tbody>'
+            + renderPayTable(ippis.taxable) + '</tbody></table>';
+        }
+        if (ippis.nontaxable && ippis.nontaxable.length) {
+          ippisHtml += '<div class="section-header">Non-Taxable Payment</div>'
+            + '<table class="items-table" style="width:70%"><colgroup><col class="col-desc"><col class="col-amount"></colgroup><tbody>'
+            + renderPayTable(ippis.nontaxable) + '</tbody></table>';
+        }
+        if (ippis.deductions && ippis.deductions.length) {
+          ippisHtml += '<div class="section-header">Deductions</div>'
+            + renderDeductions(ippis.deductions);
+        }
+        ippisHtml += '<div class="total-row"><span class="label">IPPIS Total</span><span class="amount">₦' + formatCurrency(ippis.net) + '</span></div>';
+      }
+
+      // ── NAVY section ──
+      var navyHtml = '';
+      if (emp.navy) {
+        var navy = emp.navy;
+        navyHtml += '<div class="source-header">NAVY</div>';
+
+        if (navy.taxable && navy.taxable.length) {
+          navyHtml += '<div class="section-header">Taxable Payment</div>'
+            + '<table class="items-table" style="width:70%"><colgroup><col class="col-desc"><col class="col-amount"></colgroup><tbody>'
+            + renderPayTable(navy.taxable) + '</tbody></table>';
+        }
+        if (navy.nontaxable && navy.nontaxable.length) {
+          navyHtml += '<div class="section-header">Non-Taxable Payment</div>'
+            + '<table class="items-table" style="width:70%"><colgroup><col class="col-desc"><col class="col-amount"></colgroup><tbody>'
+            + renderPayTable(navy.nontaxable) + '</tbody></table>';
+        }
+        if (navy.deductions && navy.deductions.length) {
+          navyHtml += '<div class="section-header">Deductions</div>'
+            + renderDeductions(navy.deductions);
+        }
+        navyHtml += '<div class="total-row"><span class="label">NAVY Total</span><span class="amount">₦' + formatCurrency(navy.net) + '</span></div>';
+      }
+
+      // ── Stamp ──
+      var stampHtml = globals.showStamp
+        ? '<div class="stamp-area"><div class="stamp-box">Official Stamp</div></div>'
+        : '';
+
+      return '<div class="container">'
+        + '<div class="header-wrapper">'
+        + '<div class="className">' + escHtml(globals.className || '') + '</div>'
+        + '<div class="header"><h1>Nigerian Navy (Naval Headquarters)</h1><h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2></div>'
+        + '</div>'
+
+        + '<div class="pay-period">'
+        + '<span class="pp-left"><strong>Pay Period:</strong> ' + escHtml(emp.payroll_month) + ' ' + escHtml(String(emp.payroll_year)) + '</span>'
+        + '<span class="pp-center">' + escHtml(emp.surname) + ' ' + escHtml(emp.othername)+"'s" + ' PAYSLIP</span>'
+        + '<span class="pp-right"><strong>Produced On:</strong> ' + escHtml(formatDate(globals.payDate)) + '</span>'
+        + '</div>'
+
+        + '<div class="section-header">Official Profile</div>'
+        + '<div class="employee-info">'
+        + '<div class="info-row"><span class="info-label">Service No:</span><span class="info-value">' + escHtml(emp.employee_id) + '</span></div>'
+        + '<div class="info-row"><span class="info-label">Grade:</span><span class="info-value">' + escHtml(emp.gradelevel) + '</span></div>'
+        + '<div class="info-row"><span class="info-label">Department:</span><span class="info-value">' + escHtml(emp.department) + '</span></div>'
+        + '<div class="info-row"><span class="info-label">Branch:</span><span class="info-value">' + escHtml(emp.factory) + '</span></div>'
+        + '<div class="info-row"><span class="info-label">Bank Account:</span><span class="info-value">' + bankInfo + '</span></div>'
+        + nsitfRow
+        + '</div>'
+
+        + ippisHtml
+        + navyHtml
+
+        + '<div class="net-pay"><span class="label">Net Payment This Month</span><span class="amount">₦' + formatCurrency(emp.net_pay) + '</span></div>'
+        + stampHtml
+
+        + '<div class="footer"><p>All rights reserved &#xA9; Hicad Systems Limited.</p></div>'
+        + '</div>';
+    }
+
+    function buildPayslipHTML(data, showStamp, logoDataUrl) {
+      // data may be a single employee object or the full template context
+      // Normalise: if data.employees array exists use it, else wrap single
+      var employees = data.employees || [data];
+      var globals = {
+        className: data.className || '',
+        payDate: data.payDate || new Date().toISOString(),
+        showStamp: !!showStamp
+      };
+
+      var bodyContent = employees.map(function (emp) {
+        return renderEmployee(emp, globals);
+      }).join('');
+
+      // Inline the full CSS from the payslip template so the iframe is self-contained
+      return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'
+        + getPayslipCSS(logoDataUrl)
+        + '</style></head><body>'
+        + bodyContent
+        + '</body></html>';
+    }
+
+    function getPayslipCSS(logoDataUrl) {
+      var logoUrl = logoDataUrl || 'photos/logo.png';
+      return `
+        @page {
+          size: A5;
+          margin: 10mm;
+          margin-top: 0.2mm;
+          margin-bottom: 0.2mm;
+          background-color: #f8fbff;
+        }
+
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        html {
+          background: #1e2a3a;
+          min-height: 100%;
+        }
+
+        body {
+          font-family: 'Helvetica', 'Arial', sans-serif;
+          font-size: 7pt;
+          color: #1a1a1a;
+          line-height: 1.2;
+          position: relative;
+          background-color: #f8fbff;
+          width: 559px;
+          min-height: 794px;
+          margin: 16px auto;
+          padding: 10mm;
+          padding-top: 0.2mm;
+          padding-bottom: 0.2mm;
+          box-shadow: 0 8px 40px rgba(0, 0, 0, 0.55);
+        }
+
+        body::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-image: url("${logoUrl}");
+          background-size: auto 100%;
+          background-repeat: no-repeat;
+          background-position: center center;
+          opacity: 0.01;
+          pointer-events: none;
+        }
+
+        @media print {
+          body {
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
+
+          body::before {
+            position: fixed;
+            display: block;
+          }
+        }
+
+        .container {
+          width: 100%;
+          padding: 10px;
+          page-break-after: always;
+        }
+
+        .container:last-child {
+          page-break-after: auto;
+        }
+
+        .header-wrapper {
+          display: flex;
+          align-items: flex-start;
+          margin-bottom: 8px;
+          border-bottom: 2px solid #1a1a1a;
+          padding-bottom: 5px;
+        }
+
+        .className {
+          flex-shrink: 0;
+          margin-right: 20px;
+          align-self: center;
+          font-size: 9pt;
+        }
+
+        .header {
+          flex-grow: 1;
+          text-align: center;
+        }
+
+        .header h1 {
+          font-size: 13pt;
+          font-weight: bold;
+          margin-bottom: 2px;
+          letter-spacing: 1.5px;
+          color: #1e40af;
+          font-family: 'Libre Baskerville', Georgia, serif;
+        }
+
+        .header h2 {
+          font-size: 10pt;
+          font-weight: normal;
+          margin-top: 2px;
+          color: #4a4a4a;
+          font-family: 'Libre Baskerville', Georgia, serif;
+        }
+
+        .pay-period {
+          width: 100%;
+          margin: 3px 0;
+          font-size: 7pt;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background-color: #fafafa;
+        }
+
+        .pp-left,
+        .pp-right {
+          color: #4a4a4a;
+          white-space: nowrap;
+        }
+
+        .pp-left strong,
+        .pp-right strong {
+          color: #1a1a1a;
+        }
+
+        .pp-center {
+          flex-grow: 1;
+          text-align: center;
+          font-size: 7pt;
+          font-weight: bold;
+          color: #1a1a1a;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          padding: 0 5px;
+          white-space: nowrap;
+          font-family: "Times New Roman", Times, serif;
+          font-style: italic;
+        }
+
+        .section-header {
+          font-size: 8pt;
+          font-weight: bold;
+          margin-top: 3px;
+          margin-bottom: 4px;
+          padding: 2px 5px;
+          color: #1e40af;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          width: 70%;
+        }
+
+        .source-header {
+          font-size: 8.5pt;
+          font-weight: bold;
+          margin-top: 6px;
+          margin-bottom: 2px;
+          padding: 3px 6px;
+          color: #1e40af;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+          width: 70%;
+          text-align: center;
+          border-bottom: 1.5px solid #1e40af;
+        }
+
+        .employee-info {
+          margin-bottom: 6px;
+          padding: 2px 6px;
+          background-color: #fafafa;
+          border: 1px solid #d0d0d0;
+          width: 70%;
+        }
+
+        .info-row {
+          display: flex;
+          padding: 2px 0;
+          font-size: 7pt;
+          border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-row:last-child {
+          border-bottom: none;
+        }
+
+        .info-label {
+          font-weight: 600;
+          min-width: 85px;
+          flex-shrink: 0;
+          color: #1a1a1a;
+        }
+
+        .info-value {
+          flex-grow: 1;
+          color: #4a4a4a;
+        }
+
+        .full-row {
+          width: 100%;
+          display: flex;
+          align-items: flex-start;
+        }
+
+        .full-row .left-zone {
+          width: 70%;
+          flex-shrink: 0;
+        }
+
+        .full-row .right-zone {
+          width: 30%;
+          flex-shrink: 0;
+          padding-left: 8px;
+        }
+
+        .lbal-header-row {
+          width: 100%;
+          display: flex;
+          align-items: flex-end;
+          margin-bottom: 2px;
+        }
+
+        .lbal-header-row .lh-spacer {
+          width: 70%;
+          flex-shrink: 0;
+        }
+
+        .lbal-header-row .lh-labels {
+          width: 30%;
+          display: flex;
+          justify-content: space-between;
+          padding-left: 12px;
+          padding-right: 4px;
+          padding-bottom: 3px;
+          box-sizing: border-box;
+        }
+
+        .lh-col {
+          font-size: 7pt;
+          font-weight: 600;
+          color: #4a4a4a;
+        }
+
+        .lh-col.lbal {
+          text-align: left;
+        }
+
+        .lh-col.osmths {
+          text-align: right;
+        }
+
+        .items-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 0;
+        }
+
+        .items-table col.col-desc {
+          width: auto;
+        }
+
+        .items-table col.col-amount {
+          width: 80px;
+        }
+
+        .items-table thead {
+          border-bottom: 1px solid #1a1a1a;
+        }
+
+        .items-table th {
+          font-size: 7pt;
+          font-weight: 600;
+          padding: 1px 4px;
+          text-align: left;
+          color: #1a1a1a;
+        }
+
+        .items-table th.amount-col {
+          text-align: right;
+        }
+
+        .items-table tbody tr {
+          border-bottom: 1px solid #f0f0f0;
+        }
+
+        .items-table tbody td {
+          padding: 1px 4px;
+          font-size: 7pt;
+          vertical-align: middle;
+          color: #4a4a4a;
+        }
+
+        .items-table tbody td.amount {
+          text-align: right;
+          white-space: nowrap;
+          font-family: 'Courier New', monospace;
+          color: #1a1a1a;
+          font-weight: 700;
+          font-size: 7.5pt;
+          padding-right: 8px;
+        }
+
+        .rz-rows {
+          width: 100%;
+        }
+
+        .rz-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          min-height: 13px;
+          padding: 1px 4px 1px 12px;
+          box-sizing: border-box;
+        }
+
+        .rz-empty {
+          border: none !important;
+          visibility: hidden;
+        }
+
+        .rz-lbal {
+          text-align: left;
+          font-family: 'Courier New', monospace;
+          font-size: 7pt;
+          font-weight: 600;
+          color: #1a1a1a;
+        }
+
+        .rz-osmths {
+          text-align: right;
+          font-family: 'Courier New', monospace;
+          font-size: 7pt;
+          font-weight: 600;
+          color: #7c3aed;
+        }
+
+        .rz-dim {
+          color: #d0d0d0;
+        }
+
+        .total-row {
+          background-color: #f5f5f5;
+          border-top: 1px solid #d0d0d0;
+          border-bottom: 1px solid #d0d0d0;
+          padding: 2px 6px;
+          display: flex;
+          justify-content: space-between;
+          font-size: 8pt;
+          font-weight: 600;
+          width: 70%;
+        }
+
+        .total-row .label {
+          text-transform: uppercase;
+          color: #1a1a1a;
+        }
+
+        .total-row .amount {
+          text-align: right;
+          min-width: 90px;
+          font-family: 'Courier New', monospace;
+          color: #1a1a1a;
+          font-weight: 700;
+        }
+
+        .net-pay {
+          background-color: #f0f0f0;
+          border: 2px solid #1a1a1a;
+          padding: 5px 6px;
+          margin: 4px 0;
+          display: flex;
+          justify-content: space-between;
+          font-size: 9pt;
+          font-weight: bold;
+          width: 70%;
+        }
+
+        .net-pay .label {
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+
+        .net-pay .amount {
+          text-align: right;
+          min-width: 80px;
+          font-family: 'Courier New', monospace;
+          font-weight: 800;
+        }
+
+        .stamp-area {
+          margin-top: 6px;
+          width: 70%;
+          display: flex;
+          justify-content: flex-end;
+        }
+
+        .stamp-box {
+          border: 2px dashed #1e40af;
+          width: 90px;
+          height: 50px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 6pt;
+          color: #9ca3af;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .footer {
+          margin-top: 3px;
+          padding-top: 1px;
+          border-top: 2px solid #d0d0d0;
+          text-align: center;
+          font-size: 6pt;
+          color: #6a6a6a;
+        }
+
+        .footer p {
+          margin: 1px 0;
+        }
+
+        .footer p:first-child {
+          font-weight: 600;
+          color: #4a4a4a;
+        }
+    `;
+    }
+
+    // ══════════════════════════════════════════════════
+    // OPEN PREVIEW using the existing attPreviewOverlay
+    // lightbox from user-dashboard.html — exactly the
+    // same way email attachments use it.
+    // ══════════════════════════════════════════════════
+    function openPayslipPreview(data, showStamp) {
+      // Revoke any previous blob URL to avoid memory leaks
+      if (_previewBlobUrl) { URL.revokeObjectURL(_previewBlobUrl); _previewBlobUrl = null; }
+
+      // Fetch the logo as base64 first — relative URLs don't work inside blob documents
+      fetch('photos/logo.png')
+        .then(function (r) { return r.blob(); })
+        .then(function (imgBlob) {
+          return new Promise(function (resolve) {
+            var reader = new FileReader();
+            reader.onload = function () { resolve(reader.result); };
+            reader.readAsDataURL(imgBlob);
+          });
+        })
+        .catch(function () { return ''; })  // if logo missing, continue without it
+        .then(function (logoDataUrl) {
+          _buildAndShowPreview(data, showStamp, logoDataUrl);
+        });
+    }
+
+    function _buildAndShowPreview(data, showStamp, logoDataUrl) {
+      var html = buildPayslipHTML(data, showStamp, logoDataUrl);
+      var blob = new Blob([html], { type: 'text/html' });
+      var blobUrl = URL.createObjectURL(blob);
+      _previewBlobUrl = blobUrl;
+
+      // ── Wire up the overlay elements ──
+      var overlay = document.getElementById('attPreviewOverlay');
+      var content = document.getElementById('attPreviewContent');
+      var nameEl = document.getElementById('attPreviewName');
+      var dlBtn = document.getElementById('attPreviewDownloadBtn');
+      var expBtn = document.getElementById('attPreviewExpandBtn');
+
+      if (!overlay || !content) {
+        // Fallback — just trigger direct download if lightbox isn't available
+        triggerDirectDownload(data, showStamp);
+        return;
+      }
+
+      // Set filename shown in bar
+      var employees = data.employees || [data];
+      var emp = employees[0] || {};
+      var month = emp.payroll_month || '';
+      var year = emp.payroll_year || '';
+      nameEl.textContent = (emp.surname || 'Payslip') + ' — ' + month + ' ' + year + ' ' + 'Payslip';
+
+      // Clear previous content
+      content.innerHTML = '';
+
+      // Build the iframe
+      var iframe = document.createElement('iframe');
+      iframe.src = blobUrl;
+      iframe.title = 'Payslip Preview';
+      iframe.style.cssText = 'width:100%;height:100%;border:none;background:#fff;display:block;flex:1;min-height:0;';
+      content.appendChild(iframe);
+
+      // Wire Download button → hit /payslip/pdf
+      dlBtn.onclick = function () {
+        downloadPayslipPdf(data, showStamp);
+      };
+
+      // Expand button label
+      if (expBtn) {
+        expBtn.innerHTML = '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
+          + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" '
+          + 'd="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg> Expand';
+      }
+
+      // Open the overlay (same animation class used by email attachments)
+      overlay.classList.add('open');
+
+      // Revoke blob when overlay is closed — patch closeAttPreview
+      var _origClose = window.closeAttPreview;
+      window.closeAttPreview = function () {
+        if (_previewBlobUrl) {
+          // Delay revoke so iframe has time to unload gracefully
+          var urlToRevoke = _previewBlobUrl;
+          _previewBlobUrl = null;
+          setTimeout(function () { URL.revokeObjectURL(urlToRevoke); }, 500);
+        }
+        // Restore original and call it
+        window.closeAttPreview = _origClose;
+        if (_origClose) _origClose();
+      };
+    }
+
+    // ── Download PDF via server ────────────────────────────────
+    function downloadPayslipPdf(data, showStamp) {
+      var token  = localStorage.getItem('token');
+      var dlBtn  = document.getElementById('attPreviewDownloadBtn');
+  
+      if (dlBtn) { dlBtn.disabled = true; dlBtn.textContent = 'Preparing…'; }
+  
+      fetch('/payslip/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ data: data, stamp: showStamp })
+      })
+      .then(function (r) {
+        if (!r.ok) throw new Error('PDF generation failed');
+        return r.blob();
+      })
+      .then(function (blob) {
+        var url  = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href = url;
+        // Build filename from employee data
+        var _emp      = data.employees ? data.employees[0] : data;
+        var _surname  = (_emp.surname   || '').trim().toUpperCase();
+        var _other    = (_emp.othername || '').trim().toUpperCase();
+        var _month    = data._selectedMonth || _emp.payroll_month || '';
+        var _year     = data._selectedYear  || _emp.payroll_year  || '';
+        link.download = [_surname, _other, _month, _year, 'Payslip'].filter(Boolean).join(' ') + '.pdf';
+        link.click();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+        if (dlBtn) {
+          dlBtn.disabled = false;
+          dlBtn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
+            + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" '
+            + 'd="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> Download';
+        }
+      })
+      .catch(function () {
+        if (dlBtn) { dlBtn.disabled = false; dlBtn.textContent = 'Download'; }
+        if (typeof DashAlertModal !== 'undefined') {
+          DashAlertModal.show('PDF generation failed. Please try again.');
+        }
+      });
+    }
+      
+    // ── Fallback direct download (if overlay unavailable) ────
+    function triggerDirectDownload(data, showStamp) {
+      var html = buildPayslipHTML(data, showStamp);
+      var blob = new Blob([html], { type: 'text/html' });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = 'payslip-preview.html';
+      link.click();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+    }
+
+  })();
+</script>

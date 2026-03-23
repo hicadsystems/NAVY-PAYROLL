@@ -30,7 +30,7 @@
   <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
     <h3 class="text-lg font-semibold text-gray-900">Create New Payroll User</h3>
 
-    <button type="button" onclick="window.navigation.navigateToSection('control-user', 'Control Payroll Users')"
+    <button id="quickNav-control-user" type="button" onclick="window.navigation.navigateToSection('control-user', 'Control Payroll Users')"
       class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
       View All Users
     </button>
@@ -620,4 +620,22 @@
     submitBtn.disabled = false;
     submitBtn.textContent = 'Create User';
   });
+
+  // Hide quick nav buttons user has no access to
+  function applyQuickNavAccess() {
+    const manager = window.quickAccessManager;
+
+    // Wait for manager AND its menus to be populated
+    if (!manager || !manager.userAccessibleMenus?.length) {
+        setTimeout(applyQuickNavAccess, 50);
+        return;
+    }
+
+    document.querySelectorAll('[id^="quickNav-"]').forEach(btn => {
+        const menuKey = btn.id.replace('quickNav-', '');
+        window.checkMenuAccess(menuKey, btn);
+    });
+  }
+
+  applyQuickNavAccess();
 </script>

@@ -33,12 +33,12 @@ app.use(
       defaultSrc: ["'self'"],
       scriptSrc: [
         "'self'",
+        "https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js",
         "'unsafe-inline'",
-        "https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"
       ],
       scriptSrcAttr: ["'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "blob:"],   // ← allows blob: images
-      frameSrc: ["'self'", "blob:"],           // ← allows blob: iframes
+      frameSrc: ["'self'", "blob:", "data:"],           // ← allows blob: iframes
     },
   })
 );
@@ -97,6 +97,9 @@ async function startServer() {
   // mount routes
   require('./routes')(app);
 
+  const LOCAL_IP = process.env.LOCAL_IP || '127.0.0.1';
+  const LOCAL_DOMAIN = process.env.LOCAL_DOMAIN || 'localhost';
+
   const options = {
     key: fs.readFileSync(path.join(__dirname, 'key.pem')),
     cert: fs.readFileSync(path.join(__dirname, 'cert.pem')),
@@ -105,7 +108,8 @@ async function startServer() {
   switch (SERVER_MODE) {
     case 'network':
       https.createServer(options, app).listen(PORT, '0.0.0.0', () => {
-        console.log(`🔒 HTTPS server running on https://192.168.0.194:${PORT}`);
+        console.log(`🔒 HTTPS server running on https://${LOCAL_IP}`);
+        console.log(`🌐 LAN domain: https://${LOCAL_DOMAIN}`);
       });
       break;
 
@@ -120,7 +124,8 @@ async function startServer() {
       const server = https.createServer(options, app);
 
       server.listen(PORT, '0.0.0.0', () => {
-        console.log(`🔒 HTTPS server running on https://192.168.0.194:${PORT}`);
+        console.log(`🔒 HTTPS server running on https://${LOCAL_IP}`);
+        console.log(`🌐 LAN domain: https://${LOCAL_DOMAIN}`);
       });
 
       server.on('error', (err) => {

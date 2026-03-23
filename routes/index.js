@@ -92,6 +92,7 @@ const rangePaymentRoutes = require("./audit-trail/rangePayments");
 
 //User Dashboard
 const mailSystemRoutes = require("../routes/user-dashboard/mailSystem");
+const userPayslipRoutes = require('../routes/user-dashboard/userpayslip');
 const cron = require("node-cron");
 const { cleanupOrphanedAttachments } = require("./user-dashboard/mailSystem");
 
@@ -199,6 +200,7 @@ module.exports = (app) => {
 
   //user-dashboard
   app.use("/messages", mailSystemRoutes);
+  app.use('/payslip', userPayslipRoutes);
   // Every hour at :00
   cron.schedule("0 * * * *", () => {
     cleanupOrphanedAttachments();

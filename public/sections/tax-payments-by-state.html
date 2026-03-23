@@ -47,7 +47,6 @@
       <select id="stateDropdown"
         class="mt-2 w-full bg-transparent border border-blue-500 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled>
         <option value="">Select State</option>
-        <!-- Options will be loaded from API -->
       </select>
     </div>
 
@@ -88,28 +87,19 @@
     </div>
 
     <div class="flex justify-between items-center gap-2 mb-4">
-        <!-- Summary Report -->
-        <div class="flex items-center space-x-2">
+      <!-- Summary Report -->
+      <div class="flex items-center space-x-2">
         <input type="checkbox" id="taxSummary" class="h-4 w-4">
         <label for="taxSummary" class="text-sm">Summary Report</label>
-        </div>
+      </div>
 
-        <!-- Buttons -->
-        <div class="flex space-x-2 pt-2">
+      <!-- Buttons -->
+      <div class="flex space-x-2 pt-2">
         <button type="reset" id="taxClearBtn"
-            class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
-            Clear
-        </button>
+          class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Clear</button>
         <button type="button" id="taxPrintBtn"
-            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            Generate
-        </button>
-        </div>
-    </div>
-
-    <!-- Loading Indicator -->
-    <div id="taxLoadingIndicator" class="hidden text-center text-blue-600 text-sm">
-      <span>Generating report...</span>
+          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Generate</button>
+      </div>
     </div>
   </form>
 </section>
@@ -143,9 +133,7 @@
   <div class="bg-white rounded-lg shadow-lg w-96 p-6 text-center">
     <h3 class="text-lg font-semibold text-green-600 mb-4">Success</h3>
     <p class="mb-6 text-gray-700" id="taxSuccessMessage">Report generated successfully!</p>
-    <div class="flex justify-center gap-2">
-      <button id="taxPrintNowBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
-    </div>
+    <button id="taxPrintNowBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
   </div>
 </div>
 
@@ -158,19 +146,40 @@
   </div>
 </div>
 
+<!-- Preview Modal -->
+<div id="taxPreviewModal"
+  class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+  <div class="bg-gray-50 rounded-lg shadow-lg w-full max-w-5xl max-h-[90vh] overflow-hidden">
+    <div class="sticky top-0 bg-navy px-6 py-2 flex justify-between items-center">
+      <h3 class="text-lg font-semibold text-white">Tax Payments By State Preview</h3>
+      <button id="taxClosePreviewBtn" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+    </div>
+
+    <div class="overflow-auto" style="max-height: calc(90vh - 100px); background: #d1d5db;">
+      <iframe id="taxPreviewIframe" title="Tax Payments By State Preview"
+        style="width: 100%; min-height: 842px; border: none; background: white; display: block;">
+      </iframe>
+    </div>
+
+    <div class="sticky bottom-0 bg-gray-50 border-t px-6 py-2 flex justify-end space-x-2">
+      <button id="taxCancelPreviewBtn"
+        class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
+      <button id="taxDownloadPreviewBtn"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Download</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const auth = window.authService;
-  // API Configuration
   const API_BASE = '/taxstatepay';
 
-  // Elements
   const allStates = document.getElementById('allStates');
   const specificState = document.getElementById('specificState');
   const stateDropdown = document.getElementById('stateDropdown');
   const taxMonth = document.getElementById('taxMonth');
   const taxPrintBtn = document.getElementById('taxPrintBtn');
   const taxClearBtn = document.getElementById('taxClearBtn');
-  const taxLoadingIndicator = document.getElementById('taxLoadingIndicator');
 
   const taxConfirmModal = document.getElementById('taxConfirmModal');
   const taxCancelBtn = document.getElementById('taxCancelBtn');
@@ -185,28 +194,26 @@
   const taxErrorOkBtn = document.getElementById('taxErrorOkBtn');
   const taxErrorText = document.getElementById('taxErrorText');
 
-  // Helper function to convert month name to number
+  // ── Helpers ─────────────────────────────────────────────────────
   function getMonthNumber(monthName) {
-    const months = ['January', 'February', 'March', 'April', 'May', 'June',
-                    'July', 'August', 'September', 'October', 'November', 'December'];
+    const months = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
     return months.indexOf(monthName) + 1;
   }
 
-  // Helper function to convert month number to name
   function getMonthName(monthNum) {
-    const months = ['January', 'February', 'March', 'April', 'May', 'June',
-                    'July', 'August', 'September', 'October', 'November', 'December'];
+    const months = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
     return months[monthNum - 1] || '';
   }
 
-  // Load available tax states from API
+  // ── Load states ─────────────────────────────────────────────────
   async function loadTaxStates() {
     try {
       const token = localStorage.getItem('token');
       const response = await auth.fetchWithAuth(`${API_BASE}/filter-options`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data.taxStates) {
@@ -224,19 +231,17 @@
     }
   }
 
-  // Load current period and set default month
+  // ── Load current period ─────────────────────────────────────────
   async function loadCurrentPeriod() {
     try {
       const token = localStorage.getItem('token');
       const response = await auth.fetchWithAuth(`${API_BASE}/filter-options`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data.currentPeriod) {
-          const period = result.data.currentPeriod;
-          taxMonth.value = getMonthName(period.month);
+          taxMonth.value = getMonthName(result.data.currentPeriod.month);
         }
       }
     } catch (error) {
@@ -244,7 +249,7 @@
     }
   }
 
-  // Toggle state select disabled/enabled
+  // ── Toggles ─────────────────────────────────────────────────────
   function toggleStateSelect() {
     stateDropdown.disabled = allStates.checked;
     if (allStates.checked) stateDropdown.value = '';
@@ -253,43 +258,24 @@
   allStates.addEventListener('change', toggleStateSelect);
   specificState.addEventListener('change', toggleStateSelect);
 
-  // Open confirm modal
+  // ── Validate & show confirm ─────────────────────────────────────
   taxPrintBtn.addEventListener('click', () => {
-    // Validation before showing confirm modal
     if (!taxMonth.value) {
       taxErrorText.textContent = 'Please select a processing month.';
-      taxErrorModal.classList.remove('hidden');
-      return;
+      taxErrorModal.classList.remove('hidden'); return;
     }
-
     if (specificState.checked && !stateDropdown.value) {
       taxErrorText.textContent = 'Please choose a state when "Specific State" is selected.';
-      taxErrorModal.classList.remove('hidden');
-      return;
+      taxErrorModal.classList.remove('hidden'); return;
     }
-
     taxConfirmModal.classList.remove('hidden');
   });
 
-  // Cancel confirm
-  taxCancelBtn.addEventListener('click', () => {
-    taxConfirmModal.classList.add('hidden');
-  });
+  taxCancelBtn.addEventListener('click', () => taxConfirmModal.classList.add('hidden'));
 
-  // Continue -> validate -> process
+  // ── Generate — fetch blob, show in preview iframe ───────────────
   taxContinueBtn.addEventListener('click', async () => {
     taxConfirmModal.classList.add('hidden');
-
-    // Validate again
-    if ((specificState.checked && !stateDropdown.value) || !taxMonth.value) {
-      taxErrorText.textContent = !taxMonth.value
-        ? 'Please select a processing month.'
-        : 'Please choose a state when "Specific State" is selected.';
-      taxErrorModal.classList.remove('hidden');
-      return;
-    }
-
-    // Show processing modal
     taxProcessingModal.classList.remove('hidden');
     taxPrintBtn.disabled = true;
 
@@ -299,10 +285,9 @@
 
     try {
       const token = localStorage.getItem('token');
-      
-      // Build query parameters
+
       const params = new URLSearchParams({
-        format: format,
+        format,
         month: monthNum,
         summaryOnly: summary ? 'true' : 'false'
       });
@@ -313,9 +298,7 @@
 
       const response = await auth.fetchWithAuth(`${API_BASE}/generate?${params.toString()}`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (!response.ok) {
@@ -323,29 +306,40 @@
         throw new Error(errorData.error || 'Failed to generate report');
       }
 
-      // Download file
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      
-      // Open PDF in new tab
-      if (format === 'pdf') {
-        window.open(url, '_blank');
-      }
-      
-      // Also trigger download
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `tax_report_${taxMonth.value}_${new Date().getFullYear()}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      
-      setTimeout(() => window.URL.revokeObjectURL(url), 100);
 
       taxProcessingModal.classList.add('hidden');
       taxPrintBtn.disabled = false;
-      taxSuccessMessage.textContent = `Report generated successfully! Your ${format.toUpperCase()} is ${format === 'pdf' ? 'opening in a new tab and' : ''} downloading.`;
-      taxSuccessModal.classList.remove('hidden');
+
+      // Store blob for download — no second fetch needed
+      window.taxCurrentBlob = blob;
+      window.taxCurrentFormat = format;
+      window.taxCurrentMonth = taxMonth.value;
+      window.taxCurrentYear = new Date().getFullYear();
+
+      const iframe = document.getElementById('taxPreviewIframe');
+      const dlBtn = document.getElementById('taxDownloadPreviewBtn');
+
+      if (format === 'pdf') {
+        const blobUrl = window.URL.createObjectURL(blob);
+        window.taxCurrentBlobUrl = blobUrl; // store to revoke on close
+        iframe.src = blobUrl + '#toolbar=0';
+        iframe.style.minHeight = '842px';
+        dlBtn.textContent = 'Download PDF';
+      } else {
+        iframe.srcdoc = `<div style="font-family:Arial,sans-serif;padding:40px;text-align:center;color:#555;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 16px;display:block;">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+          <p style="font-size:16pt;font-weight:bold;color:#1e40af;margin-bottom:8px;">Excel Report Ready</p>
+          <p style="font-size:10pt;">Click <strong>Download Excel</strong> below to save the file.</p>
+        </div>`;
+        iframe.style.minHeight = '300px';
+        dlBtn.textContent = 'Download Excel';
+      }
+
+      document.getElementById('taxPreviewModal').classList.remove('hidden');
 
     } catch (error) {
       taxProcessingModal.classList.add('hidden');
@@ -356,33 +350,58 @@
     }
   });
 
-  // Error OK
-  taxErrorOkBtn.addEventListener('click', () => {
-    taxErrorModal.classList.add('hidden');
+  // ── Preview modal controls ──────────────────────────────────────
+  function closePreview() {
+    document.getElementById('taxPreviewModal').classList.add('hidden');
+    const iframe = document.getElementById('taxPreviewIframe');
+    iframe.src = 'about:blank';
+    iframe.removeAttribute('srcdoc');
+    if (window.taxCurrentBlobUrl) {
+      window.URL.revokeObjectURL(window.taxCurrentBlobUrl);
+      window.taxCurrentBlobUrl = null;
+    }
+  }
+
+  document.getElementById('taxClosePreviewBtn').addEventListener('click', closePreview);
+  document.getElementById('taxCancelPreviewBtn').addEventListener('click', closePreview);
+
+  document.getElementById('taxDownloadPreviewBtn').addEventListener('click', () => {
+    if (!window.taxCurrentBlob) return;
+    const fmt = window.taxCurrentFormat || 'pdf';
+    const url = window.URL.createObjectURL(window.taxCurrentBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tax_report_${window.taxCurrentMonth}_${window.taxCurrentYear}.${fmt === 'pdf' ? 'pdf' : 'xlsx'}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url); // revoke immediately after trigger
+
+    taxSuccessMessage.textContent = 'Report downloaded successfully!';
+    taxSuccessModal.classList.remove('hidden');
   });
 
-  // Success OK - close modal
+  // ── Success OK — reset form ─────────────────────────────────────
   taxPrintNowBtn.addEventListener('click', () => {
     taxSuccessModal.classList.add('hidden');
-    // Optionally reset form here
     document.getElementById('taxStateForm').reset();
     allStates.checked = true;
     toggleStateSelect();
-    loadCurrentPeriod(); // Reload default month
+    loadCurrentPeriod();
   });
 
-  // Reset/clear
+  taxErrorOkBtn.addEventListener('click', () => taxErrorModal.classList.add('hidden'));
+
   taxClearBtn.addEventListener('click', () => {
-    // Let the native reset run, then normalize radios & disabled state
     setTimeout(() => {
-      allStates.checked = true;    // ensure default
-      toggleStateSelect();         // disable the dropdown
-      taxMonth.value = '';         // reset month
-      loadCurrentPeriod();         // reload default month
+      allStates.checked = true;
+      toggleStateSelect();
+      taxMonth.value = '';
+      loadCurrentPeriod();
     }, 0);
   });
 
-  // Initialize on load
+  // ── Init ────────────────────────────────────────────────────────
   toggleStateSelect();
   loadTaxStates();
   loadCurrentPeriod();

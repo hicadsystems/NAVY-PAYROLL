@@ -1097,10 +1097,22 @@
     document.getElementById('generateReportBtn').addEventListener('click', generateReport);
 
     // Hide quick nav buttons user has no access to
-    document.querySelectorAll('[id^="quickNav-"]').forEach(btn => {
-      const menuKey = btn.id.replace('quickNav-', '');
-      window.checkMenuAccess(menuKey, btn);
-    });
+    function applyQuickNavAccess() {
+      const manager = window.quickAccessManager;
+
+      // Wait for manager AND its menus to be populated
+      if (!manager || !manager.userAccessibleMenus?.length) {
+          setTimeout(applyQuickNavAccess, 50);
+          return;
+      }
+
+      document.querySelectorAll('[id^="quickNav-"]').forEach(btn => {
+          const menuKey = btn.id.replace('quickNav-', '');
+          window.checkMenuAccess(menuKey, btn);
+      });
+    }
+
+    applyQuickNavAccess();
 
     loadVariations();
     fetchEmployees();

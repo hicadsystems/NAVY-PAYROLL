@@ -418,7 +418,8 @@ class ConsolidatedPayslipController extends BaseReportController {
       const item = {
         description: row.BP || row.bp || 'Unknown',  // ✅ FIX: Use uppercase BP
         amount: amount,
-        loan_balance: row.lbal ? parseFloat(row.lbal) : null
+        loan_balance: row.lbal ? parseFloat(row.lbal) : null,
+        outstanding_months: row.lmth ? parseFloat(row.lmth) : null
       };
 
       if (source === 'IPPIS') {

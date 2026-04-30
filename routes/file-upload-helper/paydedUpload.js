@@ -13,10 +13,9 @@ const {
   parseCSVFile,
   deduplicate,
   normalize,
-  generateBatchName
+  generateBatchName,
 } = require("../../utils/excel_helper");
 const config = require("../../config");
-
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -79,7 +78,8 @@ function parseExcelFile(filePath) {
     // if sheetName has INACTIVE or NONEXISTENT, skip it
     if (
       sheetName.toLowerCase().includes("inactive") ||
-      sheetName.toLowerCase().includes("nonexistent")
+      sheetName.toLowerCase().includes("nonexistent") ||
+      sheetName.toLowerCase().includes("instruction")
     ) {
       console.log(`⚠️ Skipping sheet "${sheetName}" due to name filter`);
       continue;
@@ -272,7 +272,8 @@ router.post(
 
       const originalBatchame = req?.body?.batchName?.trim() || "";
       const hasBatchName = !!originalBatchame;
-      const batchName = hasBatchName ? originalBatchame
+      const batchName = hasBatchName
+        ? originalBatchame
         : generateBatchName("PAYDED", createdBy);
 
       // Parse and clean file
@@ -281,6 +282,7 @@ router.post(
         rawData = (await parseCSVFile(filePath)).map(normalize);
       } else {
         rawData = parseExcelFile(filePath).map(normalize);
+        console.log("raw data", rawData);
       }
 
       if (!rawData || rawData.length === 0) {
@@ -289,6 +291,8 @@ router.post(
       rawData = rawData?.filter((row) => Object.keys(row).length > 0);
 
       const { cleaned, duplicates } = deduplicate(rawData);
+
+      console.log(cleaned);
 
       // THEN SET DATABASE CONTEXT
       const currentDb = pool.getCurrentDatabase(req.user_id.toString());
@@ -334,12 +338,16 @@ router.post(
       }
 
       for (const [payclass, payclassData] of payclassMap) {
-        console.log(`🔄 Processing payclass: ${payclass} with ${payclassData.length} records`);
+        console.log(
+          `🔄 Processing payclass: ${payclass} with ${payclassData.length} records`,
+        );
 
         const db = PAYCLASS_MAPPING[payclass];
         if (!db) {
-          console.warn(`No database mapping for payclass ${payclass}, skipping`);
-        
+          console.warn(
+            `No database mapping for payclass ${payclass}, skipping`,
+          );
+
           results.failed += payclassData.length;
           results.errors.push(
             ...payclassData.map((row, idx) => ({
@@ -348,7 +356,7 @@ router.post(
               deductionType: row.type,
               payclass: payclass,
               error: `No database mapping for payclass ${payclass}`,
-            }))
+            })),
           );
           continue;
         }
@@ -358,11 +366,11 @@ router.post(
           await connection.query(`USE ??`, [db]);
 
           // Check for DB duplicates (Empl_id + type combination)
-         
+
           const duplicateKeys = await checkDuplicates(payclassData, connection);
 
           // Filter out duplicates
-          
+
           const uniqueData = payclassData.filter((row) => {
             const key = `${row.Empl_id}-${row.type}`;
             return !duplicateKeys.includes(key);
@@ -374,40 +382,38 @@ router.post(
               uniqueData[i].batchName = batchName;
               await insertDeduction(uniqueData[i], connection);
               results.successful++;
-              results.inserted++; 
+              results.inserted++;
             } catch (error) {
               results.failed++;
               results.errors.push({
                 row: i + 5,
                 serviceNumber: uniqueData[i].Empl_id,
                 deductionType: uniqueData[i].type,
-                payclass: payclass, 
+                payclass: payclass,
                 error: error.message,
               });
             }
           }
 
-          
-          results.failed += duplicateKeys.length; 
+          results.failed += duplicateKeys.length;
 
           // Push duplicates as soft errors for frontend visibility
-          if (duplicateKeys.length > 0) { 
-            results.duplicates.push(...duplicateKeys); 
+          if (duplicateKeys.length > 0) {
+            results.duplicates.push(...duplicateKeys);
             results.errors.push(
-              ...duplicateKeys.map((key) => { 
+              ...duplicateKeys.map((key) => {
                 const [emplId, type] = key.split("-");
                 return {
                   row: null,
                   serviceNumber: emplId,
                   deductionType: type,
-                  payclass: payclass, 
+                  payclass: payclass,
                   error: "Already exists (duplicate)",
                 };
-              })
+              }),
             );
           }
-
-        } finally { 
+        } finally {
           if (connection) {
             connection.release();
             connection = null;
@@ -429,7 +435,6 @@ router.post(
       console.error("Batch payment and deduction upload error:", error);
       if (filePath && fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
-   
       if (connection) {
         connection.release();
       }
@@ -663,7 +668,7 @@ router.get("/list-batch", verifyToken, async (req, res) => {
     const limit = Number(req.query?.limit) || 10;
     const offset = (page - 1) * limit;
 
-    const searchTerm = req.query.search?.trim() || '';
+    const searchTerm = req.query.search?.trim() || "";
     const hasSearch = searchTerm.length > 0;
     const searchPattern = `%${searchTerm}%`;
 
@@ -678,7 +683,7 @@ router.get("/list-batch", verifyToken, async (req, res) => {
       FROM py_payded
       WHERE batchName IS NOT NULL
         AND TRIM(batchName) <> ''
-        ${hasSearch ? 'AND LOWER(batchName) LIKE LOWER(?)' : ''}
+        ${hasSearch ? "AND LOWER(batchName) LIKE LOWER(?)" : ""}
       GROUP BY batchName
       ORDER BY latestDateCreated DESC
       LIMIT ? OFFSET ?;
@@ -691,7 +696,7 @@ router.get("/list-batch", verifyToken, async (req, res) => {
         FROM py_payded
         WHERE batchName IS NOT NULL
           AND TRIM(batchName) <> ''
-          ${hasSearch ? 'AND LOWER(batchName) LIKE LOWER(?)' : ''}
+          ${hasSearch ? "AND LOWER(batchName) LIKE LOWER(?)" : ""}
         GROUP BY batchName
       ) AS grouped;
     `;

@@ -1163,10 +1163,10 @@
         formData = data;
         formType = data.formType || 'RATING';
 
-        // if (!data.canEdit) {
-        //   showBlocked(data.editBlocked || 'Form is not available for editing.');
-        //   return;
-        // }
+        if (!data.canEdit) {
+          showBlocked(data.editBlocked || 'Form is not available for editing.');
+          return;
+        }
 
         initForm(data);
 

@@ -1,3 +1,10 @@
+-- Migration: seed_migration
+-- Created: 2026-04-27T09:20:38.605Z
+
+-- UP
+-- Add your schema changes here
+
+
 -- =============================================================
 -- EMOLUMENT SYSTEM — PHASE 1
 -- FILE: 03_seed_migration.sql
@@ -356,3 +363,59 @@ SELECT ur.user_id, ur.role
 FROM ef_user_roles ur
 LEFT JOIN ef_personalinfos p ON p.serviceNumber = ur.user_id
 WHERE p.serviceNumber IS NULL;
+
+-- DOWN
+-- Add rollback logic here (reverse of UP)
+-- =============================================================
+-- EMOLUMENT SYSTEM — PHASE 1
+-- FILE: 03_seed_migration_down.sql
+-- DESC: Rollback seed and data migration
+-- WARNING: This will DELETE all migrated data from new tables.
+--          Original data in ef_personalinfos remains intact.
+-- =============================================================
+
+USE hicaddata;
+
+-- -------------------------------------------------------------
+-- TRUNCATE ALL MIGRATED DATA
+-- This removes data but keeps table structure intact
+-- -------------------------------------------------------------
+
+-- Disable foreign key checks temporarily
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- Clear all migrated data
+TRUNCATE TABLE ef_allowances;
+TRUNCATE TABLE ef_loans;
+TRUNCATE TABLE ef_children;
+TRUNCATE TABLE ef_spouse;
+TRUNCATE TABLE ef_nok;
+TRUNCATE TABLE ef_documents;
+TRUNCATE TABLE ef_user_roles;
+
+-- Re-enable foreign key checks
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- -------------------------------------------------------------
+-- NOTE ABOUT ef_shiplogins
+-- ef_shiplogins was DROPPED in the UP migration (Section B).
+-- It cannot be automatically restored by this down migration.
+-- You must restore from database backup if you need it back.
+-- -------------------------------------------------------------
+
+SELECT 
+  'WARNING: ef_shiplogins was dropped in UP migration.' AS notice,
+  'Restore from backup if needed.' AS action;
+
+-- -------------------------------------------------------------
+-- VALIDATION - Verify all tables are empty
+-- -------------------------------------------------------------
+
+SELECT 'ef_user_roles after rollback' AS check_name, COUNT(*) AS count FROM ef_user_roles;
+SELECT 'ef_nok after rollback' AS check_name, COUNT(*) AS count FROM ef_nok;
+SELECT 'ef_spouse after rollback' AS check_name, COUNT(*) AS count FROM ef_spouse;
+SELECT 'ef_children after rollback' AS check_name, COUNT(*) AS count FROM ef_children;
+SELECT 'ef_loans after rollback' AS check_name, COUNT(*) AS count FROM ef_loans;
+SELECT 'ef_allowances after rollback' AS check_name, COUNT(*) AS count FROM ef_allowances;
+SELECT 'ef_documents after rollback' AS check_name, COUNT(*) AS count FROM ef_documents;
+

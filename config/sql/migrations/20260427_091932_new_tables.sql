@@ -1,3 +1,10 @@
+-- Migration: new_tables
+-- Created: 2026-04-27T09:19:32.091Z
+
+-- UP
+-- Add your schema changes here
+
+
 -- =============================================================
 -- EMOLUMENT SYSTEM — PHASE 1
 -- FILE: 02_new_tables.sql
@@ -312,3 +319,50 @@ CREATE TABLE IF NOT EXISTS ef_spouse (
     ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='Spouse details per personnel';
+
+
+-- DOWN
+-- Add rollback logic here (reverse of UP)
+
+-- =============================================================
+-- EMOLUMENT SYSTEM — PHASE 1
+-- FILE: 02_new_tables_down.sql
+-- DESC: Rollback all new emolument tables
+-- WARNING: This will DROP all new tables and their data.
+--          Make sure you have a backup before running!
+-- =============================================================
+
+USE hicaddata;
+
+-- Disable foreign key checks to avoid constraint errors during drop
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- -------------------------------------------------------------
+-- DROP NEW TABLES IN REVERSE ORDER OF DEPENDENCIES
+-- -------------------------------------------------------------
+
+-- Drop tables that reference other tables first
+DROP TABLE IF EXISTS ef_form_approvals;
+DROP TABLE IF EXISTS ef_emolument_forms;
+DROP TABLE IF EXISTS ef_documents;
+DROP TABLE IF EXISTS ef_allowances;
+DROP TABLE IF EXISTS ef_loans;
+DROP TABLE IF EXISTS ef_children;
+DROP TABLE IF EXISTS ef_nok;
+DROP TABLE IF EXISTS ef_spouse;
+DROP TABLE IF EXISTS ef_user_roles;
+DROP TABLE IF EXISTS ef_audit_logs;
+
+-- Re-enable foreign key checks
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- -------------------------------------------------------------
+-- RESTORE ef_auditlogs (the broken one that was dropped)
+-- NOTE: This cannot automatically restore the old table structure.
+-- You must restore from backup if you need the original ef_auditlogs.
+-- -------------------------------------------------------------
+
+SELECT 
+  'WARNING: ef_auditlogs was dropped in the UP migration.' AS notice,
+  'If you need the original table, restore from database backup.' AS action;
+

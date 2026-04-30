@@ -52,11 +52,12 @@
 "use strict";
 
 const express = require("express");
-const router = express.Router();
-const pool = require("../../../../config/db");
+const pool = require("../../../../config/db"); // mysql2 pool
 const verifyToken = require("../../../../middware/authentication");
 const { requirePersonnel } = require("../../../../middware/emolumentAuth");
 const formService = require("./form.service");
+
+const router = express.Router();
 
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 

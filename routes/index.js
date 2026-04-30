@@ -106,6 +106,8 @@ const rangePaymentRoutes = require("./audit-trail/rangePayments");
   //emolument
     //-- admin --
     const emolumentAdminRoutes = require("../routes/user-dashboard/emolument/admin/admin.routes");
+    //-- audit --
+    const emolumentAuditRoutes = require("../routes/user-dashboard/emolument/audit/audit.routes");
     //-- form --
     const emolumentFormRoutes = require("../routes/user-dashboard/emolument/form/form.routes");
     //-- system --
@@ -120,6 +122,8 @@ const rangePaymentRoutes = require("./audit-trail/rangePayments");
     const emolumentReportRoutes = require("../routes/user-dashboard/emolument/reports/reports.routes");
     //-- documents --
     const emolumentDocumentRoutes = require("../routes/user-dashboard/emolument/documents/documents.routes");
+    //-- tickets --
+    //const emolumentTicketsRoutes = require("../routes/user-dashboard/emolument/tickets/tickets.routes");
   //
 //
 
@@ -239,6 +243,8 @@ module.exports = (app) => {
     //emolument
       //-- admin --
       app.use("/admin", emolumentAdminRoutes);
+      //-- audit --
+      app.use("/audit", emolumentAuditRoutes);
       //-- form --
       app.use("/form", emolumentFormRoutes);
       //-- system --
@@ -253,6 +259,8 @@ module.exports = (app) => {
       app.use("/reports", emolumentReportRoutes);
       //-- documents --
       app.use("/documents", emolumentDocumentRoutes);
+      //-- tickets --
+      //app.use("/tickets", emolumentTicketsRoutes);
     //
 
     //payslip

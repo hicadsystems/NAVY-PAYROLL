@@ -359,7 +359,7 @@ class Migrator {
       .replace(/\..+/, "")
       .replace("T", "_");
     const filename = `${timestamp}_${name}.sql`;
-    const filepath = path.join(this.migrationsDir, filename);
+    const filepath = path.join(`${this.migrationsDir}/migrations`, filename);
 
     const template = `-- Migration: ${name}
 -- Created: ${new Date().toISOString()}

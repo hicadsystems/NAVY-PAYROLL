@@ -1,14 +1,12 @@
--- =============================================================
--- EMOLUMENT SYSTEM — PHASE 1
+-- Migration: unified_auth_migration
+-- Created: 2026-04-27T09:23:11.991Z
+
+-- UP
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- EMOLUMENT SYSTEM — PHASE 1: Unified Authentication
 -- FILE: 03c_unified_auth_migration.sql (FINAL)
 -- DESC: Unified auth via hr_employees as password source.
---       Replaces the slow cross-db aspnetusers migration.
---
--- BACKGROUND:
---   aspnetusers.PasswordHash was base64(accountNo) — not a real
---   hash. There is nothing worth migrating from it. Everyone
---   gets BankACNumber as initial password, same as the old system.
---   Real admins are inserted manually at the end.
+--       PRODUCTION SAFE: All operations check existence before executing
 --
 -- RUN ORDER:
 --   01_schema_remediation.sql
@@ -16,43 +14,69 @@
 --   03_seed_migration.sql   (NOK/children/loans/allowances/photos)
 --   03b_seed_migration_fix.sql  (truncation fixes)
 --   THIS FILE
--- =============================================================
+-- ═══════════════════════════════════════════════════════════════════════════════
 
 USE hicaddata;
 
 
 -- =============================================================
 -- EMOLUMENT SYSTEM
--- DESC: Add token column to hr_employees for login persistence.
---       Mirrors what the payroll system does in users.token
+-- DESC: Add authentication columns to hr_employees
+-- PRODUCTION SAFE: Checks for existing columns before adding
 -- =============================================================
 
-ALTER TABLE hr_employees
-  ADD COLUMN token TEXT DEFAULT NULL
-    COMMENT 'Current JWT — cleared on logout, replaced on new login';
+-- Add token column if it doesn't exist
+SET @col_exists = (
+  SELECT COUNT(*) FROM information_schema.columns
+  WHERE table_schema = DATABASE() AND table_name = 'hr_employees' AND column_name = 'token'
+);
+SET @sql = IF(@col_exists = 0,
+  'ALTER TABLE hr_employees ADD COLUMN token TEXT DEFAULT NULL COMMENT "Current JWT — cleared on logout, replaced on new login"',
+  'SELECT "hr_employees: token column exists, skipping"');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- Index on Empl_ID should already exist from 03c
--- but ensure it's there for fast token lookups
-ALTER TABLE hr_employees
-  ADD INDEX idx_hr_empl_id_token (Empl_ID);
+-- Add index for token lookups
+SET @idx_exists = (
+  SELECT COUNT(*) FROM information_schema.statistics
+  WHERE table_schema = DATABASE() AND table_name = 'hr_employees' AND index_name = 'idx_hr_empl_id_token'
+);
+SET @sql = IF(@idx_exists = 0,
+  'ALTER TABLE hr_employees ADD INDEX idx_hr_empl_id_token (Empl_ID)',
+  'SELECT "hr_employees: Index idx_hr_empl_id_token exists, skipping"');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ─────────────────────────────────────────────────────────────
--- SECTION A: ADD PASSWORD COLUMN TO hr_employees
+-- SECTION A: ADD PASSWORD COLUMNS TO hr_employees
 -- Single source of truth for ALL personnel authentication.
+-- PRODUCTION SAFE: Checks for existing columns before adding
 -- ─────────────────────────────────────────────────────────────
 
-ALTER TABLE hr_employees
-  ADD COLUMN password VARCHAR(255) DEFAULT NULL
-    COMMENT 'Unified password — initial value is BankACNumber',
-  ADD COLUMN password_changed_at DATETIME DEFAULT NULL
-    COMMENT 'Set when user changes from default password',
-  ADD COLUMN force_change TINYINT(1) DEFAULT 1
-    COMMENT '1 = must change password on next login';
+SET @col_exists = (
+  SELECT COUNT(*) FROM information_schema.columns
+  WHERE table_schema = DATABASE() AND table_name = 'hr_employees' AND column_name = 'password'
+);
+SET @sql = IF(@col_exists = 0,
+  'ALTER TABLE hr_employees ADD COLUMN password VARCHAR(255) DEFAULT NULL COMMENT "Unified password — initial value is BankACNumber"',
+  'SELECT "hr_employees: password column exists, skipping"');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- Index for fast login lookups
--- ALTER TABLE hr_employees
-  -- ADD INDEX idx_hr_empl_id (Empl_ID);
+SET @col_exists = (
+  SELECT COUNT(*) FROM information_schema.columns
+  WHERE table_schema = DATABASE() AND table_name = 'hr_employees' AND column_name = 'password_changed_at'
+);
+SET @sql = IF(@col_exists = 0,
+  'ALTER TABLE hr_employees ADD COLUMN password_changed_at DATETIME DEFAULT NULL COMMENT "Set when user changes from default password"',
+  'SELECT "hr_employees: password_changed_at column exists, skipping"');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
+SET @col_exists = (
+  SELECT COUNT(*) FROM information_schema.columns
+  WHERE table_schema = DATABASE() AND table_name = 'hr_employees' AND column_name = 'force_change'
+);
+SET @sql = IF(@col_exists = 0,
+  'ALTER TABLE hr_employees ADD COLUMN force_change TINYINT(1) DEFAULT 1 COMMENT "1 = must change password on next login"',
+  'SELECT "hr_employees: force_change column exists, skipping"');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ─────────────────────────────────────────────────────────────
 -- SECTION B: SEED PASSWORDS — ONE FAST BATCH UPDATE
@@ -62,7 +86,7 @@ ALTER TABLE hr_employees
 --   2. Empl_ID       (fallback if no account number)
 --
 -- No cross-database queries. No subqueries. Single UPDATE.
--- Runs in seconds not minutes.
+-- PRODUCTION SAFE: Only updates rows where password is still NULL
 -- ─────────────────────────────────────────────────────────────
 
 SET SQL_SAFE_UPDATES = 0;
@@ -72,20 +96,18 @@ SET
     WHEN BankACNumber IS NOT NULL
       AND TRIM(BankACNumber) != ''
     THEN TRIM(BankACNumber)
-    ELSE Empl_ID                    -- fallback: service number
+    ELSE Empl_ID
   END,
-  force_change = 1                  -- everyone must change on first login
-WHERE password IS NULL;             -- only seed those not yet set
+  force_change = 1
+WHERE password IS NULL;
 SET SQL_SAFE_UPDATES = 1;
 
 -- How many got seeded?
 SELECT
-  'Passwords seeded' AS status,
+  'Passwords seeded (re-run safe)' AS status,
   COUNT(*) AS total,
-  SUM(CASE WHEN BankACNumber IS NOT NULL AND TRIM(BankACNumber) != ''
-           THEN 1 ELSE 0 END) AS seeded_from_bank_account,
-  SUM(CASE WHEN BankACNumber IS NULL OR TRIM(BankACNumber) = ''
-           THEN 1 ELSE 0 END) AS seeded_from_empl_id
+  SUM(CASE WHEN BankACNumber IS NOT NULL AND TRIM(BankACNumber) != '' THEN 1 ELSE 0 END) AS from_bank_account,
+  SUM(CASE WHEN BankACNumber IS NULL OR TRIM(BankACNumber) = '' THEN 1 ELSE 0 END) AS from_empl_id
 FROM hr_employees
 WHERE password IS NOT NULL;
 
@@ -202,59 +224,23 @@ WHERE NOT EXISTS (
 );
 
 -- Drop password column from users table since payroll is now unified with hr_employees
-ALTER TABLE users DROP COLUMN IF EXISTS password;
+SET @col_exists := (
+  SELECT COUNT(*)
+  FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'users'
+    AND COLUMN_NAME = 'password'
+);
 
+SET @sql := IF(@col_exists > 0,
+  'ALTER TABLE users DROP COLUMN password',
+  'SELECT "Column does not exist"'
+);
 
--- ADD Email Quota to hr_employees
-alter table hr_employees add column `storage_used_bytes` bigint DEFAULT '0';
-alter table hr_employees add column `storage_used_bytes` bigint DEFAULT '0';
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
--- DROP existing in users
-alter table users drop column storage_used_bytes;
-alter table users drop column storage_used_bytes;
+-- DOWN
+-- Add rollback logic here (reverse of UP)
 
--- VERIFICATION
-SELECT storage_used_bytes, storage_used_bytes FROM hicaddata.hr_employees;
-
-
--- TRIGGERS TO SET PASSWORD FOR NEW PERSONNEL --
-DELIMITER $$
-
-CREATE TRIGGER trg_hr_employees_password
-BEFORE INSERT ON hr_employees
-FOR EACH ROW
-BEGIN
-    -- If Bank Account exists, use it as password
-    IF NEW.BankACNumber IS NOT NULL AND NEW.BankACNumber <> '' THEN
-        SET NEW.password = NEW.BankACNumber;
-    ELSE
-        -- fallback to employee ID
-        SET NEW.password = NEW.Empl_ID;
-    END IF;
-
-    -- force password change
-    SET NEW.force_change = 1;
-END$$
-
-DELIMITER ;
-
-
-DELIMITER $$
-
-CREATE TRIGGER trg_hr_employees_password_update
-BEFORE UPDATE ON hr_employees
-FOR EACH ROW
-BEGIN
-    IF NEW.force_change = 1 
-       AND NOT (NEW.BankACNumber <=> OLD.BankACNumber) THEN
-
-        IF NEW.BankACNumber IS NOT NULL AND NEW.BankACNumber <> '' THEN
-            SET NEW.password = NEW.BankACNumber;
-        ELSE
-            SET NEW.password = NEW.Empl_ID;
-        END IF;
-
-    END IF;
-END$$
-
-DELIMITER ;

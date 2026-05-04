@@ -587,7 +587,7 @@
             <option value="">— Select LGA —</option>
           </select>
         </div>
-        <div>
+        <div class="hidden">
           <label class="field-label">Qualification</label>
           <select class="field" id="qualification" name="qualification">
             <option value="">— Select —</option>
@@ -603,253 +603,13 @@
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════
-         SECTION 3 — SERVICE DETAILS
+      <!-- ══════════════════════════════════════
+         SECTION 3 — NEXT OF KIN
     ══════════════════════════════════════ -->
     <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="3"
       id="section-3">
       <div class="section-heading">
         <div class="section-number">03</div>
-        <h2 class="section-title">Service Details</h2>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div>
-          <label class="field-label">Date of Enlistment <span class="req">*</span></label>
-          <input class="field" type="date" id="DateEmpl" name="DateEmpl">
-        </div>
-        <div>
-          <label class="field-label">Seniority Date</label>
-          <input class="field" type="date" id="seniorityDate" name="seniorityDate">
-        </div>
-        <div>
-          <label class="field-label">Year of Promotion</label>
-          <input class="field" type="text" id="yearOfPromotion" name="yearOfPromotion" placeholder="e.g. 2022">
-        </div>
-        <div>
-          <label class="field-label">Expiry of Engagement</label>
-          <input class="field" type="date" id="expirationOfEngagementDate" name="expirationOfEngagementDate">
-        </div>
-        <div>
-          <label class="field-label">Command <span class="req">*</span></label>
-          <select class="field" id="command" name="command">
-            <option value="">— Select Command —</option>
-          </select>
-        </div>
-        <div>
-          <label class="field-label">Branch</label>
-          <select class="field" id="branch" name="branch">
-            <option value="">— Select Branch —</option>
-          </select>
-        </div>
-        <div>
-          <label class="field-label">Ship / Unit <span class="req">*</span></label>
-          <input class="field" type="text" id="ship" name="ship" disabled>
-        </div>
-        <div>
-          <label class="field-label">Specialisation</label>
-          <input class="field" type="text" id="specialisation" name="specialisation" placeholder="e.g. Warfare">
-        </div>
-        <div>
-          <label class="field-label">Entry Mode</label>
-          <select class="field" id="entry_mode" name="entry_mode">
-            <option value="">— Select —</option>
-            <option>Direct</option>
-            <option>DSSC</option>
-            <option>Short Service</option>
-            <option>Regular</option>
-          </select>
-        </div>
-        <div>
-          <label class="field-label">Grade Level</label>
-          <input class="field" type="text" id="gradelevel" name="gradelevel" placeholder="e.g. GL10">
-        </div>
-        <div>
-          <label class="field-label">Tax Code</label>
-          <input class="field" type="text" id="TaxCode" name="TaxCode">
-        </div>
-        <div>
-          <label class="field-label">Taxed</label>
-          <select class="field" id="taxed" name="taxed">
-            <option value="">— Select —</option>
-            <option value="YES">Yes</option>
-            <option value="NO">No</option>
-          </select>
-        </div>
-
-        <!-- Officer-only fields -->
-        <div id="field-entitlement" class="hidden">
-          <label class="field-label">Appointment / Entitlement</label>
-          <input class="field" type="text" id="entitlement" name="entitlement" placeholder="e.g. Executive Officer">
-        </div>
-        <div id="field-division" class="">
-          <label class="field-label">Division</label>
-          <input class="field" type="text" id="division" name="division">
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════
-         SECTION 4 — BANK & FINANCIAL
-    ══════════════════════════════════════ -->
-    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="4"
-      id="section-4">
-      <div class="section-heading">
-        <div class="section-number">04</div>
-        <h2 class="section-title">Bank &amp; Financial Details</h2>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div>
-          <label class="field-label">Account Number <span class="req">*</span></label>
-          <input class="field font-mono" type="text" id="BankACNumber" name="BankACNumber" placeholder="10-digit NUBAN"
-            maxlength="10">
-        </div>
-        <div>
-          <label class="field-label">Bank <span class="req">*</span></label>
-          <select class="field" id="Bankcode" name="Bankcode">
-            <option value="">— Select Bank —</option>
-          </select>
-        </div>
-        <div>
-          <label class="field-label">Bank Branch</label>
-          <input class="field" type="text" id="bankbranch" name="bankbranch" placeholder="e.g. Marina Branch">
-        </div>
-        <div>
-          <label class="field-label">Account Name</label>
-          <input class="field" type="text" id="AccountName" name="AccountName" placeholder="Name as on account">
-        </div>
-        <div>
-          <label class="field-label">PFA Code</label>
-          <input class="field" type="text" id="pfacode" name="pfacode">
-        </div>
-        <div>
-          <label class="field-label">NSITF Code</label>
-          <input class="field" type="text" id="NSITFcode" name="NSITFcode">
-        </div>
-        <div>
-          <label class="field-label">NHF Code</label>
-          <input class="field" type="text" id="NHFcode" name="NHFcode">
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════
-         SECTION 5 — ACCOMMODATION
-    ══════════════════════════════════════ -->
-    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="5"
-      id="section-5">
-      <div class="section-heading">
-        <div class="section-number">05</div>
-        <h2 class="section-title">Accommodation &amp; GBC</h2>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div>
-          <label class="field-label">Accommodation Type</label>
-          <select class="field" id="accomm_type" name="accomm_type">
-            <option value="">— Select —</option>
-            <option>Government</option>
-            <option>Private</option>
-            <option>Barracks</option>
-          </select>
-        </div>
-        <div>
-          <label class="field-label">Accommodation Status</label>
-          <select class="field" id="AcommodationStatus" name="AcommodationStatus">
-            <option value="">— Select —</option>
-            <option>Occupied</option>
-            <option>Vacant</option>
-          </select>
-        </div>
-        <div class="sm:col-span-2 lg:col-span-1">
-          <label class="field-label">Address of Accommodation</label>
-          <input class="field" type="text" id="AddressofAcommodation" name="AddressofAcommodation">
-        </div>
-        <div>
-          <label class="field-label">GBC</label>
-          <select class="field" id="GBC" name="GBC">
-            <option value="">— Select —</option>
-            <option>Yes</option>
-            <option>No</option>
-          </select>
-        </div>
-        <div>
-          <label class="field-label">GBC Number</label>
-          <input class="field" type="text" id="GBC_Number" name="GBC_Number">
-        </div>
-        <div>
-          <label class="field-label">Advance Date</label>
-          <input class="field" type="date" id="advanceDate" name="advanceDate">
-        </div>
-        <div>
-          <label class="field-label">Run-Out Date</label>
-          <input class="field" type="date" id="runoutDate" name="runoutDate">
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════
-         SECTION 6 — ALLOWANCES
-    ══════════════════════════════════════ -->
-    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="6"
-      id="section-6">
-      <div class="section-heading">
-        <div class="section-number">06</div>
-        <h2 class="section-title">Allowances</h2>
-      </div>
-
-      <p class="text-xs text-muted mb-4">Tick all allowances applicable to your current posting.</p>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" id="allowances-grid">
-        <!-- Rendered by JS based on form type -->
-      </div>
-
-      <!-- Other allowance specify -->
-      <div class="mt-3" id="other-allow-detail" style="display:none">
-        <label class="field-label">Specify Other Allowance</label>
-        <input class="field mt-1" type="text" id="other_allowspecify" name="other_allowspecify"
-          placeholder="Describe the allowance">
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════
-         SECTION 7 — LOANS
-    ══════════════════════════════════════ -->
-    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="7"
-      id="section-7">
-      <div class="section-heading">
-        <div class="section-number">07</div>
-        <h2 class="section-title">Loans</h2>
-      </div>
-
-      <p class="text-xs text-muted mb-4">Enter details for all outstanding loans. Leave blank if not applicable.</p>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm min-w-[600px]">
-          <thead>
-            <tr class="bg-smoke border-b border-smoke-dark">
-              <th class="text-left py-2 px-3 field-label">Loan Type</th>
-              <th class="text-left py-2 px-3 field-label">Amount (₦)</th>
-              <th class="text-left py-2 px-3 field-label">Year Taken</th>
-              <th class="text-left py-2 px-3 field-label">Tenor (Months)</th>
-              <th class="text-left py-2 px-3 field-label">Balance (₦)</th>
-            </tr>
-          </thead>
-          <tbody id="loans-table-body" class="divide-y divide-smoke-dark">
-            <!-- Rendered by JS -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════
-         SECTION 8 — NEXT OF KIN
-    ══════════════════════════════════════ -->
-    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="8"
-      id="section-8">
-      <div class="section-heading">
-        <div class="section-number">08</div>
         <h2 class="section-title">Next of Kin</h2>
       </div>
 
@@ -958,13 +718,13 @@
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════
-         SECTION 9 — SPOUSE & CHILDREN
+     <!-- ══════════════════════════════════════
+         SECTION 4 — SPOUSE & CHILDREN
     ══════════════════════════════════════ -->
-    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="9"
-      id="section-9">
+    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="4"
+      id="section-4">
       <div class="section-heading">
-        <div class="section-number">09</div>
+        <div class="section-number">04</div>
         <h2 class="section-title">Spouse &amp; Children</h2>
       </div>
 
@@ -1016,6 +776,246 @@
         </div>
       </div>
     </div>
+
+    <!-- ══════════════════════════════════════
+         SECTION 5 — SERVICE DETAILS
+    ══════════════════════════════════════ -->
+    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="5"
+      id="section-5">
+      <div class="section-heading">
+        <div class="section-number">05</div>
+        <h2 class="section-title">Service Details</h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <label class="field-label">Date of Enlistment <span class="req">*</span></label>
+          <input class="field" type="date" id="DateEmpl" name="DateEmpl">
+        </div>
+        <div>
+          <label class="field-label">Seniority Date</label>
+          <input class="field" type="date" id="seniorityDate" name="seniorityDate">
+        </div>
+         <div>
+          <label class="field-label">Date of Commissioning</label>
+          <input class="field" type="date" id="advanceDate" name="advanceDate">
+        </div>
+        <div>
+          <label class="field-label">Run-Out Date</label>
+          <input class="field" type="date" id="runoutDate" name="runoutDate">
+        </div>
+        <div>
+          <label class="field-label">Command <span class="req">*</span></label>
+          <select class="field" id="command" name="command">
+            <option value="">— Select Command —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Branch</label>
+          <select class="field" id="branch" name="branch">
+            <option value="">— Select Branch —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Ship / Unit <span class="req">*</span></label>
+          <select class="field" id="ships" name="ships">
+            <option value="">— Select —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Specialisation</label>
+          <select class="field" id="specialisation" name="specialisation">
+            <option value="">— Select —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Type Of Commissioning</label>
+          <select class="field" id="entry_mode" name="entry_mode">
+            <option value="">— Select —</option>
+            <option>Direct</option>
+            <option>DSSC</option>
+            <option>Short Service</option>
+            <option>Regular</option>
+          </select>
+        </div>
+        <div class="hidden">
+          <label class="field-label">Grade Level</label>
+          <input class="field" type="text" id="gradelevel" name="gradelevel" placeholder="e.g. GL10">
+        </div>
+        <div>
+          <label class="field-label">Tax Code</label>
+          <input class="field" type="text" id="TaxCode" name="TaxCode">
+        </div>
+        <div>
+          <label class="field-label">Taxed</label>
+          <select class="field" id="taxed" name="taxed">
+            <option value="">— Select —</option>
+            <option value="YES">Yes</option>
+            <option value="NO">No</option>
+          </select>
+        </div>
+
+        <!-- Officer-only fields -->
+        <div id="field-entitlement" class="hidden">
+          <label class="field-label">Appointment / Entitlement</label>
+          <input class="field" type="text" id="entitlement" name="entitlement" placeholder="e.g. Executive Officer">
+        </div>
+        <div id="field-division" class="hidden">
+          <label class="field-label">Division</label>
+          <input class="field" type="text" id="division" name="division">
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         SECTION 6 — BANK & FINANCIAL
+    ══════════════════════════════════════ -->
+    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="6"
+      id="section-6">
+      <div class="section-heading">
+        <div class="section-number">06</div>
+        <h2 class="section-title">Bank &amp; Financial Details</h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <label class="field-label">Account Number <span class="req">*</span></label>
+          <input class="field font-mono" type="text" id="BankACNumber" name="BankACNumber" placeholder="10-digit NUBAN"
+            maxlength="10">
+        </div>
+        <div>
+          <label class="field-label">Bank <span class="req">*</span></label>
+          <select class="field" id="Bankcode" name="Bankcode">
+            <option value="">— Select Bank —</option>
+          </select>
+        </div>
+        <div class="hidden">
+          <label class="field-label">Bank Branch</label>
+          <input class="field" type="text" id="bankbranch" name="bankbranch" placeholder="e.g. Marina Branch">
+        </div>
+        <div>
+          <label class="field-label">Account Name</label>
+          <input class="field" type="text" id="AccountName" name="AccountName" placeholder="Name as on account">
+        </div>
+        <div class="hidden">
+          <label class="field-label">PFA Code</label>
+          <input class="field" type="text" id="pfacode" name="pfacode">
+        </div>
+        <div class="hidden">
+          <label class="field-label">NSITF Code</label>
+          <input class="field" type="text" id="NSITFcode" name="NSITFcode">
+        </div>
+        <div class="hidden">
+          <label class="field-label">NHF Code</label>
+          <input class="field" type="text" id="NHFcode" name="NHFcode">
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         SECTION 7 — ACCOMMODATION
+    ══════════════════════════════════════ -->
+    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="7"
+      id="section-7">
+      <div class="section-heading">
+        <div class="section-number">07</div>
+        <h2 class="section-title">Accommodation</h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <label class="field-label">Accommodation Status</label>
+          <select class="field" id="accomm_type" name="accomm_type">
+            <option value="">— Select —</option>
+            <option>Government</option>
+            <option>Private</option>
+            <option>Barracks</option>
+          </select>
+        </div>
+        <div class="hidden">
+          <label class="field-label">Accommodation Status</label>
+          <select class="field" id="AcommodationStatus" name="AcommodationStatus">
+            <option value="">— Select —</option>
+            <option>Occupied</option>
+            <option>Vacant</option>
+          </select>
+        </div>
+        <div class="sm:col-span-2 lg:col-span-1">
+          <label class="field-label">Address of Accommodation</label>
+          <input class="field" type="text" id="AddressofAcommodation" name="AddressofAcommodation">
+        </div>
+        <div class="hidden">
+          <label class="field-label">GBC</label>
+          <select class="field" id="GBC" name="GBC">
+            <option value="">— Select —</option>
+            <option>Yes</option>
+            <option>No</option>
+          </select>
+        </div>
+        <div class="hidden">
+          <label class="field-label">GBC Number</label>
+          <input class="field" type="text" id="GBC_Number" name="GBC_Number">
+        </div>
+       
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         SECTION 8 — ALLOWANCES
+    ══════════════════════════════════════ -->
+    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="8"
+      id="section-8">
+      <div class="section-heading">
+        <div class="section-number">08</div>
+        <h2 class="section-title">Allowances</h2>
+      </div>
+
+      <p class="text-xs text-muted mb-4">Tick all allowances applicable to your current posting.</p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" id="allowances-grid">
+        <!-- Rendered by JS based on form type -->
+      </div>
+
+      <!-- Other allowance specify -->
+      <div class="mt-3" id="other-allow-detail" style="display:none">
+        <label class="field-label">Specify Other Allowance</label>
+        <input class="field mt-1" type="text" id="other_allowspecify" name="other_allowspecify"
+          placeholder="Describe the allowance">
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         SECTION 9 — LOANS
+    ══════════════════════════════════════ -->
+    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="9"
+      id="section-9">
+      <div class="section-heading">
+        <div class="section-number">09</div>
+        <h2 class="section-title">Loans</h2>
+      </div>
+
+      <p class="text-xs text-muted mb-4">Enter details for all outstanding loans. Leave blank if not applicable.</p>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[600px]">
+          <thead>
+            <tr class="bg-smoke border-b border-smoke-dark">
+              <th class="text-left py-2 px-3 field-label">Loan Type</th>
+              <th class="text-left py-2 px-3 field-label">Amount (₦)</th>
+              <th class="text-left py-2 px-3 field-label">Year Taken</th>
+              <th class="text-left py-2 px-3 field-label">Tenor (Months)</th>
+              <th class="text-left py-2 px-3 field-label">Balance (₦)</th>
+            </tr>
+          </thead>
+          <tbody id="loans-table-body" class="divide-y divide-smoke-dark">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
+   
 
   </main>
 
@@ -1117,6 +1117,7 @@
 
     // ── Init ─────────────────────────────────────────────────
     window.addEventListener('DOMContentLoaded', () => {
+      loadFormOptions();
       loadForm();
     });
 
@@ -1148,6 +1149,76 @@
       document.getElementById('progress-percent').textContent = percent + '%';
     }
 
+
+    // Add this to your init function
+    async function loadFormOptions() {
+      try {
+        const res = await fetch('/form/options', {
+          headers: { Authorization: `Bearer ${getToken()}` }
+        });
+        const options = await res.json();
+
+        // relationships, entyrmodes, specializations, ships use name
+        
+        // Populate all dropdowns
+        populateSelect('Bankcode', options.banks);
+        populateSelect('command', options.commands);
+        populateSelect('branch', options.branches);
+        populateSelect('specialisation', options.specializations, true)
+        populateSelect('ships', options.ships, true)
+        populateSelect('StateofOrigin', options.states);
+        populateSelect('nok_primary_relationship', options.relationships, true);
+        populateSelect('nok_alt_relationship', options.relationships, true);
+        populateSelect('entry_mode', options.entryModes, true);
+        
+        // Store options globally for dynamic updates (like LGA based on State)
+        window.formOptions = options;
+        
+        // Setup state change listeners for LGA filtering
+        setupStateLGAFiltering();
+        
+      } catch (error) {
+        console.error('Failed to load form options:', error);
+      }
+    }
+
+    function populateSelect(selectId, options, useName = false) {
+      const select = document.getElementById(selectId);
+      if (!select) return;
+      
+      // Keep the first option (usually "— Select —")
+      const firstOption = select.options[0];
+      select.innerHTML = '';
+      if (firstOption) select.appendChild(firstOption);
+
+      
+      
+      options.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt.id;
+        option.textContent = opt.name;
+        select.appendChild(option);
+      });
+    }
+
+    function setupStateLGAFiltering() {
+      const stateSelect = document.getElementById('StateofOrigin');
+      const lgaSelect = document.getElementById('LocalGovt');
+      
+      if (!stateSelect || !lgaSelect) return;
+      
+      stateSelect.addEventListener('change', function() {
+        const selectedStateId = this.value;
+        
+        // Filter LGAs based on selected state
+        const filteredLGAs = window.formOptions.lgas.filter(
+          lga => lga.stateId == selectedStateId
+        );
+        
+        populateSelect('LocalGovt', filteredLGAs);
+      });
+    }
+
     async function loadForm() {
       try {
         const res = await fetch('/form/load', {
@@ -1163,10 +1234,10 @@
         formData = data;
         formType = data.formType || 'RATING';
 
-        if (!data.canEdit) {
-          showBlocked(data.editBlocked || 'Form is not available for editing.');
-          return;
-        }
+        // if (!data.canEdit) {
+        //   showBlocked(data.editBlocked || 'Form is not available for editing.');
+        //   return;
+        // }
 
         initForm(data);
 
@@ -1195,6 +1266,7 @@
       // Show/hide officer-only fields
       if (formType === 'OFFICER') {
         document.getElementById('field-entitlement').classList.remove('hidden');
+        document.getElementById('field-division').classList.remove('hidden');
       }
 
       // Prefill all fields
@@ -1246,7 +1318,6 @@
         qualification: core.qualification,
         DateEmpl: core.DateEmpl ? core.DateEmpl.split('T')[0] : '',
         seniorityDate: core.seniorityDate ? core.seniorityDate.split('T')[0] : '',
-        yearOfPromotion: core.yearOfPromotion,
         expirationOfEngagementDate: core.expirationOfEngagementDate ? core.expirationOfEngagementDate.split('T')[0] : '',
         ship: core.ship,
         specialisation: core.specialisation,

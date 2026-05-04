@@ -89,6 +89,21 @@ router.get("/load", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// GET /form/options.
+// ─────────────────────────────────────────────────────────────
+router.get("/options", async (req, res) => {
+  try {
+    const result = await formService.loadFormOptions(req.user_id);
+    if (!result.success)
+      return res.status(result.code).json({ error: result.message });
+    return res.json(result.data);
+  } catch (err) {
+    console.error("❌ GET /form/options:", err);
+    return res.status(500).json({ error: "Internal Server error" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
 // GET /form/history/:year
 //
 // Returns full snapshot if available (forms confirmed after

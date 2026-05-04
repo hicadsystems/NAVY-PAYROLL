@@ -1044,6 +1044,79 @@ async function getEmolumentFormId(serviceNo, formYear) {
   return rows[0]?.id || null;
 }
 
+// ─────────────────────────────────────────────────────────────
+// FORM OPTIONS
+// ─────────────────────────────────────────────────────────────
+
+// Gets Banks, Ships, Specializations and all other select options in the frontend
+async function getFormOptions() {
+  const connection = await pool.getConnection();
+  
+  try {
+    await connection.query(`USE ??`, [DB()]);
+
+    // Fetch all options in parallel for better performance
+    const [
+      banksResult,
+      commandsResult,
+      branchesResult,
+      shipsResult,
+      specializationsResult,
+      statesResult,
+      lgasResult,
+      relationshipsResult,
+      entryModesResult
+    ] = await Promise.all([
+      // Banks
+      connection.query('SELECT bankcode AS id, bankname AS name FROM ef_banks'),
+      
+      // Commands
+      connection.query('SELECT code as id, commandName AS name FROM ef_commands'),
+      
+      // Branches
+      connection.query('SELECT code AS id, branchName AS name FROM ef_branches'),
+      
+      // Ships (with command association)
+      connection.query('SELECT Id AS id, shipName AS name, commandid FROM ef_ships'),
+      
+      // Specializations
+      connection.query('SELECT Id AS id, specname AS name FROM ef_specialisationareas'),
+      
+      // States
+      connection.query('SELECT StateId AS id, Name AS name FROM ef_states'),
+      
+      // Local Governments (with state association)
+      connection.query('SELECT Id AS id, lgaName AS name, stateId FROM ef_localgovts'),
+      
+      // Relationships (for NOK)
+      connection.query('SELECT Id AS id, description AS name FROM ef_relationships'),
+      
+      // Entry Modes (Type of Commissioning)
+      connection.query('SELECT Id AS id, Name AS name FROM ef_entrymodes')
+    ]);
+
+    return {
+      banks: banksResult[0],
+      commands: commandsResult[0],
+      branches: branchesResult[0],
+      ships: shipsResult[0],
+      specializations: specializationsResult[0],
+      states: statesResult[0],
+      lgas: lgasResult[0],
+      relationships: relationshipsResult[0],
+      entryModes: entryModesResult[0]
+    };
+
+  } catch (error) {
+    console.error('Error fetching form options:', error);
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+
+
 module.exports = {
   getSystemInfo,
   getProcessingYear,
@@ -1074,4 +1147,5 @@ module.exports = {
   insertAuditLog,
   insertFormApproval,
   getEmolumentFormId,
+  getFormOptions
 };

@@ -212,6 +212,21 @@ async function loadForm(serviceNo) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// LOAD FORM OPTIONS
+// Fetches all form options from their respective tables
+// ─────────────────────────────────────────────────────────────
+
+async function loadFormOptions() {
+  const options = await repo.getFormOptions();
+
+  return {
+    success: true,
+    data: options,
+    message: 'Options Retrieved Successfully'
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
 // LOAD HISTORICAL FORM
 // Full data comes from ef_emolument_forms.snapshot.
 // ef_personalinfoshist provides index metadata only.
@@ -421,4 +436,4 @@ async function submitForm(serviceNo, body, performedBy, ip) {
   };
 }
 
-module.exports = { loadForm, loadFormHistory, saveDraft, submitForm };
+module.exports = { loadForm, loadFormHistory, saveDraft, submitForm, loadFormOptions };

@@ -269,9 +269,10 @@ function updateHeaderEmolMode(pageId) {
   }
 
   // Also hide any quick-action payroll buttons on the home page
-  var payrollBtn = document.querySelector("button[data-page='payroll']");
-  if (payrollBtn && !_canPayroll) {
-    payrollBtn.style.display = "none";
+ // Hide all payroll UI elements if user lacks permission
+  if (!_canPayroll) {
+    const payrollElements = document.querySelectorAll('[data-page="payroll"]');
+    payrollElements.forEach(el => el.style.display = "none");
   }
 })();
 

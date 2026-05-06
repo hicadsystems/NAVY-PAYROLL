@@ -1,186 +1,825 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Navy Dashboard</title>
+    <link rel="stylesheet" href="offline-assets/css/fonts.css" />
+    <link rel="stylesheet" href="more-assets/css/boxicons.min.css" />
+    <link rel="stylesheet" href="more-assets/css/fontawesome.all.min.css" />
+    <link rel="stylesheet" href="styles/output.css" />
+    <link rel="stylesheet" href="styles/user-dashboard.css" />
+    <style>
+      /* ── Reset / base ─────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Navy Dashboard</title>
-  <link rel="stylesheet" href="offline-assets/css/fonts.css">
-  <link rel="stylesheet" href="more-assets/css/boxicons.min.css">
-  <link rel="stylesheet" href="more-assets/css/fontawesome.all.min.css">
-  <link rel="stylesheet" href="styles/output.css">
-  <link rel="stylesheet" href="styles/user-dashboard.css">
-  <style>
-    #page-emolument {
-      padding: 0 !important;
-      background: transparent !important;
-      overflow: hidden;
-      position: fixed !important;
-      top: 0px;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 10;
-    }
+      /* ── Emolument page overlay ───────────────────────────── */
+      #page-emolument {
+        padding: 0 !important;
+        background: transparent !important;
+        overflow: hidden;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10;
+      }
+      #emolument-frame {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      #emolument-frame.ready {
+        opacity: 1;
+      }
+      #emolument-loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-family: "DM Sans", sans-serif;
+        font-size: 13px;
+        color: rgba(30, 64, 175, 0.4);
+        pointer-events: none;
+      }
 
-    #emolument-frame {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
+      /* ── Header ───────────────────────────────────────────── */
+      header {
+        transition:
+          background 0.35s ease,
+          backdrop-filter 0.35s ease,
+          border-color 0.35s ease,
+          box-shadow 0.35s ease;
+        position: relative;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        height: 48px;
+      }
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+      .header-logo {
+        height: 36px;
+        width: auto;
+      }
 
-    #emolument-frame.ready {
-      opacity: 1;
-    }
+      /* desktop nav */
+      header nav {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      header nav a {
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-family: "DM Sans", sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        transition:
+          background 0.15s,
+          color 0.15s;
+      }
 
-    /* ── Header background transition ──────────────────────── */
-    header {
-      transition: background 0.35s ease, backdrop-filter 0.35s ease,
-        border-color 0.35s ease, box-shadow 0.35s ease;
-    }
+      /* emol-mode overrides */
+      header.emol-mode {
+        background: transparent !important;
+        border-bottom-color: rgba(251, 191, 36, 0.1) !important;
+        padding: 0 25px;
+      }
+      header.emol-mode nav a {
+        color: rgba(30, 64, 175, 0.65);
+      }
+      header.emol-mode nav a:hover,
+      header.emol-mode nav a.active {
+        color: rgb(30, 64, 175);
+      }
+      header.emol-mode .header-logo {
+        filter: none;
+      }
+      header.emol-mode .header-username-name {
+        color: #1e40af;
+        font-weight: bold;
+      }
+      header.emol-mode .header-username-label {
+        color: rgba(30, 64, 175, 0.65);
+      }
 
-    header.emol-mode {
-      background: transparent !important;
-      border-bottom-color: rgba(251, 191, 36, 0.1) !important;
-      padding: 0 25px;
-    }
+      /* ── Hamburger button (hidden on desktop) ─────────────── */
+      .nav-hamburger {
+        display: none;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        margin-left: 8px;
+        color: inherit;
+        border-radius: 8px;
+        transition: background 0.15s;
+        flex-shrink: 0;
+      }
+      .nav-hamburger:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .nav-hamburger svg {
+        width: 22px;
+        height: 22px;
+        display: block;
+      }
 
-    header.emol-mode nav a {
-      color: rgba(30, 64, 175, 0.65);
-    }
+      /* ── Drawer (hamburger mode) ──────────────────────────── */
+      .nav-drawer-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        background: rgba(0, 0, 0, 0.45);
+        opacity: 0;
+        transition: opacity 0.25s ease;
+      }
+      .nav-drawer-overlay.open {
+        opacity: 1;
+      }
+      .nav-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: min(280px, 85vw);
+        height: 100%;
+        z-index: 201;
+        background: #0d1f35;
+        border-left: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        flex-direction: column;
+        transform: translateX(100%);
+        transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 0;
+      }
+      .nav-drawer.open {
+        transform: translateX(0);
+      }
+      .nav-drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        flex-shrink: 0;
+      }
+      .nav-drawer-title {
+        font-family: "DM Sans", sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        color: rgba(200, 220, 255, 0.5);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .nav-drawer-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: rgba(200, 220, 255, 0.45);
+        padding: 4px;
+        border-radius: 6px;
+        transition:
+          color 0.15s,
+          background 0.15s;
+      }
+      .nav-drawer-close:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .nav-drawer-close svg {
+        width: 20px;
+        height: 20px;
+        display: block;
+      }
+      .nav-drawer-links {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        padding: 12px 12px;
+        gap: 4px;
+      }
+      .nav-drawer-links a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 10px;
+        font-family: "DM Sans", sans-serif;
+        font-size: 15px;
+        font-weight: 500;
+        color: rgba(200, 220, 255, 0.75);
+        cursor: pointer;
+        text-decoration: none;
+        transition:
+          background 0.15s,
+          color 0.15s;
+        border: 1px solid transparent;
+      }
+      .nav-drawer-links a:hover {
+        background: rgba(255, 255, 255, 0.06);
+        color: #fff;
+      }
+      .nav-drawer-links a.active {
+        background: rgba(245, 200, 66, 0.1);
+        color: #f5c842;
+        border-color: rgba(245, 200, 66, 0.2);
+      }
+      .nav-drawer-links a.logout-link {
+        margin-top: auto;
+        color: rgba(255, 100, 100, 0.7);
+      }
+      .nav-drawer-links a.logout-link:hover {
+        background: rgba(255, 80, 80, 0.08);
+        color: #ff8080;
+      }
+      .drawer-mail-badge {
+        background: #f5c842;
+        color: #0d1f35;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 20px;
+        margin-left: auto;
+      }
 
-    header.emol-mode nav a:hover,
-    header.emol-mode nav a.active {
-      color: rgb(30, 64, 175);
-    }
+      /* ── Bottom tab bar (hidden by default, shown in bottom-tab mode) ── */
+      .bottom-tab-bar {
+        display: none;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: #0d1f35;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        height: 60px;
+        flex-direction: row;
+        align-items: stretch;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .bottom-tab-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        cursor: pointer;
+        font-family: "DM Sans", sans-serif;
+        font-size: 10px;
+        font-weight: 500;
+        color: rgba(200, 220, 255, 0.45);
+        background: none;
+        border: none;
+        transition: color 0.15s;
+        padding: 0;
+        position: relative;
+      }
+      .bottom-tab-item svg {
+        width: 20px;
+        height: 20px;
+      }
+      .bottom-tab-item.active {
+        color: #f5c842;
+      }
+      .bottom-tab-badge {
+        position: absolute;
+        top: 6px;
+        right: calc(50% - 18px);
+        background: #f5c842;
+        color: #0d1f35;
+        font-size: 9px;
+        font-weight: 700;
+        min-width: 16px;
+        height: 16px;
+        border-radius: 10px;
+        padding: 0 4px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      .bottom-tab-badge.visible {
+        display: flex;
+      }
 
-    header.emol-mode .header-logo {
-      filter: none;
-    }
+      /* Body padding when bottom bar is active */
+      body.bottom-tab-mode {
+        padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+      }
+      body.bottom-tab-mode .bottom-tab-bar {
+        display: flex;
+      }
+      body.bottom-tab-mode header nav {
+        display: none;
+      }
+      body.bottom-tab-mode .nav-hamburger {
+        display: none;
+      }
 
-    header.emol-mode .header-username-name {
-      color: #1e40af;
-      font-weight: bold;
-    }
+      /* ── Nav mode switcher (demo only) ───────────────────── */
+      .nav-mode-switcher {
+        position: fixed;
+        bottom: 80px;
+        right: 12px;
+        z-index: 999;
+        background: #1e3a6e;
+        border: 1px solid rgba(245, 200, 66, 0.35);
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-family: "DM Sans", sans-serif;
+        font-size: 12px;
+        color: rgba(200, 220, 255, 0.8);
+        display: none;
+        flex-direction: column;
+        gap: 6px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      }
+      .nav-mode-switcher .sw-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(200, 220, 255, 0.4);
+        margin-bottom: 2px;
+      }
+      .sw-btn {
+        padding: 7px 12px;
+        border-radius: 7px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(200, 220, 255, 0.75);
+        font-family: "DM Sans", sans-serif;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-align: left;
+      }
+      .sw-btn.active-mode {
+        background: rgba(245, 200, 66, 0.15);
+        border-color: rgba(245, 200, 66, 0.4);
+        color: #f5c842;
+      }
+      .sw-btn:hover:not(.active-mode) {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+      }
 
-    header.emol-mode .header-username-label {
-      color: rgba(30, 64, 175, 0.65);
-    }
+      /* ── Responsive breakpoints ───────────────────────────── */
+      @media (max-width: 768px) {
+        /* show hamburger, hide desktop nav */
+        header nav {
+          display: none;
+        }
+        .nav-hamburger {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .nav-drawer-overlay {
+          display: block;
+          pointer-events: none;
+        }
+        .nav-drawer-overlay.open {
+          pointer-events: all;
+        }
 
-    /* Loading spinner */
-    #emolument-loading {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      color: rgba(30, 64, 175, 0.4);
-      pointer-events: none;
-    }
-  </style>
-</head>
+        /* show demo switcher */
+        .nav-mode-switcher {
+          display: flex;
+        }
 
-<body>
+        /* header compact */
+        header {
+          padding: 0 16px;
+          height: 60px;
+        }
+        .header-logo {
+          height: 30px;
+        }
+        .header-username {
+          display: none;
+        }
 
-  <!-- HEADER -->
-  <header>
-    <div class="header-left">
-      <img src="photos/logo.png" alt="Navy Pays logo" class="header-logo" id="header-logo">
-      <div class="header-username" id="header-username">
-        <span class="header-username-label">Signed in as</span>
-        <span class="header-username-name" id="header-username-text"></span>
+        /* pages shift up */
+        .page {
+          padding-top: 60px !important;
+        }
+
+        /* home page */
+        .home-content {
+          padding: 24px 20px !important;
+          max-width: 100% !important;
+        }
+        .welcome-name {
+          font-size: clamp(26px, 8vw, 42px) !important;
+        }
+        .quick-actions {
+          flex-direction: column !important;
+          gap: 10px !important;
+        }
+        .btn {
+          width: 100% !important;
+          text-align: center !important;
+        }
+      }
+
+      @media (max-width: 480px) {
+        header {
+          padding: 0 12px;
+        }
+        .home-content {
+          padding: 20px 16px !important;
+        }
+      }
+
+      @media (max-width: 320px) {
+        .header-logo {
+          height: 26px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ── HAMBURGER DRAWER ─────────────────────────────────── -->
+    <div
+      class="nav-drawer-overlay"
+      id="drawerOverlay"
+      onclick="closeDrawer()"
+    ></div>
+    <div class="nav-drawer" id="navDrawer">
+      <div class="nav-drawer-header">
+        <span class="nav-drawer-title">Menu</span>
+        <button
+          class="nav-drawer-close"
+          onclick="closeDrawer()"
+          aria-label="Close menu"
+        >
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+      <div class="nav-drawer-links">
+        <a class="active" data-page="home" onclick="navTo('home')">
+          <svg
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            />
+          </svg>
+          Home
+        </a>
+        <a data-page="payroll" onclick="navTo('payroll')">
+          <svg
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+            />
+          </svg>
+          Payroll
+        </a>
+        <a data-page="payslip" onclick="navTo('payslip')">
+          <svg
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          Payslip
+        </a>
+        <a data-page="email" onclick="navTo('email')">
+          <svg
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+          Email
+          <span
+            class="drawer-mail-badge"
+            id="drawer-mail-badge"
+            style="display: none"
+          ></span>
+        </a>
+        <a data-page="emolument" onclick="navTo('emolument')">
+          <svg
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          Emolument
+        </a>
+        <a
+          data-page="logout"
+          onclick="navTo('logout')"
+          class="logout-link"
+          style="margin-top: 12px"
+        >
+          <svg
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+            />
+          </svg>
+          Sign Out
+        </a>
       </div>
     </div>
 
-    <nav>
-      <a class="active" id="nav-home" data-page="home">Home</a>
-      <a id="nav-payroll" data-page="payroll">Payroll</a>
-      <a id="nav-payslip" data-page="payslip">Payslip</a>
-      <a id="nav-email" data-page="email">
-        Email
-        <span id="nav-mail-badge" style="background:#f5c842;color:#0d1f35;font-size:10px;font-weight:700;
-                 padding:2px 6px;border-radius:20px;margin-left:2px;
-                 vertical-align:middle;display:none"></span>
-      </a>
-      <a id="nav-emolument" data-page="emolument">Emolument</a>
-      <a id="nav-logout" data-page="logout">
-        <i class="fas fa-sign-out-alt"></i>
-      </a>
-    </nav>
-  </header>
-
-  <!-- HOME -->
-  <div class="page home-bg active" id="page-home">
-    <div class="home-content">
-      <p class="welcome-tag" id="greeting-tag">
-        <span class="welcome-tag-icon" id="greeting-icon">☀️</span>
-        <span id="greeting-text">Good Morning</span>
-      </p>
-      <h1 class="welcome-name" id="welcome-name">
-        Welcome, <span id="user-display-name">...</span>
-      </h1>
-      <p class="welcome-sub" id="greeting-sub">Hope your morning is off to a great start.</p>
-      <div class="divider"></div>
-      <div class="quick-actions">
-        <button class="btn btn-primary" data-page="email">My Email</button>
-        <button class="btn btn-ghost" data-page="payslip">My Payslip</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- PAYSLIP -->
-  <div class="page inner-page" id="page-payslip">
-    <p class="page-label">PAYSLIP — COMING SOON</p>
-  </div>
-
-  <!-- EMAIL -->
-  <div class="page inner-page" id="page-email">
-    <p class="page-label">EMAIL — COMING SOON</p>
-  </div>
-
-  <!-- EMOLUMENT — iframe injected lazily -->
-  <div class="page inner-page" id="page-emolument" style="position:relative;">
-    <div id="emolument-loading">
-      <i class="fas fa-spinner fa-spin"></i> Loading Emolument…
-    </div>
-    <!-- iframe inserted here by JS on first visit -->
-  </div>
-
-  <script src="script/user-dashboard.js"></script>
-
-  <!-- ATTACHMENT PREVIEW LIGHTBOX -->
-  <div class="att-preview-overlay" id="attPreviewOverlay">
-    <div class="att-preview-box">
-      <div class="att-preview-bar">
-        <span class="att-preview-filename" id="attPreviewName"></span>
-        <div class="att-preview-actions">
-          <button class="att-preview-btn att-preview-download" id="attPreviewDownloadBtn">
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Download
-          </button>
-          <button class="att-preview-btn att-preview-expand" id="attPreviewExpandBtn"
-            onclick="toggleAttFullscreen()"></button>
-          <button class="att-preview-btn att-preview-close" onclick="closeAttPreview()">✕ Close</button>
+    <!-- ── HEADER ───────────────────────────────────────────── -->
+    <header>
+      <div class="header-left">
+        <img
+          src="photos/logo.png"
+          alt="Navy Pays logo"
+          class="header-logo"
+          id="header-logo"
+        />
+        <div class="header-username" id="header-username">
+          <span class="header-username-label">Signed in as</span>
+          <span class="header-username-name" id="header-username-text"></span>
         </div>
       </div>
-      <div class="att-preview-content" id="attPreviewContent"></div>
-      <div class="att-preview-esc-hint" id="attEscHint">
-        <kbd>ESC</kbd> to exit fullscreen
+
+      <!-- Desktop nav -->
+      <nav>
+        <a class="active" id="nav-home" data-page="home">Home</a>
+        <a id="nav-payroll" data-page="payroll">Payroll</a>
+        <a id="nav-payslip" data-page="payslip">Payslip</a>
+        <a id="nav-email" data-page="email">
+          Email
+          <span
+            id="nav-mail-badge"
+            style="
+              background: #f5c842;
+              color: #0d1f35;
+              font-size: 10px;
+              font-weight: 700;
+              padding: 2px 6px;
+              border-radius: 20px;
+              margin-left: 2px;
+              vertical-align: middle;
+              display: none;
+            "
+          ></span>
+        </a>
+        <a id="nav-emolument" data-page="emolument">Emolument</a>
+        <a id="nav-logout" data-page="logout">
+          <i class="fas fa-sign-out-alt"></i>
+        </a>
+      </nav>
+
+      <!-- Mobile hamburger (hidden on desktop) -->
+      <button
+        class="nav-hamburger"
+        id="navHamburger"
+        onclick="openDrawer()"
+        aria-label="Open menu"
+      >
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 6h16M4 12h16M4 18h16"
+          />
+        </svg>
+      </button>
+    </header>
+
+    <!-- ── PAGES ─────────────────────────────────────────────── -->
+
+    <!-- HOME -->
+    <div class="page home-bg active" id="page-home">
+      <div class="home-content">
+        <p class="welcome-tag" id="greeting-tag">
+          <span class="welcome-tag-icon" id="greeting-icon">☀️</span>
+          <span id="greeting-text">Good Morning</span>
+        </p>
+        <h1 class="welcome-name" id="welcome-name">
+          Welcome, <span id="user-display-name">...</span>
+        </h1>
+        <p class="welcome-sub" id="greeting-sub">
+          Hope your morning is off to a great start.
+        </p>
+        <div class="divider"></div>
+        <div class="quick-actions">
+          <button class="btn btn-primary" data-page="email">My Email</button>
+          <button class="btn btn-ghost" data-page="payslip">My Payslip</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div id="ship-dashboard-overlay"
-    style="display:none;position:fixed;inset:0;z-index:150;background:#f7f5f1;overflow-y:auto;"></div>
-</body>
+    <!-- PAYSLIP -->
+    <div class="page inner-page" id="page-payslip">
+      <p class="page-label">PAYSLIP — COMING SOON</p>
+    </div>
 
+    <!-- EMAIL -->
+    <div class="page inner-page" id="page-email">
+      <p class="page-label">EMAIL — COMING SOON</p>
+    </div>
+
+    <!-- EMOLUMENT -->
+    <div class="page inner-page" id="page-emolument" style="position: relative">
+      <div id="emolument-loading">
+        <i class="fas fa-spinner fa-spin"></i> Loading Emolument…
+      </div>
+    </div>
+
+    <!-- ATTACHMENT PREVIEW LIGHTBOX -->
+    <div class="att-preview-overlay" id="attPreviewOverlay">
+      <div class="att-preview-box">
+        <div class="att-preview-bar">
+          <span class="att-preview-filename" id="attPreviewName"></span>
+          <div class="att-preview-actions">
+            <button
+              class="att-preview-btn att-preview-download"
+              id="attPreviewDownloadBtn"
+            >
+              <svg
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
+              </svg>
+              Download
+            </button>
+            <button
+              class="att-preview-btn att-preview-expand"
+              id="attPreviewExpandBtn"
+              onclick="toggleAttFullscreen()"
+            ></button>
+            <button
+              class="att-preview-btn att-preview-close"
+              onclick="closeAttPreview()"
+            >
+              ✕ Close
+            </button>
+          </div>
+        </div>
+        <div class="att-preview-content" id="attPreviewContent"></div>
+        <div class="att-preview-esc-hint" id="attEscHint">
+          <kbd>ESC</kbd> to exit fullscreen
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="ship-dashboard-overlay"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 150;
+        background: #f7f5f1;
+        overflow-y: auto;
+      "
+    ></div>
+
+    <script src="script/user-dashboard.js"></script>
+
+    <script>
+      /* ── Drawer helpers ──────────────────────────────── */
+      function openDrawer() {
+        document.getElementById("navDrawer").classList.add("open");
+        document.getElementById("drawerOverlay").classList.add("open");
+        document.body.style.overflow = "hidden";
+      }
+      function closeDrawer() {
+        document.getElementById("navDrawer").classList.remove("open");
+        document.getElementById("drawerOverlay").classList.remove("open");
+        document.body.style.overflow = "";
+      }
+      /* Close drawer on Escape */
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") closeDrawer();
+      });
+
+      /* ── Drawer nav active state ─────────────────────── */
+      function navTo(page) {
+        closeDrawer();
+        /* Mirror the existing dashboard nav click */
+        var el = document.getElementById("nav-" + page);
+        if (el) el.click();
+        /* Sync drawer active state */
+        document.querySelectorAll(".nav-drawer-links a").forEach(function (a) {
+          a.classList.toggle("active", a.getAttribute("data-page") === page);
+        });
+        /* Sync bottom tab active state */
+        document.querySelectorAll(".bottom-tab-item").forEach(function (b) {
+          b.classList.toggle("active", b.getAttribute("data-page") === page);
+        });
+      }
+
+      /* ── Badge sync ──────────────────────────────────── */
+      var _origUpdateGlobalBadge = window.updateGlobalBadge;
+      window.updateGlobalBadge = function (n) {
+        if (typeof _origUpdateGlobalBadge === "function")
+          _origUpdateGlobalBadge(n);
+        /* Drawer badge */
+        var db = document.getElementById("drawer-mail-badge");
+        if (db) {
+          if (n > 0) {
+            db.textContent = n > 99 ? "99+" : n;
+            db.style.display = "inline-block";
+          } else {
+            db.style.display = "none";
+          }
+        }
+        /* Bottom tab badge */
+        var btb = document.getElementById("bottom-tab-badge");
+        if (btb) {
+          btb.textContent = n > 99 ? "99+" : n;
+          n > 0
+            ? btb.classList.add("visible")
+            : btb.classList.remove("visible");
+        }
+      };
+    </script>
+  </body>
 </html>

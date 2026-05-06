@@ -38,8 +38,8 @@ app.use(
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       scriptSrcAttr: ["'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "blob:"],
-      frameSrc: ["'self'", "blob:", "data:"],
+      imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
+      frameSrc: ["'self'", "blob:", "data:", "https://res.cloudinary.com"],
     },
   }),
 );

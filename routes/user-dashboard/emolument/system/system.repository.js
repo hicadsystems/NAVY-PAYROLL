@@ -1,15 +1,15 @@
+"use strict";
+
 /**
  * FILE: routes/user-dashboard/emolument/system/system.repository.js
  *
- * All SQL for emolument system control:
- *   - Global open / close (ef_systeminfos)
- *   - Per-ship open / close (ef_ships.openship)
- *   - Processing year (ef_control)
- *   - Form number counters (ef_systeminfos)
- *   - Reference data reads (ships, commands)
+ * All SQL for ef_control CRUD.
+ * This is now the single source of truth for emolument open/close state.
+ *
+ * Table columns (after migration):
+ *   Id, processingyear, ship, formtype, startdate, enddate,
+ *   status, notes, createdby, datecreated, updatedby, updatedat
  */
-
-"use strict";
 
 const pool = require("../../../../config/db");
 const config = require("../../../../config");
@@ -17,175 +17,166 @@ const config = require("../../../../config");
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 
 // ─────────────────────────────────────────────────────────────
-// ef_systeminfos — single-row config table
+// READ
 // ─────────────────────────────────────────────────────────────
 
-async function getSystemInfo() {
-  pool.useDatabase(DB());
-  const [rows] = await pool.query(
-    `SELECT
-       SiteStatus, opendate, closedate,
-       OfficersFormNo, RatingsFormNo, TrainingFormNo,
-       comp_name, Address, email, tel
-     FROM ef_systeminfos LIMIT 1`,
-  );
-  return rows[0] || null;
-}
-
-async function setGlobalStatus(status, opendate, closedate) {
-  pool.useDatabase(DB());
-  const [result] = await pool.query(
-    `UPDATE ef_systeminfos
-     SET SiteStatus = ?,
-         opendate   = ?,
-         closedate  = ?`,
-    [status, opendate, closedate],
-  );
-  return result.affectedRows > 0;
-}
-
-async function setFormCounters(officersNo, ratingsNo, trainingNo) {
-  pool.useDatabase(DB());
-  const [result] = await pool.query(
-    `UPDATE ef_systeminfos
-     SET OfficersFormNo = ?,
-         RatingsFormNo  = ?,
-         TrainingFormNo = ?`,
-    [officersNo, ratingsNo, trainingNo],
-  );
-  return result.affectedRows > 0;
-}
-
-// ─────────────────────────────────────────────────────────────
-// ef_ships — per-ship open/close
-// ─────────────────────────────────────────────────────────────
-
-async function getShipByName(shipName) {
-  pool.useDatabase(DB());
-  const [rows] = await pool.query(
-    `SELECT Id, shipName, openship, commandid
-     FROM ef_ships WHERE shipName = ? LIMIT 1`,
-    [shipName],
-  );
-  return rows[0] || null;
-}
-
-async function getShipById(shipId) {
-  pool.useDatabase(DB());
-  const [rows] = await pool.query(
-    `SELECT Id, shipName, openship, commandid
-     FROM ef_ships WHERE Id = ? LIMIT 1`,
-    [shipId],
-  );
-  return rows[0] || null;
-}
-
-async function setShipOpenStatus(shipId, openship) {
-  pool.useDatabase(DB());
-  const [result] = await pool.query(
-    `UPDATE ef_ships SET openship = ? WHERE Id = ?`,
-    [openship ? 1 : 0, shipId],
-  );
-  return result.affectedRows > 0;
-}
-
-async function setAllShipsStatus(openship) {
-  pool.useDatabase(DB());
-  const [result] = await pool.query(`UPDATE ef_ships SET openship = ?`, [
-    openship ? 1 : 0,
-  ]);
-  return result.affectedRows;
-}
-
-async function getAllShips() {
-  pool.useDatabase(DB());
-  const [rows] = await pool.query(
-    `SELECT s.Id, s.shipName, s.openship, s.LandSea,
-            c.commandName, c.code AS commandCode
-     FROM ef_ships s
-     LEFT JOIN ef_commands c ON c.Id = s.commandid
-     ORDER BY c.commandName ASC, s.shipName ASC`,
-  );
-  return rows;
-}
-
-async function getShipsByCommand(commandCode) {
-  pool.useDatabase(DB());
-  const [rows] = await pool.query(
-    `SELECT s.Id, s.shipName, s.openship, s.LandSea
-     FROM ef_ships s
-     JOIN ef_commands c ON c.Id = s.commandid
-     WHERE c.code = ?
-     ORDER BY s.shipName ASC`,
-    [commandCode],
-  );
-  return rows;
-}
-
-// ─────────────────────────────────────────────────────────────
-// ef_control — processing year
-// ─────────────────────────────────────────────────────────────
-
+/**
+ * Return every ef_control row ordered by processingyear DESC, Id ASC.
+ */
 async function getAllControlRows() {
   pool.useDatabase(DB());
   const [rows] = await pool.query(
-    `SELECT Id, ship, startdate, enddate, status, processingyear, createdby, datecreated
+    `SELECT
+       Id, processingyear, ship, formtype,
+       startdate, enddate, status, notes,
+       createdby, datecreated, updatedby, updatedat
      FROM ef_control
-     ORDER BY Id ASC`,
+     ORDER BY processingyear DESC, Id ASC`,
   );
   return rows;
 }
 
-async function getProcessingYear(isTraining = false) {
+/**
+ * Return a single ef_control row by primary key.
+ */
+async function getControlRowById(id) {
   pool.useDatabase(DB());
-  const where = isTraining ? `WHERE ship = 'All'` : "";
   const [rows] = await pool.query(
-    `SELECT DISTINCT processingyear FROM ef_control ${where} LIMIT 1`,
+    `SELECT
+       Id, processingyear, ship, formtype,
+       startdate, enddate, status, notes,
+       createdby, datecreated, updatedby, updatedat
+     FROM ef_control
+     WHERE Id = ? LIMIT 1`,
+    [id],
   );
-  return rows[0]?.processingyear || null;
+  return rows[0] || null;
 }
 
-async function setProcessingYear(year, createdBy, isTraining = false) {
+/**
+ * Resolve the effective open/close state for a given ship + formtype.
+ *
+ * Priority:
+ *   1. Exact ship + formtype match
+ *   2. Exact ship + formtype = 'ALL'
+ *   3. ship = 'All' + formtype match
+ *   4. ship = 'All' + formtype = 'ALL'   ← global fallback
+ *
+ * Returns the winning row or null if no row exists at all.
+ */
+async function resolveEffectiveStatus(shipName, formtype) {
   pool.useDatabase(DB());
-
-  // Check if a row already exists for this context
-  const where = isTraining ? `ship = 'All'` : `ship != 'All' OR ship IS NULL`;
-  const [existing] = await pool.query(
-    `SELECT Id FROM ef_control WHERE ${where} LIMIT 1`,
+  const [rows] = await pool.query(
+    `SELECT Id, ship, formtype, status, startdate, enddate, processingyear
+     FROM ef_control
+     WHERE NOW() BETWEEN startdate AND enddate
+     ORDER BY
+       (ship = ? AND formtype = ?)    DESC,
+       (ship = ? AND formtype = 'ALL') DESC,
+       (ship = 'All' AND formtype = ?) DESC,
+       (ship = 'All' AND formtype = 'ALL') DESC
+     LIMIT 1`,
+    [shipName, formtype, shipName, formtype],
   );
+  return rows[0] || null;
+}
 
-  if (existing.length > 0) {
-    const [result] = await pool.query(
-      `UPDATE ef_control SET processingyear = ? WHERE ${where}`,
-      [String(year)],
-    );
-    return result.affectedRows > 0;
-  }
+// ─────────────────────────────────────────────────────────────
+// CREATE
+// ─────────────────────────────────────────────────────────────
 
-  // Insert new row
-  const shipVal = isTraining ? "All" : null;
+/**
+ * Insert a new ef_control row.
+ * Returns the newly created Id.
+ */
+async function createControlRow({
+  processingyear,
+  ship,
+  formtype,
+  startdate,
+  enddate,
+  status,
+  notes,
+  createdby,
+}) {
+  pool.useDatabase(DB());
   const [result] = await pool.query(
-    `INSERT INTO ef_control (ship, startdate, enddate, status, processingyear, createdby, datecreated)
-     VALUES (?, NOW(), NOW(), 'active', ?, ?, NOW())`,
-    [shipVal, String(year), createdBy],
+    `INSERT INTO ef_control
+       (processingyear, ship, formtype, startdate, enddate, status, notes, createdby, datecreated)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+    [
+      String(processingyear),
+      ship || "All",
+      formtype || "ALL",
+      startdate,
+      enddate,
+      status || "Open",
+      notes || null,
+      createdby,
+    ],
+  );
+  return result.insertId;
+}
+
+// ─────────────────────────────────────────────────────────────
+// UPDATE
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Update an existing ef_control row by Id.
+ * Returns true if a row was modified.
+ */
+async function updateControlRow(
+  id,
+  { processingyear, ship, formtype, startdate, enddate, status, notes, updatedby },
+) {
+  pool.useDatabase(DB());
+  const [result] = await pool.query(
+    `UPDATE ef_control
+     SET processingyear = ?,
+         ship           = ?,
+         formtype       = ?,
+         startdate      = ?,
+         enddate        = ?,
+         status         = ?,
+         notes          = ?,
+         updatedby      = ?,
+         updatedat      = NOW()
+     WHERE Id = ?`,
+    [
+      String(processingyear),
+      ship || "All",
+      formtype || "ALL",
+      startdate,
+      enddate,
+      status || "Open",
+      notes || null,
+      updatedby,
+      id,
+    ],
   );
   return result.affectedRows > 0;
 }
 
 // ─────────────────────────────────────────────────────────────
-// ef_commands — reference
+// DELETE
 // ─────────────────────────────────────────────────────────────
 
-async function getAllCommands() {
+/**
+ * Hard-delete a control row by Id.
+ * Returns true if a row was removed.
+ */
+async function deleteControlRow(id) {
   pool.useDatabase(DB());
-  const [rows] = await pool.query(
-    `SELECT Id, code, commandName FROM ef_commands ORDER BY commandName ASC`,
+  const [result] = await pool.query(
+    `DELETE FROM ef_control WHERE Id = ?`,
+    [id],
   );
-  return rows;
+  return result.affectedRows > 0;
 }
 
 // ─────────────────────────────────────────────────────────────
-// AUDIT
+// AUDIT (re-uses the shared pattern from system.repository)
 // ─────────────────────────────────────────────────────────────
 
 async function insertAuditLog({
@@ -215,18 +206,11 @@ async function insertAuditLog({
 }
 
 module.exports = {
-  getSystemInfo,
-  setGlobalStatus,
-  setFormCounters,
-  getShipByName,
-  getShipById,
-  setShipOpenStatus,
-  setAllShipsStatus,
-  getAllShips,
-  getShipsByCommand,
   getAllControlRows,
-  getProcessingYear,
-  setProcessingYear,
-  getAllCommands,
+  getControlRowById,
+  resolveEffectiveStatus,
+  createControlRow,
+  updateControlRow,
+  deleteControlRow,
   insertAuditLog,
 };

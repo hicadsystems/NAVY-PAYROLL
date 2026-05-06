@@ -1,22 +1,165 @@
-<div class="max-w-2xl mx-auto">
-  <div class="mb-2 md:mb-4 lg:mb-6">
+<!-- FILE: emolument-sections/form/ticket.html
+     Endpoints: POST /tickets   GET /tickets/mine -->
+
+<style>
+  .tk-badge {
+    display: inline-block;
+    font-size: 0.55rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  .tk-open {
+    background: rgba(245, 158, 11, 0.12);
+    color: #92400e;
+  }
+
+  .tk-responded {
+    background: rgba(34, 197, 94, 0.12);
+    color: #166534;
+  }
+
+  .tk-closed {
+    background: rgba(100, 116, 139, 0.12);
+    color: #475569;
+  }
+
+  .tk-card {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .tk-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .tk-subject {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: rgb(30 64 175);
+    line-height: 1.3;
+  }
+
+  .tk-meta {
+    font-size: 0.62rem;
+    color: rgba(30, 64, 175, 0.4);
+    margin-top: 2px;
+  }
+
+  .tk-body-text {
+    font-size: 0.75rem;
+    color: rgba(30, 64, 175, 0.65);
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+  }
+
+  .tk-response-box {
+    background: rgba(34, 197, 94, 0.06);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    border-radius: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .tk-response-lbl {
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #166534;
+    margin-bottom: 0.25rem;
+  }
+
+  .tk-response-text {
+    font-size: 0.75rem;
+    color: #166534;
+    line-height: 1.5;
+  }
+
+  .tk-response-by {
+    font-size: 0.6rem;
+    color: rgba(22, 101, 52, 0.6);
+    margin-top: 0.25rem;
+  }
+
+  .tk-empty {
+    text-align: center;
+    padding: 2rem 0;
+    font-size: 0.8rem;
+    color: rgba(30, 64, 175, 0.3);
+  }
+
+  .tk-sk {
+    display: inline-block;
+    background: rgba(251, 191, 36, 0.18);
+    border-radius: 0.25rem;
+    animation: tk-pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes tk-pulse {
+
+    0%,
+    100% {
+      opacity: 1
+    }
+
+    50% {
+      opacity: .4
+    }
+  }
+
+  .tk-divider {
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(30, 64, 175, 0.3);
+    margin: 1.25rem 0 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .tk-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(251, 191, 36, 0.2);
+  }
+</style>
+
+<div class="p-2 md:p-4 lg:p-6 max-w-2xl mx-auto">
+
+  <div class="mb-4">
     <h2 class="text-xl font-black text-navy">Support Ticket</h2>
-    <p class="text-[10px] md:text-sm text-blue-900/50 mt-1">Report issues or request assistance</p>
+    <p class="text-xs text-blue-900/50 mt-1">Report issues or request assistance. We'll respond as soon as possible.</p>
   </div>
 
-  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
+  <!-- Submit form -->
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-2">
     <h3 class="font-bold text-navy text-sm mb-4 uppercase tracking-wide">Submit a Ticket</h3>
 
-    <div class="space-y-4">
+    <div class="space-y-3">
       <div>
         <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Subject</label>
-        <select id="ticketSubject" class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy">
+        <select id="ticketSubject"
+          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy">
           <option value="">— Select issue type —</option>
-          <option value="form-locked">Form is locked / cannot edit</option>
-          <option value="form-rejected">Form rejected — need clarification</option>
-          <option value="wrong-data">Wrong personal data on file</option>
-          <option value="status-stuck">Approval status not updating</option>
-          <option value="other">Other</option>
+          <option value="Form is locked / cannot edit">Form is locked / cannot edit</option>
+          <option value="Form rejected — need clarification">Form rejected — need clarification</option>
+          <option value="Wrong personal data on file">Wrong personal data on file</option>
+          <option value="Approval status not updating">Approval status not updating</option>
+          <option value="Other">Other</option>
         </select>
       </div>
 
@@ -26,41 +169,139 @@
           class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy resize-none"></textarea>
       </div>
 
-      <button onclick="submitTicket()"
+      <div id="tk-submit-msg" class="hidden p-3 rounded-lg text-sm font-semibold"></div>
+
+      <button onclick="tkSubmit()" id="tk-submit-btn"
         class="w-full py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
         <i class="fas fa-paper-plane mr-2"></i>Submit Ticket
       </button>
     </div>
   </div>
 
-  <div id="ticketConfirm" class="hidden bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-700">
-    <i class="fas fa-check-circle mr-2"></i>Your ticket has been submitted. An administrator will respond shortly.
+  <!-- My tickets -->
+  <div class="tk-divider">My Tickets</div>
+
+  <div id="tk-list">
+    <div class="tk-empty">
+      <span class="tk-sk" style="width:180px;height:12px;display:block;margin:0 auto 8px;"></span>
+      <span class="tk-sk" style="width:120px;height:10px;display:block;margin:0 auto;"></span>
+    </div>
   </div>
+
 </div>
 
 <script>
-function submitTicket() {
-  const subject = document.getElementById('ticketSubject').value;
-  const body    = document.getElementById('ticketBody').value;
-  if (!subject || !body.trim()) {
-    alert('Please select a subject and describe your issue.');
-    return;
-  }
-  const token = localStorage.getItem('token');
-  if (!token) return;
+  (function () {
+    var TOKEN = localStorage.getItem('token');
 
-  fetch('/form/ticket', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-    body: JSON.stringify({ subject, body })
-  })
-  .then(r => {
-    document.getElementById('ticketConfirm').classList.remove('hidden');
-    document.getElementById('ticketSubject').value = '';
-    document.getElementById('ticketBody').value = '';
-  })
-  .catch(() => {
-    document.getElementById('ticketConfirm').classList.remove('hidden');
-  });
-}
+    var SUBJECT_LABELS = {
+      'form-locked': 'Form is locked / cannot edit',
+      'form-rejected': 'Form rejected — need clarification',
+      'wrong-data': 'Wrong personal data on file',
+      'status-stuck': 'Approval status not updating',
+      'other': 'Other',
+    };
+
+    function fmtDate(d) {
+      if (!d) return '';
+      return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    /* ── Submit ── */
+    window.tkSubmit = function () {
+      var subject = document.getElementById('ticketSubject').value;
+      var body = document.getElementById('ticketBody').value.trim();
+      var msg = document.getElementById('tk-submit-msg');
+      var btn = document.getElementById('tk-submit-btn');
+
+      if (!subject || !body) {
+        msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600';
+        msg.textContent = 'Please select a subject and describe your issue.';
+        msg.classList.remove('hidden');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
+
+      fetch('/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
+        body: JSON.stringify({ subject: subject, body: body }),
+      })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (res.ok) {
+            msg.className = 'p-3 rounded-lg text-sm font-semibold bg-green-50 text-green-700';
+            msg.textContent = 'Ticket submitted. An administrator will respond shortly.';
+            document.getElementById('ticketSubject').value = '';
+            document.getElementById('ticketBody').value = '';
+            tkLoadMine();
+          } else {
+            msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600';
+            msg.textContent = res.d.error || 'Submission failed. Please try again.';
+          }
+          msg.classList.remove('hidden');
+        })
+        .catch(function () {
+          msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600';
+          msg.textContent = 'Server error. Please try again.';
+          msg.classList.remove('hidden');
+        })
+        .finally(function () {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Submit Ticket';
+        });
+    };
+
+    /* ── Load my tickets ── */
+    function tkLoadMine() {
+      if (!TOKEN) return;
+      var el = document.getElementById('tk-list');
+
+      fetch('/tickets/mine', { headers: { Authorization: 'Bearer ' + TOKEN } })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (rows) {
+          if (!rows.length) {
+            el.innerHTML = '<div class="tk-empty">No tickets submitted yet.</div>';
+            return;
+          }
+          el.innerHTML = rows.map(function (t) {
+            var subjectLbl = SUBJECT_LABELS[t.subject] || t.subject;
+            var statusCls = t.status === 'responded' ? 'tk-responded' : t.status === 'closed' ? 'tk-closed' : 'tk-open';
+            var responseHtml = '';
+            if (t.response) {
+              responseHtml =
+                '<div class="tk-response-box">' +
+                '<div class="tk-response-lbl"><i class="fas fa-reply mr-1"></i>Admin Response</div>' +
+                '<div class="tk-response-text">' + escHtml(t.response) + '</div>' +
+                '<div class="tk-response-by">— ' + escHtml(t.responded_by || 'Admin') + ' · ' + fmtDate(t.responded_at) + '</div>' +
+                '</div>';
+            }
+            return '<div class="tk-card">' +
+              '<div class="tk-card-head">' +
+              '<div>' +
+              '<div class="tk-subject">' + escHtml(subjectLbl) + '</div>' +
+              '<div class="tk-meta">Submitted ' + fmtDate(t.created_at) + '</div>' +
+              '</div>' +
+              '<span class="tk-badge ' + statusCls + '">' + t.status + '</span>' +
+              '</div>' +
+              '<div class="tk-body-text">' + escHtml(t.body) + '</div>' +
+              responseHtml +
+              '</div>';
+          }).join('');
+        })
+        .catch(function () {
+          el.innerHTML = '<div class="tk-empty" style="color:#f87171;">Failed to load tickets.</div>';
+        });
+    }
+
+    function escHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    tkLoadMine();
+  })();
 </script>

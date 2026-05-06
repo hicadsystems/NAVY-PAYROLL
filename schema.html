@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hub — Complete Database Schema</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080B10;
+      --surface: #0E1218;
+      --surface2: #141920;
+      --surface3: #1A2030;
+      --border: #1E2535;
+      --border2: #28334A;
+      --text: #DDE4F0;
+      --muted: #7A8BA8;
+      --faint: #3D4E68;
+      --mono: 'IBM Plex Mono', monospace;
+      --display: 'Syne', 'IBM Plex Mono', sans-serif
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      min-height: 100vh
+    }
+
+    .header {
+      padding: 22px 28px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: linear-gradient(180deg, #0B1018 0%, var(--bg) 100%)
+    }
+
+    .title-block h1 {
+      font-family: var(--display);
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: var(--text)
+    }
+
+    .title-block p {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 3px;
+      letter-spacing: .5px
+    }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap
+    }
+
+    .leg {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: .3px
+    }
+
+    .leg-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px
+    }
+
+    .stats {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto
+    }
+
+    .stat {
+      padding: 10px 20px;
+      border-right: 1px solid var(--border);
+      white-space: nowrap;
+      flex-shrink: 0
+    }
+
+    .stat-num {
+      font-family: var(--display);
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      display: block;
+      line-height: 1.1
+    }
+
+    .stat-label {
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: .8px;
+      text-transform: uppercase
+    }
+
+    .schema-bar {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--border);
+      padding: 0 28px;
+      background: var(--surface)
+    }
+
+    .schema-tab {
+      padding: 10px 18px;
+      font-size: 10px;
+      font-family: var(--display);
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--faint);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color .15s, border-color .15s;
+      white-space: nowrap
+    }
+
+    .schema-tab:hover {
+      color: var(--muted)
+    }
+
+    .schema-tab.active {
+      color: var(--text);
+      border-bottom-color: var(--text)
+    }
+
+    .domain-bar {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      padding: 12px 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface)
+    }
+
+    .dtab {
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      transition: all .15s;
+      white-space: nowrap;
+      font-family: var(--mono)
+    }
+
+    .dtab:hover {
+      border-color: var(--border2);
+      color: var(--text)
+    }
+
+    .main {
+      padding: 20px 28px;
+      overflow-x: auto
+    }
+
+    .domain-section {
+      display: none
+    }
+
+    .domain-section.visible {
+      display: block
+    }
+
+    .domain-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .domain-title {
+      font-family: var(--display);
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -.2px
+    }
+
+    .domain-sub {
+      font-size: 10px;
+      color: var(--muted)
+    }
+
+    .domain-count {
+      font-size: 9px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      background: var(--surface2);
+      color: var(--muted);
+      margin-left: auto;
+      white-space: nowrap
+    }
+
+    .tbl-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 20px
+    }
+
+    .tbl-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      min-width: 220px;
+      max-width: 280px;
+      flex: 1 1 220px;
+      overflow: hidden;
+      transition: border-color .2s, box-shadow .2s
+    }
+
+    .tbl-card:hover {
+      border-color: var(--border2);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, .4)
+    }
+
+    .tbl-head {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between
+    }
+
+    .tbl-name {
+      font-family: var(--display);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text)
+    }
+
+    .tbl-cols {
+      padding: 4px 0
+    }
+
+    .col {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      padding: 3px 12px;
+      transition: background .1s
+    }
+
+    .col:hover {
+      background: var(--surface2)
+    }
+
+    .badge {
+      font-size: 8px;
+      font-weight: 600;
+      padding: 1px 4px;
+      border-radius: 2px;
+      min-width: 20px;
+      text-align: center;
+      letter-spacing: .2px;
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, .04);
+      color: var(--faint);
+      border: 1px solid rgba(255, 255, 255, .06)
+    }
+
+    .pk {
+      background: rgba(251, 191, 36, .12);
+      color: #FBBF24;
+      border: 1px solid rgba(251, 191, 36, .2)
+    }
+
+    .fk {
+      background: rgba(96, 165, 250, .12);
+      color: #60A5FA;
+      border: 1px solid rgba(96, 165, 250, .2)
+    }
+
+    .idx {
+      background: rgba(52, 211, 153, .12);
+      color: #34D399;
+      border: 1px solid rgba(52, 211, 153, .2)
+    }
+
+    .col-n {
+      color: var(--text);
+      flex: 1;
+      font-size: 11px
+    }
+
+    .col-t {
+      color: var(--faint);
+      font-size: 9px
+    }
+
+    .rels-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 4px
+    }
+
+    .rels-head {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted)
+    }
+
+    .rels-body {
+      padding: 6px 0
+    }
+
+    .rel {
+      display: flex;
+      align-items: center;
+      padding: 4px 14px;
+      font-size: 10px;
+      font-family: var(--mono)
+    }
+
+    .rel:hover {
+      background: var(--surface2)
+    }
+
+    .rf {
+      color: #67E8F9;
+      min-width: 160px
+    }
+
+    .rc {
+      color: var(--faint);
+      padding: 0 10px;
+      font-size: 11px;
+      min-width: 80px;
+      text-align: center
+    }
+
+    .rt {
+      color: #F9A8D4;
+      min-width: 160px
+    }
+
+    .rn {
+      color: var(--faint);
+      font-size: 9px;
+      padding-left: 10px;
+      font-style: italic
+    }
+
+    .all-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px
+    }
+
+    .mini-domain {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      min-width: 170px;
+      flex: 1 1 170px;
+      max-width: 230px
+    }
+
+    .mini-domain-title {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--display)
+    }
+
+    .mini-tbl {
+      font-size: 10px;
+      color: var(--muted);
+      padding: 2px 0;
+      transition: color .1s;
+      cursor: default
+    }
+
+    .mini-tbl:hover {
+      color: var(--text)
+    }
+
+    .schema-label {
+      font-family: var(--display);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--faint);
+      padding: 16px 0 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px
+    }
+
+    .schema-label:not(:first-child) {
+      margin-top: 28px
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <div class="title-block">
+      <h1>Hub — Database Schema</h1>
+      <p>109 unique table definitions · shared (38) + per-business (71 × 2 schemas) = 180 physical tables</p>
+    </div>
+    <div class="legend">
+      <div class="leg">
+        <div class="leg-dot" style="background:#FBBF24"></div>Primary Key
+      </div>
+      <div class="leg">
+        <div class="leg-dot" style="background:#60A5FA"></div>Foreign Key
+      </div>
+      <div class="leg">
+        <div class="leg-dot" style="background:#34D399"></div>Indexed
+      </div>
+      <div class="leg">
+        <div class="leg-dot" style="background:#3D4E68"></div>Column
+      </div>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><span class="stat-num">180</span><span class="stat-label">Physical Tables</span></div>
+    <div class="stat"><span class="stat-num">109</span><span class="stat-label">Unique Defs</span></div>
+    <div class="stat"><span class="stat-num">38</span><span class="stat-label">Shared Schema</span></div>
+    <div class="stat"><span class="stat-num">71</span><span class="stat-label">Per-Business</span></div>
+    <div class="stat"><span class="stat-num">2</span><span class="stat-label">Business Schemas</span></div>
+    <div class="stat"><span class="stat-num">18</span><span class="stat-label">Domain Groups</span></div>
+  </div>
+  <div class="schema-bar">
+    <div class="schema-tab active" data-schema="shared">Shared Schema (38)</div>
+    <div class="schema-tab" data-schema="business">Per-Business Schema (71)</div>
+    <div class="schema-tab" data-schema="all">Full Domain Map</div>
+  </div>
+  <div class="domain-bar" id="domainBar"></div>
+  <div class="main" id="main"></div>
+
+  <script>
+    const SD = [
+      {
+        id: 'auth', label: 'Auth & People', color: '#60A5FA', desc: 'Identity, sessions, roles, permissions, staff employment records', tables: [
+          { name: 'contacts', cols: [{ b: 'PK', n: 'contact_id', t: 'UUID' }, { b: 'IDX', n: 'contact_type', t: 'TEXT[]' }, { b: '', n: 'display_name', t: 'TEXT' }, { b: 'IDX', n: 'primary_phone', t: 'TEXT' }, { b: 'IDX', n: 'email', t: 'TEXT' }, { b: 'FK', n: 'assigned_to', t: '→ users' }, { b: '', n: 'priority_level', t: 'TEXT' }, { b: '', n: 'addresses', t: 'JSONB' }, { b: '', n: 'custom_fields', t: 'JSONB' }, { b: 'IDX', n: 'is_deleted', t: 'BOOL' }] },
+          { name: 'contact_addresses', cols: [{ b: 'PK', n: 'address_id', t: 'UUID' }, { b: 'FK', n: 'contact_id', t: '→ contacts' }, { b: '', n: 'address_type', t: 'TEXT' }, { b: '', n: 'line1', t: 'TEXT' }, { b: '', n: 'city', t: 'TEXT' }, { b: '', n: 'state', t: 'TEXT' }, { b: '', n: 'country', t: 'TEXT' }, { b: '', n: 'is_default', t: 'BOOL' }] },
+          { name: 'contact_tags', cols: [{ b: 'PK', n: 'tag_id', t: 'UUID' }, { b: 'FK', n: 'contact_id', t: '→ contacts' }, { b: '', n: 'tag_name', t: 'TEXT' }, { b: '', n: 'business', t: 'TEXT' }, { b: '', n: 'colour', t: 'TEXT' }] },
+          { name: 'users', cols: [{ b: 'PK', n: 'user_id', t: 'UUID' }, { b: 'IDX', n: 'email', t: 'TEXT UNIQUE' }, { b: '', n: 'password_hash', t: 'TEXT' }, { b: 'FK', n: 'staff_profile_id', t: '→ staff_profiles' }, { b: '', n: 'is_active', t: 'BOOL' }, { b: '', n: 'default_business', t: 'TEXT' }, { b: '', n: 'permitted_businesses', t: 'TEXT[]' }, { b: '', n: 'failed_login_attempts', t: 'SMALLINT' }, { b: '', n: 'locked_until', t: 'TIMESTAMPTZ' }] },
+          { name: 'user_sessions', cols: [{ b: 'PK', n: 'session_id', t: 'UUID' }, { b: 'FK', n: 'user_id', t: '→ users' }, { b: 'IDX', n: 'session_token', t: 'TEXT UNIQUE' }, { b: '', n: 'ip_address', t: 'TEXT' }, { b: '', n: 'user_agent', t: 'TEXT' }, { b: '', n: 'expires_at', t: 'TIMESTAMPTZ' }] },
+          { name: 'refresh_tokens', cols: [{ b: 'PK', n: 'token_id', t: 'UUID' }, { b: 'FK', n: 'user_id', t: '→ users' }, { b: 'IDX', n: 'token_hash', t: 'TEXT UNIQUE' }, { b: '', n: 'expires_at', t: 'TIMESTAMPTZ' }, { b: '', n: 'revoked_at', t: 'TIMESTAMPTZ' }] },
+          { name: 'roles', cols: [{ b: 'PK', n: 'role_id', t: 'UUID' }, { b: '', n: 'role_name', t: 'TEXT' }, { b: '', n: 'business', t: 'TEXT' }, { b: '', n: 'is_system', t: 'BOOL' }, { b: '', n: 'description', t: 'TEXT' }] },
+          { name: 'permissions', cols: [{ b: 'PK', n: 'permission_id', t: 'UUID' }, { b: 'FK', n: 'role_id', t: '→ roles' }, { b: '', n: 'module', t: 'TEXT' }, { b: '', n: 'action', t: 'TEXT' }, { b: '', n: 'record_scope', t: 'TEXT' }, { b: '', n: 'hidden_fields', t: 'TEXT[]' }] },
+          { name: 'user_roles', cols: [{ b: 'FK', n: 'user_id', t: '→ users (PK)' }, { b: 'FK', n: 'role_id', t: '→ roles (PK)' }, { b: '', n: 'business', t: 'TEXT (PK)' }, { b: 'FK', n: 'granted_by', t: '→ users' }, { b: '', n: 'expires_at', t: 'TIMESTAMPTZ' }] },
+          { name: 'staff_profiles', cols: [{ b: 'PK', n: 'profile_id', t: 'UUID' }, { b: 'FK', n: 'contact_id', t: '→ contacts UNIQUE' }, { b: '', n: 'employee_number', t: 'TEXT UNIQUE' }, { b: '', n: 'business', t: 'TEXT' }, { b: '', n: 'job_title', t: 'TEXT' }, { b: '', n: 'employment_type', t: 'TEXT' }, { b: '', n: 'base_salary', t: 'NUMERIC(12,2)' }, { b: 'FK', n: 'reports_to', t: '→ staff_profiles' }, { b: '', n: 'start_date', t: 'DATE' }, { b: '', n: 'end_date', t: 'DATE' }] },
+          { name: 'staff_contracts', cols: [{ b: 'PK', n: 'contract_id', t: 'UUID' }, { b: 'FK', n: 'profile_id', t: '→ staff_profiles' }, { b: '', n: 'contract_type', t: 'TEXT' }, { b: '', n: 'effective_from', t: 'DATE' }, { b: '', n: 'effective_to', t: 'DATE' }, { b: '', n: 'gross_salary', t: 'NUMERIC(12,2)' }, { b: 'FK', n: 'document_id', t: '→ documents' }] },
+          { name: 'staff_assets', cols: [{ b: 'PK', n: 'asset_id', t: 'UUID' }, { b: 'FK', n: 'profile_id', t: '→ staff_profiles' }, { b: '', n: 'asset_type', t: 'TEXT' }, { b: '', n: 'description', t: 'TEXT' }, { b: '', n: 'serial_number', t: 'TEXT' }, { b: '', n: 'issued_date', t: 'DATE' }, { b: '', n: 'returned_date', t: 'DATE' }] },
+          { name: 'leave_requests', cols: [{ b: 'PK', n: 'leave_id', t: 'UUID' }, { b: 'FK', n: 'profile_id', t: '→ staff_profiles' }, { b: '', n: 'leave_type', t: 'TEXT' }, { b: '', n: 'start_date', t: 'DATE' }, { b: '', n: 'end_date', t: 'DATE' }, { b: '', n: 'days_requested', t: 'SMALLINT' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: 'FK', n: 'approved_by', t: '→ users' }] },
+        ], rels: [
+          { f: 'contacts', c: '1 ──< N', t: 'contact_addresses', n: 'multiple addresses' },
+          { f: 'contacts', c: '1 ──< N', t: 'contact_tags', n: 'flexible labelling' },
+          { f: 'contacts', c: '1 ──║ 1', t: 'staff_profiles', n: 'staff is a contact subtype' },
+          { f: 'staff_profiles', c: '↩ self', t: 'staff_profiles', n: 'reporting hierarchy' },
+          { f: 'staff_profiles', c: '1 ──< N', t: 'staff_contracts', n: 'employment history' },
+          { f: 'staff_profiles', c: '1 ──< N', t: 'staff_assets', n: 'issued equipment' },
+          { f: 'staff_profiles', c: '1 ──< N', t: 'leave_requests', n: 'leave management' },
+          { f: 'staff_profiles', c: '1 ──║ 1', t: 'users', n: 'login account' },
+          { f: 'users', c: 'M >──< N', t: 'roles', n: 'via user_roles junction' },
+          { f: 'roles', c: '1 ──< N', t: 'permissions', n: 'permission matrix' },
+          { f: 'users', c: '1 ──< N', t: 'user_sessions', n: 'active sessions' },
+          { f: 'users', c: '1 ──< N', t: 'refresh_tokens', n: 'JWT refresh' },
+        ]
+      },
+      {
+        id: 'docs', label: 'Docs & Comms', color: '#34D399', desc: 'Document storage, messaging channels, notifications, email signatures', tables: [
+          { name: 'documents', cols: [{ b: 'PK', n: 'document_id', t: 'UUID' }, { b: '', n: 'filename', t: 'TEXT' }, { b: '', n: 'mime_type', t: 'TEXT' }, { b: '', n: 'file_size', t: 'BIGINT' }, { b: '', n: 'storage_path', t: 'TEXT' }, { b: '', n: 'public_url', t: 'TEXT' }, { b: 'FK', n: 'uploaded_by', t: '→ users' }, { b: '', n: 'is_deleted', t: 'BOOL' }] },
+          { name: 'document_tags', cols: [{ b: 'PK', n: 'tag_id', t: 'UUID' }, { b: 'FK', n: 'document_id', t: '→ documents' }, { b: '', n: 'tag_name', t: 'TEXT' }, { b: 'FK', n: 'tagged_by', t: '→ users' }] },
+          { name: 'email_signatures', cols: [{ b: 'PK', n: 'signature_id', t: 'UUID' }, { b: 'FK', n: 'user_id', t: '→ users' }, { b: '', n: 'name', t: 'TEXT' }, { b: '', n: 'html_content', t: 'TEXT' }, { b: '', n: 'is_default', t: 'BOOL' }] },
+          { name: 'message_channels', cols: [{ b: 'PK', n: 'channel_id', t: 'UUID' }, { b: '', n: 'channel_type', t: 'TEXT' }, { b: '', n: 'name', t: 'TEXT' }, { b: '', n: 'business', t: 'TEXT' }, { b: '', n: 'is_archived', t: 'BOOL' }, { b: '', n: 'metadata', t: 'JSONB' }] },
+          { name: 'channel_members', cols: [{ b: 'FK', n: 'channel_id', t: '→ msg_channels (PK)' }, { b: 'FK', n: 'user_id', t: '→ users' }, { b: 'FK', n: 'contact_id', t: '→ contacts' }, { b: '', n: 'role', t: 'TEXT' }, { b: '', n: 'joined_at', t: 'TIMESTAMPTZ' }] },
+          { name: 'messages', cols: [{ b: 'PK', n: 'message_id', t: 'UUID' }, { b: 'IDX', n: 'channel_id', t: '→ message_channels' }, { b: 'FK', n: 'sender_user_id', t: '→ users' }, { b: '', n: 'message_type', t: 'TEXT' }, { b: '', n: 'content', t: 'TEXT' }, { b: 'FK', n: 'reply_to_id', t: '→ messages' }, { b: 'IDX', n: 'external_ref', t: 'TEXT' }, { b: '', n: 'is_deleted', t: 'BOOL' }] },
+          { name: 'message_reads', cols: [{ b: 'FK', n: 'message_id', t: '→ messages (PK)' }, { b: 'FK', n: 'user_id', t: '→ users (PK)' }, { b: '', n: 'read_at', t: 'TIMESTAMPTZ' }] },
+          { name: 'message_attachments', cols: [{ b: 'PK', n: 'attachment_id', t: 'UUID' }, { b: 'FK', n: 'message_id', t: '→ messages' }, { b: 'FK', n: 'document_id', t: '→ documents' }, { b: '', n: 'display_name', t: 'TEXT' }] },
+          { name: 'notifications', cols: [{ b: 'PK', n: 'notification_id', t: 'UUID' }, { b: 'IDX', n: 'user_id', t: '→ users' }, { b: '', n: 'type', t: 'TEXT' }, { b: '', n: 'title', t: 'TEXT' }, { b: '', n: 'body', t: 'TEXT' }, { b: 'IDX', n: 'is_read', t: 'BOOL' }, { b: '', n: 'action_url', t: 'TEXT' }, { b: '', n: 'reference_type', t: 'TEXT' }] },
+          { name: 'notification_prefs', cols: [{ b: 'PK', n: 'pref_id', t: 'UUID' }, { b: 'FK', n: 'user_id', t: '→ users' }, { b: '', n: 'notification_type', t: 'TEXT' }, { b: '', n: 'email_enabled', t: 'BOOL' }, { b: '', n: 'push_enabled', t: 'BOOL' }, { b: '', n: 'in_app_enabled', t: 'BOOL' }] },
+        ], rels: [
+          { f: 'documents', c: '1 ──< N', t: 'document_tags', n: 'tagging' },
+          { f: 'message_channels', c: '1 ──< N', t: 'channel_members', n: 'membership' },
+          { f: 'message_channels', c: '1 ──< N', t: 'messages', n: 'all messages' },
+          { f: 'messages', c: '↩ self', t: 'messages', n: 'reply threads' },
+          { f: 'messages', c: '1 ──< N', t: 'message_reads', n: 'read receipts' },
+          { f: 'messages', c: '1 ──< N', t: 'message_attachments', n: 'file attachments' },
+          { f: 'users', c: '1 ──< N', t: 'notifications', n: 'push to user' },
+          { f: 'users', c: '1 ──< N', t: 'notification_prefs', n: 'per-type settings' },
+        ]
+      },
+      {
+        id: 'scheduling', label: 'Scheduling', color: '#A78BFA', desc: 'Calendar events, resource booking, tasks and subtasks', tables: [
+          { name: 'calendar_events', cols: [{ b: 'PK', n: 'event_id', t: 'UUID' }, { b: '', n: 'title', t: 'TEXT' }, { b: '', n: 'event_type', t: 'TEXT' }, { b: 'IDX', n: 'start_at', t: 'TIMESTAMPTZ' }, { b: '', n: 'end_at', t: 'TIMESTAMPTZ' }, { b: '', n: 'all_day', t: 'BOOL' }, { b: '', n: 'recurrence_rule', t: 'TEXT' }, { b: '', n: 'reference_type', t: 'TEXT' }, { b: '', n: 'reference_id', t: 'UUID' }] },
+          { name: 'event_participants', cols: [{ b: 'PK', n: 'participant_id', t: 'UUID' }, { b: 'FK', n: 'event_id', t: '→ calendar_events' }, { b: 'FK', n: 'user_id', t: '→ users' }, { b: 'FK', n: 'contact_id', t: '→ contacts' }, { b: '', n: 'status', t: 'TEXT' }, { b: '', n: 'role', t: 'TEXT' }] },
+          { name: 'event_resources', cols: [{ b: 'PK', n: 'resource_id', t: 'UUID' }, { b: 'FK', n: 'event_id', t: '→ calendar_events' }, { b: '', n: 'resource_type', t: 'TEXT' }, { b: '', n: 'resource_name', t: 'TEXT' }, { b: '', n: 'quantity', t: 'INTEGER' }] },
+          { name: 'tasks', cols: [{ b: 'PK', n: 'task_id', t: 'UUID' }, { b: '', n: 'title', t: 'TEXT' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: 'FK', n: 'assigned_to', t: '→ users' }, { b: 'FK', n: 'created_by', t: '→ users' }, { b: 'IDX', n: 'due_at', t: 'TIMESTAMPTZ' }, { b: '', n: 'priority', t: 'TEXT' }, { b: '', n: 'reference_type', t: 'TEXT' }, { b: '', n: 'reference_id', t: 'UUID' }] },
+          { name: 'task_subtasks', cols: [{ b: 'PK', n: 'subtask_id', t: 'UUID' }, { b: 'FK', n: 'task_id', t: '→ tasks' }, { b: '', n: 'title', t: 'TEXT' }, { b: '', n: 'is_done', t: 'BOOL' }, { b: '', n: 'display_order', t: 'SMALLINT' }] },
+        ], rels: [
+          { f: 'calendar_events', c: '1 ──< N', t: 'event_participants', n: 'attendees' },
+          { f: 'calendar_events', c: '1 ──< N', t: 'event_resources', n: 'room / equipment booking' },
+          { f: 'tasks', c: '1 ──< N', t: 'task_subtasks', n: 'checklist items' },
+        ]
+      },
+      {
+        id: 'system', label: 'System', color: '#94A3B8', desc: 'Config, audit log, numbering, custom fields, currencies, webhooks, migrations', tables: [
+          { name: 'audit_log', cols: [{ b: 'PK', n: 'log_id', t: 'UUID' }, { b: 'IDX', n: 'occurred_at', t: 'TIMESTAMPTZ' }, { b: '', n: 'user_name', t: 'TEXT snapshot' }, { b: 'IDX', n: 'module', t: 'TEXT' }, { b: '', n: 'action', t: 'TEXT' }, { b: 'IDX', n: 'table_name', t: 'TEXT' }, { b: 'IDX', n: 'record_id', t: 'UUID' }, { b: '', n: 'before_state', t: 'JSONB' }, { b: '', n: 'after_state', t: 'JSONB' }] },
+          { name: 'business_config', cols: [{ b: 'PK', n: 'config_id', t: 'UUID' }, { b: '', n: 'business', t: 'TEXT UNIQUE' }, { b: '', n: 'business_name', t: 'TEXT' }, { b: '', n: 'logo_url', t: 'TEXT' }, { b: '', n: 'primary_currency', t: 'TEXT' }, { b: '', n: 'settings', t: 'JSONB' }] },
+          { name: 'custom_field_defs', cols: [{ b: 'PK', n: 'field_id', t: 'UUID' }, { b: '', n: 'business', t: 'TEXT' }, { b: '', n: 'entity_type', t: 'TEXT' }, { b: '', n: 'field_key', t: 'TEXT' }, { b: '', n: 'field_label', t: 'TEXT' }, { b: '', n: 'field_type', t: 'TEXT' }, { b: '', n: 'options', t: 'JSONB' }, { b: '', n: 'is_required', t: 'BOOL' }] },
+          { name: 'pipeline_stage_defs', cols: [{ b: 'PK', n: 'stage_id', t: 'UUID' }, { b: '', n: 'business', t: 'TEXT' }, { b: '', n: 'pipeline_type', t: 'TEXT' }, { b: '', n: 'stage_name', t: 'TEXT' }, { b: '', n: 'display_order', t: 'SMALLINT' }, { b: '', n: 'is_terminal', t: 'BOOL' }, { b: '', n: 'colour', t: 'TEXT' }] },
+          { name: 'document_numbering', cols: [{ b: 'PK', n: 'seq_id', t: 'UUID' }, { b: '', n: 'business', t: 'TEXT' }, { b: '', n: 'document_type', t: 'TEXT' }, { b: '', n: 'prefix', t: 'TEXT' }, { b: '', n: 'next_number', t: 'INTEGER' }, { b: '', n: 'padding', t: 'SMALLINT' }] },
+          { name: 'tax_rates', cols: [{ b: 'PK', n: 'tax_id', t: 'UUID' }, { b: '', n: 'tax_name', t: 'TEXT' }, { b: '', n: 'rate', t: 'NUMERIC(7,4)' }, { b: '', n: 'tax_type', t: 'TEXT' }, { b: '', n: 'effective_from', t: 'DATE' }, { b: '', n: 'is_active', t: 'BOOL' }] },
+          { name: 'currency_rates', cols: [{ b: 'PK', n: 'rate_id', t: 'UUID' }, { b: '', n: 'from_currency', t: 'TEXT' }, { b: '', n: 'to_currency', t: 'TEXT' }, { b: '', n: 'rate', t: 'NUMERIC(14,6)' }, { b: 'IDX', n: 'effective_date', t: 'DATE' }, { b: '', n: 'source', t: 'TEXT' }] },
+          { name: 'bank_accounts', cols: [{ b: 'PK', n: 'account_id', t: 'UUID' }, { b: '', n: 'business', t: 'TEXT' }, { b: '', n: 'bank_name', t: 'TEXT' }, { b: '', n: 'account_number', t: 'TEXT' }, { b: '', n: 'currency', t: 'TEXT' }, { b: 'FK', n: 'gl_account_id', t: '→ chart_of_accounts' }, { b: '', n: 'is_active', t: 'BOOL' }] },
+          { name: 'webhook_log', cols: [{ b: 'PK', n: 'webhook_id', t: 'UUID' }, { b: 'IDX', n: 'source', t: 'TEXT' }, { b: 'IDX', n: 'event_type', t: 'TEXT' }, { b: '', n: 'payload', t: 'JSONB' }, { b: '', n: 'signature_valid', t: 'BOOL' }, { b: 'IDX', n: 'processed', t: 'BOOL' }, { b: '', n: 'received_at', t: 'TIMESTAMPTZ' }] },
+          { name: 'migrations', cols: [{ b: 'PK', n: 'migration_id', t: 'UUID' }, { b: '', n: 'version', t: 'TEXT' }, { b: '', n: 'name', t: 'TEXT' }, { b: 'IDX', n: 'applied_at', t: 'TIMESTAMPTZ' }, { b: '', n: 'checksum', t: 'TEXT' }, { b: '', n: 'status', t: 'TEXT' }] },
+        ], rels: [
+          { f: '(any entity)', c: '──→', t: 'audit_log', n: 'append-only, no UPDATE/DELETE ever' },
+          { f: 'custom_field_defs', c: '──→', t: 'contacts / products', n: 'dynamic field schema' },
+          { f: 'pipeline_stage_defs', c: '──→', t: 'crm_deals / deliveries', n: 'configurable pipelines' },
+          { f: 'document_numbering', c: '──→', t: 'invoices / POs / quotations', n: 'sequence generator' },
+          { f: 'bank_accounts', c: '1 ──< N', t: 'bank_statements', n: 'one account → many statements' },
+        ]
+      },
+    ];
+
+    const BD = [
+      {
+        id: 'catalogue', label: 'Catalogue', color: '#FBBF24', desc: 'Product master, images, categories, supplier links, barcodes', tables: [
+          { name: 'products', cols: [{ b: 'PK', n: 'product_id', t: 'UUID' }, { b: 'IDX', n: 'sku', t: 'TEXT UNIQUE' }, { b: '', n: 'name', t: 'TEXT' }, { b: 'FK', n: 'category_id', t: '→ product_categories' }, { b: '', n: 'cost_price', t: 'NUMERIC(14,2)' }, { b: '', n: 'selling_price', t: 'NUMERIC(14,2)' }, { b: '', n: 'min_selling_price', t: 'NUMERIC(14,2)' }, { b: 'IDX', n: 'is_active', t: 'BOOL' }, { b: '', n: 'custom_fields', t: 'JSONB' }] },
+          { name: 'product_images', cols: [{ b: 'PK', n: 'image_id', t: 'UUID' }, { b: 'FK', n: 'product_id', t: '→ products' }, { b: 'FK', n: 'document_id', t: '→ documents' }, { b: '', n: 'is_primary', t: 'BOOL' }, { b: '', n: 'display_order', t: 'SMALLINT' }] },
+          { name: 'product_categories', cols: [{ b: 'PK', n: 'category_id', t: 'UUID' }, { b: '', n: 'name', t: 'TEXT' }, { b: 'FK', n: 'parent_category_id', t: '→ self' }, { b: '', n: 'display_order', t: 'SMALLINT' }, { b: '', n: 'is_active', t: 'BOOL' }] },
+          { name: 'product_suppliers', cols: [{ b: 'FK', n: 'product_id', t: '→ products (PK)' }, { b: 'FK', n: 'supplier_id', t: '→ suppliers (PK)' }, { b: '', n: 'supplier_sku', t: 'TEXT' }, { b: '', n: 'unit_cost', t: 'NUMERIC(14,2)' }, { b: '', n: 'lead_time_days', t: 'SMALLINT' }, { b: '', n: 'is_preferred', t: 'BOOL' }] },
+          { name: 'barcodes', cols: [{ b: 'PK', n: 'barcode_id', t: 'UUID' }, { b: 'IDX', n: 'barcode_value', t: 'TEXT UNIQUE' }, { b: 'FK', n: 'product_id', t: '→ products' }, { b: '', n: 'barcode_type', t: 'TEXT' }, { b: '', n: 'is_primary', t: 'BOOL' }] },
+        ], rels: [
+          { f: 'product_categories', c: '↩ self', t: 'product_categories', n: 'nested hierarchy' },
+          { f: 'products', c: 'N:1', t: 'product_categories', n: '' },
+          { f: 'products', c: '1 ──< N', t: 'product_images', n: 'gallery' },
+          { f: 'products', c: 'M >──< N', t: 'suppliers', n: 'via product_suppliers' },
+          { f: 'products', c: '1 ──< N', t: 'barcodes', n: 'multiple scan codes' },
+        ]
+      },
+      {
+        id: 'stock', label: 'Stock', color: '#F97316', desc: 'Locations, append-only movement ledger, reservations, adjustments, transfers, QC', tables: [
+          { name: 'stock_locations', cols: [{ b: 'PK', n: 'location_id', t: 'UUID' }, { b: '', n: 'name', t: 'TEXT' }, { b: '', n: 'location_type', t: 'TEXT' }, { b: 'FK', n: 'partner_id', t: '→ retail_partners' }, { b: '', n: 'is_active', t: 'BOOL' }] },
+          { name: 'stock_movements', cols: [{ b: 'PK', n: 'movement_id', t: 'UUID' }, { b: 'IDX', n: 'product_id', t: '→ products' }, { b: '', n: 'movement_type', t: 'TEXT' }, { b: '', n: 'quantity', t: 'INTEGER > 0' }, { b: '', n: 'direction', t: 'SMALLINT (-1/+1)' }, { b: 'FK', n: 'from_location_id', t: '→ stock_locations' }, { b: 'FK', n: 'to_location_id', t: '→ stock_locations' }, { b: '', n: 'unit_cost', t: 'NUMERIC(14,2)' }, { b: 'IDX', n: 'performed_at', t: 'TIMESTAMPTZ' }] },
+          { name: 'stock_reservations', cols: [{ b: 'PK', n: 'reservation_id', t: 'UUID' }, { b: 'FK', n: 'product_id', t: '→ products' }, { b: 'FK', n: 'reserved_for', t: '→ contacts' }, { b: 'FK', n: 'crm_deal_id', t: '→ crm_deals' }, { b: 'IDX', n: 'expires_at', t: 'TIMESTAMPTZ' }, { b: 'IDX', n: 'status', t: 'TEXT' }] },
+          { name: 'stock_adjustments', cols: [{ b: 'PK', n: 'adjustment_id', t: 'UUID' }, { b: 'FK', n: 'product_id', t: '→ products' }, { b: 'FK', n: 'location_id', t: '→ stock_locations' }, { b: '', n: 'adjustment_type', t: 'TEXT' }, { b: '', n: 'quantity_before', t: 'INTEGER' }, { b: '', n: 'quantity_after', t: 'INTEGER' }, { b: '', n: 'reason', t: 'TEXT' }, { b: 'FK', n: 'approved_by', t: '→ users' }] },
+          { name: 'stock_transfers', cols: [{ b: 'PK', n: 'transfer_id', t: 'UUID' }, { b: '', n: 'transfer_number', t: 'TEXT UNIQUE' }, { b: 'FK', n: 'from_location_id', t: '→ stock_locations' }, { b: 'FK', n: 'to_location_id', t: '→ stock_locations' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: 'FK', n: 'initiated_by', t: '→ users' }] },
+          { name: 'quality_checks', cols: [{ b: 'PK', n: 'check_id', t: 'UUID' }, { b: 'FK', n: 'product_id', t: '→ products' }, { b: '', n: 'check_type', t: 'TEXT' }, { b: '', n: 'result', t: 'TEXT' }, { b: '', n: 'notes', t: 'TEXT' }, { b: 'FK', n: 'checked_by', t: '→ users' }, { b: '', n: 'checked_at', t: 'TIMESTAMPTZ' }] },
+        ], rels: [
+          { f: 'products', c: '1 ──< N', t: 'stock_movements', n: 'append-only ledger' },
+          { f: 'stock_locations', c: '1 ──< N', t: 'stock_movements', n: 'from + to location FK' },
+          { f: 'products', c: '1 ──< N', t: 'stock_reservations', n: 'customer holds' },
+          { f: 'products', c: '1 ──< N', t: 'stock_adjustments', n: 'write-offs / corrections' },
+          { f: 'stock_locations', c: '1 ──< N', t: 'stock_transfers', n: 'inter-location move' },
+          { f: 'products', c: '1 ──< N', t: 'quality_checks', n: 'QC records' },
+        ]
+      },
+      {
+        id: 'crm', label: 'CRM', color: '#F87171', desc: 'Deals pipeline, activities log, notes, customer preferences & milestones', tables: [
+          { name: 'crm_deals', cols: [{ b: 'PK', n: 'deal_id', t: 'UUID' }, { b: 'IDX', n: 'contact_id', t: '→ contacts' }, { b: 'IDX', n: 'assigned_to', t: '→ users' }, { b: '', n: 'title', t: 'TEXT' }, { b: 'IDX', n: 'stage', t: 'TEXT' }, { b: '', n: 'expected_value', t: 'NUMERIC(14,2)' }, { b: '', n: 'probability', t: 'SMALLINT 0-100' }, { b: '', n: 'expected_close_date', t: 'DATE' }, { b: '', n: 'source', t: 'TEXT' }] },
+          { name: 'crm_activities', cols: [{ b: 'PK', n: 'activity_id', t: 'UUID' }, { b: 'FK', n: 'deal_id', t: '→ crm_deals' }, { b: 'FK', n: 'contact_id', t: '→ contacts' }, { b: '', n: 'activity_type', t: 'TEXT' }, { b: '', n: 'summary', t: 'TEXT' }, { b: '', n: 'direction', t: 'TEXT' }, { b: '', n: 'is_auto', t: 'BOOL' }, { b: 'IDX', n: 'occurred_at', t: 'TIMESTAMPTZ' }] },
+          { name: 'crm_notes', cols: [{ b: 'PK', n: 'note_id', t: 'UUID' }, { b: 'FK', n: 'deal_id', t: '→ crm_deals' }, { b: 'FK', n: 'contact_id', t: '→ contacts' }, { b: '', n: 'content', t: 'TEXT' }, { b: 'FK', n: 'created_by', t: '→ users' }, { b: '', n: 'is_pinned', t: 'BOOL' }] },
+          { name: 'customer_preferences', cols: [{ b: 'PK', n: 'preference_id', t: 'UUID' }, { b: 'FK', n: 'contact_id', t: '→ contacts' }, { b: '', n: 'preference_key', t: 'TEXT' }, { b: '', n: 'preference_value', t: 'TEXT' }, { b: '', n: 'business', t: 'TEXT' }] },
+          { name: 'customer_milestones', cols: [{ b: 'PK', n: 'milestone_id', t: 'UUID' }, { b: 'FK', n: 'contact_id', t: '→ contacts' }, { b: '', n: 'milestone_type', t: 'TEXT' }, { b: 'IDX', n: 'milestone_date', t: 'DATE' }, { b: '', n: 'notes', t: 'TEXT' }] },
+        ], rels: [
+          { f: 'contacts', c: '1 ──< N', t: 'crm_deals', n: 'pipeline per contact' },
+          { f: 'crm_deals', c: '1 ──< N', t: 'crm_activities', n: 'interaction log' },
+          { f: 'crm_deals', c: '1 ──< N', t: 'crm_notes', n: 'deal notes' },
+          { f: 'contacts', c: '1 ──< N', t: 'customer_preferences', n: 'personalisation' },
+          { f: 'contacts', c: '1 ──< N', t: 'customer_milestones', n: 'birthday / anniversary' },
+        ]
+      },
+      {
+        id: 'sales', label: 'Sales', color: '#FB923C', desc: 'Quotations, order confirmation, order lines, discounts and approval workflow', tables: [
+          { name: 'quotations', cols: [{ b: 'PK', n: 'quotation_id', t: 'UUID' }, { b: '', n: 'quotation_number', t: 'TEXT UNIQUE' }, { b: 'IDX', n: 'contact_id', t: '→ contacts' }, { b: 'FK', n: 'deal_id', t: '→ crm_deals' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: '', n: 'valid_until', t: 'DATE' }, { b: '', n: 'subtotal', t: 'NUMERIC(14,2)' }, { b: '', n: 'vat_amount', t: 'NUMERIC(14,2)' }, { b: '', n: 'total_amount', t: 'NUMERIC(14,2)' }] },
+          { name: 'quotation_lines', cols: [{ b: 'PK', n: 'line_id', t: 'UUID' }, { b: 'FK', n: 'quotation_id', t: '→ quotations' }, { b: 'FK', n: 'product_id', t: '→ products' }, { b: '', n: 'quantity', t: 'INTEGER' }, { b: '', n: 'unit_price', t: 'NUMERIC(14,2)' }, { b: '', n: 'discount_pct', t: 'NUMERIC(5,2)' }, { b: '', n: 'line_total', t: 'NUMERIC(14,2)' }] },
+          { name: 'sales_orders', cols: [{ b: 'PK', n: 'order_id', t: 'UUID' }, { b: '', n: 'order_number', t: 'TEXT UNIQUE' }, { b: 'FK', n: 'quotation_id', t: '→ quotations UNIQUE' }, { b: 'IDX', n: 'contact_id', t: '→ contacts' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: '', n: 'fulfilment_type', t: 'TEXT' }, { b: '', n: 'total_amount', t: 'NUMERIC(14,2)' }, { b: '', n: 'amount_outstanding', t: 'GENERATED' }] },
+          { name: 'order_lines', cols: [{ b: 'PK', n: 'line_id', t: 'UUID' }, { b: 'FK', n: 'order_id', t: '→ sales_orders' }, { b: 'FK', n: 'product_id', t: '→ products' }, { b: '', n: 'quantity', t: 'INTEGER' }, { b: '', n: 'unit_price', t: 'NUMERIC(14,2)' }, { b: '', n: 'line_total', t: 'NUMERIC(14,2)' }, { b: '', n: 'status', t: 'TEXT' }] },
+          { name: 'discounts', cols: [{ b: 'PK', n: 'discount_id', t: 'UUID' }, { b: '', n: 'discount_name', t: 'TEXT' }, { b: '', n: 'discount_type', t: 'TEXT' }, { b: '', n: 'value', t: 'NUMERIC(10,4)' }, { b: '', n: 'valid_from', t: 'DATE' }, { b: '', n: 'valid_to', t: 'DATE' }, { b: '', n: 'is_active', t: 'BOOL' }] },
+          { name: 'discount_approvals', cols: [{ b: 'PK', n: 'approval_id', t: 'UUID' }, { b: '', n: 'reference_type', t: 'TEXT' }, { b: 'FK', n: 'product_id', t: '→ products' }, { b: '', n: 'requested_price', t: 'NUMERIC(14,2)' }, { b: '', n: 'min_price', t: 'NUMERIC(14,2)' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: 'FK', n: 'requested_by', t: '→ users' }, { b: 'FK', n: 'reviewed_by', t: '→ users' }] },
+        ], rels: [
+          { f: 'crm_deals', c: '1 ──< N', t: 'quotations', n: 'multiple quotes per deal' },
+          { f: 'quotations', c: '1 ──< N', t: 'quotation_lines', n: 'line items' },
+          { f: 'quotations', c: '1 ──║ 1', t: 'sales_orders', n: 'confirmed quote → order' },
+          { f: 'sales_orders', c: '1 ──< N', t: 'order_lines', n: 'order line items' },
+          { f: 'discount_approvals', c: '──→', t: 'quotations / pos_transactions', n: 'price exception flow' },
+        ]
+      },
+      {
+        id: 'pos', label: 'POS', color: '#38BDF8', desc: 'Terminals, shift sessions, transactions, split-payment records, session summaries', tables: [
+          { name: 'pos_terminals', cols: [{ b: 'PK', n: 'terminal_id', t: 'UUID' }, { b: '', n: 'name', t: 'TEXT' }, { b: 'FK', n: 'location_id', t: '→ stock_locations' }, { b: '', n: 'is_active', t: 'BOOL' }] },
+          { name: 'pos_sessions', cols: [{ b: 'PK', n: 'session_id', t: 'UUID' }, { b: 'IDX', n: 'terminal_id', t: '→ pos_terminals' }, { b: 'FK', n: 'opened_by', t: '→ users' }, { b: 'FK', n: 'closed_by', t: '→ users' }, { b: '', n: 'opening_float', t: 'NUMERIC(12,2)' }, { b: '', n: 'actual_cash', t: 'NUMERIC(12,2)' }, { b: '', n: 'cash_variance', t: 'GENERATED' }, { b: 'IDX', n: 'status', t: 'TEXT' }] },
+          { name: 'pos_transactions', cols: [{ b: 'PK', n: 'transaction_id', t: 'UUID' }, { b: '', n: 'transaction_number', t: 'TEXT UNIQUE' }, { b: 'IDX', n: 'session_id', t: '→ pos_sessions' }, { b: 'FK', n: 'contact_id', t: '→ contacts' }, { b: 'FK', n: 'served_by', t: '→ users' }, { b: '', n: 'total_amount', t: 'NUMERIC(14,2)' }, { b: '', n: 'fulfilment_type', t: 'TEXT' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: '', n: 'receipt_number', t: 'TEXT UNIQUE' }] },
+          { name: 'pos_payment_splits', cols: [{ b: 'PK', n: 'split_id', t: 'UUID' }, { b: 'FK', n: 'transaction_id', t: '→ pos_transactions' }, { b: '', n: 'payment_method', t: 'TEXT' }, { b: '', n: 'amount', t: 'NUMERIC(14,2)' }, { b: '', n: 'reference', t: 'TEXT' }, { b: '', n: 'confirmed', t: 'BOOL' }, { b: '', n: 'paystack_reference', t: 'TEXT' }] },
+          { name: 'pos_session_summary', cols: [{ b: 'PK', n: 'summary_id', t: 'UUID' }, { b: 'FK', n: 'session_id', t: '→ pos_sessions UNIQUE' }, { b: '', n: 'total_transactions', t: 'INTEGER' }, { b: '', n: 'total_revenue', t: 'NUMERIC(14,2)' }, { b: '', n: 'cash_total', t: 'NUMERIC(14,2)' }, { b: '', n: 'card_total', t: 'NUMERIC(14,2)' }, { b: '', n: 'transfer_total', t: 'NUMERIC(14,2)' }] },
+        ], rels: [
+          { f: 'pos_terminals', c: '1 ──< N', t: 'pos_sessions', n: 'one session per shift' },
+          { f: 'pos_sessions', c: '1 ──< N', t: 'pos_transactions', n: 'all sales in session' },
+          { f: 'pos_transactions', c: '1 ──< N', t: 'pos_payment_splits', n: 'multi-method payment' },
+          { f: 'pos_sessions', c: '1 ──║ 1', t: 'pos_session_summary', n: 'EOD summary' },
+          { f: 'pos_transactions', c: '──→', t: 'stock_movements', n: 'creates stock_out' },
+          { f: 'pos_sessions', c: '──→', t: 'journal_entries', n: 'EOD accounting post' },
+        ]
+      },
+      {
+        id: 'invoicing', label: 'Invoicing', color: '#818CF8', desc: 'Invoice lifecycle, line items, partial payments, credit notes and credit note lines', tables: [
+          { name: 'invoices', cols: [{ b: 'PK', n: 'invoice_id', t: 'UUID' }, { b: '', n: 'invoice_number', t: 'TEXT UNIQUE' }, { b: '', n: 'invoice_type', t: 'TEXT' }, { b: 'IDX', n: 'contact_id', t: '→ contacts' }, { b: 'FK', n: 'order_id', t: '→ sales_orders' }, { b: 'FK', n: 'pos_transaction_id', t: '→ pos_transactions' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: '', n: 'total_amount', t: 'NUMERIC(14,2)' }, { b: '', n: 'amount_paid', t: 'NUMERIC(14,2)' }, { b: 'IDX', n: 'amount_outstanding', t: 'GENERATED' }, { b: '', n: 'due_date', t: 'DATE' }] },
+          { name: 'invoice_lines', cols: [{ b: 'PK', n: 'line_id', t: 'UUID' }, { b: 'FK', n: 'invoice_id', t: '→ invoices' }, { b: 'FK', n: 'product_id', t: '→ products' }, { b: '', n: 'quantity', t: 'INTEGER' }, { b: '', n: 'unit_price', t: 'NUMERIC(14,2)' }, { b: '', n: 'vat_rate', t: 'NUMERIC(5,4)' }, { b: '', n: 'line_total', t: 'NUMERIC(14,2)' }] },
+          { name: 'invoice_payments', cols: [{ b: 'PK', n: 'payment_id', t: 'UUID' }, { b: 'FK', n: 'invoice_id', t: '→ invoices' }, { b: '', n: 'payment_date', t: 'DATE' }, { b: '', n: 'amount', t: 'NUMERIC(14,2)' }, { b: '', n: 'payment_method', t: 'TEXT' }, { b: 'IDX', n: 'paystack_reference', t: 'TEXT' }, { b: '', n: 'is_confirmed', t: 'BOOL' }] },
+          { name: 'credit_notes', cols: [{ b: 'PK', n: 'credit_note_id', t: 'UUID' }, { b: '', n: 'credit_note_number', t: 'TEXT UNIQUE' }, { b: 'FK', n: 'invoice_id', t: '→ invoices' }, { b: 'FK', n: 'contact_id', t: '→ contacts' }, { b: '', n: 'reason', t: 'TEXT' }, { b: '', n: 'total_amount', t: 'NUMERIC(14,2)' }, { b: 'IDX', n: 'status', t: 'TEXT' }] },
+          { name: 'credit_note_lines', cols: [{ b: 'PK', n: 'line_id', t: 'UUID' }, { b: 'FK', n: 'credit_note_id', t: '→ credit_notes' }, { b: 'FK', n: 'product_id', t: '→ products' }, { b: '', n: 'quantity', t: 'INTEGER' }, { b: '', n: 'unit_price', t: 'NUMERIC(14,2)' }, { b: '', n: 'line_total', t: 'NUMERIC(14,2)' }] },
+        ], rels: [
+          { f: 'sales_orders', c: '1 ──< N', t: 'invoices', n: 'can split billing' },
+          { f: 'invoices', c: '1 ──< N', t: 'invoice_lines', n: 'line items' },
+          { f: 'invoices', c: '1 ──< N', t: 'invoice_payments', n: 'partial payments' },
+          { f: 'invoices', c: '1 ──< N', t: 'credit_notes', n: 'returns / refunds' },
+          { f: 'credit_notes', c: '1 ──< N', t: 'credit_note_lines', n: 'credit line items' },
+          { f: 'bank_statements', c: '──→', t: 'invoice_payments', n: '3-way reconciliation' },
+        ]
+      },
+      {
+        id: 'accounting', label: 'Accounting', color: '#4ADE80', desc: 'Chart of accounts, double-entry journal, bank reconciliation, fiscal periods', tables: [
+          { name: 'chart_of_accounts', cols: [{ b: 'PK', n: 'account_id', t: 'UUID' }, { b: 'IDX', n: 'account_code', t: 'TEXT UNIQUE' }, { b: '', n: 'account_name', t: 'TEXT' }, { b: '', n: 'account_type', t: 'TEXT' }, { b: '', n: 'account_subtype', t: 'TEXT' }, { b: 'FK', n: 'parent_account_id', t: '→ self' }, { b: '', n: 'is_system', t: 'BOOL' }, { b: '', n: 'is_active', t: 'BOOL' }] },
+          { name: 'journal_entries', cols: [{ b: 'PK', n: 'entry_id', t: 'UUID' }, { b: 'IDX', n: 'entry_number', t: 'TEXT UNIQUE' }, { b: 'IDX', n: 'entry_date', t: 'DATE' }, { b: '', n: 'description', t: 'TEXT' }, { b: 'IDX', n: 'reference_type', t: 'TEXT' }, { b: '', n: 'reference_id', t: 'UUID' }, { b: '', n: 'is_posted', t: 'BOOL' }, { b: '', n: 'is_reversed', t: 'BOOL' }] },
+          { name: 'journal_lines', cols: [{ b: 'PK', n: 'line_id', t: 'UUID' }, { b: 'FK', n: 'entry_id', t: '→ journal_entries' }, { b: 'IDX', n: 'account_id', t: '→ chart_of_accounts' }, { b: '', n: 'debit', t: 'NUMERIC(15,2)' }, { b: '', n: 'credit', t: 'NUMERIC(15,2)' }, { b: 'FK', n: 'contact_id', t: '→ contacts AR/AP' }] },
+          { name: 'bank_statements', cols: [{ b: 'PK', n: 'statement_id', t: 'UUID' }, { b: 'FK', n: 'bank_account_id', t: '→ bank_accounts' }, { b: 'IDX', n: 'transaction_date', t: 'DATE' }, { b: '', n: 'amount', t: 'NUMERIC(14,2)' }, { b: '', n: 'balance', t: 'NUMERIC(14,2)' }, { b: 'IDX', n: 'is_reconciled', t: 'BOOL' }, { b: 'FK', n: 'matched_payment_id', t: '→ invoice_payments' }] },
+          { name: 'bank_reconciliations', cols: [{ b: 'PK', n: 'recon_id', t: 'UUID' }, { b: 'FK', n: 'bank_account_id', t: '→ bank_accounts' }, { b: '', n: 'period_start', t: 'DATE' }, { b: '', n: 'period_end', t: 'DATE' }, { b: '', n: 'closing_balance', t: 'NUMERIC(14,2)' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: 'FK', n: 'completed_by', t: '→ users' }] },
+          { name: 'fiscal_periods', cols: [{ b: 'PK', n: 'period_id', t: 'UUID' }, { b: '', n: 'name', t: 'TEXT' }, { b: '', n: 'period_type', t: 'TEXT' }, { b: 'IDX', n: 'start_date', t: 'DATE' }, { b: '', n: 'end_date', t: 'DATE' }, { b: '', n: 'is_closed', t: 'BOOL' }, { b: 'FK', n: 'closed_by', t: '→ users' }] },
+        ], rels: [
+          { f: 'chart_of_accounts', c: '↩ self', t: 'chart_of_accounts', n: 'account hierarchy' },
+          { f: 'journal_entries', c: '1 ──< N', t: 'journal_lines', n: 'min 2 lines (DR + CR = 0)' },
+          { f: 'chart_of_accounts', c: '1 ──< N', t: 'journal_lines', n: 'posted to account' },
+          { f: 'bank_statements', c: '──→', t: 'invoice_payments', n: 'reconciliation match' },
+          { f: 'bank_accounts', c: '1 ──< N', t: 'bank_reconciliations', n: 'monthly reconcile' },
+        ]
+      },
+      {
+        id: 'purchasing', label: 'Purchasing', color: '#E879F9', desc: 'RFQ → supplier quotes → PO → GRN → supplier invoice (3-way match)', tables: [
+          { name: 'suppliers', cols: [{ b: 'PK', n: 'supplier_id', t: 'UUID' }, { b: 'FK', n: 'contact_id', t: '→ contacts UNIQUE' }, { b: 'IDX', n: 'supplier_code', t: 'TEXT UNIQUE' }, { b: '', n: 'payment_terms_days', t: 'SMALLINT' }, { b: '', n: 'preferred_currency', t: 'TEXT' }, { b: '', n: 'rating', t: 'SMALLINT' }, { b: '', n: 'credit_limit', t: 'NUMERIC(14,2)' }] },
+          { name: 'rfqs', cols: [{ b: 'PK', n: 'rfq_id', t: 'UUID' }, { b: '', n: 'rfq_number', t: 'TEXT UNIQUE' }, { b: '', n: 'title', t: 'TEXT' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: 'FK', n: 'created_by', t: '→ users' }, { b: '', n: 'response_deadline', t: 'DATE' }] },
+          { name: 'rfq_lines', cols: [{ b: 'PK', n: 'line_id', t: 'UUID' }, { b: 'FK', n: 'rfq_id', t: '→ rfqs' }, { b: 'FK', n: 'product_id', t: '→ products' }, { b: '', n: 'quantity_needed', t: 'INTEGER' }, { b: '', n: 'target_price', t: 'NUMERIC(14,2)' }] },
+          { name: 'supplier_quotes', cols: [{ b: 'PK', n: 'quote_id', t: 'UUID' }, { b: 'FK', n: 'rfq_id', t: '→ rfqs' }, { b: 'FK', n: 'supplier_id', t: '→ suppliers' }, { b: '', n: 'unit_price', t: 'NUMERIC(14,2)' }, { b: '', n: 'lead_time_days', t: 'SMALLINT' }, { b: 'IDX', n: 'status', t: 'TEXT' }] },
+          { name: 'purchase_orders', cols: [{ b: 'PK', n: 'po_id', t: 'UUID' }, { b: '', n: 'po_number', t: 'TEXT UNIQUE' }, { b: 'IDX', n: 'supplier_id', t: '→ suppliers' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: '', n: 'total_amount', t: 'NUMERIC(14,2)' }, { b: '', n: 'currency', t: 'TEXT' }, { b: '', n: 'exchange_rate', t: 'NUMERIC(10,4)' }, { b: '', n: 'ngn_equivalent', t: 'NUMERIC(14,2)' }] },
+          { name: 'po_lines', cols: [{ b: 'PK', n: 'line_id', t: 'UUID' }, { b: 'FK', n: 'po_id', t: '→ purchase_orders' }, { b: 'FK', n: 'product_id', t: '→ products' }, { b: '', n: 'quantity_ordered', t: 'INTEGER' }, { b: '', n: 'quantity_received', t: 'INTEGER' }, { b: '', n: 'unit_price', t: 'NUMERIC(14,2)' }, { b: '', n: 'line_total', t: 'NUMERIC(14,2)' }] },
+          { name: 'goods_received', cols: [{ b: 'PK', n: 'receipt_id', t: 'UUID' }, { b: 'FK', n: 'po_id', t: '→ purchase_orders' }, { b: '', n: 'received_date', t: 'DATE' }, { b: 'FK', n: 'received_by', t: '→ users' }, { b: '', n: 'notes', t: 'TEXT' }] },
+          { name: 'supplier_invoices', cols: [{ b: 'PK', n: 'sup_invoice_id', t: 'UUID' }, { b: 'FK', n: 'supplier_id', t: '→ suppliers' }, { b: 'FK', n: 'po_id', t: '→ purchase_orders' }, { b: '', n: 'amount', t: 'NUMERIC(14,2)' }, { b: '', n: 'currency', t: 'TEXT' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: '', n: 'amount_paid', t: 'NUMERIC(14,2)' }] },
+        ], rels: [
+          { f: 'rfqs', c: '1 ──< N', t: 'rfq_lines', n: 'items needed' },
+          { f: 'rfqs', c: '1 ──< N', t: 'supplier_quotes', n: 'responses per supplier' },
+          { f: 'suppliers', c: '1 ──< N', t: 'purchase_orders', n: '' },
+          { f: 'purchase_orders', c: '1 ──< N', t: 'po_lines', n: 'items ordered' },
+          { f: 'purchase_orders', c: '1 ──< N', t: 'goods_received', n: 'partial shipments ok' },
+          { f: 'goods_received', c: '──→', t: 'stock_movements', n: 'creates stock_in' },
+          { f: 'purchase_orders', c: '1 ──< N', t: 'supplier_invoices', n: '3-way match' },
+        ]
+      },
+      {
+        id: 'expenses', label: 'Expenses', color: '#FCA5A5', desc: 'Staff expense claims, receipt attachments, cash advance management', tables: [
+          { name: 'expenses', cols: [{ b: 'PK', n: 'expense_id', t: 'UUID' }, { b: 'IDX', n: 'profile_id', t: '→ staff_profiles' }, { b: '', n: 'expense_type', t: 'TEXT' }, { b: '', n: 'category', t: 'TEXT' }, { b: '', n: 'amount', t: 'NUMERIC(12,2)' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: 'FK', n: 'linked_advance_id', t: '→ cash_advances' }] },
+          { name: 'expense_receipts', cols: [{ b: 'PK', n: 'receipt_id', t: 'UUID' }, { b: 'FK', n: 'expense_id', t: '→ expenses' }, { b: 'FK', n: 'document_id', t: '→ documents' }, { b: '', n: 'receipt_date', t: 'DATE' }, { b: '', n: 'merchant_name', t: 'TEXT' }, { b: '', n: 'amount_on_receipt', t: 'NUMERIC(12,2)' }] },
+          { name: 'cash_advances', cols: [{ b: 'PK', n: 'advance_id', t: 'UUID' }, { b: 'FK', n: 'profile_id', t: '→ staff_profiles' }, { b: '', n: 'purpose', t: 'TEXT' }, { b: '', n: 'amount_requested', t: 'NUMERIC(12,2)' }, { b: '', n: 'amount_approved', t: 'NUMERIC(12,2)' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: '', n: 'outstanding_balance', t: 'NUMERIC(12,2)' }, { b: 'FK', n: 'approved_by', t: '→ users' }] },
+        ], rels: [
+          { f: 'staff_profiles', c: '1 ──< N', t: 'expenses', n: 'expense claims' },
+          { f: 'expenses', c: '1 ──< N', t: 'expense_receipts', n: 'supporting receipts' },
+          { f: 'cash_advances', c: '1 ──< N', t: 'expenses', n: 'retire advance with receipts' },
+        ]
+      },
+      {
+        id: 'payroll', label: 'Payroll', color: '#FDE68A', desc: 'Payroll run cycle, payslips, deductions, commission rules and earned commissions', tables: [
+          { name: 'payroll_runs', cols: [{ b: 'PK', n: 'run_id', t: 'UUID' }, { b: '', n: 'run_number', t: 'TEXT UNIQUE' }, { b: '', n: 'period_month', t: 'SMALLINT' }, { b: '', n: 'period_year', t: 'SMALLINT' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: '', n: 'total_gross', t: 'NUMERIC(14,2)' }, { b: '', n: 'total_net', t: 'NUMERIC(14,2)' }, { b: 'FK', n: 'approved_by', t: '→ users' }] },
+          { name: 'payslips', cols: [{ b: 'PK', n: 'payslip_id', t: 'UUID' }, { b: 'FK', n: 'run_id', t: '→ payroll_runs' }, { b: 'IDX', n: 'profile_id', t: '→ staff_profiles' }, { b: '', n: 'basic_salary', t: 'NUMERIC(12,2)' }, { b: '', n: 'commission_amount', t: 'NUMERIC(12,2)' }, { b: '', n: 'gross_salary', t: 'NUMERIC(12,2)' }, { b: '', n: 'paye_deduction', t: 'NUMERIC(12,2)' }, { b: '', n: 'pension_employee', t: 'NUMERIC(12,2)' }, { b: '', n: 'net_salary', t: 'NUMERIC(12,2)' }, { b: 'FK', n: 'document_id', t: '→ documents' }] },
+          { name: 'payroll_deductions', cols: [{ b: 'PK', n: 'deduction_id', t: 'UUID' }, { b: 'FK', n: 'payslip_id', t: '→ payslips' }, { b: '', n: 'deduction_type', t: 'TEXT' }, { b: '', n: 'description', t: 'TEXT' }, { b: '', n: 'amount', t: 'NUMERIC(12,2)' }] },
+          { name: 'commission_rules', cols: [{ b: 'PK', n: 'rule_id', t: 'UUID' }, { b: 'FK', n: 'profile_id', t: '→ staff_profiles' }, { b: 'FK', n: 'role_id', t: '→ roles' }, { b: '', n: 'rule_type', t: 'TEXT' }, { b: '', n: 'rate', t: 'NUMERIC(7,4)' }, { b: '', n: 'tiers', t: 'JSONB' }, { b: '', n: 'is_active', t: 'BOOL' }] },
+          { name: 'commission_earned', cols: [{ b: 'PK', n: 'earned_id', t: 'UUID' }, { b: 'FK', n: 'profile_id', t: '→ staff_profiles' }, { b: 'FK', n: 'rule_id', t: '→ commission_rules' }, { b: '', n: 'reference_type', t: 'TEXT' }, { b: '', n: 'sale_amount', t: 'NUMERIC(14,2)' }, { b: '', n: 'commission_amount', t: 'NUMERIC(12,2)' }, { b: 'IDX', n: 'period_month', t: 'SMALLINT' }, { b: 'IDX', n: 'period_year', t: 'SMALLINT' }] },
+        ], rels: [
+          { f: 'payroll_runs', c: '1 ──< N', t: 'payslips', n: 'one per employee per run' },
+          { f: 'staff_profiles', c: '1 ──< N', t: 'payslips', n: 'pay history' },
+          { f: 'payslips', c: '1 ──< N', t: 'payroll_deductions', n: 'itemised deductions' },
+          { f: 'commission_rules', c: '1 ──< N', t: 'commission_earned', n: 'earned per sale event' },
+          { f: 'commission_earned', c: '──→', t: 'payslips', n: 'rolled into payslip total' },
+        ]
+      },
+      {
+        id: 'retail', label: 'Retail', color: '#67E8F9', desc: 'Retail partner management, consignment stock, sales recording and settlement cycles', tables: [
+          { name: 'retail_partners', cols: [{ b: 'PK', n: 'partner_id', t: 'UUID' }, { b: 'FK', n: 'contact_id', t: '→ contacts UNIQUE' }, { b: 'IDX', n: 'partner_code', t: 'TEXT UNIQUE' }, { b: '', n: 'arrangement_type', t: 'TEXT' }, { b: '', n: 'consignment_margin_pct', t: 'NUMERIC(5,2)' }, { b: '', n: 'settlement_cycle', t: 'TEXT' }, { b: '', n: 'credit_limit', t: 'NUMERIC(14,2)' }, { b: '', n: 'current_balance', t: 'NUMERIC(14,2)' }] },
+          { name: 'consignment_stock', cols: [{ b: 'PK', n: 'consignment_id', t: 'UUID' }, { b: 'IDX', n: 'partner_id', t: '→ retail_partners' }, { b: 'FK', n: 'product_id', t: '→ products' }, { b: '', n: 'quantity_sent', t: 'INTEGER' }, { b: '', n: 'quantity_sold', t: 'INTEGER' }, { b: '', n: 'quantity_outstanding', t: 'GENERATED' }, { b: '', n: 'agreed_price', t: 'NUMERIC(14,2)' }, { b: 'IDX', n: 'status', t: 'TEXT' }] },
+          { name: 'consignment_sales', cols: [{ b: 'PK', n: 'sale_id', t: 'UUID' }, { b: 'FK', n: 'consignment_id', t: '→ consignment_stock' }, { b: 'FK', n: 'partner_id', t: '→ retail_partners' }, { b: '', n: 'quantity_sold', t: 'INTEGER' }, { b: '', n: 'sale_price', t: 'NUMERIC(14,2)' }, { b: 'IDX', n: 'sale_date', t: 'DATE' }] },
+          { name: 'partner_settlements', cols: [{ b: 'PK', n: 'settlement_id', t: 'UUID' }, { b: '', n: 'settlement_number', t: 'TEXT UNIQUE' }, { b: 'IDX', n: 'partner_id', t: '→ retail_partners' }, { b: '', n: 'total_sales_value', t: 'NUMERIC(14,2)' }, { b: '', n: 'partner_commission', t: 'NUMERIC(12,2)' }, { b: '', n: 'amount_due_to_us', t: 'NUMERIC(14,2)' }, { b: 'FK', n: 'invoice_id', t: '→ invoices' }, { b: 'IDX', n: 'status', t: 'TEXT' }] },
+        ], rels: [
+          { f: 'retail_partners', c: '1 ──< N', t: 'consignment_stock', n: 'items at each partner' },
+          { f: 'consignment_stock', c: '1 ──< N', t: 'consignment_sales', n: 'partner reports sales' },
+          { f: 'retail_partners', c: '1 ──< N', t: 'partner_settlements', n: 'cycle settlement' },
+          { f: 'partner_settlements', c: '──→', t: 'invoices', n: 'generates receivable invoice' },
+        ]
+      },
+      {
+        id: 'logistics', label: 'Logistics', color: '#C084FC', desc: 'Deliveries, courier tracking log, delivery notes, courier webhooks', tables: [
+          { name: 'deliveries', cols: [{ b: 'PK', n: 'delivery_id', t: 'UUID' }, { b: '', n: 'delivery_number', t: 'TEXT UNIQUE' }, { b: '', n: 'reference_type', t: 'TEXT' }, { b: 'FK', n: 'contact_id', t: '→ contacts' }, { b: 'IDX', n: 'courier', t: 'TEXT' }, { b: 'IDX', n: 'courier_order_id', t: 'TEXT' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: '', n: 'delivery_fee', t: 'NUMERIC(10,2)' }, { b: '', n: 'delivery_address', t: 'JSONB' }] },
+          { name: 'delivery_items', cols: [{ b: 'PK', n: 'item_id', t: 'UUID' }, { b: 'FK', n: 'delivery_id', t: '→ deliveries' }, { b: 'FK', n: 'product_id', t: '→ products' }, { b: '', n: 'quantity', t: 'INTEGER' }, { b: '', n: 'serial_numbers', t: 'TEXT[]' }] },
+          { name: 'delivery_tracking', cols: [{ b: 'PK', n: 'track_id', t: 'UUID' }, { b: 'IDX', n: 'delivery_id', t: '→ deliveries' }, { b: '', n: 'status', t: 'TEXT' }, { b: '', n: 'location', t: 'TEXT' }, { b: '', n: 'source', t: 'TEXT' }, { b: 'IDX', n: 'occurred_at', t: 'TIMESTAMPTZ' }, { b: '', n: 'raw_payload', t: 'JSONB' }] },
+          { name: 'delivery_notes', cols: [{ b: 'PK', n: 'note_id', t: 'UUID' }, { b: 'FK', n: 'delivery_id', t: '→ deliveries' }, { b: '', n: 'content', t: 'TEXT' }, { b: 'FK', n: 'created_by', t: '→ users' }, { b: '', n: 'is_customer_visible', t: 'BOOL' }] },
+          { name: 'courier_webhooks', cols: [{ b: 'PK', n: 'webhook_id', t: 'UUID' }, { b: 'IDX', n: 'courier', t: 'TEXT' }, { b: 'IDX', n: 'event_type', t: 'TEXT' }, { b: '', n: 'payload', t: 'JSONB' }, { b: 'IDX', n: 'delivery_id', t: '→ deliveries' }, { b: 'IDX', n: 'processed', t: 'BOOL' }, { b: '', n: 'received_at', t: 'TIMESTAMPTZ' }] },
+        ], rels: [
+          { f: 'deliveries', c: '1 ──< N', t: 'delivery_items', n: 'products in shipment' },
+          { f: 'deliveries', c: '1 ──< N', t: 'delivery_tracking', n: 'append-only status log' },
+          { f: 'deliveries', c: '1 ──< N', t: 'delivery_notes', n: 'internal / customer notes' },
+          { f: 'courier_webhooks', c: '──→', t: 'deliveries', n: 'auto-update delivery status' },
+          { f: 'deliveries', c: '──→', t: 'stock_movements', n: 'creates stock_out on dispatch' },
+        ]
+      },
+      {
+        id: 'marketing', label: 'Marketing', color: '#F9A8D4', desc: 'Campaigns, recipient tracking, engagement events, loyalty points and tiers', tables: [
+          { name: 'campaigns', cols: [{ b: 'PK', n: 'campaign_id', t: 'UUID' }, { b: 'IDX', n: 'campaign_name', t: 'TEXT' }, { b: '', n: 'campaign_type', t: 'TEXT' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: '', n: 'audience_filter', t: 'JSONB' }, { b: '', n: 'recipient_count', t: 'INTEGER' }, { b: '', n: 'opened_count', t: 'INTEGER' }, { b: '', n: 'scheduled_at', t: 'TIMESTAMPTZ' }] },
+          { name: 'campaign_recipients', cols: [{ b: 'PK', n: 'recipient_id', t: 'UUID' }, { b: 'FK', n: 'campaign_id', t: '→ campaigns' }, { b: 'IDX', n: 'contact_id', t: '→ contacts' }, { b: 'IDX', n: 'status', t: 'TEXT' }, { b: 'IDX', n: 'tracking_token', t: 'TEXT UNIQUE' }, { b: '', n: 'sent_at', t: 'TIMESTAMPTZ' }] },
+          { name: 'campaign_events', cols: [{ b: 'PK', n: 'event_id', t: 'UUID' }, { b: 'FK', n: 'recipient_id', t: '→ campaign_recipients' }, { b: 'IDX', n: 'event_type', t: 'TEXT' }, { b: '', n: 'occurred_at', t: 'TIMESTAMPTZ' }, { b: '', n: 'metadata', t: 'JSONB' }] },
+          { name: 'loyalty_points', cols: [{ b: 'PK', n: 'transaction_id', t: 'UUID' }, { b: 'IDX', n: 'contact_id', t: '→ contacts' }, { b: '', n: 'transaction_type', t: 'TEXT' }, { b: '', n: 'points', t: 'INTEGER' }, { b: '', n: 'reference_type', t: 'TEXT' }, { b: '', n: 'expires_at', t: 'TIMESTAMPTZ' }] },
+          { name: 'loyalty_tiers', cols: [{ b: 'PK', n: 'tier_id', t: 'UUID' }, { b: '', n: 'tier_name', t: 'TEXT' }, { b: '', n: 'min_points', t: 'INTEGER' }, { b: '', n: 'max_points', t: 'INTEGER' }, { b: '', n: 'benefits', t: 'JSONB' }, { b: '', n: 'colour', t: 'TEXT' }] },
+        ], rels: [
+          { f: 'campaigns', c: '1 ──< N', t: 'campaign_recipients', n: 'one per contact' },
+          { f: 'campaign_recipients', c: '1 ──< N', t: 'campaign_events', n: 'open / click / bounce' },
+          { f: 'contacts', c: '1 ──< N', t: 'loyalty_points', n: 'append-only ledger' },
+          { f: 'loyalty_tiers', c: '──→', t: 'contacts', n: 'tier computed from total points' },
+        ]
+      },
+      {
+        id: 'reporting', label: 'Reporting', color: '#86EFAC', desc: 'Saved report definitions and per-user dashboard widget configurations', tables: [
+          { name: 'dashboard_configs', cols: [{ b: 'PK', n: 'config_id', t: 'UUID' }, { b: 'FK', n: 'user_id', t: '→ users' }, { b: '', n: 'dashboard_name', t: 'TEXT' }, { b: '', n: 'layout', t: 'JSONB' }, { b: '', n: 'widgets', t: 'JSONB' }, { b: '', n: 'is_default', t: 'BOOL' }] },
+          { name: 'saved_reports', cols: [{ b: 'PK', n: 'report_id', t: 'UUID' }, { b: 'FK', n: 'created_by', t: '→ users' }, { b: '', n: 'report_name', t: 'TEXT' }, { b: '', n: 'report_type', t: 'TEXT' }, { b: '', n: 'filters', t: 'JSONB' }, { b: '', n: 'columns', t: 'JSONB' }, { b: '', n: 'sort_config', t: 'JSONB' }, { b: '', n: 'is_shared', t: 'BOOL' }, { b: '', n: 'schedule', t: 'JSONB' }] },
+        ], rels: [
+          { f: 'users', c: '1 ──< N', t: 'dashboard_configs', n: 'per-user layouts' },
+          { f: 'users', c: '1 ──< N', t: 'saved_reports', n: 'personal + shared reports' },
+        ]
+      },
+    ];
+
+    const ALL = [...SD, ...BD];
+    let activeSchema = 'shared';
+
+    function bc(b) { return b === 'PK' ? 'pk' : b === 'FK' ? 'fk' : b === 'IDX' ? 'idx' : ''; }
+
+    function tblHTML(t) {
+      return `<div class="tbl-card"><div class="tbl-head"><span class="tbl-name">${t.name}</span></div><div class="tbl-cols">${t.cols.map(c => `<div class="col"><span class="badge ${bc(c.b)}">${c.b || '—'}</span><span class="col-n">${c.n}</span><span class="col-t">${c.t}</span></div>`).join('')
+        }</div></div>`;
+    }
+
+    function relsHTML(rels) {
+      return `<div class="rels-panel"><div class="rels-head">Relationships</div><div class="rels-body">${rels.map(r => `<div class="rel"><span class="rf">${r.f}</span><span class="rc">${r.c}</span><span class="rt">${r.t}</span>${r.n ? `<span class="rn">— ${r.n}</span>` : ''}</div>`).join('')
+        }</div></div>`;
+    }
+
+    function domHTML(d) {
+      return `<div class="domain-section" id="ds-${d.id}">
+    <div class="domain-header">
+      <span class="domain-title" style="color:${d.color}">${d.label}</span>
+      <span class="domain-sub">${d.desc}</span>
+      <span class="domain-count">${d.tables.length} tables</span>
+    </div>
+    <div class="tbl-grid">${d.tables.map(tblHTML).join('')}</div>
+    ${relsHTML(d.rels)}
+  </div>`;
+    }
+
+    function renderAll() {
+      const main = document.getElementById('main');
+      const bar = document.getElementById('domainBar');
+      bar.style.display = 'none';
+      let h = '<div class="domain-section visible" id="ds-all">';
+      for (const [sk, doms] of [['SHARED SCHEMA (38 tables)', SD], ['PER-BUSINESS SCHEMA — 71 tables each (jewelry + diffusers = 142 total)', BD]]) {
+        h += `<div class="schema-label">${sk}</div><div class="all-grid">`;
+        doms.forEach(d => {
+          h += `<div class="mini-domain" style="border-top:2px solid ${d.color}33">
+        <div class="mini-domain-title" style="color:${d.color}">${d.label}</div>
+        ${d.tables.map(t => `<div class="mini-tbl">${t.name}</div>`).join('')}
+      </div>`;
+        });
+        h += '</div>';
+      }
+      h += '</div>';
+      main.innerHTML = h;
+    }
+
+    function renderSchema(schema) {
+      const doms = schema === 'shared' ? SD : BD;
+      const bar = document.getElementById('domainBar');
+      const main = document.getElementById('main');
+      bar.style.display = 'flex';
+      bar.innerHTML = '';
+      main.innerHTML = doms.map(domHTML).join('');
+
+      doms.forEach((d, i) => {
+        const btn = document.createElement('div');
+        btn.className = 'dtab' + (i === 0 ? ' active' : '');
+        btn.textContent = d.label;
+        if (i === 0) { btn.style.cssText = `background:${d.color}18;color:${d.color};border-color:${d.color}44`; }
+        btn.onclick = () => {
+          bar.querySelectorAll('.dtab').forEach(b => { b.classList.remove('active'); b.style.cssText = ''; });
+          btn.classList.add('active');
+          btn.style.cssText = `background:${d.color}18;color:${d.color};border-color:${d.color}44`;
+          main.querySelectorAll('.domain-section').forEach(s => s.classList.remove('visible'));
+          document.getElementById('ds-' + d.id).classList.add('visible');
+        };
+        bar.appendChild(btn);
+        if (i === 0) document.getElementById('ds-' + d.id).classList.add('visible');
+      });
+    }
+
+    document.querySelector('.schema-bar').addEventListener('click', e => {
+      const tab = e.target.closest('.schema-tab');
+      if (!tab) return;
+      document.querySelectorAll('.schema-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeSchema = tab.dataset.schema;
+      if (activeSchema === 'all') renderAll();
+      else renderSchema(activeSchema);
+    });
+
+    renderSchema('shared');
+  </script>
+</body>
+
+</html>

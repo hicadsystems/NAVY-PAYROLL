@@ -435,7 +435,7 @@
     <!-- ══════════════════════════════════════
          SECTION 1 — PASSPORT PHOTOS
     ══════════════════════════════════════ -->
-    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="1"
+    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="1"
       id="section-1">
       <div class="section-heading">
         <div class="section-number">01</div>
@@ -500,7 +500,7 @@
     <!-- ══════════════════════════════════════
          SECTION 2 — PERSONAL INFORMATION
     ══════════════════════════════════════ -->
-    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="2"
+    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="2"
       id="section-2">
       <div class="section-heading">
         <div class="section-number">02</div>
@@ -606,7 +606,7 @@
     <!-- ══════════════════════════════════════
          SECTION 3 — SERVICE DETAILS
     ══════════════════════════════════════ -->
-    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="3"
+    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="3"
       id="section-3">
       <div class="section-heading">
         <div class="section-number">03</div>
@@ -692,7 +692,7 @@
     <!-- ══════════════════════════════════════
          SECTION 4 — BANK & FINANCIAL
     ══════════════════════════════════════ -->
-    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="4"
+    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="4"
       id="section-4">
       <div class="section-heading">
         <div class="section-number">04</div>
@@ -737,7 +737,7 @@
     <!-- ══════════════════════════════════════
          SECTION 5 — ACCOMMODATION
     ══════════════════════════════════════ -->
-    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="5"
+    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="5"
       id="section-5">
       <div class="section-heading">
         <div class="section-number">05</div>
@@ -792,7 +792,7 @@
     <!-- ══════════════════════════════════════
          SECTION 6 — ALLOWANCES
     ══════════════════════════════════════ -->
-    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="6"
+    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="6"
       id="section-6">
       <div class="section-heading">
         <div class="section-number">06</div>
@@ -816,7 +816,7 @@
     <!-- ══════════════════════════════════════
          SECTION 7 — LOANS
     ══════════════════════════════════════ -->
-    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="7"
+    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="7"
       id="section-7">
       <div class="section-heading">
         <div class="section-number">07</div>
@@ -846,7 +846,7 @@
     <!-- ══════════════════════════════════════
          SECTION 8 — NEXT OF KIN
     ══════════════════════════════════════ -->
-    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="8"
+    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="8"
       id="section-8">
       <div class="section-heading">
         <div class="section-number">08</div>
@@ -961,7 +961,7 @@
     <!-- ══════════════════════════════════════
          SECTION 9 — SPOUSE & CHILDREN
     ══════════════════════════════════════ -->
-    <div class="section-card bg-white rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="9"
+    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="9"
       id="section-9">
       <div class="section-heading">
         <div class="section-number">09</div>
@@ -1155,18 +1155,18 @@
         });
         const data = await res.json();
 
-        if (!res.ok) {
-          showBlocked(data.error || 'Unable to load form.');
-          return;
-        }
+        // if (!res.ok) {
+        //   showBlocked(data.error || 'Unable to load form.');
+        //   return;
+        // }
 
         formData = data;
         formType = data.formType || 'RATING';
 
-        if (!data.canEdit) {
-          showBlocked(data.editBlocked || 'Form is not available for editing.');
-          return;
-        }
+        // if (!data.canEdit) {
+        //   showBlocked(data.editBlocked || 'Form is not available for editing.');
+        //   return;
+        // }
 
         initForm(data);
 

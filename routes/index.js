@@ -123,7 +123,7 @@ const rangePaymentRoutes = require("./audit-trail/rangePayments");
     //-- documents --
     const emolumentDocumentRoutes = require("../routes/user-dashboard/emolument/documents/documents.routes");
     //-- tickets --
-    //const emolumentTicketsRoutes = require("../routes/user-dashboard/emolument/tickets/tickets.routes");
+    const emolumentTicketsRoutes = require("../routes/user-dashboard/emolument/tickets/tickets.routes");
   //
 //
 
@@ -260,7 +260,7 @@ module.exports = (app) => {
       //-- documents --
       app.use("/documents", emolumentDocumentRoutes);
       //-- tickets --
-      //app.use("/tickets", emolumentTicketsRoutes);
+      app.use("/tickets", emolumentTicketsRoutes);
     //
 
     //payslip

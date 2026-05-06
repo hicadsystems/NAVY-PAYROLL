@@ -3,12 +3,15 @@
 // Business logic between routes and repo.
 // ─────────────────────────────────────────────────────────────
 
+"use strict";
+
 const repo = require("./tickets.repository");
 
 // ── Submit ticket (user) ─────────────────────────────────────
-// Pulls identity from the decoded JWT user object so the
-// frontend cannot spoof name / ship / rank.
-async function submitTicket({ user, subject, body }) {
+// user_id comes from req.user_id (set by verifyToken).
+// Profile fields (name, ship, email, phone) are fetched from
+// ef_personalinfos so the frontend cannot spoof them.
+async function submitTicket({ user_id, subject, body, ip }) {
   if (!subject || !subject.trim()) {
     return { success: false, code: 400, message: "Subject is required." };
   }
@@ -16,14 +19,31 @@ async function submitTicket({ user, subject, body }) {
     return { success: false, code: 400, message: "Description is required." };
   }
 
-  const id = await repo.createTicket({
-    user_id: user.user_id || user.id || "",
-    full_name: user.full_name || user.name || "",
-    ship: user.ship || "",
-    email: user.email || "",
-    phone: user.phone || "",
+  const profile = await repo.getPersonProfile(user_id);
+  const full_name = profile
+    ? [profile.Surname, profile.OtherName].filter(Boolean).join(" ")
+    : user_id;
+
+  const ticketData = {
+    user_id,
+    full_name,
+    ship: profile?.ship || "",
+    email: profile?.email || "",
+    phone: profile?.gsm_number || "",
     subject: subject.trim(),
     body: body.trim(),
+  };
+
+  const id = await repo.createTicket(ticketData);
+
+  await repo.insertAuditLog({
+    tableName: "ef_tickets",
+    action: "INSERT",
+    recordKey: String(id),
+    oldValues: null,
+    newValues: { id, ...ticketData },
+    performedBy: user_id,
+    ipAddress: ip,
   });
 
   return { success: true, data: { id } };
@@ -42,27 +62,65 @@ async function listTickets({ status, search, page, pageSize } = {}) {
 }
 
 // ── Respond to ticket (admin) ─────────────────────────────────
-async function respond({ id, response, admin_name }) {
+async function respond({ id, response, admin_id, ip }) {
   if (!response || !response.trim()) {
     return { success: false, code: 400, message: "Response text is required." };
   }
+
+  const existing = await repo.getTicketById(id);
+  if (!existing) {
+    return { success: false, code: 404, message: "Ticket not found." };
+  }
+
   const affected = await repo.respondToTicket({
     id,
     response: response.trim(),
-    responded_by: admin_name || "Admin",
+    responded_by: admin_id,
   });
+
   if (!affected) {
     return { success: false, code: 404, message: "Ticket not found." };
   }
+
+  await repo.insertAuditLog({
+    tableName: "ef_tickets",
+    action: "RESPONDED",
+    recordKey: String(id),
+    oldValues: { status: existing.status, response: existing.response || null },
+    newValues: {
+      status: "responded",
+      response: response.trim(),
+      responded_by: admin_id,
+    },
+    performedBy: admin_id,
+    ipAddress: ip,
+  });
+
   return { success: true, message: "Response sent." };
 }
 
 // ── Close ticket (admin) ──────────────────────────────────────
-async function closeTicket(id) {
+async function closeTicket({ id, admin_id, ip }) {
+  const existing = await repo.getTicketById(id);
+  if (!existing) {
+    return { success: false, code: 404, message: "Ticket not found." };
+  }
+
   const affected = await repo.closeTicket(id);
   if (!affected) {
     return { success: false, code: 404, message: "Ticket not found." };
   }
+
+  await repo.insertAuditLog({
+    tableName: "ef_tickets",
+    action: "CLOSED",
+    recordKey: String(id),
+    oldValues: { status: existing.status },
+    newValues: { status: "closed", closed_by: admin_id },
+    performedBy: admin_id,
+    ipAddress: ip,
+  });
+
   return { success: true, message: "Ticket closed." };
 }
 

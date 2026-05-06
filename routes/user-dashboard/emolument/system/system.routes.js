@@ -1,300 +1,229 @@
+"use strict";
+
 /**
  * FILE: routes/user-dashboard/emolument/system/system.routes.js
  *
- * System control endpoints — EMOL_ADMIN only except where noted.
- *
- * All routes:
- *   verifyToken + requireEmolRole('EMOL_ADMIN')
- *   except GET /status and GET /ships and GET /commands
- *   which also allow any elevated emolument role (for dashboards).
+ * CRUD endpoints for ef_control — the single source of truth
+ * for emolument open / close state.
  *
  * ─── ROUTE MAP ───────────────────────────────────────────────
  *
- *  GET    /system/status                → full system state
- *  GET    /system/ships                 → all ships + open/close state
- *  GET    /system/ships/:commandCode    → ships filtered by command
- *  GET    /system/commands              → all commands
+ *  GET    /system/control           → list all rows
+ *  GET    /system/control/:id       → single row
+ *  POST   /system/control           → create row  (EMOL_ADMIN)
+ *  PUT    /system/control/:id       → update row  (EMOL_ADMIN)
+ *  DELETE /system/control/:id       → delete row  (EMOL_ADMIN)
  *
- *  POST   /system/open                  → open globally
- *  POST   /system/close                 → close globally
- *  POST   /system/ships/:id/open        → open one ship
- *  POST   /system/ships/:id/close       → close one ship
- *  POST   /system/ships/open-all        → open all ships
- *  POST   /system/ships/close-all       → close all ships
+ *  GET    /system/control/resolve   → resolve effective status
+ *         ?ship=NNS_ARADU&formtype=OFFICERS
  *
- *  PUT    /system/processing-year       → set processing year
- *  PUT    /system/form-counters         → set form number sequences
+ * ─────────────────────────────────────────────────────────────
+ * Mount in your main router as:
+ *   const controlRoutes = require('./control.routes');
+ *   router.use('/system/control', controlRoutes);
+ * ─────────────────────────────────────────────────────────────
  */
-
-"use strict";
 
 const express = require("express");
 const router = express.Router();
 const pool = require("../../../../config/db");
 const config = require("../../../../config");
+
 const verifyToken = require("../../../../middware/authentication");
 const {
   requireEmolRole,
   requireAnyEmolRole,
 } = require("../../../../middware/emolumentAuth");
-const systemService = require("./system.service");
+const controlService = require("./system.service");
 
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 
-// Set DB context for all routes in this module
+// Set DB context for every request in this module
 router.use((req, res, next) => {
   pool.useDatabase(DB());
   next();
 });
 
-// All routes require authentication
+// All routes require a valid token
 router.use(verifyToken);
 
 // ─────────────────────────────────────────────────────────────
-// READ-ONLY — any elevated emolument role
+// HELPERS
 // ─────────────────────────────────────────────────────────────
 
-// GET /system/status
-router.get("/status", requireAnyEmolRole, async (req, res) => {
-  try {
-    const result = await systemService.getStatus();
-    if (!result.success)
-      return res.status(result.code).json({ error: result.message });
-    return res.json(result.data);
-  } catch (err) {
-    console.error("❌ GET /system/status:", err);
-    return res.status(500).json({ error: "Server error" });
-  }
-});
+function parseId(param) {
+  const id = Number(param);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
 
-// GET /system/ships
-router.get("/ships", requireAnyEmolRole, async (req, res) => {
-  try {
-    const result = await systemService.listShips();
-    if (!result.success)
-      return res.status(result.code).json({ error: result.message });
-    return res.json(result.data);
-  } catch (err) {
-    console.error("❌ GET /system/ships:", err);
-    return res.status(500).json({ error: "Server error" });
+function sendResult(res, result) {
+  if (!result.success) {
+    return res.status(result.code).json({ error: result.message });
   }
-});
+  const body = { message: result.message };
+  if (result.data !== undefined && result.data !== null)
+    body.data = result.data;
+  return res.json(body);
+}
 
-// GET /system/ships/:commandCode
-router.get("/ships/:commandCode", requireAnyEmolRole, async (req, res) => {
-  try {
-    const result = await systemService.listShips(req.params.commandCode);
-    if (!result.success)
-      return res.status(result.code).json({ error: result.message });
-    return res.json(result.data);
-  } catch (err) {
-    console.error("❌ GET /system/ships/:commandCode:", err);
-    return res.status(500).json({ error: "Server error" });
+// ─────────────────────────────────────────────────────────────
+// GET /system/control/resolve
+// Query: ?ship=NNS_ARADU&formtype=OFFICERS
+// Any elevated emolument role — used by form-submission routes.
+// NOTE: must be declared before /:id to avoid 'resolve' being
+//       treated as a numeric id parameter.
+// ─────────────────────────────────────────────────────────────
+
+router.get("/resolve", requireAnyEmolRole, async (req, res) => {
+  const { ship, formtype } = req.query;
+
+  if (!ship) {
+    return res.status(400).json({ error: "ship query param is required." });
   }
-});
 
-// GET /system/commands
-router.get("/commands", requireAnyEmolRole, async (req, res) => {
   try {
-    const result = await systemService.listCommands();
-    if (!result.success)
-      return res.status(result.code).json({ error: result.message });
-    return res.json(result.data);
+    const result = await controlService.resolveEffectiveStatus(
+      ship,
+      formtype || "ALL",
+    );
+    return res.json(result);
   } catch (err) {
-    console.error("❌ GET /system/commands:", err);
+    console.error("❌ GET /system/control/resolve:", err);
     return res.status(500).json({ error: "Server error" });
   }
 });
 
 // ─────────────────────────────────────────────────────────────
-// GLOBAL OPEN / CLOSE — EMOL_ADMIN only
+// GET /system/control
+// List all ef_control rows — any elevated emolument role.
 // ─────────────────────────────────────────────────────────────
 
-// POST /system/open
-// Body: { opendate, closedate }
-router.post("/open", requireEmolRole("EMOL_ADMIN"), async (req, res) => {
-  const { opendate, closedate } = req.body;
-  if (!opendate || !closedate) {
+router.get("/", requireAnyEmolRole, async (req, res) => {
+  try {
+    const result = await controlService.listControlRows();
+    // Return the array directly so the frontend can treat the
+    // response as a plain array (matches the existing /status pattern).
+    return res.json(result.data);
+  } catch (err) {
+    console.error("❌ GET /system/control:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /system/control/:id
+// Single row — any elevated emolument role.
+// ─────────────────────────────────────────────────────────────
+
+router.get("/:id", requireAnyEmolRole, async (req, res) => {
+  const id = parseId(req.params.id);
+  if (!id) return res.status(400).json({ error: "Invalid control row ID." });
+
+  try {
+    const result = await controlService.getControlRow(id);
+    return sendResult(res, result);
+  } catch (err) {
+    console.error("❌ GET /system/control/:id:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /system/control
+// Create a new cycle row — EMOL_ADMIN only.
+//
+// Body:
+//   processingyear  string  required   e.g. "2026"
+//   ship            string  optional   ship name or "All" (default "All")
+//   formtype        string  optional   ALL|OFFICERS|RATINGS|TRAINING (default "ALL")
+//   startdate       string  required   ISO datetime
+//   enddate         string  required   ISO datetime
+//   status          string  optional   Open|Reopen|Close (default "Open")
+//   notes           string  optional
+// ─────────────────────────────────────────────────────────────
+
+router.post("/", requireEmolRole("EMOL_ADMIN"), async (req, res) => {
+  const { processingyear, ship, formtype, startdate, enddate, status, notes } =
+    req.body;
+
+  if (!processingyear || !startdate || !enddate) {
     return res
       .status(400)
-      .json({ error: "opendate and closedate are required." });
+      .json({ error: "processingyear, startdate and enddate are required." });
   }
+
   try {
-    const result = await systemService.openGlobal(
-      opendate,
-      closedate,
+    const result = await controlService.createControlRow(
+      { processingyear, ship, formtype, startdate, enddate, status, notes },
       req.user_id,
       req.ip,
     );
-    if (!result.success)
-      return res.status(result.code).json({ error: result.message });
-    return res.json({ message: result.message, data: result.data });
+    if (!result.success) return sendResult(res, result);
+    // 201 Created with the new row + its generated Id
+    return res.status(201).json({
+      message: result.message,
+      id: result.data.Id,
+      data: result.data,
+    });
   } catch (err) {
-    console.error("❌ POST /system/open:", err);
+    console.error("❌ POST /system/control:", err);
     return res.status(500).json({ error: "Server error" });
   }
 });
 
-// POST /system/close
-router.post("/close", requireEmolRole("EMOL_ADMIN"), async (req, res) => {
+// ─────────────────────────────────────────────────────────────
+// PUT /system/control/:id
+// Update an existing cycle row — EMOL_ADMIN only.
+// Body: same fields as POST, all required for a full replace.
+// ─────────────────────────────────────────────────────────────
+
+router.put("/:id", requireEmolRole("EMOL_ADMIN"), async (req, res) => {
+  const id = parseId(req.params.id);
+  if (!id) return res.status(400).json({ error: "Invalid control row ID." });
+
+  const { processingyear, ship, formtype, startdate, enddate, status, notes } =
+    req.body;
+
+  if (!processingyear || !startdate || !enddate) {
+    return res
+      .status(400)
+      .json({ error: "processingyear, startdate and enddate are required." });
+  }
+
   try {
-    const result = await systemService.closeGlobal(req.user_id, req.ip);
-    if (!result.success)
-      return res.status(result.code).json({ error: result.message });
-    return res.json({ message: result.message });
+    const result = await controlService.updateControlRow(
+      id,
+      { processingyear, ship, formtype, startdate, enddate, status, notes },
+      req.user_id,
+      req.ip,
+    );
+    return sendResult(res, result);
   } catch (err) {
-    console.error("❌ POST /system/close:", err);
+    console.error("❌ PUT /system/control/:id:", err);
     return res.status(500).json({ error: "Server error" });
   }
 });
 
 // ─────────────────────────────────────────────────────────────
-// PER-SHIP OPEN / CLOSE — EMOL_ADMIN only
-// Note: /open-all and /close-all must come BEFORE /:id routes
-// to prevent Express matching 'open-all' as an :id param.
+// DELETE /system/control/:id
+// Remove a cycle row — EMOL_ADMIN only.
 // ─────────────────────────────────────────────────────────────
 
-// POST /system/ships/open-all
-router.post(
-  "/ships/open-all",
-  requireEmolRole("EMOL_ADMIN"),
-  async (req, res) => {
-    try {
-      const result = await systemService.openAllShips(req.user_id, req.ip);
-      if (!result.success)
-        return res.status(result.code).json({ error: result.message });
-      return res.json({ message: result.message, data: result.data });
-    } catch (err) {
-      console.error("❌ POST /system/ships/open-all:", err);
-      return res.status(500).json({ error: "Server error" });
-    }
-  },
-);
+router.delete("/:id", requireEmolRole("EMOL_ADMIN"), async (req, res) => {
+  const id = parseId(req.params.id);
+  if (!id) return res.status(400).json({ error: "Invalid control row ID." });
 
-// POST /system/ships/close-all
-router.post(
-  "/ships/close-all",
-  requireEmolRole("EMOL_ADMIN"),
-  async (req, res) => {
-    try {
-      const result = await systemService.closeAllShips(req.user_id, req.ip);
-      if (!result.success)
-        return res.status(result.code).json({ error: result.message });
-      return res.json({ message: result.message, data: result.data });
-    } catch (err) {
-      console.error("❌ POST /system/ships/close-all:", err);
-      return res.status(500).json({ error: "Server error" });
-    }
-  },
-);
-
-// POST /system/ships/:id/open
-router.post(
-  "/ships/:id/open",
-  requireEmolRole("EMOL_ADMIN"),
-  async (req, res) => {
-    const shipId = Number(req.params.id);
-    if (!Number.isInteger(shipId) || shipId < 1) {
-      return res.status(400).json({ error: "Invalid ship ID." });
-    }
-    try {
-      const result = await systemService.openShip(shipId, req.user_id, req.ip);
-      if (!result.success)
-        return res.status(result.code).json({ error: result.message });
-      return res.json({ message: result.message });
-    } catch (err) {
-      console.error("❌ POST /system/ships/:id/open:", err);
-      return res.status(500).json({ error: "Server error" });
-    }
-  },
-);
-
-// POST /system/ships/:id/close
-router.post(
-  "/ships/:id/close",
-  requireEmolRole("EMOL_ADMIN"),
-  async (req, res) => {
-    const shipId = Number(req.params.id);
-    if (!Number.isInteger(shipId) || shipId < 1) {
-      return res.status(400).json({ error: "Invalid ship ID." });
-    }
-    try {
-      const result = await systemService.closeShip(shipId, req.user_id, req.ip);
-      if (!result.success)
-        return res.status(result.code).json({ error: result.message });
-      return res.json({ message: result.message });
-    } catch (err) {
-      console.error("❌ POST /system/ships/:id/close:", err);
-      return res.status(500).json({ error: "Server error" });
-    }
-  },
-);
-
-// ─────────────────────────────────────────────────────────────
-// PROCESSING YEAR — EMOL_ADMIN only
-// ─────────────────────────────────────────────────────────────
-
-// PUT /system/processing-year
-// Body: { year: 2025, target: 'all' | 'standard' | 'training' }
-router.put(
-  "/processing-year",
-  requireEmolRole("EMOL_ADMIN"),
-  async (req, res) => {
-    const { year, target = "all" } = req.body;
-    if (!year) {
-      return res.status(400).json({ error: "year is required." });
-    }
-    try {
-      const result = await systemService.setProcessingYear(
-        year,
-        target,
-        req.user_id,
-        req.ip,
-      );
-      if (!result.success)
-        return res.status(result.code).json({ error: result.message });
-      return res.json({ message: result.message, data: result.data });
-    } catch (err) {
-      console.error("❌ PUT /system/processing-year:", err);
-      return res.status(500).json({ error: "Server error" });
-    }
-  },
-);
-
-// ─────────────────────────────────────────────────────────────
-// FORM COUNTERS — EMOL_ADMIN only
-// ─────────────────────────────────────────────────────────────
-
-// PUT /system/form-counters
-// Body: { officersNo?, ratingsNo?, trainingNo? }
-// All fields optional — omitted fields keep their current value.
-router.put(
-  "/form-counters",
-  requireEmolRole("EMOL_ADMIN"),
-  async (req, res) => {
-    const { officersNo, ratingsNo, trainingNo } = req.body;
-    if (officersNo == null && ratingsNo == null && trainingNo == null) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "At least one counter (officersNo, ratingsNo, trainingNo) is required.",
-        });
-    }
-    try {
-      const result = await systemService.setFormCounters(
-        { officersNo, ratingsNo, trainingNo },
-        req.user_id,
-        req.ip,
-      );
-      if (!result.success)
-        return res.status(result.code).json({ error: result.message });
-      return res.json({ message: result.message, data: result.data });
-    } catch (err) {
-      console.error("❌ PUT /system/form-counters:", err);
-      return res.status(500).json({ error: "Server error" });
-    }
-  },
-);
+  try {
+    const result = await controlService.deleteControlRow(
+      id,
+      req.user_id,
+      req.ip,
+    );
+    return sendResult(res, result);
+  } catch (err) {
+    console.error("❌ DELETE /system/control/:id:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
 
 module.exports = router;

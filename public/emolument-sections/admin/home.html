@@ -95,7 +95,6 @@
   }
 
   @keyframes ah-pulse {
-
     0%,
     100% {
       opacity: 1
@@ -122,21 +121,43 @@
     width: 0%;
   }
 
-  /* ── Top ships ── */
+  /* ── Top ships ticker ── */
+  .ah-ship-ticker-wrap {
+    position: relative;
+    min-height: 28px;
+    overflow: hidden;
+  }
+
   .ah-ship-row {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0.32rem 0;
-    border-bottom: 1px solid rgba(251, 191, 36, 0.1);
+    position: absolute;
+    width: 100%;
+    transition: opacity 0.35s ease, transform 0.35s ease;
   }
 
-  .ah-ship-row:last-child {
-    border-bottom: none;
+  .ah-ship-row.ah-tick-hidden {
+    opacity: 0;
+  }
+
+  .ah-ship-row.ah-tick-in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .ah-ship-row.ah-tick-out-up {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+
+  .ah-ship-row.ah-tick-out-down {
+    opacity: 0;
+    transform: translateY(12px);
   }
 
   .ah-ship-rank {
-    font-size: 0.6rem;
     font-weight: 800;
     color: rgba(30, 64, 175, 0.28);
     min-width: 14px;
@@ -144,7 +165,6 @@
 
   .ah-ship-name {
     flex: 1;
-    font-size: 0.7rem;
     font-weight: 700;
     color: rgb(30 64 175);
     white-space: nowrap;
@@ -175,6 +195,33 @@
     color: rgba(30, 64, 175, 0.5);
     min-width: 24px;
     text-align: right;
+  }
+
+  .ah-ship-view {
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(30, 64, 175, 0.55);
+    background: rgba(30, 64, 175, 0.06);
+    border: 1px solid rgba(30, 64, 175, 0.15);
+    border-radius: 4px;
+    padding: 2px 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  .ah-ship-view:hover {
+    background: rgba(30, 64, 175, 0.12);
+  }
+
+  .ah-ticker-counter {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: rgba(30, 64, 175, 0.3);
+    text-align: right;
+    margin-bottom: 0.3rem;
   }
 
   /* ── Refresh badge ── */
@@ -208,6 +255,132 @@
 
   .ah-rdot.stale {
     background: #f59e0b;
+  }
+
+  /* ── Ship modal ── */
+  .ah-modal-bg {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .ah-modal {
+    background: #fff;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 8px 32px rgba(30, 64, 175, 0.12);
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .ah-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .ah-modal-title {
+    font-size: 0.85rem;
+    font-weight: 900;
+    color: rgb(30 64 175);
+  }
+
+  .ah-modal-close {
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: rgba(30, 64, 175, 0.4);
+    background: none;
+    border: none;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .ah-modal-close:hover {
+    color: rgb(30 64 175);
+  }
+
+  .ah-modal-pct {
+    font-size: 2rem;
+    font-weight: 900;
+    color: rgb(30 64 175);
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+
+  .ah-modal-prog-bar {
+    height: 6px;
+    background: rgba(251, 191, 36, 0.15);
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 0.5rem 0 1rem;
+  }
+
+  .ah-modal-prog-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #f5c842, rgb(30 64 175));
+    transition: width 0.8s ease;
+    width: 0%;
+  }
+
+  .ah-modal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.07);
+    font-size: 0.72rem;
+  }
+
+  .ah-modal-row:last-child {
+    border-bottom: none;
+  }
+
+  .ah-modal-row-lbl {
+    color: rgba(30, 64, 175, 0.5);
+    font-weight: 600;
+  }
+
+  .ah-modal-row-val {
+    font-weight: 800;
+    color: rgb(30 64 175);
+  }
+
+  .ah-modal-badge {
+    display: inline-block;
+    font-size: 0.55rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  .ah-badge-green {
+    background: rgba(34, 197, 94, 0.12);
+    color: #166534;
+  }
+
+  .ah-badge-amber {
+    background: rgba(245, 158, 11, 0.12);
+    color: #92400e;
+  }
+
+  .ah-badge-red {
+    background: rgba(239, 68, 68, 0.1);
+    color: #991b1b;
+  }
+
+  @keyframes ah-spin {
+    to { transform: rotate(360deg); }
   }
 </style>
 
@@ -379,8 +552,22 @@
 
     <section class="flex justify-center">
       <div class="frame-2 w-full p-4">
-        <p class="ah-lbl" style="margin-top:0;">Top Ships by Completion</p>
-        <div id="ah-ships-list">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem;">
+          <p class="ah-lbl" style="margin-top:0;margin-bottom:0;">Top Ships by Completion</p>
+          <span class="ah-ticker-counter" id="ah-ticker-counter"></span>
+        </div>
+        <!-- Ticker: one ship at a time, cycles through top 10 -->
+        <div class="ah-ship-ticker-wrap md:mt-5" id="ah-ships-list">
+          <div class="ah-ship-row ah-tick-hidden" id="ah-ship-ticker">
+            <span class="ah-ship-rank text-sm md:text-lg" id="ah-t-rank">1</span>
+            <span class="ah-ship-name text-sm md:text-lg" id="ah-t-name">—</span>
+            <div class="ah-ship-bar"><div class="ah-ship-fill" id="ah-t-bar" style="width:0%"></div></div>
+            <span class="ah-ship-pct" id="ah-t-pct">—%</span>
+            <button class="ah-ship-view" id="ah-t-view">View</button>
+          </div>
+        </div>
+        <!-- Skeleton shown before data arrives -->
+        <div id="ah-ships-sk">
           <div class="ah-sk" style="height:10px;width:70%;margin-bottom:8px;display:block;border-radius:4px;"></div>
           <div class="ah-sk" style="height:10px;width:85%;margin-bottom:8px;display:block;border-radius:4px;"></div>
           <div class="ah-sk" style="height:10px;width:55%;display:block;border-radius:4px;"></div>
@@ -392,10 +579,22 @@
 
 </div>
 
+<!-- ── Ship stats modal ── -->
+<div class="ah-modal-bg" id="ah-modal" style="display:none;" onclick="if(event.target===this)window.ahCloseModal()">
+  <div class="ah-modal">
+    <div class="ah-modal-head">
+      <span class="ah-modal-title" id="ah-modal-title">Ship Stats</span>
+      <button class="ah-modal-close" onclick="window.ahCloseModal()">&#x2715;</button>
+    </div>
+    <div id="ah-modal-body"></div>
+  </div>
+</div>
+
 <script>
   (function () {
     const TOKEN = localStorage.getItem('token');
 
+    /* ── Greeting ── */
     try {
       const name = (localStorage.getItem('full_name') || 'Admin').trim().split(' ')[0];
       const h = new Date().getHours();
@@ -404,14 +603,113 @@
       if (el) el.textContent = 'Good ' + part + ', ' + name;
     } catch (e) { }
 
+    /* ── Helpers ── */
     function N(v) { return (v === undefined || v === null) ? '0' : Number(v).toLocaleString(); }
     function pct(a, b) { return (!b || b === 0) ? 0 : Math.round(a / b * 100); }
     function sid(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
 
+    /* ── Ticker state ── */
+    let _ships = [];
+    let _tickIdx = 0;
+    let _tickTimer = null;
+
+    /* Show ship at index i with entrance class */
+    function showShip(i, enterClass) {
+      const s = _ships[i];
+      if (!s) return;
+      const row = document.getElementById('ah-ship-ticker');
+      if (!row) return;
+
+      /* Reset bar before swap */
+      const bar = document.getElementById('ah-t-bar');
+      if (bar) { bar.style.transition = 'none'; bar.style.width = '0%'; }
+
+      row.className = 'ah-ship-row ah-tick-hidden';
+      document.getElementById('ah-t-rank').textContent = i + 1;
+      document.getElementById('ah-t-name').textContent = s.ship;
+      document.getElementById('ah-t-pct').textContent = (s.completion_pct || 0) + '%';
+      document.getElementById('ah-t-view').onclick = function () { window.ahOpenModal(i); };
+
+      const counter = document.getElementById('ah-ticker-counter');
+      if (counter) counter.textContent = (i + 1) + ' / ' + _ships.length;
+
+      requestAnimationFrame(function () {
+        row.className = 'ah-ship-row ' + enterClass;
+        setTimeout(function () {
+          if (bar) { bar.style.transition = 'width 0.7s ease'; bar.style.width = (s.completion_pct || 0) + '%'; }
+        }, 50);
+      });
+    }
+
+    /* Transition to next ship */
+    function tickNext() {
+      const row = document.getElementById('ah-ship-ticker');
+      if (!row) return;
+      row.className = 'ah-ship-row ah-tick-out-up';
+      setTimeout(function () {
+        _tickIdx = (_tickIdx + 1) % _ships.length;
+        showShip(_tickIdx, 'ah-tick-out-down');
+        requestAnimationFrame(function () {
+          setTimeout(function () {
+            const r = document.getElementById('ah-ship-ticker');
+            if (r) r.className = 'ah-ship-row ah-tick-in';
+          }, 20);
+        });
+      }, 350);
+    }
+
+    function startTicker() {
+      /* Hide skeleton */
+      const sk = document.getElementById('ah-ships-sk');
+      if (sk) sk.style.display = 'none';
+
+      if (_tickTimer) clearInterval(_tickTimer);
+      _tickIdx = 0;
+      showShip(0, 'ah-tick-in');
+      _tickTimer = setInterval(tickNext, 3000);
+    }
+
+    /* ── Modal ── */
+    window.ahOpenModal = function (i) {
+      const s = _ships[i];
+      if (!s) return;
+      document.getElementById('ah-modal-title').textContent = s.ship;
+
+      const cp = parseFloat(s.completion_pct) || 0;
+      const pipeline = Math.max(0, (s.total || 0) - (s.confirmed || 0) - (s.not_filed || 0));
+      const badgeCls = cp >= 75 ? 'ah-badge-green' : cp >= 40 ? 'ah-badge-amber' : 'ah-badge-red';
+      const badgeLbl = cp >= 75 ? 'On Track' : cp >= 40 ? 'In Progress' : 'Behind';
+
+      document.getElementById('ah-modal-body').innerHTML =
+        '<div style="margin-bottom:0.75rem;">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;">' +
+            '<span class="ah-modal-pct">' + cp + '%</span>' +
+            '<span class="ah-modal-badge ' + badgeCls + '">' + badgeLbl + '</span>' +
+          '</div>' +
+          '<div class="ah-modal-prog-bar"><div class="ah-modal-prog-fill" id="ah-mpf"></div></div>' +
+        '</div>' +
+        '<div class="ah-modal-row"><span class="ah-modal-row-lbl">Total Personnel</span><span class="ah-modal-row-val">' + N(s.total) + '</span></div>' +
+        '<div class="ah-modal-row"><span class="ah-modal-row-lbl">Confirmed (CPO)</span><span class="ah-modal-row-val" style="color:#166534">' + N(s.confirmed) + '</span></div>' +
+        '<div class="ah-modal-row"><span class="ah-modal-row-lbl">In Pipeline</span><span class="ah-modal-row-val" style="color:#92400e">' + N(pipeline) + '</span></div>' +
+        '<div class="ah-modal-row"><span class="ah-modal-row-lbl">Not Filed</span><span class="ah-modal-row-val" style="color:#991b1b">' + N(s.not_filed || 0) + '</span></div>' +
+        '<div class="ah-modal-row"><span class="ah-modal-row-lbl">Fleet Rank</span><span class="ah-modal-row-val">#' + (i + 1) + ' of ' + _ships.length + '</span></div>';
+
+      document.getElementById('ah-modal').style.display = 'flex';
+      setTimeout(function () {
+        const f = document.getElementById('ah-mpf');
+        if (f) f.style.width = cp + '%';
+      }, 80);
+    };
+
+    window.ahCloseModal = function () {
+      document.getElementById('ah-modal').style.display = 'none';
+    };
+
+    /* ── Render ── */
     function render(data) {
       const g = data.global || {};
       const byC = data.byClass || [];
-      const ships = data.topShips || [];
+      _ships = data.topShips || [];
 
       /* Overall */
       const total = g.total_personnel || 0;
@@ -421,73 +719,66 @@
       sid('ah-of', conf.toLocaleString() + ' / ' + total.toLocaleString() + ' personnel');
       sid('ah-conf-lbl', conf.toLocaleString() + ' confirmed');
       sid('ah-nf-lbl', N(g.total_not_filed) + ' not filed');
-      setTimeout(() => { const f = document.getElementById('ah-fill'); if (f) f.style.width = p + '%'; }, 80);
+      setTimeout(function () { const f = document.getElementById('ah-fill'); if (f) f.style.width = p + '%'; }, 80);
 
-      /* Class rows
-         classes 1=Officers 2=Ratings 3=Training
-         Approved  = cpo_confirmed
-         Awaiting  = submitted + do_reviewed + fo_approved
-         Not Filed = not_filed                              */
+      /*
+       * Class rows  —  classes 1=Officers  2=Ratings  3=Training
+       * Approved   = cpo_confirmed   (field from backend)
+       * Awaiting   = submitted + do_reviewed + fo_approved
+       * Not Filed  = not_filed
+       */
       const pfx = { 1: 's-o', 2: 's-r', 3: 's-t' };
-      byC.forEach(c => {
+      byC.forEach(function (c) {
         const px = pfx[c.classes]; if (!px) return;
-        const await_ = (c.submitted || 0) + (c.do_reviewed || 0) + (c.fo_approved || 0);
+        const awaiting = (c.submitted || 0) + (c.do_reviewed || 0) + (c.fo_approved || 0);
         sid(px + '-total', N(c.total));
-        sid(px + '-conf', N(c.cpo_confirmed));
-        sid(px + '-pend', N(await_));
-        sid(px + '-nf', N(c.not_filed));
+        sid(px + '-conf',  N(c.cpo_confirmed));   /* ← fixed: was c.confirmed */
+        sid(px + '-pend',  N(awaiting));
+        sid(px + '-nf',    N(c.not_filed));
       });
-
-      /* Top ships */
-      const sl = document.getElementById('ah-ships-list');
-      if (sl && ships.length) {
-        sl.innerHTML = ships.map((s, i) => `
-        <div class="ah-ship-row">
-          <span class="ah-ship-rank">${i + 1}</span>
-          <span class="ah-ship-name">${s.ship}</span>
-          <div class="ah-ship-bar"><div class="ah-ship-fill" style="width:${s.completion_pct || 0}%"></div></div>
-          <span class="ah-ship-pct">${s.completion_pct || 0}%</span>
-        </div>`).join('');
-      } else if (sl) {
-        sl.innerHTML = '<div style="text-align:center;padding:0.75rem 0;font-size:0.75rem;color:rgba(30,64,175,0.3);">No data</div>';
-      }
 
       /* Cache badge */
       const dot = document.getElementById('ah-rdot');
       const lbl = document.getElementById('ah-rlbl');
       if (dot) dot.className = 'ah-rdot' + (data.cached ? ' stale' : '');
       if (lbl) lbl.textContent = data.cached ? 'Cached' : 'Live';
+
+      /* Start ticker if ships arrived */
+      if (_ships.length) startTicker();
     }
 
+    /* ── Fetch ── */
     function fetch_(bust) {
       if (!TOKEN) return;
       const spin = document.getElementById('ah-rspin');
       if (spin) spin.style.animation = 'ah-spin 0.7s linear infinite';
 
-      const go = () =>
+      const go = function () {
         fetch('/reports/dashboard', { headers: { Authorization: 'Bearer ' + TOKEN } })
-          .then(r => r.ok ? r.json() : null)
-          .then(res => { if (res && res.data) render(res.data); })
-          .catch(() => { })
-          .finally(() => { if (spin) spin.style.animation = ''; });
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (res) {
+            if (!res) return;
+            /* Route does res.json(result.data) — payload IS the data object.
+               Support both shapes: { data: {...} } and the data object directly. */
+            const payload = (res.global !== undefined) ? res : (res.data || null);
+            if (payload) render(payload);
+          })
+          .catch(function () { })
+          .finally(function () { if (spin) spin.style.animation = ''; });
+      };
 
       if (bust) {
         fetch('/reports/cache/bust', {
           method: 'POST',
           headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' },
           body: JSON.stringify({ scope: 'all' }),
-        }).catch(() => { }).finally(go);
-      } else { go(); }
+        }).catch(function () { }).finally(go);
+      } else {
+        go();
+      }
     }
 
     window.ahLoad = function (bust) { fetch_(bust); };
-
-    if (!document.getElementById('ah-spin-kf')) {
-      const s = document.createElement('style');
-      s.id = 'ah-spin-kf';
-      s.textContent = '@keyframes ah-spin{to{transform:rotate(360deg)}}';
-      document.head.appendChild(s);
-    }
 
     fetch_(false);
   })();

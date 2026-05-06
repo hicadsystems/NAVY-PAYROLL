@@ -1,511 +1,889 @@
-<div class="p-2 md:p-4 lg:p-6">
-
-  <!-- Header + action buttons -->
-  <div class="flex items-start justify-between gap-3 mb-4">
-    <div>
-      <h3 class="text-sm lg:text-base font-bold text-navy border-b border-amber-100 pb-1">Ships Overview</h3>
-      <p class="text-xs text-blue-900/40 mt-1">Manage ships, open/close access, assign roles</p>
-    </div>
-    <div class="flex gap-2 flex-shrink-0">
-      <button onclick="window.sOpenCreateModal()"
-        class="flex items-center gap-1.5 px-3 py-2 bg-amber-500 text-white text-xs font-bold rounded-lg hover:bg-amber-600 transition-colors cursor-pointer border-none">
-        <i class="fas fa-user-plus"></i><span class="hidden sm:inline">Assign Role</span>
-      </button>
-      <button onclick="window.sOpenUploadModal()"
-        class="flex items-center gap-1.5 px-3 py-2 bg-navy text-white text-xs font-bold rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
-        <i class="fas fa-upload"></i><span class="hidden sm:inline">Upload Personnel</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Filter row -->
-  <div class="flex gap-2 mb-3 flex-wrap">
-    <input id="sSearchInput" type="text" placeholder="Search ship..."
-      class="flex-1 min-w-28 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
-      oninput="window.sFilter()" />
-    <select id="sCommandFilter"
-      class="flex-1 min-w-28 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
-      onchange="window.sFilter()">
-      <option value="">All Commands</option>
-    </select>
-    <select id="sStatusFilter"
-      class="min-w-24 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
-      onchange="window.sFilter()">
-      <option value="">All</option>
-      <option value="1">Open</option>
-      <option value="0">Closed</option>
-    </select>
-  </div>
-
-  <!-- Bulk actions -->
-  <div class="flex gap-2 mb-4 items-center">
-    <button onclick="window.sOpenAll()"
-      class="flex-1 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none">
-      <i class="fas fa-lock-open mr-1"></i>Open All
-    </button>
-    <button onclick="window.sCloseAll()"
-      class="flex-1 py-2 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-colors cursor-pointer border-none">
-      <i class="fas fa-lock mr-1"></i>Close All
-    </button>
-    <span class="text-xs text-blue-900/40 px-1 flex-shrink-0" id="sCountLabel"></span>
-  </div>
-
-  <!-- Desktop two-column, mobile stacked -->
-  <div class="lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
-
-    <!-- LEFT: ship list — compact rows, capped height -->
-    <div class="bg-white/60 rounded-xl border border-amber-100 shadow overflow-hidden mb-4 lg:mb-0">
-      <div class="grid px-3 py-2 bg-amber-50/60 border-b border-amber-100"
-        style="grid-template-columns:1fr auto auto;gap:0.5rem;">
-        <span style="font-size:10px;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;color:rgba(30,64,175,0.4);">Ship / Command</span>
-        <span style="font-size:10px;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;color:rgba(30,64,175,0.4);">Status</span>
-        <span></span>
-      </div>
-      <div id="sShipsList" style="max-height:440px;overflow-y:auto;">
-        <div class="flex items-center justify-center py-10 text-navy/30 text-xs">
-          <i class="fas fa-spinner fa-spin mr-2"></i>Loading...
-        </div>
-      </div>
-    </div>
-
-    <!-- RIGHT: role assignments for selected ship -->
-    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4">
-      <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
-        <span style="font-size:10px;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;color:rgba(30,64,175,0.4);">
-          Role Assignments
-        </span>
-        <select id="sRoleShipSelect"
-          class="flex-1 max-w-52 border border-amber-100 rounded-lg px-2 py-1.5 text-xs text-navy bg-white/80 focus:outline-none"
-          onchange="window.sLoadRoles()">
-          <option value="">— Select ship —</option>
-        </select>
-      </div>
-      <div id="sRolesPanel">
-        <div class="text-center py-8 text-blue-900/25 text-xs">
-          <i class="fas fa-ship fa-2x mb-2 block opacity-20"></i>
-          Select a ship to view assignments
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- Modal: Assign Role -->
-<div id="sCreateModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-    <div class="flex items-center justify-between p-5 border-b border-amber-100">
-      <h3 class="font-black text-navy text-sm uppercase tracking-wide">Assign Ship Role</h3>
-      <button onclick="window.sCloseCreateModal()"
-        class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-navy/40 hover:text-navy cursor-pointer border-none text-lg font-bold">x</button>
-    </div>
-    <div class="p-5 space-y-3">
-      <div>
-        <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Service No</label>
-        <input id="sCreateSvcNo" type="text" placeholder="e.g. NA/0012345"
-          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none" />
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Role</label>
-        <select id="sCreateRole" onchange="window.sCreateRoleChange()"
-          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
-          <option value="DO">DO — Divisional Officer</option>
-          <option value="FO">FO — First Officer</option>
-          <option value="CPO">CPO — Command Payroll Officer</option>
-        </select>
-      </div>
-      <div id="sCreateShipWrap">
-        <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Ship</label>
-        <select id="sCreateShip"
-          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
-          <option value="">— Select ship —</option>
-        </select>
-      </div>
-      <div id="sCreateCommandWrap" class="hidden">
-        <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Command (CPO scope)</label>
-        <select id="sCreateCommand"
-          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
-          <option value="">— Select command —</option>
-        </select>
-      </div>
-      <button onclick="window.sSubmitCreate()"
-        class="w-full py-2.5 bg-amber-500 text-white font-bold text-sm rounded-lg hover:bg-amber-600 transition-colors cursor-pointer border-none">
-        <i class="fas fa-user-plus mr-2"></i>Assign Role
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Upload Personnel -->
-<div id="sUploadModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-    <div class="flex items-center justify-between p-5 border-b border-amber-100">
-      <h3 class="font-black text-navy text-sm uppercase tracking-wide">Upload Personnel</h3>
-      <button onclick="window.sCloseUploadModal()"
-        class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-navy/40 hover:text-navy cursor-pointer border-none text-lg font-bold">x</button>
-    </div>
-    <div class="p-5">
-      <p class="text-xs text-blue-900/50 mb-3">Required CSV columns:
-        <span class="font-mono bg-amber-50 px-1 rounded text-xs">serviceNumber, surname, otherName, rank, email, phoneNumber, payrollclass, classes, ship</span>
-      </p>
-      <div class="border-2 border-dashed border-amber-200 rounded-xl p-6 text-center mb-3 cursor-pointer hover:bg-amber-50/30 transition-all"
-        onclick="document.getElementById('sUploadFile').click()">
-        <i class="fas fa-file-csv text-amber-400 text-3xl mb-2 block"></i>
-        <p class="font-bold text-navy text-sm">Click to select CSV</p>
-        <input type="file" id="sUploadFile" accept=".csv" class="hidden" onchange="window.sPreviewFile(this)" />
-      </div>
-      <div id="sUploadFileInfo" class="hidden text-xs text-center font-semibold text-navy/60 mb-2"></div>
-      <div id="sUploadPreviewCount" class="hidden text-xs text-center text-green-700 font-bold mb-3"></div>
-      <button onclick="window.sSubmitUpload()"
-        class="w-full py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
-        <i class="fas fa-upload mr-2"></i>Upload
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- Confirm modal -->
-<div id="sConfirmModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-    <div id="sConfirmIconWrap" class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 bg-blue-50">
-      <i id="sConfirmIcon" class="fas fa-question text-xl text-blue-600"></i>
-    </div>
-    <h3 class="font-black text-navy text-base mb-2" id="sConfirmTitle">Confirm</h3>
-    <p class="text-sm text-blue-900/50 mb-6" id="sConfirmMsg">Are you sure?</p>
-    <div class="flex gap-3">
-      <button onclick="window.sCancelConfirm()"
-        class="flex-1 py-2.5 border border-amber-100 text-navy text-sm font-bold rounded-lg hover:bg-amber-50 cursor-pointer bg-white">Cancel</button>
-      <button id="sConfirmOkBtn"
-        class="flex-1 py-2.5 text-white text-sm font-bold rounded-lg cursor-pointer border-none bg-navy hover:bg-blue-800">Confirm</button>
-    </div>
-  </div>
-</div>
-
-<!-- Toast -->
-<div id="sToast" class="hidden fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-bold max-w-xs"></div>
-
 <style>
-  .s-row { border-bottom:1px solid rgba(251,191,36,0.12); }
-  .s-row:last-child { border-bottom:none; }
-  .s-row:hover { background:rgba(251,191,36,0.05); }
-  .badge-open   { background:rgba(34,197,94,0.12);  color:#166534; }
-  .badge-closed { background:rgba(239,68,68,0.1);   color:#991b1b; }
-  .badge-DO  { background:rgba(59,130,246,0.12); color:#1d4ed8; }
-  .badge-FO  { background:rgba(245,158,11,0.12); color:#92400e; }
-  .badge-CPO { background:rgba(16,185,129,0.12); color:#065f46; }
+  [x-cloak] {
+    display: none;
+  }
+
+  .modal-enter {
+    animation: modalIn 0.18s ease;
+  }
+
+  @keyframes modalIn {
+    from {
+      transform: scale(0.96);
+      opacity: 0;
+    }
+
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .toast-enter {
+    animation: toastIn 0.2s ease;
+  }
+
+  @keyframes toastIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  select {
+    appearance: auto;
+  }
 </style>
+</head>
 
-<script>
-(function () {
-  const T = localStorage.getItem('token');
-  const H = { Authorization: 'Bearer ' + T };
-  let _ships = [], _commands = [], _confirmCb = null, _uploadRecords = null;
+<body class="bg-slate-100 text-slate-800 min-h-screen text-sm font-sans">
 
-  function toast(msg, ok) {
-    const el = document.getElementById('sToast');
-    el.textContent = msg;
-    el.className = 'fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-bold max-w-xs '
-      + (ok !== false ? 'bg-green-600 text-white' : 'bg-red-500 text-white');
-    el.classList.remove('hidden');
-    setTimeout(() => el.classList.add('hidden'), 3500);
-  }
-
-  function confirm_(title, msg, cb, danger) {
-    _confirmCb = cb;
-    document.getElementById('sConfirmTitle').textContent = title;
-    document.getElementById('sConfirmMsg').textContent = msg;
-    const wrap = document.getElementById('sConfirmIconWrap');
-    const icon = document.getElementById('sConfirmIcon');
-    const btn  = document.getElementById('sConfirmOkBtn');
-    if (danger) {
-      wrap.className = 'w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 bg-red-50';
-      icon.className = 'fas fa-exclamation-triangle text-xl text-red-500';
-      btn.className  = 'flex-1 py-2.5 text-white text-sm font-bold rounded-lg cursor-pointer border-none bg-red-500 hover:bg-red-600';
-    } else {
-      wrap.className = 'w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 bg-blue-50';
-      icon.className = 'fas fa-check text-xl text-blue-600';
-      btn.className  = 'flex-1 py-2.5 text-white text-sm font-bold rounded-lg cursor-pointer border-none bg-navy hover:bg-blue-800';
-    }
-    document.getElementById('sConfirmModal').classList.remove('hidden');
-  }
-
-  document.getElementById('sConfirmOkBtn').onclick = function () {
-    document.getElementById('sConfirmModal').classList.add('hidden');
-    if (_confirmCb) { _confirmCb(); _confirmCb = null; }
-  };
-  window.sCancelConfirm = function () {
-    document.getElementById('sConfirmModal').classList.add('hidden');
-    _confirmCb = null;
-  };
-
-  // GET /system/ships — returns array directly
-  function loadShips() {
-    fetch('/system/ships', { headers: H })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(raw => {
-        _ships = Array.isArray(raw) ? raw : (raw.data || raw.ships || []);
-        renderShips(_ships);
-        populateSelects(_ships);
-        document.getElementById('sCountLabel').textContent = _ships.length + ' ships';
-      })
-      .catch(() => {
-        document.getElementById('sShipsList').innerHTML =
-          '<div class="text-center py-8 text-red-400 text-xs p-4">Failed to load ships</div>';
-      });
-  }
-
-  // GET /system/commands — returns array directly
-  function loadCommands() {
-    fetch('/system/commands', { headers: H })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(raw => {
-        _commands = Array.isArray(raw) ? raw : (raw.data || raw.commands || []);
-        const cmdFilter = document.getElementById('sCommandFilter');
-        const createCmd = document.getElementById('sCreateCommand');
-        _commands.forEach(c => {
-          const label = c.commandName || c.name;
-          const val   = c.code || c.commandCode || c.Id;
-          [cmdFilter, createCmd].forEach(sel => {
-            const opt = document.createElement('option');
-            opt.value = val; opt.textContent = label;
-            sel.appendChild(opt);
-          });
-        });
-      })
-      .catch(() => {});
-  }
-
-  function populateSelects(ships) {
-    ['sRoleShipSelect', 'sCreateShip'].forEach(id => {
-      const sel = document.getElementById(id);
-      if (!sel) return;
-      while (sel.options.length > 1) sel.remove(1);
-      ships.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.shipName;
-        opt.dataset.id = s.Id;
-        opt.textContent = s.shipName;
-        sel.appendChild(opt);
-      });
-    });
-  }
-
-  function renderShips(ships) {
-    const el = document.getElementById('sShipsList');
-    document.getElementById('sCountLabel').textContent = ships.length + ' ships';
-    if (!ships.length) {
-      el.innerHTML = '<div class="text-center py-10 text-blue-900/25 text-xs p-4">No ships found</div>';
-      return;
-    }
-    el.innerHTML = ships.map(s => {
-      const open = s.openship === 1;
-      const name = s.shipName.replace(/'/g, "\\'");
-      return `<div class="s-row" style="display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;">
-        <div style="min-width:0;">
-          <div class="font-bold text-navy truncate" style="font-size:12px;">${s.shipName}</div>
-          <div class="text-blue-900/40 truncate" style="font-size:10px;">${s.commandName || '—'}</div>
-        </div>
-        <span class="font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${open ? 'badge-open' : 'badge-closed'}" style="font-size:10px;">${open ? 'OPEN' : 'CLOSED'}</span>
-        <button onclick="window.sToggle(${s.Id},'${name}',${open ? 0 : 1})"
-          class="flex-shrink-0 flex items-center justify-center rounded-lg border border-amber-100 bg-white/60 hover:bg-amber-50 cursor-pointer transition-colors"
-          style="width:28px;height:28px;" title="${open ? 'Close' : 'Open'} ship">
-          <i class="fas fa-${open ? 'lock text-red-400' : 'lock-open text-green-600'}" style="font-size:10px;"></i>
+  <!-- ══ TOP BAR ══ -->
+  <header class="bg-navy sticky top-0 z-20 shadow-lg">
+    <div class="flex items-center justify-between px-6 py-3 max-w-screen-xl mx-auto">
+      <div class="flex items-center gap-2 text-white font-semibold text-sm tracking-wide">
+        <i class="fas fa-ship text-gold text-base"></i>
+        Ships Management
+      </div>
+      <div class="flex gap-2">
+        <button id="btn-ships" onclick="switchPanel('ships')"
+          class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-white/20 bg-gold text-white transition-all">
+          <i class="fas fa-ship"></i> Ships
         </button>
-      </div>`;
-    }).join('');
-  }
+        <button id="btn-users" onclick="switchPanel('users')"
+          class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-white/20 bg-white/10 text-white transition-all hover:bg-white/20">
+          <i class="fas fa-users"></i> Ship Users
+        </button>
+      </div>
+    </div>
+  </header>
 
-  window.sFilter = function () {
-    const q   = (document.getElementById('sSearchInput').value || '').toLowerCase();
-    const cmd = document.getElementById('sCommandFilter').value;
-    const st  = document.getElementById('sStatusFilter').value;
-    const f = _ships.filter(s => {
-      if (q && !s.shipName.toLowerCase().includes(q)) return false;
-      if (cmd && s.commandCode !== cmd) return false;
-      if (st !== '' && String(s.openship) !== st) return false;
-      return true;
-    });
-    renderShips(f);
-  };
+  <!-- ══ SHIPS PANEL ══ -->
+  <div id="panel-ships" class="max-w-screen-xl mx-auto px-6 py-5">
 
-  // POST /system/ships/:id/open|close
-  window.sToggle = function (shipId, shipName, targetOpen) {
-    confirm_(
-      (targetOpen ? 'Open' : 'Close') + ' Ship',
-      `${targetOpen ? 'Open' : 'Close'} access for ${shipName}?`,
-      function () {
-        fetch(`/system/ships/${shipId}/${targetOpen ? 'open' : 'close'}`, {
-          method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }
-        })
-        .then(r => r.json().then(d => ({ ok: r.ok, d })))
-        .then(({ ok, d }) => { toast(ok ? (d.message || 'Done.') : (d.error || 'Failed'), ok); if (ok) loadShips(); })
-        .catch(() => toast('Server error', false));
-      },
-      !targetOpen
-    );
-  };
+    <!-- Filter Row -->
+    <div class="flex flex-wrap gap-2 items-center mb-4">
+      <input id="sSearch" type="text" placeholder="Search ship name…" oninput="sFilter()"
+        class="flex-1 min-w-36 h-9 border border-slate-200 rounded-lg px-3 text-xs bg-white focus:outline-none focus:border-gold" />
+      <select id="sCmdFilter" onchange="sFilter()"
+        class="min-w-40 h-9 border border-slate-200 rounded-lg px-3 text-xs bg-white focus:outline-none focus:border-gold">
+        <option value="">All Commands</option>
+      </select>
+      <select id="sStFilter" onchange="sFilter()"
+        class="h-9 border border-slate-200 rounded-lg px-3 text-xs bg-white focus:outline-none focus:border-gold">
+        <option value="">All Status</option>
+        <option value="1">Open</option>
+        <option value="0">Closed</option>
+      </select>
+      <button onclick="openShipModal(null)"
+        class="flex items-center gap-1.5 h-9 px-4 bg-gold hover:bg-gold-hover text-white text-xs font-bold rounded-lg transition-colors">
+        <i class="fas fa-plus"></i> New Ship
+      </button>
+      <button onclick="exportShips()"
+        class="flex items-center gap-1.5 h-9 px-3 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-semibold rounded-lg transition-colors">
+        <i class="fas fa-download"></i> Export
+      </button>
+      <span id="sCountLabel" class="text-xs text-slate-400 ml-auto whitespace-nowrap">— ships</span>
+    </div>
 
-  window.sOpenAll = function () {
-    confirm_('Open All Ships', 'Open form access for all ships?', function () {
-      fetch('/system/ships/open-all', { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' } })
-        .then(r => r.json().then(d => ({ ok: r.ok, d })))
-        .then(({ ok, d }) => { toast(ok ? (d.message || 'All ships opened.') : (d.error || 'Failed'), ok); if (ok) loadShips(); })
-        .catch(() => toast('Server error', false));
-    }, false);
-  };
+    <!-- Table -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <!-- Head -->
+      <div
+        class="grid bg-slate-50 border-b border-slate-200 px-4 py-2.5 gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400"
+        style="grid-template-columns:1fr 160px 80px 70px;">
+        <span>Ship / Command</span><span>Command Code</span><span>Status</span><span>Actions</span>
+      </div>
+      <!-- Rows -->
+      <div id="sShipsList">
+        <div class="py-12 text-center text-slate-400 text-xs">
+          <i class="fas fa-spinner fa-spin text-2xl block mb-2"></i>Loading ships…
+        </div>
+      </div>
+      <!-- Pagination -->
+      <div id="sPagination"
+        class="hidden border-t border-slate-100 bg-slate-50 px-4 py-2.5 flex items-center justify-between">
+        <span id="sPageInfo" class="text-xs text-slate-400"></span>
+        <div id="sPageBtns" class="flex gap-1"></div>
+      </div>
+    </div>
+  </div>
 
-  window.sCloseAll = function () {
-    confirm_('Close All Ships', 'Close access for ALL ships? Personnel cannot submit.', function () {
-      fetch('/system/ships/close-all', { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' } })
-        .then(r => r.json().then(d => ({ ok: r.ok, d })))
-        .then(({ ok, d }) => { toast(ok ? (d.message || 'All ships closed.') : (d.error || 'Failed'), ok); if (ok) loadShips(); })
-        .catch(() => toast('Server error', false));
-    }, true);
-  };
+  <!-- ══ SHIP USERS PANEL ══ -->
+  <div id="panel-users" class="hidden max-w-screen-xl mx-auto px-6 py-5">
 
-  // GET /admin/roles?scope_type=SHIP&scope_value=X — returns array directly
-  window.sLoadRoles = function () {
-    const ship  = document.getElementById('sRoleShipSelect').value;
-    const panel = document.getElementById('sRolesPanel');
-    if (!ship) {
-      panel.innerHTML = '<div class="text-center py-8 text-blue-900/25 text-xs"><i class="fas fa-ship fa-2x mb-2 block opacity-20"></i>Select a ship</div>';
-      return;
+    <!-- Filter Row -->
+    <div class="flex flex-wrap gap-2 items-center mb-4">
+      <input id="uSearch" type="text" placeholder="Search name or service no…" oninput="uFilter()"
+        class="flex-1 min-w-40 h-9 border border-slate-200 rounded-lg px-3 text-xs bg-white focus:outline-none focus:border-gold" />
+      <select id="uShipFilter" onchange="uFilter()"
+        class="min-w-36 h-9 border border-slate-200 rounded-lg px-3 text-xs bg-white focus:outline-none focus:border-gold">
+        <option value="">All Ships</option>
+      </select>
+      <select id="uCmdFilter" onchange="uFilter()"
+        class="min-w-36 h-9 border border-slate-200 rounded-lg px-3 text-xs bg-white focus:outline-none focus:border-gold">
+        <option value="">All Commands</option>
+      </select>
+      <button onclick="openUserModal(null)"
+        class="flex items-center gap-1.5 h-9 px-4 bg-gold hover:bg-gold-hover text-white text-xs font-bold rounded-lg transition-colors">
+        <i class="fas fa-user-plus"></i> New Ship User
+      </button>
+      <button onclick="openUploadModal()"
+        class="flex items-center gap-1.5 h-9 px-3 bg-navy hover:bg-navy-hover text-white text-xs font-bold rounded-lg transition-colors">
+        <i class="fas fa-upload"></i> Upload
+      </button>
+      <button onclick="exportUsers()"
+        class="flex items-center gap-1.5 h-9 px-3 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-semibold rounded-lg transition-colors">
+        <i class="fas fa-download"></i> Export
+      </button>
+      <span id="uCountLabel" class="text-xs text-slate-400 ml-auto whitespace-nowrap">— users</span>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div
+        class="grid bg-slate-50 border-b border-slate-200 px-4 py-2.5 gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400"
+        style="grid-template-columns:1.6fr 70px 100px 120px 90px 68px;">
+        <span>Name</span><span>Rank</span><span>Service
+          No</span><span>Ship</span><span>Command</span><span>Actions</span>
+      </div>
+      <div id="uUsersList">
+        <div class="py-12 text-center text-slate-400 text-xs">
+          <i class="fas fa-spinner fa-spin text-2xl block mb-2"></i>Loading users…
+        </div>
+      </div>
+      <!-- Pagination -->
+      <div id="uPagination"
+        class="hidden border-t border-slate-100 bg-slate-50 px-4 py-2.5 flex items-center justify-between">
+        <span id="uPageInfo" class="text-xs text-slate-400"></span>
+        <div id="uPageBtns" class="flex gap-1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: ADD/EDIT SHIP ══ -->
+  <div id="shipModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+    onclick="bgClose(event,'shipModal')">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <h3 id="shipModalTitle" class="text-sm font-black text-navy uppercase tracking-wide"></h3>
+        <button onclick="closeModal('shipModal')"
+          class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 text-xs transition-colors"><i
+            class="fas fa-times"></i></button>
+      </div>
+      <div class="p-5 space-y-4">
+        <input type="hidden" id="shipId" />
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Ship Name</label>
+          <input id="shipName" type="text" placeholder="e.g. NNS ARADU"
+            class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Command</label>
+          <select id="shipCommand"
+            class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
+            <option value="">— Select command —</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Status</label>
+          <select id="shipStatus"
+            class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
+            <option value="0">Closed</option>
+            <option value="1">Open</option>
+          </select>
+        </div>
+      </div>
+      <div class="px-5 pb-5 flex gap-2 justify-end">
+        <button onclick="closeModal('shipModal')"
+          class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors">Cancel</button>
+        <button onclick="submitShip()" id="shipSubmitBtn"
+          class="flex items-center gap-1.5 px-4 py-2 bg-gold hover:bg-gold-hover text-white text-xs font-bold rounded-lg transition-colors"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: ADD/EDIT SHIP USER ══ -->
+  <div id="userModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+    onclick="bgClose(event,'userModal')">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 sticky top-0 bg-white z-10">
+        <h3 id="userModalTitle" class="text-sm font-black text-navy uppercase tracking-wide"></h3>
+        <button onclick="closeModal('userModal')"
+          class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 text-xs transition-colors"><i
+            class="fas fa-times"></i></button>
+      </div>
+      <div class="p-5 space-y-4">
+        <input type="hidden" id="userOrigSvcNo" />
+        <!-- Row 1: Service No + Rank -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Service
+              No</label>
+            <input id="userSvcNo" type="text" placeholder="e.g. NN/4940F"
+              class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Rank</label>
+            <select id="userRank"
+              class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
+              <option value="">— Rank —</option>
+              <option>MID</option>
+              <option>S/LT</option>
+              <option>LT</option>
+              <option>LT CDR</option>
+              <option>CDR</option>
+              <option>CAPT</option>
+              <option>CDRE</option>
+              <option>RADM</option>
+              <option>VADM</option>
+              <option>ADM</option>
+            </select>
+          </div>
+        </div>
+        <!-- Row 2: Command + Ship -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Command</label>
+            <select id="userCommand"
+              class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
+              <option value="">— Command —</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Ship</label>
+            <select id="userShip"
+              class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
+              <option value="">— Ship —</option>
+            </select>
+          </div>
+        </div>
+        <!-- Row 3: Surname + Other Names -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Surname</label>
+            <input id="userSurname" type="text" placeholder="Surname"
+              class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Other
+              Names</label>
+            <input id="userOther" type="text" placeholder="Other names"
+              class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Email</label>
+          <input id="userEmail" type="email" placeholder="email@navy.mil.ng"
+            class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Phone
+            Number</label>
+          <input id="userPhone" type="tel" placeholder="08012345678"
+            class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold" />
+        </div>
+      </div>
+      <div class="px-5 pb-5 flex gap-2 justify-end">
+        <button onclick="closeModal('userModal')"
+          class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors">Cancel</button>
+        <button onclick="submitUser()" id="userSubmitBtn"
+          class="flex items-center gap-1.5 px-4 py-2 bg-gold hover:bg-gold-hover text-white text-xs font-bold rounded-lg transition-colors"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: UPLOAD ══ -->
+  <div id="uploadModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+    onclick="bgClose(event,'uploadModal')">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <h3 class="text-sm font-black text-navy uppercase tracking-wide">Upload Ship Users</h3>
+        <button onclick="closeModal('uploadModal')"
+          class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 text-xs transition-colors"><i
+            class="fas fa-times"></i></button>
+      </div>
+      <div class="p-5">
+        <p class="text-xs text-slate-500 mb-2">Required CSV columns:</p>
+        <div class="flex flex-wrap gap-1 mb-4">
+          <span
+            class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">serviceNumber</span>
+          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">surname</span>
+          <span
+            class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">otherName</span>
+          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">rank</span>
+          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">email</span>
+          <span
+            class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">phoneNumber</span>
+          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">ship</span>
+          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">command</span>
+          <span
+            class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">payrollclass</span>
+          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">classes</span>
+        </div>
+        <div onclick="document.getElementById('uploadFile').click()"
+          class="border-2 border-dashed border-slate-200 hover:border-gold hover:bg-gold-light rounded-xl p-8 text-center cursor-pointer transition-all mb-3">
+          <i class="fas fa-file-csv text-gold text-3xl block mb-2"></i>
+          <p class="text-xs font-semibold text-slate-700">Click to select CSV file</p>
+          <p class="text-[11px] text-slate-400 mt-1">or drag and drop here</p>
+          <input type="file" id="uploadFile" accept=".csv" class="hidden" onchange="previewUpload(this)" />
+        </div>
+        <div id="uploadFileInfo" class="hidden text-xs text-center text-slate-500 mb-1"></div>
+        <div id="uploadPreviewCount" class="hidden text-xs text-center font-bold text-green-700 mb-3"></div>
+        <div class="flex gap-2 justify-end">
+          <button onclick="closeModal('uploadModal')"
+            class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors">Cancel</button>
+          <button onclick="submitUpload()" id="uploadSubmitBtn"
+            class="flex items-center gap-1.5 px-4 py-2 bg-navy hover:bg-navy-hover text-white text-xs font-bold rounded-lg transition-colors">
+            <i class="fas fa-upload"></i> Upload Users
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL: CONFIRM ══ -->
+  <div id="confirmModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+      <div id="confirmIconWrap" class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i id="confirmIcon" class="text-xl"></i>
+      </div>
+      <h3 id="confirmTitle" class="text-sm font-black text-navy mb-2"></h3>
+      <p id="confirmMsg" class="text-xs text-slate-500 mb-6"></p>
+      <div class="flex gap-2">
+        <button onclick="closeModal('confirmModal')"
+          class="flex-1 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors">Cancel</button>
+        <button id="confirmOkBtn"
+          class="flex-1 py-2 text-white text-xs font-bold rounded-lg transition-colors"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"
+    class="hidden fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-lg text-xs font-bold max-w-xs toast-enter">
+  </div>
+
+  <script>
+    'use strict';
+
+    const T = localStorage.getItem('token');
+    const H = { 'Authorization': 'Bearer ' + T, 'Content-Type': 'application/json' };
+
+    /* ── STATE ── */
+    let _ships = [], _shipsFiltered = [], _commands = [];
+    let _sPage = 1;
+    const S_PER_PAGE = 10;
+
+    let _uPage = 1;
+    const U_PER_PAGE = 10;
+    let _uTotal = 0;
+
+    let _uploadRecords = null;
+    let _confirmCb = null;
+    let _editingShipId = null;
+    let _editingUserSvcNo = null;
+    let _usersLoaded = false;
+
+    /* ══ PANEL SWITCH ══ */
+    function switchPanel(p) {
+      document.getElementById('panel-ships').classList.toggle('hidden', p !== 'ships');
+      document.getElementById('panel-users').classList.toggle('hidden', p !== 'users');
+
+      const bs = document.getElementById('btn-ships');
+      const bu = document.getElementById('btn-users');
+      if (p === 'ships') {
+        bs.className = 'flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-white/20 bg-gold text-white transition-all';
+        bu.className = 'flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-white/20 bg-white/10 text-white transition-all hover:bg-white/20';
+      } else {
+        bu.className = 'flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-white/20 bg-gold text-white transition-all';
+        bs.className = 'flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-white/20 bg-white/10 text-white transition-all hover:bg-white/20';
+        if (!_usersLoaded) { _usersLoaded = true; loadUsers(1); }
+      }
     }
-    panel.innerHTML = '<div class="flex items-center justify-center py-8 text-navy/30 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
-    fetch(`/admin/roles?scope_type=SHIP&scope_value=${encodeURIComponent(ship)}`, { headers: H })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(raw => {
-        const roles = Array.isArray(raw) ? raw : (raw.data || []);
-        if (!roles.length) {
-          panel.innerHTML = `<div class="text-center py-8 text-blue-900/25 text-xs"><i class="fas fa-user-slash fa-2x mb-2 block opacity-20"></i>No roles for ${ship}</div>`;
-          return;
-        }
-        panel.innerHTML = '<div class="space-y-2">' + roles.map(r => `
-          <div class="flex items-center gap-3 p-2.5 rounded-xl border border-amber-50 bg-white/40">
-            <div class="flex-1 min-w-0">
-              <div class="font-bold text-navy" style="font-size:12px;">${r.user_id}</div>
-              <div class="text-blue-900/40 mt-0.5" style="font-size:10px;">by ${r.assigned_by || '—'}</div>
-            </div>
-            <span class="font-bold px-2 py-0.5 rounded-full badge-${r.role} flex-shrink-0" style="font-size:10px;">${r.role}</span>
-            <button onclick="window.sRevokeRole(${r.id},'${r.user_id}','${r.role}')"
-              class="flex items-center justify-center rounded-lg bg-red-50 hover:bg-red-100 cursor-pointer border-none transition-colors flex-shrink-0"
-              style="width:24px;height:24px;">
-              <i class="fas fa-times text-red-400" style="font-size:9px;"></i>
-            </button>
-          </div>`).join('') + '</div>';
-      })
-      .catch(() => { panel.innerHTML = '<div class="text-center py-8 text-red-400 text-xs">Failed to load</div>'; });
-  };
 
-  // DELETE /admin/roles/:id/revoke
-  window.sRevokeRole = function (roleId, userId, role) {
-    confirm_('Revoke Role', `Revoke ${role} from ${userId}?`, function () {
-      fetch(`/admin/roles/${roleId}/revoke`, { method: 'DELETE', headers: H })
-        .then(r => r.json().then(d => ({ ok: r.ok, d })))
-        .then(({ ok, d }) => { toast(ok ? (d.message || 'Revoked.') : (d.error || 'Failed'), ok); if (ok) window.sLoadRoles(); })
-        .catch(() => toast('Server error', false));
-    }, true);
-  };
-
-  // Create modal
-  window.sOpenCreateModal = function () {
-    document.getElementById('sCreateModal').classList.remove('hidden');
-    document.getElementById('sCreateSvcNo').value = '';
-    document.getElementById('sCreateRole').value = 'DO';
-    document.getElementById('sCreateShip').value = '';
-    document.getElementById('sCreateShipWrap').classList.remove('hidden');
-    document.getElementById('sCreateCommandWrap').classList.add('hidden');
-    document.body.style.overflow = 'hidden';
-  };
-  window.sCloseCreateModal = function () {
-    document.getElementById('sCreateModal').classList.add('hidden');
-    document.body.style.overflow = '';
-  };
-  document.getElementById('sCreateModal').addEventListener('click', function (e) { if (e.target === this) window.sCloseCreateModal(); });
-
-  window.sCreateRoleChange = function () {
-    const isCPO = document.getElementById('sCreateRole').value === 'CPO';
-    document.getElementById('sCreateShipWrap').classList.toggle('hidden', isCPO);
-    document.getElementById('sCreateCommandWrap').classList.toggle('hidden', !isCPO);
-  };
-
-  // POST /admin/roles/assign
-  window.sSubmitCreate = function () {
-    const svcNo = document.getElementById('sCreateSvcNo').value.trim();
-    const role  = document.getElementById('sCreateRole').value;
-    if (!svcNo) { toast('Service number is required.', false); return; }
-    let scope_type, scope_value;
-    if (role === 'CPO') {
-      scope_type  = 'COMMAND';
-      scope_value = document.getElementById('sCreateCommand').value;
-      if (!scope_value) { toast('Select a command for CPO.', false); return; }
-    } else {
-      scope_type  = 'SHIP';
-      scope_value = document.getElementById('sCreateShip').value;
-      if (!scope_value) { toast('Select a ship.', false); return; }
+    /* ══ TOAST ══ */
+    function toast(msg, ok = true) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = `fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-lg text-xs font-bold max-w-xs toast-enter ${ok ? 'bg-green-600 text-white' : 'bg-red-500 text-white'}`;
+      el.classList.remove('hidden');
+      clearTimeout(el._t);
+      el._t = setTimeout(() => el.classList.add('hidden'), 4000);
     }
-    fetch('/admin/roles/assign', {
-      method: 'POST',
-      headers: { ...H, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: svcNo, role, scope_type, scope_value })
-    })
-    .then(r => r.json().then(d => ({ ok: r.ok, d })))
-    .then(({ ok, d }) => { toast(ok ? (d.message || 'Role assigned.') : (d.error || 'Failed'), ok); if (ok) { window.sCloseCreateModal(); window.sLoadRoles(); } })
-    .catch(() => toast('Server error', false));
-  };
 
-  // Upload modal
-  window.sOpenUploadModal = function () {
-    document.getElementById('sUploadModal').classList.remove('hidden');
-    document.getElementById('sUploadFile').value = '';
-    document.getElementById('sUploadFileInfo').classList.add('hidden');
-    document.getElementById('sUploadPreviewCount').classList.add('hidden');
-    _uploadRecords = null;
-    document.body.style.overflow = 'hidden';
-  };
-  window.sCloseUploadModal = function () {
-    document.getElementById('sUploadModal').classList.add('hidden');
-    document.body.style.overflow = '';
-  };
-  document.getElementById('sUploadModal').addEventListener('click', function (e) { if (e.target === this) window.sCloseUploadModal(); });
-
-  window.sPreviewFile = function (input) {
-    const file = input.files[0]; if (!file) return;
-    document.getElementById('sUploadFileInfo').textContent = file.name + ' · ' + (file.size / 1024).toFixed(1) + ' KB';
-    document.getElementById('sUploadFileInfo').classList.remove('hidden');
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const lines = e.target.result.split('\n').filter(l => l.trim());
-      if (lines.length < 2) { toast('File empty or no data rows.', false); return; }
-      const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-      _uploadRecords = lines.slice(1).map(line => {
-        const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-        const obj = {}; headers.forEach((h, i) => { if (vals[i]) obj[h] = vals[i]; }); return obj;
-      }).filter(r => r.serviceNumber || r.service_no);
-      const cnt = document.getElementById('sUploadPreviewCount');
-      cnt.textContent = _uploadRecords.length + ' valid records found';
-      cnt.classList.remove('hidden');
+    /* ══ CONFIRM ══ */
+    function confirm_(title, msg, cb, danger = false) {
+      _confirmCb = cb;
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmMsg').textContent = msg;
+      const wrap = document.getElementById('confirmIconWrap');
+      const icon = document.getElementById('confirmIcon');
+      const btn = document.getElementById('confirmOkBtn');
+      if (danger) {
+        wrap.className = 'w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 bg-red-50';
+        icon.className = 'text-xl fas fa-exclamation-triangle text-red-500';
+        btn.className = 'flex-1 py-2 text-white text-xs font-bold rounded-lg transition-colors bg-red-500 hover:bg-red-600';
+        btn.textContent = 'Delete';
+      } else {
+        wrap.className = 'w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 bg-blue-50';
+        icon.className = 'text-xl fas fa-check text-blue-500';
+        btn.className = 'flex-1 py-2 text-white text-xs font-bold rounded-lg transition-colors bg-navy hover:bg-navy-hover';
+        btn.textContent = 'Confirm';
+      }
+      openModal('confirmModal');
+    }
+    document.getElementById('confirmOkBtn').onclick = () => {
+      closeModal('confirmModal');
+      if (_confirmCb) { _confirmCb(); _confirmCb = null; }
     };
-    reader.readAsText(file);
-  };
 
-  // POST /admin/upload/personnel
-  window.sSubmitUpload = function () {
-    if (!_uploadRecords || !_uploadRecords.length) { toast('Select a valid CSV first.', false); return; }
-    fetch('/admin/upload/personnel', {
-      method: 'POST',
-      headers: { ...H, 'Content-Type': 'application/json' },
-      body: JSON.stringify(_uploadRecords)
-    })
-    .then(r => r.json().then(d => ({ ok: r.ok, d })))
-    .then(({ ok, d }) => {
-      if (ok) { const res = d.data || {}; toast('Done — ' + (res.inserted || 0) + ' upserted, ' + ((res.failed || []).length) + ' failed.', true); window.sCloseUploadModal(); }
-      else toast(d.error || 'Upload failed.', false);
-    })
-    .catch(() => toast('Server error', false));
-  };
+    /* ══ MODAL HELPERS ══ */
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    function bgClose(e, id) { if (e.target === e.currentTarget) closeModal(id); }
 
-  loadShips();
-  loadCommands();
-})();
-</script>
+    /* ══ PAGINATION HELPER ══ */
+    function pageRange(cur, total) {
+      if (total <= 1) return [];
+      if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+      const r = [1];
+      if (cur > 3) r.push('…');
+      for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++) r.push(i);
+      if (cur < total - 2) r.push('…');
+      r.push(total);
+      return r;
+    }
+
+    function renderPageBtns(containerId, infoId, cur, total, records, onPage) {
+      const info = document.getElementById(infoId);
+      const btns = document.getElementById(containerId);
+      const pg = btns.closest('[id$="Pagination"]') || btns.parentElement.parentElement;
+
+      if (total <= 1) { pg.classList.add('hidden'); return; }
+      pg.classList.remove('hidden');
+
+      const from = ((cur - 1) * (containerId.startsWith('s') ? S_PER_PAGE : U_PER_PAGE)) + 1;
+      const to = Math.min(cur * (containerId.startsWith('s') ? S_PER_PAGE : U_PER_PAGE), records);
+      info.textContent = `Showing ${from}–${to} of ${records}`;
+
+      btns.innerHTML = '';
+      pageRange(cur, total).forEach(p => {
+        if (p === '…') {
+          const s = document.createElement('span');
+          s.textContent = '…'; s.className = 'px-1 text-slate-400 text-xs self-center';
+          btns.appendChild(s); return;
+        }
+        const b = document.createElement('button');
+        b.textContent = p;
+        b.className = p === cur
+          ? 'min-w-7 h-7 px-2 text-xs rounded-md bg-navy text-white font-bold border border-navy'
+          : 'min-w-7 h-7 px-2 text-xs rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors';
+        b.onclick = () => onPage(p);
+        btns.appendChild(b);
+      });
+    }
+
+    /* ══ INIT ══ */
+    (function init() {
+      loadCommands().then(() => loadShips());
+    })();
+
+    /* ══ COMMANDS ══ */
+    function loadCommands() {
+      return fetch('/system/commands', { headers: H })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(raw => {
+          _commands = Array.isArray(raw) ? raw : (raw.data || raw.commands || []);
+          ['sCmdFilter', 'uCmdFilter', 'shipCommand', 'userCommand'].forEach(id => {
+            const sel = document.getElementById(id); if (!sel) return;
+            while (sel.options.length > 1) sel.remove(1);
+            _commands.forEach(c => {
+              const o = document.createElement('option');
+              o.value = c.code || c.commandCode || c.Id;
+              o.textContent = c.commandName || c.name || o.value;
+              sel.appendChild(o);
+            });
+          });
+        }).catch(() => { });
+    }
+
+    /* ══ SHIPS ══ */
+    function loadShips() {
+      document.getElementById('sShipsList').innerHTML =
+        '<div class="py-12 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin text-2xl block mb-2"></i>Loading ships…</div>';
+
+      fetch('/system/ships', { headers: H })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(raw => {
+          _ships = Array.isArray(raw) ? raw : (raw.data || raw.ships || []);
+          populateShipSelects(_ships);
+          _shipsFiltered = [..._ships];
+          _sPage = 1;
+          renderShipsPage();
+        })
+        .catch(() => {
+          document.getElementById('sShipsList').innerHTML =
+            '<div class="py-12 text-center text-red-400 text-xs"><i class="fas fa-exclamation-circle text-2xl block mb-2"></i>Failed to load ships.</div>';
+        });
+    }
+
+    function populateShipSelects(ships) {
+      ['uShipFilter', 'userShip'].forEach(id => {
+        const sel = document.getElementById(id); if (!sel) return;
+        while (sel.options.length > 1) sel.remove(1);
+        ships.forEach(s => {
+          const o = document.createElement('option');
+          o.value = s.shipName; o.textContent = s.shipName;
+          sel.appendChild(o);
+        });
+      });
+    }
+
+    function sFilter() {
+      const q = document.getElementById('sSearch').value.toLowerCase();
+      const cmd = document.getElementById('sCmdFilter').value;
+      const st = document.getElementById('sStFilter').value;
+      _shipsFiltered = _ships.filter(s => {
+        if (q && !s.shipName.toLowerCase().includes(q)) return false;
+        if (cmd && s.commandCode !== cmd) return false;
+        if (st !== '' && String(s.openship) !== st) return false;
+        return true;
+      });
+      _sPage = 1;
+      renderShipsPage();
+    }
+
+    function renderShipsPage() {
+      const total = _shipsFiltered.length;
+      const pages = Math.ceil(total / S_PER_PAGE);
+      const slice = _shipsFiltered.slice((_sPage - 1) * S_PER_PAGE, _sPage * S_PER_PAGE);
+
+      document.getElementById('sCountLabel').textContent = total + ' ships';
+
+      const el = document.getElementById('sShipsList');
+      if (!slice.length) {
+        el.innerHTML = '<div class="py-12 text-center text-slate-400 text-xs"><i class="fas fa-ship text-2xl block mb-2 opacity-30"></i>No ships found.</div>';
+        document.getElementById('sPagination').classList.add('hidden');
+        return;
+      }
+
+      el.innerHTML = slice.map(s => {
+        const open = s.openship === 1;
+        const sd = JSON.stringify(s).replace(/'/g, '&#39;');
+        return `
+      <div class="grid items-center px-4 py-2.5 gap-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors"
+           style="grid-template-columns:1fr 160px 80px 70px;">
+        <div>
+          <div class="text-xs font-semibold text-slate-800">${esc(s.shipName)}</div>
+          <div class="text-[11px] text-slate-400 mt-0.5">${esc(s.commandName || '—')}</div>
+        </div>
+        <div class="text-xs text-slate-500 font-mono">${esc(s.commandCode || '—')}</div>
+        <div>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${open
+            ? 'bg-green-100 text-green-700'
+            : 'bg-red-100 text-red-700'}">${open ? 'OPEN' : 'CLOSED'}</span>
+        </div>
+        <div class="flex gap-1.5">
+          <button onclick='openShipModal(${sd})'
+            class="w-7 h-7 border border-slate-200 bg-white hover:bg-green-50 rounded-lg flex items-center justify-center text-green-600 transition-colors" title="Edit">
+            <i class="fas fa-pen" style="font-size:10px;"></i>
+          </button>
+          <button onclick="deleteShip(${s.Id},'${esc(s.shipName)}')"
+            class="w-7 h-7 border border-slate-200 bg-white hover:bg-red-50 rounded-lg flex items-center justify-center text-red-500 transition-colors" title="Delete">
+            <i class="fas fa-trash" style="font-size:10px;"></i>
+          </button>
+        </div>
+      </div>`;
+      }).join('');
+
+      renderPageBtns('sPageBtns', 'sPageInfo', _sPage, pages, total, p => { _sPage = p; renderShipsPage(); });
+    }
+
+    /* ── Export ships ── */
+    function exportShips() {
+      const cols = ['shipName', 'commandName', 'commandCode', 'openship'];
+      const rows = [cols.join(','), ..._ships.map(s => cols.map(c => `"${s[c] ?? ''}"`).join(','))];
+      dlCSV('ships.csv', rows.join('\n'));
+    }
+
+    /* ── Ship modal ── */
+    function openShipModal(ship) {
+      _editingShipId = ship ? ship.Id : null;
+      document.getElementById('shipModalTitle').textContent = ship ? 'Edit Ship' : 'Add New Ship';
+      document.getElementById('shipId').value = ship ? ship.Id : '';
+      document.getElementById('shipName').value = ship ? ship.shipName : '';
+      document.getElementById('shipStatus').value = ship ? String(ship.openship) : '0';
+      document.getElementById('shipCommand').value = ship ? (ship.commandCode || '') : '';
+      const btn = document.getElementById('shipSubmitBtn');
+      btn.innerHTML = ship
+        ? '<i class="fas fa-save mr-1"></i>Save Changes'
+        : '<i class="fas fa-plus mr-1"></i>Create Ship';
+      openModal('shipModal');
+    }
+
+    function submitShip() {
+      const name = document.getElementById('shipName').value.trim();
+      const cmdVal = document.getElementById('shipCommand').value;
+      const status = document.getElementById('shipStatus').value;
+      if (!name) { toast('Ship name is required.', false); return; }
+      if (!cmdVal) { toast('Please select a command.', false); return; }
+      const btn = document.getElementById('shipSubmitBtn');
+      btn.disabled = true;
+      const isEdit = !!_editingShipId;
+      const url = isEdit ? `/system/ships/${_editingShipId}` : '/system/ships';
+      const method = isEdit ? 'PUT' : 'POST';
+      fetch(url, { method, headers: H, body: JSON.stringify({ shipName: name, commandCode: cmdVal, openship: Number(status) }) })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => {
+          btn.disabled = false;
+          toast(ok ? (d.message || (isEdit ? 'Ship updated.' : 'Ship created.')) : (d.error || 'Failed.'), ok);
+          if (ok) { closeModal('shipModal'); loadShips(); }
+        })
+        .catch(() => { btn.disabled = false; toast('Server error.', false); });
+    }
+
+    function deleteShip(id, name) {
+      confirm_('Delete Ship', `Delete "${name}"? This cannot be undone.`, () => {
+        fetch(`/system/ships/${id}`, { method: 'DELETE', headers: H })
+          .then(r => r.json().then(d => ({ ok: r.ok, d })))
+          .then(({ ok, d }) => {
+            toast(ok ? (d.message || 'Deleted.') : (d.error || 'Failed.'), ok);
+            if (ok) loadShips();
+          })
+          .catch(() => toast('Server error.', false));
+      }, true);
+    }
+
+    /* ══ SHIP USERS ══ */
+    function loadUsers(page = 1) {
+      _uPage = page;
+      const f = buildUFilters();
+      const p = new URLSearchParams({ ...f, page: _uPage, pageSize: U_PER_PAGE });
+
+      document.getElementById('uUsersList').innerHTML =
+        '<div class="py-12 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin text-2xl block mb-2"></i>Loading users…</div>';
+      document.getElementById('uPagination').classList.add('hidden');
+
+      fetch(`/admin/personnel?${p}`, { headers: H })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(raw => {
+          const rows = Array.isArray(raw) ? raw : (raw.rows || raw.data || []);
+          _uTotal = raw.total != null ? raw.total : rows.length;
+          renderUsers(rows);
+        })
+        .catch(() => {
+          document.getElementById('uUsersList').innerHTML =
+            '<div class="py-12 text-center text-red-400 text-xs"><i class="fas fa-exclamation-circle text-2xl block mb-2"></i>Failed to load users.</div>';
+        });
+    }
+
+    function buildUFilters() {
+      const f = {};
+      const q = document.getElementById('uSearch').value.trim();
+      const sh = document.getElementById('uShipFilter').value;
+      const cmd = document.getElementById('uCmdFilter').value;
+      if (q) { if (/^\w{2}[\/\\\-]/i.test(q)) f.serviceNumber = q; else f.surname = q; }
+      if (sh) f.ship = sh;
+      if (cmd) f.command = cmd;
+      return f;
+    }
+
+    function uFilter() { loadUsers(1); }
+
+    function renderUsers(rows) {
+      const totalPages = Math.ceil(_uTotal / U_PER_PAGE);
+      document.getElementById('uCountLabel').textContent = _uTotal + ' users';
+
+      const el = document.getElementById('uUsersList');
+      if (!rows.length) {
+        el.innerHTML = '<div class="py-12 text-center text-slate-400 text-xs"><i class="fas fa-users text-2xl block mb-2 opacity-30"></i>No users found.</div>';
+        document.getElementById('uPagination').classList.add('hidden');
+        return;
+      }
+
+      el.innerHTML = rows.map(u => {
+        const ud = JSON.stringify(u).replace(/'/g, '&#39;');
+        return `
+      <div class="grid items-center px-4 py-2.5 gap-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors"
+           style="grid-template-columns:1.6fr 70px 100px 120px 90px 68px;">
+        <div class="text-xs font-semibold text-slate-800 truncate">${esc(u.Surname || '')} ${esc(u.OtherName || '')}</div>
+        <div class="text-xs text-slate-500">${esc(u.Rank || '—')}</div>
+        <div class="text-xs font-mono text-slate-600">${esc(u.serviceNumber || '—')}</div>
+        <div class="text-xs text-slate-500 truncate">${esc(u.ship || '—')}</div>
+        <div class="text-xs text-slate-500">${esc(u.command || '—')}</div>
+        <div class="flex gap-1.5">
+          <button onclick='openUserModal(${ud})'
+            class="w-7 h-7 border border-slate-200 bg-white hover:bg-green-50 rounded-lg flex items-center justify-center text-green-600 transition-colors" title="Edit">
+            <i class="fas fa-pen" style="font-size:10px;"></i>
+          </button>
+          <button onclick="deleteUser('${esc(u.serviceNumber)}','${esc(u.Surname)} ${esc(u.OtherName)}')"
+            class="w-7 h-7 border border-slate-200 bg-white hover:bg-red-50 rounded-lg flex items-center justify-center text-red-500 transition-colors" title="Delete">
+            <i class="fas fa-trash" style="font-size:10px;"></i>
+          </button>
+        </div>
+      </div>`;
+      }).join('');
+
+      renderPageBtns('uPageBtns', 'uPageInfo', _uPage, totalPages, _uTotal, p => loadUsers(p));
+    }
+
+    /* ── Export users ── */
+    function exportUsers() {
+      const f = buildUFilters();
+      const p = new URLSearchParams({ ...f, page: 1, pageSize: 5000 });
+      fetch(`/admin/personnel?${p}`, { headers: H })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(raw => {
+          const rows = Array.isArray(raw) ? raw : (raw.rows || raw.data || []);
+          const cols = ['serviceNumber', 'Surname', 'OtherName', 'Rank', 'ship', 'command', 'email', 'gsm_number'];
+          dlCSV('ship-users.csv', [cols.join(','), ...rows.map(r => cols.map(c => `"${r[c] ?? ''}"`).join(','))].join('\n'));
+        })
+        .catch(() => toast('Failed to export.', false));
+    }
+
+    /* ── User modal ── */
+    function openUserModal(user) {
+      _editingUserSvcNo = user ? user.serviceNumber : null;
+      document.getElementById('userModalTitle').textContent = user ? 'Edit Ship User' : 'New Ship User';
+      document.getElementById('userOrigSvcNo').value = user ? user.serviceNumber : '';
+      document.getElementById('userSvcNo').value = user ? (user.serviceNumber || '') : '';
+      document.getElementById('userSvcNo').readOnly = !!user;
+      document.getElementById('userSvcNo').className = `w-full h-9 border rounded-lg px-3 text-xs focus:outline-none focus:border-gold ${user ? 'bg-slate-50 border-slate-200 text-slate-400' : 'border-slate-200'}`;
+      document.getElementById('userRank').value = user ? (user.Rank || '') : '';
+      document.getElementById('userCommand').value = user ? (user.command || '') : '';
+      document.getElementById('userShip').value = user ? (user.ship || '') : '';
+      document.getElementById('userSurname').value = user ? (user.Surname || '') : '';
+      document.getElementById('userOther').value = user ? (user.OtherName || '') : '';
+      document.getElementById('userEmail').value = user ? (user.email || '') : '';
+      document.getElementById('userPhone').value = user ? (user.gsm_number || '') : '';
+      const btn = document.getElementById('userSubmitBtn');
+      btn.innerHTML = user
+        ? '<i class="fas fa-save mr-1"></i>Save Changes'
+        : '<i class="fas fa-user-plus mr-1"></i>Add User';
+      openModal('userModal');
+    }
+
+    function submitUser() {
+      const svcNo = document.getElementById('userSvcNo').value.trim();
+      const rank = document.getElementById('userRank').value;
+      const command = document.getElementById('userCommand').value;
+      const ship = document.getElementById('userShip').value;
+      const surname = document.getElementById('userSurname').value.trim();
+      const other = document.getElementById('userOther').value.trim();
+      const email = document.getElementById('userEmail').value.trim();
+      const phone = document.getElementById('userPhone').value.trim();
+      if (!svcNo) { toast('Service number is required.', false); return; }
+      if (!rank) { toast('Rank is required.', false); return; }
+      if (!command) { toast('Command is required.', false); return; }
+      if (!ship) { toast('Ship is required.', false); return; }
+      if (!surname) { toast('Surname is required.', false); return; }
+      const btn = document.getElementById('userSubmitBtn');
+      btn.disabled = true;
+      if (_editingUserSvcNo) {
+        fetch(`/admin/personnel/${encodeURIComponent(_editingUserSvcNo)}/contact`, {
+          method: 'PUT', headers: H,
+          body: JSON.stringify({ email, phone_number: phone }),
+        })
+          .then(r => r.json().then(d => ({ ok: r.ok, d })))
+          .then(({ ok, d }) => {
+            btn.disabled = false;
+            toast(ok ? (d.message || 'User updated.') : (d.error || 'Failed.'), ok);
+            if (ok) { closeModal('userModal'); loadUsers(_uPage); }
+          })
+          .catch(() => { btn.disabled = false; toast('Server error.', false); });
+      } else {
+        fetch('/admin/upload/personnel', {
+          method: 'POST', headers: H,
+          body: JSON.stringify([{ serviceNumber: svcNo, rank, command, ship, surname, otherName: other, email, phoneNumber: phone }]),
+        })
+          .then(r => r.json().then(d => ({ ok: r.ok, d })))
+          .then(({ ok, d }) => {
+            btn.disabled = false;
+            if (ok) {
+              const res = d.data || {};
+              toast(`Done — ${res.inserted || 1} upserted, ${(res.failed || []).length} failed.`, true);
+              closeModal('userModal'); loadUsers(1);
+            } else toast(d.error || 'Failed.', false);
+          })
+          .catch(() => { btn.disabled = false; toast('Server error.', false); });
+      }
+    }
+
+    function deleteUser(svcNo, name) {
+      confirm_('Delete User', `Remove "${name}" (${svcNo})?`, () => {
+        toast('Individual delete endpoint not available in this API version.', false);
+      }, true);
+    }
+
+    /* ══ UPLOAD ══ */
+    function openUploadModal() {
+      document.getElementById('uploadFile').value = '';
+      document.getElementById('uploadFileInfo').classList.add('hidden');
+      document.getElementById('uploadPreviewCount').classList.add('hidden');
+      _uploadRecords = null;
+      openModal('uploadModal');
+    }
+
+    function previewUpload(input) {
+      const file = input.files[0]; if (!file) return;
+      const info = document.getElementById('uploadFileInfo');
+      info.textContent = file.name + ' · ' + (file.size / 1024).toFixed(1) + ' KB';
+      info.classList.remove('hidden');
+      const reader = new FileReader();
+      reader.onload = e => {
+        const lines = e.target.result.split('\n').filter(l => l.trim());
+        if (lines.length < 2) { toast('File empty or no data rows.', false); return; }
+        const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+        _uploadRecords = lines.slice(1).map(line => {
+          const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+          const obj = {}; headers.forEach((h, i) => { if (vals[i]) obj[h] = vals[i]; }); return obj;
+        }).filter(r => r.serviceNumber || r.service_no);
+        const cnt = document.getElementById('uploadPreviewCount');
+        cnt.textContent = _uploadRecords.length + ' valid records found';
+        cnt.classList.remove('hidden');
+      };
+      reader.readAsText(file);
+    }
+
+    function submitUpload() {
+      if (!_uploadRecords?.length) { toast('Select a valid CSV first.', false); return; }
+      const btn = document.getElementById('uploadSubmitBtn');
+      btn.disabled = true;
+      fetch('/admin/upload/personnel', { method: 'POST', headers: H, body: JSON.stringify(_uploadRecords) })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => {
+          btn.disabled = false;
+          if (ok) {
+            const res = d.data || {};
+            toast(`Done — ${res.inserted || 0} upserted, ${(res.failed || []).length} failed.`, true);
+            closeModal('uploadModal'); loadUsers(1);
+          } else toast(d.error || 'Upload failed.', false);
+        })
+        .catch(() => { btn.disabled = false; toast('Server error.', false); });
+    }
+
+    /* ══ UTILS ══ */
+    function esc(s) {
+      return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function dlCSV(filename, content) {
+      const a = document.createElement('a');
+      a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(content);
+      a.download = filename; a.click();
+    }
+  </script>
+</body>
+
+</html>

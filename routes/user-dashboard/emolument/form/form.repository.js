@@ -1065,7 +1065,8 @@ async function getFormOptions() {
       statesResult,
       lgasResult,
       relationshipsResult,
-      entryModesResult
+      entryModesResult,
+      rankResult
     ] = await Promise.all([
       // Banks
       connection.query('SELECT bankcode AS id, bankname AS name FROM ef_banks'),
@@ -1092,7 +1093,10 @@ async function getFormOptions() {
       connection.query('SELECT Id AS id, description AS name FROM ef_relationships'),
       
       // Entry Modes (Type of Commissioning)
-      connection.query('SELECT Id AS id, Name AS name FROM ef_entrymodes')
+      connection.query('SELECT Id AS id, Name AS name FROM ef_entrymodes'),
+
+      // Ranks
+      connection.query('SELECT Id AS id, rankName AS name FROM ef_ranks')
     ]);
 
     return {
@@ -1104,7 +1108,8 @@ async function getFormOptions() {
       states: statesResult[0],
       lgas: lgasResult[0],
       relationships: relationshipsResult[0],
-      entryModes: entryModesResult[0]
+      entryModes: entryModesResult[0],
+      ranks: rankResult[0]
     };
 
   } catch (error) {

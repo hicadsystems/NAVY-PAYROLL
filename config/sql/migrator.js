@@ -8,7 +8,7 @@ const config = require("../../config");
 
 class Migrator {
   constructor() {
-    this.migrationsDir = path.join(__dirname);
+    this.migrationsDir = path.join(__dirname, 'migrations');
     this.connection = null;
     this.targetDatabase = null;
   }
@@ -67,6 +67,8 @@ class Migrator {
   }
 
   async getPendingMigrations() {
+    const [versionResult] = await this.connection.query("SELECT VERSION();");
+console.log("REAL DATABASE VERSION:", versionResult[0]["VERSION()"]);
     const files = await fs.readdir(this.migrationsDir);
     const sqlFiles = files
       .filter((f) => f.endsWith(".sql") && !f.includes("migrator"))
@@ -90,7 +92,14 @@ class Migrator {
       throw new Error(`Migration ${filename} missing -- UP section`);
     }
 
-    const upSQL = upMatch[1].trim();
+ const upSQL = upMatch[1]
+    .replace(/\r\n/g, '\n')      // Standardize Windows newlines
+    .replace(/\r/g, '\n')        // Standardize old Mac newlines
+    .replace(/\xA0/g, ' ')       // CRITICAL: Replace Non-Breaking Spaces with standard spaces
+    .replace(/--.*$/gm, '')      // Remove SQL comments
+    .replace(/\/\/.*/g, '')      // Remove JS-style comments
+    .replace(/\s+/g, ' ')        // Collapse all whitespace to single spaces for the parser
+    .trim();
 
     await this.connection.beginTransaction();
 

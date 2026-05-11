@@ -843,14 +843,22 @@
           <label class="field-label">Division</label>
           <input class="field" type="text" id="division" name="division">
         </div>
+        <div id="field-appointment" class="hidden">
+          <label class="field-label">Nature Of Appointment</label>
+           <select class="field" id="confirmedBy" name="confirmedBy">
+            <option value="">— Select —</option>
+            <option value="Permanent">Permanent</option>
+            <option value="Contract">Contract</option>
+          </select>
+        </div>
       </div>
     </div>
 
     <!-- ══════════════════════════════════════
          SECTION 6 — BANK & FINANCIAL
     ══════════════════════════════════════ -->
-    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="4"
-      id="section-4">
+    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="6"
+      id="section-6">
       <div class="section-heading">
         <div class="section-number">06</div>
         <h2 class="section-title">Bank &amp; Financial Details</h2>
@@ -894,8 +902,8 @@
     <!-- ══════════════════════════════════════
          SECTION 7 — ACCOMMODATION
     ══════════════════════════════════════ -->
-    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="5"
-      id="section-5">
+    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="7"
+      id="section-7">
       <div class="section-heading">
         <div class="section-number">07</div>
         <h2 class="section-title">Accommodation</h2>
@@ -936,8 +944,8 @@
     <!-- ══════════════════════════════════════
          SECTION 8 — ALLOWANCES
     ══════════════════════════════════════ -->
-    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="6"
-      id="section-6">
+    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="8"
+      id="section-8">
       <div class="section-heading">
         <div class="section-number">08</div>
         <h2 class="section-title">Allowances</h2>
@@ -960,8 +968,8 @@
     <!-- ══════════════════════════════════════
          SECTION 9 — LOANS
     ══════════════════════════════════════ -->
-    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="7"
-      id="section-7">
+    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="9"
+      id="section-9">
       <div class="section-heading">
         <div class="section-number">09</div>
         <h2 class="section-title">Loans</h2>
@@ -986,132 +994,6 @@
         </table>
       </div>
     </div>
-
-    <!-- ══════════════════════════════════════
-         SECTION 8 — NEXT OF KIN
-    ══════════════════════════════════════ -->
-    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="8"
-      id="section-8">
-      <div class="section-heading">
-        <div class="section-number">08</div>
-        <h2 class="section-title">Next of Kin</h2>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Primary NOK -->
-        <div>
-          <p class="text-xs font-semibold text-navy uppercase tracking-widest mb-3 pb-1 border-b border-smoke-dark">
-            Primary NOK <span class="text-danger">*</span></p>
-          <div class="space-y-3">
-            <div>
-              <label class="field-label">Full Name <span class="req">*</span></label>
-              <input class="field" type="text" id="nok_primary_full_name" placeholder="Surname and other names">
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="field-label">Relationship <span class="req">*</span></label>
-                <select class="field" id="nok_primary_relationship">
-                  <option value="">— Select —</option>
-                  <option>Wife</option>
-                  <option>Husband</option>
-                  <option>Mother</option>
-                  <option>Father</option>
-                  <option>Sister</option>
-                  <option>Brother</option>
-                  <option>Son</option>
-                  <option>Daughter</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div>
-                <label class="field-label">National ID</label>
-                <input class="field font-mono" type="text" id="nok_primary_national_id" placeholder="NIN">
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="field-label">Phone 1 <span class="req">*</span></label>
-                <input class="field" type="tel" id="nok_primary_phone1">
-              </div>
-              <div>
-                <label class="field-label">Phone 2</label>
-                <input class="field" type="tel" id="nok_primary_phone2">
-              </div>
-            </div>
-            <div>
-              <label class="field-label">Email</label>
-              <input class="field" type="email" id="nok_primary_email">
-            </div>
-            <div>
-              <label class="field-label">Address <span class="req">*</span></label>
-              <input class="field" type="text" id="nok_primary_address">
-            </div>
-          </div>
-        </div>
-
-        <!-- Alternate NOK -->
-        <div>
-          <p class="text-xs font-semibold text-navy uppercase tracking-widest mb-3 pb-1 border-b border-smoke-dark">
-            Alternate NOK</p>
-          <div class="space-y-3">
-            <div>
-              <label class="field-label">Full Name</label>
-              <input class="field" type="text" id="nok_alt_full_name" placeholder="Surname and other names">
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="field-label">Relationship</label>
-                <select class="field" id="nok_alt_relationship">
-                  <option value="">— Select —</option>
-                  <option>Wife</option>
-                  <option>Husband</option>
-                  <option>Mother</option>
-                  <option>Father</option>
-                  <option>Sister</option>
-                  <option>Brother</option>
-                  <option>Son</option>
-                  <option>Daughter</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div>
-                <label class="field-label">National ID</label>
-                <input class="field font-mono" type="text" id="nok_alt_national_id" placeholder="NIN">
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="field-label">Phone 1</label>
-                <input class="field" type="tel" id="nok_alt_phone1">
-              </div>
-              <div>
-                <label class="field-label">Phone 2</label>
-                <input class="field" type="tel" id="nok_alt_phone2">
-              </div>
-            </div>
-            <div>
-              <label class="field-label">Email</label>
-              <input class="field" type="email" id="nok_alt_email">
-            </div>
-            <div>
-              <label class="field-label">Address</label>
-              <input class="field" type="text" id="nok_alt_address">
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════
-         SECTION 9 — SPOUSE & CHILDREN
-    ══════════════════════════════════════ -->
-    <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="9"
-      id="section-9">
-      <div class="section-heading">
-        <div class="section-number">09</div>
-        <h2 class="section-title">Spouse &amp; Children</h2>
-      </div>
-
 
 
   </main>
@@ -1177,7 +1059,7 @@
         { key: 'SHIFT_DUTY', label: 'Shift Duty Allowance' },
         { key: 'HAZARD', label: 'Hazard Allowance' },
         { key: 'RENT_SUBSIDY', label: 'Rent Subsidy' },
-        { key: 'SBC', label: 'SBC Allowance' },
+        { key: 'SBC', label: 'SBS Allowance' },
         { key: 'SPECIAL_FORCES', label: 'Special Forces Allowance' },
         { key: 'OTHER', label: 'Other Allowance' },
       ],
@@ -1206,7 +1088,7 @@
       { key: 'FGSHLS', label: 'FGSHLS Loan' },
       { key: 'CAR', label: 'Car Loan' },
       { key: 'WELFARE', label: 'Welfare Loan' },
-      { key: 'NNNCS', label: 'NNNCS Loan' },
+      { key: 'NNNCS', label: 'NNMCS Loan' },
       { key: 'NNMFBL', label: 'NNMFBL Loan' },
       { key: 'PPCFS', label: 'PPCFS Loan' },
       { key: 'OTHER', label: 'Any Other Loan' },
@@ -1364,7 +1246,7 @@
       // Show/hide officer-only fields
       if (formType === 'OFFICER') {
         document.getElementById('field-entitlement').classList.remove('hidden');
-        // document.getElementById('field-division').classList.remove('hidden');
+        document.getElementById('field-appointment').classList.remove('hidden');
       }
 
       // Prefill all fields
@@ -1419,7 +1301,7 @@
         ship: core.ship,
         specialisation: core.specialisation,
         entry_mode: core.entry_mode,
-        
+        confirmedBy: core.confirmedBy,
         entitlement: core.entitlement,
         division: core.division,
         Bankcode: core.Bankcode,
@@ -1606,7 +1488,7 @@
         expirationOfEngagementDate: gv('expirationOfEngagementDate'),
         ship: gv('ship'), specialisation: gv('specialisation'),
         entry_mode: gv('entry_mode'),
-        entitlement: gv('entitlement'), division: gv('division'),
+        entitlement: gv('entitlement'), division: gv('division'),confirmedBy: gv('confirmedBy'),
         BankACNumber: gv('BankACNumber'), Bankcode: gv('Bankcode'),
         AccountName: gv('AccountName'),
         AcommodationStatus: gv('AcommodationStatus'),

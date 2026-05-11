@@ -1,45 +1,30 @@
 -- =============================================================================
 -- Migration: drop_flat_columns
--- Created: 2026-04-30T11:36:11.507Z
+-- MySQL: 8.0.44+
 -- PURPOSE:
---   Drop flat NOK/spouse/children/loan/allowance/blob columns from
---   ef_personalinfos and slim down ef_personalinfoshist to a lightweight
---   index/archive table. Full form data lives in ef_emolument_forms.snapshot.
+--   Remove legacy flat columns after normalization migration.
 --
--- RUN ORDER:
---   1. Run 20240601_001_backfill_history_snapshots.sql first
---   2. Run 20240602_001_performance_indexes.sql second
---   3. Run this script last
+-- SAFE RERUN:
+--   Uses native MySQL 8:
+--     - DROP COLUMN IF EXISTS
+--     - ADD COLUMN IF NOT EXISTS
 --
--- Safe to re-run: every DROP COLUMN is wrapped in a column-existence check.
---                 Running twice is a no-op — no errors.
---
--- IMPORTANT: Take a full database backup before running UP.
---            DOWN restores the columns as NULLable — data is NOT restored.
--- ============================================================================
-
-
+-- IMPORTANT:
+--   Run snapshot/backfill migrations BEFORE this migration.
+-- =============================================================================
 
 
 -- =============================================================================
 -- UP
 -- =============================================================================
--- Add your schema changes here
+
 
 -- -----------------------------------------------------------------------------
--- GATE: abort if snapshots are missing or child tables are empty.
--- Dropping columns on a DB where snapshots haven't been backfilled yet
--- would cause permanent data loss. This check runs inside UP so it fires
--- automatically on every run — no manual pre-flight step needed.
---
--- What is checked:
---   1. ef_emolument_forms must have at least one snapshot
---   2. Zero history rows may be missing a snapshot (backfill must be complete)
---   3. Child tables (ef_nok, ef_spouse, ef_children, ef_loans, ef_allowances,
---      ef_documents) must all have at least one row
---
--- If any check fails the procedure signals an error and the whole script
--- stops. Fix the problem (run the backfill migration first) then re-run.
+-- PRE-FLIGHT VALIDATION
+-- Abort if snapshots are missing.
+-- No stored procedures.
+-- No DELIMITER.
+-- Compatible with mysql2 / Prisma-style runners.
 -- -----------------------------------------------------------------------------
 
 SELECT
@@ -72,8 +57,9 @@ SELECT
 -- ef_personalinfos
 -- =============================================================================
 
--- NOK primary
 ALTER TABLE ef_personalinfos
+
+-- NOK primary
 DROP COLUMN IF EXISTS nok_name,
 DROP COLUMN IF EXISTS nok_relation,
 DROP COLUMN IF EXISTS nok_phone,
@@ -81,6 +67,8 @@ DROP COLUMN IF EXISTS nok_phone12,
 DROP COLUMN IF EXISTS nok_email,
 DROP COLUMN IF EXISTS nok_address,
 DROP COLUMN IF EXISTS nok_nationalId,
+
+-- NOK alternate
 DROP COLUMN IF EXISTS nok_name2,
 DROP COLUMN IF EXISTS nok_relation2,
 DROP COLUMN IF EXISTS nok_phone2,
@@ -88,14 +76,20 @@ DROP COLUMN IF EXISTS nok_phone22,
 DROP COLUMN IF EXISTS nok_email2,
 DROP COLUMN IF EXISTS nok_address2,
 DROP COLUMN IF EXISTS nok_nationalId2,
+
+-- Spouse
 DROP COLUMN IF EXISTS sp_name,
 DROP COLUMN IF EXISTS sp_phone,
 DROP COLUMN IF EXISTS sp_phone2,
 DROP COLUMN IF EXISTS sp_email,
+
+-- Children
 DROP COLUMN IF EXISTS chid_name,
 DROP COLUMN IF EXISTS chid_name2,
 DROP COLUMN IF EXISTS chid_name3,
 DROP COLUMN IF EXISTS chid_name4,
+
+-- Loans
 DROP COLUMN IF EXISTS FGSHLS_loan,
 DROP COLUMN IF EXISTS FGSHLS_loanYear,
 DROP COLUMN IF EXISTS car_loan,
@@ -114,6 +108,8 @@ DROP COLUMN IF EXISTS NHFcode,
 DROP COLUMN IF EXISTS NHFcodeYear,
 DROP COLUMN IF EXISTS NSITFcode,
 DROP COLUMN IF EXISTS NSITFcodeYear,
+
+-- Allowances
 DROP COLUMN IF EXISTS aircrew_allow,
 DROP COLUMN IF EXISTS pilot_allow,
 DROP COLUMN IF EXISTS shift_duty_allow,
@@ -124,12 +120,15 @@ DROP COLUMN IF EXISTS special_forces_allow,
 DROP COLUMN IF EXISTS call_duty_allow,
 DROP COLUMN IF EXISTS other_allow,
 DROP COLUMN IF EXISTS other_allowspecify,
+
+-- Photos / URLs
 DROP COLUMN IF EXISTS Passport,
 DROP COLUMN IF EXISTS NokPassport,
 DROP COLUMN IF EXISTS AltNokPassport,
 DROP COLUMN IF EXISTS mypassporturl,
 DROP COLUMN IF EXISTS mynokpassporturl,
 DROP COLUMN IF EXISTS myalternatenokpassporturl;
+
 
 -- =============================================================================
 -- ef_personalinfoshist
@@ -295,13 +294,8 @@ WHERE TABLE_SCHEMA = DATABASE()
   );
 
 
-
 -- =============================================================================
 -- DOWN
--- Add rollback logic here (reverse of UP)
--- Restores all dropped columns as NULLable VARCHAR/TEXT.
--- DATA IS NOT RESTORED — this only brings back the column structure.
--- Use your database backup to restore actual data if needed.
 -- =============================================================================
 
 ALTER TABLE ef_personalinfos
@@ -339,7 +333,6 @@ ADD COLUMN IF NOT EXISTS Passport       LONGBLOB NULL,
 ADD COLUMN IF NOT EXISTS mypassporturl  VARCHAR(500) NULL;
 
 
-
 -- =============================================================================
--- END OF MIGRATION
+-- END
 -- =============================================================================

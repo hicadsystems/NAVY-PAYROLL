@@ -14,7 +14,7 @@ START TRANSACTION;
 -- Review before proceeding.
 -- -----------------------------------------------------------------------------
 
-SELECT 'ef_personalinfos'    AS tbl, COUNT(*) AS rows FROM ef_personalinfos
+SELECT 'ef_personalinfos' AS tbl, COUNT(*) AS row_count FROM ef_personalinfos
 UNION ALL SELECT 'ef_emolument_forms',   COUNT(*) FROM ef_emolument_forms
 UNION ALL SELECT 'ef_form_approvals',    COUNT(*) FROM ef_form_approvals
 UNION ALL SELECT 'ef_audit_logs',        COUNT(*) FROM ef_audit_logs

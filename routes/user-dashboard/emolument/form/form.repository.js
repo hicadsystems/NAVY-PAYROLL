@@ -247,10 +247,19 @@ async function loadAllowances(serviceNo) {
      FROM ef_allowances WHERE service_no = ?`,
     [serviceNo],
   );
+
+  // For GBC => GCB (wrong data typing and storage)
+
+  const [gbc] = await pool.query(
+    `SELECT GBC, GBC_Number from ef_personalinfos WHERE serviceNumber = ? AND GBC IS NOT NULL LIMIT 1`,
+    [serviceNo]
+  );
+
   const out = {};
   rows.forEach((r) => {
     out[r.allow_type] = r;
   });
+  out['GCB'] = gbc?.GBC ? { allow_type: 'GCB', is_active: 1, specify: null , gcb_number: gbc.GBC_Number } : null;
   return out;
 }
 

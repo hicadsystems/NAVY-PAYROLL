@@ -331,11 +331,24 @@ router.post("/pdf", verifyToken, async (req, res) => {
       logoDataUrl = `data:image/png;base64,${buf.toString("base64")}`;
     }
 
+    // Only load stamp when requested
+    let stampDataUrl = "";
+    if (stamp) {
+      const stampPath = path.join(
+        __dirname,
+        "../../../public/photos/cpo-stamp.png",
+      );
+      if (fs.existsSync(stampPath)) {
+        const buf = fs.readFileSync(stampPath);
+        stampDataUrl = `data:image/png;base64,${buf.toString("base64")}`;
+      }
+    }
+
     const controller = getController();
 
     const pdfBuffer = await controller.generateBatchedPDF(
       templatePath,
-      [data], // single employee array — template iterates {{#each employees}}
+      [{ ...data, stampDataUrl, showStamp: !!stamp }], // single employee array — template iterates {{#each employees}}
       1,
       {
         format: "A5",
@@ -360,6 +373,7 @@ router.post("/pdf", verifyToken, async (req, res) => {
       {
         payDate: new Date(),
         logoDataUrl,
+        stampDataUrl,
         showStamp: !!stamp,
       },
     );

@@ -96,3 +96,4 @@ config/sql/Migration drop flat columns.sql
 build-db-doc.js
 db-doc-helpers.js
 routes/user-dashboard/emolument/system/system.service.js
+schema.html

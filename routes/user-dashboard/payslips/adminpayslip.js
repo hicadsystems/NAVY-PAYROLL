@@ -521,11 +521,25 @@ router.post("/pdf", verifyToken, async (req, res) => {
     "../../../templates/user-payslip.html",
   );
   const logoPath = path.join(__dirname, "../../../public/photos/logo.png");
+
   let logoDataUrl = "";
+  let stampDataUrl = "";
 
   if (fs.existsSync(logoPath)) {
     const buf = fs.readFileSync(logoPath);
     logoDataUrl = `data:image/png;base64,${buf.toString("base64")}`;
+  }
+
+  //Only load stamp from disk if stamp is requested
+  if (stamp) {
+    const stampPath = path.join(
+      __dirname,
+      "../../../public/photos/cpo-stamp.png",
+    );
+    if (fs.existsSync(stampPath)) {
+      const buf = fs.readFileSync(stampPath);
+      stampDataUrl = `data:image/png;base64,${buf.toString("base64")}`;
+    }
   }
 
   const controller = getController();
@@ -535,6 +549,7 @@ router.post("/pdf", verifyToken, async (req, res) => {
   const sharedGlobals = {
     payDate: new Date(),
     logoDataUrl,
+    stampDataUrl,
     showStamp: !!stamp,
   };
 
@@ -565,9 +580,15 @@ router.post("/pdf", verifyToken, async (req, res) => {
         `📄 Generating merged PDF for ${validEntries.length} employees`,
       );
 
+      // AFTER
       const mergedBuffer = await controller.generateBatchedPDF(
         templatePath,
-        validEntries.map((e) => e.data),
+        validEntries.map((e) => ({
+          // ← stamp/showStamp injected into each employee
+          ...e.data,
+          stampDataUrl,
+          showStamp: !!stamp,
+        })),
         PDF_BATCH_SIZE,
         pdfOptions,
         sharedGlobals,
@@ -596,7 +617,7 @@ router.post("/pdf", verifyToken, async (req, res) => {
       for (const entry of validEntries) {
         const buf = await controller.generateBatchedPDF(
           templatePath,
-          [entry.data],
+          [{ ...entry.data, stampDataUrl, showStamp: !!stamp }],
           1,
           pdfOptions,
           sharedGlobals,

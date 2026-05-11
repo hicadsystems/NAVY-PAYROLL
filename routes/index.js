@@ -265,7 +265,7 @@ module.exports = (app) => {
 
     //payslip
     app.use('/payslip', userPayslipRoutes);
-    app.use("/admin/payslip", adminPayslip);
+    app.use("/adm/payslip", adminPayslip);
   //
 
   //file-upload-helper

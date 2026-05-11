@@ -1389,7 +1389,7 @@
     });
 
     // ── Name search shared ──────────────────────────────────────
-    // Debounced search against /admin/employees/search?q=
+    // Debounced search against /adm/employees/search?q=
     // Endpoint should return [{ id, surname, othername }]
     // Replace with your actual endpoint if different.
     function buildSearchDrop(inputId, dropId, onSelect) {
@@ -1403,7 +1403,7 @@
         if (q.length < 2) { drop.classList.remove('open'); return; }
         timer = setTimeout(function () {
           var token = localStorage.getItem('token');
-          fetch('/admin/payslip/search?q=' + encodeURIComponent(q), {
+          fetch('/adm/payslip/search?q=' + encodeURIComponent(q), {
             headers: { 'Authorization': 'Bearer ' + token }
           })
             .then(function (r) { return r.json(); })
@@ -1618,7 +1618,7 @@
       hideResultsPanel();
       setLoading('adm-generate-btn', 'adm-spinner', 'adm-btn-text', true);
 
-      fetch('/admin/payslip/generate', {
+      fetch('/adm/payslip/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify(body)
@@ -1809,7 +1809,7 @@
       if (delivery === 'merged') { mergedSpin.style.display = 'block'; }
       else { zipSpin.style.display = 'block'; }
 
-      fetch('/admin/payslip/pdf', {
+      fetch('/adm/payslip/pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({ results: selected, delivery: delivery, stamp: admStampOn })
@@ -1857,8 +1857,7 @@
       d._selectedMonth = d.payroll_month || '';
       d._selectedYear = d.payroll_year || '';
 
-      // Build preview HTML
-      fetch('photos/logo.png')
+      var logoPromise = fetch('photos/logo.png')
         .then(function (r) { return r.blob(); })
         .then(function (b) {
           return new Promise(function (res) {
@@ -1867,16 +1866,34 @@
             fr.readAsDataURL(b);
           });
         })
-        .catch(function () { return ''; })
-        .then(function (logoDataUrl) {
-          _buildAndShowCarouselSlide(d, logoDataUrl);
-        });
-    }
+        .catch(function () { return ''; });
 
-    function _buildAndShowCarouselSlide(data, logoDataUrl) {
+      var stampPromise = admStampOn
+        ? fetch('photos/cpo-stamp.png')
+          .then(function (r) { return r.blob(); })
+          .then(function (b) {
+            return new Promise(function (res) {
+              var fr = new FileReader();
+              fr.onload = function () { res(fr.result); };
+              fr.readAsDataURL(b);
+            });
+          })
+          .catch(function () { return ''; })
+        : Promise.resolve('');
+
+      var fontsPromise = fetch('offline-assets/css/fonts.css')
+        .then(function (r) { return r.text(); })
+        .catch(function () { return ''; });
+
+      Promise.all([logoPromise, stampPromise, fontsPromise]).then(function (results) {
+        _buildAndShowCarouselSlide(d, results[0], results[1], results[2]);
+      });
+    }
+    
+    function _buildAndShowCarouselSlide(data, logoDataUrl, stampDataUrl, fontsCSS) {
       if (_previewBlobUrl) { URL.revokeObjectURL(_previewBlobUrl); _previewBlobUrl = null; }
 
-      var html = buildPayslipHTML(data, admStampOn, logoDataUrl);
+      var html = buildPayslipHTML(data, admStampOn, logoDataUrl, stampDataUrl, fontsCSS);
       var blob = new Blob([html], { type: 'text/html' });
       var blobUrl = URL.createObjectURL(blob);
       _previewBlobUrl = blobUrl;
@@ -2055,8 +2072,10 @@
         navyHtml += '<div class="total-row"><span class="label">NAVY Total</span><span class="amount">₦' + formatCurrency(navy.net) + '</span></div>';
       }
 
-      var stampHtml = globals.showStamp
-        ? '<div class="stamp-area"><div class="stamp-box">Official Stamp</div></div>' : '';
+      var stampHtml = globals.showStamp && globals.stampDataUrl
+        ? '<img class="stamp-box" src="' + globals.stampDataUrl + '" alt="Official Stamp" />'
+        + '<span class="stamp-date-text">' + formatDate(globals.payDate) + '</span>'
+        : '';
 
       return '<div class="container">'
         + '<div class="header-wrapper">'
@@ -2077,28 +2096,32 @@
         + '<div class="info-row"><span class="info-label">Bank Account:</span><span class="info-value">' + bankInfo + '</span></div>'
         + nsitfRow + '</div>'
         + ippisHtml + navyHtml
+        + '<div class="net-pay-wrapper">'
         + '<div class="net-pay"><span class="label">Net Payment This Month</span><span class="amount">₦' + formatCurrency(emp.net_pay) + '</span></div>'
         + stampHtml
+        + '</div>'
         + '<div class="footer"><p>All rights reserved &#xA9; Hicad Systems Limited.</p></div>'
         + '</div>';
     }
 
-    function buildPayslipHTML(data, showStamp, logoDataUrl) {
+    function buildPayslipHTML(data, showStamp, logoDataUrl, stampDataUrl, fontsCSS) {
       var employees = data.employees || [data];
       var globals = {
         className: data.className || '',
         payDate: data.payDate || new Date().toISOString(),
-        showStamp: !!showStamp
+        showStamp: !!showStamp,
+        stampDataUrl: stampDataUrl || ''
       };
       var body = employees.map(function (emp) { return renderEmployee(emp, globals); }).join('');
       return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'
-        + getPayslipCSS(logoDataUrl)
+        + getPayslipCSS(logoDataUrl, fontsCSS)
         + '</style></head><body>' + body + '</body></html>';
     }
 
-    function getPayslipCSS(logoDataUrl) {
+    function getPayslipCSS(logoDataUrl, fontsCSS) {
       var logoUrl = logoDataUrl || 'photos/logo.png';
-      return '@page{size:A5;margin:10mm;margin-top:0.2mm;margin-bottom:0.2mm;background-color:#f8fbff;}'
+      return (fontsCSS || '')
+        + '@page{size:A5;margin:10mm;margin-top:0.2mm;margin-bottom:0.2mm;background-color:#f8fbff;}'
         + '*{margin:0;padding:0;box-sizing:border-box;}'
         + 'html{background:#1e2a3a;min-height:100%;}'
         + 'body{font-family:Helvetica,Arial,sans-serif;font-size:7pt;color:#1a1a1a;line-height:1.2;position:relative;background-color:#f8fbff;width:559px;min-height:794px;margin:16px auto;padding:10mm;padding-top:0.2mm;padding-bottom:0.2mm;box-shadow:0 8px 40px rgba(0,0,0,0.55);}'
@@ -2130,30 +2153,55 @@
         + '.total-row{background-color:#f5f5f5;border-top:1px solid #d0d0d0;border-bottom:1px solid #d0d0d0;padding:2px 6px;display:flex;justify-content:space-between;font-size:8pt;font-weight:600;width:70%;}'
         + '.total-row .label{text-transform:uppercase;color:#1a1a1a;}.total-row .amount{text-align:right;min-width:90px;font-family:"Courier New",monospace;color:#1a1a1a;font-weight:700;}'
         + '.net-pay{background-color:#f0f0f0;border:2px solid #1a1a1a;padding:5px 6px;margin:4px 0;display:flex;justify-content:space-between;font-size:9pt;font-weight:bold;width:70%;}'
+        + '.net-pay-wrapper{position:relative;width:100%;margin:4px 0;}'
+        + '.net-pay{background-color:#f0f0f0;border:2px solid #1a1a1a;padding:5px 6px;display:flex;justify-content:space-between;font-size:9pt;font-weight:bold;width:70%;}'
         + '.net-pay .label{text-transform:uppercase;letter-spacing:1px;}.net-pay .amount{text-align:right;min-width:80px;font-family:"Courier New",monospace;font-weight:800;}'
-        + '.stamp-area{margin-top:6px;width:70%;display:flex;justify-content:flex-end;}.stamp-box{border:2px dashed #1e40af;width:90px;height:50px;display:flex;align-items:center;justify-content:center;font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;}'
+        + '.stamp-box{position:absolute;left:calc(70% - 39px);top:150%;transform:translateY(-50%) rotate(-15deg);transform-origin:center center;width:195px;height:145px;object-fit:contain;opacity:0.5;}'
+        + '.stamp-date-text{position:absolute;font-family:"Caveat",cursive;font-size:7pt;color:#1a4080; font-weight:600;'
+        + 'left:calc(70% + 52px);top:calc(150% + 19px);transform:translateY(-50%) rotate(-15deg);'
+        + 'transform-origin:center center;white-space:nowrap;pointer-events:none;}'
         + '.footer{margin-top:3px;padding-top:1px;border-top:2px solid #d0d0d0;text-align:center;font-size:6pt;color:#6a6a6a;}.footer p{margin:1px 0;}.footer p:first-child{font-weight:600;color:#4a4a4a;}';
     }
 
     function openPayslipPreview(data, showStamp) {
       if (_previewBlobUrl) { URL.revokeObjectURL(_previewBlobUrl); _previewBlobUrl = null; }
-      fetch('photos/logo.png')
+
+      var logoPromise = fetch('photos/logo.png')
         .then(function (r) { return r.blob(); })
-        .then(function (imgBlob) {
+        .then(function (blob) {
           return new Promise(function (resolve) {
             var reader = new FileReader();
             reader.onload = function () { resolve(reader.result); };
-            reader.readAsDataURL(imgBlob);
+            reader.readAsDataURL(blob);
           });
         })
-        .catch(function () { return ''; })
-        .then(function (logoDataUrl) {
-          _buildAndShowPreview(data, showStamp, logoDataUrl);
-        });
+        .catch(function () { return ''; });
+
+      var stampPromise = showStamp
+        ? fetch('photos/cpo-stamp.png')
+          .then(function (r) { return r.blob(); })
+          .then(function (blob) {
+            return new Promise(function (resolve) {
+              var reader = new FileReader();
+              reader.onload = function () { resolve(reader.result); };
+              reader.readAsDataURL(blob);
+            });
+          })
+          .catch(function () { return ''; })
+        : Promise.resolve('');
+
+      // Fetch fonts CSS alongside logo and stamp
+      var fontsPromise = fetch('offline-assets/css/fonts.css')
+        .then(function (r) { return r.text(); })
+        .catch(function () { return ''; });
+
+      Promise.all([logoPromise, stampPromise, fontsPromise]).then(function (results) {
+        _buildAndShowPreview(data, showStamp, results[0], results[1], results[2]);
+      });
     }
 
-    function _buildAndShowPreview(data, showStamp, logoDataUrl) {
-      var html = buildPayslipHTML(data, showStamp, logoDataUrl);
+    function _buildAndShowPreview(data, showStamp, logoDataUrl, stampDataUrl, fontsCSS) {
+      var html = buildPayslipHTML(data, showStamp, logoDataUrl, stampDataUrl, fontsCSS);
       var blob = new Blob([html], { type: 'text/html' });
       var blobUrl = URL.createObjectURL(blob);
       _previewBlobUrl = blobUrl;

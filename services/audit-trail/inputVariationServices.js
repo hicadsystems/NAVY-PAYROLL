@@ -32,7 +32,8 @@ class PayPeriodReportService {
           pp.payind as payment_indicator,
           pp.nomth as number_of_months,
           pp.createdby as created_by,
-          DATE_FORMAT(pp.datecreated, '%Y-%m-%d %H:%i:%s') as date_created
+          DATE_FORMAT(pp.datecreated, '%Y-%m-%d %H:%i:%s') as date_created,
+          pp.batchName as batch_name
         FROM py_inputhistory pp
         INNER JOIN hr_employees h ON h.empl_id = pp.Empl_ID
         LEFT JOIN py_Title tt ON tt.Titlecode = h.Title

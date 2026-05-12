@@ -649,7 +649,7 @@ router.get('/batch-template', verifyToken, async (req, res) => {
     const buffer = await workbook.xlsx.writeBuffer();
     
     // Send file
-    res.setHeader('Content-Disposition', 'attachment; filename=personnel_template.xlsx');
+    res.setHeader('Content-Disposition', 'attachment; filename=Personnel_Upload_Template.xlsx');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.send(buffer);
     

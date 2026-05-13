@@ -157,7 +157,6 @@
     /* ── Toggle checkbox ── */
     .toggle-row {
       display: flex;
-      align-items: center;
       gap: .6rem;
       padding: .45rem .6rem;
       border-radius: .3rem;
@@ -845,7 +844,7 @@
         </div>
         <div id="field-appointment" class="hidden">
           <label class="field-label">Nature Of Appointment</label>
-           <select class="field" id="confirmedBy" name="confirmedBy">
+          <select class="field" id="confirmedBy" name="confirmedBy">
             <option value="">— Select —</option>
             <option value="Permanent">Permanent</option>
             <option value="Contract">Contract</option>
@@ -1050,6 +1049,7 @@
     let autoSaveTimer = null;
     let isDirty = false;
     let pendingNavigation = null;
+    window.formLocked = false;
 
     // ── Allowances by form type ───────────────────────────────
     const ALLOWANCES = {
@@ -1072,6 +1072,7 @@
         { key: 'SBC', label: 'SBC Allowance' },
         { key: 'SPECIAL_FORCES', label: 'Special Forces Allowance' },
         { key: 'OTHER', label: 'Other Allowance' },
+        { key: 'GCB', label: 'GCB Allowance' },
       ],
       TRAINING: [
         { key: 'AIRCREW', label: 'Aircrew Allowance' },
@@ -1098,13 +1099,31 @@
     window.addEventListener('DOMContentLoaded', async () => {
       await loadFormOptions();
       await loadForm();
+
+      // Wrap showSection after SPA has had a chance to define it
+      setTimeout(() => {
+        const _orig = window.showSection;
+        if (typeof _orig === 'function') {
+          window.showSection = function (section) {
+            openLeaveModal(() => _orig(section));
+          };
+        }
+      }, 0);
     });
 
     window.addEventListener('beforeunload', function (e) {
-      if (!isDirty) return;
+      if (window.formLocked || !isDirty) return;
 
       e.preventDefault();
       e.returnValue = '';
+    });
+
+    // Intercept SPA navigation via emolNav event
+    document.addEventListener('emolNav', function (e) {
+      openLeaveModal(() => {
+        if (window.showSection) window.showSection(e.detail);
+        else document.dispatchEvent(new CustomEvent('emolNav-confirmed', { detail: e.detail }));
+      });
     });
 
     function calculateProgress() {
@@ -1206,18 +1225,18 @@
         });
         const data = await res.json();
 
-        // if (!res.ok) {
-        //   showBlocked(data.error || 'Unable to load form.');
-        //   return;
-        // }
+        if (!res.ok) {
+          showBlocked(data.error || 'Unable to load form.');
+          return;
+        }
 
         formData = data;
         formType = data.formType || 'RATING';
 
-        // if (!data.canEdit) {
-        //   showBlocked(data.editBlocked || 'Form is not available for editing.');
-        //   return;
-        // }
+        if (!data.canEdit) {
+          showBlocked(data.editBlocked || 'Form is not available for editing.');
+          return;
+        }
 
         initForm(data);
 
@@ -1232,7 +1251,7 @@
     function initForm(data) {
       // Show form
       document.getElementById('form-wrapper').classList.remove('hidden');
-      document.getElementById('action-bar').classList.remove('hidden');
+      // document.getElementById('action-bar').classList.remove('hidden');
 
       // Header metadata
       document.getElementById('header-svc-no').textContent = data.serviceNumber || '—';
@@ -1260,19 +1279,46 @@
       renderStepNumbers(9);
 
       // Auto-save on input change
-      document.querySelectorAll('.field').forEach(el => {
-        el.addEventListener('input', () => {
-          isDirty = true;
+      // ── Lock form if status is DO_REVIEWED or beyond ──────────
+      const lockedStatuses = ['DO_REVIEWED', 'FO_APPROVED', 'CPO_CONFIRMED'];
+      const isLocked = lockedStatuses.includes(data.formStatus);
 
-          calculateProgress();
+      if (isLocked) {
+        window.formLocked = true;
+        // Disable all fields
+        document.querySelectorAll('.field').forEach(el => el.disabled = true);
+        document.querySelectorAll('.toggle-row input').forEach(el => el.disabled = true);
+        // Hide action bar entirely — no save or submit
+        document.getElementById('action-bar').classList.add('hidden');
 
-          clearTimeout(autoSaveTimer);
-          autoSaveTimer = setTimeout(() => {
-            saveDraft();
-            isDirty = false;
-          }, 3000);
+        // Disable photo upload zones
+        document.querySelectorAll('.photo-zone').forEach(zone => {
+          zone.style.pointerEvents = 'none';
+          zone.style.opacity = '0.6';
+          zone.style.cursor = 'not-allowed';
         });
-      });
+        // Show a read-only notice
+        const notice = document.createElement('div');
+        notice.className = 'bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 text-sm text-blue-800 flex items-center gap-2 mb-2';
+        notice.innerHTML = `<i class="fas fa-lock text-blue-400"></i> This form is currently under review and cannot be edited.`;
+        document.getElementById('form-wrapper').prepend(notice);
+
+      } else {
+        document.getElementById('action-bar').classList.remove('hidden');
+        // Auto-save on input change
+        document.querySelectorAll('.field').forEach(el => {
+          el.addEventListener('input', () => {
+            isDirty = true;
+            calculateProgress();
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+              saveDraft();
+              isDirty = false;
+            }, 3000);
+          });
+        });
+      }
+
       // Section scroll observer
       initScrollObserver();
     }
@@ -1402,29 +1448,57 @@
       grid.innerHTML = '';
 
       items.forEach(({ key, label }) => {
-        const checked = existing[key]?.is_active ? true : false;
-        const div = document.createElement('label');
-        div.className = `toggle-row${checked ? ' active' : ''}`;
-        div.innerHTML = `
-        <input type="checkbox" id="allow_${key}" ${checked ? 'checked' : ''}
-               onchange="onAllowanceChange(this,'${key}')">
-        <span class="text-sm text-ink">${label}</span>`;
+        const checked = existing[key]?.is_active == 1;
+        const div = document.createElement('div');
+
+        if (key === 'GCB') {
+          const gcbNumber = existing['GCB']?.gcb_number || '';
+          div.className = `toggle-row flex-col items-start gap-2${checked ? ' active' : ''}`;
+          div.style.cssText = 'grid-column: 1;';   // ← spans full width
+          div.innerHTML = `
+    <label class="flex items-center gap-2 cursor-pointer">
+      <input type="checkbox" id="allow_GCB" ${checked ? 'checked' : ''}
+             onchange="onAllowanceChange(this,'GCB')"
+             style="accent-color:#2E5090;width:1rem;height:1rem;cursor:pointer;flex-shrink:0;">
+      <span class="text-sm text-ink font-medium">GCB Allowance</span>
+    </label>
+    <input class="field font-mono text-sm" type="text" id="gcb_number"
+           placeholder="Enter GCB number"
+           value="${gcbNumber}"
+           ${checked ? '' : 'disabled'}
+           style="max-width:280px;">`;
+        } else {
+          div.className = `toggle-row${checked ? ' active' : ''}`;
+          div.innerHTML = `
+        <label class="flex items-center gap-2 w-full cursor-pointer">
+          <input type="checkbox" id="allow_${key}" ${checked ? 'checked' : ''}
+                 onchange="onAllowanceChange(this,'${key}')"
+                 style="accent-color:#2E5090;width:1rem;height:1rem;cursor:pointer;">
+          <span class="text-sm text-ink">${label}</span>
+        </label>`;
+        }
+
         grid.appendChild(div);
       });
 
-      // Show/hide 'other' specify if already active
+      // OTHER
       const otherEl = existing['OTHER'];
-      if (otherEl?.is_active) {
+      if (otherEl?.is_active == 1) {
         document.getElementById('other-allow-detail').style.display = 'block';
         setVal('other_allowspecify', otherEl.specify);
       }
     }
-
     function onAllowanceChange(cb, key) {
-      isDirty = true
-      cb.closest('label').classList.toggle('active', cb.checked);
+      if (window.formLocked) return callback();
+      isDirty = true;
+      cb.closest('.toggle-row').classList.toggle('active', cb.checked);
       if (key === 'OTHER') {
         document.getElementById('other-allow-detail').style.display = cb.checked ? 'block' : 'none';
+      }
+      if (key === 'GCB') {
+        const gcbInput = document.getElementById('gcb_number');
+        gcbInput.disabled = !cb.checked;
+
       }
       clearTimeout(autoSaveTimer);
       autoSaveTimer = setTimeout(saveDraft, 2000);
@@ -1488,7 +1562,7 @@
         expirationOfEngagementDate: gv('expirationOfEngagementDate'),
         ship: gv('ship'), specialisation: gv('specialisation'),
         entry_mode: gv('entry_mode'),
-        entitlement: gv('entitlement'), division: gv('division'),confirmedBy: gv('confirmedBy'),
+        entitlement: gv('entitlement'), division: gv('division'), confirmedBy: gv('confirmedBy'),
         BankACNumber: gv('BankACNumber'), Bankcode: gv('Bankcode'),
         AccountName: gv('AccountName'),
         AcommodationStatus: gv('AcommodationStatus'),
@@ -1545,6 +1619,7 @@
         if (cb) allowances[key] = {
           is_active: cb.checked,
           specify: key === 'OTHER' ? gv('other_allowspecify') : null,
+          gcb_number: key === 'GCB' ? gv('gcb_number') : null,
         };
       });
 
@@ -1743,7 +1818,7 @@
 
 
     function openLeaveModal(callback) {
-      if (!isDirty) return callback();
+      if (window.formLocked || !isDirty) return callback();
 
       pendingNavigation = callback;
       document.getElementById('leave-modal').classList.remove('hidden');

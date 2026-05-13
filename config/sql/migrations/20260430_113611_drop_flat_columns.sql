@@ -193,10 +193,6 @@ CALL drop_col_if_exists('ef_personalinfos', 'PPCFS_loan');
 CALL drop_col_if_exists('ef_personalinfos', 'PPCFS_loanYear');
 CALL drop_col_if_exists('ef_personalinfos', 'Anyother_Loan');
 CALL drop_col_if_exists('ef_personalinfos', 'Anyother_LoanYear');
--- CALL drop_col_if_exists('ef_personalinfos', 'NHFcode');
--- CALL drop_col_if_exists('ef_personalinfos', 'NHFcodeYear');
--- CALL drop_col_if_exists('ef_personalinfos', 'NSITFcode');
--- CALL drop_col_if_exists('ef_personalinfos', 'NSITFcodeYear');
 
 -- Allowances
 CALL drop_col_if_exists('ef_personalinfos', 'aircrew_allow');

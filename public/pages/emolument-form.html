@@ -529,14 +529,6 @@
           <input class="field font-mono" type="text" id="NIN" name="NIN" placeholder="11-digit NIN" maxlength="11">
         </div>
         <div>
-          <label class="field-label">Sex <span class="req">*</span></label>
-          <select class="field" id="Sex" name="Sex">
-            <option value="">— Select —</option>
-            <option>Male</option>
-            <option>Female</option>
-          </select>
-        </div>
-        <div>
           <label class="field-label">Marital Status <span class="req">*</span></label>
           <select class="field" id="MaritalStatus" name="MaritalStatus">
             <option value="">— Select —</option>
@@ -771,7 +763,7 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
-          <label class="field-label">Date of Enlistment <span class="req">*</span></label>
+          <label class="field-label">Date of Joining Service <span class="req">*</span></label>
           <input class="field" type="date" id="DateEmpl" name="DateEmpl">
         </div>
         <div>
@@ -785,6 +777,14 @@
         <div>
           <label class="field-label">Run-Out Date</label>
           <input class="field" type="date" id="runoutDate" name="runoutDate">
+        </div>
+        <div class="hidden" data-rating-only>
+          <label class="field-label">Expiration of Current Engagement</label>
+          <input class="field" type="date" id="expirationOfEngagementDate" name="expirationOfEngagementDate">
+        </div>
+        <div class="hidden" data-rating-only>
+          <label class="field-label">Year of Advancement</label>
+          <input class="field" type="text" id="yearOfPromotion" name="yearOfPromotion">
         </div>
         <div>
           <label class="field-label">Command <span class="req">*</span></label>
@@ -810,7 +810,7 @@
             <option value="">— Select —</option>
           </select>
         </div>
-        <div>
+        <div id="commission-type" class="hidden">
           <label class="field-label">Type Of Commissioning</label>
           <select class="field" id="entry_mode" name="entry_mode">
             <option value="">— Select —</option>
@@ -837,10 +837,6 @@
         <div id="field-entitlement" class="hidden">
           <label class="field-label">Appointment / Entitlement</label>
           <input class="field" type="text" id="entitlement" name="entitlement" placeholder="e.g. Executive Officer">
-        </div>
-        <div id="field-division" class="hidden">
-          <label class="field-label">Division</label>
-          <input class="field" type="text" id="division" name="division">
         </div>
         <div id="field-appointment" class="hidden">
           <label class="field-label">Nature Of Appointment</label>
@@ -1051,6 +1047,24 @@
     let pendingNavigation = null;
     window.formLocked = false;
 
+    // ── LABEL OVERRIDES ───────────────────────────────
+
+    const LABEL_OVERRIDES = {
+      RATING: {
+        Rank: 'Rate',
+        serviceNumber: 'Official Number',
+        advanceDate: 'Date Of Enlistment',
+        runoutDate: 'Date Of Joining Ship',
+      },
+
+      OFFICER: {
+        Rank: 'Rank / Title',
+        serviceNumber: 'Service Number',
+        advanceDate: 'Date of Commissioning',
+        runoutDate: 'Run-Out Date',
+      }
+    };
+
     // ── Allowances by form type ───────────────────────────────
     const ALLOWANCES = {
       OFFICER: [
@@ -1145,6 +1159,37 @@
 
       const percent = Math.round((completed / sections.length) * 100);
       document.getElementById('progress-percent').textContent = percent + '%';
+    }
+
+    function toggleRatingOnlyFields(formType) {
+      const isRating = formType === 'RATING';
+
+      document.querySelectorAll('[data-rating-only]').forEach(el => {
+        el.classList.toggle('hidden', !isRating);
+      });
+    }
+
+    function applyLabelOverrides(formType) {
+      const overrides = LABEL_OVERRIDES[formType];
+      if (!overrides) return;
+
+      Object.entries(overrides).forEach(([fieldId, label]) => {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+
+        const wrapper = field.closest('div');
+        const labelEl = wrapper?.querySelector('.field-label');
+
+        if (labelEl) {
+          const req = labelEl.querySelector('.req');
+          labelEl.innerHTML = label;
+
+          if (req) {
+            labelEl.appendChild(document.createTextNode(' '));
+            labelEl.appendChild(req);
+          }
+        }
+      });
     }
 
 
@@ -1266,8 +1311,12 @@
       if (formType === 'OFFICER') {
         document.getElementById('field-entitlement').classList.remove('hidden');
         document.getElementById('field-appointment').classList.remove('hidden');
+        document.getElementById('commission-type').classList.remove('hidden');
       }
 
+
+      applyLabelOverrides(formType);
+      toggleRatingOnlyFields(formType);
       // Prefill all fields
       prefillFields(data);
 
@@ -1333,7 +1382,6 @@
         OtherName: core.OtherName,
         Rank: core.Rank,
         NIN: core.NIN,
-        Sex: core.Sex,
         MaritalStatus: core.MaritalStatus,
         Birthdate: core.Birthdate ? core.Birthdate.split('T')[0] : '',
         religion: core.religion,
@@ -1360,6 +1408,7 @@
         command: core.command,
         branch: core.branch,
         StateofOrigin: String(core.StateofOrigin),
+        yearOfPromotion: core.yearOfPromotion,
 
         // hidden, to be removed
         //  GBC: core.GBC,
@@ -1553,7 +1602,7 @@
     function buildBody() {
       const core = {
         Surname: gv('Surname'), OtherName: gv('OtherName'), Rank: gv('Rank'),
-        NIN: gv('NIN'), Sex: gv('Sex'), MaritalStatus: gv('MaritalStatus'),
+        NIN: gv('NIN'), MaritalStatus: gv('MaritalStatus'),
         Birthdate: gv('Birthdate'), religion: gv('religion'),
         gsm_number: gv('gsm_number'), gsm_number2: gv('gsm_number2'),
         email: gv('email'), home_address: gv('home_address'),
@@ -1570,6 +1619,8 @@
         advanceDate: gv('advanceDate'), runoutDate: gv('runoutDate'),
         command: gv('command'), branch: gv('branch'),
         StateofOrigin: gv('StateofOrigin'), LocalGovt: gv('LocalGovt'),
+        expirationOfEngagementDate: gv('expirationOfEngagementDate'),
+        yearOfPromotion: gv('yearOfPromotion'),
 
         // hidden, to be removed
         // qualification: gv('qualification'), 
@@ -1660,7 +1711,7 @@
     // ── Submit Form ───────────────────────────────────────────
     async function submitForm() {
       // Basic validation
-      const required = ['Surname', 'OtherName', 'Sex', 'Birthdate', 'gsm_number',
+      const required = ['Surname', 'OtherName', 'Birthdate', 'gsm_number',
         'home_address', 'BankACNumber', 'Bankcode',
         'nok_primary_full_name', 'nok_primary_phone1', 'nok_primary_address'];
       const missing = required.filter(id => {

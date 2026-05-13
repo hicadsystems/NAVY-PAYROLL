@@ -165,7 +165,7 @@ async function loadPersonCore(serviceNo) {
        p.entry_mode, p.gradelevel, p.gradetype, p.taxed,
        p.entitlement, p.town, p.accomm_type,
        p.AcommodationStatus, p.AddressofAcommodation,
-       p.GBC, p.GBC_Number, p.NSITFcode, p.NHFcode,
+       p.NSITFcode, p.NHFcode,
        p.qualification, p.division, p.NIN,
        p.formNumber, p.FormYear, p.Status, p.emolumentform,
        p.div_off_name, p.div_off_rank, p.div_off_svcno, p.div_off_date,
@@ -247,10 +247,19 @@ async function loadAllowances(serviceNo) {
      FROM ef_allowances WHERE service_no = ?`,
     [serviceNo],
   );
+
+  // For GBC => GCB (wrong data typing and storage)
+
+  const [gbc] = await pool.query(
+    `SELECT GBC, GBC_Number from ef_personalinfos WHERE serviceNumber = ? AND GBC IS NOT NULL LIMIT 1`,
+    [serviceNo]
+  );
+
   const out = {};
   rows.forEach((r) => {
     out[r.allow_type] = r;
   });
+  out['GCB'] = gbc[0]?.GBC ? { allow_type: 'GCB', is_active: 1, specify: null , gcb_number: gbc[0].GBC_Number } : null;
   return out;
 }
 

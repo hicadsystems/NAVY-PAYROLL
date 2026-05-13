@@ -62,9 +62,29 @@ ALTER TABLE ef_localgovts
   DROP PRIMARY KEY,
   ADD PRIMARY KEY (Id),
   MODIFY COLUMN lgaName VARCHAR(150) NOT NULL,
-  MODIFY COLUMN code VARCHAR(20) DEFAULT NULL,
-  ADD CONSTRAINT fk_lga_state
-    FOREIGN KEY (StateId) REFERENCES ef_states(StateId) ON UPDATE CASCADE;
+  MODIFY COLUMN code VARCHAR(20) DEFAULT NULL;
+
+
+SET @fk_exists := (
+  SELECT COUNT(1)
+  FROM information_schema.TABLE_CONSTRAINTS
+  WHERE table_schema = DATABASE()
+    AND table_name = 'ef_localgovts'
+    AND constraint_name = 'fk_lga_state'
+);
+
+SET @sql := IF(@fk_exists = 0,
+  'ALTER TABLE ef_localgovts
+     ADD CONSTRAINT fk_lga_state
+     FOREIGN KEY (StateId)
+     REFERENCES ef_states(StateId)
+     ON UPDATE CASCADE',
+  'SELECT 1'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- ef_banks
 ALTER TABLE ef_banks
@@ -97,10 +117,29 @@ ALTER TABLE ef_ships
   ADD PRIMARY KEY (Id),
   MODIFY COLUMN code VARCHAR(20) DEFAULT NULL,
   MODIFY COLUMN shipName VARCHAR(150) DEFAULT NULL,
-  MODIFY COLUMN LandSea VARCHAR(20) DEFAULT NULL,
-  ADD CONSTRAINT fk_ship_command
-    FOREIGN KEY (commandid) REFERENCES ef_commands(Id) ON UPDATE CASCADE;
+  MODIFY COLUMN LandSea VARCHAR(20) DEFAULT NULL;
 SET FOREIGN_KEY_CHECKS = 1;
+
+SET @fk_exists := (
+  SELECT COUNT(1)
+  FROM information_schema.TABLE_CONSTRAINTS
+  WHERE table_schema = DATABASE()
+    AND table_name = 'ef_ships'
+    AND constraint_name = 'fk_ship_command'
+);
+
+SET @sql := IF(@fk_exists = 0,
+  'ALTER TABLE ef_ships
+     ADD CONSTRAINT fk_ship_command
+     FOREIGN KEY (commandid)
+     REFERENCES ef_commands(Id)
+     ON UPDATE CASCADE',
+  'SELECT 1'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- ef_relationships (NOK relationship types)
 ALTER TABLE ef_relationships
@@ -133,8 +172,24 @@ ALTER TABLE ef_entrymodes
 ALTER TABLE ef_personalinfos
   MODIFY COLUMN Id BIGINT NOT NULL AUTO_INCREMENT,
   DROP PRIMARY KEY,
-  ADD PRIMARY KEY (Id),
-  ADD UNIQUE KEY uq_personalinfos_svcno (serviceNumber);
+  ADD PRIMARY KEY (Id);
+
+SET @index_exists := (
+  SELECT COUNT(1)
+  FROM information_schema.STATISTICS
+  WHERE table_schema = DATABASE()
+    AND table_name = 'ef_personalinfos'
+    AND index_name = 'uq_personalinfos_svcno'
+);
+
+SET @sql := IF(@index_exists = 0,
+  'ALTER TABLE ef_personalinfos ADD UNIQUE KEY uq_personalinfos_svcno (serviceNumber)',
+  'SELECT "Index already exists"'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
   -- Remove legacy blob passport columns (photos now in ef_documents)
   -- DROP COLUMN Passport,
   -- DROP COLUMN NokPassport,
@@ -144,16 +199,61 @@ ALTER TABLE ef_personalinfos
 ALTER TABLE ef_personalinfoshist
   MODIFY COLUMN Id INT NOT NULL AUTO_INCREMENT,
   DROP PRIMARY KEY,
-  ADD PRIMARY KEY (Id),
-  ADD INDEX idx_hist_svcno (serviceNumber),
-  ADD INDEX idx_hist_year (FormYear);
+  ADD PRIMARY KEY (Id);
+
+SET @index_exists := (
+  SELECT COUNT(1)
+  FROM information_schema.STATISTICS
+  WHERE table_schema = DATABASE()
+    AND table_name = 'ef_personalinfoshist'
+    AND index_name = 'idx_hist_svcno'
+);
+
+SET @sql := IF(@index_exists = 0,
+  'ALTER TABLE ef_personalinfoshist ADD INDEX idx_hist_svcno (serviceNumber)',
+  'SELECT 1'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @index_exists := (
+  SELECT COUNT(1)
+  FROM information_schema.STATISTICS
+  WHERE table_schema = DATABASE()
+    AND table_name = 'ef_personalinfoshist'
+    AND index_name = 'idx_hist_year'
+);
+
+SET @sql := IF(@index_exists = 0,
+  'ALTER TABLE ef_personalinfoshist  ADD INDEX idx_hist_year (FormYear)',
+  'SELECT 1'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- ef_control — form cycle management
 ALTER TABLE ef_control
   MODIFY COLUMN Id INT NOT NULL AUTO_INCREMENT,
   DROP PRIMARY KEY,
-  ADD PRIMARY KEY (Id),
-  ADD INDEX idx_control_status (status);
+  ADD PRIMARY KEY (Id);
+
+SET @idx_exists := (
+  SELECT COUNT(1)
+  FROM information_schema.STATISTICS
+  WHERE table_schema = DATABASE()
+    AND table_name = 'ef_control'
+    AND index_name = 'idx_control_status'
+);
+
+SET @sql := IF(@idx_exists = 0,
+  'ALTER TABLE ef_control
+    ADD INDEX idx_control_status (status)',
+  'SELECT 1'
+);
 
 -- ef_systeminfos — global system config
 ALTER TABLE ef_systeminfos
@@ -162,13 +262,13 @@ ALTER TABLE ef_systeminfos
   ADD PRIMARY KEY (Id);
 
 -- ef_auditlogs — fix the broken audit table
-ALTER TABLE ef_auditlogs
-  MODIFY COLUMN Id INT NOT NULL AUTO_INCREMENT,
-  DROP PRIMARY KEY,
-  ADD PRIMARY KEY (Id),
-  ADD INDEX idx_audit_table (TableName(100)),
-  ADD INDEX idx_audit_performed_at (PerformedAt),
-  ADD INDEX idx_audit_performed_by (PerformedBy(50));
+-- ALTER TABLE ef_auditlogs
+--   MODIFY COLUMN Id INT NOT NULL AUTO_INCREMENT,
+--   DROP PRIMARY KEY,
+--   ADD PRIMARY KEY (Id),
+--   ADD INDEX idx_audit_table (TableName(100)),
+--   ADD INDEX idx_audit_performed_at (PerformedAt),
+--   ADD INDEX idx_audit_performed_by (PerformedBy(50));
 
 -- ef_contactus
 ALTER TABLE ef_contactus
@@ -186,8 +286,25 @@ ALTER TABLE ef_menugroups
 ALTER TABLE ef_menus
   MODIFY COLUMN Id INT NOT NULL AUTO_INCREMENT,
   DROP PRIMARY KEY,
-  ADD PRIMARY KEY (Id),
-  ADD INDEX idx_menus_group (MenuGroupId);
+  ADD PRIMARY KEY (Id);
+
+SET @idx_exists := (
+  SELECT COUNT(1)
+  FROM information_schema.STATISTICS
+  WHERE table_schema = DATABASE()
+    AND table_name = 'ef_menus'
+    AND index_name = 'idx_menus_group'
+);
+
+SET @sql := IF(@idx_exists = 0,
+  'ALTER TABLE ef_menus
+    ADD INDEX idx_menus_group (MenuGroupId)',
+  'SELECT 1'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- ef_rolemenus
 ALTER TABLE ef_rolemenus

@@ -131,6 +131,7 @@ const rangePaymentRoutes = require("./audit-trail/rangePayments");
 const salaryscaleuploadRoutes = require("./file-upload-helper/salaryscaleupload");
 const personnelUploadRoutes = require("./file-upload-helper/personnelUpload");
 const paydedUploadRoutes = require("./file-upload-helper/paydedUpload");
+const inputDocumentationUploadRoutes = require("./file-upload-helper/inputDocumentationUpload");
 
 //Helpers
 const paydedReportRoutes = require("./helpers/puppeteer-gen-reports/paydedReport");
@@ -265,13 +266,15 @@ module.exports = (app) => {
 
     //payslip
     app.use('/payslip', userPayslipRoutes);
-    app.use("/admin/payslip", adminPayslip);
+    app.use("/adm/payslip", adminPayslip);
   //
 
   //file-upload-helper
   app.use("/api/v1", salaryscaleuploadRoutes);
   app.use("/batchpersonnel", personnelUploadRoutes);
   app.use("/batchpayded", paydedUploadRoutes);
+  app.use("/batchdocumentation", inputDocumentationUploadRoutes);
+
 
   //helpers
   app.use("/puppeteer", paydedReportRoutes);

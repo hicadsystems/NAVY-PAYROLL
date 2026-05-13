@@ -22,27 +22,55 @@
   }
 
   @keyframes grow-up {
-    0% { height: 0; bottom: 0; }
-    100% { height: 100%; bottom: 0; }
+    0% {
+      height: 0;
+      bottom: 0;
+    }
+
+    100% {
+      height: 100%;
+      bottom: 0;
+    }
   }
+
   @keyframes grow-down {
-    0% { height: 0; top: 0; }
-    100% { height: 100%; top: 0; }
+    0% {
+      height: 0;
+      top: 0;
+    }
+
+    100% {
+      height: 100%;
+      top: 0;
+    }
   }
+
   @keyframes expand {
-    0% { width: 0; left: 50%; transform: translate(-50%, -50%); }
-    100% { width: 100%; left: 0; transform: translateY(-50%); }
+    0% {
+      width: 0;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    100% {
+      width: 100%;
+      left: 0;
+      transform: translateY(-50%);
+    }
   }
+
   .animate-grow-up {
     animation: grow-up 0.6s ease-in-out infinite alternate;
     position: absolute;
     bottom: 0;
   }
+
   .animate-grow-down {
     animation: grow-down 0.6s ease-in-out infinite alternate;
     position: absolute;
     top: 0;
   }
+
   .animate-expand {
     animation: expand 0.6s ease-in-out infinite alternate;
   }
@@ -60,6 +88,16 @@
         class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow">
         <i class="fa-solid fa-print mr-2"></i>
         Print All
+      </button>
+      <button type="button" id="printOptionsBtn"
+        class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg shadow">
+        <i class="fa-solid fa-print mr-2"></i>
+        Print Options
+      </button>
+      <button type="button" id="uploadBtn"
+        class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow">
+        <i class="fa-solid fa-file-upload mr-2"></i>
+        Upload
       </button>
       <button type="button" id="addNewBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow">
         + Add New
@@ -196,11 +234,6 @@
 
       <!-- Action Buttons -->
       <div class="flex justify-end space-x-2 pt-4">
-        <!-- View Mode Buttons -->
-        <!-- Clear Button for Main Form -->
-
-
-
         <div id="viewButtons" class="flex space-x-4">
           <button type="button" id="clearBtn"
             class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow">
@@ -231,6 +264,162 @@
       </div>
     </div>
   </form>
+</div>
+
+<!-- =====================================================================
+     UPLOAD MODAL (pattern copied from batch upload doc)
+     ===================================================================== -->
+<div id="uploadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-lg p-6 max-w-lg w-full mx-4">
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between mb-5 border-b pb-3">
+      <h2 class="text-xl font-bold text-purple-700">
+        <i class="fa-solid fa-file-upload mr-2"></i>Batch Upload Documentation
+      </h2>
+      <button id="closeUploadModal" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Download Template -->
+    <div class="mb-5 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+      <span class="text-sm text-blue-700 font-medium">Download the required Excel template first</span>
+      <button id="downloadTemplateBtn"
+        class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg shadow flex items-center gap-2">
+        <i class="fa-solid fa-download"></i> Template
+      </button>
+    </div>
+
+    <!-- Drop Zone -->
+    <div id="dropZone"
+      class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-colors mb-4"
+      onclick="document.getElementById('batchFileInput').click()">
+      <i class="fa-solid fa-cloud-arrow-up text-4xl text-gray-400 mb-3"></i>
+      <p class="text-gray-600 font-medium">Drag & drop your file here</p>
+      <p class="text-gray-400 text-sm mt-1">or click to browse</p>
+      <p class="text-gray-400 text-xs mt-2">.xlsx, .xls, .csv — max 10MB</p>
+      <input type="file" id="batchFileInput" accept=".xlsx,.xls,.csv" class="hidden" />
+    </div>
+
+    <!-- Selected File Display -->
+    <div id="selectedFileDisplay"
+      class="hidden mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-file-excel text-green-600"></i>
+        <span id="selectedFileName" class="text-sm text-gray-700 font-medium truncate max-w-xs"></span>
+      </div>
+      <button id="clearFileBtn" class="text-gray-400 hover:text-red-500 ml-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Upload Result Summary -->
+    <div id="uploadResult" class="hidden mb-4 p-4 rounded-lg border text-sm"></div>
+
+    <!-- Modal Action Buttons -->
+    <div class="flex justify-end gap-3 pt-2">
+      <button id="cancelUploadBtn" class="px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium">
+        Close
+      </button>
+      <button id="submitUploadBtn"
+        class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+        <i class="fa-solid fa-upload"></i> Upload
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================================
+     PRINT OPTIONS MODAL
+     ===================================================================== -->
+<div id="printOptionsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-lg p-6 max-w-md w-full mx-4">
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between mb-5 border-b pb-3">
+      <h2 class="text-xl font-bold text-yellow-700">
+        <i class="fa-solid fa-print mr-2"></i>Print Options
+      </h2>
+      <button id="closePrintOptionsModal" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Print filter type selector -->
+    <div class="mb-5">
+      <label class="block text-sm font-medium text-gray-700 mb-2">Print By</label>
+      <div class="flex gap-3">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" name="printFilter" value="range" id="printByRange" checked class="accent-yellow-600" />
+          <span class="text-sm text-gray-700">Svc. No. Range</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" name="printFilter" value="signal" id="printBySignal" class="accent-yellow-600" />
+          <span class="text-sm text-gray-700">Signal / Reference</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" name="printFilter" value="period" id="printByPeriod" class="accent-yellow-600" />
+          <span class="text-sm text-gray-700">Period</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Svc. No. Range Panel -->
+    <div id="panelRange" class="print-panel space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">From Svc. No.</label>
+          <input type="text" id="printRangeFrom" placeholder="e.g. NN/001"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">To Svc. No.</label>
+          <input type="text" id="printRangeTo" placeholder="e.g. NN/050"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400" />
+        </div>
+      </div>
+      <p class="text-xs text-gray-400">Leave blank to include all service numbers.</p>
+    </div>
+
+    <!-- Signal Panel -->
+    <div id="panelSignal" class="print-panel hidden space-y-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Select Signal / Reference No.</label>
+        <select id="printSignalSelect"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400">
+          <option value="">-- Select Signal --</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Period Panel -->
+    <div id="panelPeriod" class="print-panel hidden space-y-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Period <span
+            class="text-gray-400">(YYYYMM)</span></label>
+        <input type="text" id="printPeriodInput" placeholder="e.g. 202501" maxlength="6"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400" />
+        <p class="text-xs text-gray-400 mt-1">Enter 6-digit period — year then month (e.g. 202501 = January 2025).</p>
+      </div>
+    </div>
+
+    <!-- Modal Action Buttons -->
+    <div class="flex justify-end gap-3 pt-5 border-t mt-5">
+      <button id="cancelPrintOptionsBtn"
+        class="px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium">
+        Cancel
+      </button>
+      <button id="confirmPrintOptionsBtn"
+        class="px-5 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium flex items-center gap-2">
+        <i class="fa-solid fa-print"></i> Print
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- Success Modal -->
@@ -269,6 +458,7 @@
   const auth = window.authService;
   (function () {
     const API_BASE = '/documentation';
+    const BATCH_API_BASE = '/batchdocumentation';
 
     function getAuthToken() {
       return localStorage.getItem('token');
@@ -344,6 +534,7 @@
           headers: { 'Authorization': `Bearer ${token}` }
         });
         allDocumentation = await response.json();
+        populateSignalDropdown();
       } catch (error) {
         console.error('Error fetching documentation:', error);
       }
@@ -360,14 +551,13 @@
         });
         const data = await response.json();
 
-        // Support both array and single object responses
         const records = Array.isArray(data) ? data : [data];
 
         if (records.length > 1) {
-          currentPickerRecords = null; // Fresh load — reset picker state
+          currentPickerRecords = null;
           showRecordPicker(records);
         } else if (records.length === 1) {
-          currentPickerRecords = null; // Single record — no picker
+          currentPickerRecords = null;
           fillForm(records[0]);
         }
 
@@ -437,20 +627,18 @@
 
       let filteredEmployees = employees;
       if (containerElement === docNameDropdownItems) {
-        // Main dropdown: only show employees who have at least one documentation record
         filteredEmployees = employees.filter(emp =>
           allDocumentation.some(doc => doc.doc_numb === emp.Empl_ID)
         );
       }
-      // Add New dropdown: show all employees, no prefill
 
       filteredEmployees.forEach(emp => {
         const div = document.createElement('div');
         div.className = 'dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100';
         div.setAttribute('data-value', emp.Empl_ID);
         div.innerHTML = `
-        <span class="font-semibold text-blue-600">${emp.Empl_ID}</span> - ${emp.Surname} ${emp.OtherName}
-      `;
+          <span class="font-semibold text-blue-600">${emp.Empl_ID}</span> - ${emp.Surname} ${emp.OtherName}
+        `;
 
         div.addEventListener('click', function () {
           const value = this.getAttribute('data-value');
@@ -462,7 +650,6 @@
             docNameDropdown.classList.add('hidden');
             loadDocumentation(value);
           } else {
-            // Add New dropdown — always blank, no prefill
             newNameInput.value = text;
             newNameId.value = value;
             newNameDropdown.classList.add('hidden');
@@ -480,10 +667,8 @@
       docRef.value = record.doc_ref || '';
       docComments.value = record.doc_remark || '';
 
-      // Store current record's ref for update tracking
       docNameId.dataset.currentRef = record.doc_ref || '';
 
-      // Properly hide picker instead of display:none
       const picker = document.getElementById("recordPickerList");
       if (picker) picker.style.display = 'none';
 
@@ -492,7 +677,6 @@
     }
 
     function showRecordPicker(records) {
-      // Always hide form fields first
       formFields.classList.add("hidden");
       editButtons.classList.add("hidden");
       viewButtons.classList.remove("hidden");
@@ -539,7 +723,6 @@
 
       mainSelectContainer.insertAdjacentElement("afterend", picker);
 
-      // Fix 1: stopPropagation prevents bubbling that causes section refresh
       document.getElementById("printPersonRecordsBtn").addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -613,7 +796,7 @@
       const success = await updateDocumentation(currentRecordId, data);
       if (success) {
         setTimeout(() => {
-          setViewMode(); // Always return to view mode after save
+          setViewMode();
         }, 2000);
       }
     }
@@ -623,11 +806,10 @@
       docMonth.value = originalData.month;
       docRef.value = originalData.ref;
       docComments.value = originalData.comments;
-      setViewMode(); // Always return to view mode on cancel
+      setViewMode();
     }
 
     function clearMainForm() {
-      // Coming from picker — go back to picker
       if (currentPickerRecords) {
         formFields.classList.add("hidden");
         editButtons.classList.add("hidden");
@@ -643,7 +825,6 @@
         return;
       }
 
-      // No picker — full clear
       docNameInput.value = "";
       docNameId.value = "";
       docNameId.dataset.currentRef = "";
@@ -672,7 +853,6 @@
         return;
       }
 
-      // Check if identical record already exists
       const existingRecord = allDocumentation.find(doc =>
         doc.doc_numb === doc_numb &&
         doc.doc_year === doc_year &&
@@ -738,7 +918,6 @@
 
     // ─── PRINT ─────────────────────────────────────────────────────────────────
 
-    // Print single record (from the main "Print" button)
     function printSelected() {
       if (!docNameId.value) {
         showError("Please select an employee first");
@@ -755,54 +934,53 @@
 
       const printWindow = window.open('', '_blank');
       printWindow.document.write(`
-      <!DOCTYPE html><html><head><meta charset="utf-8">
-      <title>Documentation - ${selectedEmployee.Surname} ${selectedEmployee.OtherName}</title>
-      <style>
-        @page { size: A4 portrait; margin: 0.5mm; background-color: #f8fbff; }
-        body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; margin: 40px; color: #333; }
-        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-          background-image: url('photos/logo.png'); background-size: auto 100%; background-repeat: no-repeat;
-          background-position: center center; opacity: 0.02; z-index: -1; pointer-events: none; }
-        .header-wrapper { display: flex; align-items: flex-start; margin-bottom: 8px; border-bottom: 2px solid #1a1a1a; padding-bottom: 5px; }
-        .header { flex-grow: 1; text-align: center; }
-        .header h1 { font-size: 13pt; font-weight: bold; margin-bottom: 2px; letter-spacing: 1.5px; color: #1e40af; font-family: 'Libre Baskerville', Georgia, serif; }
-        .header h2 { font-size: 10pt; font-weight: normal; margin-top: 2px; color: #4a4a4a; font-family: 'Libre Baskerville', Georgia, serif; }
-        .header-info { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 20px 0; font-size: 9pt; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10pt; }
-        th { color: #1e40af; padding: 12px 8px; text-align: left; font-weight: bold; font-size: 10pt;
-          text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid #0056A0; width: 30%; }
-        td { padding: 12px 8px; border-bottom: 0.5px solid #e5e7eb; vertical-align: middle; }
-        .footer { padding-top: 10px; border-top: 0.5px solid #1a1a1a; text-align: center; font-size: 8pt; color: #64748b; margin-top: 30px; }
-        @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
-      </style></head><body>
-      <div class="header-wrapper"><div class="header">
-        <h1>Nigerian Navy (Naval Headquarters)</h1>
-        <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
-      </div></div>
-      <div class="header-info">
-        <div><strong>DOCUMENTATION RECORD</strong></div>
-        <div><span>PRODUCED ON</span> <strong>${dateStr}</strong> <span>AT</span> <strong>${timeStr}</strong></div>
-        <div><strong>SINGLE RECORD</strong></div>
-      </div>
-      <table>
-        <tr><th>Service No</th><td><strong>${docNameId.value}</strong></td></tr>
-        <tr><th>Name</th><td><strong>${selectedEmployee.Surname} ${selectedEmployee.OtherName}</strong></td></tr>
-        <tr><th>Year</th><td>${docYear.value}</td></tr>
-        <tr><th>Month</th><td>${docMonth.value}</td></tr>
-        <tr><th>Reference No</th><td>${docRef.value}</td></tr>
-        <tr><th>Comments</th><td>${docComments.value}</td></tr>
-      </table>
-      <div class="footer">
-        <p>Generated by: ${generatedBy}</p>
-        <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
-      </div>
-      </body></html>
-    `);
+        <!DOCTYPE html><html><head><meta charset="utf-8">
+        <title>Documentation - ${selectedEmployee.Surname} ${selectedEmployee.OtherName}</title>
+        <style>
+          @page { size: A4 portrait; margin: 0.5mm; background-color: #f8fbff; }
+          body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; margin: 40px; color: #333; }
+          body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('photos/logo.png'); background-size: auto 100%; background-repeat: no-repeat;
+            background-position: center center; opacity: 0.02; z-index: -1; pointer-events: none; }
+          .header-wrapper { display: flex; align-items: flex-start; margin-bottom: 8px; border-bottom: 2px solid #1a1a1a; padding-bottom: 5px; }
+          .header { flex-grow: 1; text-align: center; }
+          .header h1 { font-size: 13pt; font-weight: bold; margin-bottom: 2px; letter-spacing: 1.5px; color: #1e40af; font-family: 'Libre Baskerville', Georgia, serif; }
+          .header h2 { font-size: 10pt; font-weight: normal; margin-top: 2px; color: #4a4a4a; font-family: 'Libre Baskerville', Georgia, serif; }
+          .header-info { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 20px 0; font-size: 9pt; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10pt; }
+          th { color: #1e40af; padding: 12px 8px; text-align: left; font-weight: bold; font-size: 10pt;
+            text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid #0056A0; width: 30%; }
+          td { padding: 12px 8px; border-bottom: 0.5px solid #e5e7eb; vertical-align: middle; }
+          .footer { padding-top: 10px; border-top: 0.5px solid #1a1a1a; text-align: center; font-size: 8pt; color: #64748b; margin-top: 30px; }
+          @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+        </style></head><body>
+        <div class="header-wrapper"><div class="header">
+          <h1>Nigerian Navy (Naval Headquarters)</h1>
+          <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+        </div></div>
+        <div class="header-info">
+          <div><strong>DOCUMENTATION RECORD</strong></div>
+          <div><span>PRODUCED ON</span> <strong>${dateStr}</strong> <span>AT</span> <strong>${timeStr}</strong></div>
+          <div><strong>SINGLE RECORD</strong></div>
+        </div>
+        <table>
+          <tr><th>Service No</th><td><strong>${docNameId.value}</strong></td></tr>
+          <tr><th>Name</th><td><strong>${selectedEmployee.Surname} ${selectedEmployee.OtherName}</strong></td></tr>
+          <tr><th>Year</th><td>${docYear.value}</td></tr>
+          <tr><th>Month</th><td>${docMonth.value}</td></tr>
+          <tr><th>Reference No</th><td>${docRef.value}</td></tr>
+          <tr><th>Comments</th><td>${docComments.value}</td></tr>
+        </table>
+        <div class="footer">
+          <p>Generated by: ${generatedBy}</p>
+          <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+        </div>
+        </body></html>
+      `);
       printWindow.document.close();
       printWindow.onload = () => printWindow.print();
     }
 
-    // Print multiple records for the same person (from the picker)
     function printPersonRecords(records) {
       const employee = allEmployees.find(e => e.Empl_ID === docNameId.value);
       if (!employee) return;
@@ -878,7 +1056,6 @@
       printWindow.onload = () => printWindow.print();
     }
 
-    // Print all documentation records (from the main "Print All" button)
     function printAll() {
       if (allDocumentation.length === 0) {
         showError("No records to print");
@@ -896,66 +1073,334 @@
         const monthValue = monthMap[doc.doc_month] || doc.doc_month || '';
 
         return `
-        <tr>
-          <td><strong>${doc.doc_numb}</strong></td>
-          <td style="white-space: nowrap;"><strong>${empName}</strong></td>
-          <td>${doc.doc_year || ''}</td>
-          <td>${monthValue}</td>
-          <td>${doc.doc_ref || ''}</td>
-          <td>${doc.doc_remark || ''}</td>
-        </tr>
-      `;
+          <tr>
+            <td><strong>${doc.doc_numb}</strong></td>
+            <td style="white-space: nowrap;"><strong>${empName}</strong></td>
+            <td>${doc.doc_year || ''}</td>
+            <td>${monthValue}</td>
+            <td>${doc.doc_ref || ''}</td>
+            <td>${doc.doc_remark || ''}</td>
+          </tr>
+        `;
       }).join('');
+
+      openPrintWindow('All Documentation Records', allDocumentation.length, tableRows, generatedBy);
+    }
+
+    // ─── PRINT OPTIONS ─────────────────────────────────────────────────────────
+
+    function populateSignalDropdown() {
+      const signalSelect = document.getElementById('printSignalSelect');
+      const uniqueSignals = [...new Set(
+        allDocumentation.map(d => d.doc_ref).filter(Boolean)
+      )].sort();
+
+      signalSelect.innerHTML = '<option value="">-- Select Signal --</option>';
+      uniqueSignals.forEach(sig => {
+        const opt = document.createElement('option');
+        opt.value = sig;
+        opt.textContent = sig;
+        signalSelect.appendChild(opt);
+      });
+    }
+
+    function openPrintOptionsModal() {
+      document.getElementById('printOptionsModal').classList.remove('hidden');
+    }
+
+    function closePrintOptionsModal() {
+      document.getElementById('printOptionsModal').classList.add('hidden');
+      // reset to default panel
+      document.getElementById('printByRange').checked = true;
+      showPrintPanel('range');
+      document.getElementById('printRangeFrom').value = '';
+      document.getElementById('printRangeTo').value = '';
+      document.getElementById('printPeriodInput').value = '';
+      document.getElementById('printSignalSelect').value = '';
+    }
+
+    function showPrintPanel(type) {
+      document.querySelectorAll('.print-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById('panel' + type.charAt(0).toUpperCase() + type.slice(1)).classList.remove('hidden');
+    }
+
+    function executePrintOptions() {
+      const filterType = document.querySelector('input[name="printFilter"]:checked').value;
+      let filtered = [];
+
+      if (filterType === 'range') {
+        const from = document.getElementById('printRangeFrom').value.trim().toUpperCase();
+        const to = document.getElementById('printRangeTo').value.trim().toUpperCase();
+
+        filtered = allDocumentation.filter(doc => {
+          const id = (doc.doc_numb || '').toUpperCase();
+          if (from && to) return id >= from && id <= to;
+          if (from) return id >= from;
+          if (to) return id <= to;
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          showError('No records found for the specified Svc. No. range.');
+          return;
+        }
+
+      } else if (filterType === 'signal') {
+        const signal = document.getElementById('printSignalSelect').value;
+        if (!signal) {
+          showError('Please select a signal / reference number.');
+          return;
+        }
+        filtered = allDocumentation.filter(doc => doc.doc_ref === signal);
+        if (filtered.length === 0) {
+          showError('No records found for the selected signal.');
+          return;
+        }
+
+      } else if (filterType === 'period') {
+        const period = document.getElementById('printPeriodInput').value.trim();
+        if (!period || period.length !== 6) {
+          showError('Please enter a valid 6-digit period (e.g. 202501).');
+          return;
+        }
+        const year = period.substring(0, 4);
+        const month = String(parseInt(period.substring(4, 6)));
+
+        filtered = allDocumentation.filter(doc =>
+          String(doc.doc_year) === year && String(doc.doc_month) === month
+        );
+        if (filtered.length === 0) {
+          showError('No records found for the specified period.');
+          return;
+        }
+      }
+
+      closePrintOptionsModal();
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const generatedBy = localStorage.getItem('full_name') || 'System User';
+
+      const tableRows = filtered.map(doc => {
+        const employee = allEmployees.find(e => e.Empl_ID === doc.doc_numb);
+        const empName = employee ? `${employee.Surname} ${employee.OtherName}` : 'N/A';
+        const monthValue = monthMap[String(doc.doc_month)] || doc.doc_month || '';
+        return `
+          <tr>
+            <td><strong>${doc.doc_numb}</strong></td>
+            <td style="white-space: nowrap;"><strong>${empName}</strong></td>
+            <td>${doc.doc_year || ''}</td>
+            <td>${monthValue}</td>
+            <td>${doc.doc_ref || ''}</td>
+            <td>${doc.doc_remark || ''}</td>
+          </tr>
+        `;
+      }).join('');
+
+      openPrintWindow('Documentation Records', filtered.length, tableRows, generatedBy);
+    }
+
+    function openPrintWindow(title, count, tableRows, generatedBy) {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
 
       const printWindow = window.open('', '_blank');
       printWindow.document.write(`
-      <!DOCTYPE html><html><head><meta charset="utf-8">
-      <title>All Documentation Records</title>
-      <style>
-        @page { size: A4; margin: 5mm; background-color: #f8fbff; }
-        body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; margin: 0; padding: 0; color: #333; }
-        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-          background-image: url('photos/logo.png'); background-size: auto 100%; background-repeat: no-repeat;
-          background-position: center center; opacity: 0.02; z-index: -1; pointer-events: none; }
-        .header-wrapper { display: flex; align-items: flex-start; margin-bottom: 8px; border-bottom: 2px solid #1a1a1a; padding-bottom: 5px; }
-        .header { flex-grow: 1; text-align: center; }
-        .header h1 { font-size: 13pt; font-weight: bold; margin-bottom: 2px; letter-spacing: 1.5px; color: #1e40af; font-family: 'Libre Baskerville', Georgia, serif; }
-        .header h2 { font-size: 10pt; font-weight: normal; margin-top: 2px; color: #4a4a4a; font-family: 'Libre Baskerville', Georgia, serif; }
-        .header-info { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; font-size: 9pt; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
-        th { color: #1e40af; padding: 8px 4px; text-align: left; font-weight: bold; font-size: 12px;
-          text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid #0056A0; }
-        td { padding: 6px 4px; border: none; vertical-align: middle; }
-        .footer { padding-top: 10px; border-top: 0.5px solid #1a1a1a; text-align: center; font-size: 8pt; color: #64748b; margin-top: 20px; }
-        @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
-      </style></head><body>
-      <div class="header-wrapper"><div class="header">
-        <h1>Nigerian Navy (Naval Headquarters)</h1>
-        <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
-      </div></div>
-      <div class="header-info">
-        <div><strong>DOCUMENTATION RECORDS</strong></div>
-        <div><span>PRODUCED ON</span> <strong>${dateStr}</strong> <span>AT</span> <strong>${timeStr}</strong></div>
-        <div><strong>${allDocumentation.length}</strong> <span>RECORDS</span></div>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:12%;">Service No</th>
-            <th style="width:25%;">Name</th>
-            <th style="width:8%;">Year</th>
-            <th style="width:10%;">Month</th>
-            <th style="width:15%;">Ref. No</th>
-            <th style="width:30%;">Comments</th>
-          </tr>
-        </thead>
-        <tbody>${tableRows}</tbody>
-      </table>
-      <div class="footer"><p>All rights reserved &#xA9; Hicad Systems Limited.</p></div>
-      </body></html>
-    `);
+        <!DOCTYPE html><html><head><meta charset="utf-8">
+        <title>${title}</title>
+        <style>
+          @page { size: A4; margin: 5mm; }
+          body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; margin: 0; padding: 0; color: #333; }
+          body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('photos/logo.png'); background-size: auto 100%; background-repeat: no-repeat;
+            background-position: center center; opacity: 0.02; z-index: -1; pointer-events: none; }
+          .header-wrapper { display: flex; align-items: flex-start; margin-bottom: 8px; border-bottom: 2px solid #1a1a1a; padding-bottom: 5px; }
+          .header { flex-grow: 1; text-align: center; }
+          .header h1 { font-size: 13pt; font-weight: bold; margin-bottom: 2px; letter-spacing: 1.5px; color: #1e40af; font-family: 'Libre Baskerville', Georgia, serif; }
+          .header h2 { font-size: 10pt; font-weight: normal; margin-top: 2px; color: #4a4a4a; font-family: 'Libre Baskerville', Georgia, serif; }
+          .header-info { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; font-size: 9pt; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
+          th { color: #1e40af; padding: 8px 4px; text-align: left; font-weight: bold; font-size: 12px;
+            text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid #0056A0; }
+          td { padding: 6px 4px; border: none; vertical-align: middle; }
+          .footer { padding-top: 10px; border-top: 0.5px solid #1a1a1a; text-align: center; font-size: 8pt; color: #64748b; margin-top: 20px; }
+          @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+        </style></head><body>
+        <div class="header-wrapper"><div class="header">
+          <h1>Nigerian Navy (Naval Headquarters)</h1>
+          <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+        </div></div>
+        <div class="header-info">
+          <div><strong>DOCUMENTATION RECORDS</strong></div>
+          <div><span>PRODUCED ON</span> <strong>${dateStr}</strong> <span>AT</span> <strong>${timeStr}</strong></div>
+          <div><strong>${count}</strong> <span>RECORDS</span></div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:12%;">Service No</th>
+              <th style="width:25%;">Name</th>
+              <th style="width:8%;">Year</th>
+              <th style="width:10%;">Month</th>
+              <th style="width:15%;">Ref. No</th>
+              <th style="width:30%;">Comments</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+        <div class="footer">
+          <p>Generated by: ${generatedBy}</p>
+          <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+        </div>
+        </body></html>
+      `);
       printWindow.document.close();
       printWindow.onload = () => printWindow.print();
+    }
+
+    // ─── UPLOAD MODAL ──────────────────────────────────────────────────────────
+
+    const uploadModal = document.getElementById('uploadModal');
+    const batchFileInput = document.getElementById('batchFileInput');
+    const dropZone = document.getElementById('dropZone');
+    const selectedFileDisplay = document.getElementById('selectedFileDisplay');
+    const selectedFileName = document.getElementById('selectedFileName');
+    const uploadResult = document.getElementById('uploadResult');
+    const submitUploadBtn = document.getElementById('submitUploadBtn');
+
+    let selectedFile = null;
+
+    function openUploadModal() {
+      uploadModal.classList.remove('hidden');
+      resetUploadModal();
+    }
+
+    function closeUploadModal() {
+      uploadModal.classList.add('hidden');
+      resetUploadModal();
+    }
+
+    function resetUploadModal() {
+      selectedFile = null;
+      batchFileInput.value = '';
+      selectedFileDisplay.classList.add('hidden');
+      selectedFileName.textContent = '';
+      uploadResult.classList.add('hidden');
+      uploadResult.innerHTML = '';
+    }
+
+    function handleFileSelect(file) {
+      if (!file) return;
+      const allowed = ['.xlsx', '.xls', '.csv'];
+      const ext = '.' + file.name.split('.').pop().toLowerCase();
+      if (!allowed.includes(ext)) {
+        showError('Only .xlsx, .xls, and .csv files are allowed.');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        showError('File size exceeds 10MB limit.');
+        return;
+      }
+      selectedFile = file;
+      selectedFileName.textContent = file.name;
+      selectedFileDisplay.classList.remove('hidden');
+      uploadResult.classList.add('hidden');
+    }
+
+    async function submitUpload() {
+      if (!selectedFile) {
+        showError('Please select a file first.');
+        return;
+      }
+
+      submitUploadBtn.disabled = true;
+      submitUploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      try {
+        const token = getAuthToken();
+        const response = await auth.fetchWithAuth(`${BATCH_API_BASE}/batch-upload`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+
+        const result = await response.json();
+
+        uploadResult.classList.remove('hidden');
+
+        if (response.ok) {
+          const s = result.summary;
+          const hasDuplicates = s.duplicates && s.duplicates.length > 0;
+          const hasFailed = s.failed > 0;
+
+          uploadResult.className = 'mb-4 p-4 rounded-lg border text-sm ' +
+            (hasFailed ? 'bg-yellow-50 border-yellow-300 text-yellow-800' : 'bg-green-50 border-green-300 text-green-800');
+
+          uploadResult.innerHTML = `
+            <p class="font-semibold mb-2">${result.message}</p>
+            <ul class="space-y-1">
+              <li>Total parsed: <strong>${s.totalRecords}</strong></li>
+              <li>Successfully inserted: <strong>${s.successful}</strong></li>
+              <li>Duplicates skipped: <strong>${s.duplicates ? s.duplicates.length : 0}</strong></li>
+              <li>Failed: <strong>${s.failed - (s.duplicates ? s.duplicates.length : 0)}</strong></li>
+            </ul>
+            ${s.errors && s.errors.length > 0 ? `
+              <details class="mt-3">
+                <summary class="cursor-pointer font-medium">View errors (${s.errors.length})</summary>
+                <ul class="mt-2 space-y-1 text-xs">
+                  ${s.errors.map(e => `<li>Row ${e.row || '—'} | ${e.serviceNumber || ''} ${e.signal ? '/ ' + e.signal : ''} — ${e.error}</li>`).join('')}
+                </ul>
+              </details>` : ''}
+          `;
+
+          await fetchDocumentation();
+          renderEmployeeDropdown(allEmployees, docNameDropdownItems);
+        } else {
+          uploadResult.className = 'mb-4 p-4 rounded-lg border text-sm bg-red-50 border-red-300 text-red-800';
+          uploadResult.innerHTML = `
+            <p class="font-semibold">Upload failed</p>
+            <p>${result.error || 'An unexpected error occurred.'}</p>
+            ${result.details ? `<ul class="mt-2 text-xs list-disc list-inside">${Array.isArray(result.details) ? result.details.map(d => `<li>${d}</li>`).join('') : `<li>${result.details}</li>`}</ul>` : ''}
+          `;
+        }
+      } catch (error) {
+        uploadResult.classList.remove('hidden');
+        uploadResult.className = 'mb-4 p-4 rounded-lg border text-sm bg-red-50 border-red-300 text-red-800';
+        uploadResult.innerHTML = `<p class="font-semibold">Network error</p><p>${error.message}</p>`;
+      } finally {
+        submitUploadBtn.disabled = false;
+        submitUploadBtn.innerHTML = '<i class="fa-solid fa-upload"></i> Upload';
+      }
+    }
+
+    async function downloadTemplate() {
+      try {
+        const token = getAuthToken();
+        const response = await auth.fetchWithAuth(`${BATCH_API_BASE}/batch-template`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+          showError('Failed to download template.');
+          return;
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'documentation_template.xlsx';
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        showError('Error downloading template.');
+      }
     }
 
     // ─── EVENT LISTENERS ───────────────────────────────────────────────────────
@@ -980,6 +1425,55 @@
     document.getElementById("printBtn").addEventListener("click", printSelected);
     document.getElementById("printAllBtn").addEventListener("click", printAll);
 
+    // Upload modal listeners
+    document.getElementById("uploadBtn").addEventListener("click", openUploadModal);
+    document.getElementById("closeUploadModal").addEventListener("click", closeUploadModal);
+    document.getElementById("cancelUploadBtn").addEventListener("click", closeUploadModal);
+    document.getElementById("submitUploadBtn").addEventListener("click", submitUpload);
+    document.getElementById("downloadTemplateBtn").addEventListener("click", downloadTemplate);
+    document.getElementById("clearFileBtn").addEventListener("click", () => {
+      selectedFile = null;
+      batchFileInput.value = '';
+      selectedFileDisplay.classList.add('hidden');
+      uploadResult.classList.add('hidden');
+    });
+
+    batchFileInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('border-purple-400', 'bg-purple-50');
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('border-purple-400', 'bg-purple-50');
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-purple-400', 'bg-purple-50');
+      handleFileSelect(e.dataTransfer.files[0]);
+    });
+
+    // Close upload modal on backdrop click
+    uploadModal.addEventListener('click', (e) => {
+      if (e.target === uploadModal) closeUploadModal();
+    });
+
+    // Print Options modal listeners
+    document.getElementById("printOptionsBtn").addEventListener("click", openPrintOptionsModal);
+    document.getElementById("closePrintOptionsModal").addEventListener("click", closePrintOptionsModal);
+    document.getElementById("cancelPrintOptionsBtn").addEventListener("click", closePrintOptionsModal);
+    document.getElementById("confirmPrintOptionsBtn").addEventListener("click", executePrintOptions);
+
+    document.querySelectorAll('input[name="printFilter"]').forEach(radio => {
+      radio.addEventListener('change', () => showPrintPanel(radio.value));
+    });
+
+    // Close print options modal on backdrop click
+    document.getElementById('printOptionsModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('printOptionsModal')) closePrintOptionsModal();
+    });
+
+    // Employee search dropdowns
     docNameInput.addEventListener('focus', () => docNameDropdown.classList.remove('hidden'));
     docNameInput.addEventListener('input', function () {
       filterDropdown(this.value, docNameDropdownItems);

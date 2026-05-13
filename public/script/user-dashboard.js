@@ -235,6 +235,7 @@ setInterval(applyGreeting, 60 * 1000);
 var headerEl = document.querySelector("header");
 var headerLogo = document.getElementById("header-logo");
 var headerUsername = document.getElementById("header-username");
+var navHamburger = document.getElementById("navHamburger");
 
 function updateHeaderSlot(pageId) {
   if (!headerLogo || !headerUsername) return;
@@ -251,8 +252,10 @@ function updateHeaderEmolMode(pageId) {
   if (!headerEl) return;
   if (pageId === "emolument") {
     headerEl.classList.add("emol-mode");
+    navHamburger.classList.add("emol-mode");
   } else {
     headerEl.classList.remove("emol-mode");
+    navHamburger.classList.remove("emol-mode");
   }
 }
 

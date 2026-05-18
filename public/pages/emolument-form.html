@@ -22,6 +22,81 @@
       background: #F0F3F8;
     }
 
+    /* ── Ratings form background ── */
+    body.ratings-theme {
+      background: #EDE8DC;
+    }
+
+    body.ratings-theme::before {
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(11, 30, 61, .035) 39px, rgba(11, 30, 61, .035) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(11, 30, 61, .035) 39px, rgba(11, 30, 61, .035) 40px);
+    }
+
+    body.ratings-theme .field {
+      background: #FAF8F3;
+      border-color: #C9BC9F;
+    }
+
+    body.ratings-theme .field:focus {
+      border-color: #8B6914;
+      box-shadow: 0 0 0 3px rgba(139, 105, 20, .12);
+    }
+
+    body.ratings-theme .field:disabled {
+      background: #EDE8DC;
+      color: #6B7280;
+    }
+
+    body.ratings-theme .toggle-row {
+      background: #FAF8F3;
+      border-color: #C9BC9F;
+    }
+
+    body.ratings-theme .toggle-row:hover {
+      border-color: #8B6914;
+      background: #F0EAD9;
+    }
+
+    body.ratings-theme .toggle-row.active {
+      border-color: #8B6914;
+      background: #F0E6C8;
+    }
+
+    body.ratings-theme .toggle-row input[type=checkbox] {
+      accent-color: #8B6914;
+    }
+
+    body.ratings-theme .section-card {
+      background: rgba(250, 248, 243, 0.7);
+    }
+
+    /* ── Ratings theme — header accent ── */
+    body.ratings-theme .section-card.bg-navy {
+      background: #0B1E3D !important;
+      /* keep full navy, no wash */
+    }
+
+    body.ratings-theme .section-card.bg-navy::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 2px solid rgba(196, 147, 42, 0.35);
+      border-radius: .75rem;
+      pointer-events: none;
+    }
+
+    /* Ratings badge strip under the title */
+    body.ratings-theme #header-form-type {
+      color: rgba(196, 147, 42, 0.9) !important;
+      letter-spacing: .15em;
+    }
+
+    /* Strengthen the service number text */
+    body.ratings-theme #header-svc-no {
+      color: #C4932A !important;
+    }
+
     /* ── Subtle page pattern ── */
     body::before {
       content: '';
@@ -1305,6 +1380,7 @@
 
       // Form type badge
       const typeLabels = { OFFICER: 'Officer Form', RATING: 'Ratings Form', TRAINING: 'Training Form' };
+      if (formType === 'RATING') document.body.classList.add('ratings-theme');
       document.getElementById('header-form-type').textContent = typeLabels[formType] || 'Annual Data Collection';
 
       // Show/hide officer-only fields

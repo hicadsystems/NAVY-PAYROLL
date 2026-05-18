@@ -259,7 +259,7 @@ async function loadAllowances(serviceNo) {
   rows.forEach((r) => {
     out[r.allow_type] = r;
   });
-  out['GCB'] = gbc[0]?.GBC ? { allow_type: 'GCB', is_active: 1, specify: null , gcb_number: gbc[0].GBC_Number } : null;
+  out['GCB'] = gbc[0]?.GBC ? { allow_type: 'GCB', is_active: 1, specify: null , gcb_number: gbc[0].GBC_Number } : undefined;
   return out;
 }
 

@@ -267,7 +267,7 @@
     const container = document.getElementById('allowance-list');
 
     const allowances = Object.values(data.allowances || [])
-      .filter(a => a.is_active);
+      .filter(a => a?.is_active);
 
     if (!allowances.length) {
       container.innerHTML = `<p class="text-blue-900/40 text-sm">No active allowances</p>`;

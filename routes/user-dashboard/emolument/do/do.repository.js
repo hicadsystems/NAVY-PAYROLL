@@ -53,10 +53,9 @@ async function withTransaction(fn) {
 // Returns summary rows only — not full form data
 // ─────────────────────────────────────────────────────────────
 
-async function getSubmittedForms(ship) {
+async function getSubmittedForms(ship, limit, offset) {
   pool.useDatabase(DB());
-  const [rows] = await pool.query(
-    `SELECT
+  const submittedQuery = `SELECT
        p.serviceNumber, p.Surname, p.OtherName, p.Rank,
        p.payrollclass, p.classes, p.formNumber, p.FormYear,
        p.Status, p.datecreated,
@@ -70,10 +69,61 @@ async function getSubmittedForms(ship) {
      WHERE p.ship   = ?
        AND p.Status = 'Filled'
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
-     ORDER BY p.Surname ASC, p.OtherName ASC`,
-    [ship],
-  );
-  return rows;
+     ORDER BY p.Surname ASC, p.OtherName ASC
+     LIMIT ? OFFSET ?`;
+
+  const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM ef_personalinfos p
+      WHERE p.ship   = ?
+       AND p.Status = 'Filled'
+       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes');
+    `;
+
+  const [[rows], [countResults]] = await Promise.all([
+    pool.query(submittedQuery, [ship, limit, offset]),
+    pool.query(countQuery, [ship]),
+  ]);
+  return { forms: rows, total: countResults[0].total };
+}
+
+// ─────────────────────────────────────────────────────────────
+// LIST — REVIEWED forms on a ship
+// Returns summary rows only — not full form data
+// ─────────────────────────────────────────────────────────────
+
+async function getReviewedForms(ship, svc, limit, offset) {
+  pool.useDatabase(DB());
+  const reviewedQuery = `SELECT
+       p.serviceNumber, p.Surname, p.OtherName, p.Rank,
+       p.payrollclass, p.classes, p.formNumber, p.FormYear, p.div_off_date,
+       p.Status, p.datecreated,
+       ef.id         AS form_id,
+       ef.status     AS form_status,
+       ef.submitted_at
+     FROM ef_personalinfos p
+     LEFT JOIN ef_emolument_forms ef
+            ON ef.service_no = p.serviceNumber
+           AND ef.ship       = p.ship
+     WHERE p.ship   = ?
+       AND p.Status NOT IN ('Filled','SUBMITTED')
+       AND (p.div_off_svcno = ?)
+     ORDER BY p.Surname ASC, p.OtherName ASC
+     LIMIT ? OFFSET ?`;
+
+  const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM ef_personalinfos p
+      WHERE p.ship   = ?
+       AND p.Status NOT IN ('Filled','SUBMITTED')
+       AND (p.div_off_svcno = ?);
+    `;
+
+  const [[rows], [countResults]] = await Promise.all([
+    pool.query(reviewedQuery, [ship, svc, limit, offset]),
+    pool.query(countQuery, [ship, svc]),
+  ]);
+  return { forms: rows, total: countResults[0].total };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -350,6 +400,26 @@ async function insertAuditLog({
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+// STATUS STATS
+// ─────────────────────────────────────────────────────────────
+
+async function getStatusStats(ship, svc) {
+  pool.useDatabase(DB());
+
+  const [stats] = await pool.query(
+    `SELECT
+        COUNT(CASE WHEN status IN ('Filled', 'SUBMITTED') THEN 1 END) AS pending,
+        COUNT(CASE WHEN status IN ('DO_REVIEWED', 'FO', 'FO_APPROVED', 'CPO_APPROVED', 'CPO', 'Verified') AND div_off_svcno = ? THEN 1 END) AS reviewed,
+        COUNT(CASE WHEN status = 'REJECTED' AND div_off_svcno = ? THEN 1 END) AS rejected
+      FROM ef_personalinfos
+      WHERE ship = ? 
+   `,
+    [svc, svc, ship],
+  );
+  return stats[0];
+}
+
 module.exports = {
   getSubmittedForms,
   getFormDetail,
@@ -363,4 +433,6 @@ module.exports = {
   rejectForm,
   insertFormApproval,
   insertAuditLog,
+  getReviewedForms,
+  getStatusStats,
 };

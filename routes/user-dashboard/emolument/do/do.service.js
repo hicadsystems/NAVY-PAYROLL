@@ -25,11 +25,11 @@ const {
 // LIST SUBMITTED FORMS
 // ─────────────────────────────────────────────────────────────
 
-async function listSubmittedForms(ship) {
+async function listSubmittedForms(ship, limit,offset ) {
   if (!ship)
     return { success: false, code: 400, message: "Ship name is required." };
 
-  const forms = await repo.getSubmittedForms(ship);
+  const forms = await repo.getSubmittedForms(ship, limit, offset);
   return { success: true, data: forms };
 }
 
@@ -259,9 +259,48 @@ async function rejectForm(formId, doShip, body, performedBy, ip) {
   };
 }
 
+// ─────────────────────────────────────────────────────────────
+// STATUS STATS — for DO dashboard summary
+// ─────────────────────────────────────────────────────────────
+
+async function getStatusStats(ship, svc) {
+  if (!ship)
+    return { success: false, code: 400, message: "Ship name is required." };
+  if (!svc)
+    return { success: false, code: 400, message: "Service number is required." };
+
+  const stats = await repo.getStatusStats(ship, svc);
+  return { success: true, data: stats };
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// LIST REVIEWED FORMS
+// ─────────────────────────────────────────────────────────────
+
+async function listReviewedForms(ship, svc, limit, offset) {
+  if (!ship)
+    return { success: false, code: 400, message: "Ship name is required." };
+  if (!svc)
+    return { success: false, code: 400, message: "Service number is required." };
+  if (!limit || !Number.isInteger(limit) || limit < 1) {
+    return { success: false, code: 400, message: "Valid limit is required." };
+  }
+  if (offset === undefined || offset < 0) {
+    return { success: false, code: 400, message: "Valid offset is required." };
+  }
+
+  const forms = await repo.getReviewedForms(ship, svc, limit, offset);
+
+  return { success: true, data: forms };
+}
+
+
 module.exports = {
   listSubmittedForms,
   getForm,
   reviewForm,
   rejectForm,
+  listReviewedForms,
+  getStatusStats
 };

@@ -37,11 +37,11 @@ const {
 // LIST DO_REVIEWED FORMS
 // ─────────────────────────────────────────────────────────────
 
-async function listDoReviewedForms(ship) {
+async function listDoReviewedForms(ship, limit, offset) {
   if (!ship)
     return { success: false, code: 400, message: "Ship name is required." };
 
-  const forms = await repo.getDoReviewedForms(ship);
+  const forms = await repo.getDoReviewedForms(ship, limit, offset);
   return { success: true, data: forms };
 }
 
@@ -368,10 +368,55 @@ async function rejectForm(formId, foShip, body, performedBy, ip) {
   };
 }
 
+// ─────────────────────────────────────────────────────────────
+// STATUS STATS — for DO dashboard summary
+// ─────────────────────────────────────────────────────────────
+
+async function getStatusStats(ship, svc) {
+  if (!ship)
+    return { success: false, code: 400, message: "Ship name is required." };
+  if (!svc)
+    return {
+      success: false,
+      code: 400,
+      message: "Service number is required.",
+    };
+
+  const stats = await repo.getStatusStats(ship, svc);
+  return { success: true, data: stats };
+}
+
+// ─────────────────────────────────────────────────────────────
+// LIST APPROVED FORMS
+// ─────────────────────────────────────────────────────────────
+
+async function listApprovedForms(ship, svc, limit, offset) {
+  if (!ship)
+    return { success: false, code: 400, message: "Ship name is required." };
+  if (!svc)
+    return {
+      success: false,
+      code: 400,
+      message: "Service number is required.",
+    };
+  if (!limit || !Number.isInteger(limit) || limit < 1) {
+    return { success: false, code: 400, message: "Valid limit is required." };
+  }
+  if (offset === undefined || offset < 0) {
+    return { success: false, code: 400, message: "Valid offset is required." };
+  }
+
+  const forms = await repo.getApprovedForms(ship, svc, limit, offset);
+
+  return { success: true, data: forms };
+}
+
 module.exports = {
   listDoReviewedForms,
+  listApprovedForms,
   getForm,
   approveForm,
   approveBulk,
   rejectForm,
+  getStatusStats,
 };

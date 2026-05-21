@@ -59,8 +59,14 @@ function resolveForShips(req) {
 
 router.get("/ship/:ship/personnel", requireEmolRole("FO"), async (req, res) => {
   const { ship } = req.params;
+  const { limit, page = 1 } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
   try {
-    const result = await foService.listDoReviewedForms(ship);
+    const result = await foService.listDoReviewedForms(
+      ship,
+      Number(limit),
+      offset,
+    );
     if (!result.success)
       return res.status(result.code).json({ error: result.message });
     return res.json(result.data);
@@ -147,11 +153,9 @@ router.post(
     const { ship } = req.params;
 
     if (!req.body?.classes) {
-      return res
-        .status(400)
-        .json({
-          error: "classes is required (1=Officers, 2=Ratings, 3=Training).",
-        });
+      return res.status(400).json({
+        error: "classes is required (1=Officers, 2=Ratings, 3=Training).",
+      });
     }
 
     try {
@@ -212,5 +216,54 @@ router.post(
     }
   },
 );
+
+// ─────────────────────────────────────────────────────────────
+// GET /fo/ship/:ship/stats
+// List status statistics for forms on a ship.
+// requireEmolRole('FO') scopes the ship from req.params.ship.
+// ─────────────────────────────────────────────────────────────
+
+router.get("/ship/:ship/stats", requireEmolRole("FO"), async (req, res) => {
+  const { ship } = req.params;
+  const svc = req.user_id; // Use FO's service number to get their specific stats if needed
+  try {
+    const result = await foService.getStatusStats(ship, svc);
+    if (!result.success)
+      return res.status(result.code).json({ error: result.message });
+    return res.json(result.data);
+  } catch (err) {
+    console.error("❌ GET /fo/ship/:ship/stats:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /fo/ship/:ship/approved
+// List all FO_APPROVED forms on a ship.
+// requireEmolRole('FO') scopes the ship from req.params.ship.
+// ─────────────────────────────────────────────────────────────
+
+router.get("/ship/:ship/approved", requireEmolRole("FO"), async (req, res) => {
+  const { ship } = req.params;
+
+  const svc = req.user_id; // Use FO's service number to get their specific stats if needed
+
+  const { limit, page = 1 } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
+  try {
+    const result = await foService.listApprovedForms(
+      ship,
+      svc,
+      Number(limit),
+      offset,
+    );
+    if (!result.success)
+      return res.status(result.code).json({ error: result.message });
+    return res.json(result.data);
+  } catch (err) {
+    console.error("❌ GET /fo/ship/:ship/approved:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
 
 module.exports = router;

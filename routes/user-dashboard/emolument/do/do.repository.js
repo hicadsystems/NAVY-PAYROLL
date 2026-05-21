@@ -67,7 +67,7 @@ async function getSubmittedForms(ship, limit, offset) {
             ON ef.service_no = p.serviceNumber
            AND ef.ship       = p.ship
      WHERE p.ship   = ?
-       AND p.Status = 'Filled'
+       AND p.Status IN ('Filled', 'SUBMITTED')
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
      ORDER BY p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`;
@@ -76,7 +76,7 @@ async function getSubmittedForms(ship, limit, offset) {
       SELECT COUNT(*) AS total
       FROM ef_personalinfos p
       WHERE p.ship   = ?
-       AND p.Status = 'Filled'
+       AND p.Status IN ('Filled', 'SUBMITTED')
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes');
     `;
 
@@ -106,8 +106,8 @@ async function getReviewedForms(ship, svc, limit, offset) {
             ON ef.service_no = p.serviceNumber
            AND ef.ship       = p.ship
      WHERE p.ship   = ?
-       AND p.Status NOT IN ('Filled','SUBMITTED')
-       AND (p.div_off_svcno = ?)
+       AND p.Status NOT IN ('Filled','SUBMITTED', 'REJECTED')
+       AND p.div_off_svcno = ?
      ORDER BY p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`;
 
@@ -115,8 +115,8 @@ async function getReviewedForms(ship, svc, limit, offset) {
       SELECT COUNT(*) AS total
       FROM ef_personalinfos p
       WHERE p.ship   = ?
-       AND p.Status NOT IN ('Filled','SUBMITTED')
-       AND (p.div_off_svcno = ?);
+       AND p.Status NOT IN ('Filled','SUBMITTED', 'REJECTED')
+       AND p.div_off_svcno = ?;
     `;
 
   const [[rows], [countResults]] = await Promise.all([
@@ -411,7 +411,7 @@ async function getStatusStats(ship, svc) {
     `SELECT
         COUNT(CASE WHEN status IN ('Filled', 'SUBMITTED') THEN 1 END) AS pending,
         COUNT(CASE WHEN status IN ('DO_REVIEWED', 'FO', 'FO_APPROVED', 'CPO_APPROVED', 'CPO', 'Verified') AND div_off_svcno = ? THEN 1 END) AS reviewed,
-        COUNT(CASE WHEN status = 'REJECTED' AND div_off_svcno = ? THEN 1 END) AS rejected
+        COUNT(CASE WHEN status = 'REJECTED' AND div_off_svcno = ? AND fo_svcno IS NULL THEN 1 END) AS rejected
       FROM ef_personalinfos
       WHERE ship = ? 
    `,

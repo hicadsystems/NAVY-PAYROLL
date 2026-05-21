@@ -25,7 +25,7 @@ const {
 // LIST SUBMITTED FORMS
 // ─────────────────────────────────────────────────────────────
 
-async function listSubmittedForms(ship, limit,offset ) {
+async function listSubmittedForms(ship, limit, offset) {
   if (!ship)
     return { success: false, code: 400, message: "Ship name is required." };
 
@@ -267,12 +267,15 @@ async function getStatusStats(ship, svc) {
   if (!ship)
     return { success: false, code: 400, message: "Ship name is required." };
   if (!svc)
-    return { success: false, code: 400, message: "Service number is required." };
+    return {
+      success: false,
+      code: 400,
+      message: "Service number is required.",
+    };
 
   const stats = await repo.getStatusStats(ship, svc);
   return { success: true, data: stats };
 }
-
 
 // ─────────────────────────────────────────────────────────────
 // LIST REVIEWED FORMS
@@ -282,7 +285,11 @@ async function listReviewedForms(ship, svc, limit, offset) {
   if (!ship)
     return { success: false, code: 400, message: "Ship name is required." };
   if (!svc)
-    return { success: false, code: 400, message: "Service number is required." };
+    return {
+      success: false,
+      code: 400,
+      message: "Service number is required.",
+    };
   if (!limit || !Number.isInteger(limit) || limit < 1) {
     return { success: false, code: 400, message: "Valid limit is required." };
   }
@@ -295,12 +302,11 @@ async function listReviewedForms(ship, svc, limit, offset) {
   return { success: true, data: forms };
 }
 
-
 module.exports = {
   listSubmittedForms,
+  listReviewedForms,
   getForm,
   reviewForm,
   rejectForm,
-  listReviewedForms,
-  getStatusStats
+  getStatusStats,
 };

@@ -44,19 +44,19 @@
 <body class="bg-slate-100 text-slate-800 min-h-screen text-sm font-sans">
 
   <!-- ══ TOP BAR ══ -->
-  <header class="bg-navy sticky top-0 z-20 shadow-lg">
+  <header class="bg-transparent sticky top-0 z-20">
     <div class="flex items-center justify-between px-6 py-3 max-w-screen-xl mx-auto">
-      <div class="flex items-center gap-2 text-white font-semibold text-sm tracking-wide">
-        <i class="fas fa-ship text-gold text-base"></i>
+      <div class="flex items-center gap-2 text-navy font-semibold text-sm tracking-wide">
+        <i class="fas fa-ship text-navy text-base"></i>
         Ships Management
       </div>
       <div class="flex gap-2">
         <button id="btn-ships" onclick="switchPanel('ships')"
-          class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-white/20 bg-gold text-white transition-all">
+          class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-navy/20 bg-navy text-white transition-all">
           <i class="fas fa-ship"></i> Ships
         </button>
         <button id="btn-users" onclick="switchPanel('users')"
-          class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-white/20 bg-white/10 text-white transition-all hover:bg-white/20">
+          class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-navy/20 bg-navy/10 text-navy transition-all hover:bg-navy/20">
           <i class="fas fa-users"></i> Ship Users
         </button>
       </div>
@@ -125,9 +125,12 @@
         class="min-w-36 h-9 border border-slate-200 rounded-lg px-3 text-xs bg-white focus:outline-none focus:border-gold">
         <option value="">All Ships</option>
       </select>
-      <select id="uCmdFilter" onchange="uFilter()"
+      <select id="uRoleFilter" onchange="uFilter()"
         class="min-w-36 h-9 border border-slate-200 rounded-lg px-3 text-xs bg-white focus:outline-none focus:border-gold">
-        <option value="">All Commands</option>
+        <option value="">All Roles</option>
+        <option value="DO">DO</option>
+        <option value="FO">FO</option>
+        <option value="CPO">CPO</option>
       </select>
       <button onclick="openUserModal(null)"
         class="flex items-center gap-1.5 h-9 px-4 bg-gold hover:bg-gold-hover text-white text-xs font-bold rounded-lg transition-colors">
@@ -150,7 +153,7 @@
         class="grid bg-slate-50 border-b border-slate-200 px-4 py-2.5 gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400"
         style="grid-template-columns:1.6fr 70px 100px 120px 90px 68px;">
         <span>Name</span><span>Rank</span><span>Service
-          No</span><span>Ship</span><span>Command</span><span>Actions</span>
+          No</span><span>Ship/Scope</span><span>Role</span><span>Actions</span>
       </div>
       <div id="uUsersList">
         <div class="py-12 text-center text-slate-400 text-xs">
@@ -220,73 +223,52 @@
       </div>
       <div class="p-5 space-y-4">
         <input type="hidden" id="userOrigSvcNo" />
-        <!-- Row 1: Service No + Rank -->
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Service
-              No</label>
-            <input id="userSvcNo" type="text" placeholder="e.g. NN/4940F"
-              class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold" />
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Rank</label>
-            <select id="userRank"
-              class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
-              <option value="">— Rank —</option>
-              <option>MID</option>
-              <option>S/LT</option>
-              <option>LT</option>
-              <option>LT CDR</option>
-              <option>CDR</option>
-              <option>CAPT</option>
-              <option>CDRE</option>
-              <option>RADM</option>
-              <option>VADM</option>
-              <option>ADM</option>
-            </select>
-          </div>
+
+        <!-- Service No (full width with validate hint) -->
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
+            Service No <span class="text-red-500">*</span>
+          </label>
+          <input id="userSvcNo" type="text" placeholder="e.g. NN/4940F"
+            class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold" />
+          <p id="userSvcMsg" class="hidden text-[10px] mt-1"></p>
         </div>
-        <!-- Row 2: Command + Ship -->
+
+        <!-- Command + Ship (cascade) -->
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Command</label>
-            <select id="userCommand"
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
+              Command <span class="text-red-500">*</span>
+            </label>
+            <select id="userCommand" onchange="onUserCommandChange()"
               class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
               <option value="">— Command —</option>
             </select>
           </div>
           <div>
-            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Ship</label>
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
+              Ship <span class="text-red-500">*</span>
+            </label>
             <select id="userShip"
               class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
-              <option value="">— Ship —</option>
+              <option value="">— Select command first —</option>
             </select>
           </div>
         </div>
-        <!-- Row 3: Surname + Other Names -->
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Surname</label>
-            <input id="userSurname" type="text" placeholder="Surname"
-              class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold" />
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Other
-              Names</label>
-            <input id="userOther" type="text" placeholder="Other names"
-              class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold" />
-          </div>
-        </div>
+
+        <!-- Appointment (required) -->
         <div>
-          <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Email</label>
-          <input id="userEmail" type="email" placeholder="email@navy.mil.ng"
-            class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold" />
-        </div>
-        <div>
-          <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Phone
-            Number</label>
-          <input id="userPhone" type="tel" placeholder="08012345678"
-            class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold" />
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
+            Appointment <span class="text-red-500">*</span>
+          </label>
+          <select id="userAppointment"
+            class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
+            <option value="">— Select appointment —</option>
+            <option value="DO">DO — Divisional Officer</option>
+            <option value="FO">FO — Flag Officer</option>
+            <option value="CPO">CPO — Command Payroll Officer</option>
+          </select>
+          <p class="text-[10px] text-slate-400 mt-1">DO/FO scope = Ship &nbsp;·&nbsp; CPO scope = Command</p>
         </div>
       </div>
       <div class="px-5 pb-5 flex gap-2 justify-end">
@@ -309,22 +291,16 @@
             class="fas fa-times"></i></button>
       </div>
       <div class="p-5">
-        <p class="text-xs text-slate-500 mb-2">Required CSV columns:</p>
+        <p class="text-xs text-slate-500 mb-2">Bulk assign DO / FO / CPO roles. Required CSV columns:</p>
         <div class="flex flex-wrap gap-1 mb-4">
-          <span
-            class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">serviceNumber</span>
-          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">surname</span>
-          <span
-            class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">otherName</span>
-          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">rank</span>
-          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">email</span>
-          <span
-            class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">phoneNumber</span>
-          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">ship</span>
-          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">command</span>
-          <span
-            class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">payrollclass</span>
-          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">classes</span>
+          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">user_id <span
+              class="text-red-400">*</span></span>
+          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">role <span
+              class="text-red-400">*</span> (DO/FO/CPO)</span>
+          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">scope_type
+            <span class="text-red-400">*</span> (SHIP/COMMAND)</span>
+          <span class="text-[10px] font-mono bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">scope_value
+            <span class="text-red-400">*</span> (ship or command name)</span>
         </div>
         <div onclick="document.getElementById('uploadFile').click()"
           class="border-2 border-dashed border-slate-200 hover:border-gold hover:bg-gold-light rounded-xl p-8 text-center cursor-pointer transition-all mb-3">
@@ -398,12 +374,12 @@
       const bs = document.getElementById('btn-ships');
       const bu = document.getElementById('btn-users');
       if (p === 'ships') {
-        bs.className = 'flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-white/20 bg-gold text-white transition-all';
-        bu.className = 'flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-white/20 bg-white/10 text-white transition-all hover:bg-white/20';
+        bs.className = 'flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-navy/20 bg-navy text-white transition-all';
+        bu.className = 'flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-navy/20 bg-navy/10 text-navy transition-all hover:bg-navy/20';
       } else {
-        bu.className = 'flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-white/20 bg-gold text-white transition-all';
-        bs.className = 'flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-white/20 bg-white/10 text-white transition-all hover:bg-white/20';
-        if (!_usersLoaded) { _usersLoaded = true; loadUsers(1); }
+        bu.className = 'flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-navy/20 bg-navy text-white transition-all';
+        bs.className = 'flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-navy/20 bg-navy/10 text-navy transition-all hover:bg-navy/20';
+        if (!_usersLoaded) { _usersLoaded = true; loadUsers(); }
       }
     }
 
@@ -506,12 +482,13 @@
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(raw => {
           _commands = Array.isArray(raw) ? raw : (raw.data || raw.commands || []);
-          ['sCmdFilter', 'uCmdFilter', 'shipCommand', 'userCommand'].forEach(id => {
+          // Populate command selects (no uCmdFilter anymore — that's now uRoleFilter)
+          ['sCmdFilter', 'shipCommand', 'userCommand'].forEach(id => {
             const sel = document.getElementById(id); if (!sel) return;
             while (sel.options.length > 1) sel.remove(1);
             _commands.forEach(c => {
               const o = document.createElement('option');
-              o.value = c.code || c.commandCode || c.Id;
+              o.value = c.Id;
               o.textContent = c.commandName || c.name || o.value;
               sel.appendChild(o);
             });
@@ -540,15 +517,37 @@
     }
 
     function populateShipSelects(ships) {
-      ['uShipFilter', 'userShip'].forEach(id => {
-        const sel = document.getElementById(id); if (!sel) return;
-        while (sel.options.length > 1) sel.remove(1);
-        ships.forEach(s => {
+      // Only top filter — userShip is cascade-populated from selected command
+      const sel = document.getElementById('uShipFilter');
+      if (!sel) return;
+      while (sel.options.length > 1) sel.remove(1);
+      ships.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s.shipName; o.textContent = s.shipName;
+        sel.appendChild(o);
+      });
+    }
+
+    // Cascade: when command changes, populate ship dropdown with only ships under it
+    function onUserCommandChange() {
+      const cmdId = document.getElementById('userCommand').value;
+      const sel = document.getElementById('userShip');
+      while (sel.options.length > 0) sel.remove(0);
+      if (!cmdId) {
+        const o = document.createElement('option');
+        o.value = ''; o.textContent = '— Select command first —';
+        sel.appendChild(o);
+        return;
+      }
+      const placeholder = document.createElement('option');
+      placeholder.value = ''; placeholder.textContent = '— Ship —';
+      sel.appendChild(placeholder);
+      _ships.filter(s => String(s.commandid) === String(cmdId))
+        .forEach(s => {
           const o = document.createElement('option');
           o.value = s.shipName; o.textContent = s.shipName;
           sel.appendChild(o);
         });
-      });
     }
 
     function sFilter() {
@@ -557,7 +556,7 @@
       const st = document.getElementById('sStFilter').value;
       _shipsFiltered = _ships.filter(s => {
         if (q && !s.shipName.toLowerCase().includes(q)) return false;
-        if (cmd && s.commandCode !== cmd) return false;
+        if (cmd && String(s.commandid) !== String(cmd)) return false;
         if (st !== '' && String(s.openship) !== st) return false;
         return true;
       });
@@ -589,7 +588,7 @@
           <div class="text-xs font-semibold text-slate-800">${esc(s.shipName)}</div>
           <div class="text-[11px] text-slate-400 mt-0.5">${esc(s.commandName || '—')}</div>
         </div>
-        <div class="text-xs text-slate-500 font-mono">${esc(s.commandCode || '—')}</div>
+        <div class="text-xs text-slate-500 font-mono">${esc(s.code || '—')}</div>
         <div>
           <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${open
             ? 'bg-green-100 text-green-700'
@@ -613,7 +612,7 @@
 
     /* ── Export ships ── */
     function exportShips() {
-      const cols = ['shipName', 'commandName', 'commandCode', 'openship'];
+      const cols = ['shipName', 'code', 'commandName', 'commandid', 'openship'];
       const rows = [cols.join(','), ..._ships.map(s => cols.map(c => `"${s[c] ?? ''}"`).join(','))];
       dlCSV('ships.csv', rows.join('\n'));
     }
@@ -625,7 +624,7 @@
       document.getElementById('shipId').value = ship ? ship.Id : '';
       document.getElementById('shipName').value = ship ? ship.shipName : '';
       document.getElementById('shipStatus').value = ship ? String(ship.openship) : '0';
-      document.getElementById('shipCommand').value = ship ? (ship.commandCode || '') : '';
+      document.getElementById('shipCommand').value = ship ? (ship.commandid || '') : '';
       const btn = document.getElementById('shipSubmitBtn');
       btn.innerHTML = ship
         ? '<i class="fas fa-save mr-1"></i>Save Changes'
@@ -644,7 +643,7 @@
       const isEdit = !!_editingShipId;
       const url = isEdit ? `/system/ships/${_editingShipId}` : '/system/ships';
       const method = isEdit ? 'PUT' : 'POST';
-      fetch(url, { method, headers: H, body: JSON.stringify({ shipName: name, commandCode: cmdVal, openship: Number(status) }) })
+      fetch(url, { method, headers: H, body: JSON.stringify({ shipName: name, commandid: Number(cmdVal), openship: Number(status) }) })
         .then(r => r.json().then(d => ({ ok: r.ok, d })))
         .then(({ ok, d }) => {
           btn.disabled = false;
@@ -667,21 +666,20 @@
     }
 
     /* ══ SHIP USERS ══ */
-    function loadUsers(page = 1) {
-      _uPage = page;
-      const f = buildUFilters();
-      const p = new URLSearchParams({ ...f, page: _uPage, pageSize: U_PER_PAGE });
+    let _uAllRows = [];
 
+    function loadUsers() {
       document.getElementById('uUsersList').innerHTML =
         '<div class="py-12 text-center text-slate-400 text-xs"><i class="fas fa-spinner fa-spin text-2xl block mb-2"></i>Loading users…</div>';
       document.getElementById('uPagination').classList.add('hidden');
 
-      fetch(`/admin/personnel?${p}`, { headers: H })
+      fetch('/admin/roles', { headers: H })
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(raw => {
-          const rows = Array.isArray(raw) ? raw : (raw.rows || raw.data || []);
-          _uTotal = raw.total != null ? raw.total : rows.length;
-          renderUsers(rows);
+          _uAllRows = (Array.isArray(raw) ? raw : (raw.data || raw.rows || []))
+            .filter(r => r.role !== 'EMOL_ADMIN');
+          _uPage = 1;
+          applyUFiltersAndRender();
         })
         .catch(() => {
           document.getElementById('uUsersList').innerHTML =
@@ -689,21 +687,30 @@
         });
     }
 
-    function buildUFilters() {
-      const f = {};
-      const q = document.getElementById('uSearch').value.trim();
+    function applyUFiltersAndRender() {
+      const q = document.getElementById('uSearch').value.trim().toLowerCase();
       const sh = document.getElementById('uShipFilter').value;
-      const cmd = document.getElementById('uCmdFilter').value;
-      if (q) { if (/^\w{2}[\/\\\-]/i.test(q)) f.serviceNumber = q; else f.surname = q; }
-      if (sh) f.ship = sh;
-      if (cmd) f.command = cmd;
-      return f;
+      const role = document.getElementById('uRoleFilter').value;
+
+      const filtered = _uAllRows.filter(r => {
+        if (q && !((r.Surname || '') + ' ' + (r.OtherName || '')).toLowerCase().includes(q)
+          && !(r.user_id || '').toLowerCase().includes(q)) return false;
+        if (sh && r.scope_value !== sh) return false;
+        if (role && r.role !== role) return false;
+        return true;
+      });
+
+      _uTotal = filtered.length;
+      const totalPages = Math.ceil(_uTotal / U_PER_PAGE) || 1;
+      _uPage = Math.max(1, Math.min(_uPage, totalPages));
+      const slice = filtered.slice((_uPage - 1) * U_PER_PAGE, _uPage * U_PER_PAGE);
+      renderUsers(slice, totalPages);
     }
 
-    function uFilter() { loadUsers(1); }
+    function uFilter() { _uPage = 1; applyUFiltersAndRender(); }
 
-    function renderUsers(rows) {
-      const totalPages = Math.ceil(_uTotal / U_PER_PAGE);
+    function renderUsers(rows, totalPages) {
+      const tp = totalPages || Math.ceil(_uTotal / U_PER_PAGE) || 1;
       document.getElementById('uCountLabel').textContent = _uTotal + ' users';
 
       const el = document.getElementById('uUsersList');
@@ -713,6 +720,12 @@
         return;
       }
 
+      const ROLE_CLS = {
+        DO: 'bg-blue-50 text-blue-700',
+        FO: 'bg-purple-50 text-purple-700',
+        CPO: 'bg-amber-50 text-amber-700',
+      };
+
       el.innerHTML = rows.map(u => {
         const ud = JSON.stringify(u).replace(/'/g, '&#39;');
         return `
@@ -720,54 +733,65 @@
            style="grid-template-columns:1.6fr 70px 100px 120px 90px 68px;">
         <div class="text-xs font-semibold text-slate-800 truncate">${esc(u.Surname || '')} ${esc(u.OtherName || '')}</div>
         <div class="text-xs text-slate-500">${esc(u.Rank || '—')}</div>
-        <div class="text-xs font-mono text-slate-600">${esc(u.serviceNumber || '—')}</div>
-        <div class="text-xs text-slate-500 truncate">${esc(u.ship || '—')}</div>
-        <div class="text-xs text-slate-500">${esc(u.command || '—')}</div>
+        <div class="text-xs font-mono text-slate-600">${esc(u.user_id || '—')}</div>
+        <div class="text-xs text-slate-500 truncate">${esc(u.scope_value || u.ship || '—')}</div>
+        <div>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${ROLE_CLS[u.role] || 'bg-gray-100 text-gray-600'}">
+            ${esc(u.role)}
+          </span>
+        </div>
         <div class="flex gap-1.5">
           <button onclick='openUserModal(${ud})'
             class="w-7 h-7 border border-slate-200 bg-white hover:bg-green-50 rounded-lg flex items-center justify-center text-green-600 transition-colors" title="Edit">
             <i class="fas fa-pen" style="font-size:10px;"></i>
           </button>
-          <button onclick="deleteUser('${esc(u.serviceNumber)}','${esc(u.Surname)} ${esc(u.OtherName)}')"
-            class="w-7 h-7 border border-slate-200 bg-white hover:bg-red-50 rounded-lg flex items-center justify-center text-red-500 transition-colors" title="Delete">
-            <i class="fas fa-trash" style="font-size:10px;"></i>
+          <button onclick="revokeUser(${u.id},'${esc(u.user_id)}','${esc(u.role)}')"
+            class="w-7 h-7 border border-slate-200 bg-white hover:bg-red-50 rounded-lg flex items-center justify-center text-red-500 transition-colors" title="Revoke">
+            <i class="fas fa-user-minus" style="font-size:10px;"></i>
           </button>
         </div>
       </div>`;
       }).join('');
 
-      renderPageBtns('uPageBtns', 'uPageInfo', _uPage, totalPages, _uTotal, p => loadUsers(p));
+      renderPageBtns('uPageBtns', 'uPageInfo', _uPage, tp, _uTotal, p => { _uPage = p; applyUFiltersAndRender(); });
     }
 
-    /* ── Export users ── */
     function exportUsers() {
-      const f = buildUFilters();
-      const p = new URLSearchParams({ ...f, page: 1, pageSize: 5000 });
-      fetch(`/admin/personnel?${p}`, { headers: H })
-        .then(r => r.ok ? r.json() : Promise.reject())
-        .then(raw => {
-          const rows = Array.isArray(raw) ? raw : (raw.rows || raw.data || []);
-          const cols = ['serviceNumber', 'Surname', 'OtherName', 'Rank', 'ship', 'command', 'email', 'gsm_number'];
-          dlCSV('ship-users.csv', [cols.join(','), ...rows.map(r => cols.map(c => `"${r[c] ?? ''}"`).join(','))].join('\n'));
-        })
-        .catch(() => toast('Failed to export.', false));
+      const cols = ['user_id', 'Surname', 'OtherName', 'Rank', 'role', 'scope_type', 'scope_value'];
+      dlCSV('ship-users.csv', [cols.join(','), ..._uAllRows.map(r => cols.map(c => `"${r[c] ?? ''}"`).join(','))].join('\n'));
     }
 
     /* ── User modal ── */
     function openUserModal(user) {
-      _editingUserSvcNo = user ? user.serviceNumber : null;
+      _editingUserSvcNo = user ? user.user_id : null;
       document.getElementById('userModalTitle').textContent = user ? 'Edit Ship User' : 'New Ship User';
-      document.getElementById('userOrigSvcNo').value = user ? user.serviceNumber : '';
-      document.getElementById('userSvcNo').value = user ? (user.serviceNumber || '') : '';
+      document.getElementById('userOrigSvcNo').value = user ? user.user_id : '';
+      document.getElementById('userSvcNo').value = user ? (user.user_id || '') : '';
       document.getElementById('userSvcNo').readOnly = !!user;
       document.getElementById('userSvcNo').className = `w-full h-9 border rounded-lg px-3 text-xs focus:outline-none focus:border-gold ${user ? 'bg-slate-50 border-slate-200 text-slate-400' : 'border-slate-200'}`;
-      document.getElementById('userRank').value = user ? (user.Rank || '') : '';
-      document.getElementById('userCommand').value = user ? (user.command || '') : '';
-      document.getElementById('userShip').value = user ? (user.ship || '') : '';
-      document.getElementById('userSurname').value = user ? (user.Surname || '') : '';
-      document.getElementById('userOther').value = user ? (user.OtherName || '') : '';
-      document.getElementById('userEmail').value = user ? (user.email || '') : '';
-      document.getElementById('userPhone').value = user ? (user.gsm_number || '') : '';
+      document.getElementById('userSvcMsg').classList.add('hidden');
+
+      // Resolve command for this user:
+      //  - CPO: scope_value IS the command name → look up by name
+      //  - DO/FO: scope_value is a ship name → find ship → use its commandid
+      let cmdId = '';
+      let shipName = '';
+      if (user) {
+        if (user.role === 'CPO') {
+          const cmd = _commands.find(c => c.commandName === user.scope_value);
+          cmdId = cmd ? cmd.Id : '';
+          shipName = '';
+        } else {
+          shipName = user.scope_value || '';
+          const ship = _ships.find(s => s.shipName === shipName);
+          cmdId = ship ? ship.commandid : '';
+        }
+      }
+      document.getElementById('userCommand').value = String(cmdId || '');
+      onUserCommandChange();                                  // populate ship list
+      document.getElementById('userShip').value = shipName;
+      document.getElementById('userAppointment').value = user ? (user.role || '') : '';
+
       const btn = document.getElementById('userSubmitBtn');
       btn.innerHTML = user
         ? '<i class="fas fa-save mr-1"></i>Save Changes'
@@ -775,55 +799,79 @@
       openModal('userModal');
     }
 
-    function submitUser() {
+    async function submitUser() {
       const svcNo = document.getElementById('userSvcNo').value.trim();
-      const rank = document.getElementById('userRank').value;
-      const command = document.getElementById('userCommand').value;
+      const cmdId = document.getElementById('userCommand').value;
       const ship = document.getElementById('userShip').value;
-      const surname = document.getElementById('userSurname').value.trim();
-      const other = document.getElementById('userOther').value.trim();
-      const email = document.getElementById('userEmail').value.trim();
-      const phone = document.getElementById('userPhone').value.trim();
+      const appt = document.getElementById('userAppointment').value;
+      const svcMsg = document.getElementById('userSvcMsg');
+
+      svcMsg.classList.add('hidden');
+
+      // ── validation ─────────────────────────────────────
       if (!svcNo) { toast('Service number is required.', false); return; }
-      if (!rank) { toast('Rank is required.', false); return; }
-      if (!command) { toast('Command is required.', false); return; }
-      if (!ship) { toast('Ship is required.', false); return; }
-      if (!surname) { toast('Surname is required.', false); return; }
+      if (!cmdId) { toast('Command is required.', false); return; }
+      if (appt !== 'CPO' && !ship) { toast('Ship is required.', false); return; }
+      if (!appt) { toast('Appointment is required.', false); return; }
+
       const btn = document.getElementById('userSubmitBtn');
       btn.disabled = true;
-      if (_editingUserSvcNo) {
-        fetch(`/admin/personnel/${encodeURIComponent(_editingUserSvcNo)}/contact`, {
-          method: 'PUT', headers: H,
-          body: JSON.stringify({ email, phone_number: phone }),
-        })
-          .then(r => r.json().then(d => ({ ok: r.ok, d })))
-          .then(({ ok, d }) => {
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Validating…';
+
+      try {
+        // ── validate user exists in ef_personalinfos (skip for edit — already validated) ──
+        if (!_editingUserSvcNo) {
+          const vr = await fetch(`/admin/personnel/${encodeURIComponent(svcNo)}`, { headers: H });
+          if (vr.status === 404) {
+            svcMsg.textContent = 'Service number not found in personnel records.';
+            svcMsg.className = 'text-[10px] mt-1 text-red-500 font-semibold';
+            svcMsg.classList.remove('hidden');
             btn.disabled = false;
-            toast(ok ? (d.message || 'User updated.') : (d.error || 'Failed.'), ok);
-            if (ok) { closeModal('userModal'); loadUsers(_uPage); }
-          })
-          .catch(() => { btn.disabled = false; toast('Server error.', false); });
-      } else {
-        fetch('/admin/upload/personnel', {
+            btn.innerHTML = '<i class="fas fa-user-plus mr-1"></i>Add User';
+            return;
+          }
+          if (!vr.ok) throw new Error('validation request failed');
+        }
+
+        // ── assign appointment ─────────────────────────────
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Saving…';
+        const scopeType = appt === 'CPO' ? 'COMMAND' : 'SHIP';
+        // CPO scope is the command NAME (not Id) — look it up
+        const cmdObj = _commands.find(c => String(c.Id) === String(cmdId));
+        const scopeValue = appt === 'CPO' ? (cmdObj?.commandName || '') : ship;
+
+        const r = await fetch('/admin/roles/assign', {
           method: 'POST', headers: H,
-          body: JSON.stringify([{ serviceNumber: svcNo, rank, command, ship, surname, otherName: other, email, phoneNumber: phone }]),
-        })
-          .then(r => r.json().then(d => ({ ok: r.ok, d })))
-          .then(({ ok, d }) => {
-            btn.disabled = false;
-            if (ok) {
-              const res = d.data || {};
-              toast(`Done — ${res.inserted || 1} upserted, ${(res.failed || []).length} failed.`, true);
-              closeModal('userModal'); loadUsers(1);
-            } else toast(d.error || 'Failed.', false);
-          })
-          .catch(() => { btn.disabled = false; toast('Server error.', false); });
+          body: JSON.stringify({ user_id: svcNo, role: appt, scope_type: scopeType, scope_value: scopeValue }),
+        });
+        const d = await r.json();
+        if (!r.ok) { toast(d.error || 'Failed to assign role.', false); btn.disabled = false; btn.innerHTML = _editingUserSvcNo ? '<i class="fas fa-save mr-1"></i>Save Changes' : '<i class="fas fa-user-plus mr-1"></i>Add User'; return; }
+
+        toast(_editingUserSvcNo ? `Role updated to ${appt}.` : `User added with ${appt} role.`);
+        closeModal('userModal'); loadUsers();
+      } catch (err) {
+        toast('Server error.', false);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = _editingUserSvcNo ? '<i class="fas fa-save mr-1"></i>Save Changes' : '<i class="fas fa-user-plus mr-1"></i>Add User';
       }
     }
 
+    function revokeUser(id, userId, role) {
+      confirm_('Revoke Role', `Revoke ${role} role from ${userId}?`, () => {
+        fetch(`/admin/roles/${id}/revoke`, { method: 'DELETE', headers: H })
+          .then(r => r.json().then(d => ({ ok: r.ok, d })))
+          .then(({ ok, d }) => {
+            toast(ok ? (d.message || 'Role revoked.') : (d.error || 'Failed.'), ok);
+            if (ok) loadUsers();
+          })
+          .catch(() => toast('Server error.', false));
+      }, true);
+    }
+
     function deleteUser(svcNo, name) {
-      confirm_('Delete User', `Remove "${name}" (${svcNo})?`, () => {
-        toast('Individual delete endpoint not available in this API version.', false);
+      confirm_('Remove User', `Remove "${name}" (${svcNo})?`, () => {
+        toast('Individual delete not available in this API version.', false);
       }, true);
     }
 
@@ -849,7 +897,7 @@
         _uploadRecords = lines.slice(1).map(line => {
           const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
           const obj = {}; headers.forEach((h, i) => { if (vals[i]) obj[h] = vals[i]; }); return obj;
-        }).filter(r => r.serviceNumber || r.service_no);
+        }).filter(r => r.user_id && r.role && r.scope_type && r.scope_value);
         const cnt = document.getElementById('uploadPreviewCount');
         cnt.textContent = _uploadRecords.length + ' valid records found';
         cnt.classList.remove('hidden');
@@ -857,21 +905,32 @@
       reader.readAsText(file);
     }
 
-    function submitUpload() {
+    async function submitUpload() {
       if (!_uploadRecords?.length) { toast('Select a valid CSV first.', false); return; }
       const btn = document.getElementById('uploadSubmitBtn');
       btn.disabled = true;
-      fetch('/admin/upload/personnel', { method: 'POST', headers: H, body: JSON.stringify(_uploadRecords) })
-        .then(r => r.json().then(d => ({ ok: r.ok, d })))
-        .then(({ ok, d }) => {
-          btn.disabled = false;
-          if (ok) {
-            const res = d.data || {};
-            toast(`Done — ${res.inserted || 0} upserted, ${(res.failed || []).length} failed.`, true);
-            closeModal('uploadModal'); loadUsers(1);
-          } else toast(d.error || 'Upload failed.', false);
-        })
-        .catch(() => { btn.disabled = false; toast('Server error.', false); });
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading…';
+
+      let done = 0, failed = 0;
+      for (const rec of _uploadRecords) {
+        try {
+          const r = await fetch('/admin/roles/assign', {
+            method: 'POST', headers: H,
+            body: JSON.stringify({
+              user_id: rec.user_id,
+              role: rec.role,
+              scope_type: rec.scope_type,
+              scope_value: rec.scope_value,
+            }),
+          });
+          if (r.ok) done++; else failed++;
+        } catch { failed++; }
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-upload"></i> Upload Users';
+      toast(`Done — ${done} assigned, ${failed} failed.`, failed === 0);
+      if (done > 0) { closeModal('uploadModal'); loadUsers(); }
     }
 
     /* ══ UTILS ══ */

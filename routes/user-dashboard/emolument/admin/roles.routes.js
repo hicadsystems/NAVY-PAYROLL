@@ -121,6 +121,42 @@ router.delete("/role-catalog/:id", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// MY ROLE — returns the calling user's assigned role + menuIds
+// Used by the nav filter on page load. No EMOL_ADMIN guard —
+// any authenticated user can call this to discover their access.
+// ─────────────────────────────────────────────────────────────
+
+router.get("/my-role", async (req, res) => {
+  try {
+    // Get this user's active custom role assignment
+    const repo = require("./roles.repository");
+    const rows = await repo.getAssignments(null);
+    const mine = rows.find((r) => r.user_id === req.user_id);
+
+    if (!mine) {
+      // No custom role — treat as EMOL_ADMIN (full access) or no access
+      // Return null so the nav filter shows everything
+      return res.json({ role: null, menuIds: [], menuCodes: [] });
+    }
+
+    const menuIds = await repo.getMenuIdsByRoleId(mine.admin_role_id);
+    const allMenus = await repo.getAllMenus();
+    const menuCodes = allMenus
+      .filter((m) => menuIds.includes(m.Id))
+      .map((m) => m.Code);
+
+    return res.json({
+      role: { id: mine.admin_role_id, name: mine.role_name },
+      menuIds,
+      menuCodes,
+    });
+  } catch (err) {
+    console.error("❌ GET /admin/my-role:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
 // ASSIGNMENTS
 // ─────────────────────────────────────────────────────────────
 

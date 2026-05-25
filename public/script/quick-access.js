@@ -118,13 +118,13 @@ class QuickAccessManager {
       },
       "monthly-yearly-processing": {
         id: "monthly-yearly-processing",
-        label: "Process Month End",
+        label: "Month End Processing",
         section: "monthly-yearly-processing",
         title: "Month End Processing",
       },
       "yearly-processing": {
         id: "yearly-processing",
-        label: "Process Year End",
+        label: "Year End Processing",
         section: "yearly-processing",
         title: "Year End Processing",
       },
@@ -360,9 +360,9 @@ class QuickAccessManager {
       // Reports
       "pay-slips": {
         id: "pay-slips",
-        label: "Pay Slips",
+        label: "Payslips",
         section: "pay-slips",
-        title: "Pay Slips",
+        title: "Payslips",
       },
       "payments-by-bank": {
         id: "payments-by-bank",

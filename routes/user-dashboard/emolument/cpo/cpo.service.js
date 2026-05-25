@@ -32,11 +32,11 @@ const {
 // LIST FO_APPROVED FORMS — scoped to CPO's command
 // ─────────────────────────────────────────────────────────────
 
-async function listFoApprovedForms(command) {
+async function listFoApprovedForms(command, limit, offset) {
   if (!command)
     return { success: false, code: 400, message: "Command is required." };
 
-  const forms = await repo.getFoApprovedForms(command);
+  const forms = await repo.getFoApprovedForms(command, limit, offset);
   return { success: true, data: forms };
 }
 
@@ -285,9 +285,55 @@ async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
   };
 }
 
+// ─────────────────────────────────────────────────────────────
+// STATUS STATS — for CPO dashboard summary
+// ─────────────────────────────────────────────────────────────
+
+async function getStatusStats(command, svc) {
+  if (!command)
+    return { success: false, code: 400, message: "Command is required." };
+
+  if (!svc)
+    return {
+      success: false,
+      code: 400,
+      message: "Service number is required.",
+    };
+
+  const stats = await repo.getStatusStats(command, svc);
+  return { success: true, data: stats };
+}
+
+// ─────────────────────────────────────────────────────────────
+// LIST CONFIRMED FORMS
+// ─────────────────────────────────────────────────────────────
+
+async function listConfirmedForms(command, svc, limit, offset) {
+ if (!command)
+    return { success: false, code: 400, message: "Command is required." };
+  if (!svc)
+    return {
+      success: false,
+      code: 400,
+      message: "Service number is required.",
+    };
+  if (!limit || !Number.isInteger(limit) || limit < 1) {
+    return { success: false, code: 400, message: "Valid limit is required." };
+  }
+  if (offset === undefined || offset < 0) {
+    return { success: false, code: 400, message: "Valid offset is required." };
+  }
+
+  const forms = await repo.getCPOConfirmedForms(command, svc, limit, offset);
+
+  return { success: true, data: forms };
+}
+
 module.exports = {
   listFoApprovedForms,
+  listConfirmedForms,
   getForm,
   confirmForm,
   rejectForm,
+  getStatusStats
 };

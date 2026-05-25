@@ -236,4 +236,95 @@ router.post(
   },
 );
 
+// ─────────────────────────────────────────────────────────────
+// GET /cpo/confirmed
+// List all FO_APPROVED forms across all CPO's commands.
+// requireEmolRole('CPO') — scope comes from the CPO's roles.
+// ─────────────────────────────────────────────────────────────
+
+router.get("/confirmed", requireEmolRole("CPO"), async (req, res) => {
+  const commands = resolveCpoCommands(req);
+
+  const { limit, page = 1 } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
+
+  // For scoped CPOs — collect all their commands and merge results
+  // For EMOL_ADMIN — query needs a command; return 400 if none scoped
+  if (commands !== "ALL" && commands.length === 0) {
+    return res.status(403).json({ error: "No command scope assigned." });
+  }
+
+  try {
+    // If EMOL_ADMIN, they should use /confirmed/:command to scope the query
+    if (commands === "ALL") {
+      return res.status(400).json({
+        error: "Please specify a command: GET /cpo/confirmed/:command",
+      });
+    }
+
+    // Fetch for all assigned commands in parallel
+    const results = await Promise.all(
+      commands.map((cmd) => cpoService.listFoApprovedForms(cmd, limit, offset)),
+    );
+
+    const merged = results.flatMap((r) => (r.success ? r.data : []));
+    return res.json(merged);
+  } catch (err) {
+    console.error("❌ GET /cpo/confirmed:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /cpo/confirmed/:command
+// List FO_APPROVED forms for a specific command.
+// Used by EMOL_ADMIN and CPOs who want to filter by command.
+// requireEmolRole('CPO') with command in params.
+// ─────────────────────────────────────────────────────────────
+
+router.get("/confirmed/:command", requireEmolRole("CPO"), async (req, res) => {
+  const { command } = req.params;
+  const cpoCommands = resolveCpoCommands(req);
+
+  const { limit, page = 1 } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
+
+  // Scope check — scoped CPO can only query their own commands
+  if (cpoCommands !== "ALL" && !cpoCommands.includes(command)) {
+    return res.status(403).json({
+      error: `Access denied. Command '${command}' is not under your scope.`,
+    });
+  }
+
+  try {
+    const result = await cpoService.listFoApprovedForms(command, limit, offset);
+    if (!result.success)
+      return res.status(result.code).json({ error: result.message });
+    return res.json(result.data);
+  } catch (err) {
+    console.error("❌ GET /cpo/confirmed/:command:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /cpo/command/:command/stats
+// List status statistics for forms in a command.
+// requireEmolRole('CPO') with command in params.
+// ─────────────────────────────────────────────────────────────
+
+router.get("/command/:command/stats", requireEmolRole("CPO"), async (req, res) => {
+  const { command } = req.params;
+  const svc = req.user_id; // Use CPO's service number to get their specific stats if needed
+  try {
+    const result = await cpoService.getStatusStats(command, svc);
+    if (!result.success)
+      return res.status(result.code).json({ error: result.message });
+    return res.json(result.data);
+  } catch (err) {
+    console.error("❌ GET /cpo/command/:command/stats:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
 module.exports = router;

@@ -249,6 +249,8 @@ const requireEmolRole = (requiredRole) => {
         if (r.scope_type === 'COMMAND') return commandVal && r.scope_value === commandVal;
         return false;
       });
+      
+      console.log(`🔐 requireEmolRole(${requiredRole}) - resolved ship: ${shipVal}, command: ${commandVal}`);
 
       if (!passes) {
         return res.status(403).json({

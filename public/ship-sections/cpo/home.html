@@ -1,6 +1,5 @@
-<div>
+<div class="p-4">
   <div class="mb-6">
-    <h2 class="text-xl font-black text-navy">CPO Dashboard</h2>
     <p class="text-sm text-blue-900/50 mt-1">Command Payroll Officer — <span id="cpo-ship-name">—</span></p>
   </div>
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
@@ -8,7 +7,7 @@
       <div class="text-2xl font-black text-amber-500" id="cpo-stat-pending">—</div>
       <div
         style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);"
-        class="mt-1">For Confirm</div>
+        class="mt-1">For Confirmation</div>
     </div>
     <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 text-center">
       <div class="text-2xl font-black text-green-600" id="cpo-stat-confirmed">—</div>
@@ -49,11 +48,19 @@
 </div>
 <script>
   (function () {
-    const ship = sessionStorage.getItem('active_ship') || '—'; const token = localStorage.getItem('token');
-    const el = document.getElementById('cpo-ship-name'); if (el) el.textContent = ship;
+    const command = sessionStorage.getItem('active_ship') || '—'; 
+    const token = localStorage.getItem('token');
+    const el = document.getElementById('cpo-ship-name'); 
+    if (el) el.textContent = command;
     if (!token) return;
-    fetch('/ship/cpo/stats?ship=' + encodeURIComponent(ship), { headers: { Authorization: 'Bearer ' + token } })
+    fetch('/cpo/command/' + encodeURIComponent(command) + '/stats', { headers: { Authorization: 'Bearer ' + token } })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (!d) return; document.getElementById('cpo-stat-pending').textContent = d.pending ?? '—'; document.getElementById('cpo-stat-confirmed').textContent = d.confirmed ?? '—'; document.getElementById('cpo-stat-total').textContent = d.total ?? '—'; document.getElementById('cpo-stat-rejected').textContent = d.rejected ?? '—'; }).catch(() => { });
+      .then(d => { 
+        if (!d) return; 
+        document.getElementById('cpo-stat-pending').textContent = d.pending ?? '—'; 
+        document.getElementById('cpo-stat-confirmed').textContent = d.confirmed ?? '—'; 
+        document.getElementById('cpo-stat-total').textContent = d.total ?? '—'; 
+        document.getElementById('cpo-stat-rejected').textContent = d.rejected ?? '—'; })
+        .catch(() => { });
   })();
 </script>

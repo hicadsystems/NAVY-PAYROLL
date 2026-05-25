@@ -70,10 +70,9 @@ async function withTransaction(fn) {
 // LIST — FO_APPROVED forms scoped to a command
 // ─────────────────────────────────────────────────────────────
 
-async function getFoApprovedForms(command) {
+async function getFoApprovedForms(command, limit, offset) {
   pool.useDatabase(DB());
-  const [rows] = await pool.query(
-    `SELECT
+  const approvedQuery = `SELECT
        p.serviceNumber, p.Surname, p.OtherName, p.Rank,
        p.payrollclass, p.classes, p.ship, p.command,
        p.formNumber, p.FormYear, p.Status,
@@ -88,12 +87,67 @@ async function getFoApprovedForms(command) {
            ON ef.service_no = p.serviceNumber
           AND ef.command    = p.command
      WHERE p.command = ?
-       AND p.Status  = 'CPO'
+       AND p.Status IN ('CPO', 'FO_APPROVED')
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
-     ORDER BY p.ship ASC, p.Surname ASC, p.OtherName ASC`,
-    [command],
-  );
-  return rows;
+     ORDER BY p.ship ASC, p.Surname ASC, p.OtherName ASC
+     LIMIT ? OFFSET ?`;
+
+  const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM ef_personalinfos p
+      WHERE p.command = ?
+       AND p.Status IN ('CPO', 'FO_APPROVED')
+       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes');
+    `;
+
+  const [[rows], [countResults]] = await Promise.all([
+    pool.query(approvedQuery, [command, limit, offset]),
+    pool.query(countQuery, [ship]),
+  ]);
+  return { forms: rows, total: countResults[0].total };
+}
+
+// ─────────────────────────────────────────────────────────────
+// LIST — CPO_CONFIRMED forms scoped to a command
+// ─────────────────────────────────────────────────────────────
+
+async function getCPOConfirmedForms(command, svc, limit, offset) {
+  pool.useDatabase(DB());
+  const confirmedQuery = `SELECT
+       p.serviceNumber, p.Surname, p.OtherName, p.Rank,
+       p.payrollclass, p.classes, p.ship, p.command,
+       p.formNumber, p.FormYear, p.Status,
+       p.div_off_name, p.div_off_rank, p.div_off_svcno, p.div_off_date,
+       p.fo_name,     p.fo_rank,     p.fo_svcno,     p.fo_date,
+       p.cdr_date,
+       ef.id          AS form_id,
+       ef.status      AS form_status,
+       ef.submitted_at,
+       ef.updated_at  AS last_updated
+     FROM ef_personalinfos p
+     JOIN ef_emolument_forms ef
+           ON ef.service_no = p.serviceNumber
+          AND ef.command    = p.command
+     WHERE p.command = ?
+       AND p.Status IN ('Verified', 'CPO_CONFIRMED')
+       AND p.emolumentform = 'Yes'
+       AND p.cdr_svcno = ?
+     ORDER BY p.ship ASC, p.Surname ASC, p.OtherName ASC
+     LIMIT ? OFFSET ?`;
+
+  const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM ef_personalinfos p
+      WHERE p.command = ?
+       AND p.Status IN ('Verified', 'CPO_CONFIRMED')
+       AND p.emolumentform = 'Yes'
+       AND p.cdr_svcno = ?;
+    `;
+  const [[rows], [countResults]] = await Promise.all([
+    pool.query(confirmedQuery, [command, svc, limit, offset]),
+    pool.query(countQuery, [ship]),
+  ]);
+  return { forms: rows, total: countResults[0].total };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -423,8 +477,30 @@ async function insertAuditLog({
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+// STATUS STATS
+// ─────────────────────────────────────────────────────────────
+
+async function getStatusStats(command, svc) {
+  pool.useDatabase(DB());
+
+  const [stats] = await pool.query(
+    `SELECT
+        COUNT(CASE WHEN status IN ('CPO', 'FO_APPROVED') THEN 1 END) AS pending,
+        COUNT(CASE WHEN command = ? THEN 1 END) AS total,
+        COUNT(CASE WHEN status IN ('CPO_APPROVED', 'Verified') AND cdr_svcno = ? THEN 1 END) AS confirmed,
+        COUNT(CASE WHEN status = 'REJECTED' AND cdr_svcno = ? THEN 1 END) AS rejected
+      FROM ef_personalinfos
+      WHERE command = ? 
+   `,
+    [command, svc, svc, command],
+  );
+  return stats[0];
+}
+
 module.exports = {
   getFoApprovedForms,
+  getCPOConfirmedForms,
   getFormDetail,
   getNok,
   getSpouse,
@@ -436,4 +512,5 @@ module.exports = {
   rejectForm,
   insertFormApproval,
   insertAuditLog,
+  getStatusStats,
 };

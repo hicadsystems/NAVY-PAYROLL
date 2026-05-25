@@ -11,15 +11,8 @@
         DO-Reviewed Forms
       </h3>
       <div class="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="foBulkSelectAll"
-          onchange="foToggleAll(this)"
-          class="accent-navy w-4 h-4"
-        />
-        <label for="foBulkSelectAll" class="text-xs font-bold text-navy/60"
-          >Select All</label
-        >
+        <input type="checkbox" id="foBulkSelectAll" onchange="foToggleAll(this)" class="accent-navy w-4 h-4" />
+        <label for="foBulkSelectAll" class="text-xs font-bold text-navy/60">Select All</label>
       </div>
     </div>
     <div id="foBulkList">
@@ -29,24 +22,16 @@
     </div>
   </div>
 
-  <button
-    onclick="executeFoBulk()"
-    class="w-full py-3 bg-green-600 text-white font-bold text-sm rounded-xl hover:bg-green-700 transition-colors cursor-pointer border-none"
-  >
+  <button onclick="executeFoBulk()"
+    class="w-full py-3 bg-green-600 text-white font-bold text-sm rounded-xl hover:bg-green-700 transition-colors cursor-pointer border-none">
     <i class="fas fa-check-double mr-2"></i>Approve Selected
   </button>
-  <div
-    id="foBulkMsg"
-    class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"
-  ></div>
+  <div id="foBulkMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
 </div>
 
 <script>
   let foBulkForms = [];
 
-  const FO_PAGE_SIZE = 12;
-  const token = localStorage.getItem("token");
-  const ship = sessionStorage.getItem("active_ship");
 
   /* ── paginator HTML — uses total_pages from BE response ── */
   function paginatorHTML(current, total, key) {
@@ -54,29 +39,33 @@
     const pages = Array.from({ length: total }, (_, i) => i + 1);
     return `<div class="flex items-center justify-center gap-1 mt-5 flex-wrap">
     ${pages
-      .map(
-        (p) => `
+        .map(
+          (p) => `
       <button data-paginator="${key}" data-page="${p}"
         class="w-8 h-8 rounded-lg text-xs font-bold border-none cursor-pointer transition-colors
                ${p === current ? "bg-navy text-white" : "bg-white/60 text-navy hover:bg-amber-50 border border-amber-100"}">
         ${p}
       </button>`,
-      )
-      .join("")}
+        )
+        .join("")}
   </div>`;
   }
 
   (function loadFoBulkList(page) {
+    const FO_PAGE_SIZE = 12;
+
+    const token = localStorage.getItem("token");
+    const ship = sessionStorage.getItem("active_ship");
     page = page || 1;
     foPendingCurrentPage = page;
     const el = document.getElementById("foBulkList");
     fetch(
       "/fo/ship/" +
-        encodeURIComponent(ship) +
-        "/personnel?page=" +
-        page +
-        "&limit=" +
-        FO_PAGE_SIZE,
+      encodeURIComponent(ship) +
+      "/personnel?page=" +
+      page +
+      "&limit=" +
+      FO_PAGE_SIZE,
       { headers: { Authorization: "Bearer " + token } },
     )
       .then((r) => (r.ok ? r.json() : { forms: [], total: 0 }))
@@ -91,8 +80,8 @@
         }
         el.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
          ${rows
-           .map(
-             (r, i) => `
+            .map(
+              (r, i) => `
         <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 flex items-center gap-4">
           <input type="checkbox" class="fo-bulk-chk accent-navy w-4 h-4 flex-shrink-0" data-idx="${i}" checked />
           <div class="flex-1 min-w-0">
@@ -101,8 +90,8 @@
           </div>
           <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-500 flex-shrink-0">DO Reviewed</span>
         </div>`,
-           )
-           .join("")} </div>
+            )
+            .join("")} </div>
 
              ${paginatorHTML(page, Math.ceil(total / FO_PAGE_SIZE), "foPending")}`;
 
@@ -124,6 +113,9 @@
   }
 
   function executeFoBulk() {
+
+    const token = localStorage.getItem("token");
+    const ship = sessionStorage.getItem("active_ship");
     const selected = [...document.querySelectorAll(".fo-bulk-chk:checked")]
       .map((c) => foBulkForms[+c.dataset.idx]?.form_id)
       .filter(Boolean);

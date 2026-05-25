@@ -3,23 +3,17 @@
  *
  * All SQL for EMOL_ADMIN functions.
  *
- * Admin capabilities (from old SPs):
- *   Role management    → assign/revoke DO, FO, CPO, EMOL_ADMIN roles
- *   Personnel mgmt     → search, update contact details, commission upload
- *   Bulk ship approve  → UpdateShipPersonnelByAdmin (bypass DO entirely)
- *   Form reject        → RejectForm (any stage, any ship)
- *   Exit personnel     → RemoveExitPersonnel
- *   Payroll sync       → UpdatePayrollEF (sync confirmed → HICADDATA)
- *   New personnel      → UploadUploadPerson equivalent
- *   Service number     → CommisionedPersonnelUpload equivalent
- *
- * TRANSACTION SAFETY:
- *   bulkApproveShip and adminRejectForm each write to two tables.
- *   Both are wrapped in explicit transactions.
- *   bulkApproveShip also uses FOR UPDATE on the pre-fetch to prevent
- *   a concurrent admin session from approving the same ship simultaneously.
- *   Audit log inserts after bulk operations use a single multi-row INSERT
- *   instead of N individual inserts.
+ * New additions vs original:
+ *   getAllMenus               → ef_menus joined with ef_menugroups
+ *   getMenuIdsByRole          → ef_rolemenus WHERE role code = ?
+ *   setMenusForRole           → full-replace in ef_rolemenus for a role
+ *   getControlRowById         → single ef_control row (for extendCycle)
+ *   extendCycle               → UPDATE ef_control enddate + status = Reopen
+ *   getFormYearsForPersonnel  → distinct form_year values from ef_emolument_forms
+ *   getCurrentFormForPersonnel → latest ef_emolument_forms row for current year
+ *   getFormByServiceNoAndYear → single ef_emolument_forms row by svcno + year
+ *   getFormApprovals          → ef_form_approvals for a form_id
+ *   getConfirmedForSync       → accepts single class OR array of classes
  */
 
 "use strict";
@@ -98,7 +92,6 @@ async function getRoleById(roleId) {
 
 async function assignRole(userId, role, scopeType, scopeValue, assignedBy) {
   pool.useDatabase(DB());
-  // Upsert — if same user+role+scope_value exists but was revoked, reactivate it
   const [result] = await pool.query(
     `INSERT INTO ef_user_roles
        (user_id, role, scope_type, scope_value, is_active, assigned_by, assigned_at)
@@ -128,13 +121,84 @@ async function revokeRole(roleId, revokedBy) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// ROLE MENUS — ef_menus + ef_menugroups + ef_rolemenus
+//
+// ef_rolemenus.RoleId holds the numeric Id of a row whose
+// Code in ef_menus encodes the emol role string.
+// We map DO/FO/CPO/EMOL_ADMIN ↔ ef_menus.Code for lookups.
+// ─────────────────────────────────────────────────────────────
+
+async function getAllMenus() {
+  pool.useDatabase(DB());
+  const [rows] = await pool.query(
+    `SELECT m.Id, m.Name, m.Code, m.Description, m.IsActive,
+            m.MenuGroupId,
+            mg.Name AS groupName
+     FROM ef_menus m
+     LEFT JOIN ef_menugroups mg ON mg.Id = m.MenuGroupId
+     WHERE m.IsActive = 1
+     ORDER BY mg.Id ASC, m.Id ASC`,
+  );
+  return rows;
+}
+
+// Returns array of MenuId values currently assigned to a role
+async function getMenuIdsByRole(role) {
+  pool.useDatabase(DB());
+  // ef_rolemenus.RoleId stores the Id of the ef_menus row whose Code = role
+  const [rows] = await pool.query(
+    `SELECT rm.MenuId
+     FROM ef_rolemenus rm
+     INNER JOIN ef_menus m ON m.Id = rm.RoleId
+     WHERE m.Code = ? AND rm.IsActive = 1`,
+    [role],
+  );
+  return rows.map((r) => r.MenuId);
+}
+
+// Full replace: deactivate all current assignments for this role, insert new set.
+async function setMenusForRole(role, menuIds) {
+  pool.useDatabase(DB());
+
+  // Find the ef_menus row that represents this role
+  const [roleMenuRows] = await pool.query(
+    `SELECT Id FROM ef_menus WHERE Code = ? LIMIT 1`,
+    [role],
+  );
+
+  if (!roleMenuRows.length) {
+    // Role has no menu-definition row yet — nothing to set
+    return;
+  }
+
+  const roleMenuId = roleMenuRows[0].Id;
+  const now = new Date();
+
+  // Deactivate all existing assignments for this role
+  await pool.query(
+    `UPDATE ef_rolemenus SET IsActive = 0, UpdatedOn = ? WHERE RoleId = ?`,
+    [now, roleMenuId],
+  );
+
+  if (!menuIds.length) return;
+
+  // Insert new assignments (upsert — reactivate if row already exists)
+  const values = menuIds.map((mid) => [mid, roleMenuId, 1, now, now]);
+  await pool.query(
+    `INSERT INTO ef_rolemenus (MenuId, RoleId, IsActive, CreatedOn, UpdatedOn)
+     VALUES ?
+     ON DUPLICATE KEY UPDATE IsActive = 1, UpdatedOn = VALUES(UpdatedOn)`,
+    [values],
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
 // PERSONNEL SEARCH + UPDATE
 // ─────────────────────────────────────────────────────────────
 
 async function searchPersonnel(filters = {}, limit = 50, offset = 0) {
   pool.useDatabase(DB());
 
-  // Hard cap — never let a missing limit parameter return unbounded rows
   const safeLimit = Math.min(Number(limit) || 50, 200);
   const safeOffset = Math.max(Number(offset) || 0, 0);
 
@@ -143,11 +207,9 @@ async function searchPersonnel(filters = {}, limit = 50, offset = 0) {
 
   if (filters.serviceNumber) {
     conditions.push("p.serviceNumber LIKE ?");
-    params.push(`${filters.serviceNumber}%`); // prefix-only — index-safe
+    params.push(`${filters.serviceNumber}%`);
   }
   if (filters.surname) {
-    // Use FULLTEXT if the ft_pi_name index exists (added in index migration).
-    // Fall back to prefix LIKE — never leading-wildcard LIKE.
     conditions.push(
       "MATCH(p.Surname, p.OtherName) AGAINST (? IN BOOLEAN MODE)",
     );
@@ -228,13 +290,7 @@ async function updatePersonnelContact(serviceNo, email, phoneNumber) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// BULK SHIP APPROVE — UpdateShipPersonnelByAdmin equivalent
-//
-// TRANSACTION: pre-fetch + two UPDATE statements are in one transaction.
-// FOR UPDATE on the pre-fetch prevents a concurrent admin session from
-// approving the same ship in parallel.
-//
-// Returns affected service numbers for approval trail.
+// BULK SHIP APPROVE
 // ─────────────────────────────────────────────────────────────
 
 async function bulkApproveShip(
@@ -246,36 +302,33 @@ async function bulkApproveShip(
   legacyStatus,
 ) {
   return withTransaction(async (conn) => {
-    // 1. Pre-fetch inside transaction + lock rows
     const [affected] = await conn.query(
-    `SELECT serviceNumber FROM ef_personalinfos
-     WHERE ship   = ?
-       AND Status = 'Filled'
+      `SELECT serviceNumber FROM ef_personalinfos
+       WHERE ship   = ?
+         AND Status = 'Filled'
          AND (emolumentform IS NULL OR emolumentform != 'Yes')
        FOR UPDATE`,
-    [ship],
-  );
+      [ship],
+    );
 
-  if (affected.length === 0) return { count: 0, serviceNumbers: [] };
+    if (affected.length === 0) return { count: 0, serviceNumbers: [] };
 
-    // 2. Bulk update ef_personalinfos
     const [result] = await conn.query(
-    `UPDATE ef_personalinfos
-     SET fo_name    = ?,
-         fo_svcno   = ?,
-         fo_rank    = ?,
-         fo_date    = ?,
-         Status     = ?,
-         dateModify = NOW()
-     WHERE ship   = ?
-       AND Status = 'Filled'
-       AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
-    [foName, foSvcNo, foRank, foDate, legacyStatus, ship],
-  );
+      `UPDATE ef_personalinfos
+       SET fo_name    = ?,
+           fo_svcno   = ?,
+           fo_rank    = ?,
+           fo_date    = ?,
+           Status     = ?,
+           dateModify = NOW()
+       WHERE ship   = ?
+         AND Status = 'Filled'
+         AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
+      [foName, foSvcNo, foRank, foDate, legacyStatus, ship],
+    );
 
-  const serviceNumbers = affected.map((r) => r.serviceNumber);
+    const serviceNumbers = affected.map((r) => r.serviceNumber);
 
-    // 3. Bulk update ef_emolument_forms
     const placeholders = serviceNumbers.map(() => "?").join(",");
     await conn.query(
       `UPDATE ef_emolument_forms
@@ -287,7 +340,7 @@ async function bulkApproveShip(
       [...serviceNumbers, ship],
     );
 
-  return { count: result.affectedRows, serviceNumbers };
+    return { count: result.affectedRows, serviceNumbers };
   });
 }
 
@@ -304,26 +357,20 @@ async function getFormIdsByServiceNos(serviceNumbers, ship) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// FORM REJECT — RejectForm equivalent (admin can reject any stage)
-//
-// TRANSACTION: two-table write.
-// Admin reject has no Status gate on ef_personalinfos (intentional —
-// admin can reject at any stage). The only guard is emolumentform != 'Yes'
-// which prevents rejecting an already-confirmed form.
+// FORM REJECT
 // ─────────────────────────────────────────────────────────────
 
 async function adminRejectForm(serviceNo, formId, ship) {
   return withTransaction(async (conn) => {
-    // 1. Reset ef_personalinfos — no status gate, admin can reject any stage
     const [r1] = await conn.query(
-    `UPDATE ef_personalinfos
-     SET Status     = NULL,
-         dateModify = NOW()
-     WHERE serviceNumber = ?
-       AND ship          = ?
-       AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
-    [serviceNo, ship],
-  );
+      `UPDATE ef_personalinfos
+       SET Status     = NULL,
+           dateModify = NOW()
+       WHERE serviceNumber = ?
+         AND ship          = ?
+         AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
+      [serviceNo, ship],
+    );
 
     if (r1.affectedRows === 0) {
       throw Object.assign(
@@ -334,23 +381,21 @@ async function adminRejectForm(serviceNo, formId, ship) {
       );
     }
 
-    // 2. Reset ef_emolument_forms — any non-final status
     await conn.query(
-    `UPDATE ef_emolument_forms
-     SET status     = 'REJECTED',
-         updated_at = NOW()
-     WHERE id     = ?
-       AND status NOT IN ('CPO_CONFIRMED', 'REJECTED')`,
-    [formId],
-  );
+      `UPDATE ef_emolument_forms
+       SET status     = 'REJECTED',
+           updated_at = NOW()
+       WHERE id     = ?
+         AND status NOT IN ('CPO_CONFIRMED', 'REJECTED')`,
+      [formId],
+    );
 
-  return true;
+    return true;
   });
 }
 
 // ─────────────────────────────────────────────────────────────
-// EXIT PERSONNEL — RemoveExitPersonnel equivalent
-// Single-table delete — no transaction needed.
+// EXIT PERSONNEL
 // ─────────────────────────────────────────────────────────────
 
 async function removeExitPersonnel(payrollclass) {
@@ -366,8 +411,7 @@ async function removeExitPersonnel(payrollclass) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// NEW PERSONNEL UPLOAD — UploadUploadPerson equivalent
-// Single-table upsert — no transaction needed.
+// PERSONNEL UPSERT
 // ─────────────────────────────────────────────────────────────
 
 async function upsertPersonnel(data) {
@@ -461,8 +505,7 @@ async function upsertPersonnel(data) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// COMMISSION — CommisionedPersonnelUpload equivalent
-// Single-table update — no transaction needed.
+// COMMISSION
 // ─────────────────────────────────────────────────────────────
 
 async function updateServiceNumber(oldSvcNo, newSvcNo) {
@@ -491,7 +534,9 @@ async function updateServiceNumber(oldSvcNo, newSvcNo) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// PAYROLL SYNC — UpdatePayrollEF equivalent
+// PAYROLL SYNC
+// getConfirmedForSync now accepts a single class string.
+// The multi-class iteration is handled in admin.service.js.
 // ─────────────────────────────────────────────────────────────
 
 async function getConfirmedForSync(payrollclass) {
@@ -500,10 +545,29 @@ async function getConfirmedForSync(payrollclass) {
     `SELECT serviceNumber FROM ef_personalinfos
      WHERE emolumentform = 'Yes'
        AND payrollclass  = ?
-       AND Status IN ('Verified', 'Updated')`, // IN() instead of OR — index-friendly
+       AND Status IN ('Verified', 'Updated')`,
     [payrollclass],
   );
   return rows.map((r) => r.serviceNumber);
+}
+
+// Returns { serviceNumber → formId } map for CPO_CONFIRMED forms
+// in a given payrollclass — used by syncPayroll to write SYNCED
+// approval rows without a separate per-record query.
+async function getFormIdMapForSync(payrollclass) {
+  pool.useDatabase(DB());
+  const [rows] = await pool.query(
+    `SELECT f.id AS formId, f.service_no AS serviceNo
+     FROM ef_emolument_forms f
+     INNER JOIN ef_personalinfos p ON p.serviceNumber = f.service_no
+     WHERE p.emolumentform = 'Yes'
+       AND p.payrollclass  = ?
+       AND p.Status       IN ('Verified', 'Updated')
+       AND f.status        = 'CPO_CONFIRMED'`,
+    [payrollclass],
+  );
+  // Build a plain object map: serviceNo → formId
+  return Object.fromEntries(rows.map((r) => [r.serviceNo, r.formId]));
 }
 
 async function markSyncedInPersonnel(serviceNo, payrollclass) {
@@ -517,10 +581,6 @@ async function markSyncedInPersonnel(serviceNo, payrollclass) {
   );
 }
 
-// Sync confirmed emolument status back to hr_employees.
-// This is the cross-table write that UpdatePayrollEF SP did to
-// HICADDATA..hr_employees. In the new system hr_employees is in
-// the same officers DB — no cross-DB call needed.
 async function syncToHrEmployees(serviceNo) {
   pool.useDatabase(DB());
   await pool.query(
@@ -532,9 +592,119 @@ async function syncToHrEmployees(serviceNo) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// AUDIT + APPROVAL TRAIL
-// bulkInsertFormApprovals — single multi-row INSERT for bulk operations.
-// Use this after bulkApproveShip instead of looping insertFormApproval.
+// CYCLE CONTROL
+// ─────────────────────────────────────────────────────────────
+
+async function getControlRowById(id) {
+  pool.useDatabase(DB());
+  const [rows] = await pool.query(
+    `SELECT Id, processingyear, ship, formtype,
+            startdate, enddate, status, notes,
+            createdby, datecreated, updatedby, updatedat
+     FROM ef_control
+     WHERE Id = ? LIMIT 1`,
+    [id],
+  );
+  return rows[0] || null;
+}
+
+async function extendCycle(id, newEnddate, notes, performedBy) {
+  pool.useDatabase(DB());
+  await pool.query(
+    `UPDATE ef_control
+     SET enddate   = ?,
+         status    = 'Reopen',
+         notes     = COALESCE(?, notes),
+         updatedby = ?,
+         updatedat = NOW()
+     WHERE Id = ?`,
+    [newEnddate, notes ?? null, performedBy, id],
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// FORM HISTORY — admin view
+// ─────────────────────────────────────────────────────────────
+
+// Distinct years for which this personnel has a form record
+async function getFormYearsForPersonnel(serviceNo) {
+  pool.useDatabase(DB());
+  const [rows] = await pool.query(
+    `SELECT DISTINCT form_year
+     FROM ef_emolument_forms
+     WHERE service_no = ?
+     ORDER BY form_year DESC`,
+    [serviceNo],
+  );
+  return rows.map((r) => r.form_year);
+}
+
+// Current period: use the active processingyear from ef_control
+async function getCurrentFormForPersonnel(serviceNo) {
+  pool.useDatabase(DB());
+  // Resolve current year from ef_control (most recent open or latest row)
+  const [ctrlRows] = await pool.query(
+    `SELECT processingyear FROM ef_control
+     WHERE status IN ('Open','Reopen')
+     ORDER BY processingyear DESC
+     LIMIT 1`,
+  );
+  const currentYear =
+    ctrlRows[0]?.processingyear ?? String(new Date().getFullYear());
+
+  const [rows] = await pool.query(
+    `SELECT id, service_no, form_year, form_number, payroll_class,
+            ship, command, status, snapshot, submitted_at, updated_at
+     FROM ef_emolument_forms
+     WHERE service_no = ? AND form_year = ?
+     LIMIT 1`,
+    [serviceNo, currentYear],
+  );
+
+  if (!rows.length) return null;
+
+  const row = rows[0];
+  // Parse snapshot
+  if (row.snapshot && typeof row.snapshot === "string") {
+    try {
+      row.snapshot = JSON.parse(row.snapshot);
+    } catch {
+      row.snapshot = null;
+    }
+  }
+
+  return row;
+}
+
+async function getFormByServiceNoAndYear(serviceNo, year) {
+  pool.useDatabase(DB());
+  const [rows] = await pool.query(
+    `SELECT id, service_no, form_year, form_number, payroll_class,
+            ship, command, status, snapshot, submitted_at, updated_at
+     FROM ef_emolument_forms
+     WHERE service_no = ? AND form_year = ?
+     LIMIT 1`,
+    [serviceNo, String(year)],
+  );
+  return rows[0] || null;
+}
+
+// Full approval trail for a specific form_id, ordered chronologically
+async function getFormApprovals(formId) {
+  pool.useDatabase(DB());
+  const [rows] = await pool.query(
+    `SELECT id, form_id, action, from_status, to_status,
+            performed_by, performer_role, remarks, performed_at
+     FROM ef_form_approvals
+     WHERE form_id = ?
+     ORDER BY performed_at ASC`,
+    [formId],
+  );
+  return rows;
+}
+
+// ─────────────────────────────────────────────────────────────
+// APPROVAL TRAIL + AUDIT
 // ─────────────────────────────────────────────────────────────
 
 async function insertFormApproval({
@@ -620,22 +790,42 @@ async function insertAuditLog({
 }
 
 module.exports = {
+  // roles
   getAllRoles,
   getRoleById,
   assignRole,
   revokeRole,
+  // menus
+  getAllMenus,
+  getMenuIdsByRole,
+  setMenusForRole,
+  // personnel
   searchPersonnel,
   getPersonnelByServiceNo,
   updatePersonnelContact,
-  bulkApproveShip,
-  getFormIdsByServiceNos,
-  adminRejectForm,
-  removeExitPersonnel,
   upsertPersonnel,
   updateServiceNumber,
+  // bulk approve
+  bulkApproveShip,
+  getFormIdsByServiceNos,
+  // form reject
+  adminRejectForm,
+  // exits
+  removeExitPersonnel,
+  // payroll sync
   getConfirmedForSync,
+  getFormIdMapForSync,
   markSyncedInPersonnel,
   syncToHrEmployees,
+  // cycle
+  getControlRowById,
+  extendCycle,
+  // form history (admin)
+  getFormYearsForPersonnel,
+  getCurrentFormForPersonnel,
+  getFormByServiceNoAndYear,
+  getFormApprovals,
+  // approval trail + audit
   insertFormApproval,
   bulkInsertFormApprovals,
   insertAuditLog,

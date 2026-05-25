@@ -374,12 +374,12 @@
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">From Svc. No.</label>
-          <input type="text" id="printRangeFrom" placeholder="e.g. NN/001"
+          <input type="text" id="printRangeFrom" placeholder="e.g. NN001"
             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">To Svc. No.</label>
-          <input type="text" id="printRangeTo" placeholder="e.g. NN/050"
+          <input type="text" id="printRangeTo" placeholder="e.g. NN050"
             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400" />
         </div>
       </div>
@@ -399,13 +399,22 @@
 
     <!-- Period Panel -->
     <div id="panelPeriod" class="print-panel hidden space-y-3">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Period <span
-            class="text-gray-400">(YYYYMM)</span></label>
-        <input type="text" id="printPeriodInput" placeholder="e.g. 202501" maxlength="6"
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400" />
-        <p class="text-xs text-gray-400 mt-1">Enter 6-digit period — year then month (e.g. 202501 = January 2025).</p>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">From Period <span
+              class="text-gray-400">(YYYYMM)</span></label>
+          <input type="text" id="printPeriodFrom" placeholder="e.g. 202501" maxlength="6"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">To Period <span
+              class="text-gray-400">(YYYYMM)</span></label>
+          <input type="text" id="printPeriodTo" placeholder="e.g. 202512" maxlength="6"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400" />
+        </div>
       </div>
+      <p class="text-xs text-gray-400">6-digit format — YYYYMM (e.g. 202501 = January 2025). Leave "To" blank to match
+        from period onwards.</p>
     </div>
 
     <!-- Modal Action Buttons -->
@@ -663,7 +672,7 @@
     function fillForm(record) {
       currentRecordId = record.id;
       docYear.value = record.doc_year || '';
-      docMonth.value = record.doc_month || '';
+      docMonth.value = String(parseInt(record.doc_month || '0', 10)) || '';
       docRef.value = record.doc_ref || '';
       docComments.value = record.doc_remark || '';
 
@@ -711,7 +720,7 @@
               <div class="text-sm">
                 <span class="font-semibold text-gray-800">${rec.doc_ref || '—'}</span>
                 <span class="text-gray-500 ml-3">
-                  ${monthMap[rec.doc_month] || rec.doc_month || '—'} ${rec.doc_year || ''}
+                  ${monthMap[String(parseInt(rec.doc_month || '0', 10))] || rec.doc_month || '—'} ${rec.doc_year || ''}
                 </span>
               </div>
               <div class="text-xs text-gray-400 truncate max-w-xs">${rec.doc_remark || ''}</div>
@@ -993,7 +1002,7 @@
       const tableRows = records.map(rec => `
         <tr>
           <td>${rec.doc_year || ''}</td>
-          <td>${monthMap[rec.doc_month] || rec.doc_month || ''}</td>
+          <td>${monthMap[String(parseInt(rec.doc_month || '0', 10))] || rec.doc_month || ''}</td>
           <td>${rec.doc_ref || ''}</td>
           <td>${rec.doc_remark || ''}</td>
         </tr>
@@ -1070,7 +1079,7 @@
       const tableRows = allDocumentation.map(doc => {
         const employee = allEmployees.find(e => e.Empl_ID === doc.doc_numb);
         const empName = employee ? `${employee.Surname} ${employee.OtherName}` : 'N/A';
-        const monthValue = monthMap[doc.doc_month] || doc.doc_month || '';
+        const monthValue = monthMap[String(parseInt(doc.doc_month || '0', 10))] || doc.doc_month || '';
 
         return `
           <tr>
@@ -1115,7 +1124,8 @@
       showPrintPanel('range');
       document.getElementById('printRangeFrom').value = '';
       document.getElementById('printRangeTo').value = '';
-      document.getElementById('printPeriodInput').value = '';
+      document.getElementById('printPeriodFrom').value = '';
+      document.getElementById('printPeriodTo').value = '';
       document.getElementById('printSignalSelect').value = '';
     }
 
@@ -1158,19 +1168,35 @@
         }
 
       } else if (filterType === 'period') {
-        const period = document.getElementById('printPeriodInput').value.trim();
-        if (!period || period.length !== 6) {
-          showError('Please enter a valid 6-digit period (e.g. 202501).');
+        const periodFrom = document.getElementById('printPeriodFrom').value.trim();
+        const periodTo = document.getElementById('printPeriodTo').value.trim();
+
+        if (!periodFrom || periodFrom.length !== 6) {
+          showError('Please enter a valid From Period (e.g. 202501).');
           return;
         }
-        const year = period.substring(0, 4);
-        const month = String(parseInt(period.substring(4, 6)));
+        if (periodTo && periodTo.length !== 6) {
+          showError('Please enter a valid To Period (e.g. 202512), or leave it blank.');
+          return;
+        }
 
-        filtered = allDocumentation.filter(doc =>
-          String(doc.doc_year) === year && String(doc.doc_month) === month
-        );
+        const fromNum = parseInt(periodFrom, 10);
+        const toNum = periodTo ? parseInt(periodTo, 10) : Infinity;
+
+        if (periodTo && toNum < fromNum) {
+          showError('"To Period" must be equal to or after "From Period".');
+          return;
+        }
+
+        filtered = allDocumentation.filter(doc => {
+          const docYear = String(doc.doc_year || '').padStart(4, '0');
+          const docMonth = String(parseInt(doc.doc_month || '0', 10)).padStart(2, '0');
+          const docPeriodNum = parseInt(docYear + docMonth, 10);
+          return docPeriodNum >= fromNum && docPeriodNum <= toNum;
+        });
+
         if (filtered.length === 0) {
-          showError('No records found for the specified period.');
+          showError('No records found for the specified period range.');
           return;
         }
       }
@@ -1185,7 +1211,7 @@
       const tableRows = filtered.map(doc => {
         const employee = allEmployees.find(e => e.Empl_ID === doc.doc_numb);
         const empName = employee ? `${employee.Surname} ${employee.OtherName}` : 'N/A';
-        const monthValue = monthMap[String(doc.doc_month)] || doc.doc_month || '';
+        const monthValue = monthMap[String(parseInt(doc.doc_month || '0', 10))] || doc.doc_month || '';
         return `
           <tr>
             <td><strong>${doc.doc_numb}</strong></td>
@@ -1500,7 +1526,6 @@
     fetchDocumentation();
     fetchEmployees();
 
-    // Hide quick nav buttons user has no access to
     document.querySelectorAll('[id^="quickNav-"]').forEach(btn => {
       const menuKey = btn.id.replace('quickNav-', '');
       window.checkMenuAccess(menuKey, btn);

@@ -12,28 +12,7 @@
 </div>
 <script>
   (function () {
-    const FO_APPROVED_PAGE_SIZE = 12;
-    const token = localStorage.getItem("token");
-    const ship = sessionStorage.getItem("active_ship");
     const el = document.getElementById("fo-approved-list");
-
-    /* ── paginator HTML — uses total_pages from BE response ── */
-    function paginatorHTML(current, total, key) {
-      if (total <= 1) return "";
-      const pages = Array.from({ length: total }, (_, i) => i + 1);
-      return `<div class="flex items-center justify-center gap-1 mt-5 flex-wrap">
-      ${pages
-        .map(
-          (p) => `
-        <button data-paginator="${key}" data-page="${p}"
-          class="w-8 h-8 rounded-lg text-xs font-bold border-none cursor-pointer transition-colors
-                 ${p === current ? "bg-navy text-white" : "bg-white/60 text-navy hover:bg-amber-50 border border-amber-100"}">
-          ${p}
-        </button>`,
-        )
-        .join("")}
-    </div>`;
-    }
 
     function loadPage(page) {
       el.innerHTML =

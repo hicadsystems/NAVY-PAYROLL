@@ -83,7 +83,7 @@ async function getFoApprovedForms(command, limit, offset) {
        ef.submitted_at,
        ef.updated_at  AS last_updated
      FROM ef_personalinfos p
-     JOIN ef_emolument_forms ef
+     LEFT JOIN ef_emolument_forms ef
            ON ef.service_no = p.serviceNumber
           AND ef.command    = p.command
      WHERE p.command = ?
@@ -102,7 +102,7 @@ async function getFoApprovedForms(command, limit, offset) {
 
   const [[rows], [countResults]] = await Promise.all([
     pool.query(approvedQuery, [command, limit, offset]),
-    pool.query(countQuery, [ship]),
+    pool.query(countQuery, [command]),
   ]);
   return { forms: rows, total: countResults[0].total };
 }
@@ -145,7 +145,7 @@ async function getCPOConfirmedForms(command, svc, limit, offset) {
     `;
   const [[rows], [countResults]] = await Promise.all([
     pool.query(confirmedQuery, [command, svc, limit, offset]),
-    pool.query(countQuery, [ship]),
+    pool.query(countQuery, [command, svc]),
   ]);
   return { forms: rows, total: countResults[0].total };
 }

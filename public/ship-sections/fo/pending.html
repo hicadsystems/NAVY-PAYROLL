@@ -12,32 +12,51 @@
 </div>
 
 <!-- FO Approval Modal -->
-<div id="foApproveModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+<div
+  id="foApproveModal"
+  class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+>
   <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
     <h3 class="font-black text-navy text-base mb-1 uppercase tracking-wide">
       FO Approval
     </h3>
     <p class="text-sm text-blue-900/40 mb-4" id="foModalMeta"></p>
     <div class="mb-4">
-      <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-2">Remarks (optional)</label>
-      <textarea id="foRemarks" rows="3" placeholder="Add remarks..."
-        class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none resize-none"></textarea>
+      <label
+        class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-2"
+        >Remarks (optional)</label
+      >
+      <textarea
+        id="foRemarks"
+        rows="3"
+        placeholder="Add remarks..."
+        class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none resize-none"
+      ></textarea>
     </div>
     <div class="flex gap-3">
-      <button onclick="foAction('reject')"
-        class="flex-1 py-2.5 bg-red-500 text-white font-bold text-sm rounded-lg hover:bg-red-600 transition-colors cursor-pointer border-none">
+      <button
+        onclick="foAction('reject')"
+        class="flex-1 py-2.5 bg-red-500 text-white font-bold text-sm rounded-lg hover:bg-red-600 transition-colors cursor-pointer border-none"
+      >
         <i class="fas fa-times mr-1"></i>Reject
       </button>
-      <button onclick="foAction('approve')"
-        class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none">
+      <button
+        onclick="foAction('approve')"
+        class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none"
+      >
         <i class="fas fa-check mr-1"></i>Approve
       </button>
     </div>
-    <button onclick="closeFoModal()"
-      class="mt-3 w-full text-sm text-center text-gray-400 py-1 cursor-pointer border-none bg-none">
+    <button
+      onclick="closeFoModal()"
+      class="mt-3 w-full text-sm text-center text-gray-400 py-1 cursor-pointer border-none bg-none"
+    >
       Cancel
     </button>
-    <div id="foApproveMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
+    <div
+      id="foApproveMsg"
+      class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"
+    ></div>
   </div>
 </div>
 
@@ -45,40 +64,18 @@
   let foActiveFormId = null;
   let foPendingCurrentPage = 1;
 
-
-  /* ── paginator HTML — uses total_pages from BE response ── */
-  function paginatorHTML(current, total, key) {
-    if (total <= 1) return "";
-    const pages = Array.from({ length: total }, (_, i) => i + 1);
-    return `<div class="flex items-center justify-center gap-1 mt-5 flex-wrap">
-    ${pages
-        .map(
-          (p) => `
-      <button data-paginator="${key}" data-page="${p}"
-        class="w-8 h-8 rounded-lg text-xs font-bold border-none cursor-pointer transition-colors
-               ${p === current ? "bg-navy text-white" : "bg-white/60 text-navy hover:bg-amber-50 border border-amber-100"}">
-        ${p}
-      </button>`,
-        )
-        .join("")}
-  </div>`;
-  }
-
   function loadFoPending(page) {
-    const FO_PAGE_SIZE = 12;
-    const token = localStorage.getItem("token");
-    const ship = sessionStorage.getItem("active_ship");
     page = page || 1;
     foPendingCurrentPage = page;
     const el = document.getElementById("fo-pending-content");
     el.innerHTML = `<div class="flex items-center justify-center py-12 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>`;
     fetch(
       "/fo/ship/" +
-      encodeURIComponent(ship) +
-      "/personnel?page=" +
-      page +
-      "&limit=" +
-      FO_PAGE_SIZE,
+        encodeURIComponent(ship) +
+        "/personnel?page=" +
+        page +
+        "&limit=" +
+        FO_APPROVED_PAGE_SIZE,
       { headers: { Authorization: "Bearer " + token } },
     )
       .then((r) => (r.ok ? r.json() : { forms: [], total: 0 }))
@@ -109,7 +106,7 @@
             .join("")}
           </div>
 
-           ${paginatorHTML(page, Math.ceil(total / FO_PAGE_SIZE), "foPending")}`;
+           ${paginatorHTML(page, Math.ceil(total / FO_APPROVED_PAGE_SIZE), "foPending")}`;
 
         /* paginator click handlers — each click triggers a fresh BE fetch */
         el.querySelectorAll('[data-paginator="foPending"]').forEach((btn) => {
@@ -136,8 +133,6 @@
   }
 
   function foAction(action) {
-    const token = localStorage.getItem("token");
-    const ship = sessionStorage.getItem("active_ship");
     const remarks = document.getElementById("foRemarks").value.trim();
     const msg = document.getElementById("foApproveMsg");
     fetch("/ship/fo/" + action, {
@@ -155,7 +150,7 @@
           (ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600");
         msg.textContent = ok
           ? d.message ||
-          (action === "approve" ? "Form approved." : "Form rejected.")
+            (action === "approve" ? "Form approved." : "Form rejected.")
           : d.error || "Failed";
         msg.classList.remove("hidden");
         if (ok) {

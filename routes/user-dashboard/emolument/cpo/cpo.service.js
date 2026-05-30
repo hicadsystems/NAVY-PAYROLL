@@ -149,7 +149,7 @@ async function confirmForm(formId, cpoCommand, performedBy, ip) {
     performedBy,
     legacyStatus,
     snapshot,
-    form.FormYear,       // ← new param — was passed to insertHistoryRecord before
+    form.FormYear, // ← new param — was passed to insertHistoryRecord before
   );
 
   if (!confirmed) {
@@ -309,7 +309,7 @@ async function getStatusStats(command, svc) {
 // ─────────────────────────────────────────────────────────────
 
 async function listConfirmedForms(command, svc, limit, offset) {
- if (!command)
+  if (!command)
     return { success: false, code: 400, message: "Command is required." };
   if (!svc)
     return {
@@ -335,5 +335,5 @@ module.exports = {
   getForm,
   confirmForm,
   rejectForm,
-  getStatusStats
+  getStatusStats,
 };

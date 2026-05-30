@@ -102,6 +102,9 @@ router.get("/pending/:command", requireEmolRole("CPO"), async (req, res) => {
   const { command } = req.params;
   const cpoCommands = resolveCpoCommands(req);
 
+  const { limit, page = 1 } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
+
   // Scope check — scoped CPO can only query their own commands
   if (cpoCommands !== "ALL" && !cpoCommands.includes(command)) {
     return res.status(403).json({
@@ -110,7 +113,11 @@ router.get("/pending/:command", requireEmolRole("CPO"), async (req, res) => {
   }
 
   try {
-    const result = await cpoService.listFoApprovedForms(command);
+    const result = await cpoService.listFoApprovedForms(
+      command,
+      Number(limit),
+      offset,
+    );
     if (!result.success)
       return res.status(result.code).json({ error: result.message });
     return res.json(result.data);
@@ -264,7 +271,9 @@ router.get("/confirmed", requireEmolRole("CPO"), async (req, res) => {
 
     // Fetch for all assigned commands in parallel
     const results = await Promise.all(
-      commands.map((cmd) => cpoService.listFoApprovedForms(cmd, limit, offset)),
+      commands.map((cmd) =>
+        cpoService.listFoApprovedForms(cmd, Number(limit), offset),
+      ),
     );
 
     const merged = results.flatMap((r) => (r.success ? r.data : []));
@@ -286,6 +295,8 @@ router.get("/confirmed/:command", requireEmolRole("CPO"), async (req, res) => {
   const { command } = req.params;
   const cpoCommands = resolveCpoCommands(req);
 
+  const svc = req.user_id; // Use CPO's service number to get their specific stats if needed
+
   const { limit, page = 1 } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
 
@@ -297,7 +308,12 @@ router.get("/confirmed/:command", requireEmolRole("CPO"), async (req, res) => {
   }
 
   try {
-    const result = await cpoService.listFoApprovedForms(command, limit, offset);
+    const result = await cpoService.listConfirmedForms(
+      command,
+      svc,
+      Number(limit),
+      offset,
+    );
     if (!result.success)
       return res.status(result.code).json({ error: result.message });
     return res.json(result.data);
@@ -313,18 +329,22 @@ router.get("/confirmed/:command", requireEmolRole("CPO"), async (req, res) => {
 // requireEmolRole('CPO') with command in params.
 // ─────────────────────────────────────────────────────────────
 
-router.get("/command/:command/stats", requireEmolRole("CPO"), async (req, res) => {
-  const { command } = req.params;
-  const svc = req.user_id; // Use CPO's service number to get their specific stats if needed
-  try {
-    const result = await cpoService.getStatusStats(command, svc);
-    if (!result.success)
-      return res.status(result.code).json({ error: result.message });
-    return res.json(result.data);
-  } catch (err) {
-    console.error("❌ GET /cpo/command/:command/stats:", err);
-    return res.status(500).json({ error: "Server error" });
-  }
-});
+router.get(
+  "/command/:command/stats",
+  requireEmolRole("CPO"),
+  async (req, res) => {
+    const { command } = req.params;
+    const svc = req.user_id; // Use CPO's service number to get their specific stats if needed
+    try {
+      const result = await cpoService.getStatusStats(command, svc);
+      if (!result.success)
+        return res.status(result.code).json({ error: result.message });
+      return res.json(result.data);
+    } catch (err) {
+      console.error("❌ GET /cpo/command/:command/stats:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  },
+);
 
 module.exports = router;

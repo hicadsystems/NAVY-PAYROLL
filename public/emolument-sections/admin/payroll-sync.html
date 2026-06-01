@@ -1,82 +1,111 @@
 <div class="p-2 md:p-4 lg:p-6">
   <div class="mb-2 md:mb-4 lg:mb-6">
-    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">
-      Sync CPO-confirmed emolument data to the payroll system
+    <h3
+      class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
+    >
+      Sync Verified emolument data to the payroll system
     </h3>
   </div>
 
   <div class="flex flex-col md:flex-row gap-4">
-
     <!-- ── LEFT: Ready to Sync ── -->
-    <div class="flex-1 bg-white/60 rounded-xl border border-amber-100 shadow p-5">
-
-      <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Ready to Sync</h3>
+    <div
+      class="flex-1 bg-white/60 rounded-xl border border-amber-100 shadow p-5"
+    >
+      <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">
+        Ready to Sync
+      </h3>
 
       <!-- Pay Class selector -->
       <div class="mb-4">
         <label
-          style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);"
-          class="block mb-1">Pay Class</label>
-        <select id="payClass" onchange="onClassChange()"
-          class="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm font-semibold text-navy bg-white focus:outline-none focus:ring-2 focus:ring-amber-200 cursor-pointer">
+          class="block mb-1 text-xs font-bold text-navy/40 uppercase tracking-wide"
+          >Pay Class</label
+        >
+        <select
+          id="payClass"
+          onchange="onClassChange()"
+          class="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm font-semibold text-navy bg-white focus:outline-none focus:ring-2 focus:ring-amber-200 cursor-pointer"
+        >
           <option value="">— Select pay class —</option>
-          <option value="Officers">Officers</option>
-          <option value="Ratings">Ratings</option>
-          <option value="Civilians">Civilians</option>
+          <option value="1">Officers</option>
+          <option value="2">Warrant Officers</option>
+          <option value="3">Ratings A</option>
+          <option value="4">Ratings B</option>
+          <option value="5">Ratings C</option>
+          <option value="6">Trainees</option>
         </select>
       </div>
 
       <!-- Preview table -->
       <div id="syncPreview" class="mb-4">
-        <div class="flex items-center justify-center py-8 text-navy/30 flex-col gap-2">
+        <div
+          class="flex items-center justify-center py-8 text-navy/30 flex-col gap-2"
+        >
           <i class="fas fa-table-list fa-lg"></i>
           <span class="text-xs">Select a pay class to preview records</span>
         </div>
       </div>
 
       <!-- Warning -->
-      <div class="bg-amber-50/60 border border-amber-200 rounded-xl p-4 mb-4 text-sm text-amber-800">
+      <div
+        class="bg-amber-50/60 border border-amber-200 rounded-xl p-4 mb-4 text-sm text-amber-800"
+      >
         <i class="fas fa-exclamation-triangle mr-2"></i>
-        Syncing will push all CPO-confirmed records for the selected class to the payroll system.
-        This action cannot be undone. Ensure all records are correct before proceeding.
+        Syncing will push all emolument records for the selected class to the
+        payroll system. This action cannot be undone. Ensure all records are
+        correct before proceeding.
       </div>
 
-      <button onclick="executeSync()" id="syncBtn" disabled
-        class="w-full py-3 bg-navy text-white font-bold text-sm rounded-xl hover:bg-blue-800 transition-colors cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed">
+      <button
+        onclick="executeSync()"
+        id="syncBtn"
+        disabled
+        class="w-full py-3 bg-navy text-white font-bold text-sm rounded-xl hover:bg-blue-800 transition-colors cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed"
+      >
         <i class="fas fa-sync mr-2"></i>Execute Payroll Sync
       </button>
-      <div id="syncMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
+      <div
+        id="syncMsg"
+        class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"
+      ></div>
     </div>
 
     <!-- ── RIGHT: Sync History ── -->
-    <div class="flex-1 bg-white/60 rounded-xl border border-amber-100 shadow p-5">
-
+    <div
+      class="flex-1 bg-white/60 rounded-xl border border-amber-100 shadow p-5"
+    >
       <div class="flex items-center justify-between mb-4">
-        <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Sync History</h3>
-        <span id="histLabel"
-          style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);">
-          All Classes
-        </span>
+        <h3 class="font-bold text-navy text-sm uppercase tracking-wide">
+          Sync History
+        </h3>
+        <span
+          id="histLabel"
+          class="text-xs font-bold text-navy/40 uppercase tracking-wide"
+          >All Classes</span
+        >
       </div>
 
       <!-- Stats -->
       <div class="grid grid-cols-3 gap-3 text-center mb-5">
         <div>
-          <div
-            style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);">
-            Last Sync</div>
+          <div class="text-xs font-bold text-navy/40 uppercase tracking-wide">
+            Last Sync
+          </div>
           <div class="font-bold text-navy text-sm mt-1" id="statDate">—</div>
         </div>
         <div>
-          <div
-            style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);">
-            Records Synced</div>
-          <div class="font-bold text-green-600 text-sm mt-1" id="statCount">—</div>
+          <div class="text-xs font-bold text-navy/40 uppercase tracking-wide">
+            Records Synced
+          </div>
+          <div class="font-bold text-green-600 text-sm mt-1" id="statCount">
+            —
+          </div>
         </div>
         <div>
-          <div
-            style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(30,64,175,0.4);">
-            Status</div>
+          <div class="text-xs font-bold text-navy/40 uppercase tracking-wide">
+            Status
+          </div>
           <div class="font-bold text-sm mt-1" id="statStatus">—</div>
         </div>
       </div>
@@ -86,207 +115,324 @@
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-amber-100">
-              <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Date</th>
-              <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Class</th>
-              <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">By</th>
-              <th class="text-center py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Synced</th>
-              <th class="text-center py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Failed</th>
+              <th
+                class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide"
+              >
+                Date
+              </th>
+              <th
+                class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide"
+              >
+                Class
+              </th>
+              <th
+                class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide"
+              >
+                By
+              </th>
+              <th
+                class="text-center py-2 text-xs font-bold text-navy/50 uppercase tracking-wide"
+              >
+                Synced
+              </th>
+              <th
+                class="text-center py-2 text-xs font-bold text-navy/50 uppercase tracking-wide"
+              >
+                Failed
+              </th>
             </tr>
           </thead>
           <tbody id="logBody">
             <tr>
               <td colspan="5" class="text-center py-8 text-navy/20 text-xs">
-                <i class="fas fa-clock-rotate-left fa-lg block mb-2"></i>No sync history yet
+                <i class="fas fa-clock-rotate-left fa-lg block mb-2"></i>No sync
+                history yet
               </td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
-
   </div>
 </div>
 
 <script>
   (() => {
-    const token = localStorage.getItem('token');
-    const fmt = iso => iso ? new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-    const fmtDT = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+    "use strict";
 
-    // ── On class change: load preview + filter history ──────
+    const token = localStorage.getItem("token");
+    const H = {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token,
+    };
+
+    const CLASS_LABELS = {
+      1: "Officers",
+      2: "Warrant Officers",
+      3: "Ratings A",
+      4: "Ratings B",
+      5: "Ratings C",
+      6: "Trainees",
+    };
+    const labelFor = (v) => CLASS_LABELS[String(v)] || String(v ?? "—");
+
+    const fmt = (iso) =>
+      iso
+        ? new Date(iso).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "—";
+    const fmtDT = (iso) =>
+      iso
+        ? new Date(iso).toLocaleString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "—";
+    const esc = (s) =>
+      String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+
+    // ── On class change ─────────────────────────────────────
     window.onClassChange = function () {
-      const cls = document.getElementById('payClass').value;
-      document.getElementById('syncBtn').disabled = true;
-      document.getElementById('syncMsg').classList.add('hidden');
-      document.getElementById('histLabel').textContent = cls ? cls : 'All Classes';
+      const cls = document.getElementById("payClass").value;
+      document.getElementById("syncBtn").disabled = true;
+      document.getElementById("syncMsg").classList.add("hidden");
+      document.getElementById("histLabel").textContent = cls
+        ? labelFor(cls)
+        : "All Classes";
 
       loadPreview(cls);
       loadHistory(cls);
     };
 
-    // ── Preview: pending records for selected class ─────────
+    // ── Preview: pending records (Verified, not yet synced) ─
     function loadPreview(cls) {
-      const el = document.getElementById('syncPreview');
+      const el = document.getElementById("syncPreview");
       if (!cls) {
         el.innerHTML = `<div class="flex items-center justify-center py-8 text-navy/30 flex-col gap-2">
-          <i class="fas fa-table-list fa-lg"></i>
-          <span class="text-xs">Select a pay class to preview records</span>
-        </div>`;
+        <i class="fas fa-table-list fa-lg"></i>
+        <span class="text-xs">Select a pay class to preview records</span>
+      </div>`;
         return;
       }
 
-      el.innerHTML = '<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+      el.innerHTML =
+        '<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
 
-      fetch(`/admin/payroll/sync-preview?payrollclass=${encodeURIComponent(cls)}`, {
-        headers: { Authorization: 'Bearer ' + token }
-      })
-        .then(r => r.ok ? r.json() : [])
-        .then(rows => {
+      // /admin/personnel filters: status=Verified + payrollclass — emolumentform!='Yes' is what makes them pending
+      const params = new URLSearchParams({
+        status: "Verified",
+        payrollclass: cls,
+        pageSize: "50",
+      });
+
+      fetch(`/admin/personnel?${params}`, { headers: H })
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((raw) => {
+          const all = Array.isArray(raw) ? raw : raw.rows || raw.data || [];
+          // Pending = Verified but not yet confirmed in hr_employees
+          const rows = all.filter((r) => r.emolumentform !== "Yes");
+
           if (!rows.length) {
-            el.innerHTML = `<div class="text-center py-6 text-blue-900/30 text-sm">
-              <i class="fas fa-check-circle fa-2x mb-2 block text-green-300"></i>
-              All confirmed records already synced
-            </div>`;
+            el.innerHTML = `<div class="text-center py-6 text-navy/40 text-sm">
+            <i class="fas fa-check-circle fa-2x mb-2 block text-green-300"></i>
+            No verified records pending sync for ${esc(labelFor(cls))}
+          </div>`;
             return;
           }
-          document.getElementById('syncBtn').disabled = false;
+          document.getElementById("syncBtn").disabled = false;
           el.innerHTML = `
-            <div class="flex items-center gap-3 mb-3 p-3 bg-amber-50 rounded-lg">
-              <i class="fas fa-info-circle text-amber-500"></i>
-              <span class="text-sm font-semibold text-amber-700">${rows.length} CPO-confirmed record(s) pending sync</span>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead><tr class="border-b border-amber-100">
-                  <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Svc No</th>
-                  <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Name</th>
-                  <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Ship</th>
-                  <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Confirmed</th>
-                </tr></thead>
-                <tbody>
-                  ${rows.map(r => `<tr class="border-b border-amber-50 hover:bg-amber-50/30">
-                    <td class="py-2 font-semibold text-navy">${r.user_id}</td>
-                    <td class="py-2 text-blue-900/70">${r.full_name}</td>
-                    <td class="py-2 text-blue-900/50 text-xs">${r.ship || '—'}</td>
-                    <td class="py-2 text-blue-900/40 text-xs">${fmt(r.confirmed_at)}</td>
-                  </tr>`).join('')}
-                </tbody>
-              </table>
-            </div>`;
+          <div class="flex items-center gap-3 mb-3 p-3 bg-amber-50 rounded-lg">
+            <i class="fas fa-info-circle text-amber-500"></i>
+            <span class="text-sm font-semibold text-amber-700">${rows.length} verified record(s) pending sync</span>
+          </div>
+          <div class="overflow-x-auto max-h-72">
+            <table class="w-full text-sm">
+              <thead><tr class="border-b border-amber-100 sticky top-0 bg-white">
+                <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Svc No</th>
+                <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Name</th>
+                <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide hidden sm:table-cell">Ship</th>
+                <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide hidden md:table-cell">Form #</th>
+              </tr></thead>
+              <tbody>
+                ${rows
+                  .map(
+                    (
+                      r,
+                    ) => `<tr class="border-b border-amber-50 hover:bg-amber-50/30">
+                  <td class="py-2 font-mono font-semibold text-navy text-xs">${esc(r.serviceNumber)}</td>
+                  <td class="py-2 text-navy/70 text-xs">${esc(r.Surname || "")} ${esc(r.OtherName || "")}</td>
+                  <td class="py-2 text-navy/50 text-xs hidden sm:table-cell">${esc(r.ship || "—")}</td>
+                  <td class="py-2 text-navy/40 text-xs font-mono hidden md:table-cell">${esc(r.formNumber || "—")}</td>
+                </tr>`,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>`;
         })
         .catch(() => {
-          el.innerHTML = '<div class="text-center py-6 text-red-400 text-sm">Failed to load preview</div>';
+          el.innerHTML =
+            '<div class="text-center py-6 text-red-400 text-sm">Failed to load preview</div>';
         });
     }
 
-    // ── History: query audit log for SYNC entries ───────────
-    function loadHistory(cls) {
-      const logBody = document.getElementById('logBody');
-      logBody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-navy/20"><i class="fas fa-spinner fa-spin"></i></td></tr>';
+    // ── History from audit log ─────────────────────────────
+    async function loadHistory(cls) {
+      const logBody = document.getElementById("logBody");
+      logBody.innerHTML =
+        '<tr><td colspan="5" class="text-center py-6 text-navy/20"><i class="fas fa-spinner fa-spin"></i></td></tr>';
 
-      // Build query: filter by recordKey pattern SYNC:class=X (or all SYNC: entries)
-      const recordKey = cls ? `SYNC:class=${cls}` : 'SYNC:class=';
+      const recordKey = cls ? `SYNC:class=${cls}` : "SYNC:class=";
       const params = new URLSearchParams({
-        tableName: 'ef_personalinfos',
-        action: 'UPDATE',
+        tableName: "ef_personalinfos",
+        action: "UPDATE",
         recordKey,
-        pageSize: 20
+        pageSize: "20",
       });
 
-      fetch(`/admin/audit?${params}`, {
-        headers: { Authorization: 'Bearer ' + token }
-      })
-        .then(r => r.ok ? r.json() : { logs: [] })
-        .then(({ logs }) => renderHistory(logs))
-        .catch(() => {
-          logBody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-red-400 text-xs">Failed to load history</td></tr>';
-        });
+      try {
+        const r = await fetch(`/audit?${params}`, { headers: H });
+        if (!r.ok) throw new Error("audit fetch failed");
+        const raw = await r.json();
+        const logs =
+          raw.logs ||
+          raw.data?.logs ||
+          raw.data ||
+          (Array.isArray(raw) ? raw : []);
+        renderHistory(
+          logs.filter((l) => (l.record_key || "").startsWith("SYNC:class=")),
+        );
+      } catch {
+        logBody.innerHTML =
+          '<tr><td colspan="5" class="text-center py-6 text-red-400 text-xs">Failed to load history</td></tr>';
+      }
+    }
+
+    function parseValues(v) {
+      if (!v) return {};
+      if (typeof v === "object") return v;
+      try {
+        return JSON.parse(v);
+      } catch {
+        return {};
+      }
     }
 
     function renderHistory(logs) {
-      const logBody = document.getElementById('logBody');
-      const statDate = document.getElementById('statDate');
-      const statCount = document.getElementById('statCount');
-      const statStatus = document.getElementById('statStatus');
+      const logBody = document.getElementById("logBody");
+      const statDate = document.getElementById("statDate");
+      const statCount = document.getElementById("statCount");
+      const statStatus = document.getElementById("statStatus");
 
       if (!logs.length) {
-        statDate.textContent = '—'; statCount.textContent = '—';
-        statStatus.textContent = '—'; statStatus.className = 'font-bold text-sm mt-1 text-navy/40';
+        statDate.textContent = "—";
+        statCount.textContent = "—";
+        statStatus.textContent = "—";
+        statStatus.className = "font-bold text-sm mt-1 text-navy/40";
         logBody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-navy/20 text-xs">
-          <i class="fas fa-clock-rotate-left fa-lg block mb-2"></i>No sync history yet
-        </td></tr>`;
+        <i class="fas fa-clock-rotate-left fa-lg block mb-2"></i>No sync history yet
+      </td></tr>`;
         return;
       }
 
-      // Stats from most recent entry
+      // Stats from most recent
       const latest = logs[0];
-      const nv = latest.new_values || {};
+      const nv = parseValues(latest.new_values);
       statDate.textContent = fmt(latest.performed_at);
-      statCount.textContent = nv.synced ?? '—';
-      const hasFailed = nv.failed > 0;
-      statStatus.textContent = hasFailed ? 'PARTIAL' : 'SUCCESS';
-      statStatus.className = 'font-bold text-sm mt-1 ' + (hasFailed ? 'text-amber-500' : 'text-green-600');
+      statCount.textContent = nv.synced ?? "—";
+      const hasFailed = (nv.failed || 0) > 0;
+      statStatus.textContent = hasFailed ? "PARTIAL" : "SUCCESS";
+      statStatus.className =
+        "font-bold text-sm mt-1 " +
+        (hasFailed ? "text-amber-500" : "text-green-600");
 
-      // Extract class from record_key e.g. "SYNC:class=Officers"
-      const parseClass = key => (key || '').replace('SYNC:class=', '') || '—';
+      const parseClass = (key) =>
+        labelFor((key || "").replace("SYNC:class=", "").trim() || "—");
 
-      logBody.innerHTML = logs.map(l => {
-        const v = l.new_values || {};
-        const failed = v.failed ?? 0;
-        return `<tr class="border-b border-amber-50 hover:bg-amber-50/30">
-          <td class="py-2 text-blue-900/50 text-xs whitespace-nowrap">${fmtDT(l.performed_at)}</td>
-          <td class="py-2 font-semibold text-navy text-xs">${parseClass(l.record_key)}</td>
-          <td class="py-2 text-blue-900/40 text-xs">${l.performed_by || '—'}</td>
-          <td class="py-2 text-center">
-            <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">${v.synced ?? '—'}</span>
-          </td>
-          <td class="py-2 text-center">
-            ${failed ? `<span class="bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">${failed}</span>` : `<span class="text-navy/20">—</span>`}
-          </td>
-        </tr>`;
-      }).join('');
+      logBody.innerHTML = logs
+        .map((l) => {
+          const v = parseValues(l.new_values);
+          const failed = v.failed ?? 0;
+          return `<tr class="border-b border-amber-50 hover:bg-amber-50/30">
+        <td class="py-2 text-navy/50 text-xs whitespace-nowrap">${fmtDT(l.performed_at)}</td>
+        <td class="py-2 font-semibold text-navy text-xs">${esc(parseClass(l.record_key))}</td>
+        <td class="py-2 text-navy/40 text-xs">${esc(l.performed_by || "—")}</td>
+        <td class="py-2 text-center">
+          <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">${v.synced ?? "—"}</span>
+        </td>
+        <td class="py-2 text-center">
+          ${
+            failed
+              ? `<span class="bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">${failed}</span>`
+              : `<span class="text-navy/20">—</span>`
+          }
+        </td>
+      </tr>`;
+        })
+        .join("");
     }
 
-    // ── Execute sync ────────────────────────────────────────
-    function executeSync() {
-      const cls = document.getElementById('payClass').value;
+    // ── Execute sync ───────────────────────────────────────
+    window.executeSync = function () {
+      const cls = document.getElementById("payClass").value;
       if (!cls) return;
-      if (!confirm(`Execute payroll sync for "${cls}"?\n\nThis will push all confirmed records to the payroll system. This cannot be undone.`)) return;
+      if (
+        !confirm(
+          `Execute payroll sync for "${labelFor(cls)}"?\n\nThis will push all confirmed records to the payroll system. This cannot be undone.`,
+        )
+      )
+        return;
 
-      const btn = document.getElementById('syncBtn');
-      const msg = document.getElementById('syncMsg');
+      const btn = document.getElementById("syncBtn");
+      const msg = document.getElementById("syncMsg");
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Syncing...';
 
-      fetch('/admin/payroll/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ payrollclass: cls })
+      fetch("/admin/payroll/sync", {
+        method: "POST",
+        headers: H,
+        body: JSON.stringify({ payrollclass: cls }),
       })
-        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
         .then(({ ok, d }) => {
-          msg.className = 'mt-3 p-3 rounded-lg text-sm font-semibold ' + (ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600');
-          msg.textContent = ok ? (d.message || `${d.data?.synced} record(s) synced successfully.`) : (d.error || 'Sync failed');
-          msg.classList.remove('hidden');
+          msg.className =
+            "mt-3 p-3 rounded-lg text-sm font-semibold " +
+            (ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600");
+          msg.textContent = ok
+            ? d.message ||
+              `${d.data?.synced ?? 0} record(s) synced successfully.`
+            : d.error || "Sync failed";
+          msg.classList.remove("hidden");
           btn.disabled = false;
-          btn.innerHTML = '<i class="fas fa-sync mr-2"></i>Execute Payroll Sync';
+          btn.innerHTML =
+            '<i class="fas fa-sync mr-2"></i>Execute Payroll Sync';
           if (ok) {
             loadPreview(cls);
             loadHistory(cls);
           }
         })
         .catch(() => {
-          msg.className = 'mt-3 p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600';
-          msg.textContent = 'Server error during sync';
-          msg.classList.remove('hidden');
+          msg.className =
+            "mt-3 p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
+          msg.textContent = "Server error during sync";
+          msg.classList.remove("hidden");
           btn.disabled = false;
-          btn.innerHTML = '<i class="fas fa-sync mr-2"></i>Execute Payroll Sync';
+          btn.innerHTML =
+            '<i class="fas fa-sync mr-2"></i>Execute Payroll Sync';
         });
-    }
-
-    window.executeSync = executeSync;
+    };
 
     // Initial history load (all classes)
-    loadHistory('');
+    loadHistory("");
   })();
 </script>

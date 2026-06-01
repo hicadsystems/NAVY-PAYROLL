@@ -106,12 +106,20 @@ const rangePaymentRoutes = require("./audit-trail/rangePayments");
   //emolument
     //-- admin --
     const emolumentAdminRoutes = require("../routes/user-dashboard/emolument/admin/admin.routes");
+    //-- roles --
+    const emolRolesRoutes = require("../routes/user-dashboard/emolument/admin/roles.routes");
+    //-- form view --
+    const formViewRoutes = require("../routes/user-dashboard/emolument/admin/form-view.routes");
+    //-- accept verified --
+    const acceptVerifiedRoutes = require("../routes/user-dashboard/emolument/admin/accept-verified.routes");
     //-- audit --
     const emolumentAuditRoutes = require("../routes/user-dashboard/emolument/audit/audit.routes");
     //-- form --
     const emolumentFormRoutes = require("../routes/user-dashboard/emolument/form/form.routes");
     //-- system --
     const emolumentSystemRoutes = require("../routes/user-dashboard/emolument/system/system.routes");
+    //-- ship --
+    const emolumentShipRoutes = require("../routes/user-dashboard/emolument/system/ships.routes");
     //-- do --
     const emolumentDoRoutes = require("../routes/user-dashboard/emolument/do/do.routes");
     //-- fo --
@@ -243,13 +251,16 @@ module.exports = (app) => {
 
     //emolument
       //-- admin --
-      app.use("/admin", emolumentAdminRoutes);
+      app.use("/admin", emolumentAdminRoutes, emolRolesRoutes, formViewRoutes, acceptVerifiedRoutes);
       //-- audit --
       app.use("/audit", emolumentAuditRoutes);
       //-- form --
       app.use("/form", emolumentFormRoutes);
       //-- system --
-      app.use("/system", emolumentSystemRoutes);
+      app.use("/system/control", emolumentSystemRoutes);
+      require('../routes/user-dashboard/emolument/emolument.scheduler');
+      //-- ships--
+      app.use("/system", emolumentShipRoutes);
       //-- do --
       app.use("/do", emolumentDoRoutes);
       //-- fo --

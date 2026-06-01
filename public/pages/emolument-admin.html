@@ -682,6 +682,63 @@
     // ── BOOT ──────────────────────────────────────────────────
     window.emolNav = new EmolumentNav();
   </script>
+  <script>
+    (function () {
+      'use strict';
+
+      const TOKEN = localStorage.getItem('token');
+      if (!TOKEN) return;
+
+      fetch('/admin/my-role', {
+        headers: { Authorization: 'Bearer ' + TOKEN },
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          // No role assigned or server error — show everything
+          if (!data || !data.role || !data.menuCodes?.length) return;
+
+          const allowed = new Set(data.menuCodes);
+
+          // ── Sidebar buttons: button.emol-nav-item[data-section] inside li > ul
+          document.querySelectorAll('button.emol-nav-item[data-section]').forEach(btn => {
+            const li = btn.closest('li');
+            if (li && !allowed.has(btn.dataset.section)) {
+              li.style.display = 'none';
+            }
+          });
+
+          // ── After hiding items, hide group label + its ul if all children hidden
+          document.querySelectorAll('div.emol-nav-group').forEach(label => {
+            // The ul immediately follows the group label div as nextElementSibling
+            const ul = label.nextElementSibling;
+            if (!ul) return;
+            const anyVisible = [...ul.querySelectorAll('li')].some(li => li.style.display !== 'none');
+            if (!anyVisible) {
+              label.style.display = 'none';
+              ul.style.display = 'none';
+            }
+          });
+
+          // ── Bottom nav: button.emol-bn-item[data-section]
+          document.querySelectorAll('button.emol-bn-item[data-section]').forEach(btn => {
+            if (!allowed.has(btn.dataset.section)) btn.style.display = 'none';
+          });
+
+          // ── Drawer: button.emol-drawer-item[data-section]
+          document.querySelectorAll('button.emol-drawer-item[data-section]').forEach(btn => {
+            if (!allowed.has(btn.dataset.section)) btn.style.display = 'none';
+          });
+
+          // ── If current section is not allowed, navigate to first allowed
+          const current = sessionStorage.getItem('emol_active_section');
+          if (current && !allowed.has(current) && window.emolNav) {
+            const first = data.menuCodes[0];
+            if (first) window.emolNav.navigate(first, { addHistory: false });
+          }
+        })
+        .catch(() => { /* fail open — show all nav */ });
+    })();
+  </script>
 </body>
 
 </html>

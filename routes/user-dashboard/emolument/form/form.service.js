@@ -35,24 +35,30 @@ const {
 
 // ─────────────────────────────────────────────────────────────
 // GATE CHECK
+// Checks ef_control directly — no ef_systeminfos dependency.
+// resolveEffectiveStatus queries NOW() BETWEEN startdate AND enddate
+// and returns isOpen based on status IN ('Open','Reopen').
+// ef_ships.openship is kept in sync by the scheduler but we check
+// ef_control here as the single source of truth.
 // ─────────────────────────────────────────────────────────────
 
-async function checkFormEligibility(person, systemInfo) {
-  if (!systemInfo || systemInfo.SiteStatus !== 1) {
+const controlService = require("../system/system.service");
+
+async function checkFormEligibility(person) {
+  const formType = resolveFormType(person.payrollclass);
+
+  // Resolve against ef_control — ship='All' covers everyone
+  const { isOpen } = await controlService.resolveEffectiveStatus(
+    person.ship || "All",
+    formType,
+  );
+
+  if (!isOpen) {
     return {
       allowed: false,
-      reason: "The emolument form collection is currently closed.",
+      reason:
+        "The emolument form collection is currently closed for your ship/unit.",
     };
-  }
-
-  if (person.ship) {
-    const shipOpen = await repo.getShipOpenStatus(person.ship);
-    if (!shipOpen) {
-      return {
-        allowed: false,
-        reason: "Forms are not yet open for your ship/unit.",
-      };
-    }
   }
 
   if (person.emolumentform === "Yes") {
@@ -62,8 +68,6 @@ async function checkFormEligibility(person, systemInfo) {
     };
   }
 
-  // Block editing once the form is in review.
-  // Compare using the clean enum — toFormStatus handles the legacy string.
   const currentFormStatus = toFormStatus(person.Status);
   if (currentFormStatus !== FORM_STATUS.DRAFT) {
     return {
@@ -127,27 +131,17 @@ async function loadForm(serviceNo) {
   const formType = resolveFormType(person.payrollclass);
   const isTraining = formType === "TRAINING";
 
-  const [
-    core,
-    nok,
-    spouse,
-    children,
-    loans,
-    allowances,
-    documents,
-    systemInfo,
-    formYear,
-  ] = await Promise.all([
-    repo.loadPersonCore(serviceNo),
-    repo.loadNok(serviceNo),
-    repo.loadSpouse(serviceNo),
-    repo.loadChildren(serviceNo),
-    repo.loadLoans(serviceNo),
-    repo.loadAllowances(serviceNo),
-    repo.loadDocuments(serviceNo),
-    repo.getSystemInfo(),
-    repo.getProcessingYear(isTraining),
-  ]);
+  const [core, nok, spouse, children, loans, allowances, documents, formYear] =
+    await Promise.all([
+      repo.loadPersonCore(serviceNo),
+      repo.loadNok(serviceNo),
+      repo.loadSpouse(serviceNo),
+      repo.loadChildren(serviceNo),
+      repo.loadLoans(serviceNo),
+      repo.loadAllowances(serviceNo),
+      repo.loadDocuments(serviceNo),
+      repo.getProcessingYear(isTraining),
+    ]);
 
   if (!core)
     return {
@@ -156,7 +150,7 @@ async function loadForm(serviceNo) {
       message: "Personnel record not found.",
     };
 
-  const eligibility = await checkFormEligibility(person, systemInfo);
+  const eligibility = await checkFormEligibility(person);
   const currentFormStatus = toFormStatus(person.Status);
 
   // Ensure ef_emolument_forms row exists from first open.
@@ -202,11 +196,6 @@ async function loadForm(serviceNo) {
       formType,
       canEdit: eligibility.allowed,
       editBlocked: eligibility.reason,
-      systemInfo: {
-        siteStatus: systemInfo?.SiteStatus,
-        opendate: systemInfo?.opendate,
-        closedate: systemInfo?.closedate,
-      },
     },
   };
 }
@@ -222,7 +211,7 @@ async function loadFormOptions() {
   return {
     success: true,
     data: options,
-    message: 'Options Retrieved Successfully'
+    message: "Options Retrieved Successfully",
   };
 }
 
@@ -268,8 +257,7 @@ async function saveDraft(serviceNo, body, performedBy, ip) {
       message: "Personnel record not found.",
     };
 
-  const systemInfo = await repo.getSystemInfo();
-  const eligibility = await checkFormEligibility(person, systemInfo);
+  const eligibility = await checkFormEligibility(person);
   if (!eligibility.allowed)
     return { success: false, code: 403, message: eligibility.reason };
 
@@ -322,8 +310,7 @@ async function submitForm(serviceNo, body, performedBy, ip) {
       message: "Personnel record not found.",
     };
 
-  const systemInfo = await repo.getSystemInfo();
-  const eligibility = await checkFormEligibility(person, systemInfo);
+  const eligibility = await checkFormEligibility(person);
   if (!eligibility.allowed)
     return { success: false, code: 403, message: eligibility.reason };
 
@@ -436,4 +423,51 @@ async function submitForm(serviceNo, body, performedBy, ip) {
   };
 }
 
-module.exports = { loadForm, loadFormHistory, saveDraft, submitForm, loadFormOptions };
+// ─────────────────────────────────────────────────────────────
+// OPEN NEW CYCLE
+//
+// Called by admin when creating/activating a new processing year.
+// Archives unconfirmed submissions from the previous year and
+// resets their Status so they can fill the form again.
+//
+// previousYear: the year being closed e.g. '2025'
+// ─────────────────────────────────────────────────────────────
+
+async function openNewCycle(previousYear, performedBy, ip) {
+  if (!previousYear || !/^\d{4}$/.test(String(previousYear))) {
+    return {
+      success: false,
+      code: 400,
+      message: "previousYear must be a 4-digit year.",
+    };
+  }
+
+  const resetCount = await repo.archiveAndResetCycle(
+    String(previousYear),
+    performedBy,
+  );
+
+  await repo.insertAuditLog({
+    tableName: "ef_personalinfos",
+    action: "UPDATE",
+    recordKey: `NEW_CYCLE:prev=${previousYear}`,
+    oldValues: { Status: "various", FormYear: previousYear },
+    newValues: { Status: null, FormYear: null, resetCount },
+    performedBy,
+    ipAddress: ip,
+  });
+
+  return {
+    success: true,
+    message: `New cycle opened. ${resetCount} personnel record(s) archived and reset for year ${previousYear}.`,
+    data: { previousYear, resetCount },
+  };
+}
+
+module.exports = {
+  loadForm,
+  loadFormHistory,
+  saveDraft,
+  submitForm,
+  loadFormOptions,
+};

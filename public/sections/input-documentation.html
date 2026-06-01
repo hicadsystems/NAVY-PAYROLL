@@ -374,12 +374,12 @@
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">From Svc. No.</label>
-          <input type="text" id="printRangeFrom" placeholder="e.g. NN/001"
+          <input type="text" id="printRangeFrom" placeholder="e.g. NN001"
             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">To Svc. No.</label>
-          <input type="text" id="printRangeTo" placeholder="e.g. NN/050"
+          <input type="text" id="printRangeTo" placeholder="e.g. NN050"
             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400" />
         </div>
       </div>
@@ -399,13 +399,22 @@
 
     <!-- Period Panel -->
     <div id="panelPeriod" class="print-panel hidden space-y-3">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Period <span
-            class="text-gray-400">(YYYYMM)</span></label>
-        <input type="text" id="printPeriodInput" placeholder="e.g. 202501" maxlength="6"
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400" />
-        <p class="text-xs text-gray-400 mt-1">Enter 6-digit period — year then month (e.g. 202501 = January 2025).</p>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">From Period <span
+              class="text-gray-400">(YYYYMM)</span></label>
+          <input type="text" id="printPeriodFrom" placeholder="e.g. 202501" maxlength="6"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">To Period <span
+              class="text-gray-400">(YYYYMM)</span></label>
+          <input type="text" id="printPeriodTo" placeholder="e.g. 202512" maxlength="6"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400" />
+        </div>
       </div>
+      <p class="text-xs text-gray-400">6-digit format — YYYYMM (e.g. 202501 = January 2025). Leave "To" blank to match
+        from period onwards.</p>
     </div>
 
     <!-- Modal Action Buttons -->
@@ -453,6 +462,28 @@
   </div>
 </div>
 
+
+<!-- Preview Modal -->
+<div id="docPreviewModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+  <div class="bg-gray-50 rounded-lg shadow-lg w-full max-w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div class="sticky top-0 px-6 py-3 flex justify-between items-center bg-[#1e3a5f]">
+      <h3 id="docPreviewTitle" class="text-lg font-semibold text-white">Documentation Preview</h3>
+      <button id="docClosePreviewBtn" class="text-white hover:text-gray-200 text-2xl leading-none">&times;</button>
+    </div>
+    <div class="overflow-auto flex-1" style="background: #d1d5db;">
+      <iframe id="docPreviewIframe" title="Documentation Preview"
+        style="width: 100%; height: 842px; min-height: 842px; border: none; background: #f8fbff; display: block;"></iframe>
+    </div>
+    <div class="sticky bottom-0 bg-gray-50 border-t px-6 py-3 flex justify-end space-x-2">
+      <button id="docCancelPreviewBtn"
+        class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
+      <button id="docDownloadPreviewBtn"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2">
+        <i class="fa-solid fa-file-arrow-down"></i> Download
+      </button>
+    </div>
+  </div>
+</div>
 
 <script>
   const auth = window.authService;
@@ -663,7 +694,7 @@
     function fillForm(record) {
       currentRecordId = record.id;
       docYear.value = record.doc_year || '';
-      docMonth.value = record.doc_month || '';
+      docMonth.value = String(parseInt(record.doc_month || '0', 10)) || '';
       docRef.value = record.doc_ref || '';
       docComments.value = record.doc_remark || '';
 
@@ -711,7 +742,7 @@
               <div class="text-sm">
                 <span class="font-semibold text-gray-800">${rec.doc_ref || '—'}</span>
                 <span class="text-gray-500 ml-3">
-                  ${monthMap[rec.doc_month] || rec.doc_month || '—'} ${rec.doc_year || ''}
+                  ${monthMap[String(parseInt(rec.doc_month || '0', 10))] || rec.doc_month || '—'} ${rec.doc_year || ''}
                 </span>
               </div>
               <div class="text-xs text-gray-400 truncate max-w-xs">${rec.doc_remark || ''}</div>
@@ -931,54 +962,57 @@
       const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
       const generatedBy = localStorage.getItem('full_name') || 'System User';
+      const monthLabel = monthMap[String(parseInt(docMonth.value || '0', 10))] || docMonth.value || '';
 
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(`
-        <!DOCTYPE html><html><head><meta charset="utf-8">
+      const singleHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">
         <title>Documentation - ${selectedEmployee.Surname} ${selectedEmployee.OtherName}</title>
         <style>
-          @page { size: A4 portrait; margin: 0.5mm; background-color: #f8fbff; }
-          body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; margin: 40px; color: #333; }
-          body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('photos/logo.png'); background-size: auto 100%; background-repeat: no-repeat;
-            background-position: center center; opacity: 0.02; z-index: -1; pointer-events: none; }
+          * { box-sizing: border-box; }
+          @page { size: A4 portrait; margin: 10mm; }
+          html { background: #9ca3af; }
+          body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; margin: 0; padding: 24px 16px; color: #333; background: #9ca3af; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+          .page { width: 794px; min-height: 1123px; background: #ffffff; margin: 0 auto; padding: 36px 32px; box-shadow: 0 4px 16px rgba(0,0,0,0.35); position: relative; overflow: hidden; }
+          .page::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('photos/logo.png'); background-size: auto 80%; background-repeat: no-repeat;
+            background-position: center center; opacity: 0.03; z-index: 0; pointer-events: none; }
+          .page-content { position: relative; z-index: 1; }
           .header-wrapper { display: flex; align-items: flex-start; margin-bottom: 8px; border-bottom: 2px solid #1a1a1a; padding-bottom: 5px; }
           .header { flex-grow: 1; text-align: center; }
-          .header h1 { font-size: 13pt; font-weight: bold; margin-bottom: 2px; letter-spacing: 1.5px; color: #1e40af; font-family: 'Libre Baskerville', Georgia, serif; }
-          .header h2 { font-size: 10pt; font-weight: normal; margin-top: 2px; color: #4a4a4a; font-family: 'Libre Baskerville', Georgia, serif; }
-          .header-info { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 20px 0; font-size: 9pt; }
+          .header h1 { font-size: 13pt; font-weight: bold; margin: 0 0 2px; letter-spacing: 1.5px; color: #1e40af; font-family: 'Libre Baskerville', Georgia, serif; }
+          .header h2 { font-size: 10pt; font-weight: normal; margin: 2px 0 0; color: #4a4a4a; font-family: 'Libre Baskerville', Georgia, serif; }
+          .header-info { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 20px; font-size: 9pt; }
           table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10pt; }
-          th { color: #1e40af; padding: 12px 8px; text-align: left; font-weight: bold; font-size: 10pt;
-            text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid #0056A0; width: 30%; }
+          th { color: #1e40af; padding: 12px 8px; text-align: left; font-weight: bold; font-size: 10pt; text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid #0056A0; width: 30%; background-color: #eff6ff; }
           td { padding: 12px 8px; border-bottom: 0.5px solid #e5e7eb; vertical-align: middle; }
           .footer { padding-top: 10px; border-top: 0.5px solid #1a1a1a; text-align: center; font-size: 8pt; color: #64748b; margin-top: 30px; }
-          @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+          @media print { html, body { background: white !important; padding: 0 !important; } .page { box-shadow: none !important; width: 100% !important; min-height: 0 !important; } }
         </style></head><body>
-        <div class="header-wrapper"><div class="header">
-          <h1>Nigerian Navy (Naval Headquarters)</h1>
-          <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+        <div class="page"><div class="page-content">
+          <div class="header-wrapper"><div class="header">
+            <h1>Nigerian Navy (Naval Headquarters)</h1>
+            <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+          </div></div>
+          <div class="header-info">
+            <div><strong>DOCUMENTATION RECORD</strong></div>
+            <div><span>PRODUCED ON</span> <strong>${dateStr}</strong> <span>AT</span> <strong>${timeStr}</strong></div>
+            <div><strong>SINGLE RECORD</strong></div>
+          </div>
+          <table>
+            <tr><th>Service No</th><td><strong>${docNameId.value}</strong></td></tr>
+            <tr><th>Name</th><td><strong>${selectedEmployee.Surname} ${selectedEmployee.OtherName}</strong></td></tr>
+            <tr><th>Year</th><td>${docYear.value}</td></tr>
+            <tr><th>Month</th><td>${monthLabel}</td></tr>
+            <tr><th>Reference No</th><td>${docRef.value}</td></tr>
+            <tr><th>Comments</th><td>${docComments.value}</td></tr>
+          </table>
+          <div class="footer">
+            <p>Generated by: ${generatedBy}</p>
+            <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+          </div>
         </div></div>
-        <div class="header-info">
-          <div><strong>DOCUMENTATION RECORD</strong></div>
-          <div><span>PRODUCED ON</span> <strong>${dateStr}</strong> <span>AT</span> <strong>${timeStr}</strong></div>
-          <div><strong>SINGLE RECORD</strong></div>
-        </div>
-        <table>
-          <tr><th>Service No</th><td><strong>${docNameId.value}</strong></td></tr>
-          <tr><th>Name</th><td><strong>${selectedEmployee.Surname} ${selectedEmployee.OtherName}</strong></td></tr>
-          <tr><th>Year</th><td>${docYear.value}</td></tr>
-          <tr><th>Month</th><td>${docMonth.value}</td></tr>
-          <tr><th>Reference No</th><td>${docRef.value}</td></tr>
-          <tr><th>Comments</th><td>${docComments.value}</td></tr>
-        </table>
-        <div class="footer">
-          <p>Generated by: ${generatedBy}</p>
-          <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
-        </div>
-        </body></html>
-      `);
-      printWindow.document.close();
-      printWindow.onload = () => printWindow.print();
+        </body></html>`;
+
+      openPreviewModal('Documentation Record — ' + selectedEmployee.Surname + ' ' + selectedEmployee.OtherName, singleHtml);
     }
 
     function printPersonRecords(records) {
@@ -990,70 +1024,91 @@
       const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
       const generatedBy = localStorage.getItem('full_name') || 'System User';
 
-      const tableRows = records.map(rec => `
-        <tr>
+      const rowsArray = records.map(rec => `<tr>
           <td>${rec.doc_year || ''}</td>
-          <td>${monthMap[rec.doc_month] || rec.doc_month || ''}</td>
+          <td>${monthMap[String(parseInt(rec.doc_month || '0', 10))] || rec.doc_month || ''}</td>
           <td>${rec.doc_ref || ''}</td>
           <td>${rec.doc_remark || ''}</td>
-        </tr>
-      `).join('');
+        </tr>`);
 
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(`
-        <!DOCTYPE html><html><head><meta charset="utf-8">
+      const personHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">
         <title>Documentation - ${employee.Surname} ${employee.OtherName}</title>
         <style>
+          * { box-sizing: border-box; }
           @page { size: A4 portrait; margin: 10mm; }
-          body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #333; }
-          body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('photos/logo.png'); background-size: auto 100%; background-repeat: no-repeat;
-            background-position: center; opacity: 0.02; z-index: -1; pointer-events: none; }
+          html { background: #9ca3af; }
+          body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; margin: 0; padding: 24px 16px; color: #333; background: #9ca3af; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+          .page { width: 794px; min-height: 1123px; background: #ffffff; margin: 0 auto 24px auto; padding: 32px; box-shadow: 0 4px 16px rgba(0,0,0,0.35); position: relative; overflow: hidden; }
+          .page::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('photos/logo.png'); background-size: auto 80%; background-repeat: no-repeat;
+            background-position: center center; opacity: 0.03; z-index: 0; pointer-events: none; }
+          .page-content { position: relative; z-index: 1; }
           .header-wrapper { display: flex; align-items: flex-start; margin-bottom: 8px; border-bottom: 2px solid #1a1a1a; padding-bottom: 5px; }
           .header { flex-grow: 1; text-align: center; }
-          .header h1 { font-size: 13pt; font-weight: bold; color: #1e40af; font-family: Georgia, serif; margin-bottom: 2px; }
-          .header h2 { font-size: 10pt; font-weight: normal; color: #4a4a4a; font-family: Georgia, serif; margin-top: 2px; }
-          .header-info { display: flex; justify-content: space-between; margin: 10px 0 16px; font-size: 9pt; }
-          .employee-info { margin-bottom: 16px; font-size: 10pt; }
+          .header h1 { font-size: 13pt; font-weight: bold; color: #1e40af; font-family: Georgia, serif; margin: 0 0 2px; }
+          .header h2 { font-size: 10pt; font-weight: normal; color: #4a4a4a; font-family: Georgia, serif; margin: 2px 0 0; }
+          .header-info { display: flex; justify-content: space-between; margin: 10px 0 10px; font-size: 9pt; }
+          .employee-info { margin-bottom: 14px; font-size: 10pt; background: #f0f4ff; padding: 8px 10px; border-radius: 4px; border-left: 3px solid #1e40af; }
           table { width: 100%; border-collapse: collapse; font-size: 10pt; }
-          th { color: #1e40af; padding: 8px; text-align: left; font-weight: bold; text-transform: uppercase;
-            border-bottom: 1px solid #0056A0; font-size: 9pt; }
-          td { padding: 8px; border-bottom: 0.5px solid #e5e7eb; }
+          th { color: #1e40af; padding: 8px; text-align: left; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #0056A0; font-size: 9pt; background-color: #eff6ff; }
+          td { padding: 7px 8px; border-bottom: 0.5px solid #e5e7eb; vertical-align: top; }
+          tr:nth-child(even) td { background-color: #f9fafb; }
           .footer { padding-top: 10px; border-top: 0.5px solid #1a1a1a; text-align: center; font-size: 8pt; color: #64748b; margin-top: 24px; }
-          @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
-        </style></head><body>
-        <div class="header-wrapper"><div class="header">
-          <h1>Nigerian Navy (Naval Headquarters)</h1>
-          <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
-        </div></div>
-        <div class="header-info">
-          <div><strong>DOCUMENTATION RECORDS</strong></div>
-          <div><span>PRODUCED ON</span> <strong>${dateStr}</strong> <span>AT</span> <strong>${timeStr}</strong></div>
-          <div><strong>${records.length}</strong> <span>RECORDS</span></div>
-        </div>
-        <div class="employee-info">
-          <strong>Service No:</strong> ${employee.Empl_ID} &nbsp;&nbsp;
-          <strong>Name:</strong> ${employee.Surname} ${employee.OtherName}
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th style="width:10%;">Year</th>
-              <th style="width:15%;">Month</th>
-              <th style="width:20%;">Ref. No</th>
-              <th style="width:55%;">Comments</th>
-            </tr>
-          </thead>
-          <tbody>${tableRows}</tbody>
-        </table>
-        <div class="footer">
-          <p>Generated by: ${generatedBy}</p>
-          <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
-        </div>
-        </body></html>
-      `);
-      printWindow.document.close();
-      printWindow.onload = () => printWindow.print();
+          .cont-header { font-size: 8pt; color: #64748b; text-align: right; margin-bottom: 6px; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; }
+          @media print { html, body { background: white !important; padding: 0 !important; } .page { box-shadow: none !important; width: 100% !important; min-height: 0 !important; page-break-after: always; } .page:last-child { page-break-after: avoid; } }
+        </style>
+        </head>
+        <body id="previewBody">
+        <script>
+          const ROWS_PER_PAGE = 30;
+          const allRows = ${JSON.stringify(rowsArray)};
+          const empId   = ${JSON.stringify(employee.Empl_ID)};
+          const empName = ${JSON.stringify(employee.Surname + ' ' + employee.OtherName)};
+          const recCount = ${JSON.stringify(String(records.length))};
+          const dateStr = ${JSON.stringify(dateStr)};
+          const timeStr = ${JSON.stringify(timeStr)};
+          const generatedBy = ${JSON.stringify(generatedBy)};
+
+          const rowMatches = Array.isArray(allRows) ? allRows : [];
+          const totalPages = Math.max(1, Math.ceil(rowMatches.length / ROWS_PER_PAGE));
+
+          function tableHtml(rowsHtml) {
+            return \`<table><thead><tr>
+              <th style="width:10%">Year</th>
+              <th style="width:15%">Month</th>
+              <th style="width:20%">Ref. No</th>
+              <th style="width:55%">Comments</th>
+            </tr></thead><tbody>\${rowsHtml}</tbody></table>\`;
+          }
+
+          let html = '';
+          for (let p = 0; p < totalPages; p++) {
+            const pageRows = rowMatches.slice(p * ROWS_PER_PAGE, (p + 1) * ROWS_PER_PAGE).join('');
+            const isFirst = p === 0;
+            const isLast  = p === totalPages - 1;
+            html += \`<div class="page"><div class="page-content">
+              \${isFirst
+                ? \`<div class="header-wrapper"><div class="header">
+                    <h1>Nigerian Navy (Naval Headquarters)</h1>
+                    <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+                  </div></div>
+                  <div class="header-info">
+                    <div><strong>DOCUMENTATION RECORDS</strong></div>
+                    <div>PRODUCED ON <strong>\${dateStr}</strong> AT <strong>\${timeStr}</strong></div>
+                    <div><strong>\${recCount}</strong> RECORDS</div>
+                  </div>
+                  <div class="employee-info"><strong>Service No:</strong> \${empId} &nbsp;&nbsp; <strong>Name:</strong> \${empName}</div>\`
+                : \`<div class="cont-header">Nigerian Navy — \${empName} — Documentation (continued)</div>\`
+              }
+              \${tableHtml(pageRows)}
+              \${isLast ? \`<div class="footer"><p>Generated by: \${generatedBy}</p><p>All rights reserved &copy; Hicad Systems Limited.</p></div>\` : ''}
+            </div></div>\`;
+          }
+          document.getElementById('previewBody').innerHTML = html;
+        <\/script>
+        </body></html>`;
+
+      openPreviewModal('Documentation — ' + employee.Surname + ' ' + employee.OtherName, personHtml);
     }
 
     function printAll() {
@@ -1067,24 +1122,21 @@
       const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
       const generatedBy = localStorage.getItem('full_name') || 'System User';
 
-      const tableRows = allDocumentation.map(doc => {
+      const rowsArray = allDocumentation.map(doc => {
         const employee = allEmployees.find(e => e.Empl_ID === doc.doc_numb);
         const empName = employee ? `${employee.Surname} ${employee.OtherName}` : 'N/A';
-        const monthValue = monthMap[doc.doc_month] || doc.doc_month || '';
-
-        return `
-          <tr>
+        const monthValue = monthMap[String(parseInt(doc.doc_month || '0', 10))] || doc.doc_month || '';
+        return `<tr>
             <td><strong>${doc.doc_numb}</strong></td>
             <td style="white-space: nowrap;"><strong>${empName}</strong></td>
             <td>${doc.doc_year || ''}</td>
             <td>${monthValue}</td>
             <td>${doc.doc_ref || ''}</td>
             <td>${doc.doc_remark || ''}</td>
-          </tr>
-        `;
-      }).join('');
+          </tr>`;
+      });
 
-      openPrintWindow('All Documentation Records', allDocumentation.length, tableRows, generatedBy);
+      openPrintWindow('All Documentation Records', allDocumentation.length, rowsArray, generatedBy);
     }
 
     // ─── PRINT OPTIONS ─────────────────────────────────────────────────────────
@@ -1115,7 +1167,8 @@
       showPrintPanel('range');
       document.getElementById('printRangeFrom').value = '';
       document.getElementById('printRangeTo').value = '';
-      document.getElementById('printPeriodInput').value = '';
+      document.getElementById('printPeriodFrom').value = '';
+      document.getElementById('printPeriodTo').value = '';
       document.getElementById('printSignalSelect').value = '';
     }
 
@@ -1158,19 +1211,35 @@
         }
 
       } else if (filterType === 'period') {
-        const period = document.getElementById('printPeriodInput').value.trim();
-        if (!period || period.length !== 6) {
-          showError('Please enter a valid 6-digit period (e.g. 202501).');
+        const periodFrom = document.getElementById('printPeriodFrom').value.trim();
+        const periodTo = document.getElementById('printPeriodTo').value.trim();
+
+        if (!periodFrom || periodFrom.length !== 6) {
+          showError('Please enter a valid From Period (e.g. 202501).');
           return;
         }
-        const year = period.substring(0, 4);
-        const month = String(parseInt(period.substring(4, 6)));
+        if (periodTo && periodTo.length !== 6) {
+          showError('Please enter a valid To Period (e.g. 202512), or leave it blank.');
+          return;
+        }
 
-        filtered = allDocumentation.filter(doc =>
-          String(doc.doc_year) === year && String(doc.doc_month) === month
-        );
+        const fromNum = parseInt(periodFrom, 10);
+        const toNum = periodTo ? parseInt(periodTo, 10) : Infinity;
+
+        if (periodTo && toNum < fromNum) {
+          showError('"To Period" must be equal to or after "From Period".');
+          return;
+        }
+
+        filtered = allDocumentation.filter(doc => {
+          const docYear = String(doc.doc_year || '').padStart(4, '0');
+          const docMonth = String(parseInt(doc.doc_month || '0', 10)).padStart(2, '0');
+          const docPeriodNum = parseInt(docYear + docMonth, 10);
+          return docPeriodNum >= fromNum && docPeriodNum <= toNum;
+        });
+
         if (filtered.length === 0) {
-          showError('No records found for the specified period.');
+          showError('No records found for the specified period range.');
           return;
         }
       }
@@ -1182,82 +1251,223 @@
       const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
       const generatedBy = localStorage.getItem('full_name') || 'System User';
 
-      const tableRows = filtered.map(doc => {
+      const rowsArray = filtered.map(doc => {
         const employee = allEmployees.find(e => e.Empl_ID === doc.doc_numb);
         const empName = employee ? `${employee.Surname} ${employee.OtherName}` : 'N/A';
-        const monthValue = monthMap[String(doc.doc_month)] || doc.doc_month || '';
-        return `
-          <tr>
+        const monthValue = monthMap[String(parseInt(doc.doc_month || '0', 10))] || doc.doc_month || '';
+        return `<tr>
             <td><strong>${doc.doc_numb}</strong></td>
             <td style="white-space: nowrap;"><strong>${empName}</strong></td>
             <td>${doc.doc_year || ''}</td>
             <td>${monthValue}</td>
             <td>${doc.doc_ref || ''}</td>
             <td>${doc.doc_remark || ''}</td>
-          </tr>
-        `;
-      }).join('');
+          </tr>`;
+      });
 
-      openPrintWindow('Documentation Records', filtered.length, tableRows, generatedBy);
+      openPrintWindow('Documentation Records', filtered.length, rowsArray, generatedBy);
     }
 
-    function openPrintWindow(title, count, tableRows, generatedBy) {
+    // ─── SHARED HTML BUILDER ──────────────────────────────────────────────────
+
+    function buildDocHtml(title, count, rowsArray, generatedBy) {
       const now = new Date();
       const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
+      // A4 portrait: 210mm x 297mm. At 96dpi screen: 794px x 1123px
+      const A4_W = 794;
+      const A4_H = 1123;
+      const PAGE_PADDING = 24; // px inside each page
 
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(`
-        <!DOCTYPE html><html><head><meta charset="utf-8">
+      return `<!DOCTYPE html><html><head><meta charset="utf-8">
         <title>${title}</title>
         <style>
-          @page { size: A4; margin: 5mm; }
-          body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; margin: 0; padding: 0; color: #333; }
-          body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('photos/logo.png'); background-size: auto 100%; background-repeat: no-repeat;
-            background-position: center center; opacity: 0.02; z-index: -1; pointer-events: none; }
+          * { box-sizing: border-box; }
+          @page { size: A4 portrait; margin: 10mm; }
+          html { background: #9ca3af; }
+          body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 9pt;
+            margin: 0;
+            padding: 24px 16px;
+            color: #333;
+            background: #9ca3af;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
+          /* ── A4 page card ── */
+          .page {
+            width: ${A4_W}px;
+            min-height: ${A4_H}px;
+            background: #ffffff;
+            margin: 0 auto 24px auto;
+            padding: ${PAGE_PADDING}px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+            position: relative;
+            overflow: hidden;
+          }
+          /* faint logo watermark per page */
+          .page::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('photos/logo.png');
+            background-size: auto 80%;
+            background-repeat: no-repeat;
+            background-position: center center;
+            opacity: 0.03;
+            z-index: 0;
+            pointer-events: none;
+          }
+          .page-content { position: relative; z-index: 1; }
+          /* header */
           .header-wrapper { display: flex; align-items: flex-start; margin-bottom: 8px; border-bottom: 2px solid #1a1a1a; padding-bottom: 5px; }
           .header { flex-grow: 1; text-align: center; }
-          .header h1 { font-size: 13pt; font-weight: bold; margin-bottom: 2px; letter-spacing: 1.5px; color: #1e40af; font-family: 'Libre Baskerville', Georgia, serif; }
-          .header h2 { font-size: 10pt; font-weight: normal; margin-top: 2px; color: #4a4a4a; font-family: 'Libre Baskerville', Georgia, serif; }
-          .header-info { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; font-size: 9pt; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
-          th { color: #1e40af; padding: 8px 4px; text-align: left; font-weight: bold; font-size: 12px;
-            text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid #0056A0; }
-          td { padding: 6px 4px; border: none; vertical-align: middle; }
-          .footer { padding-top: 10px; border-top: 0.5px solid #1a1a1a; text-align: center; font-size: 8pt; color: #64748b; margin-top: 20px; }
-          @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
-        </style></head><body>
-        <div class="header-wrapper"><div class="header">
-          <h1>Nigerian Navy (Naval Headquarters)</h1>
-          <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
-        </div></div>
-        <div class="header-info">
-          <div><strong>DOCUMENTATION RECORDS</strong></div>
-          <div><span>PRODUCED ON</span> <strong>${dateStr}</strong> <span>AT</span> <strong>${timeStr}</strong></div>
-          <div><strong>${count}</strong> <span>RECORDS</span></div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th style="width:12%;">Service No</th>
-              <th style="width:25%;">Name</th>
-              <th style="width:8%;">Year</th>
-              <th style="width:10%;">Month</th>
-              <th style="width:15%;">Ref. No</th>
-              <th style="width:30%;">Comments</th>
-            </tr>
-          </thead>
-          <tbody>${tableRows}</tbody>
-        </table>
-        <div class="footer">
-          <p>Generated by: ${generatedBy}</p>
-          <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
-        </div>
-        </body></html>
-      `);
-      printWindow.document.close();
-      printWindow.onload = () => printWindow.print();
+          .header h1 { font-size: 13pt; font-weight: bold; margin: 0 0 2px; letter-spacing: 1.5px; color: #1e40af; font-family: 'Libre Baskerville', Georgia, serif; }
+          .header h2 { font-size: 10pt; font-weight: normal; margin: 2px 0 0; color: #4a4a4a; font-family: 'Libre Baskerville', Georgia, serif; }
+          .header-info { display: flex; justify-content: space-between; align-items: center; margin: 8px 0 6px; font-size: 8.5pt; }
+          /* table */
+          table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+          thead tr th {
+            color: #1e40af; padding: 7px 4px; text-align: left; font-weight: bold;
+            font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.3px;
+            border-bottom: 1.5px solid #0056A0; background-color: #eff6ff;
+          }
+          tbody tr td { padding: 5px 4px; border-bottom: 0.5px solid #e5e7eb; vertical-align: top; }
+          tbody tr:nth-child(even) td { background-color: #f9fafb; }
+          /* footer */
+          .footer { padding-top: 8px; border-top: 0.5px solid #1a1a1a; text-align: center; font-size: 7.5pt; color: #64748b; margin-top: 12px; }
+          /* continuation header (shown on pages after page 1) */
+          .cont-header { font-size: 8pt; color: #64748b; text-align: right; margin-bottom: 4px; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; }
+          @media print {
+            html, body { background: white !important; padding: 0 !important; }
+            .page { box-shadow: none !important; margin: 0 !important; width: 100% !important; min-height: 0 !important; page-break-after: always; }
+            .page:last-child { page-break-after: avoid; }
+          }
+        </style>
+        </head>
+        <body id="previewBody">
+        <script>
+          // ── client-side pagination: split rows across A4 pages ──
+          const ROWS_PER_PAGE = 28; // approx rows that fit A4 portrait at 9pt
+          const allRows = ${JSON.stringify(rowsArray)};
+          const title   = ${JSON.stringify(title)};
+          const count   = ${JSON.stringify(String(count))};
+          const dateStr = ${JSON.stringify(dateStr)};
+          const timeStr = ${JSON.stringify(timeStr)};
+          const generatedBy = ${JSON.stringify(generatedBy)};
+
+          function headerHtml(isFirst) {
+            if (isFirst) return \`
+              <div class="header-wrapper"><div class="header">
+                <h1>Nigerian Navy (Naval Headquarters)</h1>
+                <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+              </div></div>
+              <div class="header-info">
+                <div><strong>DOCUMENTATION RECORDS</strong></div>
+                <div>PRODUCED ON <strong>\${dateStr}</strong> AT <strong>\${timeStr}</strong></div>
+                <div><strong>\${count}</strong> RECORDS</div>
+              </div>\`;
+            return \`<div class="cont-header">Nigerian Navy — Documentation Records (continued)</div>\`;
+          }
+
+          function tableHtml(rowsHtml) {
+            return \`<table>
+              <thead><tr>
+                <th style="width:12%">Service No</th>
+                <th style="width:23%">Name</th>
+                <th style="width:8%">Year</th>
+                <th style="width:10%">Month</th>
+                <th style="width:15%">Ref. No</th>
+                <th style="width:32%">Comments</th>
+              </tr></thead>
+              <tbody>\${rowsHtml}</tbody>
+            </table>\`;
+          }
+
+          // Parse rows string into individual <tr>...</tr> chunks
+          const rowMatches = Array.isArray(allRows) ? allRows : [];
+          const totalPages = Math.max(1, Math.ceil(rowMatches.length / ROWS_PER_PAGE));
+
+          let html = '';
+          for (let p = 0; p < totalPages; p++) {
+            const pageRows = rowMatches.slice(p * ROWS_PER_PAGE, (p + 1) * ROWS_PER_PAGE).join('');
+            const isLast = p === totalPages - 1;
+            html += \`<div class="page">
+              <div class="page-content">
+                \${headerHtml(p === 0)}
+                \${tableHtml(pageRows)}
+                \${isLast ? \`<div class="footer"><p>Generated by: \${generatedBy}</p><p>All rights reserved &copy; Hicad Systems Limited.</p></div>\` : ''}
+              </div>
+            </div>\`;
+          }
+          document.getElementById('previewBody').innerHTML = html;
+        <\/script>
+        </body></html>`;
+    }
+
+    // ─── PREVIEW MODAL ────────────────────────────────────────────────────────
+
+    let _previewHtmlBlob = null;
+
+    async function openPreviewModal(title, htmlContent) {
+      const modal = document.getElementById('docPreviewModal');
+      const iframe = document.getElementById('docPreviewIframe');
+      document.getElementById('docPreviewTitle').textContent = title;
+
+      // Revoke any previous blob
+      if (_previewHtmlBlob) { URL.revokeObjectURL(_previewHtmlBlob); _previewHtmlBlob = null; }
+
+      // Resolve logo to absolute URL so the blob iframe can load it cross-origin
+      const logoAbsUrl = window.location.origin + '/photos/logo.png';
+
+      // Inject absolute logo URL into the html before creating the blob
+      const resolvedHtml = htmlContent.replace(/url\('photos\/logo\.png'\)/g, `url('${logoAbsUrl}')`);
+
+      const blob = new Blob([resolvedHtml], { type: 'text/html' });
+      _previewHtmlBlob = URL.createObjectURL(blob);
+
+      // Auto-resize iframe to full document height once loaded (including all page cards)
+      iframe.onload = () => {
+        try {
+          // Poll briefly to let inline <script> pagination finish rendering
+          const check = () => {
+            const docHeight = iframe.contentDocument.documentElement.scrollHeight;
+            if (docHeight > 100) {
+              iframe.style.height = docHeight + 'px';
+            } else {
+              setTimeout(check, 80);
+            }
+          };
+          setTimeout(check, 120);
+        } catch (e) { /* cross-origin guard */ }
+      };
+      iframe.src = _previewHtmlBlob;
+
+      modal.classList.remove('hidden');
+    }
+
+    function closePreviewModal() {
+      document.getElementById('docPreviewModal').classList.add('hidden');
+      const iframe = document.getElementById('docPreviewIframe');
+      iframe.src = 'about:blank';
+      if (_previewHtmlBlob) { URL.revokeObjectURL(_previewHtmlBlob); _previewHtmlBlob = null; }
+    }
+
+    function downloadPreview(filename) {
+      if (!_previewHtmlBlob) return;
+      // Trigger browser Save As dialog via a hidden <a> with download attribute
+      const a = document.createElement('a');
+      a.href = _previewHtmlBlob;
+      a.download = filename || 'documentation.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function openPrintWindow(title, count, rowsArray, generatedBy) {
+      const html = buildDocHtml(title, count, rowsArray, generatedBy);
+      openPreviewModal(title, html);
     }
 
     // ─── UPLOAD MODAL ──────────────────────────────────────────────────────────
@@ -1458,6 +1668,18 @@
       if (e.target === uploadModal) closeUploadModal();
     });
 
+    // ─── PREVIEW MODAL LISTENERS ───────────────────────────────────────────────
+    document.getElementById('docClosePreviewBtn').addEventListener('click', closePreviewModal);
+    document.getElementById('docCancelPreviewBtn').addEventListener('click', closePreviewModal);
+    document.getElementById('docPreviewModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('docPreviewModal')) closePreviewModal();
+    });
+    document.getElementById('docDownloadPreviewBtn').addEventListener('click', () => {
+      const title = document.getElementById('docPreviewTitle').textContent || 'documentation';
+      const filename = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.html';
+      downloadPreview(filename);
+    });
+
     // Print Options modal listeners
     document.getElementById("printOptionsBtn").addEventListener("click", openPrintOptionsModal);
     document.getElementById("closePrintOptionsModal").addEventListener("click", closePrintOptionsModal);
@@ -1500,7 +1722,6 @@
     fetchDocumentation();
     fetchEmployees();
 
-    // Hide quick nav buttons user has no access to
     document.querySelectorAll('[id^="quickNav-"]').forEach(btn => {
       const menuKey = btn.id.replace('quickNav-', '');
       window.checkMenuAccess(menuKey, btn);

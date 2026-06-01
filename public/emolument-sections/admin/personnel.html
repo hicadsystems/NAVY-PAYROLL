@@ -1,40 +1,72 @@
 <div class="p-2 md:p-4 lg:p-6">
   <div class="mb-2 md:mb-4 lg:mb-6">
-    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">Upload, update, commission and manage
-      personnel records</h3>
+    <h3
+      class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
+    >
+      Upload, update, commission and manage personnel records
+    </h3>
   </div>
 
   <!-- Sub-tabs -->
   <div
-    class="max-w-2xl mr-auto ml-auto flex gap-1 mb-4 bg-white/40 rounded-lg p-1 border border-amber-100 overflow-x-auto">
-    <button onclick="window.pTab('search')"
-      class="ptab active flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all" data-ptab="search">Search /
-      Update</button>
-    <button onclick="window.pTab('upload')"
-      class="ptab flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all" data-ptab="upload">Batch
-      Upload</button>
-    <button onclick="window.pTab('svcno')"
-      class="ptab flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all" data-ptab="svcno">Change SVC
-      No</button>
-    <button onclick="window.pTab('list')" class="ptab flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all"
-      data-ptab="list">List</button>
+    class="max-w-2xl mr-auto ml-auto flex gap-1 mb-4 bg-white/40 rounded-lg p-1 border border-amber-100 overflow-x-auto"
+  >
+    <button
+      onclick="window.pTab('search')"
+      class="ptab active flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all"
+      data-ptab="search"
+    >
+      Search / Update
+    </button>
+    <button
+      onclick="window.pTab('upload')"
+      class="ptab flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all"
+      data-ptab="upload"
+    >
+      Batch Upload
+    </button>
+    <button
+      onclick="window.pTab('svcno')"
+      class="ptab flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all"
+      data-ptab="svcno"
+    >
+      Change SVC No
+    </button>
+    <button
+      onclick="window.pTab('list')"
+      class="ptab flex-1 min-w-max py-2 text-xs font-bold rounded-md transition-all"
+      data-ptab="list"
+    >
+      List
+    </button>
   </div>
 
   <!-- Search / Update -->
   <div id="ptab-search" class="max-w-lg mr-auto ml-auto ptab-panel">
     <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
-      <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-3">Search Personnel</h3>
+      <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-3">
+        Search Personnel
+      </h3>
       <div class="flex gap-2">
-        <input id="searchSvcNo" type="text" placeholder="Service number or name..."
+        <input
+          id="searchSvcNo"
+          type="text"
+          placeholder="Service number or name..."
           class="flex-1 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy"
-          onkeydown="if(event.key==='Enter')window.searchPersonnel()" />
-        <button onclick="window.clearSearch()"
-          class="px-4 py-2 bg-gray-100 text-navy/60 text-sm font-bold rounded-lg cursor-pointer border border-amber-100 hover:bg-gray-200 transition-colors">
+          onkeydown="if (event.key === 'Enter') window.searchPersonnel();"
+        />
+        <button
+          onclick="window.clearSearch()"
+          class="px-4 py-2 bg-gray-100 text-navy/60 text-sm font-bold rounded-lg cursor-pointer border border-amber-100 hover:bg-gray-200 transition-colors"
+        >
           <i class="fas fa-times"></i>
         </button>
-        <button onclick="window.searchPersonnel()"
-          class="px-4 py-2 bg-navy text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors"><i
-            class="fas fa-search"></i></button>
+        <button
+          onclick="window.searchPersonnel()"
+          class="px-4 py-2 bg-navy text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors"
+        >
+          <i class="fas fa-search"></i>
+        </button>
       </div>
       <div id="searchResults" class="mt-4"></div>
     </div>
@@ -43,29 +75,47 @@
   <!-- Batch Upload -->
   <div id="ptab-upload" class="max-w-lg mr-auto ml-auto ptab-panel hidden">
     <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
-      <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-3">Batch Personnel Upload (PERS)</h3>
-      <p class="text-sm text-blue-900/50 mb-4">Upload a CSV/Excel file with personnel records. Existing records will be
-        updated, new ones created.</p>
+      <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-3">
+        Batch Personnel Upload (PERS)
+      </h3>
+      <p class="text-sm text-blue-900/50 mb-4">
+        Upload a CSV/Excel file with personnel records. Existing records will be
+        updated, new ones created.
+      </p>
       <div
         class="border-2 border-dashed border-amber-200 rounded-xl p-8 text-center mb-4 cursor-pointer hover:bg-amber-50/30 transition-all"
-        onclick="document.getElementById('persFile').click()">
+        onclick="document.getElementById('persFile').click()"
+      >
         <i class="fas fa-cloud-upload-alt text-amber-400 fa-2x mb-2 block"></i>
         <p class="font-bold text-navy text-sm">Click to select file</p>
         <p class="text-xs text-blue-900/40 mt-1">CSV or Excel (.xlsx)</p>
-        <input type="file" id="persFile" accept=".csv,.xlsx" class="hidden" onchange="window.previewFile(this)" />
+        <input
+          type="file"
+          id="persFile"
+          accept=".csv,.xlsx"
+          class="hidden"
+          onchange="window.previewFile(this)"
+        />
       </div>
       <div id="filePreview" class="hidden text-sm text-navy/60 mb-3"></div>
       <div class="flex gap-2">
-        <button onclick="window.clearUpload()"
-          class="flex-1 py-2.5 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer border border-amber-100">
+        <button
+          onclick="window.clearUpload()"
+          class="flex-1 py-2.5 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer border border-amber-100"
+        >
           <i class="fas fa-times mr-2"></i>Clear
         </button>
-        <button onclick="window.uploadPers()"
-          class="flex-1 py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
+        <button
+          onclick="window.uploadPers()"
+          class="flex-1 py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none"
+        >
           <i class="fas fa-upload mr-2"></i>Upload & Process
         </button>
       </div>
-      <div id="uploadMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
+      <div
+        id="uploadMsg"
+        class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"
+      ></div>
     </div>
   </div>
 
@@ -73,40 +123,71 @@
   <div id="ptab-svcno" class="max-w-lg mr-auto ml-auto ptab-panel hidden">
     <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Change Service Number</h3>
-        <button onclick="window.openCommissionModal()"
-          class="px-3 py-1.5 bg-amber-500 text-white font-bold text-xs rounded-lg hover:bg-amber-600 transition-colors cursor-pointer border-none flex items-center gap-1.5">
+        <h3 class="font-bold text-navy text-sm uppercase tracking-wide">
+          Change Service Number
+        </h3>
+        <button
+          onclick="window.openCommissionModal()"
+          class="px-3 py-1.5 bg-amber-500 text-white font-bold text-xs rounded-lg hover:bg-amber-600 transition-colors cursor-pointer border-none flex items-center gap-1.5"
+        >
           <i class="fas fa-star"></i>Commission Upload
         </button>
       </div>
       <div class="space-y-3">
         <div>
-          <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Current Service
-            Number</label>
-          <input id="oldSvcNo" type="text" placeholder="e.g. NA/0012345"
-            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
+          <label
+            class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
+            >Current Service Number</label
+          >
+          <input
+            id="oldSvcNo"
+            type="text"
+            placeholder="e.g. NA/0012345"
+            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy"
+          />
         </div>
         <div>
-          <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">New Service Number</label>
-          <input id="newSvcNo" type="text" placeholder="e.g. NA/0054321"
-            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
+          <label
+            class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
+            >New Service Number</label
+          >
+          <input
+            id="newSvcNo"
+            type="text"
+            placeholder="e.g. NA/0054321"
+            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy"
+          />
         </div>
         <div>
-          <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Reason / Authority</label>
-          <input id="svcNoReason" type="text" placeholder="e.g. Commissioned from rating"
-            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
+          <label
+            class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
+            >Reason / Authority</label
+          >
+          <input
+            id="svcNoReason"
+            type="text"
+            placeholder="e.g. Commissioned from rating"
+            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy"
+          />
         </div>
         <div class="flex gap-2">
-          <button onclick="window.clearSvcNo()"
-            class="flex-1 py-2.5 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer border border-amber-100">
+          <button
+            onclick="window.clearSvcNo()"
+            class="flex-1 py-2.5 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer border border-amber-100"
+          >
             <i class="fas fa-times mr-2"></i>Clear
           </button>
-          <button onclick="window.changeSvcNo()"
-            class="flex-1 py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
+          <button
+            onclick="window.changeSvcNo()"
+            class="flex-1 py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none"
+          >
             <i class="fas fa-exchange-alt mr-2"></i>Change Service Number
           </button>
         </div>
-        <div id="svcNoMsg" class="hidden p-3 rounded-lg text-sm font-semibold"></div>
+        <div
+          id="svcNoMsg"
+          class="hidden p-3 rounded-lg text-sm font-semibold"
+        ></div>
       </div>
     </div>
   </div>
@@ -115,21 +196,32 @@
   <div id="ptab-list" class="max-w-2xl mr-auto ml-auto ptab-panel hidden">
     <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 mb-4">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Personnel List</h3>
+        <h3 class="font-bold text-navy text-sm uppercase tracking-wide">
+          Personnel List
+        </h3>
         <span class="text-xs text-blue-900/40" id="rptCount"></span>
       </div>
 
       <!-- Filters row -->
       <div class="flex gap-2 mb-3">
-        <input id="rptSearch" type="text" placeholder="Search name or service no..."
+        <input
+          id="rptSearch"
+          type="text"
+          placeholder="Search name or service no..."
           class="flex-1 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
-          oninput="window.rptSearchFilter()" />
-        <select id="rptCommandFilter" onchange="window.loadPersonnelList(1)"
-          class="border border-amber-100 rounded-lg px-2 py-2 text-sm text-navy bg-white/80 focus:outline-none cursor-pointer">
+          oninput="window.rptSearchFilter()"
+        />
+        <select
+          id="rptCommandFilter"
+          onchange="window.loadPersonnelList(1)"
+          class="border border-amber-100 rounded-lg px-2 py-2 text-sm text-navy bg-white/80 focus:outline-none cursor-pointer"
+        >
           <option value="">All Commands</option>
         </select>
-        <button onclick="window.clearRptSearch()"
-          class="px-3 py-2 bg-gray-100 text-navy/60 text-sm font-bold rounded-lg cursor-pointer border border-amber-100 hover:bg-gray-200 transition-colors">
+        <button
+          onclick="window.clearRptSearch()"
+          class="px-3 py-2 bg-gray-100 text-navy/60 text-sm font-bold rounded-lg cursor-pointer border border-amber-100 hover:bg-gray-200 transition-colors"
+        >
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -141,14 +233,23 @@
       </div>
 
       <!-- Pagination -->
-      <div id="rptPagination" class="flex items-center justify-between mt-3 hidden">
-        <button id="rptPrevBtn" onclick="window.rptChangePage(-1)"
-          class="px-3 py-1.5 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer border-solid transition-colors disabled:opacity-30">
+      <div
+        id="rptPagination"
+        class="flex items-center justify-between mt-3 hidden"
+      >
+        <button
+          id="rptPrevBtn"
+          onclick="window.rptChangePage(-1)"
+          class="px-3 py-1.5 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer border-solid transition-colors disabled:opacity-30"
+        >
           <i class="fas fa-chevron-left mr-1"></i>Prev
         </button>
         <span class="text-xs text-navy/50" id="rptPageInfo"></span>
-        <button id="rptNextBtn" onclick="window.rptChangePage(1)"
-          class="px-3 py-1.5 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer border-solid transition-colors disabled:opacity-30">
+        <button
+          id="rptNextBtn"
+          onclick="window.rptChangePage(1)"
+          class="px-3 py-1.5 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer border-solid transition-colors disabled:opacity-30"
+        >
           Next<i class="fas fa-chevron-right ml-1"></i>
         </button>
       </div>
@@ -157,35 +258,62 @@
 </div>
 
 <!-- Commission Modal -->
-<div id="commissionModal" class="fixed inset-0 z-50 hidden flex items-center justify-center"
-  style="background:rgba(0,0,0,0.4)">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 relative">
-    <button onclick="window.closeCommissionModal()"
-      class="absolute top-4 right-4 text-navy/40 hover:text-navy text-lg cursor-pointer border-none bg-transparent">
+<div
+  id="commissionModal"
+  class="fixed inset-0 z-50 hidden flex items-center justify-center"
+  style="background: rgba(0, 0, 0, 0.4)"
+>
+  <div
+    class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 relative"
+  >
+    <button
+      onclick="window.closeCommissionModal()"
+      class="absolute top-4 right-4 text-navy/40 hover:text-navy text-lg cursor-pointer border-none bg-transparent"
+    >
       <i class="fas fa-times"></i>
     </button>
-    <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Commission Personnel Upload</h3>
-    <p class="text-sm text-blue-900/50 mb-4">Upload commissioned personnel data file to update records system-wide.</p>
+    <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">
+      Commission Personnel Upload
+    </h3>
+    <p class="text-sm text-blue-900/50 mb-4">
+      Upload commissioned personnel data file to update records system-wide.
+    </p>
     <div
       class="border-2 border-dashed border-amber-200 rounded-xl p-8 text-center mb-4 cursor-pointer hover:bg-amber-50/30 transition-all"
-      onclick="document.getElementById('commFile').click()">
+      onclick="document.getElementById('commFile').click()"
+    >
       <i class="fas fa-star text-amber-400 fa-2x mb-2 block"></i>
-      <p class="font-bold text-navy text-sm">Click to select commissioned personnel file</p>
+      <p class="font-bold text-navy text-sm">
+        Click to select commissioned personnel file
+      </p>
       <p class="text-xs text-blue-900/40 mt-1">CSV or Excel (.xlsx)</p>
-      <input type="file" id="commFile" accept=".csv,.xlsx" class="hidden" onchange="window.previewCommFile(this)" />
+      <input
+        type="file"
+        id="commFile"
+        accept=".csv,.xlsx"
+        class="hidden"
+        onchange="window.previewCommFile(this)"
+      />
     </div>
     <div id="commFilePreview" class="hidden text-sm text-navy/60 mb-3"></div>
     <div class="flex gap-2">
-      <button onclick="window.clearCommission()"
-        class="flex-1 py-2.5 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer border border-amber-100">
+      <button
+        onclick="window.clearCommission()"
+        class="flex-1 py-2.5 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer border border-amber-100"
+      >
         <i class="fas fa-times mr-2"></i>Clear
       </button>
-      <button onclick="window.uploadCommission()"
-        class="flex-1 py-2.5 bg-amber-500 text-white font-bold text-sm rounded-lg hover:bg-amber-600 transition-colors cursor-pointer border-none">
+      <button
+        onclick="window.uploadCommission()"
+        class="flex-1 py-2.5 bg-amber-500 text-white font-bold text-sm rounded-lg hover:bg-amber-600 transition-colors cursor-pointer border-none"
+      >
         <i class="fas fa-upload mr-2"></i>Upload Commission Data
       </button>
     </div>
-    <div id="commMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
+    <div
+      id="commMsg"
+      class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"
+    ></div>
   </div>
 </div>
 
@@ -205,244 +333,577 @@
 
 <script>
   (() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     const TOKEN = token;
-    const PAGE_SIZE = 20;
-    let _page = 1, _allRows = [], _filtered = [];
+    const PAGE_SIZE = 10;
+    let _page = 1,
+      _allRows = [],
+      _filtered = [];
 
     window.pTab = function (name) {
-      document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.ptab-panel').forEach(p => p.classList.add('hidden'));
-      document.querySelector('[data-ptab="' + name + '"]').classList.add('active');
-      document.getElementById('ptab-' + name).classList.remove('hidden');
-      if (name === 'list') window.loadPersonnelList(1);
-    }
+      document
+        .querySelectorAll(".ptab")
+        .forEach((t) => t.classList.remove("active"));
+      document
+        .querySelectorAll(".ptab-panel")
+        .forEach((p) => p.classList.add("hidden"));
+      document
+        .querySelector('[data-ptab="' + name + '"]')
+        .classList.add("active");
+      document.getElementById("ptab-" + name).classList.remove("hidden");
+      if (name === "list") window.loadPersonnelList(1);
+    };
 
     window.openCommissionModal = function () {
-      document.getElementById('commissionModal').classList.remove('hidden');
-      document.getElementById('commissionModal').classList.add('flex');
+      document.getElementById("commissionModal").classList.remove("hidden");
+      document.getElementById("commissionModal").classList.add("flex");
     };
 
     window.closeCommissionModal = function () {
-      document.getElementById('commissionModal').classList.add('hidden');
-      document.getElementById('commissionModal').classList.remove('flex');
+      document.getElementById("commissionModal").classList.add("hidden");
+      document.getElementById("commissionModal").classList.remove("flex");
     };
 
-    document.getElementById('commissionModal').addEventListener('click', function (e) {
-      if (e.target === this) window.closeCommissionModal();
-    });
+    document
+      .getElementById("commissionModal")
+      .addEventListener("click", function (e) {
+        if (e.target === this) window.closeCommissionModal();
+      });
 
     // ── Clear functions ───────────────────────────────────────
     window.clearSearch = function () {
-      document.getElementById('searchSvcNo').value = '';
-      document.getElementById('searchResults').innerHTML = '';
+      document.getElementById("searchSvcNo").value = "";
+      document.getElementById("searchResults").innerHTML = "";
     };
 
     window.clearUpload = function () {
-      document.getElementById('persFile').value = '';
-      const fp = document.getElementById('filePreview');
-      fp.textContent = '';
-      fp.classList.add('hidden');
-      const msg = document.getElementById('uploadMsg');
-      msg.textContent = '';
-      msg.classList.add('hidden');
+      document.getElementById("persFile").value = "";
+      const fp = document.getElementById("filePreview");
+      fp.textContent = "";
+      fp.classList.add("hidden");
+      const msg = document.getElementById("uploadMsg");
+      msg.textContent = "";
+      msg.classList.add("hidden");
     };
 
     window.clearSvcNo = function () {
-      document.getElementById('oldSvcNo').value = '';
-      document.getElementById('newSvcNo').value = '';
-      document.getElementById('svcNoReason').value = '';
-      const msg = document.getElementById('svcNoMsg');
-      msg.textContent = '';
-      msg.classList.add('hidden');
+      document.getElementById("oldSvcNo").value = "";
+      document.getElementById("newSvcNo").value = "";
+      document.getElementById("svcNoReason").value = "";
+      const msg = document.getElementById("svcNoMsg");
+      msg.textContent = "";
+      msg.classList.add("hidden");
     };
 
     window.clearCommission = function () {
-      document.getElementById('commFile').value = '';
-      const fp = document.getElementById('commFilePreview');
-      fp.textContent = '';
-      fp.classList.add('hidden');
-      const msg = document.getElementById('commMsg');
-      msg.textContent = '';
-      msg.classList.add('hidden');
+      document.getElementById("commFile").value = "";
+      const fp = document.getElementById("commFilePreview");
+      fp.textContent = "";
+      fp.classList.add("hidden");
+      const msg = document.getElementById("commMsg");
+      msg.textContent = "";
+      msg.classList.add("hidden");
     };
 
     window.clearRptSearch = function () {
-      document.getElementById('rptSearch').value = '';
+      document.getElementById("rptSearch").value = "";
       renderTable(_allRows);
     };
 
     // ── Core functions ────────────────────────────────────────
     window.searchPersonnel = function () {
-      const q = document.getElementById('searchSvcNo').value.trim();
+      const q = document.getElementById("searchSvcNo").value.trim();
       if (!q) return;
-      const el = document.getElementById('searchResults');
-      el.innerHTML = '<div class="flex items-center gap-2 text-navy/30 text-sm"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+      const el = document.getElementById("searchResults");
+      el.innerHTML =
+        '<div class="flex items-center gap-2 text-navy/30 text-sm"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
 
-      fetch('/admin/personnel/search?q=' + encodeURIComponent(q), { headers: { Authorization: 'Bearer ' + token } })
-        .then(r => r.ok ? r.json() : [])
-        .then(rows => {
-          if (!rows.length) { el.innerHTML = '<div class="text-sm text-blue-900/40 py-2">No results found</div>'; return; }
-          el.innerHTML = `<div class="space-y-2">` + rows.map(r => `
-        <div class="flex items-center gap-3 p-3 rounded-xl border border-amber-100 bg-white/40">
-          <div class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-            <i class="fas fa-user text-blue-400" style="font-size:14px"></i>
+      fetch("/admin/personnel/search?q=" + encodeURIComponent(q), {
+        headers: { Authorization: "Bearer " + token },
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((data) => {
+          const rows = Array.isArray(data) ? data : data?.rows || [];
+          if (!rows.length) {
+            el.innerHTML =
+              '<div class="text-sm text-blue-900/40 py-2">No results found</div>';
+            return;
+          }
+          el.innerHTML =
+            `<div class="space-y-2">` +
+            rows
+              .map(
+                (r) => `
+        <div class="border border-amber-100 rounded-xl bg-white/40 overflow-hidden">
+          <div class="flex items-center gap-3 p-3">
+            <div class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-user text-blue-400" style="font-size:14px"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-navy text-sm">${r.Surname || ""} ${r.OtherName || ""}</div>
+              <div class="text-xs text-blue-900/40 mt-0.5">${r.serviceNumber} · ${r.Rank || "—"} · ${r.ship || "—"}</div>
+            </div>
+            <button onclick="window.toggleContactEdit('${r.serviceNumber}')" class="text-xs font-bold text-amber-600 hover:text-amber-800 cursor-pointer border border-amber-200 rounded px-2 py-1 bg-amber-50 mr-1">Edit</button>
+            <button onclick="window.openPersonnelForm('${r.serviceNumber}')" class="text-xs font-bold text-blue-600 hover:text-blue-800 cursor-pointer border border-blue-200 rounded px-2 py-1 bg-blue-50">View Form</button>
           </div>
-          <div class="flex-1 min-w-0">
-            <div class="font-bold text-navy text-sm">${r.full_name}</div>
-            <div class="text-xs text-blue-900/40 mt-0.5">${r.user_id} · ${r.rank || '—'} · ${r.ship || '—'}</div>
+          <div id="contact-edit-${r.serviceNumber}" class="hidden border-t border-amber-100 p-3 bg-amber-50/30">
+            <p class="text-xs font-bold text-navy/50 uppercase tracking-wide mb-2">Update Contact Details</p>
+            <div class="flex flex-col gap-2">
+              <input id="ce-email-${r.serviceNumber}" type="email" value="${r.email || ""}" placeholder="Email"
+                class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white focus:outline-none w-full"/>
+              <input id="ce-phone-${r.serviceNumber}" type="text" value="${r.gsm_number || ""}" placeholder="Phone"
+                class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white focus:outline-none w-full"/>
+              <div class="flex gap-2">
+                <button onclick="window.saveContact('${r.serviceNumber}')"
+                  class="flex-1 py-1.5 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800">
+                  Save
+                </button>
+                <button onclick="window.toggleContactEdit('${r.serviceNumber}')"
+                  class="flex-1 py-1.5 bg-gray-100 text-navy/60 text-xs font-bold rounded-lg cursor-pointer border border-amber-100">
+                  Cancel
+                </button>
+              </div>
+              <div id="ce-msg-${r.serviceNumber}" class="hidden text-xs font-semibold rounded px-2 py-1"></div>
+            </div>
           </div>
-          <button onclick="openEditModal('${r.user_id}')" class="text-xs font-bold text-blue-600 hover:text-blue-800 cursor-pointer border border-blue-200 rounded px-2 py-1 bg-blue-50">Edit</button>
-        </div>`).join('') + `</div>`;
+        </div>`,
+              )
+              .join("") +
+            `</div>`;
         })
-        .catch(() => { el.innerHTML = '<div class="text-sm text-red-400 py-2">Search failed</div>'; });
-    }
+        .catch(() => {
+          el.innerHTML =
+            '<div class="text-sm text-red-400 py-2">Search failed</div>';
+        });
+    };
 
-    window.openEditModal = function (userId) {
-      alert('Edit record for ' + userId + '\n(Full record editor loads here via /admin/personnel/' + userId + ')');
-    }
+    window.toggleContactEdit = function (svcNo) {
+      const el = document.getElementById("contact-edit-" + svcNo);
+      if (el) el.classList.toggle("hidden");
+    };
+
+    window.saveContact = function (svcNo) {
+      const email = document.getElementById("ce-email-" + svcNo)?.value.trim();
+      const phone = document.getElementById("ce-phone-" + svcNo)?.value.trim();
+      const msg = document.getElementById("ce-msg-" + svcNo);
+      fetch("/admin/personnel/" + encodeURIComponent(svcNo) + "/contact", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify({ email, phone_number: phone }),
+      })
+        .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => {
+          if (msg) {
+            msg.textContent = ok
+              ? d.message || "Contact updated."
+              : d.error || "Failed.";
+            msg.className = `text-xs font-semibold rounded px-2 py-1 ${ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`;
+            msg.classList.remove("hidden");
+          }
+        })
+        .catch(() => {
+          if (msg) {
+            msg.textContent = "Server error.";
+            msg.className =
+              "text-xs font-semibold rounded px-2 py-1 bg-red-50 text-red-600";
+            msg.classList.remove("hidden");
+          }
+        });
+    };
+
+    window.openEditModal = function (svcNo) {
+      window.openPersonnelForm(svcNo);
+    };
+
+    window.openPersonnelForm = function (svcNo) {
+      const existing = document.getElementById("persFormOverlay");
+      if (existing) existing.remove();
+
+      const overlay = document.createElement("div");
+      overlay.id = "persFormOverlay";
+      overlay.style.cssText =
+        "position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;background:#0B1E3D";
+
+      overlay.innerHTML = `
+    <div style="flex-shrink:0;background:#0B1E3D;padding:10px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,0.08)">
+      <i class="fas fa-id-card" style="color:#C4932A;font-size:14px"></i>
+      <span style="font-family:monospace;font-weight:700;font-size:13px;color:#C4932A;letter-spacing:.05em">${svcNo}</span>
+      <span style="flex:1"></span>
+
+      <div id="pfo-history-wrap" style="display:none;align-items:center;gap:8px">
+        <label style="font-size:.68rem;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase">Year</label>
+        <select id="pfo-year-sel"
+          style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;
+                 padding:4px 8px;border-radius:6px;font-size:.75rem;font-weight:700;cursor:pointer">
+        </select>
+        <button id="pfo-load-hist"
+          style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.8);
+                 padding:4px 12px;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer">
+          Load
+        </button>
+        <button id="pfo-load-current"
+          style="background:rgba(196,147,42,.2);border:1px solid rgba(196,147,42,.4);color:#C4932A;
+                 padding:4px 12px;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer">
+          Current
+        </button>
+      </div>
+
+      <button id="pfo-close-btn"
+        style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);color:white;padding:6px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <i class="fas fa-times" style="font-size:11px"></i> Close
+      </button>
+    </div>
+
+    <iframe
+      id="pfo-iframe"
+      src="./emolument-form.html?svcno=${encodeURIComponent(svcNo)}&admin=1"
+      style="flex:1;border:none;width:100%;background:#f0f3f8;"
+    ></iframe>`;
+
+      document.body.appendChild(overlay);
+      document.body.style.overflow = "hidden";
+
+      // Wire up close button
+      overlay
+        .querySelector("#pfo-close-btn")
+        .addEventListener("click", function () {
+          overlay.remove();
+          document.body.style.overflow = "";
+          window.removeEventListener("message", window._pfoMsgHandler);
+          (window._pfoHiddenEls || []).forEach(
+            ([el, d]) => (el.style.display = d),
+          );
+          window._pfoHiddenEls = null;
+        });
+
+      // Hide SPA chrome (topbar, sidebar) while overlay is open
+      const _hidden = [];
+      [
+        "#topbar",
+        ".topbar",
+        "header.topbar",
+        "#sidebar",
+        ".sidebar",
+        "#main-nav",
+      ].forEach((sel) => {
+        document.querySelectorAll(sel).forEach((el) => {
+          if (el.style.display !== "none") {
+            _hidden.push([el, el.style.display]);
+            el.style.display = "none";
+          }
+        });
+      });
+      window._pfoHiddenEls = _hidden;
+
+      // Listen for postMessage from iframe (history years)
+      window._pfoMsgHandler = function (e) {
+        if (e.data?.type === "emol_form_years") {
+          const years = e.data.years || [];
+          if (!years.length) return;
+          const wrap = document.getElementById("pfo-history-wrap");
+          const sel = document.getElementById("pfo-year-sel");
+          if (!wrap || !sel) return;
+          sel.innerHTML = years
+            .map((y) => `<option value="${y}">${y}</option>`)
+            .join("");
+          wrap.style.display = "flex";
+
+          document.getElementById("pfo-load-hist").onclick = function () {
+            const yr = sel.value;
+            const iframe = document.getElementById("pfo-iframe");
+            if (iframe && yr)
+              iframe.contentWindow.postMessage(
+                { type: "emol_load_history", year: yr },
+                "*",
+              );
+          };
+          document.getElementById("pfo-load-current").onclick = function () {
+            const iframe = document.getElementById("pfo-iframe");
+            if (iframe)
+              iframe.src = `./emolument-form.html?svcno=${encodeURIComponent(svcNo)}&admin=1`;
+          };
+        }
+      };
+      window.addEventListener("message", window._pfoMsgHandler);
+    };
 
     window.previewFile = function (input) {
       const f = input.files[0];
-      if (f) { document.getElementById('filePreview').textContent = 'Selected: ' + f.name + ' (' + (f.size / 1024).toFixed(1) + ' KB)'; document.getElementById('filePreview').classList.remove('hidden'); }
+      if (f) {
+        document.getElementById("filePreview").textContent =
+          "Selected: " + f.name + " (" + (f.size / 1024).toFixed(1) + " KB)";
+        document.getElementById("filePreview").classList.remove("hidden");
+      }
     };
 
     window.uploadPers = function () {
-      const file = document.getElementById('persFile').files[0];
-      const msg = document.getElementById('uploadMsg');
-      if (!file) { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Select a file first.'; msg.classList.remove('hidden'); return; }
+      const file = document.getElementById("persFile").files[0];
+      const msg = document.getElementById("uploadMsg");
+      if (!file) {
+        msg.className =
+          "p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
+        msg.textContent = "Select a file first.";
+        msg.classList.remove("hidden");
+        return;
+      }
       const fd = new FormData();
-      fd.append('file', file);
-      fetch('/admin/personnel/batch-upload', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd })
-        .then(r => r.json().then(d => ({ ok: r.ok, d })))
-        .then(({ ok, d }) => { msg.className = 'p-3 rounded-lg text-sm font-semibold ' + (ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'); msg.textContent = ok ? (d.message || 'Upload successful.') : (d.error || 'Failed'); msg.classList.remove('hidden'); })
-        .catch(() => { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Server error'; msg.classList.remove('hidden'); });
-    }
+      fd.append("file", file);
+      fetch("/admin/personnel/batch-upload", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token },
+        body: fd,
+      })
+        .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => {
+          msg.className =
+            "p-3 rounded-lg text-sm font-semibold " +
+            (ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600");
+          msg.textContent = ok
+            ? d.message || "Upload successful."
+            : d.error || "Failed";
+          msg.classList.remove("hidden");
+        })
+        .catch(() => {
+          msg.className =
+            "p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
+          msg.textContent = "Server error";
+          msg.classList.remove("hidden");
+        });
+    };
 
     window.previewCommFile = function (input) {
       const f = input.files[0];
-      if (f) { document.getElementById('commFilePreview').textContent = 'Selected: ' + f.name; document.getElementById('commFilePreview').classList.remove('hidden'); }
+      if (f) {
+        document.getElementById("commFilePreview").textContent =
+          "Selected: " + f.name;
+        document.getElementById("commFilePreview").classList.remove("hidden");
+      }
     };
 
     window.uploadCommission = function () {
-      const file = document.getElementById('commFile').files[0];
-      const msg = document.getElementById('commMsg');
-      if (!file) { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Select a file first.'; msg.classList.remove('hidden'); return; }
+      const file = document.getElementById("commFile").files[0];
+      const msg = document.getElementById("commMsg");
+      if (!file) {
+        msg.className =
+          "p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
+        msg.textContent = "Select a file first.";
+        msg.classList.remove("hidden");
+        return;
+      }
       const fd = new FormData();
-      fd.append('file', file);
-      fetch('/admin/personnel/commission-upload', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd })
-        .then(r => r.json().then(d => ({ ok: r.ok, d })))
-        .then(({ ok, d }) => { msg.className = 'p-3 rounded-lg text-sm font-semibold ' + (ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'); msg.textContent = ok ? (d.message || 'Commission data uploaded.') : (d.error || 'Failed'); msg.classList.remove('hidden'); })
-        .catch(() => { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Server error'; msg.classList.remove('hidden'); });
-    }
+      fd.append("file", file);
+      fetch("/admin/personnel/commission-upload", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token },
+        body: fd,
+      })
+        .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => {
+          msg.className =
+            "p-3 rounded-lg text-sm font-semibold " +
+            (ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600");
+          msg.textContent = ok
+            ? d.message || "Commission data uploaded."
+            : d.error || "Failed";
+          msg.classList.remove("hidden");
+        })
+        .catch(() => {
+          msg.className =
+            "p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
+          msg.textContent = "Server error";
+          msg.classList.remove("hidden");
+        });
+    };
 
     window.changeSvcNo = function () {
-      const oldNo = document.getElementById('oldSvcNo').value.trim();
-      const newNo = document.getElementById('newSvcNo').value.trim();
-      const reason = document.getElementById('svcNoReason').value.trim();
-      const msg = document.getElementById('svcNoMsg');
-      if (!oldNo || !newNo) { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Both service numbers are required.'; msg.classList.remove('hidden'); return; }
-      if (!confirm('Change service number from ' + oldNo + ' to ' + newNo + '?')) return;
-      fetch('/admin/personnel/change-svcno', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ old_svc_no: oldNo, new_svc_no: newNo, reason })
+      const oldNo = document.getElementById("oldSvcNo").value.trim();
+      const newNo = document.getElementById("newSvcNo").value.trim();
+      const reason = document.getElementById("svcNoReason").value.trim();
+      const msg = document.getElementById("svcNoMsg");
+      if (!oldNo || !newNo) {
+        msg.className =
+          "p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
+        msg.textContent = "Both service numbers are required.";
+        msg.classList.remove("hidden");
+        return;
+      }
+      if (
+        !confirm("Change service number from " + oldNo + " to " + newNo + "?")
+      )
+        return;
+      fetch("/admin/personnel/change-svcno", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify({ old_svc_no: oldNo, new_svc_no: newNo, reason }),
       })
-        .then(r => r.json().then(d => ({ ok: r.ok, d })))
-        .then(({ ok, d }) => { msg.className = 'p-3 rounded-lg text-sm font-semibold ' + (ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'); msg.textContent = ok ? (d.message || 'Service number changed.') : (d.error || 'Failed'); msg.classList.remove('hidden'); })
-        .catch(() => { msg.className = 'p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600'; msg.textContent = 'Server error'; msg.classList.remove('hidden'); });
-    }
+        .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => {
+          msg.className =
+            "p-3 rounded-lg text-sm font-semibold " +
+            (ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600");
+          msg.textContent = ok
+            ? d.message || "Service number changed."
+            : d.error || "Failed";
+          msg.classList.remove("hidden");
+        })
+        .catch(() => {
+          msg.className =
+            "p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
+          msg.textContent = "Server error";
+          msg.classList.remove("hidden");
+        });
+    };
+
+    // ── Load commands into dropdown ──────────────────────────
+    fetch("/system/commands", { headers: { Authorization: "Bearer " + TOKEN } })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((cmds) => {
+        const sel = document.getElementById("rptCommandFilter");
+        if (!sel) return;
+        const list = Array.isArray(cmds) ? cmds : cmds?.data || [];
+        list.forEach((c) => {
+          const opt = document.createElement("option");
+          opt.value = c.code || c.commandName;
+          opt.textContent = c.commandName;
+          sel.appendChild(opt);
+        });
+      })
+      .catch(() => {});
 
     // ── Personnel list with pagination ───────────────────────
     window.loadPersonnelList = function (page) {
       _page = page;
-      const tableEl = document.getElementById('rptTable');
-      const countEl = document.getElementById('rptCount');
-      tableEl.innerHTML = '<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+      const tableEl = document.getElementById("rptTable");
+      const countEl = document.getElementById("rptCount");
+      tableEl.innerHTML =
+        '<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
 
       const params = new URLSearchParams({ page, pageSize: PAGE_SIZE });
-      const command = document.getElementById('rptCommandFilter').value;
-      if (command) params.set('command', command);
+      const command = document.getElementById("rptCommandFilter").value;
+      const q = document.getElementById("rptSearch").value.trim();
+      if (command) params.set("command", command);
+      // Pass search query to backend — looksLikeSvcNo → serviceNumber filter, else surname
+      if (q) {
+        if (/^[A-Za-z]\d/i.test(q)) {
+          params.set("serviceNumber", q);
+        } else {
+          params.set("surname", q);
+        }
+      }
 
-      fetch('/admin/personnel?' + params, { headers: { Authorization: 'Bearer ' + TOKEN } })
-        .then(r => r.ok ? r.json() : Promise.reject(r.status))
-        .then(data => {
+      fetch("/admin/personnel?" + params, {
+        headers: { Authorization: "Bearer " + TOKEN },
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+        .then((data) => {
           const rows = data.rows || [];
           const pagination = data.pagination || {};
           _allRows = rows;
           _filtered = rows;
 
-          if (countEl) countEl.textContent = (pagination.total || 0).toLocaleString() + ' record(s)';
+          if (countEl)
+            countEl.textContent =
+              (pagination.total || 0).toLocaleString() + " record(s)";
           renderTable(rows);
           renderPagination(pagination);
         })
         .catch(() => {
-          tableEl.innerHTML = '<div class="text-center py-8 text-red-400 text-sm">Failed to load personnel</div>';
+          tableEl.innerHTML =
+            '<div class="text-center py-8 text-red-400 text-sm">Failed to load personnel</div>';
         });
     };
 
     function renderTable(rows) {
-      const tableEl = document.getElementById('rptTable');
+      const tableEl = document.getElementById("rptTable");
       if (!rows.length) {
-        tableEl.innerHTML = '<div class="text-center py-8 text-blue-900/30 text-sm">No records found</div>';
+        tableEl.innerHTML =
+          '<div class="text-center py-8 text-blue-900/30 text-sm">No records found</div>';
         return;
       }
       const STATUS_CLS = {
-        Filled: 'bg-amber-50 text-amber-600',
-        FO: 'bg-blue-50 text-blue-600',
-        CPO: 'bg-purple-50 text-purple-600',
-        Verified: 'bg-green-50 text-green-600',
+        Filled: "bg-amber-50 text-amber-600",
+        FO: "bg-blue-50 text-blue-600",
+        CPO: "bg-purple-50 text-purple-600",
+        Verified: "bg-green-50 text-green-600",
       };
       const STATUS_LBL = {
-        Filled: 'Submitted',
-        FO: 'DO Reviewed',
-        CPO: 'FO Approved',
-        Verified: 'Confirmed',
+        Filled: "Submitted",
+        FO: "DO Reviewed",
+        CPO: "FO Approved",
+        Verified: "Confirmed",
       };
-      tableEl.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-sm">
+      tableEl.innerHTML =
+        `<div class="overflow-x-auto"><table class="w-full text-sm">
         <thead><tr class="border-b border-amber-100">
           <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Svc No</th>
           <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Name</th>
           <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide hidden md:table-cell">Ship</th>
           <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Status</th>
+          <th class="py-2 text-xs font-bold text-navy/50 uppercase tracking-wide text-center">Form</th>
         </tr></thead>
         <tbody>` +
-        rows.map(r => {
-          const cls = STATUS_CLS[r.Status] || 'bg-gray-100 text-gray-500';
-          const lbl = STATUS_LBL[r.Status] || (r.emolumentform === 'Yes' ? 'Completed' : 'Not Filed');
-          const badgeCls = r.Status
-            ? cls
-            : r.emolumentform === 'Yes'
-              ? 'bg-green-50 text-green-600'
-              : 'bg-red-50 text-red-400';
-          return `<tr class="border-b border-amber-50 hover:bg-amber-50/30 cursor-pointer" onclick="window.rptOpenShip('${r.ship || ''}')">
+        rows
+          .map((r) => {
+            const cls = STATUS_CLS[r.Status] || "bg-gray-100 text-gray-500";
+            const lbl =
+              STATUS_LBL[r.Status] ||
+              (r.emolumentform === "Yes" ? "Completed" : "Not Filed");
+            const badgeCls = r.Status
+              ? cls
+              : r.emolumentform === "Yes"
+                ? "bg-green-50 text-green-600"
+                : "bg-red-50 text-red-400";
+            return `<tr class="border-b border-amber-50 hover:bg-amber-50/30">
             <td class="py-2 font-semibold text-navy text-xs">${r.serviceNumber}</td>
-            <td class="py-2 text-blue-900/70 text-xs">${r.Surname} ${r.OtherName || ''}</td>
-            <td class="py-2 text-blue-900/50 text-xs hidden md:table-cell">${r.ship || '—'}</td>
+            <td class="py-2 text-blue-900/70 text-xs">${r.Surname} ${r.OtherName || ""}</td>
+            <td class="py-2 text-blue-900/50 text-xs hidden md:table-cell">${r.ship || "—"}</td>
             <td class="py-2"><span class="text-xs font-bold px-2 py-0.5 rounded-full ${badgeCls}">${lbl}</span></td>
+            <td class="py-2 text-center">
+              <button onclick="window.openPersonnelForm('${r.serviceNumber}')"
+                class="text-xs font-bold text-indigo-600 hover:text-indigo-900 cursor-pointer border border-indigo-200 rounded px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 transition-colors">
+                <i class="fas fa-eye" style="font-size:10px"></i> View
+              </button>
+            </td>
           </tr>`;
-        }).join('') +
+          })
+          .join("") +
         `</tbody></table></div>`;
     }
 
     function renderPagination(p) {
-      const el = document.getElementById('rptPagination');
-      const info = document.getElementById('rptPageInfo');
-      const prev = document.getElementById('rptPrevBtn');
-      const next = document.getElementById('rptNextBtn');
-      if (!el || !p.totalPages) return;
-      el.classList.remove('hidden');
-      if (info) info.textContent = `Page ${p.page} of ${p.totalPages}`;
+      const el = document.getElementById("rptPagination");
+      const info = document.getElementById("rptPageInfo");
+      const prev = document.getElementById("rptPrevBtn");
+      const next = document.getElementById("rptNextBtn");
+      if (!el) return;
+      if (!p.totalPages || p.totalPages <= 1) {
+        el.classList.add("hidden");
+        return;
+      }
+      el.classList.remove("hidden");
+      if (info)
+        info.textContent = `Page ${p.page} of ${p.totalPages} · ${(p.total || 0).toLocaleString()} total`;
       if (prev) prev.disabled = p.page <= 1;
       if (next) next.disabled = p.page >= p.totalPages;
     }
 
     window.rptSearchFilter = function () {
-      const q = document.getElementById('rptSearch').value.toLowerCase();
-      const filtered = _allRows.filter(r =>
-        ((r.Surname || '') + ' ' + (r.OtherName || '')).toLowerCase().includes(q) ||
-        (r.serviceNumber || '').toLowerCase().includes(q)
-      );
-      renderTable(filtered);
+      // Debounce — wait 400ms after last keystroke then reload from backend
+      clearTimeout(window._rptSearchTimer);
+      window._rptSearchTimer = setTimeout(() => {
+        window.loadPersonnelList(1);
+      }, 400);
+    };
+
+    window.clearRptSearch = function () {
+      document.getElementById("rptSearch").value = "";
+      window.loadPersonnelList(1);
     };
 
     window.rptChangePage = function (dir) {

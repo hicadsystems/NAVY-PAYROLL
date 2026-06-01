@@ -128,7 +128,16 @@ async function createControlRow({
  */
 async function updateControlRow(
   id,
-  { processingyear, ship, formtype, startdate, enddate, status, notes, updatedby },
+  {
+    processingyear,
+    ship,
+    formtype,
+    startdate,
+    enddate,
+    status,
+    notes,
+    updatedby,
+  },
 ) {
   pool.useDatabase(DB());
   const [result] = await pool.query(
@@ -168,10 +177,9 @@ async function updateControlRow(
  */
 async function deleteControlRow(id) {
   pool.useDatabase(DB());
-  const [result] = await pool.query(
-    `DELETE FROM ef_control WHERE Id = ?`,
-    [id],
-  );
+  const [result] = await pool.query(`DELETE FROM ef_control WHERE Id = ?`, [
+    id,
+  ]);
   return result.affectedRows > 0;
 }
 
@@ -205,6 +213,18 @@ async function insertAuditLog({
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+// SET ALL SHIPS OPEN STATUS
+// Called when a Global (ship='All') ef_control row is created
+// or updated. Syncs ef_ships.openship to match the control status.
+//   open=1  → Open/Reopen  → personnel can access forms
+//   open=0  → Close        → forms blocked at ship level
+// ─────────────────────────────────────────────────────────────
+async function setAllShipsOpenStatus(open) {
+  pool.useDatabase(DB());
+  await pool.query(`UPDATE ef_ships SET openship = ?`, [open ? 1 : 0]);
+}
+
 module.exports = {
   getAllControlRows,
   getControlRowById,
@@ -212,5 +232,6 @@ module.exports = {
   createControlRow,
   updateControlRow,
   deleteControlRow,
+  setAllShipsOpenStatus,
   insertAuditLog,
 };

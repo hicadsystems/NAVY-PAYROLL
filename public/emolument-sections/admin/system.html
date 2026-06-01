@@ -1,1207 +1,76 @@
-<style>
-  /* ── TOKENS ───────────────────────────────────────── */
-  :root {
-    --navy: #1e3a5f;
-    --navy-mid: #2a4f7c;
-    --navy-soft: rgba(30, 58, 95, 0.08);
-    --navy-border: rgba(30, 58, 95, 0.14);
-    --navy-text: rgba(30, 58, 95, 0.55);
-    --amber: #d97706;
-    --amber-light: #fef3c7;
-    --amber-border: #fde68a;
-    --green: #15803d;
-    --green-light: #dcfce7;
-    --blue: #1d4ed8;
-    --blue-light: #dbeafe;
-    --red: #b91c1c;
-    --red-light: #fee2e2;
-    --surface: #f4f6fa;
-    --white: #ffffff;
-    --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 14px;
-    --shadow-sm: 0 1px 3px rgba(30, 58, 95, 0.08), 0 1px 2px rgba(30, 58, 95, 0.06);
-    --shadow-md: 0 4px 16px rgba(30, 58, 95, 0.10), 0 1px 4px rgba(30, 58, 95, 0.06);
-    --shadow-lg: 0 16px 48px rgba(30, 58, 95, 0.18), 0 4px 12px rgba(30, 58, 95, 0.10);
-    --font: 'DM Sans', sans-serif;
-    --font-mono: 'DM Mono', monospace;
-    --transition: 0.18s ease;
-  }
-
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
-  body {
-    font-family: var(--font);
-    background: var(--surface);
-    color: var(--navy);
-    min-height: 100vh;
-  }
-
-  /* ── LAYOUT ───────────────────────────────────────── */
-  .page {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 28px 20px 48px;
-  }
-
-  /* ── PAGE HEADER ──────────────────────────────────── */
-  .page-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-  }
-
-  .page-header-left {}
-
-  .page-eyebrow {
-    font-size: 10.5px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--amber);
-    margin-bottom: 4px;
-  }
-
-  .page-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--navy);
-    line-height: 1.2;
-  }
-
-  .page-sub {
-    font-size: 13px;
-    color: var(--navy-text);
-    margin-top: 4px;
-  }
-
-  /* ── STAT CARDS ───────────────────────────────────── */
-  .stat-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-
-  @media (max-width: 700px) {
-    .stat-row {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  .stat-card {
-    background: var(--white);
-    border: 1px solid var(--navy-border);
-    border-radius: var(--radius-md);
-    padding: 14px 16px;
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    transition: box-shadow var(--transition);
-  }
-
-  .stat-card:hover {
-    box-shadow: var(--shadow-md);
-  }
-
-  .stat-label {
-    font-size: 10.5px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--navy-text);
-  }
-
-  .stat-value {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--navy);
-    font-family: var(--font-mono);
-    line-height: 1;
-  }
-
-  .stat-value.open-val {
-    color: var(--green);
-  }
-
-  .stat-value.close-val {
-    color: var(--red);
-  }
-
-  .stat-value.reopen-val {
-    color: var(--blue);
-  }
-
-  .stat-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 7px;
-    border-radius: 20px;
-    width: fit-content;
-  }
-
-  /* ── MAIN CARD ────────────────────────────────────── */
-  .card {
-    background: var(--white);
-    border: 1px solid var(--navy-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
-  }
-
-  .card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--navy-border);
-    background: linear-gradient(135deg, rgba(30, 58, 95, 0.04) 0%, rgba(255, 255, 255, 0) 60%);
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .card-header-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .card-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: var(--radius-sm);
-    background: var(--navy);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 13px;
-    flex-shrink: 0;
-  }
-
-  .card-title {
-    font-size: 13.5px;
-    font-weight: 700;
-    color: var(--navy);
-  }
-
-  .card-subtitle {
-    font-size: 11.5px;
-    color: var(--navy-text);
-    margin-top: 1px;
-  }
-
-  /* ── TOOLBAR ──────────────────────────────────────── */
-  .toolbar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 20px;
-    border-bottom: 1px solid var(--navy-border);
-    background: rgba(244, 246, 250, 0.5);
-    flex-wrap: wrap;
-  }
-
-  .search-wrap {
-    position: relative;
-    flex: 1;
-    min-width: 180px;
-  }
-
-  .search-wrap i {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--navy-text);
-    font-size: 12px;
-  }
-
-  .search-input {
-    width: 100%;
-    padding: 7px 10px 7px 30px;
-    border: 1.5px solid var(--navy-border);
-    border-radius: var(--radius-sm);
-    font-size: 12.5px;
-    font-family: var(--font);
-    color: var(--navy);
-    background: var(--white);
-    outline: none;
-    transition: border-color var(--transition);
-  }
-
-  .search-input:focus {
-    border-color: var(--navy-mid);
-  }
-
-  .search-input::placeholder {
-    color: var(--navy-text);
-  }
-
-  .filter-select {
-    padding: 7px 28px 7px 10px;
-    border: 1.5px solid var(--navy-border);
-    border-radius: var(--radius-sm);
-    font-size: 12.5px;
-    font-family: var(--font);
-    color: var(--navy);
-    background: var(--white);
-    outline: none;
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%231e3a5f' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 9px center;
-    transition: border-color var(--transition);
-  }
-
-  .filter-select:focus {
-    border-color: var(--navy-mid);
-  }
-
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
-    border-radius: var(--radius-sm);
-    font-size: 12.5px;
-    font-weight: 600;
-    font-family: var(--font);
-    cursor: pointer;
-    border: none;
-    transition: opacity var(--transition), transform var(--transition);
-    white-space: nowrap;
-  }
-
-  .btn:active {
-    transform: scale(0.97);
-  }
-
-  .btn-primary {
-    background: var(--navy);
-    color: white;
-  }
-
-  .btn-primary:hover {
-    opacity: 0.88;
-  }
-
-  .btn-ghost {
-    background: var(--navy-soft);
-    color: var(--navy);
-  }
-
-  .btn-ghost:hover {
-    background: rgba(30, 58, 95, 0.13);
-  }
-
-  /* ── TABLE ────────────────────────────────────────── */
-  .table-wrap {
-    overflow-x: auto;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-
-  thead {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-  }
-
-  thead tr {
-    background: var(--navy);
-  }
-
-  thead th {
-    padding: 11px 14px;
-    text-align: left;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.82);
-    white-space: nowrap;
-  }
-
-  thead th:last-child {
-    text-align: right;
-  }
-
-  thead th.sortable {
-    cursor: pointer;
-    user-select: none;
-  }
-
-  thead th.sortable:hover {
-    color: white;
-  }
-
-  thead th.sortable i {
-    margin-left: 4px;
-    font-size: 10px;
-    opacity: 0.6;
-  }
-
-  tbody tr {
-    border-bottom: 1px solid rgba(30, 58, 95, 0.06);
-    transition: background var(--transition);
-  }
-
-  tbody tr:last-child {
-    border-bottom: none;
-  }
-
-  tbody tr:hover {
-    background: rgba(30, 58, 95, 0.03);
-  }
-
-  tbody tr.row-entering {
-    animation: rowIn 0.28s ease forwards;
-  }
-
-  @keyframes rowIn {
-    from {
-      opacity: 0;
-      transform: translateY(-6px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  tbody td {
-    padding: 11px 14px;
-    color: var(--navy);
-    vertical-align: middle;
-  }
-
-  tbody td:last-child {
-    text-align: right;
-  }
-
-  .year-cell {
-    font-family: var(--font-mono);
-    font-weight: 600;
-    font-size: 14px;
-  }
-
-  .ship-cell {
-    font-weight: 500;
-    font-size: 12.5px;
-  }
-
-  .date-cell {
-    font-size: 11.5px;
-    color: var(--navy-text);
-    font-family: var(--font-mono);
-  }
-
-  .notes-cell {
-    font-size: 12px;
-    color: var(--navy-text);
-    max-width: 160px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  /* ── BADGES ───────────────────────────────────────── */
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 9px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-
-  .badge-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .badge-open {
-    background: var(--green-light);
-    color: var(--green);
-  }
-
-  .badge-open .badge-dot {
-    background: var(--green);
-  }
-
-  .badge-close {
-    background: var(--red-light);
-    color: var(--red);
-  }
-
-  .badge-close .badge-dot {
-    background: var(--red);
-  }
-
-  .badge-reopen {
-    background: var(--blue-light);
-    color: var(--blue);
-  }
-
-  .badge-reopen .badge-dot {
-    background: var(--blue);
-  }
-
-  .ft-badge {
-    display: inline-flex;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 10.5px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    font-family: var(--font-mono);
-  }
-
-  .ft-all {
-    background: var(--amber-light);
-    color: #92400e;
-  }
-
-  .ft-officers {
-    background: rgba(30, 58, 95, 0.10);
-    color: var(--navy);
-  }
-
-  .ft-ratings {
-    background: rgba(16, 185, 129, 0.12);
-    color: #065f46;
-  }
-
-  .ft-training {
-    background: rgba(124, 58, 237, 0.10);
-    color: #5b21b6;
-  }
-
-  /* ── ROW ACTIONS ──────────────────────────────────── */
-  .row-actions {
-    display: flex;
-    gap: 6px;
-    justify-content: flex-end;
-  }
-
-  .act-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 11px;
-    border-radius: var(--radius-sm);
-    font-size: 11.5px;
-    font-weight: 700;
-    cursor: pointer;
-    border: none;
-    font-family: var(--font);
-    transition: opacity var(--transition), transform var(--transition);
-  }
-
-  .act-btn:active {
-    transform: scale(0.96);
-  }
-
-  .act-edit {
-    background: rgba(21, 128, 61, 0.12);
-    color: var(--green);
-  }
-
-  .act-edit:hover {
-    background: rgba(21, 128, 61, 0.2);
-  }
-
-  .act-del {
-    background: rgba(185, 28, 28, 0.10);
-    color: var(--red);
-  }
-
-  .act-del:hover {
-    background: rgba(185, 28, 28, 0.18);
-  }
-
-  /* ── EMPTY & LOADING STATES ───────────────────────── */
-  .state-row td {
-    padding: 48px 20px;
-    text-align: center;
-  }
-
-  .state-icon {
-    font-size: 28px;
-    margin-bottom: 12px;
-    opacity: 0.3;
-  }
-
-  .state-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--navy-text);
-    margin-bottom: 4px;
-  }
-
-  .state-sub {
-    font-size: 12px;
-    color: rgba(30, 58, 95, 0.35);
-  }
-
-  .spinner {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 2.5px solid rgba(30, 58, 95, 0.15);
-    border-top-color: var(--navy);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  /* ── DANGER ZONE ──────────────────────────────────── */
-  .danger-zone {
-    background: #fff8f8;
-    border: 1px solid #fecaca;
-    border-radius: var(--radius-lg);
-    padding: 16px 20px;
-    margin-top: 16px;
-  }
-
-  .danger-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-
-  .danger-header-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: var(--radius-sm);
-    background: rgba(185, 28, 28, 0.12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--red);
-    font-size: 11px;
-  }
-
-  .danger-label {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--red);
-  }
-
-  .danger-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 11px 14px;
-    background: white;
-    border: 1px solid #fecaca;
-    border-radius: var(--radius-md);
-    flex-wrap: wrap;
-  }
-
-  .danger-row-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--red);
-  }
-
-  .danger-row-sub {
-    font-size: 11.5px;
-    color: rgba(185, 28, 28, 0.6);
-    margin-top: 2px;
-  }
-
-  .btn-danger {
-    padding: 6px 14px;
-    background: var(--red);
-    color: white;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: var(--font);
-    transition: opacity var(--transition);
-    white-space: nowrap;
-  }
-
-  .btn-danger:hover {
-    opacity: 0.85;
-  }
-
-  /* ── MODAL ────────────────────────────────────────── */
-  .overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(10, 20, 40, 0.5);
-    backdrop-filter: blur(3px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 900;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.22s ease;
-    padding: 16px;
-  }
-
-  .overlay.active {
-    opacity: 1;
-    pointer-events: all;
-  }
-
-  .modal {
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    width: 560px;
-    max-width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: var(--shadow-lg);
-    transform: translateY(16px) scale(0.98);
-    transition: transform 0.22s ease;
-  }
-
-  .overlay.active .modal {
-    transform: translateY(0) scale(1);
-  }
-
-  .modal-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--navy-border);
-    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-  }
-
-  .modal-head-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .modal-head-icon {
-    width: 30px;
-    height: 30px;
-    border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.15);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 12px;
-  }
-
-  .modal-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: white;
-  }
-
-  .modal-close {
-    background: rgba(255, 255, 255, 0.12);
-    border: none;
-    color: rgba(255, 255, 255, 0.75);
-    width: 28px;
-    height: 28px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    transition: background var(--transition), color var(--transition);
-  }
-
-  .modal-close:hover {
-    background: rgba(255, 255, 255, 0.22);
-    color: white;
-  }
-
-  .modal-body {
-    padding: 20px;
-  }
-
-  .form-section-label {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.09em;
-    color: var(--navy-text);
-    margin-bottom: 10px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--navy-border);
-  }
-
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 18px;
-  }
-
-  @media (max-width: 500px) {
-    .form-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-
-  .form-group.full {
-    grid-column: 1 / -1;
-  }
-
-  .form-label {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--navy);
-  }
-
-  .form-label span {
-    color: var(--red);
-    margin-left: 2px;
-  }
-
-  .form-input,
-  .form-select,
-  .form-textarea {
-    padding: 8px 11px;
-    border: 1.5px solid var(--navy-border);
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    font-family: var(--font);
-    color: var(--navy);
-    background: #f8f9fc;
-    outline: none;
-    transition: border-color var(--transition), background var(--transition);
-    width: 100%;
-  }
-
-  .form-input:focus,
-  .form-select:focus,
-  .form-textarea:focus {
-    border-color: var(--navy-mid);
-    background: var(--white);
-    box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.08);
-  }
-
-  .form-input.error,
-  .form-select.error {
-    border-color: var(--red);
-  }
-
-  .form-error {
-    font-size: 11px;
-    color: var(--red);
-    margin-top: 2px;
-    display: none;
-  }
-
-  .form-error.visible {
-    display: block;
-  }
-
-  .form-select {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%231e3a5f' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    padding-right: 28px;
-    cursor: pointer;
-  }
-
-  .form-textarea {
-    resize: vertical;
-    min-height: 70px;
-  }
-
-  .status-hint {
-    display: flex;
-    gap: 8px;
-    margin-top: 6px;
-    flex-wrap: wrap;
-  }
-
-  .status-hint-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 10.5px;
-    color: var(--navy-text);
-  }
-
-  .status-hint-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-  }
-
-  .modal-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 20px;
-    border-top: 1px solid var(--navy-border);
-    background: rgba(244, 246, 250, 0.6);
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-    position: sticky;
-    bottom: 0;
-    gap: 10px;
-  }
-
-  .modal-footer-note {
-    font-size: 11px;
-    color: var(--navy-text);
-  }
-
-  .modal-footer-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  /* ── CONFIRM DIALOG ───────────────────────────────── */
-  .confirm-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(10, 20, 40, 0.55);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-    padding: 16px;
-  }
-
-  .confirm-overlay.active {
-    opacity: 1;
-    pointer-events: all;
-  }
-
-  .confirm-box {
-    background: white;
-    border-radius: var(--radius-lg);
-    padding: 28px 24px;
-    width: 360px;
-    max-width: 100%;
-    box-shadow: var(--shadow-lg);
-    text-align: center;
-    transform: scale(0.96);
-    transition: transform 0.2s ease;
-  }
-
-  .confirm-overlay.active .confirm-box {
-    transform: scale(1);
-  }
-
-  .confirm-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: var(--red-light);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--red);
-    font-size: 18px;
-    margin: 0 auto 16px;
-  }
-
-  .confirm-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--navy);
-    margin-bottom: 8px;
-  }
-
-  .confirm-body {
-    font-size: 13px;
-    color: var(--navy-text);
-    margin-bottom: 22px;
-    line-height: 1.5;
-  }
-
-  .confirm-meta {
-    background: var(--red-light);
-    border: 1px solid #fecaca;
-    border-radius: var(--radius-sm);
-    padding: 8px 12px;
-    margin-bottom: 20px;
-    text-align: left;
-  }
-
-  .confirm-meta-item {
-    font-size: 12px;
-    color: var(--red);
-    display: flex;
-    gap: 6px;
-    align-items: baseline;
-  }
-
-  .confirm-meta-item strong {
-    font-weight: 700;
-  }
-
-  .confirm-btns {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-  }
-
-  .btn-confirm-cancel {
-    padding: 8px 20px;
-    border-radius: var(--radius-sm);
-    background: var(--navy-soft);
-    color: var(--navy);
-    border: none;
-    font-family: var(--font);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background var(--transition);
-  }
-
-  .btn-confirm-cancel:hover {
-    background: rgba(30, 58, 95, 0.13);
-  }
-
-  .btn-confirm-del {
-    padding: 8px 20px;
-    border-radius: var(--radius-sm);
-    background: var(--red);
-    color: white;
-    border: none;
-    font-family: var(--font);
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: opacity var(--transition);
-  }
-
-  .btn-confirm-del:hover {
-    opacity: 0.85;
-  }
-
-  /* ── TOAST ────────────────────────────────────────── */
-  .toast-stack {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    pointer-events: none;
-  }
-
-  .toast {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 11px 16px;
-    border-radius: var(--radius-md);
-    font-size: 13px;
-    font-weight: 600;
-    box-shadow: var(--shadow-md);
-    opacity: 0;
-    transform: translateY(10px) scale(0.97);
-    transition: opacity 0.22s ease, transform 0.22s ease;
-    max-width: 300px;
-  }
-
-  .toast.show {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-
-  .toast.hide {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-
-  .toast-success {
-    background: #f0fdf4;
-    color: #15803d;
-    border: 1px solid #bbf7d0;
-  }
-
-  .toast-error {
-    background: #fef2f2;
-    color: #b91c1c;
-    border: 1px solid #fecaca;
-  }
-
-  .toast-info {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
-  }
-
-  .toast i {
-    font-size: 14px;
-  }
-
-  /* ── PAGINATION ───────────────────────────────────── */
-  .pagination {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 20px;
-    border-top: 1px solid var(--navy-border);
-    background: rgba(244, 246, 250, 0.4);
-    font-size: 12px;
-    color: var(--navy-text);
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .pagination-btns {
-    display: flex;
-    gap: 4px;
-  }
-
-  .pg-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: var(--radius-sm);
-    border: 1.5px solid var(--navy-border);
-    background: white;
-    color: var(--navy);
-    font-size: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background var(--transition), border-color var(--transition);
-  }
-
-  .pg-btn:hover {
-    background: var(--navy-soft);
-    border-color: var(--navy);
-  }
-
-  .pg-btn.active {
-    background: var(--navy);
-    color: white;
-    border-color: var(--navy);
-  }
-
-  .pg-btn:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-  }
-</style>
-
-<div class="page">
-
-  <!-- Page Header -->
-  <div class="page-header">
-    <div class="page-header-left">
-      <div class="page-eyebrow"><i class="fas fa-sliders-h"></i> &nbsp;Emolument Admin</div>
-      <h1 class="page-title">Cycle Control</h1>
-      <p class="page-sub">Manage open / close windows for emolument form submissions</p>
-    </div>
-    <button class="btn btn-primary" onclick="openModal(null)">
-      <i class="fas fa-plus"></i> Add Cycle
-    </button>
+<!-- FILE: emolument-sections/admin/system.html
+     APIs:
+       GET    /system/control               → list all ef_control rows
+       POST   /system/control               → create cycle
+       PUT    /system/control/:id           → update cycle
+       DELETE /system/control/:id           → delete cycle
+       GET    /system/ships                 → ship list for dropdown
+       POST   /admin/system/extend_cycle    → { control_id, new_enddate, notes? }
+-->
+
+<div class="p-2 md:p-4 lg:p-6">
+
+  <div class="mb-2 md:mb-4 lg:mb-6">
+    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">
+      Manage open / close windows for emolument form submissions
+    </h3>
   </div>
 
-  <!-- Stat Cards -->
-  <div class="stat-row" id="statRow">
-    <div class="stat-card">
-      <div class="stat-label">Total Rows</div>
-      <div class="stat-value" id="statTotal">—</div>
+  <!-- Stat chips -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-3">
+      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">Total</p>
+      <p class="text-xl font-black text-navy font-mono" id="sys-stat-total">—</p>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">Open</div>
-      <div class="stat-value open-val" id="statOpen">—</div>
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-3">
+      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">Open</p>
+      <p class="text-xl font-black text-green-600 font-mono" id="sys-stat-open">—</p>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">Reopen</div>
-      <div class="stat-value reopen-val" id="statReopen">—</div>
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-3">
+      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">Reopen</p>
+      <p class="text-xl font-black text-blue-600 font-mono" id="sys-stat-reopen">—</p>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">Closed</div>
-      <div class="stat-value close-val" id="statClose">—</div>
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-3">
+      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">Closed</p>
+      <p class="text-xl font-black text-red-600 font-mono" id="sys-stat-close">—</p>
     </div>
   </div>
 
-  <!-- Main Table Card -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-header-left">
-        <div class="card-icon"><i class="fas fa-calendar-alt"></i></div>
-        <div>
-          <div class="card-title">ef_control — Cycle Rows</div>
-          <div class="card-subtitle">Each row defines an access window for a ship / form type combination</div>
-        </div>
+  <!-- Main card -->
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow mb-4">
+
+    <!-- Card header -->
+    <div class="flex items-center justify-between p-4 border-b border-amber-100 flex-wrap gap-2">
+      <div>
+        <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Cycle Rows</h3>
+        <p class="text-xs text-navy/40 mt-0.5">Each row is an access window for a ship / form type</p>
       </div>
-      <button class="btn btn-ghost" onclick="loadData()" title="Refresh">
-        <i class="fas fa-sync-alt"></i> Refresh
-      </button>
+      <div class="flex items-center gap-2">
+        <button onclick="sysLoadData()"
+          class="px-3 py-1.5 bg-white border border-amber-100 text-navy text-xs font-bold rounded-lg hover:bg-amber-50 cursor-pointer transition-colors">
+          <i class="fas fa-sync-alt mr-1"></i>Refresh
+        </button>
+        <button onclick="sysOpenModal(null)"
+          class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg hover:bg-blue-800 cursor-pointer border-none transition-colors">
+          <i class="fas fa-plus mr-1"></i>Add Cycle
+        </button>
+      </div>
     </div>
 
-    <!-- Toolbar -->
-    <div class="toolbar">
-      <div class="search-wrap">
-        <i class="fas fa-search"></i>
-        <input type="text" class="search-input" id="searchInput" placeholder="Search year, ship, notes…"
-          oninput="applyFilters()" />
-      </div>
-      <select class="filter-select" id="filterStatus" onchange="applyFilters()">
+    <!-- Filters -->
+    <div class="flex flex-wrap gap-2 p-3 border-b border-amber-50 bg-white/30">
+      <input id="sys-search" type="text" placeholder="Search year, ship, notes…"
+        class="flex-1 min-w-[160px] border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none"
+        oninput="sysApplyFilters()" />
+      <select id="sys-filter-status" onchange="sysApplyFilters()"
+        class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none cursor-pointer">
         <option value="">All Statuses</option>
         <option value="Open">Open</option>
         <option value="Reopen">Reopen</option>
         <option value="Close">Close</option>
       </select>
-      <select class="filter-select" id="filterFormtype" onchange="applyFilters()">
+      <select id="sys-filter-type" onchange="sysApplyFilters()"
+        class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none cursor-pointer">
         <option value="">All Types</option>
         <option value="ALL">ALL</option>
         <option value="OFFICERS">OFFICERS</option>
@@ -1211,29 +80,38 @@
     </div>
 
     <!-- Table -->
-    <div class="table-wrap">
-      <table>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
         <thead>
-          <tr>
-            <th class="sortable" onclick="sortBy('processingyear')">Year <i class="fas fa-sort"
-                id="sort-processingyear"></i></th>
-            <th>Ship</th>
-            <th>Form Type</th>
-            <th class="sortable" onclick="sortBy('startdate')">Start <i class="fas fa-sort" id="sort-startdate"></i>
+          <tr class="border-b border-amber-100">
+            <th
+              class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide cursor-pointer select-none"
+              onclick="sysSortBy('processingyear')">
+              Year <i class="fas fa-sort ml-1 text-navy/30" id="sys-sort-processingyear"></i>
             </th>
-            <th class="sortable" onclick="sortBy('enddate')">End <i class="fas fa-sort" id="sort-enddate"></i></th>
-            <th>Status</th>
-            <th>Notes</th>
-            <th>Actions</th>
+            <th class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide hidden sm:table-cell">
+              Ship</th>
+            <th class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide">Type</th>
+            <th
+              class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide cursor-pointer select-none hidden md:table-cell"
+              onclick="sysSortBy('startdate')">
+              Start <i class="fas fa-sort ml-1 text-navy/30" id="sys-sort-startdate"></i>
+            </th>
+            <th
+              class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide cursor-pointer select-none hidden md:table-cell"
+              onclick="sysSortBy('enddate')">
+              End <i class="fas fa-sort ml-1 text-navy/30" id="sys-sort-enddate"></i>
+            </th>
+            <th class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide">Status</th>
+            <th class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide hidden lg:table-cell">
+              Notes</th>
+            <th class="py-2 px-3 w-28"></th>
           </tr>
         </thead>
-        <tbody id="cycleTable">
-          <tr class="state-row">
-            <td colspan="8">
-              <div class="state-icon">
-                <div class="spinner"></div>
-              </div>
-              <div class="state-title">Loading cycles…</div>
+        <tbody id="sys-table-body">
+          <tr>
+            <td colspan="8" class="text-center py-10 text-navy/30">
+              <i class="fas fa-spinner fa-spin mr-2"></i>Loading…
             </td>
           </tr>
         </tbody>
@@ -1241,590 +119,605 @@
     </div>
 
     <!-- Pagination -->
-    <div class="pagination" id="paginationBar" style="display:none;">
-      <span id="pgInfo">Showing 0–0 of 0</span>
-      <div class="pagination-btns" id="pgBtns"></div>
-    </div>
-  </div>
-
-  <!-- Danger Zone -->
-  <div class="danger-zone">
-    <div class="danger-header">
-      <div class="danger-header-icon"><i class="fas fa-exclamation-triangle"></i></div>
-      <div class="danger-label">Danger Zone</div>
-    </div>
-    <div class="danger-row">
-      <div>
-        <div class="danger-row-title">Reset Current Cycle Data</div>
-        <div class="danger-row-sub">Wipes all form submissions for the active cycle only. Irreversible.</div>
-      </div>
-      <button class="btn-danger" onclick="dangerReset()">
-        <i class="fas fa-trash-alt"></i> Reset Cycle
+    <div id="sys-pagination"
+      class="hidden flex items-center justify-between px-4 py-2.5 border-t border-amber-50 bg-white/30">
+      <button id="sys-pg-prev" onclick="sysChangePage(-1)"
+        class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
+        <i class="fas fa-chevron-left mr-1"></i>Prev
+      </button>
+      <span id="sys-pg-info" class="text-xs text-navy/40 font-semibold"></span>
+      <button id="sys-pg-next" onclick="sysChangePage(1)"
+        class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
+        Next<i class="fas fa-chevron-right ml-1"></i>
       </button>
     </div>
-  </div>
 
-</div><!-- /.page -->
+  </div><!-- /main card -->
 
-<!-- ─── ADD / EDIT MODAL ─────────────────────────────────── -->
-<div class="overlay" id="modalOverlay">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal-head">
-      <div class="modal-head-left">
-        <div class="modal-head-icon"><i class="fas fa-calendar-plus" id="modalIcon"></i></div>
-        <div class="modal-title" id="modalTitle">Add Cycle</div>
+  <!-- Danger zone — extend cycle -->
+  <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="w-6 h-6 rounded bg-red-100 flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-exclamation-triangle text-red-500" style="font-size:10px"></i>
       </div>
-      <button class="modal-close" onclick="closeModal()" aria-label="Close"><i class="fas fa-times"></i></button>
+      <p class="text-xs font-black text-red-600 uppercase tracking-wider">Danger Zone</p>
     </div>
 
-    <div class="modal-body">
+    <!-- Extend Closing Date -->
+    <div class="bg-white border border-red-100 rounded-xl p-3 flex items-center justify-between gap-3 flex-wrap">
+      <div>
+        <p class="text-xs font-bold text-red-700">Extend Closing Date</p>
+        <p class="text-xs text-red-400 mt-0.5">Reopens the most recent cycle with a new end date. Sets status to
+          <strong>Reopen</strong>.</p>
+      </div>
+      <button onclick="sysToggleExtend()"
+        class="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 cursor-pointer border-none transition-colors flex-shrink-0">
+        <i class="fas fa-calendar-plus mr-1"></i>Extend Cycle
+      </button>
+    </div>
+    <!-- Extend inline form -->
+    <div id="sys-extend-form" class="hidden mt-3 space-y-3">
+      <div class="flex flex-col sm:flex-row gap-3">
+        <div class="flex-1">
+          <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">New End Date &amp; Time <span
+              class="text-red-500">*</span></label>
+          <input type="datetime-local" id="sys-extend-date"
+            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none" />
+        </div>
+        <div class="flex-1">
+          <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Notes (optional)</label>
+          <input type="text" id="sys-extend-notes" placeholder="Reason for extension…"
+            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none" />
+        </div>
+      </div>
+      <div class="flex gap-2 justify-end">
+        <button onclick="sysToggleExtend()"
+          class="px-4 py-2 border border-amber-100 text-navy/60 text-xs font-bold rounded-lg bg-white hover:bg-amber-50 cursor-pointer transition-colors">
+          Cancel
+        </button>
+        <button onclick="sysDoExtend()"
+          class="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 cursor-pointer border-none transition-colors">
+          <i class="fas fa-save mr-1"></i>Apply Extension
+        </button>
+      </div>
+      <div id="sys-extend-msg" class="hidden text-xs font-semibold rounded-lg px-3 py-2"></div>
+    </div>
+  </div>
 
-      <!-- Section: Cycle Identity -->
-      <div class="form-section-label">Cycle Identity</div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label" for="fYear">Processing Year <span>*</span></label>
-          <input type="number" class="form-input" id="fYear" placeholder="e.g. 2026" min="2000" max="2099" />
-          <div class="form-error" id="errYear">Enter a valid 4-digit year.</div>
+</div><!-- /p-2 -->
+
+
+<!-- ═══ FULL-SCREEN MODAL — Add / Edit ═══════════════════════ -->
+<div id="sys-modal"
+  style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:1rem"
+  onclick="if(event.target===this)sysCloseModal()">
+  <div
+    style="background:#fff;border-radius:1rem;width:100%;max-width:540px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(15,23,42,.22);animation:sys-pop .17s ease">
+    <style>
+      @keyframes sys-pop {
+        from {
+          opacity: 0;
+          transform: scale(.96) translateY(8px)
+        }
+
+        to {
+          opacity: 1;
+          transform: none
+        }
+      }
+    </style>
+
+    <!-- Modal header -->
+    <div class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-lg bg-navy flex items-center justify-center flex-shrink-0">
+          <i id="sys-modal-icon" class="fas fa-calendar-plus text-white" style="font-size:11px"></i>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="fShip">Ship</label>
-          <select class="form-select" id="fShip">
-            <option value="All">ALL (Global)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="fFormType">Form Type</label>
-          <select class="form-select" id="fFormType">
-            <option value="ALL">ALL</option>
-            <option value="OFFICERS">OFFICERS</option>
-            <option value="RATINGS">RATINGS</option>
-            <option value="TRAINING">TRAINING</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="fStatus">Status</label>
-          <select class="form-select" id="fStatus">
-            <option value="Open">Open</option>
-            <option value="Reopen">Reopen</option>
-            <option value="Close">Close</option>
-          </select>
-          <div class="status-hint">
-            <div class="status-hint-item">
-              <div class="status-hint-dot" style="background:var(--green)"></div>Open / Reopen = accessible
-            </div>
-            <div class="status-hint-item">
-              <div class="status-hint-dot" style="background:var(--red)"></div>Close = blocked
+        <h2 id="sys-modal-title" class="text-sm font-black text-navy uppercase tracking-wide">Add Cycle</h2>
+      </div>
+      <button onclick="sysCloseModal()"
+        class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 cursor-pointer border-none bg-transparent text-lg leading-none">✕</button>
+    </div>
+
+    <!-- Modal body -->
+    <div class="px-5 py-4 space-y-4">
+
+      <div>
+        <p class="text-xs font-black text-navy/40 uppercase tracking-widest mb-3">Cycle Identity</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Year <span
+                class="text-red-500">*</span></label>
+            <input type="number" id="sys-f-year" placeholder="e.g. 2026" min="2000" max="2099"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
+            <p id="sys-err-year" class="hidden text-xs text-red-500 mt-1">Enter a valid 4-digit year.</p>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Ship</label>
+            <select id="sys-f-ship"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
+              <option value="All">ALL (Global)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Form Type</label>
+            <select id="sys-f-type"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
+              <option value="ALL">ALL</option>
+              <option value="OFFICERS">OFFICERS</option>
+              <option value="RATINGS">RATINGS</option>
+              <option value="TRAINING">TRAINING</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Status</label>
+            <select id="sys-f-status"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
+              <option value="Open">Open</option>
+              <option value="Reopen">Reopen</option>
+              <option value="Close">Close</option>
+            </select>
+            <div class="flex gap-3 mt-1.5">
+              <span class="flex items-center gap-1 text-xs text-navy/40">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>Open / Reopen = accessible
+              </span>
+              <span class="flex items-center gap-1 text-xs text-navy/40">
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span>Close = blocked
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Section: Date Window -->
-      <div class="form-section-label">Access Window</div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label" for="fStart">Start Date & Time <span>*</span></label>
-          <input type="datetime-local" class="form-input" id="fStart" />
-          <div class="form-error" id="errStart">Start date is required.</div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="fEnd">End Date & Time <span>*</span></label>
-          <input type="datetime-local" class="form-input" id="fEnd" />
-          <div class="form-error" id="errEnd">End date must be after start date.</div>
-        </div>
-      </div>
-
-      <!-- Section: Notes -->
-      <div class="form-section-label">Additional Info</div>
-      <div class="form-grid">
-        <div class="form-group full">
-          <label class="form-label" for="fNotes">Notes <span
-              style="color:var(--navy-text);font-weight:400;">(optional)</span></label>
-          <textarea class="form-textarea" id="fNotes" placeholder="Any notes about this cycle window…"></textarea>
+      <div>
+        <p class="text-xs font-black text-navy/40 uppercase tracking-widest mb-3">Access Window</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Start Date &amp; Time <span
+                class="text-red-500">*</span></label>
+            <input type="datetime-local" id="sys-f-start"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
+            <p id="sys-err-start" class="hidden text-xs text-red-500 mt-1">Start date is required.</p>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">End Date &amp; Time <span
+                class="text-red-500">*</span></label>
+            <input type="datetime-local" id="sys-f-end"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
+            <p id="sys-err-end" class="hidden text-xs text-red-500 mt-1">End date must be after start.</p>
+          </div>
         </div>
       </div>
 
-    </div><!-- /.modal-body -->
+      <div>
+        <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Notes <span
+            class="text-navy/30 font-normal normal-case">(optional)</span></label>
+        <textarea id="sys-f-notes" rows="2" placeholder="Any notes about this cycle window…"
+          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none resize-none"></textarea>
+      </div>
 
-    <div class="modal-footer">
-      <div class="modal-footer-note" id="modalFooterNote"></div>
-      <div class="modal-footer-actions">
-        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" id="saveBtn" onclick="saveCycle()">
-          <i class="fas fa-save"></i> Save Cycle
+      <div id="sys-modal-meta" class="hidden text-xs text-navy/40 pt-1 border-t border-amber-50"></div>
+
+    </div>
+
+    <!-- Modal footer -->
+    <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-100 bg-slate-50/60 rounded-b-2xl">
+      <button onclick="sysCloseModal()"
+        class="px-4 py-2 border border-amber-100 text-navy/60 text-sm font-bold rounded-lg bg-white hover:bg-amber-50 cursor-pointer transition-colors">
+        Cancel
+      </button>
+      <button id="sys-save-btn" onclick="sysSaveCycle()"
+        class="px-5 py-2 bg-navy text-white text-sm font-bold rounded-lg hover:bg-blue-800 cursor-pointer border-none transition-colors">
+        <i class="fas fa-save mr-1.5"></i>Save Cycle
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ CONFIRM DELETE MODAL ═══════════════════════════════ -->
+<div id="sys-confirm"
+  style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem"
+  onclick="if(event.target===this)sysCloseConfirm()">
+  <div
+    style="background:#fff;border-radius:1rem;width:100%;max-width:380px;box-shadow:0 24px 64px rgba(15,23,42,.22);animation:sys-pop .16s ease">
+    <div class="px-6 py-6 text-center">
+      <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-trash-alt text-red-500 text-lg"></i>
+      </div>
+      <h3 class="text-base font-black text-navy mb-2">Delete this cycle?</h3>
+      <p class="text-sm text-navy/50 mb-4 leading-relaxed">
+        This will permanently remove the row from <strong>ef_control</strong>. Cannot be undone.
+      </p>
+      <div id="sys-confirm-meta"
+        class="bg-red-50 border border-red-100 rounded-lg p-3 text-left mb-5 text-xs text-red-700 space-y-1"></div>
+      <div class="flex gap-2">
+        <button onclick="sysCloseConfirm()"
+          class="flex-1 py-2.5 border border-slate-200 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50 cursor-pointer bg-white">
+          Cancel
+        </button>
+        <button onclick="sysDoDelete()"
+          class="flex-1 py-2.5 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 cursor-pointer border-none">
+          <i class="fas fa-trash-alt mr-1.5"></i>Delete
         </button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ─── CONFIRM DELETE DIALOG ─────────────────────────────── -->
-<div class="confirm-overlay" id="confirmOverlay">
-  <div class="confirm-box">
-    <div class="confirm-icon"><i class="fas fa-trash-alt"></i></div>
-    <div class="confirm-title">Delete this cycle?</div>
-    <div class="confirm-body">This will permanently remove the cycle row from <strong>ef_control</strong>. This cannot
-      be undone.</div>
-    <div class="confirm-meta" id="confirmMeta"></div>
-    <div class="confirm-btns">
-      <button class="btn-confirm-cancel" onclick="closeConfirm()">Cancel</button>
-      <button class="btn-confirm-del" onclick="confirmDelete()"><i class="fas fa-trash-alt"></i> Delete</button>
-    </div>
-  </div>
+<!-- Toast -->
+<div id="sys-toast" style="position:fixed;bottom:1.4rem;left:50%;transform:translateX(-50%) translateY(1.5rem);z-index:100001;
+         background:#1e3a5f;color:#fff;padding:.5rem 1.3rem;border-radius:99px;
+         font-size:.77rem;font-weight:700;white-space:nowrap;pointer-events:none;opacity:0;transition:all .22s ease">
 </div>
 
-<!-- ─── TOAST STACK ───────────────────────────────────────── -->
-<div class="toast-stack" id="toastStack"></div>
-
 <script>
-  /* ═══════════════════════════════════════════════════════════
-     STATE
-  ═══════════════════════════════════════════════════════════ */
-  const token = localStorage.getItem('token');
+  (function () {
+    'use strict';
 
-  let allCycles = [];   // raw from API
-  let filtered = [];   // after search/filter
-  let ships = [];
+    const TOKEN = localStorage.getItem('token');
+    const H = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN };
+    const PAGE_SIZE = 10;
 
-  let editingId = null;
-  let deletingId = null;
+    let allCycles = [];
+    let filtered = [];
+    let ships = [];
+    let editingId = null;
+    let deletingId = null;
+    let curPage = 1;
+    let sortKey = 'processingyear';
+    let sortDir = 'desc';
 
-  // pagination
-  const PAGE_SIZE = 10;
-  let currentPage = 1;
-
-  // sort
-  let sortKey = 'processingyear';
-  let sortDir = 'desc';
-
-  /* ═══════════════════════════════════════════════════════════
-     INIT
-  ═══════════════════════════════════════════════════════════ */
-  document.addEventListener('DOMContentLoaded', () => {
-    loadData();
-
-    // close modal on backdrop click
-    document.getElementById('modalOverlay').addEventListener('click', e => {
-      if (e.target === document.getElementById('modalOverlay')) closeModal();
-    });
-  });
-
-  /* ═══════════════════════════════════════════════════════════
-     DATA LOADING
-  ═══════════════════════════════════════════════════════════ */
-  function loadData() {
-    setTableLoading();
-    Promise.all([
-      apiFetch('/system/control'),
-      apiFetch('/system/ships'),
-    ]).then(([ctrl, sh]) => {
-      allCycles = Array.isArray(ctrl) ? ctrl : (ctrl?.data || []);
-      ships = Array.isArray(sh) ? sh : (sh?.data || []);
-      populateShipSelect();
-      applyFilters();
-      updateStats();
-    }).catch(err => {
-      console.error(err);
-      // fallback demo data
-      allCycles = [
-        { Id: 1, processingyear: '2026', ship: 'All', formtype: 'ALL', startdate: '2025-11-05T00:00:00', enddate: '2025-11-12T23:59:00', status: 'Reopen', notes: 'Initial cycle', createdby: 'admin', datecreated: '2025-10-01T00:00:00' },
-        { Id: 2, processingyear: '2026', ship: 'All', formtype: 'OFFICERS', startdate: '2025-11-05T00:00:00', enddate: '2025-11-20T23:59:00', status: 'Open', notes: '', createdby: 'admin', datecreated: '2025-10-01T00:00:00' },
-      ];
-      populateShipSelect();
-      applyFilters();
-      updateStats();
-      showToast('Could not reach server — showing demo data', 'info');
-    });
-  }
-
-  function apiFetch(url, options = {}) {
-    return fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + token,
-        ...(options.headers || {}),
-      },
-    }).then(r => {
-      if (!r.ok) return r.json().then(d => Promise.reject(d));
-      return r.json();
-    });
-  }
-
-  function setTableLoading() {
-    document.getElementById('cycleTable').innerHTML = `
-    <tr class="state-row">
-      <td colspan="8">
-        <div class="state-icon"><div class="spinner"></div></div>
-        <div class="state-title">Loading cycles…</div>
-      </td>
-    </tr>`;
-    document.getElementById('paginationBar').style.display = 'none';
-  }
-
-  /* ═══════════════════════════════════════════════════════════
-     SHIP SELECT
-  ═══════════════════════════════════════════════════════════ */
-  function populateShipSelect() {
-    const sel = document.getElementById('fShip');
-    const prev = sel.value;
-    sel.innerHTML = '<option value="All">ALL (Global)</option>' +
-      ships.map(s => `<option value="${esc(s.shipName)}">${esc(s.shipName)}</option>`).join('');
-    sel.value = prev || 'All';
-  }
-
-  /* ═══════════════════════════════════════════════════════════
-     STATS
-  ═══════════════════════════════════════════════════════════ */
-  function updateStats() {
-    document.getElementById('statTotal').textContent = allCycles.length;
-    document.getElementById('statOpen').textContent = allCycles.filter(c => c.status === 'Open').length;
-    document.getElementById('statReopen').textContent = allCycles.filter(c => c.status === 'Reopen').length;
-    document.getElementById('statClose').textContent = allCycles.filter(c => c.status === 'Close').length;
-  }
-
-  /* ═══════════════════════════════════════════════════════════
-     FILTERS + SORT
-  ═══════════════════════════════════════════════════════════ */
-  function applyFilters() {
-    const q = document.getElementById('searchInput').value.toLowerCase().trim();
-    const st = document.getElementById('filterStatus').value;
-    const ft = document.getElementById('filterFormtype').value;
-
-    filtered = allCycles.filter(c => {
-      const matchQ = !q || [c.processingyear, c.ship, c.notes, c.formtype].some(v => String(v || '').toLowerCase().includes(q));
-      const matchSt = !st || c.status === st;
-      const matchFt = !ft || c.formtype === ft;
-      return matchQ && matchSt && matchFt;
-    });
-
-    // sort
-    filtered.sort((a, b) => {
-      let av = a[sortKey] ?? '', bv = b[sortKey] ?? '';
-      if (sortKey === 'startdate' || sortKey === 'enddate') { av = new Date(av); bv = new Date(bv); }
-      if (av < bv) return sortDir === 'asc' ? -1 : 1;
-      if (av > bv) return sortDir === 'asc' ? 1 : -1;
-      return 0;
-    });
-
-    currentPage = 1;
-    renderTable();
-  }
-
-  function sortBy(key) {
-    if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-    else { sortKey = key; sortDir = 'desc'; }
-
-    // update sort icons
-    document.querySelectorAll('[id^="sort-"]').forEach(el => {
-      el.className = 'fas fa-sort';
-      el.style.opacity = '0.5';
-    });
-    const icon = document.getElementById('sort-' + key);
-    if (icon) {
-      icon.className = sortDir === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
-      icon.style.opacity = '1';
+    /* ── util ─────────────────────────────────────────── */
+    function esc(s) {
+      return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
-    applyFilters();
-  }
-
-  /* ═══════════════════════════════════════════════════════════
-     RENDER TABLE
-  ═══════════════════════════════════════════════════════════ */
-  function renderTable() {
-    const tb = document.getElementById('cycleTable');
-    const pgBar = document.getElementById('paginationBar');
-
-    if (!filtered.length) {
-      tb.innerHTML = `
-      <tr class="state-row">
-        <td colspan="8">
-          <div class="state-icon"><i class="fas fa-inbox"></i></div>
-          <div class="state-title">No cycle rows found</div>
-          <div class="state-sub">Try adjusting your filters or add a new cycle.</div>
-        </td>
-      </tr>`;
-      pgBar.style.display = 'none';
-      return;
+    function api(url, opts = {}) {
+      return fetch(url, { ...opts, headers: { ...H, ...(opts.headers || {}) } })
+        .then(r => r.ok ? r.json() : r.json().then(d => Promise.reject(d)));
+    }
+    function toast(msg, ok) {
+      const el = document.getElementById('sys-toast');
+      if (!el) return;
+      el.textContent = msg;
+      el.style.background = ok ? '#15803d' : '#dc2626';
+      el.style.opacity = '1'; el.style.transform = 'translateX(-50%) translateY(0)';
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(-50%) translateY(1.5rem)'; }, 2800);
+    }
+    function fmtDate(dt) {
+      if (!dt) return '—';
+      const d = new Date(dt);
+      if (isNaN(d)) return '—';
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+        + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    }
+    function toLocalDT(val) {
+      if (!val) return '';
+      const d = new Date(val); if (isNaN(d)) return '';
+      const p = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+    function statusBadge(s) {
+      const map = {
+        Open: 'bg-green-50 text-green-700',
+        Reopen: 'bg-blue-50 text-blue-700',
+        Close: 'bg-red-50 text-red-600',
+      };
+      return `<span class="text-xs font-bold px-2 py-0.5 rounded-full ${map[s] || 'bg-gray-100 text-gray-500'}">${esc(s)}</span>`;
+    }
+    function typeBadge(ft) {
+      const map = {
+        ALL: 'bg-amber-50 text-amber-700',
+        OFFICERS: 'bg-navy/10 text-navy',
+        RATINGS: 'bg-green-50 text-green-700',
+        TRAINING: 'bg-purple-50 text-purple-700',
+      };
+      return `<span class="text-xs font-bold px-2 py-0.5 rounded ${map[ft] || 'bg-amber-50 text-amber-700'}">${esc(ft || 'ALL')}</span>`;
     }
 
-    const total = filtered.length;
-    const pages = Math.ceil(total / PAGE_SIZE);
-    currentPage = Math.min(currentPage, pages);
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const slice = filtered.slice(start, start + PAGE_SIZE);
+    /* ── load ─────────────────────────────────────────── */
+    window.sysLoadData = function () {
+      document.getElementById('sys-table-body').innerHTML =
+        `<tr><td colspan="8" class="text-center py-10 text-navy/30">
+        <i class="fas fa-spinner fa-spin mr-2"></i>Loading…</td></tr>`;
 
-    tb.innerHTML = slice.map((c, i) => `
-    <tr class="row-entering" style="animation-delay:${i * 30}ms">
-      <td class="year-cell">${esc(c.processingyear)}</td>
-      <td class="ship-cell">${c.ship === 'All' ? '<span style="opacity:0.55;font-style:italic;font-size:12px;">Global</span>' : esc(c.ship)}</td>
-      <td>${formtypeBadge(c.formtype)}</td>
-      <td class="date-cell">${fmtDate(c.startdate)}</td>
-      <td class="date-cell">${fmtDate(c.enddate)}</td>
-      <td>${statusBadge(c.status)}</td>
-      <td class="notes-cell" title="${esc(c.notes || '')}">${c.notes ? esc(c.notes) : '<span style="opacity:0.3">—</span>'}</td>
-      <td>
-        <div class="row-actions">
-          <button class="act-btn act-edit" onclick="openModal(${c.Id})"><i class="fas fa-pencil-alt"></i> Edit</button>
-          <button class="act-btn act-del"  onclick="askDelete(${c.Id})"><i class="fas fa-trash-alt"></i> Delete</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-
-    // pagination
-    if (total > PAGE_SIZE) {
-      pgBar.style.display = 'flex';
-      const startN = start + 1;
-      const endN = Math.min(start + PAGE_SIZE, total);
-      document.getElementById('pgInfo').textContent = `Showing ${startN}–${endN} of ${total}`;
-
-      let btns = `<button class="pg-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
-      for (let p = 1; p <= pages; p++) {
-        if (pages > 7 && p > 2 && p < pages - 1 && Math.abs(p - currentPage) > 1) {
-          if (p === 3 || p === pages - 2) btns += `<span style="padding:0 4px;color:var(--navy-text)">…</span>`;
-          continue;
-        }
-        btns += `<button class="pg-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
-      }
-      btns += `<button class="pg-btn" onclick="goPage(${currentPage + 1})" ${currentPage === pages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
-      document.getElementById('pgBtns').innerHTML = btns;
-    } else {
-      pgBar.style.display = 'none';
-    }
-  }
-
-  function goPage(p) {
-    const pages = Math.ceil(filtered.length / PAGE_SIZE);
-    if (p < 1 || p > pages) return;
-    currentPage = p;
-    renderTable();
-  }
-
-  /* ═══════════════════════════════════════════════════════════
-     MODAL
-  ═══════════════════════════════════════════════════════════ */
-  function openModal(id) {
-    editingId = id;
-    clearErrors();
-
-    const isEdit = id !== null;
-    document.getElementById('modalTitle').textContent = isEdit ? 'Edit Cycle' : 'Add Cycle';
-    document.getElementById('modalIcon').className = isEdit ? 'fas fa-pencil-alt' : 'fas fa-calendar-plus';
-    document.getElementById('saveBtn').innerHTML = isEdit ? '<i class="fas fa-save"></i> Update Cycle' : '<i class="fas fa-save"></i> Save Cycle';
-
-    const c = isEdit ? allCycles.find(x => x.Id === id) : null;
-
-    document.getElementById('fYear').value = c?.processingyear || new Date().getFullYear();
-    document.getElementById('fShip').value = c?.ship || 'All';
-    document.getElementById('fFormType').value = c?.formtype || 'ALL';
-    document.getElementById('fStatus').value = c?.status || 'Open';
-    document.getElementById('fStart').value = toLocalDT(c?.startdate);
-    document.getElementById('fEnd').value = toLocalDT(c?.enddate);
-    document.getElementById('fNotes').value = c?.notes || '';
-
-    if (isEdit && c) {
-      document.getElementById('modalFooterNote').textContent =
-        `Created by ${c.createdby || '—'} · ${fmtDate(c.datecreated)}`;
-    } else {
-      document.getElementById('modalFooterNote').textContent = '';
-    }
-
-    document.getElementById('modalOverlay').classList.add('active');
-    setTimeout(() => document.getElementById('fYear').focus(), 220);
-  }
-
-  function closeModal() {
-    document.getElementById('modalOverlay').classList.remove('active');
-    editingId = null;
-  }
-
-  /* ═══════════════════════════════════════════════════════════
-     SAVE
-  ═══════════════════════════════════════════════════════════ */
-  function saveCycle() {
-    if (!validateForm()) return;
-
-    const payload = {
-      processingyear: document.getElementById('fYear').value.trim(),
-      ship: document.getElementById('fShip').value,
-      formtype: document.getElementById('fFormType').value,
-      status: document.getElementById('fStatus').value,
-      startdate: document.getElementById('fStart').value,
-      enddate: document.getElementById('fEnd').value,
-      notes: document.getElementById('fNotes').value.trim(),
+      Promise.all([api('/system/control'), api('/system/ships')])
+        .then(([ctrl, sh]) => {
+          allCycles = Array.isArray(ctrl) ? ctrl : (ctrl?.data || []);
+          ships = Array.isArray(sh) ? sh : (sh?.data || []);
+          populateShipSel();
+          sysApplyFilters();
+          updateStats();
+        })
+        .catch(() => {
+          document.getElementById('sys-table-body').innerHTML =
+            `<tr><td colspan="8" class="text-center py-10 text-red-400 text-sm font-semibold">Failed to load — check connection</td></tr>`;
+        });
     };
 
-    const saveBtn = document.getElementById('saveBtn');
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+    function populateShipSel() {
+      const sel = document.getElementById('sys-f-ship');
+      const prev = sel.value;
+      sel.innerHTML = '<option value="All">ALL (Global)</option>' +
+        ships.map(s => `<option value="${esc(s.shipName)}">${esc(s.shipName)}</option>`).join('');
+      sel.value = prev || 'All';
+    }
 
-    const isEdit = editingId !== null;
-    const url = isEdit ? `/system/control/${editingId}` : '/system/control';
-    const method = isEdit ? 'PUT' : 'POST';
+    function updateStats() {
+      document.getElementById('sys-stat-total').textContent = allCycles.length;
+      document.getElementById('sys-stat-open').textContent = allCycles.filter(c => c.status === 'Open').length;
+      document.getElementById('sys-stat-reopen').textContent = allCycles.filter(c => c.status === 'Reopen').length;
+      document.getElementById('sys-stat-close').textContent = allCycles.filter(c => c.status === 'Close').length;
+    }
 
-    apiFetch(url, { method, body: JSON.stringify(payload) })
-      .then(res => {
-        if (isEdit) {
-          const idx = allCycles.findIndex(x => x.Id === editingId);
-          if (idx > -1) allCycles[idx] = { ...allCycles[idx], ...payload };
-        } else {
-          const newRow = res.data || { Id: res.id || Date.now(), ...payload };
-          allCycles.unshift(newRow);
-        }
-        updateStats();
-        applyFilters();
-        closeModal();
-        showToast(isEdit ? 'Cycle updated successfully.' : 'Cycle created successfully.', 'success');
-      })
-      .catch(err => {
-        showToast(err?.error || 'Failed to save. Please try again.', 'error');
-      })
-      .finally(() => {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = isEdit ? '<i class="fas fa-save"></i> Update Cycle' : '<i class="fas fa-save"></i> Save Cycle';
+    /* ── filter + sort ────────────────────────────────── */
+    window.sysApplyFilters = function () {
+      const q = document.getElementById('sys-search').value.toLowerCase().trim();
+      const st = document.getElementById('sys-filter-status').value;
+      const ft = document.getElementById('sys-filter-type').value;
+
+      filtered = allCycles.filter(c => {
+        const mQ = !q || [c.processingyear, c.ship, c.notes, c.formtype].some(v => String(v || '').toLowerCase().includes(q));
+        const mSt = !st || c.status === st;
+        const mFt = !ft || c.formtype === ft;
+        return mQ && mSt && mFt;
       });
-  }
 
-  /* ═══════════════════════════════════════════════════════════
-     VALIDATE
-  ═══════════════════════════════════════════════════════════ */
-  function validateForm() {
-    let valid = true;
-    clearErrors();
-
-    const year = document.getElementById('fYear').value.trim();
-    const start = document.getElementById('fStart').value;
-    const end = document.getElementById('fEnd').value;
-
-    if (!year || !/^\d{4}$/.test(year) || Number(year) < 2000 || Number(year) > 2099) {
-      setError('fYear', 'errYear'); valid = false;
-    }
-    if (!start) {
-      setError('fStart', 'errStart'); valid = false;
-    }
-    if (!end || (start && new Date(end) <= new Date(start))) {
-      setError('fEnd', 'errEnd',
-        !end ? 'End date is required.' : 'End date must be after start date.');
-      valid = false;
-    }
-    return valid;
-  }
-
-  function setError(inputId, errId, msg) {
-    document.getElementById(inputId).classList.add('error');
-    const errEl = document.getElementById(errId);
-    if (msg) errEl.textContent = msg;
-    errEl.classList.add('visible');
-  }
-
-  function clearErrors() {
-    document.querySelectorAll('.form-input.error, .form-select.error')
-      .forEach(el => el.classList.remove('error'));
-    document.querySelectorAll('.form-error.visible')
-      .forEach(el => el.classList.remove('visible'));
-  }
-
-  /* ═══════════════════════════════════════════════════════════
-     DELETE
-  ═══════════════════════════════════════════════════════════ */
-  function askDelete(id) {
-    deletingId = id;
-    const c = allCycles.find(x => x.Id === id);
-    document.getElementById('confirmMeta').innerHTML = c ? `
-    <div class="confirm-meta-item"><strong>Year:</strong> ${esc(c.processingyear)}</div>
-    <div class="confirm-meta-item"><strong>Ship:</strong> ${esc(c.ship)}</div>
-    <div class="confirm-meta-item"><strong>Type:</strong> ${esc(c.formtype)}</div>
-    <div class="confirm-meta-item"><strong>Status:</strong> ${esc(c.status)}</div>
-  ` : '';
-    document.getElementById('confirmOverlay').classList.add('active');
-  }
-
-  function closeConfirm() {
-    document.getElementById('confirmOverlay').classList.remove('active');
-    deletingId = null;
-  }
-
-  function confirmDelete() {
-    const id = deletingId;
-    apiFetch(`/system/control/${id}`, { method: 'DELETE' })
-      .then(() => {
-        allCycles = allCycles.filter(x => x.Id !== id);
-        updateStats();
-        applyFilters();
-        closeConfirm();
-        showToast('Cycle deleted.', 'success');
-      })
-      .catch(err => {
-        showToast(err?.error || 'Failed to delete.', 'error');
-        closeConfirm();
+      filtered.sort((a, b) => {
+        let av = a[sortKey] ?? '', bv = b[sortKey] ?? '';
+        if (sortKey === 'startdate' || sortKey === 'enddate') { av = new Date(av); bv = new Date(bv); }
+        if (av < bv) return sortDir === 'asc' ? -1 : 1;
+        if (av > bv) return sortDir === 'asc' ? 1 : -1;
+        return 0;
       });
-  }
 
-  /* ═══════════════════════════════════════════════════════════
-     DANGER RESET
-  ═══════════════════════════════════════════════════════════ */
-  function dangerReset() {
-    if (!confirm('WARNING: This will permanently wipe all form submissions for the current cycle. Are you absolutely sure?')) return;
-    apiFetch('/admin/system/reset_cycle', { method: 'POST' })
-      .then(d => showToast(d?.message || 'Cycle data reset.', 'success'))
-      .catch(err => showToast(err?.error || 'Server error during reset.', 'error'));
-  }
+      curPage = 1;
+      renderTable();
+    };
 
-  /* ═══════════════════════════════════════════════════════════
-     TOAST
-  ═══════════════════════════════════════════════════════════ */
-  function showToast(msg, type = 'info') {
-    const stack = document.getElementById('toastStack');
-    const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
-    const t = document.createElement('div');
-    t.className = `toast toast-${type}`;
-    t.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i>${esc(msg)}`;
-    stack.appendChild(t);
-    requestAnimationFrame(() => { requestAnimationFrame(() => t.classList.add('show')); });
-    setTimeout(() => {
-      t.classList.add('hide');
-      setTimeout(() => t.remove(), 300);
-    }, 3500);
-  }
+    window.sysSortBy = function (key) {
+      sortDir = sortKey === key ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc';
+      sortKey = key;
+      document.querySelectorAll('[id^="sys-sort-"]').forEach(el => { el.className = 'fas fa-sort ml-1 text-navy/30'; });
+      const icon = document.getElementById('sys-sort-' + key);
+      if (icon) icon.className = `fas ${sortDir === 'asc' ? 'fa-sort-up' : 'fa-sort-down'} ml-1 text-navy`;
+      sysApplyFilters();
+    };
 
-  /* ═══════════════════════════════════════════════════════════
-     BADGES & FORMATTERS
-  ═══════════════════════════════════════════════════════════ */
-  function statusBadge(s) {
-    const map = { Open: 'badge-open', Close: 'badge-close', Reopen: 'badge-reopen' };
-    const cls = map[s] || 'badge-open';
-    return `<span class="badge ${cls}"><span class="badge-dot"></span>${esc(s)}</span>`;
-  }
+    /* ── render ───────────────────────────────────────── */
+    function renderTable() {
+      const tbody = document.getElementById('sys-table-body');
+      const total = filtered.length;
+      const pages = Math.ceil(total / PAGE_SIZE) || 1;
+      curPage = Math.max(1, Math.min(curPage, pages));
+      const slice = filtered.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
+      const pg = document.getElementById('sys-pagination');
+      const pi = document.getElementById('sys-pg-info');
 
-  function formtypeBadge(ft) {
-    const map = { ALL: 'ft-all', OFFICERS: 'ft-officers', RATINGS: 'ft-ratings', TRAINING: 'ft-training' };
-    return `<span class="ft-badge ${map[ft] || 'ft-all'}">${esc(ft || 'ALL')}</span>`;
-  }
+      if (!slice.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-navy/30 text-sm">No cycles found</td></tr>`;
+        pg?.classList.add('hidden');
+        return;
+      }
 
-  function fmtDate(dt) {
-    if (!dt) return '—';
-    const d = new Date(dt);
-    if (isNaN(d)) return '—';
-    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
-      ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-  }
+      tbody.innerHTML = slice.map(c => `
+      <tr class="border-b border-amber-50 hover:bg-amber-50/30">
+        <td class="py-2 px-3 font-mono font-bold text-navy text-sm">${esc(c.processingyear)}</td>
+        <td class="py-2 px-3 text-xs text-navy/70 hidden sm:table-cell">
+          ${c.ship === 'All' ? '<span class="text-navy/30 italic">Global</span>' : esc(c.ship)}
+        </td>
+        <td class="py-2 px-3">${typeBadge(c.formtype)}</td>
+        <td class="py-2 px-3 text-xs text-navy/50 font-mono hidden md:table-cell">${fmtDate(c.startdate)}</td>
+        <td class="py-2 px-3 text-xs text-navy/50 font-mono hidden md:table-cell">${fmtDate(c.enddate)}</td>
+        <td class="py-2 px-3">${statusBadge(c.status)}</td>
+        <td class="py-2 px-3 text-xs text-navy/40 max-w-[140px] truncate hidden lg:table-cell"
+          title="${esc(c.notes || '')}">
+          ${c.notes ? esc(c.notes) : '<span class="opacity-30">—</span>'}
+        </td>
+        <td class="py-2 px-3 text-right">
+          <button onclick="sysOpenModal(${c.Id})"
+            class="text-xs font-bold text-green-700 bg-green-50 border border-green-100 rounded px-2 py-0.5 hover:bg-green-100 cursor-pointer mr-1 transition-colors">
+            <i class="fas fa-pencil-alt" style="font-size:9px"></i> Edit
+          </button>
+          <button onclick="sysAskDelete(${c.Id})"
+            class="text-xs font-bold text-red-500 bg-red-50 border border-red-100 rounded px-2 py-0.5 hover:bg-red-100 cursor-pointer transition-colors">
+            <i class="fas fa-trash-alt" style="font-size:9px"></i>
+          </button>
+        </td>
+      </tr>`).join('');
 
-  function toLocalDT(val) {
-    if (!val) return '';
-    const d = new Date(val);
-    if (isNaN(d)) return '';
-    const pad = n => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  }
+      if (pages > 1) {
+        pg?.classList.remove('hidden');
+        if (pi) pi.textContent = `Page ${curPage} of ${pages} · ${total} total`;
+        document.getElementById('sys-pg-prev').disabled = curPage <= 1;
+        document.getElementById('sys-pg-next').disabled = curPage >= pages;
+      } else {
+        pg?.classList.add('hidden');
+      }
+    }
 
-  function esc(str) {
-    if (str == null) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
+    window.sysChangePage = function (dir) { curPage += dir; renderTable(); };
+
+    /* ── modal ────────────────────────────────────────── */
+    window.sysOpenModal = function (id) {
+      editingId = id;
+      const isEdit = id !== null;
+      const c = isEdit ? allCycles.find(x => x.Id === id) : null;
+
+      document.getElementById('sys-modal-title').textContent = isEdit ? 'Edit Cycle' : 'Add Cycle';
+      document.getElementById('sys-modal-icon').className = `fas ${isEdit ? 'fa-pencil-alt' : 'fa-calendar-plus'} text-white`;
+      document.getElementById('sys-save-btn').innerHTML = `<i class="fas fa-save mr-1.5"></i>${isEdit ? 'Update' : 'Save'} Cycle`;
+
+      document.getElementById('sys-f-year').value = c?.processingyear || new Date().getFullYear();
+      document.getElementById('sys-f-ship').value = c?.ship || 'All';
+      document.getElementById('sys-f-type').value = c?.formtype || 'ALL';
+      document.getElementById('sys-f-status').value = c?.status || 'Open';
+      document.getElementById('sys-f-start').value = toLocalDT(c?.startdate);
+      document.getElementById('sys-f-end').value = toLocalDT(c?.enddate);
+      document.getElementById('sys-f-notes').value = c?.notes || '';
+
+      const metaEl = document.getElementById('sys-modal-meta');
+      if (isEdit && c) {
+        metaEl.textContent = `Created by ${c.createdby || '—'} · ${fmtDate(c.datecreated)}`;
+        metaEl.classList.remove('hidden');
+      } else {
+        metaEl.classList.add('hidden');
+      }
+
+      // clear errors
+      ['sys-err-year', 'sys-err-start', 'sys-err-end'].forEach(id => document.getElementById(id).classList.add('hidden'));
+
+      const modal = document.getElementById('sys-modal');
+      modal.style.display = 'flex';
+      setTimeout(() => document.getElementById('sys-f-year').focus(), 200);
+    };
+
+    window.sysCloseModal = function () {
+      document.getElementById('sys-modal').style.display = 'none';
+      editingId = null;
+    };
+
+    /* ── save ─────────────────────────────────────────── */
+    window.sysSaveCycle = function () {
+      const year = document.getElementById('sys-f-year').value.trim();
+      const start = document.getElementById('sys-f-start').value;
+      const end = document.getElementById('sys-f-end').value;
+      let valid = true;
+
+      document.getElementById('sys-err-year').classList.add('hidden');
+      document.getElementById('sys-err-start').classList.add('hidden');
+      document.getElementById('sys-err-end').classList.add('hidden');
+
+      if (!year || !/^\d{4}$/.test(year) || +year < 2000 || +year > 2099) {
+        document.getElementById('sys-err-year').classList.remove('hidden'); valid = false;
+      }
+      if (!start) { document.getElementById('sys-err-start').classList.remove('hidden'); valid = false; }
+      if (!end || (start && new Date(end) <= new Date(start))) {
+        const el = document.getElementById('sys-err-end');
+        el.textContent = !end ? 'End date is required.' : 'End date must be after start date.';
+        el.classList.remove('hidden'); valid = false;
+      }
+      if (!valid) return;
+
+      const payload = {
+        processingyear: year,
+        ship: document.getElementById('sys-f-ship').value,
+        formtype: document.getElementById('sys-f-type').value,
+        status: document.getElementById('sys-f-status').value,
+        startdate: start,
+        enddate: end,
+        notes: document.getElementById('sys-f-notes').value.trim(),
+      };
+
+      const btn = document.getElementById('sys-save-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i>Saving…';
+
+      const isEdit = editingId !== null;
+      api(isEdit ? `/system/control/${editingId}` : '/system/control', {
+        method: isEdit ? 'PUT' : 'POST',
+        body: JSON.stringify(payload),
+      })
+        .then(res => {
+          if (isEdit) {
+            const idx = allCycles.findIndex(x => x.Id === editingId);
+            if (idx > -1) allCycles[idx] = { ...allCycles[idx], ...payload };
+          } else {
+            allCycles.unshift(res?.data || { Id: res?.id || Date.now(), ...payload });
+          }
+          updateStats(); sysApplyFilters(); sysCloseModal();
+          toast(isEdit ? 'Cycle updated.' : 'Cycle created.', true);
+        })
+        .catch(err => toast(err?.error || 'Failed to save.', false))
+        .finally(() => {
+          btn.disabled = false;
+          btn.innerHTML = `<i class="fas fa-save mr-1.5"></i>${isEdit ? 'Update' : 'Save'} Cycle`;
+        });
+    };
+
+    /* ── delete ───────────────────────────────────────── */
+    window.sysAskDelete = function (id) {
+      deletingId = id;
+      const c = allCycles.find(x => x.Id === id);
+      document.getElementById('sys-confirm-meta').innerHTML = c ? `
+      <div><strong>Year:</strong> ${esc(c.processingyear)}</div>
+      <div><strong>Ship:</strong> ${esc(c.ship)}</div>
+      <div><strong>Type:</strong> ${esc(c.formtype)}</div>
+      <div><strong>Status:</strong> ${esc(c.status)}</div>` : '';
+      document.getElementById('sys-confirm').style.display = 'flex';
+    };
+
+    window.sysCloseConfirm = function () {
+      document.getElementById('sys-confirm').style.display = 'none';
+      deletingId = null;
+    };
+
+    window.sysDoDelete = function () {
+      api(`/system/control/${deletingId}`, { method: 'DELETE' })
+        .then(() => {
+          allCycles = allCycles.filter(x => x.Id !== deletingId);
+          updateStats(); sysApplyFilters(); sysCloseConfirm();
+          toast('Cycle deleted.', true);
+        })
+        .catch(err => { toast(err?.error || 'Failed to delete.', false); sysCloseConfirm(); });
+    };
+
+    /* ── extend cycle ─────────────────────────────────── */
+    window.sysToggleExtend = function () {
+      const el = document.getElementById('sys-extend-form');
+      el.classList.toggle('hidden');
+      document.getElementById('sys-extend-msg').classList.add('hidden');
+    };
+
+    window.sysDoExtend = function () {
+      const newEnd = document.getElementById('sys-extend-date').value;
+      const notes = document.getElementById('sys-extend-notes').value.trim();
+      const msgEl = document.getElementById('sys-extend-msg');
+
+      if (!newEnd) {
+        msgEl.textContent = 'New end date is required.';
+        msgEl.className = 'text-xs font-semibold rounded-lg px-3 py-2 bg-red-50 text-red-600';
+        msgEl.classList.remove('hidden');
+        return;
+      }
+
+      // Use a copy — never mutate allCycles directly
+      const target = [...allCycles].sort((a, b) => {
+        const aId = a.Id ?? a.id ?? 0;
+        const bId = b.Id ?? b.id ?? 0;
+        return bId - aId;
+      })[0];
+
+      if (!target) {
+        msgEl.textContent = 'No cycle found to extend.';
+        msgEl.className = 'text-xs font-semibold rounded-lg px-3 py-2 bg-red-50 text-red-600';
+        msgEl.classList.remove('hidden');
+        return;
+      }
+
+      const targetId = target.Id ?? target.id;
+
+      api('/admin/system/extend_cycle', {
+        method: 'POST',
+        body: JSON.stringify({ control_id: targetId, new_enddate: newEnd, notes: notes || undefined }),
+      })
+        .then(d => {
+          const idx = allCycles.findIndex(x => (x.Id ?? x.id) === targetId);
+          if (idx > -1) { allCycles[idx].enddate = newEnd; allCycles[idx].status = 'Reopen'; }
+          updateStats(); sysApplyFilters();
+          document.getElementById('sys-extend-form').classList.add('hidden');
+          toast(d?.message || 'Cycle extended — status set to Reopen.', true);
+        })
+        .catch(err => {
+          msgEl.textContent = err?.error || 'Failed to extend cycle.';
+          msgEl.className = 'text-xs font-semibold rounded-lg px-3 py-2 bg-red-50 text-red-600';
+          msgEl.classList.remove('hidden');
+        });
+    };
+
+    /* ── boot ─────────────────────────────────────────── */
+    sysLoadData();
+
+  })();
 </script>

@@ -1,251 +1,705 @@
 <!-- FILE: emolument-sections/admin/roles.html
-     APIs: GET /admin/roles  POST /admin/roles/assign  DELETE /admin/roles/:id/revoke -->
+     APIs:
+       GET    /admin/role-catalog          → custom roles for filter dropdown
+       GET    /admin/role-assignments      → active assignments (name, ship, role_name)
+       POST   /admin/role-assignments      → assign { user_id, admin_role_id } — upsert
+       DELETE /admin/roles/:id/revoke      → revoke assignment
+       GET    /admin/role-catalog/menus    → all menus for checkbox list
+       GET    /admin/role-catalog/:id      → single role with menuIds
+       POST   /admin/role-catalog          → create role { name, description, menuIds }
+       PUT    /admin/role-catalog/:id      → update role
+       DELETE /admin/role-catalog/:id      → delete role
+-->
 
 <style>
-  .badge-DO {
-    background: rgba(59, 130, 246, 0.12);
-    color: #1d4ed8;
+  /* scoped to #rm-root */
+  #rm-root .rm-view {
+    display: none;
   }
 
-  .badge-FO {
-    background: rgba(245, 158, 11, 0.12);
-    color: #92400e;
+  #rm-root .rm-view.active {
+    display: block;
   }
 
-  .badge-CPO {
-    background: rgba(16, 185, 129, 0.12);
-    color: #065f46;
+  /* full-screen modal */
+  #rm-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(15, 23, 42, .55);
+    backdrop-filter: blur(3px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
   }
 
-  .badge-EMOL_ADMIN {
-    background: rgba(245, 200, 66, 0.2);
-    color: #92400e;
+  #rm-modal.open {
+    display: flex;
+  }
+
+  #rm-modal .rm-box {
+    background: #fff;
+    border-radius: 1rem;
+    width: 100%;
+    max-width: 520px;
+    max-height: 92vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 64px rgba(15, 23, 42, .22);
+    animation: rm-pop .16s ease;
+  }
+
+  @keyframes rm-pop {
+    from {
+      opacity: 0;
+      transform: scale(.96) translateY(8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* configure: role list item */
+  #rm-root .rm-role-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .6rem .75rem;
+    border-radius: .5rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all .13s;
+  }
+
+  #rm-root .rm-role-item:hover {
+    background: rgba(245, 158, 11, .06);
+  }
+
+  #rm-root .rm-role-item.active {
+    background: rgba(30, 58, 95, .06);
+    border-color: rgba(30, 58, 95, .12);
+  }
+
+  /* menu checkbox rows */
+  #rm-root .rm-menu-row {
+    display: flex;
+    align-items: flex-start;
+    gap: .6rem;
+    padding: .45rem .5rem;
+    border-radius: .4rem;
+    transition: background .12s;
+    cursor: pointer;
+  }
+
+  #rm-root .rm-menu-row:hover {
+    background: rgba(30, 58, 95, .04);
+  }
+
+  #rm-root .rm-menu-row input[type=checkbox] {
+    margin-top: 2px;
+    accent-color: #1e3a5f;
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+  }
+
+  /* scoped toast */
+  #rm-toast {
+    position: fixed;
+    bottom: 1.4rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(1.5rem);
+    z-index: 10000;
+    background: #1e3a5f;
+    color: #fff;
+    padding: .5rem 1.3rem;
+    border-radius: 99px;
+    font-size: .77rem;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: all .22s ease;
+  }
+
+  #rm-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  #rm-toast.is-err {
+    background: #dc2626;
   }
 </style>
 
-<div class="p-2 md:p-4 lg:p-6">
-  <div class="mb-2 md:mb-4 lg:mb-6">
-    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">Assign and revoke emolument roles (DO,
-      FO, CPO)</h3>
-  </div>
+<div id="rm-toast"></div>
 
-  <!-- Desktop: 2-col. Mobile: stacked -->
-  <div class="flex flex-col lg:flex-row gap-4">
-
-    <!-- LEFT: Active role assignments -->
-    <div class="flex-1 min-w-0">
-      <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4">
-        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Active Role Assignments</h3>
-          <div class="flex gap-2">
-            <select id="filterRole"
-              class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none">
-              <option value="">All Roles</option>
-              <option value="DO">DO</option>
-              <option value="FO">FO</option>
-              <option value="CPO">CPO</option>
-              <option value="EMOL_ADMIN">EMOL_ADMIN</option>
-            </select>
-            <button onclick="loadRoles()"
-              class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors">
-              <i class="fas fa-search"></i>
-            </button>
-          </div>
-        </div>
-
-        <div id="rolesTable">
-          <div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i>
-          </div>
-        </div>
-
-        <!-- Pagination -->
-        <div id="rolesPagination" class="flex items-center justify-between mt-3 hidden">
-          <button id="rolesPrev" onclick="rolesPage(-1)"
-            class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
-            <i class="fas fa-chevron-left mr-1"></i>Prev
-          </button>
-          <span id="rolesPageInfo" class="text-xs text-navy/40 font-semibold"></span>
-          <button id="rolesNext" onclick="rolesPage(1)"
-            class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
-            Next<i class="fas fa-chevron-right ml-1"></i>
-          </button>
-        </div>
-      </div>
+<!-- Full-screen modal -->
+<div id="rm-modal" onclick="if(event.target===this)_rm.modal.close()">
+  <div class="rm-box">
+    <div class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
+      <h2 id="rm-modal-title" class="text-sm font-black text-navy uppercase tracking-wide"></h2>
+      <button onclick="_rm.modal.close()"
+        class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 cursor-pointer border-none bg-transparent text-lg leading-none">✕</button>
     </div>
-
-    <!-- RIGHT: Assign new role -->
-    <div class="lg:w-80 flex-shrink-0">
-      <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
-        <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Assign New Role</h3>
-        <div class="space-y-3">
-          <div>
-            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Service Number</label>
-            <input id="assignUserId" type="text" placeholder="e.g. NA/0012345"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Role</label>
-            <select id="assignRole"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
-              onchange="toggleScopeField()">
-              <option value="">— Select role —</option>
-              <option value="DO">DO (Divisional Officer)</option>
-              <option value="FO">FO (Flag Officer)</option>
-              <option value="CPO">CPO (Command Payroll Officer)</option>
-              <option value="EMOL_ADMIN">EMOL_ADMIN</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Scope Type</label>
-            <select id="assignScopeType"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
-              onchange="toggleScopeField()">
-              <option value="GLOBAL">GLOBAL</option>
-              <option value="SHIP">SHIP</option>
-              <option value="COMMAND">COMMAND</option>
-            </select>
-          </div>
-          <div id="scopeValueWrapper">
-            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Scope Value (Ship /
-              Command)</label>
-            <input id="assignScopeValue" type="text" placeholder="e.g. NNS BEECROFT"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
-          </div>
-          <button onclick="assignRole()"
-            class="w-full py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
-            <i class="fas fa-plus mr-2"></i>Assign Role
-          </button>
-        </div>
-      </div>
-    </div>
-
+    <div id="rm-modal-body" class="px-5 py-4"></div>
   </div>
 </div>
 
+<div id="rm-root" class="p-2 md:p-4 lg:p-6">
+
+  <!-- ══════════════════════════════════════════════════════
+       VIEW 1 — ASSIGNMENT  (original layout preserved)
+  ══════════════════════════════════════════════════════ -->
+  <div id="rm-view-assign" class="rm-view active">
+
+    <div class="mb-2 md:mb-4 lg:mb-6">
+      <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">
+        Admin Role Management
+      </h3>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-4">
+
+      <!-- LEFT: active assignments table -->
+      <div class="flex-1 min-w-0">
+        <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4">
+
+          <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Active Role Assignments</h3>
+            <div class="flex gap-2">
+              <!-- Configure button — opens role catalog -->
+              <button onclick="_rm.nav.toConfigure()"
+                class="px-3 py-1.5 border border-amber-200 text-amber-700 bg-amber-50 text-xs font-bold rounded-lg hover:bg-amber-100 transition-colors cursor-pointer">
+                <i class="fas fa-sliders-h mr-1"></i>Configure
+              </button>
+              <!-- Role filter — populated from catalog -->
+              <select id="rm-filter-role"
+                class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none">
+                <option value="">All Roles</option>
+              </select>
+              <button onclick="_rm.assignments.load(1)"
+                class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div id="rm-assign-table">
+            <div class="flex items-center justify-center py-8 text-navy/30">
+              <i class="fas fa-spinner fa-spin mr-2"></i>
+            </div>
+          </div>
+
+          <!-- Pagination -->
+          <div id="rm-assign-pg" class="flex items-center justify-between mt-3 hidden">
+            <button id="rm-pg-prev" onclick="_rm.assignments.page(-1)"
+              class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
+              <i class="fas fa-chevron-left mr-1"></i>Prev
+            </button>
+            <span id="rm-pg-info" class="text-xs text-navy/40 font-semibold"></span>
+            <button id="rm-pg-next" onclick="_rm.assignments.page(1)"
+              class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
+              Next<i class="fas fa-chevron-right ml-1"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: assign form -->
+      <div class="lg:w-80 flex-shrink-0">
+        <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
+          <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Assign Role</h3>
+          <div class="space-y-3">
+
+            <div>
+              <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Service Number</label>
+              <input id="rm-a-user" type="text" placeholder="e.g. NA/0012345"
+                class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Role</label>
+              <select id="rm-a-role"
+                class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
+                <option value="">— Select role —</option>
+              </select>
+            </div>
+
+            <div id="rm-a-msg" class="hidden text-xs font-semibold rounded-lg px-3 py-2"></div>
+
+            <button onclick="_rm.assignments.assign()"
+              class="w-full py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
+              <i class="fas fa-plus mr-2"></i>Assign Role
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /rm-view-assign -->
+
+
+  <!-- ══════════════════════════════════════════════════════
+       VIEW 2 — CONFIGURE ROLES
+  ══════════════════════════════════════════════════════ -->
+  <div id="rm-view-configure" class="rm-view">
+
+    <div class="mb-4 flex items-center gap-3">
+      <button onclick="_rm.nav.toAssign()"
+        class="w-8 h-8 flex items-center justify-center rounded-full border border-amber-100 bg-white hover:bg-amber-50 text-navy transition-colors cursor-pointer text-sm flex-shrink-0">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div>
+        <h3 class="text-sm lg:text-lg font-bold text-navy">Configure Roles</h3>
+        <p class="text-xs text-navy/45 mt-0.5">Create and edit admin roles with their menu access</p>
+      </div>
+      <button onclick="_rm.catalog.openForm(null)"
+        class="ml-auto px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none flex-shrink-0">
+        <i class="fas fa-plus mr-1"></i>New Role
+      </button>
+    </div>
+
+    <!-- Desktop: 2-col. Mobile: stacked -->
+    <div class="flex flex-col lg:flex-row gap-4">
+
+      <!-- LEFT: role list -->
+      <div class="lg:w-64 flex-shrink-0">
+        <div class="bg-white/60 rounded-xl border border-amber-100 shadow overflow-hidden">
+          <div class="px-4 py-3 border-b border-amber-50">
+            <h4 class="text-xs font-black text-navy uppercase tracking-wide">Defined Roles</h4>
+          </div>
+          <div id="rm-catalog-list" class="p-2 space-y-0.5">
+            <div class="flex items-center justify-center py-8 text-navy/30 text-sm">
+              <i class="fas fa-spinner fa-spin mr-2"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: edit / create panel -->
+      <div class="flex-1 min-w-0">
+        <div id="rm-catalog-panel" class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
+          <p class="text-center text-sm text-navy/30 py-8">
+            Select a role to edit, or click <strong>New Role</strong> to create one.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /rm-view-configure -->
+
+</div><!-- /rm-root -->
+
+
 <script>
   (function () {
-    const token = localStorage.getItem('token');
+    'use strict';
+
+    const TOKEN = localStorage.getItem('token');
     const PAGE_SIZE = 10;
-    let allRows = [];
-    let currentPage = 1;
+    const H = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN };
 
-    function toggleScopeField() {
-      const scope = document.getElementById('assignScopeType').value;
-      document.getElementById('scopeValueWrapper').style.display = (scope === 'GLOBAL') ? 'none' : 'block';
+    /* ── util ─────────────────────────────────────────────── */
+    function esc(s) {
+      return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
-    toggleScopeField();
+    function api(url, opts = {}) {
+      return fetch(url, { ...opts, headers: { ...H, ...(opts.headers || {}) } })
+        .then(r => r.ok ? r.json() : r.json().then(d => Promise.reject(d)));
+    }
+    function toast(msg, err) {
+      const el = document.getElementById('rm-toast');
+      if (!el) return;
+      el.textContent = msg;
+      el.className = 'show' + (err ? ' is-err' : '');
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { el.className = ''; }, 2800);
+    }
+    function showMsg(id, txt, ok) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = txt;
+      el.className = `text-xs font-semibold rounded-lg px-3 py-2 ${ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`;
+      el.classList.remove('hidden');
+    }
+    function hideMsg(id) { document.getElementById(id)?.classList.add('hidden'); }
 
-    function renderPage() {
-      const el = document.getElementById('rolesTable');
-      const total = allRows.length;
-      const pages = Math.ceil(total / PAGE_SIZE) || 1;
-      currentPage = Math.max(1, Math.min(currentPage, pages));
-      const slice = allRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    /* ── state ────────────────────────────────────────────── */
+    let _catalog = [];   // all custom roles from /admin/role-catalog
+    let _allMenus = [];   // from /admin/role-catalog/menus
+    let _rows = [];   // assignment rows
+    let _page = 1;
+    let _editing = null; // role id being edited in configure panel
 
-      if (!slice.length) {
-        el.innerHTML = '<div class="text-center py-6 text-blue-900/30 text-sm">No roles found</div>';
-        document.getElementById('rolesPagination').classList.add('hidden');
-        return;
-      }
+    /* ── modal ────────────────────────────────────────────── */
+    const modal = {
+      open(title, html) {
+        document.getElementById('rm-modal-title').textContent = title;
+        document.getElementById('rm-modal-body').innerHTML = html;
+        document.getElementById('rm-modal').classList.add('open');
+      },
+      close() { document.getElementById('rm-modal').classList.remove('open'); },
+    };
 
-      el.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-sm">
-      <thead><tr class="border-b border-amber-100">
-        <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">User</th>
-        <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Role</th>
-        <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide sm:table-cell">Scope</th>
-        <th class="py-2 w-16"></th>
-      </tr></thead>
-      <tbody>` +
-        slice.map(r => `<tr class="border-b border-amber-50 hover:bg-amber-50/30">
-        <td class="py-2 font-semibold text-navy text-xs">${r.user_id}</td>
-        <td class="py-2"><span class="text-xs font-bold px-2 py-0.5 rounded-full badge-${r.role}">${r.role}</span></td>
-        <td class="py-2 text-blue-900/50 text-xs sm:table-cell">${r.scope_type}${r.scope_value ? ' · ' + r.scope_value : ''}</td>
-        <td class="py-2 text-right">
-          <button onclick="revokeRole(${r.id},'${r.user_id}')"
-            class="text-xs text-red-400 hover:text-red-600 font-bold cursor-pointer border border-red-100 rounded px-2 py-0.5 bg-red-50/50">Revoke</button>
-        </td>
-      </tr>`).join('') +
-        `</tbody></table></div>`;
+    /* ── navigation ───────────────────────────────────────── */
+    const nav = {
+      to(key) {
+        document.querySelectorAll('#rm-root .rm-view').forEach(v => v.classList.remove('active'));
+        document.getElementById('rm-view-' + key)?.classList.add('active');
+      },
+      toAssign() { this.to('assign'); },
+      toConfigure() { this.to('configure'); catalog.load(); },
+    };
 
-      const pg = document.getElementById('rolesPagination');
-      const pi = document.getElementById('rolesPageInfo');
-      pg.classList.toggle('hidden', pages <= 1);
-      pi.textContent = `Page ${currentPage} of ${pages} · ${total} total`;
-      document.getElementById('rolesPrev').disabled = currentPage <= 1;
-      document.getElementById('rolesNext').disabled = currentPage >= pages;
+    /* ── ASSIGNMENTS ──────────────────────────────────────── */
+    const assignments = {
+      load(pg) {
+        if (pg !== undefined) _page = pg;
+        const roleId = document.getElementById('rm-filter-role')?.value || '';
+        const tbody = document.getElementById('rm-assign-table');
+        tbody.innerHTML = `<div class="flex items-center justify-center py-8 text-navy/30">
+        <i class="fas fa-spinner fa-spin mr-2"></i></div>`;
+
+        const q = roleId ? '?admin_role_id=' + encodeURIComponent(roleId) : '';
+        api('/admin/role-assignments' + q)
+          .then(data => {
+            _rows = Array.isArray(data) ? data : (data?.data || []);
+            _page = 1;
+            this.render();
+          })
+          .catch(() => {
+            tbody.innerHTML = `<div class="text-center py-8 text-red-400 text-sm font-semibold">Failed to load</div>`;
+          });
+      },
+
+      render() {
+        const tbody = document.getElementById('rm-assign-table');
+        const total = _rows.length;
+        const pages = Math.ceil(total / PAGE_SIZE) || 1;
+        _page = Math.max(1, Math.min(_page, pages));
+        const slice = _rows.slice((_page - 1) * PAGE_SIZE, _page * PAGE_SIZE);
+        const pg = document.getElementById('rm-assign-pg');
+        const pi = document.getElementById('rm-pg-info');
+
+        if (!slice.length) {
+          tbody.innerHTML = `<div class="text-center py-8 text-blue-900/30 text-sm">No assignments found</div>`;
+          pg?.classList.add('hidden');
+          return;
+        }
+
+        tbody.innerHTML = `
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-amber-100">
+                <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Name</th>
+                <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide hidden sm:table-cell">Ship</th>
+                <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Role</th>
+                <th class="py-2 w-16"></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${slice.map(r => `
+              <tr class="border-b border-amber-50 hover:bg-amber-50/30">
+                <td class="py-2 text-xs">
+                  <span class="font-bold text-navy">${esc(r.Surname || '')} ${esc(r.OtherName || '')}</span>
+                  <span class="block text-navy/40 font-mono">${esc(r.user_id)}</span>
+                </td>
+                <td class="py-2 text-xs text-navy/50 hidden sm:table-cell">${esc(r.ship || '—')}</td>
+                <td class="py-2">
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-navy/10 text-navy">
+                    ${esc(r.role_name)}
+                  </span>
+                </td>
+                <td class="py-2 text-right">
+                  <button onclick="_rm.assignments.confirmRevoke(${r.id},'${esc(r.user_id)}')"
+                    class="text-xs text-red-400 hover:text-red-600 font-bold cursor-pointer border border-red-100 rounded px-2 py-0.5 bg-red-50/50 transition-colors">
+                    Revoke
+                  </button>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+
+        if (pages > 1) {
+          pg?.classList.remove('hidden');
+          if (pi) pi.textContent = `Page ${_page} of ${pages} · ${total} total`;
+          document.getElementById('rm-pg-prev').disabled = _page <= 1;
+          document.getElementById('rm-pg-next').disabled = _page >= pages;
+        } else {
+          pg?.classList.add('hidden');
+        }
+      },
+
+      page(dir) { _page += dir; this.render(); },
+
+      confirmRevoke(id, userId) {
+        modal.open('Revoke Assignment', `
+        <div class="space-y-4">
+          <div class="flex gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
+            <i class="fas fa-exclamation-triangle text-red-400 mt-0.5 flex-shrink-0"></i>
+            <p class="text-sm text-red-700">Revoke role for <strong>${esc(userId)}</strong>?
+              Their access will be removed immediately.</p>
+          </div>
+          <div id="rm-rv-msg" class="hidden"></div>
+          <div class="flex gap-2">
+            <button onclick="_rm.modal.close()"
+              class="flex-1 py-2.5 border border-slate-200 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50 cursor-pointer bg-white">
+              Cancel
+            </button>
+            <button onclick="_rm.assignments.doRevoke(${id},'${esc(userId)}')"
+              class="flex-1 py-2.5 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 cursor-pointer border-none">
+              Yes, Revoke
+            </button>
+          </div>
+        </div>`);
+      },
+
+      async doRevoke(id, userId) {
+        try {
+          await api(`/admin/roles/${id}/revoke`, { method: 'DELETE' });
+          toast(`Role revoked for ${userId}`);
+          modal.close();
+          this.load(1);
+        } catch (err) {
+          showMsg('rm-rv-msg', err?.error || err?.message || 'Server error.', false);
+        }
+      },
+
+      async assign() {
+        const user = document.getElementById('rm-a-user')?.value.trim();
+        const roleId = document.getElementById('rm-a-role')?.value;
+        hideMsg('rm-a-msg');
+
+        if (!user) { showMsg('rm-a-msg', 'Service number is required.', false); return; }
+        if (!roleId) { showMsg('rm-a-msg', 'Please select a role.', false); return; }
+
+        try {
+          await api('/admin/role-assignments', {
+            method: 'POST',
+            body: JSON.stringify({ user_id: user, admin_role_id: Number(roleId) }),
+          });
+          toast(`Role assigned to ${user}`);
+          document.getElementById('rm-a-user').value = '';
+          document.getElementById('rm-a-role').value = '';
+          hideMsg('rm-a-msg');
+          this.load(1);
+        } catch (err) {
+          showMsg('rm-a-msg', err?.error || err?.message || 'Server error.', false);
+        }
+      },
+    };
+
+    /* ── CATALOG ──────────────────────────────────────────── */
+    const catalog = {
+      async load() {
+        const listEl = document.getElementById('rm-catalog-list');
+        listEl.innerHTML = `<div class="flex items-center justify-center py-8 text-navy/30 text-sm">
+        <i class="fas fa-spinner fa-spin mr-2"></i></div>`;
+
+        try {
+          _catalog = await api('/admin/role-catalog').then(d => Array.isArray(d) ? d : (d?.data || []));
+          _allMenus = await api('/admin/role-catalog/menus').then(d => Array.isArray(d) ? d : (d?.data || []));
+        } catch {
+          listEl.innerHTML = `<div class="text-center py-8 text-red-400 text-sm">Failed to load roles</div>`;
+          return;
+        }
+
+        this.renderList();
+        // Also refresh role dropdowns in assign view
+        populateRoleDropdowns();
+      },
+
+      renderList() {
+        const listEl = document.getElementById('rm-catalog-list');
+        if (!_catalog.length) {
+          listEl.innerHTML = `<div class="text-center py-8 text-navy/30 text-sm">No roles defined yet</div>`;
+          return;
+        }
+        listEl.innerHTML = _catalog.map(r => `
+        <div class="rm-role-item ${_editing === r.id ? 'active' : ''}" onclick="_rm.catalog.openForm(${r.id})">
+          <div class="min-w-0">
+            <p class="text-xs font-bold text-navy truncate">${esc(r.name)}</p>
+            ${r.description ? `<p class="text-xs text-navy/40 truncate mt-0.5">${esc(r.description)}</p>` : ''}
+          </div>
+          <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
+            <span class="text-xs text-navy/30">${(r.menuIds || []).length} menus</span>
+            ${r.id === 1
+            ? `<span class="text-xs font-bold text-amber-600 px-1.5 py-0.5 bg-amber-50 rounded">Built-in</span>`
+            : `<button onclick="event.stopPropagation();_rm.catalog.confirmDelete(${r.id},'${esc(r.name)}')"
+                  class="text-red-300 hover:text-red-500 cursor-pointer border-none bg-transparent p-0 text-xs">
+                  <i class="fas fa-trash"></i>
+                </button>`
+          }
+          </div>
+        </div>`).join('');
+      },
+
+      openForm(id) {
+        _editing = id;
+        this.renderList(); // update active state
+
+        const role = id ? _catalog.find(r => r.id === id) : null;
+        const isBuiltin = role?.id === 1;
+        const panelEl = document.getElementById('rm-catalog-panel');
+
+        // Group menus by groupName for checkboxes
+        const groups = {};
+        _allMenus.forEach(m => {
+          const g = m.groupName || 'General';
+          (groups[g] = groups[g] || []).push(m);
+        });
+        const checkedIds = new Set((role?.menuIds || []).map(Number));
+
+        const menuHtml = Object.entries(groups).map(([grp, menus]) => `
+        <div class="mb-3">
+          <p class="text-xs font-black uppercase tracking-widest text-navy/35 mb-1.5">${esc(grp)}</p>
+          ${menus.map(m => `
+            <label class="rm-menu-row">
+              <input type="checkbox" value="${m.Id}" ${checkedIds.has(m.Id) ? 'checked' : ''}
+                ${isBuiltin ? 'disabled' : ''}
+                class="rm-menu-cb" />
+              <div>
+                <p class="text-xs font-semibold text-navy">${esc(m.Name || m.Code || '')}</p>
+                ${m.Description ? `<p class="text-xs text-navy/40">${esc(m.Description)}</p>` : ''}
+              </div>
+            </label>`).join('')}
+        </div>`).join('');
+
+        panelEl.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-black text-navy uppercase tracking-wide">
+              ${id ? 'Edit Role' : 'New Role'}
+            </h4>
+            ${isBuiltin ? `<span class="text-xs font-bold text-amber-600 px-2 py-0.5 bg-amber-50 rounded-full">Built-in — read only</span>` : ''}
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Role Name</label>
+            <input id="rm-cf-name" type="text" value="${esc(role?.name || '')}"
+              placeholder="e.g. Finance Reviewer" ${isBuiltin ? 'readonly' : ''}
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy ${isBuiltin ? 'opacity-60' : ''}" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Description</label>
+            <input id="rm-cf-desc" type="text" value="${esc(role?.description || '')}"
+              placeholder="Brief description of this role" ${isBuiltin ? 'readonly' : ''}
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy ${isBuiltin ? 'opacity-60' : ''}" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-2">Menu Access</label>
+            <div class="border border-amber-100 rounded-lg p-3 max-h-64 overflow-y-auto bg-white/50">
+              ${menuHtml || '<p class="text-xs text-navy/30 text-center py-4">No menus available</p>'}
+            </div>
+          </div>
+
+          <div id="rm-cf-msg" class="hidden text-xs font-semibold rounded-lg px-3 py-2"></div>
+
+          ${isBuiltin ? '' : `
+          <button onclick="_rm.catalog.save(${id || 'null'})"
+            class="w-full py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
+            <i class="fas fa-save mr-2"></i>${id ? 'Save Changes' : 'Create Role'}
+          </button>`}
+        </div>`;
+      },
+
+      async save(id) {
+        const name = document.getElementById('rm-cf-name')?.value.trim();
+        const desc = document.getElementById('rm-cf-desc')?.value.trim();
+        const menuIds = [...document.querySelectorAll('.rm-menu-cb:checked')].map(cb => Number(cb.value));
+        hideMsg('rm-cf-msg');
+
+        if (!name) { showMsg('rm-cf-msg', 'Role name is required.', false); return; }
+
+        try {
+          const body = { name, description: desc, menuIds };
+          if (id) {
+            await api(`/admin/role-catalog/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+            toast(`Role "${name}" updated`);
+          } else {
+            await api('/admin/role-catalog', { method: 'POST', body: JSON.stringify(body) });
+            toast(`Role "${name}" created`);
+          }
+          await this.load();
+          // re-open the saved role to reflect updated state
+          const saved = _catalog.find(r => r.name === name);
+          if (saved) this.openForm(saved.id);
+        } catch (err) {
+          showMsg('rm-cf-msg', err?.error || err?.message || 'Server error.', false);
+        }
+      },
+
+      confirmDelete(id, name) {
+        modal.open('Delete Role', `
+        <div class="space-y-4">
+          <div class="flex gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
+            <i class="fas fa-exclamation-triangle text-red-400 mt-0.5 flex-shrink-0"></i>
+            <p class="text-sm text-red-700">Delete role <strong>${esc(name)}</strong>?
+              Any personnel assigned this role will lose access.</p>
+          </div>
+          <div id="rm-del-msg" class="hidden"></div>
+          <div class="flex gap-2">
+            <button onclick="_rm.modal.close()"
+              class="flex-1 py-2.5 border border-slate-200 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50 cursor-pointer bg-white">
+              Cancel
+            </button>
+            <button onclick="_rm.catalog.doDelete(${id},'${esc(name)}')"
+              class="flex-1 py-2.5 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 cursor-pointer border-none">
+              Yes, Delete
+            </button>
+          </div>
+        </div>`);
+      },
+
+      async doDelete(id, name) {
+        try {
+          await api(`/admin/role-catalog/${id}`, { method: 'DELETE' });
+          toast(`Role "${name}" deleted`);
+          modal.close();
+          _editing = null;
+          document.getElementById('rm-catalog-panel').innerHTML =
+            `<p class="text-center text-sm text-navy/30 py-8">Select a role to edit, or click <strong>New Role</strong> to create one.</p>`;
+          await this.load();
+        } catch (err) {
+          showMsg('rm-del-msg', err?.error || err?.message || 'Server error.', false);
+        }
+      },
+    };
+
+    /* ── populate role dropdowns (filter + assign form) ──── */
+    function populateRoleDropdowns() {
+      const filter = document.getElementById('rm-filter-role');
+      const assign = document.getElementById('rm-a-role');
+      if (!filter || !assign) return;
+
+      const opts = _catalog.map(r =>
+        `<option value="${r.id}">${esc(r.name)}</option>`).join('');
+
+      filter.innerHTML = `<option value="">All Roles</option>${opts}`;
+      assign.innerHTML = `<option value="">— Select role —</option>${opts}`;
     }
 
-    window.rolesPage = function (dir) { currentPage += dir; renderPage(); };
+    /* ── expose to window for inline onclick ─────────────── */
+    window._rm = { modal, nav, assignments, catalog };
 
-    window.loadRoles = function () {
-      const role = document.getElementById('filterRole').value;
-      const el = document.getElementById('rolesTable');
-      el.innerHTML = '<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
-      const q = role ? '?role=' + role : '';
-      fetch('/admin/roles' + q, { headers: { Authorization: 'Bearer ' + token } })
-        .then(r => r.ok ? r.json() : [])
-        .then(rows => { allRows = rows; currentPage = 1; renderPage(); })
-        .catch(() => { el.innerHTML = '<div class="text-center py-6 text-red-400 text-sm">Failed to load roles</div>'; });
-    };
+    /* ── boot ─────────────────────────────────────────────── */
+    // Load catalog first (to populate dropdowns), then assignments
+    api('/admin/role-catalog')
+      .then(d => {
+        _catalog = Array.isArray(d) ? d : (d?.data || []);
+        populateRoleDropdowns();
+        assignments.load(1);
+      })
+      .catch(() => assignments.load(1));
 
-    window.revokeRole = async function (roleId, userId) {
-      const ok = await window.EmolModal.confirm(
-        `Revoke role for ${userId}? This will immediately remove their access.`,
-        { title: 'Revoke Role', icon: '🔒', danger: true }
-      );
-      if (!ok) return;
-      try {
-        const r = await fetch('/admin/roles/' + roleId + '/revoke', {
-          method: 'DELETE', headers: { Authorization: 'Bearer ' + token }
-        });
-        const d = await r.json();
-        if (r.ok) {
-          window.EmolModal.toast('Role revoked successfully.', 'success');
-          loadRoles();
-        } else {
-          window.EmolModal.alert(window.EmolModal.apiErr(d), { title: 'Revoke Failed', icon: '❌' });
-        }
-      } catch {
-        window.EmolModal.alert('Server error. Please try again.', { title: 'Error', icon: '❌' });
-      }
-    };
-
-    window.assignRole = async function () {
-      const body = {
-        user_id: document.getElementById('assignUserId').value.trim(),
-        role: document.getElementById('assignRole').value,
-        scope_type: document.getElementById('assignScopeType').value,
-        scope_value: document.getElementById('assignScopeValue').value.trim() || undefined,
-      };
-      if (!body.user_id || !body.role) {
-        window.EmolModal.alert('Service number and role are required.', { title: 'Validation', icon: '⚠️' });
-        return;
-      }
-      if (body.scope_type !== 'GLOBAL' && !body.scope_value) {
-        window.EmolModal.alert('Scope value is required for SHIP and COMMAND scope types.', { title: 'Validation', icon: '⚠️' });
-        return;
-      }
-      try {
-        const r = await fetch('/admin/roles/assign', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-          body: JSON.stringify(body)
-        });
-        const d = await r.json();
-        if (r.ok) {
-          window.EmolModal.toast('Role assigned to ' + body.user_id + '.', 'success');
-          document.getElementById('assignUserId').value = '';
-          document.getElementById('assignScopeValue').value = '';
-          loadRoles();
-        } else {
-          window.EmolModal.alert(window.EmolModal.apiErr(d), { title: 'Assignment Failed', icon: '❌' });
-        }
-      } catch {
-        window.EmolModal.alert('Server error. Please try again.', { title: 'Error', icon: '❌' });
-      }
-    };
-
-    // Auto-load on mount
-    loadRoles();
   })();
 </script>

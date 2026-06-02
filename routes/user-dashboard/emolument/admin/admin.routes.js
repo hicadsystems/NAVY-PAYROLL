@@ -271,11 +271,9 @@ router.post("/personnel/change-svcno", async (req, res) => {
 // Body: JSON array of personnel objects (same shape as /admin/upload/personnel)
 router.post("/personnel/batch-upload", async (req, res) => {
   if (!req.body || (Array.isArray(req.body) && req.body.length === 0))
-    return res
-      .status(400)
-      .json({
-        error: "Request body must contain at least one personnel record.",
-      });
+    return res.status(400).json({
+      error: "Request body must contain at least one personnel record.",
+    });
   try {
     const result = await adminService.uploadPersonnel(
       req.body,
@@ -386,11 +384,9 @@ router.put("/personnel/:svcno/contact", async (req, res) => {
 // POST /admin/upload/personnel  — original route kept for backward compat
 router.post("/upload/personnel", async (req, res) => {
   if (!req.body || (Array.isArray(req.body) && req.body.length === 0))
-    return res
-      .status(400)
-      .json({
-        error: "Request body must contain at least one personnel record.",
-      });
+    return res.status(400).json({
+      error: "Request body must contain at least one personnel record.",
+    });
   try {
     const result = await adminService.uploadPersonnel(
       req.body,
@@ -429,11 +425,16 @@ router.get("/ships", async (req, res) => {
 // GET /admin/bulk-approve/preview?ship=NNS+BEECROFT
 // Returns count + list of personnel with Status='Filled' on that ship.
 router.get("/bulk-approve/preview", async (req, res) => {
-  const ship = req.query.ship;
+  const { ship, limit, page = 1 } = req.query.ship;
   if (!ship)
     return res.status(400).json({ error: "ship query param is required." });
+  const offset = (Number(page) - 1) * Number(limit);
   try {
-    const result = await adminService.bulkApprovePreview(ship);
+    const result = await adminService.bulkApprovePreview(
+      ship,
+      Number(limit),
+      offset,
+    );
     if (!result.success)
       return res.status(result.code).json({ error: result.message });
     return res.json(result.data);
@@ -446,13 +447,21 @@ router.get("/bulk-approve/preview", async (req, res) => {
 // POST /admin/bulk-approve
 // Body: { ship, fo_name, fo_rank, fo_date }
 router.post("/bulk-approve", async (req, res) => {
-  const { ship, fo_name, fo_rank, fo_date } = req.body;
+  const { ship, selected } = req.body;
   if (!ship) return res.status(400).json({ error: "ship is required." });
+  if (!selected || !Array.isArray(selected) || selected.length === 0)
+    return res.status(400).json({
+      error: "selected must be a non-empty array of service numbers.",
+    });
   try {
     const result = await adminService.bulkApproveShip(
       ship,
-      { fo_name, fo_rank, fo_date },
-      req.user_id,
+      selected,
+      {
+        fo_svcno: req.user_id,
+        fo_name: req.user_name,
+        fo_rank: req.user_rank,
+      },
       req.ip,
     );
     if (!result.success)
@@ -467,11 +476,22 @@ router.post("/bulk-approve", async (req, res) => {
 // POST /admin/ship/:ship/bulk-approve  — original URL kept for backward compat
 router.post("/ship/:ship/bulk-approve", async (req, res) => {
   const { ship } = req.params;
+  const { selected } = req.body;
+
+  if (!ship) return res.status(400).json({ error: "ship is required." });
+  if (!selected || !Array.isArray(selected) || selected.length === 0)
+    return res.status(400).json({
+      error: "selected must be a non-empty array of service numbers.",
+    });
   try {
     const result = await adminService.bulkApproveShip(
       ship,
-      req.body,
-      req.user_id,
+      selected,
+      {
+        fo_svcno: req.user_id,
+        fo_name: req.user_name,
+        fo_rank: req.user_rank,
+      },
       req.ip,
     );
     if (!result.success)

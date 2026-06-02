@@ -123,7 +123,11 @@ router.post(
         formId,
         foShip,
         req.body,
-        req.user_id,
+        {
+          fo_svcno: req.user_id,
+          fo_name: req.user_name,
+          fo_rank: req.user_rank,
+        },
         req.ip,
       );
       if (!result.success)
@@ -138,7 +142,7 @@ router.post(
 
 // ─────────────────────────────────────────────────────────────
 // POST /fo/ship/:ship/bulk-approve
-// Bulk approval for a ship + classes combination.
+// Bulk approval for a ship + selected combination.
 // requireEmolRole('FO') scopes from req.params.ship.
 // Body: { fo_name, fo_rank, fo_date, classes }
 //
@@ -152,17 +156,15 @@ router.post(
   async (req, res) => {
     const { ship } = req.params;
 
-    if (!req.body?.classes) {
-      return res.status(400).json({
-        error: "classes is required (1=Officers, 2=Ratings, 3=Training).",
-      });
-    }
-
     try {
       const result = await foService.approveBulk(
         ship,
         req.body,
-        req.user_id,
+        {
+          fo_svcno: req.user_id,
+          fo_name: req.user_name,
+          fo_rank: req.user_rank,
+        },
         req.ip,
       );
       if (!result.success)
@@ -170,6 +172,43 @@ router.post(
       return res.json({ message: result.message, data: result.data });
     } catch (err) {
       console.error("❌ POST /fo/ship/:ship/bulk-approve:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  },
+);
+
+// ─────────────────────────────────────────────────────────────
+// POST /fo/ship/:ship/class-approve
+// Bulk approval for a ship + classes combination.
+// requireEmolRole('FO') scopes from req.params.ship.
+// Body: { fo_name, fo_rank, fo_date, classes }
+//
+// Note: classes is required — FO bulk processes one class at
+// a time (1=Officers, 2=Ratings, 3=Training) to match old SP.
+// ─────────────────────────────────────────────────────────────
+
+router.post(
+  "/ship/:ship/class-approve",
+  requireEmolRole("FO"),
+  async (req, res) => {
+    const { ship } = req.params;
+
+    try {
+      const result = await foService.approveClass(
+        ship,
+        req.body,
+        {
+          fo_svcno: req.user_id,
+          fo_name: req.user_name,
+          fo_rank: req.user_rank,
+        },
+        req.ip,
+      );
+      if (!result.success)
+        return res.status(result.code).json({ error: result.message });
+      return res.json({ message: result.message, data: result.data });
+    } catch (err) {
+      console.error("❌ POST /fo/ship/:ship/class-approve:", err);
       return res.status(500).json({ error: "Server error" });
     }
   },
@@ -204,7 +243,11 @@ router.post(
         formId,
         foShip,
         req.body,
-        req.user_id,
+        {
+          fo_svcno: req.user_id,
+          fo_name: req.user_name,
+          fo_rank: req.user_rank,
+        },
         req.ip,
       );
       if (!result.success)

@@ -313,7 +313,7 @@ async function approveSingle(
 // ─────────────────────────────────────────────────────────────
 // BULK APPROVE — UpdatePersonByShipFO equivalent
 //
-// CRITICAL: filters WHERE Status = 'Filled' AND classes = @classes
+// CRITICAL: filters WHERE Status = 'Filled' AND serviceNumber IN @selected
 // This matches the EXACT old SP behaviour — do not change to 'FO'.
 //
 // TRANSACTION: both table updates are inside one transaction.
@@ -326,11 +326,84 @@ async function approveSingle(
 
 async function approveBulk(
   ship,
+  selected,
+  foName,
+  foRank,
+  foSvcNo,
+  legacyStatus,
+) {
+  return withTransaction(async (conn) => {
+    // 1. Fetch affected personnel inside the transaction
+    //    FOR UPDATE locks the rows so no concurrent bulk approve
+    //    can grab the same set between our SELECT and UPDATE.
+
+    const placeholders = selected.map(() => "?").join(",");
+
+    const [affected] = await conn.query(
+      `SELECT serviceNumber FROM ef_personalinfos
+       WHERE ship    = ?
+        AND formNumber IN ${placeholders}
+        AND Status  = 'Filled'
+        AND (emolumentform IS NULL OR emolumentform != 'Yes')
+       FOR UPDATE`,
+      [ship, ...selected.map(String)],
+    );
+
+    if (affected.length === 0) return { count: 0, serviceNumbers: [] };
+
+    // 2. Bulk update ef_personalinfos
+    const [result] = await conn.query(
+      `UPDATE ef_personalinfos
+       SET Status     = ?,
+           fo_name    = ?,
+           fo_rank    = ?,
+           fo_svcno   = ?,
+           fo_date    = NOW(),
+           dateModify = NOW()
+       WHERE ship    = ?
+        AND formNumber IN ${placeholders}
+        AND Status  = 'Filled'
+        AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
+      [legacyStatus, foName, foRank, foSvcNo, ship, ...selected.map(String)],
+    );
+
+    // 3. Bulk update ef_emolument_forms
+    const serviceNumbers = affected.map((r) => r.serviceNumber);
+    const svcPlaceholders = serviceNumbers.map(() => "?").join(",");
+    await conn.query(
+      `UPDATE ef_emolument_forms
+       SET status     = 'FO_APPROVED',
+           updated_at = NOW()
+       WHERE service_no IN (${svcPlaceholders})
+         AND ship     = ?
+         AND status   IN ('SUBMITTED', 'DO_REVIEWED')`,
+      [...serviceNumbers, ship],
+    );
+
+    return { count: result.affectedRows, serviceNumbers: selected };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// APPROVE ALL — UpdatePersonByShipFO equivalent
+//
+// CRITICAL: filters WHERE Status = 'Filled' AND classes = @classes
+// This matches the EXACT old SP behaviour — do not change to 'FO'.
+//
+// TRANSACTION: both table updates are inside one transaction.
+// The pre-fetch of affected service numbers is done INSIDE the
+// transaction so the set cannot change between fetch and update
+// (another session approving the same records concurrently).
+//
+// Returns list of affected serviceNumbers for audit logging.
+// ─────────────────────────────────────────────────────────────
+
+async function approveClass(
+  ship,
   classes,
   foName,
   foRank,
   foSvcNo,
-  foDate,
   legacyStatus,
 ) {
   return withTransaction(async (conn) => {
@@ -356,13 +429,13 @@ async function approveBulk(
            fo_name    = ?,
            fo_rank    = ?,
            fo_svcno   = ?,
-           fo_date    = ?,
+           fo_date    = NOW(),
            dateModify = NOW()
        WHERE ship    = ?
          AND classes = ?
          AND Status  = 'Filled'
          AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
-      [legacyStatus, foName, foRank, foSvcNo, foDate, ship, classes],
+      [legacyStatus, foName, foRank, foSvcNo, ship, classes],
     );
 
     const serviceNumbers = affected.map((r) => r.serviceNumber);
@@ -557,6 +630,7 @@ module.exports = {
   getDocuments,
   approveSingle,
   approveBulk,
+  approveClass,
   getFormIdsByServiceNos,
   rejectForm,
   insertFormApproval,

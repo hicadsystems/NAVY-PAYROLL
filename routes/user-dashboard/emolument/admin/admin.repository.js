@@ -313,21 +313,25 @@ async function updatePersonnelContact(serviceNo, email, phoneNumber) {
 
 async function bulkApproveShip(
   ship,
+  selected,
   foName,
   foRank,
   foSvcNo,
-  foDate,
   legacyStatus,
 ) {
   return withTransaction(async (conn) => {
     // 1. Pre-fetch inside transaction + lock rows
+
+    const placeholders = selected.map(() => "?").join(",");
+
     const [affected] = await conn.query(
       `SELECT serviceNumber FROM ef_personalinfos
      WHERE ship   = ?
-       AND Status = 'Filled'
-         AND (emolumentform IS NULL OR emolumentform != 'Yes')
+      AND formNumber IN ${placeholders}
+      AND Status = 'Filled'
+      AND (emolumentform IS NULL OR emolumentform != 'Yes')
        FOR UPDATE`,
-      [ship],
+      [ship, ...selected.map(String)],
     );
 
     if (affected.length === 0) return { count: 0, serviceNumbers: [] };
@@ -338,24 +342,24 @@ async function bulkApproveShip(
      SET fo_name    = ?,
          fo_svcno   = ?,
          fo_rank    = ?,
-         fo_date    = ?,
+         fo_date    = NOW(),
          Status     = ?,
          dateModify = NOW()
      WHERE ship   = ?
        AND Status = 'Filled'
+       AND formNumber IN ${placeholders}
        AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
-      [foName, foSvcNo, foRank, foDate, legacyStatus, ship],
+      [foName, foSvcNo, foRank, legacyStatus, ship, ...selected.map(String)],
     );
 
-    const serviceNumbers = affected.map((r) => r.serviceNumber);
-
     // 3. Bulk update ef_emolument_forms
-    const placeholders = serviceNumbers.map(() => "?").join(",");
+    const serviceNumbers = affected.map((r) => r.serviceNumber);
+    const svcPlaceholders = serviceNumbers.map(() => "?").join(",");
     await conn.query(
       `UPDATE ef_emolument_forms
        SET status     = 'FO_APPROVED',
            updated_at = NOW()
-       WHERE service_no IN (${placeholders})
+       WHERE service_no IN (${svcPlaceholders})
          AND ship     = ?
          AND status   IN ('SUBMITTED', 'DO_REVIEWED')`,
       [...serviceNumbers, ship],

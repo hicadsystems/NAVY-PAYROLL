@@ -324,13 +324,13 @@ async function updateContact(serviceNo, body, performedBy, ip) {
 // without touching any data.
 // ─────────────────────────────────────────────────────────────
 
-async function bulkApprovePreview(ship) {
+async function bulkApprovePreview(ship, limit, offset) {
   if (!ship) return { success: false, code: 400, message: "ship is required." };
 
   const { rows, total } = await repo.searchPersonnel(
     { ship, status: FO_BULK_FILTER_STATUS },
-    200, // cap — if a ship has >200 pending that's unusual
-    0,
+    limit,
+    offset,
   );
 
   return {
@@ -348,24 +348,24 @@ async function bulkApprovePreview(ship) {
 // ─────────────────────────────────────────────────────────────
 
 async function bulkApproveShip(ship, body, performedBy, ip) {
-  const { fo_name, fo_rank, fo_date } = body;
+  const { fo_name, fo_rank, fo_svcno } = performedBy;
 
   if (!ship) return { success: false, code: 400, message: "Ship is required." };
   if (!fo_name || !fo_rank || !fo_date)
     return {
       success: false,
       code: 400,
-      message: "fo_name, fo_rank, and fo_date are required.",
+      message: "fo_name, fo_rank, and fo_svcno are required.",
     };
 
   const legacyStatus = toLegacyStatus(FORM_STATUS.FO_APPROVED); // 'CPO'
 
   const { count, serviceNumbers } = await repo.bulkApproveShip(
     ship,
+    selected,
     fo_name,
     fo_rank,
-    performedBy,
-    fo_date,
+    fo_svcno,
     legacyStatus,
   );
 
@@ -387,7 +387,7 @@ async function bulkApproveShip(ship, body, performedBy, ip) {
         action: "FO_APPROVED",
         fromStatus: FORM_STATUS.SUBMITTED,
         toStatus: FORM_STATUS.FO_APPROVED,
-        performedBy,
+        performedBy: fo_svcno,
         performerRole: "EMOL_ADMIN",
         remarks: `Admin bulk approval — ship: ${ship} (DO bypassed)`,
       }),
@@ -401,10 +401,10 @@ async function bulkApproveShip(ship, body, performedBy, ip) {
     oldValues: { Status: FO_BULK_FILTER_STATUS, ship },
     newValues: {
       Status: legacyStatus,
-      fo_svcno: performedBy,
+      fo_svcno: fo_svcno,
       affectedCount: count,
     },
-    performedBy,
+    performedBy: fo_svcno,
     ipAddress: ip,
   });
 

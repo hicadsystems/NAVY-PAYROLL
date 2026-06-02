@@ -63,7 +63,11 @@ router.get("/ship/:ship/personnel", requireEmolRole("DO"), async (req, res) => {
   const offset = (Number(page) - 1) * Number(limit);
 
   try {
-    const result = await doService.listSubmittedForms(ship, Number(limit), offset);
+    const result = await doService.listSubmittedForms(
+      ship,
+      Number(limit),
+      offset,
+    );
     if (!result.success)
       return res.status(result.code).json({ error: result.message });
     return res.json(result.data);
@@ -127,7 +131,11 @@ router.post(
         formId,
         doShip,
         req.body,
-        req.user_id,
+        {
+          do_svcno: req.user_id,
+          do_name: req.user_name,
+          do_rank: req.user_rank,
+        },
         req.ip,
       );
       if (!result.success)
@@ -169,7 +177,11 @@ router.post(
         formId,
         doShip,
         req.body,
-        req.user_id,
+        {
+          do_svcno: req.user_id,
+          do_name: req.user_name,
+          do_rank: req.user_rank,
+        },
         req.ip,
       );
       if (!result.success)
@@ -216,7 +228,12 @@ router.get("/ship/:ship/reviewed", requireEmolRole("DO"), async (req, res) => {
   const { limit, page = 1 } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
   try {
-    const result = await doService.listReviewedForms(ship, svc, Number(limit), offset);
+    const result = await doService.listReviewedForms(
+      ship,
+      svc,
+      Number(limit),
+      offset,
+    );
     if (!result.success)
       return res.status(result.code).json({ error: result.message });
     return res.json(result.data);

@@ -93,13 +93,13 @@ async function getForm(formId, doShips) {
 // ─────────────────────────────────────────────────────────────
 
 async function reviewForm(formId, doShip, body, performedBy, ip) {
-  const { do_name, do_rank, do_date } = body;
+  const { do_name, do_rank, do_svcno } = performedBy;
 
-  if (!do_name || !do_rank || !do_date) {
+  if (!do_name || !do_rank || !do_svcno) {
     return {
       success: false,
       code: 400,
-      message: "do_name, do_rank, and do_date are required.",
+      message: "do_name, do_rank, and do_svcno are required.",
     };
   }
 
@@ -129,8 +129,7 @@ async function reviewForm(formId, doShip, body, performedBy, ip) {
     formId,
     do_name,
     do_rank,
-    performedBy, // DO's own service number
-    do_date,
+    do_svcno, // DO's own service number
     legacyStatus,
   );
 
@@ -149,7 +148,7 @@ async function reviewForm(formId, doShip, body, performedBy, ip) {
     action: "DO_REVIEWED",
     fromStatus: FORM_STATUS.SUBMITTED,
     toStatus: FORM_STATUS.DO_REVIEWED,
-    performedBy,
+    performedBy: do_svcno,
     performerRole: "DO",
     remarks: null,
   });
@@ -163,10 +162,10 @@ async function reviewForm(formId, doShip, body, performedBy, ip) {
       Status: legacyStatus,
       div_off_name: do_name,
       div_off_rank: do_rank,
-      div_off_svcno: performedBy,
-      div_off_date: do_date,
+      div_off_svcno: do_svcno,
+      div_off_date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
     },
-    performedBy,
+    performedBy: do_svcno,
     ipAddress: ip,
   });
 
@@ -188,7 +187,7 @@ async function reviewForm(formId, doShip, body, performedBy, ip) {
 
 async function rejectForm(formId, doShip, body, performedBy, ip) {
   const { remarks } = body;
-
+  const { do_svcno } = performedBy; // Only need svcno for performedBy in this case, but can expand if needed
   if (!remarks || !remarks.trim()) {
     return {
       success: false,
@@ -229,7 +228,7 @@ async function rejectForm(formId, doShip, body, performedBy, ip) {
     action: "REJECTED",
     fromStatus: FORM_STATUS.SUBMITTED,
     toStatus: FORM_STATUS.REJECTED,
-    performedBy,
+    performedBy: do_svcno,
     performerRole: "DO",
     remarks: remarks.trim(),
   });
@@ -241,10 +240,10 @@ async function rejectForm(formId, doShip, body, performedBy, ip) {
     oldValues: { Status: LEGACY_STATUS.SUBMITTED },
     newValues: {
       Status: null,
-      rejectedBy: performedBy,
+      rejectedBy: do_svcno,
       remarks: remarks.trim(),
     },
-    performedBy,
+    performedBy: do_svcno,
     ipAddress: ip,
   });
 

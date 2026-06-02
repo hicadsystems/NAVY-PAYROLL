@@ -266,7 +266,6 @@ async function markDoReviewed(
   doName,
   doRank,
   doSvcNo,
-  doDate,
   legacyStatus,
 ) {
   return withTransaction(async (conn) => {
@@ -277,11 +276,11 @@ async function markDoReviewed(
            div_off_name  = ?,
            div_off_rank  = ?,
            div_off_svcno = ?,
-           div_off_date  = ?,
+           div_off_date  = NOW(),
            dateModify    = NOW()
        WHERE serviceNumber = ?
          AND Status = 'Filled'`,
-      [legacyStatus, doName, doRank, doSvcNo, doDate, serviceNo],
+      [legacyStatus, doName, doRank, doSvcNo, serviceNo],
     );
 
     if (r1.affectedRows === 0) {

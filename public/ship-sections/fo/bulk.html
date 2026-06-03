@@ -114,7 +114,7 @@
       return;
     }
     if (!confirm("Approve " + selected.length + " form(s)?")) return;
-    fetch("/ship/fo/bulk-approve", {
+    fetch("/fo/ship/" + ship + "/bulk-approve", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

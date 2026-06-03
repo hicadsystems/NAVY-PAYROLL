@@ -115,7 +115,6 @@
       msg.classList.remove("hidden");
       return;
     }
-    console.log({  selected, command });
     if (!confirm("Confirm " + selected.length + " form(s)?")) return;
     fetch("/cpo/" + encodeURIComponent(command) + "/confirm/bulk", {
       method: "POST",

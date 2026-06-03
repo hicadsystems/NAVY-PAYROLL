@@ -44,7 +44,7 @@
         <i class="fas fa-times mr-1"></i>Reject
       </button>
       <button
-        onclick="doReviewAction('approve')"
+        onclick="doReviewAction('review')"
         class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none"
       >
         <i class="fas fa-check mr-1"></i>Authenticate
@@ -163,7 +163,7 @@
   function doReviewAction(action) {
     const remarks = document.getElementById("doReviewRemarks").value.trim();
     const msg = document.getElementById("doReviewMsg");
-    fetch("/ship/do/" + action, {
+    fetch("/do/forms/"+ doActiveFormId + "/" + action, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

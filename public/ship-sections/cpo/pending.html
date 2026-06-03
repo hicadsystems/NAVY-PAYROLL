@@ -138,7 +138,7 @@
   function cpoAction(action) {
     const remarks = document.getElementById("cpoRemarks").value.trim();
     const msg = document.getElementById("cpoConfirmMsg");
-    fetch("/cpo/command/" + encodeURIComponent(command) + "/" + action, {
+    fetch("/cpo/forms/" + cpoActiveFormId + "/" + action, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

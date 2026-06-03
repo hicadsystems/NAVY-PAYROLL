@@ -135,7 +135,7 @@
   function foAction(action) {
     const remarks = document.getElementById("foRemarks").value.trim();
     const msg = document.getElementById("foApproveMsg");
-    fetch("/ship/fo/" + action, {
+    fetch("/fo/forms/" + foActiveFormId + "/" + action, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

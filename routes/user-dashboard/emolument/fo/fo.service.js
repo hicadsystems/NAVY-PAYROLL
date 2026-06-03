@@ -228,7 +228,7 @@ async function approveBulk(ship, body, performedBy, ip) {
     return {
       success: false,
       code: 404,
-      message: `No forms found with Status='${FO_BULK_FILTER_STATUS}' for ship '${ship}' in ${selected.join(", ")}.`,
+      message: `No forms found with Status='${FORM_STATUS.FO_APPROVED}' for ship '${ship}' in ${selected.join(", ")}.`,
     };
   }
 
@@ -241,7 +241,7 @@ async function approveBulk(ship, body, performedBy, ip) {
       repo.insertFormApproval({
         formId: f.id,
         action: "FO_APPROVED",
-        fromStatus: FORM_STATUS.SUBMITTED, // bulk came from 'Filled' = SUBMITTED
+        fromStatus: FORM_STATUS.DO_REVIEWED, // bulk came from 'Filled' = SUBMITTED, but for approval trail we show DO_REVIEWED → FO_APPROVED
         toStatus: FORM_STATUS.FO_APPROVED,
         performedBy: fo_svcno,
         performerRole: "FO",
@@ -256,7 +256,7 @@ async function approveBulk(ship, body, performedBy, ip) {
     action: "UPDATE",
     recordKey: `BULK:${ship}:serviceNumbers=${selected.join(",")}`,
     oldValues: {
-      Status: FO_BULK_FILTER_STATUS,
+      Status: FORM_STATUS.FO_APPROVED,
       ship,
       serviceNumbers: selected,
     },
@@ -330,7 +330,7 @@ async function approveClass(ship, body, performedBy, ip) {
     return {
       success: false,
       code: 404,
-      message: `No forms found with Status='${FO_BULK_FILTER_STATUS}' for ship '${ship}' and classes=${classes}.`,
+      message: `No forms found with Status='${FORM_STATUS.FO_APPROVED}' for ship '${ship}' and classes=${classes}.`,
     };
   }
 
@@ -343,7 +343,7 @@ async function approveClass(ship, body, performedBy, ip) {
       repo.insertFormApproval({
         formId: f.id,
         action: "FO_APPROVED",
-        fromStatus: FORM_STATUS.SUBMITTED, // bulk came from 'Filled' = SUBMITTED
+        fromStatus: FORM_STATUS.DO_REVIEWED, // bulk came from 'Filled' = SUBMITTED, but for approval trail we show DO_REVIEWED → FO_APPROVED
         toStatus: FORM_STATUS.FO_APPROVED,
         performedBy: fo_svcno,
         performerRole: "FO",
@@ -357,7 +357,7 @@ async function approveClass(ship, body, performedBy, ip) {
     tableName: "ef_personalinfos",
     action: "UPDATE",
     recordKey: `BULK:${ship}:classes=${classes}`,
-    oldValues: { Status: FO_BULK_FILTER_STATUS, ship, classes },
+    oldValues: { Status: FORM_STATUS.FO_APPROVED, ship, classes },
     newValues: {
       Status: legacyStatus,
       fo_name,
@@ -511,6 +511,7 @@ module.exports = {
   getForm,
   approveForm,
   approveBulk,
+  approveClass,
   rejectForm,
   getStatusStats,
 };

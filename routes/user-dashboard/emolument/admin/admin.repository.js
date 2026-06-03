@@ -327,7 +327,7 @@ async function bulkApproveShip(
     const [affected] = await conn.query(
       `SELECT serviceNumber FROM ef_personalinfos
      WHERE ship   = ?
-      AND formNumber IN ${placeholders}
+      AND formNumber IN (${placeholders})
       AND Status = 'Filled'
       AND (emolumentform IS NULL OR emolumentform != 'Yes')
        FOR UPDATE`,
@@ -347,7 +347,7 @@ async function bulkApproveShip(
          dateModify = NOW()
      WHERE ship   = ?
        AND Status = 'Filled'
-       AND formNumber IN ${placeholders}
+       AND formNumber IN (${placeholders})
        AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
       [foName, foSvcNo, foRank, legacyStatus, ship, ...selected.map(String)],
     );

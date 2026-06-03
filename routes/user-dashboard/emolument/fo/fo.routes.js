@@ -122,7 +122,6 @@ router.post(
       const result = await foService.approveForm(
         formId,
         foShip,
-        req.body,
         {
           fo_svcno: req.user_id,
           fo_name: req.user_name,

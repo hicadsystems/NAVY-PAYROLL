@@ -92,7 +92,7 @@ async function getForm(formId, doShips) {
 // do_svcno comes from req.user_id (the DO themselves)
 // ─────────────────────────────────────────────────────────────
 
-async function reviewForm(formId, doShip, body, performedBy, ip) {
+async function reviewForm(formId, doShip,  performedBy, ip) {
   const { do_name, do_rank, do_svcno } = performedBy;
 
   if (!do_name || !do_rank || !do_svcno) {

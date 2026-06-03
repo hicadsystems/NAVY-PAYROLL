@@ -347,11 +347,11 @@ async function bulkApprovePreview(ship, limit, offset) {
 // BULK SHIP APPROVE
 // ─────────────────────────────────────────────────────────────
 
-async function bulkApproveShip(ship, body, performedBy, ip) {
+async function bulkApproveShip(ship, selected, performedBy, ip) {
   const { fo_name, fo_rank, fo_svcno } = performedBy;
 
   if (!ship) return { success: false, code: 400, message: "Ship is required." };
-  if (!fo_name || !fo_rank || !fo_date)
+  if (!fo_name || !fo_rank)
     return {
       success: false,
       code: 400,

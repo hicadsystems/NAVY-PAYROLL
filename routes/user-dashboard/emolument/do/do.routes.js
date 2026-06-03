@@ -130,7 +130,6 @@ router.post(
       const result = await doService.reviewForm(
         formId,
         doShip,
-        req.body,
         {
           do_svcno: req.user_id,
           do_name: req.user_name,

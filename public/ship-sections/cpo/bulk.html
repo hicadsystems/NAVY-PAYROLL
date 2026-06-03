@@ -105,7 +105,7 @@
 
   function executeCpoBulk() {
     const selected = [...document.querySelectorAll(".cpo-bulk-chk:checked")]
-      .map((c) => cpoBulkForms[Number(c.dataset.idx)]?.form_id)
+      .map((c) => cpoBulkForms[Number(c.dataset.idx)]?.formNumber)
       .filter(Boolean);
     const msg = document.getElementById("cpoBulkMsg");
     if (!selected.length) {
@@ -115,15 +115,15 @@
       msg.classList.remove("hidden");
       return;
     }
-    console.log({ form_ids: selected, command });
+    console.log({  selected, command });
     if (!confirm("Confirm " + selected.length + " form(s)?")) return;
-    fetch("/cpo/bulk-confirm", {
+    fetch("/cpo/" + encodeURIComponent(command) + "/confirm/bulk", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + token,
       },
-      body: JSON.stringify({ form_ids: selected, command }),
+      body: JSON.stringify({ selected }),
     })
       .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
       .then(({ ok, d }) => {

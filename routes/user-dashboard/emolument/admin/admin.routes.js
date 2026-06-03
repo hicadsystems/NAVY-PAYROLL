@@ -425,7 +425,7 @@ router.get("/ships", async (req, res) => {
 // GET /admin/bulk-approve/preview?ship=NNS+BEECROFT
 // Returns count + list of personnel with Status='Filled' on that ship.
 router.get("/bulk-approve/preview", async (req, res) => {
-  const { ship, limit, page = 1 } = req.query.ship;
+  const { ship, limit, page = 1 } = req.query;
   if (!ship)
     return res.status(400).json({ error: "ship query param is required." });
   const offset = (Number(page) - 1) * Number(limit);

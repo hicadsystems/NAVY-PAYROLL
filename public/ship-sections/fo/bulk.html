@@ -103,7 +103,7 @@
 
   function executeFoBulk() {
     const selected = [...document.querySelectorAll(".fo-bulk-chk:checked")]
-      .map((c) => foBulkForms[+c.dataset.idx]?.form_id)
+      .map((c) => foBulkForms[+c.dataset.idx]?.formNumber)
       .filter(Boolean);
     const msg = document.getElementById("foBulkMsg");
     if (!selected.length) {
@@ -120,7 +120,7 @@
         "Content-Type": "application/json",
         Authorization: "Bearer " + token,
       },
-      body: JSON.stringify({ form_ids: selected, ship }),
+      body: JSON.stringify({ selected, ship }),
     })
       .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
       .then(({ ok, d }) => {

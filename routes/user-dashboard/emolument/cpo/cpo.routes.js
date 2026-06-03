@@ -182,7 +182,11 @@ router.post(
       const result = await cpoService.confirmForm(
         formId,
         cpoCommand,
-        req.user_id,
+        {
+          cpo_svcno: req.user_id,
+          cpo_name: req.user_name,
+          cpo_rank: req.user_rank,
+        },
         req.ip,
       );
       if (!result.success)
@@ -230,7 +234,11 @@ router.post(
         formId,
         cpoCommand,
         req.body,
-        req.user_id,
+        {
+          cpo_svcno: req.user_id,
+          cpo_name: req.user_name,
+          cpo_rank: req.user_rank,
+        },
         req.ip,
       );
       if (!result.success)
@@ -238,6 +246,90 @@ router.post(
       return res.json({ message: result.message, data: result.data });
     } catch (err) {
       console.error("❌ POST /cpo/forms/:form_id/reject:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  },
+);
+
+// ─────────────────────────────────────────────────────────────
+// BULK CONFIRM — selected form numbers
+// POST /cpo/:command/confirm/bulk
+// Body: { selected: string[] }
+// ─────────────────────────────────────────────────────────────
+
+router.post(
+  "/:command/confirm/bulk",
+  requireEmolRole("CPO"),
+  async (req, res) => {
+    const command = req.params.command;
+
+    const cpoCommand = req.isEmolAdmin ? "ALL" : req.formScope?.command || null;
+
+    if (!cpoCommand) {
+      return res
+        .status(403)
+        .json({ error: "Command scope could not be resolved." });
+    }
+
+    try {
+      const result = await cpoService.confirmBulk(
+        command,
+        req.body,
+        {
+          cpo_svcno: req.user_id,
+          cpo_name: req.user_name,
+          cpo_rank: req.user_rank,
+        },
+        cpoCommand,
+        req.ip,
+      );
+      if (!result.success)
+        return res.status(result.code).json({ error: result.message });
+      return res.json({ message: result.message, data: result.data });
+    } catch (err) {
+      console.error("❌ POST /cpo/ships/:ship/confirm/bulk:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  },
+);
+
+// ─────────────────────────────────────────────────────────────
+// CLASS CONFIRM — all forms of a given class
+// POST /cpo/:command/confirm/class
+// Body: { classes: 1 | 2 | 3 }
+// ─────────────────────────────────────────────────────────────
+
+router.post(
+  "/:command/confirm/class",
+  requireEmolRole("CPO"),
+  async (req, res) => {
+    const command = req.params.command || req.formScope?.command;
+
+    const cpoCommand = req.isEmolAdmin ? "ALL" : req.formScope?.command || null;
+
+    if (!cpoCommand) {
+      return res
+        .status(403)
+        .json({ error: "Command scope could not be resolved." });
+    }
+
+    try {
+      const result = await cpoService.confirmClass(
+        command,
+        req.body,
+        {
+          cpo_svcno: req.user_id,
+          cpo_name: req.user_name,
+          cpo_rank: req.user_rank,
+        },
+        cpoCommand,
+        req.ip,
+      );
+      if (!result.success)
+        return res.status(result.code).json({ error: result.message });
+      return res.json({ message: result.message, data: result.data });
+    } catch (err) {
+      console.error("❌ POST /cpo/ships/:ship/confirm/class:", err);
       return res.status(500).json({ error: "Server error" });
     }
   },

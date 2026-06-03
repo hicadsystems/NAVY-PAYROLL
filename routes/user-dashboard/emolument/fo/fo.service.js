@@ -37,11 +37,11 @@ const {
 // LIST DO_REVIEWED FORMS
 // ─────────────────────────────────────────────────────────────
 
-async function listDoReviewedForms(ship) {
+async function listDoReviewedForms(ship, limit, offset) {
   if (!ship)
     return { success: false, code: 400, message: "Ship name is required." };
 
-  const forms = await repo.getDoReviewedForms(ship);
+  const forms = await repo.getDoReviewedForms(ship, limit, offset);
   return { success: true, data: forms };
 }
 
@@ -97,12 +97,11 @@ async function getForm(formId, foShips) {
 
 // ─────────────────────────────────────────────────────────────
 // INDIVIDUAL APPROVE
-// Body: { fo_name, fo_rank, fo_date }
 // fo_svcno always comes from req.user_id
 // ─────────────────────────────────────────────────────────────
 
-async function approveForm(formId, foShip, body, performedBy, ip) {
-  const { fo_name, fo_rank, fo_date } = body;
+async function approveForm(formId, foShip, performedBy, ip) {
+  const { fo_svcno, fo_name, fo_rank } = performedBy;
 
   if (!fo_name || !fo_rank || !fo_date) {
     return {
@@ -138,7 +137,7 @@ async function approveForm(formId, foShip, body, performedBy, ip) {
     form.ship,
     fo_name,
     fo_rank,
-    performedBy, // FO's own service number
+    fo_svcno, // FO's own service number
     fo_date,
     legacyStatus,
   );
@@ -173,10 +172,10 @@ async function approveForm(formId, foShip, body, performedBy, ip) {
       Status: legacyStatus,
       fo_name,
       fo_rank,
-      fo_svcno: performedBy,
-      fo_date,
+      fo_svcno,
+      fo_date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
     },
-    performedBy,
+    performedBy: fo_svcno,
     ipAddress: ip,
   });
 
@@ -193,7 +192,101 @@ async function approveForm(formId, foShip, body, performedBy, ip) {
 
 // ─────────────────────────────────────────────────────────────
 // BULK APPROVE
-// Body: { fo_name, fo_rank, fo_date, classes }
+// Body: {  selected }
+// Matches UpdatePersonByShipFO exactly:
+//   WHERE Status = 'Filled' AND ship = @ship AND serviceNumber IN @selected
+//
+// FO_BULK_FILTER_STATUS = 'Filled' — imported from constants.
+// ─────────────────────────────────────────────────────────────
+
+async function approveBulk(ship, body, performedBy, ip) {
+  const { selected } = body;
+  const { fo_svcno, fo_name, fo_rank } = performedBy;
+
+  if (!selected || !Array.isArray(selected) || selected.length === 0) {
+    return {
+      success: false,
+      code: 400,
+      message:
+        "At least one service number must be selected for bulk approval.",
+    };
+  }
+
+  // Legacy status — FO bulk sets 'CPO' on ef_personalinfos
+  const legacyStatus = toLegacyStatus(FORM_STATUS.FO_APPROVED); // → 'CPO'
+
+  const { count, serviceNumbers } = await repo.approveBulk(
+    ship,
+    selected,
+    fo_name,
+    fo_rank,
+    fo_svcno,
+    legacyStatus,
+  );
+
+  if (count === 0) {
+    return {
+      success: false,
+      code: 404,
+      message: `No forms found with Status='${FORM_STATUS.FO_APPROVED}' for ship '${ship}' in ${selected.join(", ")}.`,
+    };
+  }
+
+  invalidateShipCache(ship);
+
+  // Write approval trail for each affected form
+  const formRows = await repo.getFormIdsByServiceNos(serviceNumbers, ship);
+  await Promise.all(
+    formRows.map((f) =>
+      repo.insertFormApproval({
+        formId: f.id,
+        action: "FO_APPROVED",
+        fromStatus: FORM_STATUS.DO_REVIEWED, // bulk came from 'Filled' = SUBMITTED, but for approval trail we show DO_REVIEWED → FO_APPROVED
+        toStatus: FORM_STATUS.FO_APPROVED,
+        performedBy: fo_svcno,
+        performerRole: "FO",
+        remarks: `Bulk approval — ship: ${ship} for selected service numbers`,
+      }),
+    ),
+  );
+
+  // Single audit log entry for the bulk operation
+  await repo.insertAuditLog({
+    tableName: "ef_personalinfos",
+    action: "UPDATE",
+    recordKey: `BULK:${ship}:serviceNumbers=${selected.join(",")}`,
+    oldValues: {
+      Status: FORM_STATUS.FO_APPROVED,
+      ship,
+      serviceNumbers: selected,
+    },
+    newValues: {
+      Status: legacyStatus,
+      fo_name,
+      fo_rank,
+      fo_svcno,
+      fo_date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
+      affectedCount: count,
+    },
+    performedBy: fo_svcno,
+    ipAddress: ip,
+  });
+
+  return {
+    success: true,
+    message: `Bulk approval complete. ${count} form(s) approved.`,
+    data: {
+      ship,
+      approved: count,
+      newStatus: FORM_STATUS.FO_APPROVED,
+      selectedServiceNumbers: selected,
+    },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
+// CLASS APPROVE
+// Body: { classes }
 // Matches UpdatePersonByShipFO exactly:
 //   WHERE Status = 'Filled' AND ship = @ship AND classes = @classes
 //
@@ -201,8 +294,9 @@ async function approveForm(formId, foShip, body, performedBy, ip) {
 // classes: 1 = Officers, 2 = Ratings, 3 = Training
 // ─────────────────────────────────────────────────────────────
 
-async function approveBulk(ship, body, performedBy, ip) {
-  const { fo_name, fo_rank, fo_date, classes } = body;
+async function approveClass(ship, body, performedBy, ip) {
+  const { classes } = body;
+  const { fo_svcno, fo_name, fo_rank } = performedBy;
 
   if (!fo_name || !fo_rank || !fo_date) {
     return {
@@ -223,13 +317,12 @@ async function approveBulk(ship, body, performedBy, ip) {
   // Legacy status — FO bulk sets 'CPO' on ef_personalinfos
   const legacyStatus = toLegacyStatus(FORM_STATUS.FO_APPROVED); // → 'CPO'
 
-  const { count, serviceNumbers } = await repo.approveBulk(
+  const { count, serviceNumbers } = await repo.approveClass(
     ship,
     Number(classes),
     fo_name,
     fo_rank,
-    performedBy,
-    fo_date,
+    fo_svcno,
     legacyStatus,
   );
 
@@ -237,7 +330,7 @@ async function approveBulk(ship, body, performedBy, ip) {
     return {
       success: false,
       code: 404,
-      message: `No forms found with Status='${FO_BULK_FILTER_STATUS}' for ship '${ship}' and classes=${classes}.`,
+      message: `No forms found with Status='${FORM_STATUS.FO_APPROVED}' for ship '${ship}' and classes=${classes}.`,
     };
   }
 
@@ -250,9 +343,9 @@ async function approveBulk(ship, body, performedBy, ip) {
       repo.insertFormApproval({
         formId: f.id,
         action: "FO_APPROVED",
-        fromStatus: FORM_STATUS.SUBMITTED, // bulk came from 'Filled' = SUBMITTED
+        fromStatus: FORM_STATUS.DO_REVIEWED, // bulk came from 'Filled' = SUBMITTED, but for approval trail we show DO_REVIEWED → FO_APPROVED
         toStatus: FORM_STATUS.FO_APPROVED,
-        performedBy,
+        performedBy: fo_svcno,
         performerRole: "FO",
         remarks: `Bulk approval — ship: ${ship}, classes: ${classes}`,
       }),
@@ -264,13 +357,13 @@ async function approveBulk(ship, body, performedBy, ip) {
     tableName: "ef_personalinfos",
     action: "UPDATE",
     recordKey: `BULK:${ship}:classes=${classes}`,
-    oldValues: { Status: FO_BULK_FILTER_STATUS, ship, classes },
+    oldValues: { Status: FORM_STATUS.FO_APPROVED, ship, classes },
     newValues: {
       Status: legacyStatus,
       fo_name,
       fo_rank,
-      fo_svcno: performedBy,
-      fo_date,
+      fo_svcno,
+      fo_date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
       affectedCount: count,
     },
     performedBy,
@@ -297,6 +390,7 @@ async function approveBulk(ship, body, performedBy, ip) {
 
 async function rejectForm(formId, foShip, body, performedBy, ip) {
   const { remarks } = body;
+  const { fo_svcno, fo_name, fo_rank } = performedBy;
 
   if (!remarks || !remarks.trim()) {
     return {
@@ -338,7 +432,7 @@ async function rejectForm(formId, foShip, body, performedBy, ip) {
     action: "REJECTED",
     fromStatus: FORM_STATUS.DO_REVIEWED,
     toStatus: FORM_STATUS.REJECTED,
-    performedBy,
+    performedBy: fo_svcno,
     performerRole: "FO",
     remarks: remarks.trim(),
   });
@@ -350,10 +444,10 @@ async function rejectForm(formId, foShip, body, performedBy, ip) {
     oldValues: { Status: LEGACY_STATUS.DO_REVIEWED },
     newValues: {
       Status: null,
-      rejectedBy: performedBy,
+      rejectedBy: fo_svcno,
       remarks: remarks.trim(),
     },
-    performedBy,
+    performedBy: fo_svcno,
     ipAddress: ip,
   });
 
@@ -368,10 +462,56 @@ async function rejectForm(formId, foShip, body, performedBy, ip) {
   };
 }
 
+// ─────────────────────────────────────────────────────────────
+// STATUS STATS — for DO dashboard summary
+// ─────────────────────────────────────────────────────────────
+
+async function getStatusStats(ship, svc) {
+  if (!ship)
+    return { success: false, code: 400, message: "Ship name is required." };
+  if (!svc)
+    return {
+      success: false,
+      code: 400,
+      message: "Service number is required.",
+    };
+
+  const stats = await repo.getStatusStats(ship, svc);
+  return { success: true, data: stats };
+}
+
+// ─────────────────────────────────────────────────────────────
+// LIST APPROVED FORMS
+// ─────────────────────────────────────────────────────────────
+
+async function listApprovedForms(ship, svc, limit, offset) {
+  if (!ship)
+    return { success: false, code: 400, message: "Ship name is required." };
+  if (!svc)
+    return {
+      success: false,
+      code: 400,
+      message: "Service number is required.",
+    };
+  if (!limit || !Number.isInteger(limit) || limit < 1) {
+    return { success: false, code: 400, message: "Valid limit is required." };
+  }
+  if (offset === undefined || offset < 0) {
+    return { success: false, code: 400, message: "Valid offset is required." };
+  }
+
+  const forms = await repo.getApprovedForms(ship, svc, limit, offset);
+
+  return { success: true, data: forms };
+}
+
 module.exports = {
   listDoReviewedForms,
+  listApprovedForms,
   getForm,
   approveForm,
   approveBulk,
+  approveClass,
   rejectForm,
+  getStatusStats,
 };

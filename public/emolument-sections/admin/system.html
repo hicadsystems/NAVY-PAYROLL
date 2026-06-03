@@ -9,9 +9,10 @@
 -->
 
 <div class="p-2 md:p-4 lg:p-6">
-
   <div class="mb-2 md:mb-4 lg:mb-6">
-    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">
+    <h3
+      class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
+    >
       Manage open / close windows for emolument form submissions
     </h3>
   </div>
@@ -19,39 +20,67 @@
   <!-- Stat chips -->
   <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
     <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-3">
-      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">Total</p>
-      <p class="text-xl font-black text-navy font-mono" id="sys-stat-total">—</p>
+      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">
+        Total
+      </p>
+      <p class="text-xl font-black text-navy font-mono" id="sys-stat-total">
+        —
+      </p>
     </div>
     <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-3">
-      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">Open</p>
-      <p class="text-xl font-black text-green-600 font-mono" id="sys-stat-open">—</p>
+      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">
+        Open
+      </p>
+      <p class="text-xl font-black text-green-600 font-mono" id="sys-stat-open">
+        —
+      </p>
     </div>
     <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-3">
-      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">Reopen</p>
-      <p class="text-xl font-black text-blue-600 font-mono" id="sys-stat-reopen">—</p>
+      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">
+        Reopen
+      </p>
+      <p
+        class="text-xl font-black text-blue-600 font-mono"
+        id="sys-stat-reopen"
+      >
+        —
+      </p>
     </div>
     <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-3">
-      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">Closed</p>
-      <p class="text-xl font-black text-red-600 font-mono" id="sys-stat-close">—</p>
+      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">
+        Closed
+      </p>
+      <p class="text-xl font-black text-red-600 font-mono" id="sys-stat-close">
+        —
+      </p>
     </div>
   </div>
 
   <!-- Main card -->
   <div class="bg-white/60 rounded-xl border border-amber-100 shadow mb-4">
-
     <!-- Card header -->
-    <div class="flex items-center justify-between p-4 border-b border-amber-100 flex-wrap gap-2">
+    <div
+      class="flex items-center justify-between p-4 border-b border-amber-100 flex-wrap gap-2"
+    >
       <div>
-        <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Cycle Rows</h3>
-        <p class="text-xs text-navy/40 mt-0.5">Each row is an access window for a ship / form type</p>
+        <h3 class="font-bold text-navy text-sm uppercase tracking-wide">
+          Cycle Rows
+        </h3>
+        <p class="text-xs text-navy/40 mt-0.5">
+          Each row is an access window for a ship / form type
+        </p>
       </div>
       <div class="flex items-center gap-2">
-        <button onclick="sysLoadData()"
-          class="px-3 py-1.5 bg-white border border-amber-100 text-navy text-xs font-bold rounded-lg hover:bg-amber-50 cursor-pointer transition-colors">
+        <button
+          onclick="sysLoadData()"
+          class="px-3 py-1.5 bg-white border border-amber-100 text-navy text-xs font-bold rounded-lg hover:bg-amber-50 cursor-pointer transition-colors"
+        >
           <i class="fas fa-sync-alt mr-1"></i>Refresh
         </button>
-        <button onclick="sysOpenModal(null)"
-          class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg hover:bg-blue-800 cursor-pointer border-none transition-colors">
+        <button
+          onclick="sysOpenModal(null)"
+          class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg hover:bg-blue-800 cursor-pointer border-none transition-colors"
+        >
           <i class="fas fa-plus mr-1"></i>Add Cycle
         </button>
       </div>
@@ -59,23 +88,33 @@
 
     <!-- Filters -->
     <div class="flex flex-wrap gap-2 p-3 border-b border-amber-50 bg-white/30">
-      <input id="sys-search" type="text" placeholder="Search year, ship, notes…"
+      <input
+        id="sys-search"
+        type="text"
+        placeholder="Search year, ship, notes…"
         class="flex-1 min-w-[160px] border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none"
-        oninput="sysApplyFilters()" />
-      <select id="sys-filter-status" onchange="sysApplyFilters()"
-        class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none cursor-pointer">
+        oninput="sysApplyFilters()"
+      />
+      <select
+        id="sys-filter-status"
+        onchange="sysApplyFilters()"
+        class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none cursor-pointer"
+      >
         <option value="">All Statuses</option>
         <option value="Open">Open</option>
         <option value="Reopen">Reopen</option>
         <option value="Close">Close</option>
       </select>
-      <select id="sys-filter-type" onchange="sysApplyFilters()"
-        class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none cursor-pointer">
+      <select
+        id="sys-filter-type"
+        onchange="sysApplyFilters()"
+        class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none cursor-pointer"
+      >
         <option value="">All Types</option>
         <option value="ALL">ALL</option>
         <option value="OFFICERS">OFFICERS</option>
         <option value="RATINGS">RATINGS</option>
-        <option value="TRAINING">TRAINING</option>
+        <option value="TRAINEES">TRAINEES</option>
       </select>
     </div>
 
@@ -86,25 +125,54 @@
           <tr class="border-b border-amber-100">
             <th
               class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide cursor-pointer select-none"
-              onclick="sysSortBy('processingyear')">
-              Year <i class="fas fa-sort ml-1 text-navy/30" id="sys-sort-processingyear"></i>
-            </th>
-            <th class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide hidden sm:table-cell">
-              Ship</th>
-            <th class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide">Type</th>
-            <th
-              class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide cursor-pointer select-none hidden md:table-cell"
-              onclick="sysSortBy('startdate')">
-              Start <i class="fas fa-sort ml-1 text-navy/30" id="sys-sort-startdate"></i>
+              onclick="sysSortBy('processingyear')"
+            >
+              Year
+              <i
+                class="fas fa-sort ml-1 text-navy/30"
+                id="sys-sort-processingyear"
+              ></i>
             </th>
             <th
-              class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide cursor-pointer select-none hidden md:table-cell"
-              onclick="sysSortBy('enddate')">
-              End <i class="fas fa-sort ml-1 text-navy/30" id="sys-sort-enddate"></i>
+              class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide hidden sm:table-cell"
+            >
+              Ship
             </th>
-            <th class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide">Status</th>
-            <th class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide hidden lg:table-cell">
-              Notes</th>
+            <th
+              class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide"
+            >
+              Type
+            </th>
+            <th
+              class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide cursor-pointer select-none hidden md:table-cell"
+              onclick="sysSortBy('startdate')"
+            >
+              Start
+              <i
+                class="fas fa-sort ml-1 text-navy/30"
+                id="sys-sort-startdate"
+              ></i>
+            </th>
+            <th
+              class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide cursor-pointer select-none hidden md:table-cell"
+              onclick="sysSortBy('enddate')"
+            >
+              End
+              <i
+                class="fas fa-sort ml-1 text-navy/30"
+                id="sys-sort-enddate"
+              ></i>
+            </th>
+            <th
+              class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide"
+            >
+              Status
+            </th>
+            <th
+              class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide hidden lg:table-cell"
+            >
+              Notes
+            </th>
             <th class="py-2 px-3 w-28"></th>
           </tr>
         </thead>
@@ -119,39 +187,60 @@
     </div>
 
     <!-- Pagination -->
-    <div id="sys-pagination"
-      class="hidden flex items-center justify-between px-4 py-2.5 border-t border-amber-50 bg-white/30">
-      <button id="sys-pg-prev" onclick="sysChangePage(-1)"
-        class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
+    <div
+      id="sys-pagination"
+      class="hidden flex items-center justify-between px-4 py-2.5 border-t border-amber-50 bg-white/30"
+    >
+      <button
+        id="sys-pg-prev"
+        onclick="sysChangePage(-1)"
+        class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+      >
         <i class="fas fa-chevron-left mr-1"></i>Prev
       </button>
       <span id="sys-pg-info" class="text-xs text-navy/40 font-semibold"></span>
-      <button id="sys-pg-next" onclick="sysChangePage(1)"
-        class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
+      <button
+        id="sys-pg-next"
+        onclick="sysChangePage(1)"
+        class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+      >
         Next<i class="fas fa-chevron-right ml-1"></i>
       </button>
     </div>
-
-  </div><!-- /main card -->
+  </div>
+  <!-- /main card -->
 
   <!-- Danger zone — extend cycle -->
   <div class="bg-red-50 border border-red-200 rounded-xl p-4">
     <div class="flex items-center gap-2 mb-3">
-      <div class="w-6 h-6 rounded bg-red-100 flex items-center justify-center flex-shrink-0">
-        <i class="fas fa-exclamation-triangle text-red-500" style="font-size:10px"></i>
+      <div
+        class="w-6 h-6 rounded bg-red-100 flex items-center justify-center flex-shrink-0"
+      >
+        <i
+          class="fas fa-exclamation-triangle text-red-500"
+          style="font-size: 10px"
+        ></i>
       </div>
-      <p class="text-xs font-black text-red-600 uppercase tracking-wider">Danger Zone</p>
+      <p class="text-xs font-black text-red-600 uppercase tracking-wider">
+        Danger Zone
+      </p>
     </div>
 
     <!-- Extend Closing Date -->
-    <div class="bg-white border border-red-100 rounded-xl p-3 flex items-center justify-between gap-3 flex-wrap">
+    <div
+      class="bg-white border border-red-100 rounded-xl p-3 flex items-center justify-between gap-3 flex-wrap"
+    >
       <div>
         <p class="text-xs font-bold text-red-700">Extend Closing Date</p>
-        <p class="text-xs text-red-400 mt-0.5">Reopens the most recent cycle with a new end date. Sets status to
-          <strong>Reopen</strong>.</p>
+        <p class="text-xs text-red-400 mt-0.5">
+          Reopens the most recent cycle with a new end date. Sets status to
+          <strong>Reopen</strong>.
+        </p>
       </div>
-      <button onclick="sysToggleExtend()"
-        class="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 cursor-pointer border-none transition-colors flex-shrink-0">
+      <button
+        onclick="sysToggleExtend()"
+        class="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 cursor-pointer border-none transition-colors flex-shrink-0"
+      >
         <i class="fas fa-calendar-plus mr-1"></i>Extend Cycle
       </button>
     </div>
@@ -159,90 +248,170 @@
     <div id="sys-extend-form" class="hidden mt-3 space-y-3">
       <div class="flex flex-col sm:flex-row gap-3">
         <div class="flex-1">
-          <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">New End Date &amp; Time <span
-              class="text-red-500">*</span></label>
-          <input type="datetime-local" id="sys-extend-date"
-            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none" />
+          <label
+            class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
+            >New End Date &amp; Time <span class="text-red-500">*</span></label
+          >
+          <input
+            type="datetime-local"
+            id="sys-extend-date"
+            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none"
+          />
         </div>
         <div class="flex-1">
-          <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Notes (optional)</label>
-          <input type="text" id="sys-extend-notes" placeholder="Reason for extension…"
-            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none" />
+          <label
+            class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
+            >Notes (optional)</label
+          >
+          <input
+            type="text"
+            id="sys-extend-notes"
+            placeholder="Reason for extension…"
+            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none"
+          />
         </div>
       </div>
       <div class="flex gap-2 justify-end">
-        <button onclick="sysToggleExtend()"
-          class="px-4 py-2 border border-amber-100 text-navy/60 text-xs font-bold rounded-lg bg-white hover:bg-amber-50 cursor-pointer transition-colors">
+        <button
+          onclick="sysToggleExtend()"
+          class="px-4 py-2 border border-amber-100 text-navy/60 text-xs font-bold rounded-lg bg-white hover:bg-amber-50 cursor-pointer transition-colors"
+        >
           Cancel
         </button>
-        <button onclick="sysDoExtend()"
-          class="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 cursor-pointer border-none transition-colors">
+        <button
+          onclick="sysDoExtend()"
+          class="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 cursor-pointer border-none transition-colors"
+        >
           <i class="fas fa-save mr-1"></i>Apply Extension
         </button>
       </div>
-      <div id="sys-extend-msg" class="hidden text-xs font-semibold rounded-lg px-3 py-2"></div>
+      <div
+        id="sys-extend-msg"
+        class="hidden text-xs font-semibold rounded-lg px-3 py-2"
+      ></div>
     </div>
   </div>
-
-</div><!-- /p-2 -->
-
+</div>
+<!-- /p-2 -->
 
 <!-- ═══ FULL-SCREEN MODAL — Add / Edit ═══════════════════════ -->
-<div id="sys-modal"
-  style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:1rem"
-  onclick="if(event.target===this)sysCloseModal()">
+<div
+  id="sys-modal"
+  style="
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(3px);
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  "
+  onclick="if (event.target === this) sysCloseModal();"
+>
   <div
-    style="background:#fff;border-radius:1rem;width:100%;max-width:540px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(15,23,42,.22);animation:sys-pop .17s ease">
+    style="
+      background: #fff;
+      border-radius: 1rem;
+      width: 100%;
+      max-width: 540px;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(15, 23, 42, 0.22);
+      animation: sys-pop 0.17s ease;
+    "
+  >
     <style>
       @keyframes sys-pop {
         from {
           opacity: 0;
-          transform: scale(.96) translateY(8px)
+          transform: scale(0.96) translateY(8px);
         }
 
         to {
           opacity: 1;
-          transform: none
+          transform: none;
         }
       }
     </style>
 
     <!-- Modal header -->
-    <div class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
+    <div
+      class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100"
+    >
       <div class="flex items-center gap-2">
-        <div class="w-7 h-7 rounded-lg bg-navy flex items-center justify-center flex-shrink-0">
-          <i id="sys-modal-icon" class="fas fa-calendar-plus text-white" style="font-size:11px"></i>
+        <div
+          class="w-7 h-7 rounded-lg bg-navy flex items-center justify-center flex-shrink-0"
+        >
+          <i
+            id="sys-modal-icon"
+            class="fas fa-calendar-plus text-white"
+            style="font-size: 11px"
+          ></i>
         </div>
-        <h2 id="sys-modal-title" class="text-sm font-black text-navy uppercase tracking-wide">Add Cycle</h2>
+        <h2
+          id="sys-modal-title"
+          class="text-sm font-black text-navy uppercase tracking-wide"
+        >
+          Add Cycle
+        </h2>
       </div>
-      <button onclick="sysCloseModal()"
-        class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 cursor-pointer border-none bg-transparent text-lg leading-none">✕</button>
+      <button
+        onclick="sysCloseModal()"
+        class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 cursor-pointer border-none bg-transparent text-lg leading-none"
+      >
+        ✕
+      </button>
     </div>
 
     <!-- Modal body -->
     <div class="px-5 py-4 space-y-4">
-
       <div>
-        <p class="text-xs font-black text-navy/40 uppercase tracking-widest mb-3">Cycle Identity</p>
+        <p
+          class="text-xs font-black text-navy/40 uppercase tracking-widest mb-3"
+        >
+          Cycle Identity
+        </p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Year <span
-                class="text-red-500">*</span></label>
-            <input type="number" id="sys-f-year" placeholder="e.g. 2026" min="2000" max="2099"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
-            <p id="sys-err-year" class="hidden text-xs text-red-500 mt-1">Enter a valid 4-digit year.</p>
+            <label
+              class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
+              >Year <span class="text-red-500">*</span></label
+            >
+            <input
+              type="number"
+              id="sys-f-year"
+              placeholder="e.g. 2026"
+              min="2000"
+              max="2099"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy"
+            />
+            <p id="sys-err-year" class="hidden text-xs text-red-500 mt-1">
+              Enter a valid 4-digit year.
+            </p>
           </div>
           <div>
-            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Ship</label>
-            <select id="sys-f-ship"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
+            <label
+              class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
+              >Ship</label
+            >
+            <select
+              id="sys-f-ship"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
+            >
               <option value="All">ALL (Global)</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Form Type</label>
-            <select id="sys-f-type"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
+            <label
+              class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
+              >Form Type</label
+            >
+            <select
+              id="sys-f-type"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
+            >
               <option value="ALL">ALL</option>
               <option value="OFFICERS">OFFICERS</option>
               <option value="RATINGS">RATINGS</option>
@@ -250,19 +419,30 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Status</label>
-            <select id="sys-f-status"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
+            <label
+              class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
+              >Status</label
+            >
+            <select
+              id="sys-f-status"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
+            >
               <option value="Open">Open</option>
               <option value="Reopen">Reopen</option>
               <option value="Close">Close</option>
             </select>
             <div class="flex gap-3 mt-1.5">
               <span class="flex items-center gap-1 text-xs text-navy/40">
-                <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>Open / Reopen = accessible
+                <span
+                  class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"
+                ></span
+                >Open / Reopen = accessible
               </span>
               <span class="flex items-center gap-1 text-xs text-navy/40">
-                <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span>Close = blocked
+                <span
+                  class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"
+                ></span
+                >Close = blocked
               </span>
             </div>
           </div>
@@ -270,74 +450,138 @@
       </div>
 
       <div>
-        <p class="text-xs font-black text-navy/40 uppercase tracking-widest mb-3">Access Window</p>
+        <p
+          class="text-xs font-black text-navy/40 uppercase tracking-widest mb-3"
+        >
+          Access Window
+        </p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Start Date &amp; Time <span
-                class="text-red-500">*</span></label>
-            <input type="datetime-local" id="sys-f-start"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
-            <p id="sys-err-start" class="hidden text-xs text-red-500 mt-1">Start date is required.</p>
+            <label
+              class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
+              >Start Date &amp; Time <span class="text-red-500">*</span></label
+            >
+            <input
+              type="datetime-local"
+              id="sys-f-start"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy"
+            />
+            <p id="sys-err-start" class="hidden text-xs text-red-500 mt-1">
+              Start date is required.
+            </p>
           </div>
           <div>
-            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">End Date &amp; Time <span
-                class="text-red-500">*</span></label>
-            <input type="datetime-local" id="sys-f-end"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
-            <p id="sys-err-end" class="hidden text-xs text-red-500 mt-1">End date must be after start.</p>
+            <label
+              class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
+              >End Date &amp; Time <span class="text-red-500">*</span></label
+            >
+            <input
+              type="datetime-local"
+              id="sys-f-end"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy"
+            />
+            <p id="sys-err-end" class="hidden text-xs text-red-500 mt-1">
+              End date must be after start.
+            </p>
           </div>
         </div>
       </div>
 
       <div>
-        <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Notes <span
-            class="text-navy/30 font-normal normal-case">(optional)</span></label>
-        <textarea id="sys-f-notes" rows="2" placeholder="Any notes about this cycle window…"
-          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none resize-none"></textarea>
+        <label
+          class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
+          >Notes
+          <span class="text-navy/30 font-normal normal-case"
+            >(optional)</span
+          ></label
+        >
+        <textarea
+          id="sys-f-notes"
+          rows="2"
+          placeholder="Any notes about this cycle window…"
+          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none resize-none"
+        ></textarea>
       </div>
 
-      <div id="sys-modal-meta" class="hidden text-xs text-navy/40 pt-1 border-t border-amber-50"></div>
-
+      <div
+        id="sys-modal-meta"
+        class="hidden text-xs text-navy/40 pt-1 border-t border-amber-50"
+      ></div>
     </div>
 
     <!-- Modal footer -->
-    <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-100 bg-slate-50/60 rounded-b-2xl">
-      <button onclick="sysCloseModal()"
-        class="px-4 py-2 border border-amber-100 text-navy/60 text-sm font-bold rounded-lg bg-white hover:bg-amber-50 cursor-pointer transition-colors">
+    <div
+      class="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-100 bg-slate-50/60 rounded-b-2xl"
+    >
+      <button
+        onclick="sysCloseModal()"
+        class="px-4 py-2 border border-amber-100 text-navy/60 text-sm font-bold rounded-lg bg-white hover:bg-amber-50 cursor-pointer transition-colors"
+      >
         Cancel
       </button>
-      <button id="sys-save-btn" onclick="sysSaveCycle()"
-        class="px-5 py-2 bg-navy text-white text-sm font-bold rounded-lg hover:bg-blue-800 cursor-pointer border-none transition-colors">
+      <button
+        id="sys-save-btn"
+        onclick="sysSaveCycle()"
+        class="px-5 py-2 bg-navy text-white text-sm font-bold rounded-lg hover:bg-blue-800 cursor-pointer border-none transition-colors"
+      >
         <i class="fas fa-save mr-1.5"></i>Save Cycle
       </button>
     </div>
   </div>
 </div>
 
-
 <!-- ═══ CONFIRM DELETE MODAL ═══════════════════════════════ -->
-<div id="sys-confirm"
-  style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem"
-  onclick="if(event.target===this)sysCloseConfirm()">
+<div
+  id="sys-confirm"
+  style="
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  "
+  onclick="if (event.target === this) sysCloseConfirm();"
+>
   <div
-    style="background:#fff;border-radius:1rem;width:100%;max-width:380px;box-shadow:0 24px 64px rgba(15,23,42,.22);animation:sys-pop .16s ease">
+    style="
+      background: #fff;
+      border-radius: 1rem;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 24px 64px rgba(15, 23, 42, 0.22);
+      animation: sys-pop 0.16s ease;
+    "
+  >
     <div class="px-6 py-6 text-center">
-      <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+      <div
+        class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4"
+      >
         <i class="fas fa-trash-alt text-red-500 text-lg"></i>
       </div>
       <h3 class="text-base font-black text-navy mb-2">Delete this cycle?</h3>
       <p class="text-sm text-navy/50 mb-4 leading-relaxed">
-        This will permanently remove the row from <strong>ef_control</strong>. Cannot be undone.
+        This will permanently remove the row from <strong>ef_control</strong>.
+        Cannot be undone.
       </p>
-      <div id="sys-confirm-meta"
-        class="bg-red-50 border border-red-100 rounded-lg p-3 text-left mb-5 text-xs text-red-700 space-y-1"></div>
+      <div
+        id="sys-confirm-meta"
+        class="bg-red-50 border border-red-100 rounded-lg p-3 text-left mb-5 text-xs text-red-700 space-y-1"
+      ></div>
       <div class="flex gap-2">
-        <button onclick="sysCloseConfirm()"
-          class="flex-1 py-2.5 border border-slate-200 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50 cursor-pointer bg-white">
+        <button
+          onclick="sysCloseConfirm()"
+          class="flex-1 py-2.5 border border-slate-200 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50 cursor-pointer bg-white"
+        >
           Cancel
         </button>
-        <button onclick="sysDoDelete()"
-          class="flex-1 py-2.5 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 cursor-pointer border-none">
+        <button
+          onclick="sysDoDelete()"
+          class="flex-1 py-2.5 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 cursor-pointer border-none"
+        >
           <i class="fas fa-trash-alt mr-1.5"></i>Delete
         </button>
       </div>
@@ -346,17 +590,36 @@
 </div>
 
 <!-- Toast -->
-<div id="sys-toast" style="position:fixed;bottom:1.4rem;left:50%;transform:translateX(-50%) translateY(1.5rem);z-index:100001;
-         background:#1e3a5f;color:#fff;padding:.5rem 1.3rem;border-radius:99px;
-         font-size:.77rem;font-weight:700;white-space:nowrap;pointer-events:none;opacity:0;transition:all .22s ease">
-</div>
+<div
+  id="sys-toast"
+  style="
+    position: fixed;
+    bottom: 1.4rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(1.5rem);
+    z-index: 100001;
+    background: #1e3a5f;
+    color: #fff;
+    padding: 0.5rem 1.3rem;
+    border-radius: 99px;
+    font-size: 0.77rem;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.22s ease;
+  "
+></div>
 
 <script>
   (function () {
-    'use strict';
+    "use strict";
 
-    const TOKEN = localStorage.getItem('token');
-    const H = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN };
+    const TOKEN = localStorage.getItem("token");
+    const H = {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + TOKEN,
+    };
     const PAGE_SIZE = 10;
 
     let allCycles = [];
@@ -365,110 +628,155 @@
     let editingId = null;
     let deletingId = null;
     let curPage = 1;
-    let sortKey = 'processingyear';
-    let sortDir = 'desc';
+    let sortKey = "processingyear";
+    let sortDir = "desc";
 
     /* ── util ─────────────────────────────────────────── */
     function esc(s) {
-      return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
     }
     function api(url, opts = {}) {
-      return fetch(url, { ...opts, headers: { ...H, ...(opts.headers || {}) } })
-        .then(r => r.ok ? r.json() : r.json().then(d => Promise.reject(d)));
+      return fetch(url, {
+        ...opts,
+        headers: { ...H, ...(opts.headers || {}) },
+      }).then((r) =>
+        r.ok ? r.json() : r.json().then((d) => Promise.reject(d)),
+      );
     }
     function toast(msg, ok) {
-      const el = document.getElementById('sys-toast');
+      const el = document.getElementById("sys-toast");
       if (!el) return;
       el.textContent = msg;
-      el.style.background = ok ? '#15803d' : '#dc2626';
-      el.style.opacity = '1'; el.style.transform = 'translateX(-50%) translateY(0)';
+      el.style.background = ok ? "#15803d" : "#dc2626";
+      el.style.opacity = "1";
+      el.style.transform = "translateX(-50%) translateY(0)";
       clearTimeout(el._t);
-      el._t = setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(-50%) translateY(1.5rem)'; }, 2800);
+      el._t = setTimeout(() => {
+        el.style.opacity = "0";
+        el.style.transform = "translateX(-50%) translateY(1.5rem)";
+      }, 2800);
     }
     function fmtDate(dt) {
-      if (!dt) return '—';
+      if (!dt) return "—";
       const d = new Date(dt);
-      if (isNaN(d)) return '—';
-      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-        + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      if (isNaN(d)) return "—";
+      return (
+        d.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }) +
+        " " +
+        d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
+      );
     }
     function toLocalDT(val) {
-      if (!val) return '';
-      const d = new Date(val); if (isNaN(d)) return '';
-      const p = n => String(n).padStart(2, '0');
+      if (!val) return "";
+      const d = new Date(val);
+      if (isNaN(d)) return "";
+      const p = (n) => String(n).padStart(2, "0");
       return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
     }
     function statusBadge(s) {
       const map = {
-        Open: 'bg-green-50 text-green-700',
-        Reopen: 'bg-blue-50 text-blue-700',
-        Close: 'bg-red-50 text-red-600',
+        Open: "bg-green-50 text-green-700",
+        Reopen: "bg-blue-50 text-blue-700",
+        Close: "bg-red-50 text-red-600",
       };
-      return `<span class="text-xs font-bold px-2 py-0.5 rounded-full ${map[s] || 'bg-gray-100 text-gray-500'}">${esc(s)}</span>`;
+      return `<span class="text-xs font-bold px-2 py-0.5 rounded-full ${map[s] || "bg-gray-100 text-gray-500"}">${esc(s)}</span>`;
     }
     function typeBadge(ft) {
       const map = {
-        ALL: 'bg-amber-50 text-amber-700',
-        OFFICERS: 'bg-navy/10 text-navy',
-        RATINGS: 'bg-green-50 text-green-700',
-        TRAINING: 'bg-purple-50 text-purple-700',
+        ALL: "bg-amber-50 text-amber-700",
+        OFFICERS: "bg-navy/10 text-navy",
+        RATINGS: "bg-green-50 text-green-700",
+        TRAINING: "bg-purple-50 text-purple-700",
       };
-      return `<span class="text-xs font-bold px-2 py-0.5 rounded ${map[ft] || 'bg-amber-50 text-amber-700'}">${esc(ft || 'ALL')}</span>`;
+      return `<span class="text-xs font-bold px-2 py-0.5 rounded ${map[ft] || "bg-amber-50 text-amber-700"}">${esc(ft || "ALL")}</span>`;
     }
 
     /* ── load ─────────────────────────────────────────── */
     window.sysLoadData = function () {
-      document.getElementById('sys-table-body').innerHTML =
+      document.getElementById("sys-table-body").innerHTML =
         `<tr><td colspan="8" class="text-center py-10 text-navy/30">
         <i class="fas fa-spinner fa-spin mr-2"></i>Loading…</td></tr>`;
 
-      Promise.all([api('/system/control'), api('/system/ships')])
+      Promise.all([api("/system/control"), api("/system/ships")])
         .then(([ctrl, sh]) => {
-          allCycles = Array.isArray(ctrl) ? ctrl : (ctrl?.data || []);
-          ships = Array.isArray(sh) ? sh : (sh?.data || []);
+          allCycles = Array.isArray(ctrl) ? ctrl : ctrl?.data || [];
+          ships = Array.isArray(sh) ? sh : sh?.data || [];
           populateShipSel();
           sysApplyFilters();
           updateStats();
         })
         .catch(() => {
-          document.getElementById('sys-table-body').innerHTML =
+          document.getElementById("sys-table-body").innerHTML =
             `<tr><td colspan="8" class="text-center py-10 text-red-400 text-sm font-semibold">Failed to load — check connection</td></tr>`;
         });
     };
 
     function populateShipSel() {
-      const sel = document.getElementById('sys-f-ship');
+      const sel = document.getElementById("sys-f-ship");
       const prev = sel.value;
-      sel.innerHTML = '<option value="All">ALL (Global)</option>' +
-        ships.map(s => `<option value="${esc(s.shipName)}">${esc(s.shipName)}</option>`).join('');
-      sel.value = prev || 'All';
+      sel.innerHTML =
+        '<option value="All">ALL (Global)</option>' +
+        ships
+          .map(
+            (s) =>
+              `<option value="${esc(s.shipName)}">${esc(s.shipName)}</option>`,
+          )
+          .join("");
+      sel.value = prev || "All";
     }
 
     function updateStats() {
-      document.getElementById('sys-stat-total').textContent = allCycles.length;
-      document.getElementById('sys-stat-open').textContent = allCycles.filter(c => c.status === 'Open').length;
-      document.getElementById('sys-stat-reopen').textContent = allCycles.filter(c => c.status === 'Reopen').length;
-      document.getElementById('sys-stat-close').textContent = allCycles.filter(c => c.status === 'Close').length;
+      document.getElementById("sys-stat-total").textContent = allCycles.length;
+      document.getElementById("sys-stat-open").textContent = allCycles.filter(
+        (c) => c.status === "Open",
+      ).length;
+      document.getElementById("sys-stat-reopen").textContent = allCycles.filter(
+        (c) => c.status === "Reopen",
+      ).length;
+      document.getElementById("sys-stat-close").textContent = allCycles.filter(
+        (c) => c.status === "Close",
+      ).length;
     }
 
     /* ── filter + sort ────────────────────────────────── */
     window.sysApplyFilters = function () {
-      const q = document.getElementById('sys-search').value.toLowerCase().trim();
-      const st = document.getElementById('sys-filter-status').value;
-      const ft = document.getElementById('sys-filter-type').value;
+      const q = document
+        .getElementById("sys-search")
+        .value.toLowerCase()
+        .trim();
+      const st = document.getElementById("sys-filter-status").value;
+      const ft = document.getElementById("sys-filter-type").value;
 
-      filtered = allCycles.filter(c => {
-        const mQ = !q || [c.processingyear, c.ship, c.notes, c.formtype].some(v => String(v || '').toLowerCase().includes(q));
+      filtered = allCycles.filter((c) => {
+        const mQ =
+          !q ||
+          [c.processingyear, c.ship, c.notes, c.formtype].some((v) =>
+            String(v || "")
+              .toLowerCase()
+              .includes(q),
+          );
         const mSt = !st || c.status === st;
         const mFt = !ft || c.formtype === ft;
         return mQ && mSt && mFt;
       });
 
       filtered.sort((a, b) => {
-        let av = a[sortKey] ?? '', bv = b[sortKey] ?? '';
-        if (sortKey === 'startdate' || sortKey === 'enddate') { av = new Date(av); bv = new Date(bv); }
-        if (av < bv) return sortDir === 'asc' ? -1 : 1;
-        if (av > bv) return sortDir === 'asc' ? 1 : -1;
+        let av = a[sortKey] ?? "",
+          bv = b[sortKey] ?? "";
+        if (sortKey === "startdate" || sortKey === "enddate") {
+          av = new Date(av);
+          bv = new Date(bv);
+        }
+        if (av < bv) return sortDir === "asc" ? -1 : 1;
+        if (av > bv) return sortDir === "asc" ? 1 : -1;
         return 0;
       });
 
@@ -477,45 +785,53 @@
     };
 
     window.sysSortBy = function (key) {
-      sortDir = sortKey === key ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc';
+      sortDir = sortKey === key ? (sortDir === "asc" ? "desc" : "asc") : "desc";
       sortKey = key;
-      document.querySelectorAll('[id^="sys-sort-"]').forEach(el => { el.className = 'fas fa-sort ml-1 text-navy/30'; });
-      const icon = document.getElementById('sys-sort-' + key);
-      if (icon) icon.className = `fas ${sortDir === 'asc' ? 'fa-sort-up' : 'fa-sort-down'} ml-1 text-navy`;
+      document.querySelectorAll('[id^="sys-sort-"]').forEach((el) => {
+        el.className = "fas fa-sort ml-1 text-navy/30";
+      });
+      const icon = document.getElementById("sys-sort-" + key);
+      if (icon)
+        icon.className = `fas ${sortDir === "asc" ? "fa-sort-up" : "fa-sort-down"} ml-1 text-navy`;
       sysApplyFilters();
     };
 
     /* ── render ───────────────────────────────────────── */
     function renderTable() {
-      const tbody = document.getElementById('sys-table-body');
+      const tbody = document.getElementById("sys-table-body");
       const total = filtered.length;
       const pages = Math.ceil(total / PAGE_SIZE) || 1;
       curPage = Math.max(1, Math.min(curPage, pages));
-      const slice = filtered.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
-      const pg = document.getElementById('sys-pagination');
-      const pi = document.getElementById('sys-pg-info');
+      const slice = filtered.slice(
+        (curPage - 1) * PAGE_SIZE,
+        curPage * PAGE_SIZE,
+      );
+      const pg = document.getElementById("sys-pagination");
+      const pi = document.getElementById("sys-pg-info");
 
       if (!slice.length) {
         tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-navy/30 text-sm">No cycles found</td></tr>`;
-        pg?.classList.add('hidden');
+        pg?.classList.add("hidden");
         return;
       }
 
-      tbody.innerHTML = slice.map(c => `
+      tbody.innerHTML = slice
+        .map(
+          (c) => `
       <tr class="border-b border-amber-50 hover:bg-amber-50/30">
         <td class="py-2 px-3 font-mono font-bold text-navy text-sm">${esc(c.processingyear)}</td>
         <td class="py-2 px-3 text-xs text-navy/70 hidden sm:table-cell">
-          ${c.ship === 'All' ? '<span class="text-navy/30 italic">Global</span>' : esc(c.ship)}
+          ${c.ship === "All" ? '<span class="text-navy/30 italic">Global</span>' : esc(c.ship)}
         </td>
         <td class="py-2 px-3">${typeBadge(c.formtype)}</td>
         <td class="py-2 px-3 text-xs text-navy/50 font-mono hidden md:table-cell">${fmtDate(c.startdate)}</td>
         <td class="py-2 px-3 text-xs text-navy/50 font-mono hidden md:table-cell">${fmtDate(c.enddate)}</td>
         <td class="py-2 px-3">${statusBadge(c.status)}</td>
         <td class="py-2 px-3 text-xs text-navy/40 max-w-[140px] truncate hidden lg:table-cell"
-          title="${esc(c.notes || '')}">
+          title="${esc(c.notes || "")}">
           ${c.notes ? esc(c.notes) : '<span class="opacity-30">—</span>'}
         </td>
-        <td class="py-2 px-3 text-right">
+        <td class="flex gap-1 items-center">
           <button onclick="sysOpenModal(${c.Id})"
             class="text-xs font-bold text-green-700 bg-green-50 border border-green-100 rounded px-2 py-0.5 hover:bg-green-100 cursor-pointer mr-1 transition-colors">
             <i class="fas fa-pencil-alt" style="font-size:9px"></i> Edit
@@ -525,160 +841,191 @@
             <i class="fas fa-trash-alt" style="font-size:9px"></i>
           </button>
         </td>
-      </tr>`).join('');
+      </tr>`,
+        )
+        .join("");
 
       if (pages > 1) {
-        pg?.classList.remove('hidden');
+        pg?.classList.remove("hidden");
         if (pi) pi.textContent = `Page ${curPage} of ${pages} · ${total} total`;
-        document.getElementById('sys-pg-prev').disabled = curPage <= 1;
-        document.getElementById('sys-pg-next').disabled = curPage >= pages;
+        document.getElementById("sys-pg-prev").disabled = curPage <= 1;
+        document.getElementById("sys-pg-next").disabled = curPage >= pages;
       } else {
-        pg?.classList.add('hidden');
+        pg?.classList.add("hidden");
       }
     }
 
-    window.sysChangePage = function (dir) { curPage += dir; renderTable(); };
+    window.sysChangePage = function (dir) {
+      curPage += dir;
+      renderTable();
+    };
 
     /* ── modal ────────────────────────────────────────── */
     window.sysOpenModal = function (id) {
       editingId = id;
       const isEdit = id !== null;
-      const c = isEdit ? allCycles.find(x => x.Id === id) : null;
+      const c = isEdit ? allCycles.find((x) => x.Id === id) : null;
 
-      document.getElementById('sys-modal-title').textContent = isEdit ? 'Edit Cycle' : 'Add Cycle';
-      document.getElementById('sys-modal-icon').className = `fas ${isEdit ? 'fa-pencil-alt' : 'fa-calendar-plus'} text-white`;
-      document.getElementById('sys-save-btn').innerHTML = `<i class="fas fa-save mr-1.5"></i>${isEdit ? 'Update' : 'Save'} Cycle`;
+      document.getElementById("sys-modal-title").textContent = isEdit
+        ? "Edit Cycle"
+        : "Add Cycle";
+      document.getElementById("sys-modal-icon").className =
+        `fas ${isEdit ? "fa-pencil-alt" : "fa-calendar-plus"} text-white`;
+      document.getElementById("sys-save-btn").innerHTML =
+        `<i class="fas fa-save mr-1.5"></i>${isEdit ? "Update" : "Save"} Cycle`;
 
-      document.getElementById('sys-f-year').value = c?.processingyear || new Date().getFullYear();
-      document.getElementById('sys-f-ship').value = c?.ship || 'All';
-      document.getElementById('sys-f-type').value = c?.formtype || 'ALL';
-      document.getElementById('sys-f-status').value = c?.status || 'Open';
-      document.getElementById('sys-f-start').value = toLocalDT(c?.startdate);
-      document.getElementById('sys-f-end').value = toLocalDT(c?.enddate);
-      document.getElementById('sys-f-notes').value = c?.notes || '';
+      document.getElementById("sys-f-year").value =
+        c?.processingyear || new Date().getFullYear();
+      document.getElementById("sys-f-ship").value = c?.ship || "All";
+      document.getElementById("sys-f-type").value = c?.formtype || "ALL";
+      document.getElementById("sys-f-status").value = c?.status || "Open";
+      document.getElementById("sys-f-start").value = toLocalDT(c?.startdate);
+      document.getElementById("sys-f-end").value = toLocalDT(c?.enddate);
+      document.getElementById("sys-f-notes").value = c?.notes || "";
 
-      const metaEl = document.getElementById('sys-modal-meta');
+      const metaEl = document.getElementById("sys-modal-meta");
       if (isEdit && c) {
-        metaEl.textContent = `Created by ${c.createdby || '—'} · ${fmtDate(c.datecreated)}`;
-        metaEl.classList.remove('hidden');
+        metaEl.textContent = `Created by ${c.createdby || "—"} · ${fmtDate(c.datecreated)}`;
+        metaEl.classList.remove("hidden");
       } else {
-        metaEl.classList.add('hidden');
+        metaEl.classList.add("hidden");
       }
 
       // clear errors
-      ['sys-err-year', 'sys-err-start', 'sys-err-end'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      ["sys-err-year", "sys-err-start", "sys-err-end"].forEach((id) =>
+        document.getElementById(id).classList.add("hidden"),
+      );
 
-      const modal = document.getElementById('sys-modal');
-      modal.style.display = 'flex';
-      setTimeout(() => document.getElementById('sys-f-year').focus(), 200);
+      const modal = document.getElementById("sys-modal");
+      modal.style.display = "flex";
+      setTimeout(() => document.getElementById("sys-f-year").focus(), 200);
     };
 
     window.sysCloseModal = function () {
-      document.getElementById('sys-modal').style.display = 'none';
+      document.getElementById("sys-modal").style.display = "none";
       editingId = null;
     };
 
     /* ── save ─────────────────────────────────────────── */
     window.sysSaveCycle = function () {
-      const year = document.getElementById('sys-f-year').value.trim();
-      const start = document.getElementById('sys-f-start').value;
-      const end = document.getElementById('sys-f-end').value;
+      const year = document.getElementById("sys-f-year").value.trim();
+      const start = document.getElementById("sys-f-start").value;
+      const end = document.getElementById("sys-f-end").value;
       let valid = true;
 
-      document.getElementById('sys-err-year').classList.add('hidden');
-      document.getElementById('sys-err-start').classList.add('hidden');
-      document.getElementById('sys-err-end').classList.add('hidden');
+      document.getElementById("sys-err-year").classList.add("hidden");
+      document.getElementById("sys-err-start").classList.add("hidden");
+      document.getElementById("sys-err-end").classList.add("hidden");
 
       if (!year || !/^\d{4}$/.test(year) || +year < 2000 || +year > 2099) {
-        document.getElementById('sys-err-year').classList.remove('hidden'); valid = false;
+        document.getElementById("sys-err-year").classList.remove("hidden");
+        valid = false;
       }
-      if (!start) { document.getElementById('sys-err-start').classList.remove('hidden'); valid = false; }
+      if (!start) {
+        document.getElementById("sys-err-start").classList.remove("hidden");
+        valid = false;
+      }
       if (!end || (start && new Date(end) <= new Date(start))) {
-        const el = document.getElementById('sys-err-end');
-        el.textContent = !end ? 'End date is required.' : 'End date must be after start date.';
-        el.classList.remove('hidden'); valid = false;
+        const el = document.getElementById("sys-err-end");
+        el.textContent = !end
+          ? "End date is required."
+          : "End date must be after start date.";
+        el.classList.remove("hidden");
+        valid = false;
       }
       if (!valid) return;
 
       const payload = {
         processingyear: year,
-        ship: document.getElementById('sys-f-ship').value,
-        formtype: document.getElementById('sys-f-type').value,
-        status: document.getElementById('sys-f-status').value,
+        ship: document.getElementById("sys-f-ship").value,
+        formtype: document.getElementById("sys-f-type").value,
+        status: document.getElementById("sys-f-status").value,
         startdate: start,
         enddate: end,
-        notes: document.getElementById('sys-f-notes').value.trim(),
+        notes: document.getElementById("sys-f-notes").value.trim(),
       };
 
-      const btn = document.getElementById('sys-save-btn');
+      const btn = document.getElementById("sys-save-btn");
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i>Saving…';
 
       const isEdit = editingId !== null;
-      api(isEdit ? `/system/control/${editingId}` : '/system/control', {
-        method: isEdit ? 'PUT' : 'POST',
+      api(isEdit ? `/system/control/${editingId}` : "/system/control", {
+        method: isEdit ? "PUT" : "POST",
         body: JSON.stringify(payload),
       })
-        .then(res => {
+        .then((res) => {
           if (isEdit) {
-            const idx = allCycles.findIndex(x => x.Id === editingId);
+            const idx = allCycles.findIndex((x) => x.Id === editingId);
             if (idx > -1) allCycles[idx] = { ...allCycles[idx], ...payload };
           } else {
-            allCycles.unshift(res?.data || { Id: res?.id || Date.now(), ...payload });
+            allCycles.unshift(
+              res?.data || { Id: res?.id || Date.now(), ...payload },
+            );
           }
-          updateStats(); sysApplyFilters(); sysCloseModal();
-          toast(isEdit ? 'Cycle updated.' : 'Cycle created.', true);
+          updateStats();
+          sysApplyFilters();
+          sysCloseModal();
+          toast(isEdit ? "Cycle updated." : "Cycle created.", true);
         })
-        .catch(err => toast(err?.error || 'Failed to save.', false))
+        .catch((err) => toast(err?.error || "Failed to save.", false))
         .finally(() => {
           btn.disabled = false;
-          btn.innerHTML = `<i class="fas fa-save mr-1.5"></i>${isEdit ? 'Update' : 'Save'} Cycle`;
+          btn.innerHTML = `<i class="fas fa-save mr-1.5"></i>${isEdit ? "Update" : "Save"} Cycle`;
         });
     };
 
     /* ── delete ───────────────────────────────────────── */
     window.sysAskDelete = function (id) {
       deletingId = id;
-      const c = allCycles.find(x => x.Id === id);
-      document.getElementById('sys-confirm-meta').innerHTML = c ? `
+      const c = allCycles.find((x) => x.Id === id);
+      document.getElementById("sys-confirm-meta").innerHTML = c
+        ? `
       <div><strong>Year:</strong> ${esc(c.processingyear)}</div>
       <div><strong>Ship:</strong> ${esc(c.ship)}</div>
       <div><strong>Type:</strong> ${esc(c.formtype)}</div>
-      <div><strong>Status:</strong> ${esc(c.status)}</div>` : '';
-      document.getElementById('sys-confirm').style.display = 'flex';
+      <div><strong>Status:</strong> ${esc(c.status)}</div>`
+        : "";
+      document.getElementById("sys-confirm").style.display = "flex";
     };
 
     window.sysCloseConfirm = function () {
-      document.getElementById('sys-confirm').style.display = 'none';
+      document.getElementById("sys-confirm").style.display = "none";
       deletingId = null;
     };
 
     window.sysDoDelete = function () {
-      api(`/system/control/${deletingId}`, { method: 'DELETE' })
+      api(`/system/control/${deletingId}`, { method: "DELETE" })
         .then(() => {
-          allCycles = allCycles.filter(x => x.Id !== deletingId);
-          updateStats(); sysApplyFilters(); sysCloseConfirm();
-          toast('Cycle deleted.', true);
+          allCycles = allCycles.filter((x) => x.Id !== deletingId);
+          updateStats();
+          sysApplyFilters();
+          sysCloseConfirm();
+          toast("Cycle deleted.", true);
         })
-        .catch(err => { toast(err?.error || 'Failed to delete.', false); sysCloseConfirm(); });
+        .catch((err) => {
+          toast(err?.error || "Failed to delete.", false);
+          sysCloseConfirm();
+        });
     };
 
     /* ── extend cycle ─────────────────────────────────── */
     window.sysToggleExtend = function () {
-      const el = document.getElementById('sys-extend-form');
-      el.classList.toggle('hidden');
-      document.getElementById('sys-extend-msg').classList.add('hidden');
+      const el = document.getElementById("sys-extend-form");
+      el.classList.toggle("hidden");
+      document.getElementById("sys-extend-msg").classList.add("hidden");
     };
 
     window.sysDoExtend = function () {
-      const newEnd = document.getElementById('sys-extend-date').value;
-      const notes = document.getElementById('sys-extend-notes').value.trim();
-      const msgEl = document.getElementById('sys-extend-msg');
+      const newEnd = document.getElementById("sys-extend-date").value;
+      const notes = document.getElementById("sys-extend-notes").value.trim();
+      const msgEl = document.getElementById("sys-extend-msg");
 
       if (!newEnd) {
-        msgEl.textContent = 'New end date is required.';
-        msgEl.className = 'text-xs font-semibold rounded-lg px-3 py-2 bg-red-50 text-red-600';
-        msgEl.classList.remove('hidden');
+        msgEl.textContent = "New end date is required.";
+        msgEl.className =
+          "text-xs font-semibold rounded-lg px-3 py-2 bg-red-50 text-red-600";
+        msgEl.classList.remove("hidden");
         return;
       }
 
@@ -690,34 +1037,43 @@
       })[0];
 
       if (!target) {
-        msgEl.textContent = 'No cycle found to extend.';
-        msgEl.className = 'text-xs font-semibold rounded-lg px-3 py-2 bg-red-50 text-red-600';
-        msgEl.classList.remove('hidden');
+        msgEl.textContent = "No cycle found to extend.";
+        msgEl.className =
+          "text-xs font-semibold rounded-lg px-3 py-2 bg-red-50 text-red-600";
+        msgEl.classList.remove("hidden");
         return;
       }
 
       const targetId = target.Id ?? target.id;
 
-      api('/admin/system/extend_cycle', {
-        method: 'POST',
-        body: JSON.stringify({ control_id: targetId, new_enddate: newEnd, notes: notes || undefined }),
+      api("/admin/system/extend_cycle", {
+        method: "POST",
+        body: JSON.stringify({
+          control_id: targetId,
+          new_enddate: newEnd,
+          notes: notes || undefined,
+        }),
       })
-        .then(d => {
-          const idx = allCycles.findIndex(x => (x.Id ?? x.id) === targetId);
-          if (idx > -1) { allCycles[idx].enddate = newEnd; allCycles[idx].status = 'Reopen'; }
-          updateStats(); sysApplyFilters();
-          document.getElementById('sys-extend-form').classList.add('hidden');
-          toast(d?.message || 'Cycle extended — status set to Reopen.', true);
+        .then((d) => {
+          const idx = allCycles.findIndex((x) => (x.Id ?? x.id) === targetId);
+          if (idx > -1) {
+            allCycles[idx].enddate = newEnd;
+            allCycles[idx].status = "Reopen";
+          }
+          updateStats();
+          sysApplyFilters();
+          document.getElementById("sys-extend-form").classList.add("hidden");
+          toast(d?.message || "Cycle extended — status set to Reopen.", true);
         })
-        .catch(err => {
-          msgEl.textContent = err?.error || 'Failed to extend cycle.';
-          msgEl.className = 'text-xs font-semibold rounded-lg px-3 py-2 bg-red-50 text-red-600';
-          msgEl.classList.remove('hidden');
+        .catch((err) => {
+          msgEl.textContent = err?.error || "Failed to extend cycle.";
+          msgEl.className =
+            "text-xs font-semibold rounded-lg px-3 py-2 bg-red-50 text-red-600";
+          msgEl.classList.remove("hidden");
         });
     };
 
     /* ── boot ─────────────────────────────────────────── */
     sysLoadData();
-
   })();
 </script>

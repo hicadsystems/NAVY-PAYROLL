@@ -1,28 +1,28 @@
 <div class="p-4">
   <div class="mb-6">
     <p class="text-sm text-blue-900/50 mt-1">
-      Approve all eligible DO-reviewed forms at once
+      Confirm all eligible FO-approved forms at once
     </p>
   </div>
 
   <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
     <div class="flex items-center justify-between mb-4">
       <h3 class="font-bold text-navy text-sm uppercase tracking-wide">
-        DO-Reviewed Forms
+        FO-approved Forms
       </h3>
       <div class="flex items-center gap-2">
         <input
           type="checkbox"
-          id="foBulkSelectAll"
-          onchange="foToggleAll(this)"
+          id="cpoBulkSelectAll"
+          onchange="cpoToggleAll(this)"
           class="accent-navy w-4 h-4"
         />
-        <label for="foBulkSelectAll" class="text-xs font-bold text-navy/60"
+        <label for="cpoBulkSelectAll" class="text-xs font-bold text-navy/60"
           >Select All</label
         >
       </div>
     </div>
-    <div id="foBulkList">
+    <div id="cpoBulkList">
       <div class="flex items-center justify-center py-8 text-navy/30">
         <i class="fas fa-spinner fa-spin mr-2"></i>
       </div>
@@ -30,41 +30,41 @@
   </div>
 
   <button
-    onclick="executeFoBulk()"
+    onclick="executeCpoBulk()"
     class="w-full py-3 bg-green-600 text-white font-bold text-sm rounded-xl hover:bg-green-700 transition-colors cursor-pointer border-none"
   >
-    <i class="fas fa-check-double mr-2"></i>Approve Selected
+    <i class="fas fa-check-double mr-2"></i>Confirm Selected
   </button>
   <div
-    id="foBulkMsg"
+    id="cpoBulkMsg"
     class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"
   ></div>
 </div>
 
 <script>
-  let foBulkForms = [];
+  let cpoBulkForms = [];
 
-  (function loadFoBulkList(page) {
+  (function loadCpoBulkList(page) {
     page = page || 1;
-    foPendingCurrentPage = page;
-    const el = document.getElementById("foBulkList");
+    cpoPendingCurrentPage = page;
+    const el = document.getElementById("cpoBulkList");
     fetch(
-      "/fo/ship/" +
-        encodeURIComponent(ship) +
-        "/personnel?page=" +
+      "/cpo/pending/" +
+        encodeURIComponent(command) +
+        "?page=" +
         page +
         "&limit=" +
-        FO_APPROVED_PAGE_SIZE,
+        CPO_CONFIRMED_PAGE_SIZE,
       { headers: { Authorization: "Bearer " + token } },
     )
       .then((r) => (r.ok ? r.json() : { forms: [], total: 0 }))
       .then((res) => {
         const rows = Array.isArray(res) ? res : res.forms || [];
         const total = Array.isArray(res) ? 1 : res.total || 1;
-        foBulkForms = rows;
+        cpoBulkForms = rows;
         if (!rows.length && page === 1) {
           el.innerHTML =
-            '<div class="text-center py-8 text-blue-900/30 text-sm"><i class="fas fa-check-circle fa-2x mb-2 block text-green-300"></i>No forms pending FO approval</div>';
+            '<div class="text-center py-8 text-blue-900/30 text-sm"><i class="fas fa-check-circle fa-2x mb-2 block text-green-300"></i>No forms pending CPO confirmation</div>';
           return;
         }
         el.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -72,21 +72,23 @@
            .map(
              (r, i) => `
         <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 flex items-center gap-4">
-          <input type="checkbox" class="fo-bulk-chk accent-navy w-4 h-4 flex-shrink-0" data-idx="${i}" checked />
+          <input type="checkbox" class="cpo-bulk-chk accent-navy w-4 h-4 flex-shrink-0" data-idx="${i}" />
           <div class="flex-1 min-w-0">
             <div class="font-bold text-navy text-sm">${r.Surname || ""} ${r.OtherName || ""}</div>
             <div class="text-xs text-blue-900/40">${r.serviceNumber}</div>
           </div>
-          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-500 flex-shrink-0">DO Reviewed</span>
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-500 flex-shrink-0">FO Approved</span>
         </div>`,
            )
            .join("")} </div>
 
-             ${paginatorHTML(page, Math.ceil(total / FO_APPROVED_PAGE_SIZE), "foPending")}`;
+             ${paginatorHTML(page, Math.ceil(total / FO_APPROVED_PAGE_SIZE), "cpoPending")}`;
 
         /* paginator click handlers — each click triggers a fresh BE fetch */
-        el.querySelectorAll('[data-paginator="foPending"]').forEach((btn) => {
-          btn.addEventListener("click", () => loadFoPending(+btn.dataset.page));
+        el.querySelectorAll('[data-paginator="cpoPending"]').forEach((btn) => {
+          btn.addEventListener("click", () =>
+            loadCpoBulkList(+btn.dataset.page),
+          );
         });
       })
       .catch(() => {
@@ -95,17 +97,17 @@
       });
   })();
 
-  function foToggleAll(cb) {
+  function cpoToggleAll(cb) {
     document
-      .querySelectorAll(".fo-bulk-chk")
+      .querySelectorAll(".cpo-bulk-chk")
       .forEach((c) => (c.checked = cb.checked));
   }
 
-  function executeFoBulk() {
-    const selected = [...document.querySelectorAll(".fo-bulk-chk:checked")]
-      .map((c) => foBulkForms[+c.dataset.idx]?.formNumber)
+  function executeCpoBulk() {
+    const selected = [...document.querySelectorAll(".cpo-bulk-chk:checked")]
+      .map((c) => cpoBulkForms[Number(c.dataset.idx)]?.formNumber)
       .filter(Boolean);
-    const msg = document.getElementById("foBulkMsg");
+    const msg = document.getElementById("cpoBulkMsg");
     if (!selected.length) {
       msg.className =
         "p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
@@ -113,14 +115,15 @@
       msg.classList.remove("hidden");
       return;
     }
-    if (!confirm("Approve " + selected.length + " form(s)?")) return;
-    fetch("/ship/fo/bulk-approve", {
+    console.log({  selected, command });
+    if (!confirm("Confirm " + selected.length + " form(s)?")) return;
+    fetch("/cpo/" + encodeURIComponent(command) + "/confirm/bulk", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + token,
       },
-      body: JSON.stringify({ selected, ship }),
+      body: JSON.stringify({ selected }),
     })
       .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
       .then(({ ok, d }) => {

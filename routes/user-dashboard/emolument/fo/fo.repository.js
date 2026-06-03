@@ -51,10 +51,9 @@ async function withTransaction(fn) {
 // LIST — DO_REVIEWED forms on a ship
 // ─────────────────────────────────────────────────────────────
 
-async function getDoReviewedForms(ship) {
+async function getDoReviewedForms(ship, limit, offset) {
   pool.useDatabase(DB());
-  const [rows] = await pool.query(
-    `SELECT
+  const reviewedQuery = `SELECT
        p.serviceNumber, p.Surname, p.OtherName, p.Rank,
        p.payrollclass, p.classes, p.formNumber, p.FormYear,
        p.Status, p.datecreated,
@@ -67,12 +66,66 @@ async function getDoReviewedForms(ship) {
             ON ef.service_no = p.serviceNumber
            AND ef.ship       = p.ship
      WHERE p.ship   = ?
-       AND p.Status = 'FO'
+       AND p.Status IN ('FO', 'DO_REVIEWED')
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
-     ORDER BY p.Surname ASC, p.OtherName ASC`,
-    [ship],
-  );
-  return rows;
+     ORDER BY p.Surname ASC, p.OtherName ASC
+     LIMIT ? OFFSET ? ;
+     `;
+
+  const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM ef_personalinfos p
+      WHERE p.ship   = ?
+       AND p.Status IN ('FO', 'DO_REVIEWED')
+       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes');
+    `;
+
+  const [[rows], [countResults]] = await Promise.all([
+    pool.query(reviewedQuery, [ship, limit, offset]),
+    pool.query(countQuery, [ship]),
+  ]);
+  return { forms: rows, total: countResults[0].total };
+}
+
+// ─────────────────────────────────────────────────────────────
+// LIST — APPROVED forms on a ship
+// Returns summary rows only — not full form data
+// ─────────────────────────────────────────────────────────────
+
+async function getApprovedForms(ship, svc, limit, offset) {
+  pool.useDatabase(DB());
+  const approvedQuery = `SELECT
+       p.serviceNumber, p.Surname, p.OtherName, p.Rank,
+       p.payrollclass, p.classes, p.formNumber, p.FormYear,
+       p.div_off_name, p.div_off_rank, p.div_off_svcno, p.div_off_date,
+       p.fo_date,
+       p.Status, p.datecreated,
+       ef.id         AS form_id,
+       ef.status     AS form_status,
+       ef.submitted_at
+     FROM ef_personalinfos p
+     LEFT JOIN ef_emolument_forms ef
+            ON ef.service_no = p.serviceNumber
+           AND ef.ship       = p.ship
+     WHERE p.ship   = ?
+       AND p.Status NOT IN ('Filled','SUBMITTED','FO', 'DO_REVIEWED', "REJECTED")
+       AND p.fo_svcno = ?
+     ORDER BY p.Surname ASC, p.OtherName ASC
+     LIMIT ? OFFSET ?`;
+
+  const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM ef_personalinfos p
+      WHERE p.ship   = ?
+       AND p.Status NOT IN ('Filled','SUBMITTED','FO', 'DO_REVIEWED', "REJECTED")
+       AND p.fo_svcno = ?;
+    `;
+
+  const [[rows], [countResults]] = await Promise.all([
+    pool.query(approvedQuery, [ship, svc, limit, offset]),
+    pool.query(countQuery, [ship, svc]),
+  ]);
+  return { forms: rows, total: countResults[0].total };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -260,7 +313,7 @@ async function approveSingle(
 // ─────────────────────────────────────────────────────────────
 // BULK APPROVE — UpdatePersonByShipFO equivalent
 //
-// CRITICAL: filters WHERE Status = 'Filled' AND classes = @classes
+// CRITICAL: filters WHERE Status = 'Filled' AND serviceNumber IN @selected
 // This matches the EXACT old SP behaviour — do not change to 'FO'.
 //
 // TRANSACTION: both table updates are inside one transaction.
@@ -273,11 +326,84 @@ async function approveSingle(
 
 async function approveBulk(
   ship,
+  selected,
+  foName,
+  foRank,
+  foSvcNo,
+  legacyStatus,
+) {
+  return withTransaction(async (conn) => {
+    // 1. Fetch affected personnel inside the transaction
+    //    FOR UPDATE locks the rows so no concurrent bulk approve
+    //    can grab the same set between our SELECT and UPDATE.
+
+    const placeholders = selected.map(() => "?").join(",");
+
+    const [affected] = await conn.query(
+      `SELECT serviceNumber FROM ef_personalinfos
+       WHERE ship    = ?
+        AND formNumber IN ${placeholders}
+        AND Status  = 'Filled'
+        AND (emolumentform IS NULL OR emolumentform != 'Yes')
+       FOR UPDATE`,
+      [ship, ...selected.map(String)],
+    );
+
+    if (affected.length === 0) return { count: 0, serviceNumbers: [] };
+
+    // 2. Bulk update ef_personalinfos
+    const [result] = await conn.query(
+      `UPDATE ef_personalinfos
+       SET Status     = ?,
+           fo_name    = ?,
+           fo_rank    = ?,
+           fo_svcno   = ?,
+           fo_date    = NOW(),
+           dateModify = NOW()
+       WHERE ship    = ?
+        AND formNumber IN ${placeholders}
+        AND Status  = 'Filled'
+        AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
+      [legacyStatus, foName, foRank, foSvcNo, ship, ...selected.map(String)],
+    );
+
+    // 3. Bulk update ef_emolument_forms
+    const serviceNumbers = affected.map((r) => r.serviceNumber);
+    const svcPlaceholders = serviceNumbers.map(() => "?").join(",");
+    await conn.query(
+      `UPDATE ef_emolument_forms
+       SET status     = 'FO_APPROVED',
+           updated_at = NOW()
+       WHERE service_no IN (${svcPlaceholders})
+         AND ship     = ?
+         AND status   IN ('SUBMITTED', 'DO_REVIEWED')`,
+      [...serviceNumbers, ship],
+    );
+
+    return { count: result.affectedRows, serviceNumbers: selected };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// APPROVE ALL — UpdatePersonByShipFO equivalent
+//
+// CRITICAL: filters WHERE Status = 'Filled' AND classes = @classes
+// This matches the EXACT old SP behaviour — do not change to 'FO'.
+//
+// TRANSACTION: both table updates are inside one transaction.
+// The pre-fetch of affected service numbers is done INSIDE the
+// transaction so the set cannot change between fetch and update
+// (another session approving the same records concurrently).
+//
+// Returns list of affected serviceNumbers for audit logging.
+// ─────────────────────────────────────────────────────────────
+
+async function approveClass(
+  ship,
   classes,
   foName,
   foRank,
   foSvcNo,
-  foDate,
   legacyStatus,
 ) {
   return withTransaction(async (conn) => {
@@ -303,13 +429,13 @@ async function approveBulk(
            fo_name    = ?,
            fo_rank    = ?,
            fo_svcno   = ?,
-           fo_date    = ?,
+           fo_date    = NOW(),
            dateModify = NOW()
        WHERE ship    = ?
          AND classes = ?
          AND Status  = 'Filled'
          AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
-      [legacyStatus, foName, foRank, foSvcNo, foDate, ship, classes],
+      [legacyStatus, foName, foRank, foSvcNo, ship, classes],
     );
 
     const serviceNumbers = affected.map((r) => r.serviceNumber);
@@ -472,8 +598,29 @@ async function insertAuditLog({
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+// STATUS STATS
+// ─────────────────────────────────────────────────────────────
+
+async function getStatusStats(ship, svc) {
+  pool.useDatabase(DB());
+
+  const [stats] = await pool.query(
+    `SELECT
+        COUNT(CASE WHEN status IN ('FO', 'DO_REVIEWED') THEN 1 END) AS pending,
+        COUNT(CASE WHEN status IN ('FO_APPROVED', 'CPO_APPROVED', 'CPO', 'Verified') AND fo_svcno = ? THEN 1 END) AS approved,
+        COUNT(CASE WHEN status = 'REJECTED' AND fo_svcno = ? THEN 1 END) AS rejected
+      FROM ef_personalinfos
+      WHERE ship = ? 
+   `,
+    [svc, svc, ship],
+  );
+  return stats[0];
+}
+
 module.exports = {
   getDoReviewedForms,
+  getApprovedForms,
   getFormDetail,
   getNok,
   getSpouse,
@@ -483,9 +630,11 @@ module.exports = {
   getDocuments,
   approveSingle,
   approveBulk,
+  approveClass,
   getFormIdsByServiceNos,
   rejectForm,
   insertFormApproval,
   bulkInsertFormApprovals,
   insertAuditLog,
+  getStatusStats,
 };

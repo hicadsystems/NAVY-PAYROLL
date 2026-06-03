@@ -32,11 +32,11 @@ const {
 // LIST FO_APPROVED FORMS — scoped to CPO's command
 // ─────────────────────────────────────────────────────────────
 
-async function listFoApprovedForms(command) {
+async function listFoApprovedForms(command, limit, offset) {
   if (!command)
     return { success: false, code: 400, message: "Command is required." };
 
-  const forms = await repo.getFoApprovedForms(command);
+  const forms = await repo.getFoApprovedForms(command, limit, offset);
   return { success: true, data: forms };
 }
 
@@ -99,6 +99,7 @@ async function getForm(formId, cpoCommands) {
 
 async function confirmForm(formId, cpoCommand, performedBy, ip) {
   const form = await repo.getFormDetail(formId);
+  const { cpo_svcno, cpo_name, cpo_rank } = performedBy;
   if (!form) {
     return {
       success: false,
@@ -129,7 +130,7 @@ async function confirmForm(formId, cpoCommand, performedBy, ip) {
 
   const snapshot = {
     confirmedAt: new Date().toISOString(),
-    confirmedBy: performedBy,
+    confirmedBy: cpo_svcno,
     core: form,
     nok,
     spouse,
@@ -146,10 +147,12 @@ async function confirmForm(formId, cpoCommand, performedBy, ip) {
     form.serviceNumber,
     formId,
     form.command,
-    performedBy,
+    cpo_svcno,
+    cpo_rank,
+    cpo_name,
     legacyStatus,
     snapshot,
-    form.FormYear,       // ← new param — was passed to insertHistoryRecord before
+    form.FormYear, // ← new param — was passed to insertHistoryRecord before
   );
 
   if (!confirmed) {
@@ -172,7 +175,7 @@ async function confirmForm(formId, cpoCommand, performedBy, ip) {
     action: "CPO_CONFIRMED",
     fromStatus: FORM_STATUS.FO_APPROVED,
     toStatus: FORM_STATUS.CPO_CONFIRMED,
-    performedBy,
+    performedBy: cpo_svcno,
     performerRole: "CPO",
     remarks: null,
   });
@@ -186,10 +189,10 @@ async function confirmForm(formId, cpoCommand, performedBy, ip) {
       Status: legacyStatus,
       emolumentform: "Yes",
       exittype: "Yes",
-      hod_svcno: performedBy,
-      confirmedBy: performedBy,
+      hod_svcno: cpo_svcno,
+      confirmedBy: cpo_svcno,
     },
-    performedBy,
+    performedBy: cpo_svcno,
     ipAddress: ip,
   });
 
@@ -202,7 +205,7 @@ async function confirmForm(formId, cpoCommand, performedBy, ip) {
       formNumber: form.formNumber,
       formYear: form.FormYear,
       newStatus: FORM_STATUS.CPO_CONFIRMED,
-      confirmedBy: performedBy,
+      confirmedBy: cpo_svcno,
     },
   };
 }
@@ -214,6 +217,7 @@ async function confirmForm(formId, cpoCommand, performedBy, ip) {
 
 async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
   const { remarks } = body;
+  const { cpo_svcno } = performedBy;
 
   if (!remarks || !remarks.trim()) {
     return {
@@ -255,7 +259,7 @@ async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
     action: "REJECTED",
     fromStatus: FORM_STATUS.FO_APPROVED,
     toStatus: FORM_STATUS.REJECTED,
-    performedBy,
+    performedBy: cpo_svcno,
     performerRole: "CPO",
     remarks: remarks.trim(),
   });
@@ -267,10 +271,10 @@ async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
     oldValues: { Status: LEGACY_STATUS.FO_APPROVED },
     newValues: {
       Status: null,
-      rejectedBy: performedBy,
+      rejectedBy: cpo_svcno,
       remarks: remarks.trim(),
     },
-    performedBy,
+    performedBy:cpo_svcno,
     ipAddress: ip,
   });
 
@@ -285,9 +289,363 @@ async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
   };
 }
 
+// ─────────────────────────────────────────────────────────────
+// BULK CONFIRM
+// Body: { selected }
+// Confirms forms WHERE Status = 'CPO'
+//   AND formNumber IN @selected AND command = @cpoCommand
+//
+// Mirrors approveBulk (FO) — same shape, CPO stage.
+// ─────────────────────────────────────────────────────────────
+
+async function confirmBulk( body, performedBy, cpoCommand, ip) {
+  const { selected } = body;
+  const { cpo_svcno, cpo_name, cpo_rank } = performedBy;
+
+  if (!cpo_name || !cpo_rank) {
+    return {
+      success: false,
+      code: 400,
+      message: "cpo_name and cpo_rank are required.",
+    };
+  }
+
+  if (!selected || !Array.isArray(selected) || selected.length === 0) {
+    return {
+      success: false,
+      code: 400,
+      message: "At least one form number must be selected for bulk confirm.",
+    };
+  }
+
+  // Fetch candidate forms upfront — gives us formId, serviceNumber,
+  // command, and FormYear without a second round-trip later.
+  const candidateForms = await repo.getFormsByFormNumbers(
+    selected,
+    toLegacyStatus(FORM_STATUS.FO_APPROVED), // 'CPO' (= FO_APPROVED legacy)
+  );
+
+  if (candidateForms.length === 0) {
+    return {
+      success: false,
+      code: 404,
+      message: `No forms found with Status='${toLegacyStatus(FORM_STATUS.FO_APPROVED)}' in ${selected.join(", ")}.`,
+    };
+  }
+
+  // Enforce command scope — drop forms outside this CPO's command
+  const scopedForms =
+    cpoCommand === "ALL"
+      ? candidateForms
+      : candidateForms.filter((f) => f.command === cpoCommand);
+
+  if (scopedForms.length === 0) {
+    return {
+      success: false,
+      code: 403,
+      message: "None of the selected forms are under your command.",
+    };
+  }
+
+  // Build snapshots in batches of 10 — before the transaction opens
+  // so we don't hold locks while doing read-heavy child-table fetches.
+  const snapshots = await buildSnapshotsInBatches(scopedForms, cpo_svcno, 10);
+
+  const legacyStatus = toLegacyStatus(FORM_STATUS.CPO_CONFIRMED); // → 'Verified'
+  const formYear = new Date().getFullYear(); // fallback; repo uses per-form value
+
+  const { count, confirmedFormIds, skipped } =
+    await repo.confirmBulkWithHistory(
+      scopedForms,
+      snapshots,
+      cpo_svcno,
+      cpo_name,
+      cpo_rank,
+      legacyStatus,
+    );
+
+  if (count === 0) {
+    return {
+      success: false,
+      code: 409,
+      message:
+        "No forms could be confirmed. They may already be confirmed or are not in FO_APPROVED status.",
+    };
+  }
+
+  invalidateCommandCache(cpoCommand);
+
+  // Approval trail — one entry per confirmed form
+  await Promise.all(
+    confirmedFormIds.map((fId) =>
+      repo.insertFormApproval({
+        formId: fId,
+        action: "CPO_CONFIRMED",
+        fromStatus: FORM_STATUS.FO_APPROVED,
+        toStatus: FORM_STATUS.CPO_CONFIRMED,
+        performedBy: cpo_svcno,
+        performerRole: "CPO",
+        remarks: `Bulk confirm — command: ${cpoCommand} for selected form numbers`,
+      }),
+    ),
+  );
+
+  // Single audit log for the bulk operation
+  await repo.insertAuditLog({
+    tableName: "ef_personalinfos",
+    action: "UPDATE",
+    recordKey: `BULK_CONFIRM:${cpoCommand}:formNumbers=${selected.join(",")}`,
+    oldValues: {
+      Status: toLegacyStatus(FORM_STATUS.FO_APPROVED),
+      command: cpoCommand,
+      formNumbers: selected,
+    },
+    newValues: {
+      Status: legacyStatus,
+      cpo_name,
+      cpo_rank,
+      cpo_svcno,
+      hod_date: new Date().toISOString().slice(0, 10),
+      affectedCount: count,
+      skippedCount: skipped.length,
+    },
+    performedBy: cpo_svcno,
+    ipAddress: ip,
+  });
+
+  return {
+    success: true,
+    message: `Bulk confirm complete. ${count} form(s) confirmed.${skipped.length ? ` ${skipped.length} skipped (stale/already confirmed).` : ""}`,
+    data: {
+      command: cpoCommand,
+      confirmed: count,
+      skipped: skipped.length,
+      newStatus: FORM_STATUS.CPO_CONFIRMED,
+      selectedFormNumbers: selected,
+    },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
+// CLASS CONFIRM
+// Body: { classes }
+// Confirms forms WHERE Status = 'CPO'
+//   AND classes = @classes AND command = @cpoCommand
+//
+// Mirrors approveClass (FO) — same shape, CPO stage.
+// classes: 1 = Officers, 2 = Ratings, 3 = Training
+// ─────────────────────────────────────────────────────────────
+
+async function confirmClass( body, performedBy, cpoCommand, ip) {
+  const { classes } = body;
+  const { cpo_svcno, cpo_name, cpo_rank } = performedBy;
+
+  if (!cpo_name || !cpo_rank) {
+    return {
+      success: false,
+      code: 400,
+      message: "cpo_name and cpo_rank are required.",
+    };
+  }
+
+  if (!classes || ![1, 2, 3].includes(Number(classes))) {
+    return {
+      success: false,
+      code: 400,
+      message: "classes must be 1 (Officers), 2 (Ratings), or 3 (Training).",
+    };
+  }
+
+  // Fetch candidate forms upfront — command filter applied in SQL
+  // when cpoCommand !== 'ALL', otherwise no command filter.
+  const candidateForms = await repo.getFormsByClass(
+    Number(classes),
+    toLegacyStatus(FORM_STATUS.FO_APPROVED), // 'CPO' (= FO_APPROVED legacy)
+    cpoCommand, // repo handles 'ALL' → no command clause
+  );
+
+  if (candidateForms.length === 0) {
+    return {
+      success: false,
+      code: 404,
+      message: `No forms found with Status='${toLegacyStatus(FORM_STATUS.FO_APPROVED)}' for command '${cpoCommand}' and classes=${classes}.`,
+    };
+  }
+
+  // Build snapshots in batches of 10 before the transaction
+  const snapshots = await buildSnapshotsInBatches(
+    candidateForms,
+    cpo_svcno,
+    10,
+  );
+
+  const legacyStatus = toLegacyStatus(FORM_STATUS.CPO_CONFIRMED); // → 'Verified'
+
+  const { count, confirmedFormIds, skipped } =
+    await repo.confirmBulkWithHistory(
+      candidateForms,
+      snapshots,
+      cpo_svcno,
+      cpo_name,
+      cpo_rank,
+      legacyStatus,
+    );
+
+  if (count === 0) {
+    return {
+      success: false,
+      code: 409,
+      message:
+        "No forms could be confirmed. They may already be confirmed or are not in FO_APPROVED status.",
+    };
+  }
+
+  invalidateCommandCache(cpoCommand);
+
+  // Approval trail — one entry per confirmed form
+  await Promise.all(
+    confirmedFormIds.map((fId) =>
+      repo.insertFormApproval({
+        formId: fId,
+        action: "CPO_CONFIRMED",
+        fromStatus: FORM_STATUS.FO_APPROVED,
+        toStatus: FORM_STATUS.CPO_CONFIRMED,
+        performedBy: cpo_svcno,
+        performerRole: "CPO",
+        remarks: `Bulk confirm — command: ${cpoCommand}, classes: ${classes}`,
+      }),
+    ),
+  );
+
+  // Single audit log for the bulk operation
+  await repo.insertAuditLog({
+    tableName: "ef_personalinfos",
+    action: "UPDATE",
+    recordKey: `CLASS_CONFIRM:${cpoCommand}:classes=${classes}`,
+    oldValues: {
+      Status: FORM_STATUS.CPO_APPROVED,
+      command: cpoCommand,
+      classes,
+    },
+    newValues: {
+      Status: legacyStatus,
+      cpo_name,
+      cpo_rank,
+      cpo_svcno,
+      hod_date: new Date().toISOString().slice(0, 10),
+      affectedCount: count,
+      skippedCount: skipped.length,
+    },
+    performedBy: cpo_svcno,
+    ipAddress: ip,
+  });
+
+  return {
+    success: true,
+    message: `Class confirm complete. ${count} form(s) confirmed.${skipped.length ? ` ${skipped.length} skipped (stale/already confirmed).` : ""}`,
+    data: {
+      command: cpoCommand,
+      classes: Number(classes),
+      confirmed: count,
+      skipped: skipped.length,
+      newStatus: FORM_STATUS.CPO_CONFIRMED,
+    },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
+// SNAPSHOT HELPER
+// Builds a snapshot per form in batches to throttle DB load.
+// Returns a Map<formId, snapshot> for O(1) lookup in the repo.
+// ─────────────────────────────────────────────────────────────
+
+async function buildSnapshotsInBatches(forms, cpo_svcno, batchSize) {
+  const snapshotMap = new Map();
+
+  for (let i = 0; i < forms.length; i += batchSize) {
+    const batch = forms.slice(i, i + batchSize);
+
+    await Promise.all(
+      batch.map(async (f) => {
+        const [nok, spouse, children, loans, allowances, documents] =
+          await Promise.all([
+            repo.getNok(f.serviceNumber),
+            repo.getSpouse(f.serviceNumber),
+            repo.getChildren(f.serviceNumber),
+            repo.getLoans(f.serviceNumber),
+            repo.getAllowances(f.serviceNumber),
+            repo.getDocuments(f.serviceNumber),
+          ]);
+
+        snapshotMap.set(f.id, {
+          confirmedAt: new Date().toISOString(),
+          confirmedBy: cpo_svcno,
+          core: f,
+          nok,
+          spouse,
+          children,
+          loans,
+          allowances,
+          documents,
+        });
+      }),
+    );
+  }
+
+  return snapshotMap;
+}
+
+// ─────────────────────────────────────────────────────────────
+// STATUS STATS — for CPO dashboard summary
+// ─────────────────────────────────────────────────────────────
+
+async function getStatusStats(command, svc) {
+  if (!command)
+    return { success: false, code: 400, message: "Command is required." };
+
+  if (!svc)
+    return {
+      success: false,
+      code: 400,
+      message: "Service number is required.",
+    };
+
+  const stats = await repo.getStatusStats(command, svc);
+  return { success: true, data: stats };
+}
+
+// ─────────────────────────────────────────────────────────────
+// LIST CONFIRMED FORMS
+// ─────────────────────────────────────────────────────────────
+
+async function listConfirmedForms(command, svc, limit, offset) {
+  if (!command)
+    return { success: false, code: 400, message: "Command is required." };
+  if (!svc)
+    return {
+      success: false,
+      code: 400,
+      message: "Service number is required.",
+    };
+  if (!limit || !Number.isInteger(limit) || limit < 1) {
+    return { success: false, code: 400, message: "Valid limit is required." };
+  }
+  if (offset === undefined || offset < 0) {
+    return { success: false, code: 400, message: "Valid offset is required." };
+  }
+
+  const forms = await repo.getCPOConfirmedForms(command, svc, limit, offset);
+
+  return { success: true, data: forms };
+}
+
 module.exports = {
   listFoApprovedForms,
+  listConfirmedForms,
   getForm,
   confirmForm,
   rejectForm,
+  confirmBulk,
+  confirmClass,
+  getStatusStats,
 };

@@ -70,10 +70,9 @@ async function withTransaction(fn) {
 // LIST — FO_APPROVED forms scoped to a command
 // ─────────────────────────────────────────────────────────────
 
-async function getFoApprovedForms(command) {
+async function getFoApprovedForms(command, limit, offset) {
   pool.useDatabase(DB());
-  const [rows] = await pool.query(
-    `SELECT
+  const approvedQuery = `SELECT
        p.serviceNumber, p.Surname, p.OtherName, p.Rank,
        p.payrollclass, p.classes, p.ship, p.command,
        p.formNumber, p.FormYear, p.Status,
@@ -84,16 +83,71 @@ async function getFoApprovedForms(command) {
        ef.submitted_at,
        ef.updated_at  AS last_updated
      FROM ef_personalinfos p
+     LEFT JOIN ef_emolument_forms ef
+           ON ef.service_no = p.serviceNumber
+          AND ef.command    = p.command
+     WHERE p.command = ?
+       AND p.Status IN ('CPO', 'FO_APPROVED')
+       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
+     ORDER BY p.ship ASC, p.Surname ASC, p.OtherName ASC
+     LIMIT ? OFFSET ?`;
+
+  const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM ef_personalinfos p
+      WHERE p.command = ?
+       AND p.Status IN ('CPO', 'FO_APPROVED')
+       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes');
+    `;
+
+  const [[rows], [countResults]] = await Promise.all([
+    pool.query(approvedQuery, [command, limit, offset]),
+    pool.query(countQuery, [command]),
+  ]);
+  return { forms: rows, total: countResults[0].total };
+}
+
+// ─────────────────────────────────────────────────────────────
+// LIST — CPO_CONFIRMED forms scoped to a command
+// ─────────────────────────────────────────────────────────────
+
+async function getCPOConfirmedForms(command, svc, limit, offset) {
+  pool.useDatabase(DB());
+  const confirmedQuery = `SELECT
+       p.serviceNumber, p.Surname, p.OtherName, p.Rank,
+       p.payrollclass, p.classes, p.ship, p.command,
+       p.formNumber, p.FormYear, p.Status,
+       p.div_off_name, p.div_off_rank, p.div_off_svcno, p.div_off_date,
+       p.fo_name,     p.fo_rank,     p.fo_svcno,     p.fo_date,
+       p.cdr_date,
+       ef.id          AS form_id,
+       ef.status      AS form_status,
+       ef.submitted_at,
+       ef.updated_at  AS last_updated
+     FROM ef_personalinfos p
      JOIN ef_emolument_forms ef
            ON ef.service_no = p.serviceNumber
           AND ef.command    = p.command
      WHERE p.command = ?
-       AND p.Status  = 'CPO'
-       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
-     ORDER BY p.ship ASC, p.Surname ASC, p.OtherName ASC`,
-    [command],
-  );
-  return rows;
+       AND p.Status IN ('Verified', 'CPO_CONFIRMED')
+       AND p.emolumentform = 'Yes'
+       AND p.cdr_svcno = ?
+     ORDER BY p.ship ASC, p.Surname ASC, p.OtherName ASC
+     LIMIT ? OFFSET ?`;
+
+  const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM ef_personalinfos p
+      WHERE p.command = ?
+       AND p.Status IN ('Verified', 'CPO_CONFIRMED')
+       AND p.emolumentform = 'Yes'
+       AND p.cdr_svcno = ?;
+    `;
+  const [[rows], [countResults]] = await Promise.all([
+    pool.query(confirmedQuery, [command, svc, limit, offset]),
+    pool.query(countQuery, [command, svc]),
+  ]);
+  return { forms: rows, total: countResults[0].total };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -255,6 +309,8 @@ async function confirmFormWithHistory(
   formId,
   command,
   cpoSvcNo,
+  cpoRank,
+  cpoName,
   legacyStatus,
   snapshot,
   formYear,
@@ -265,17 +321,17 @@ async function confirmFormWithHistory(
       `UPDATE ef_personalinfos
       SET Status        = ?,
           emolumentform = 'Yes',
-          exittype      = 'Yes',
           hod_svcno     = ?,
+          hod_name      = ?,
+          hod_rank      = ?,
           hod_date      = NOW(),
           dateconfirmed = NOW(),
-          confirmedBy   = ?,
           dateModify    = NOW()
       WHERE serviceNumber = ?
         AND command       = ?
         AND Status        = 'CPO'
         AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
-      [legacyStatus, cpoSvcNo, cpoSvcNo, serviceNo, command],
+      [legacyStatus, cpoSvcNo, cpoName, cpoRank, serviceNo, command],
     );
 
     if (r1.affectedRows === 0) {
@@ -327,6 +383,183 @@ async function confirmFormWithHistory(
     );
 
     return true;
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// GET FORMS BY FORM NUMBERS
+// Used by confirmBulk to prefetch candidate forms before the
+// transaction — gives service layer formId, serviceNumber,
+// command, and FormYear in one query.
+//
+// Filters: Status = @status
+//          AND formNumber IN @formNumbers
+//          AND emolumentform != 'Yes' (not already confirmed)
+// ─────────────────────────────────────────────────────────────
+
+async function getFormsByFormNumbers(formNumbers,  status) {
+  const placeholders = formNumbers.map(() => "?").join(",");
+
+  const [rows] = await pool.query(
+    `SELECT id, serviceNumber, formNumber, command, FormYear
+     FROM ef_personalinfos
+     WHERE formNumber IN (${placeholders})
+       AND Status     = ?
+       AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
+    [...formNumbers.map(String), status],
+  );
+
+  return rows;
+}
+
+// ─────────────────────────────────────────────────────────────
+// GET FORMS BY CLASS
+// Used by confirmClass to prefetch candidate forms before the
+// transaction. Command filter is applied here in SQL so the
+// service layer doesn't need a post-fetch filter step.
+//
+// When cpoCommand = 'ALL' no command clause is added.
+// Filters: Status = @status 
+//          AND classes = @classes
+//          AND command = @cpoCommand (unless 'ALL')
+//          AND emolumentform != 'Yes'
+// ─────────────────────────────────────────────────────────────
+
+async function getFormsByClass( classes, status, cpoCommand) {
+  const params = [classes, status];
+  const commandClause =
+    cpoCommand !== "ALL" ? "AND command = ?" : "";
+
+  if (cpoCommand !== "ALL") params.push(cpoCommand);
+
+  const [rows] = await pool.query(
+    `SELECT id, serviceNumber, formNumber, command, FormYear
+     FROM ef_personalinfos
+     WHERE classes = ?
+       AND Status  = ?
+       ${commandClause}
+       AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
+    params,
+  );
+
+  return rows;
+}
+
+// ─────────────────────────────────────────────────────────────
+// CONFIRM BULK WITH HISTORY — N-form atomic write
+//
+// Single transaction covering all forms. Each form gets:
+//   1. UPDATE ef_personalinfos   — gate on Status='CPO' + command
+//   2. UPDATE ef_emolument_forms — status → CPO_CONFIRMED + snapshot
+//   3. INSERT IGNORE ef_personalinfoshist — unique (serviceNumber, FormYear)
+//
+// Skip semantics: if a form's ef_personalinfos UPDATE returns
+// affectedRows = 0 (stale / already confirmed), that form is
+// silently skipped — the transaction continues for the rest.
+// No partial rollback — any DB error rolls back everything.
+//
+// Params:
+//   forms       — array of { id, serviceNumber, command, FormYear }
+//                 fetched by getFormsByFormNumbers / getFormsByClass
+//   snapshots   — Map<formId, snapshot> built by buildSnapshotsInBatches
+//   cpoSvcNo    — confirming CPO's service number
+//   cpoName     — confirming CPO's name
+//   cpoRank     — confirming CPO's rank
+//   legacyStatus — 'Verified' (written to ef_personalinfos.Status)
+//
+// Returns:
+//   count           — number of forms actually confirmed
+//   confirmedFormIds — ef_emolument_forms.id for each confirmed form
+//   skipped         — formIds that were stale / already confirmed
+// ─────────────────────────────────────────────────────────────
+
+async function confirmBulkWithHistory(
+  forms,
+  snapshots,
+  cpoSvcNo,
+  cpoName,
+  cpoRank,
+  legacyStatus,
+) {
+  return withTransaction(async (conn) => {
+    let count = 0;
+    const confirmedFormIds = [];
+    const skipped = [];
+
+    for (const form of forms) {
+      const snapshot = snapshots.get(form.id);
+
+      // 1. Update ef_personalinfos — gate on Status='CPO' and command match.
+      //    Mirrors the single confirmFormWithHistory gate exactly.
+      const [r1] = await conn.query(
+        `UPDATE ef_personalinfos
+         SET Status        = ?,
+             emolumentform = 'Yes',
+             hod_svcno     = ?,
+             hod_name      = ?,
+             hod_rank      = ?,
+             hod_date      = NOW(),
+             dateconfirmed = NOW(),
+             dateModify    = NOW()
+         WHERE serviceNumber = ?
+           AND command       = ?
+           AND Status        = 'CPO'
+           AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
+        [legacyStatus, cpoSvcNo, cpoName, cpoRank, form.serviceNumber, form.command],
+      );
+
+      if (r1.affectedRows === 0) {
+        // Stale or already confirmed — skip, don't roll back
+        skipped.push(form.id);
+        continue;
+      }
+
+      // 2. Update ef_emolument_forms — write snapshot + CPO_CONFIRMED status.
+      await conn.query(
+        `UPDATE ef_emolument_forms
+         SET status     = 'CPO_CONFIRMED',
+             snapshot   = ?,
+             updated_at = NOW()
+         WHERE id     = ?
+           AND status  = 'FO_APPROVED'`,
+        [JSON.stringify(snapshot), form.id],
+      );
+
+      // 3. Insert history record — INSERT IGNORE is idempotent on the
+      //    unique index (serviceNumber, FormYear). A retry won't cause
+      //    a rollback; the duplicate is silently dropped.
+      await conn.query(
+        `INSERT IGNORE INTO ef_personalinfoshist (
+          FormYear,
+          serviceNumber, Surname, OtherName, Title, Rank,
+          payrollclass, classes, ship, command, branch,
+          Status, formNumber, emolumentform,
+          confirmedBy, dateconfirmed,
+          div_off_name, div_off_rank, div_off_svcno, div_off_date,
+          hod_name,     hod_rank,     hod_svcno,     hod_date,
+          fo_name,      fo_rank,      fo_svcno,       fo_date,
+          NIN, upload
+        )
+        SELECT
+          ?,
+          serviceNumber, Surname, OtherName, Title, Rank,
+          payrollclass, classes, ship, command, branch,
+          Status, formNumber, emolumentform,
+          confirmedBy, dateconfirmed,
+          div_off_name, div_off_rank, div_off_svcno, div_off_date,
+          hod_name,     hod_rank,     hod_svcno,     hod_date,
+          fo_name,      fo_rank,      fo_svcno,       fo_date,
+          NIN, upload
+        FROM ef_personalinfos
+        WHERE serviceNumber = ?`,
+        [form.FormYear, form.serviceNumber],
+      );
+
+      count++;
+      confirmedFormIds.push(form.id);
+    }
+
+    return { count, confirmedFormIds, skipped };
   });
 }
 
@@ -423,8 +656,30 @@ async function insertAuditLog({
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+// STATUS STATS
+// ─────────────────────────────────────────────────────────────
+
+async function getStatusStats(command, svc) {
+  pool.useDatabase(DB());
+
+  const [stats] = await pool.query(
+    `SELECT
+        COUNT(CASE WHEN status IN ('CPO', 'FO_APPROVED') THEN 1 END) AS pending,
+        COUNT(CASE WHEN command = ? THEN 1 END) AS total,
+        COUNT(CASE WHEN status IN ('CPO_APPROVED', 'Verified') AND cdr_svcno = ? THEN 1 END) AS confirmed,
+        COUNT(CASE WHEN status = 'REJECTED' AND cdr_svcno = ? THEN 1 END) AS rejected
+      FROM ef_personalinfos
+      WHERE command = ? 
+   `,
+    [command, svc, svc, command],
+  );
+  return stats[0];
+}
+
 module.exports = {
   getFoApprovedForms,
+  getCPOConfirmedForms,
   getFormDetail,
   getNok,
   getSpouse,
@@ -433,7 +688,11 @@ module.exports = {
   getAllowances,
   getDocuments,
   confirmFormWithHistory, // replaces confirmForm + insertHistoryRecord
+  getFormsByFormNumbers,
+  getFormsByClass,
+  confirmBulkWithHistory, // replaces confirmBulk + insertHistoryRecord in bulk
   rejectForm,
   insertFormApproval,
   insertAuditLog,
+  getStatusStats,
 };

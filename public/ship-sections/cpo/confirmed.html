@@ -1,20 +1,66 @@
-  <div class="mb-6"><h2 class="text-xl font-black text-navy">CPO Confirmed</h2><p class="text-sm text-blue-900/50 mt-1">Forms confirmed by you — pending payroll sync by admin</p></div>
-  <div id="cpo-confirmed-list"><div class="flex items-center justify-center py-12 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div></div>
+<div class="p-4">
+  <div class="mb-6">
+    <p class="text-sm text-blue-900/50 mt-1">
+      Forms confirmed by you — pending payroll sync by admin
+    </p>
+  </div>
+  <div id="cpo-confirmed-list">
+    <div class="flex items-center justify-center py-12 text-navy/30">
+      <i class="fas fa-spinner fa-spin mr-2"></i>
+    </div>
+  </div>
 </div>
 <script>
-(function(){
-  const token=localStorage.getItem('token'); const ship=sessionStorage.getItem('active_ship');
-  const el=document.getElementById('cpo-confirmed-list');
-  fetch('/ship/cpo/confirmed?ship='+encodeURIComponent(ship),{headers:{Authorization:'Bearer '+token}})
-    .then(r=>r.ok?r.json():[])
-    .then(rows=>{
-      if(!rows.length){el.innerHTML='<div class="text-center py-12 text-blue-900/30"><i class="fas fa-stamp fa-2x mb-3 block"></i><p class="font-semibold">No confirmed forms yet</p></div>';return;}
-      el.innerHTML='<div class="space-y-2">'+rows.map(r=>`
+  (function () {
+    function loadPage(page) {
+      const el = document.getElementById("cpo-confirmed-list");
+      fetch(
+        "/cpo/confirmed/" +
+          encodeURIComponent(command) +
+          "?page=" +
+          page +
+          "&limit=" +
+          CPO_CONFIRMED_PAGE_SIZE,
+        {
+          headers: { Authorization: "Bearer " + token },
+        },
+      )
+        .then((r) => (r.ok ? r.json() : { forms: [], total: 0 }))
+        .then((res) => {
+          const rows = Array.isArray(res) ? res : res.forms || [];
+          const total = Array.isArray(res) ? 1 : res.total || 1;
+          if (!rows.length) {
+            el.innerHTML =
+              '<div class="text-center py-12 text-blue-900/30"><i class="fas fa-stamp fa-2x mb-3 block"></i><p class="font-semibold">No confirmed forms yet</p></div>';
+            return;
+          }
+          el.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          ${rows
+            .map(
+              (r) => `
         <div class="flex items-center gap-4 p-4 bg-white/60 rounded-xl border border-amber-100 shadow">
           <div class="w-9 h-9 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0"><i class="fas fa-stamp text-green-500" style="font-size:14px"></i></div>
-          <div class="flex-1 min-w-0"><div class="font-bold text-navy text-sm">${r.full_name}</div><div class="text-xs text-blue-900/40 mt-0.5">${r.user_id} · Confirmed ${r.confirmed_at?new Date(r.confirmed_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—'}</div></div>
+          <div class="flex-1 min-w-0"><div class="font-bold text-navy text-sm">${r.full_name}</div><div class="text-xs text-blue-900/40 mt-0.5">${r.user_id} · Confirmed ${r.confirmed_at ? new Date(r.confirmed_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</div></div>
           <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 flex-shrink-0">CONFIRMED</span>
-        </div>`).join('')+'</div>';
-    }).catch(()=>{el.innerHTML='<div class="text-center py-8 text-red-400 text-sm">Failed to load</div>';});
-})();
+        </div>`,
+            )
+            .join("")} 
+            </div>
+
+             ${paginatorHTML(page, Math.ceil(total / CPO_CONFIRMED_PAGE_SIZE), "cpo-confirmed")}`;
+
+          /* paginator click handlers — each click triggers a fresh BE fetch */
+          el.querySelectorAll('[data-paginator="cpo-confirmed"]').forEach(
+            (btn) => {
+              btn.addEventListener("click", () => loadPage(+btn.dataset.page));
+            },
+          );
+        })
+        .catch(() => {
+          el.innerHTML =
+            '<div class="text-center py-8 text-red-400 text-sm">Failed to load</div>';
+        });
+    }
+    loadPage(1);
+  })();
 </script>

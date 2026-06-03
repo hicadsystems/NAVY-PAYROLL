@@ -1,6 +1,5 @@
-<div>
+<div class="p-4">
   <div class="mb-6">
-    <h2 class="text-xl font-black text-navy">DO Dashboard</h2>
     <p class="text-sm text-blue-900/50 mt-1" id="do-ship-label">Divisional Officer — <span id="do-ship-name">—</span></p>
   </div>
 
@@ -51,7 +50,7 @@
   if (el) el.textContent = ship;
 
   if (!token) return;
-  fetch('/ship/do/stats?ship=' + encodeURIComponent(ship), { headers: { Authorization: 'Bearer ' + token } })
+  fetch('/do/ship/' + encodeURIComponent(ship) + '/stats', { headers: { Authorization: 'Bearer ' + token } })
     .then(r => r.ok ? r.json() : null)
     .then(d => {
       if (!d) return;

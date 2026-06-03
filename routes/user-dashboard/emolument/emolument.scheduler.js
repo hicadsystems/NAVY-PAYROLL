@@ -56,6 +56,30 @@ function getDB() {
   }
 }
 
+// Close any ef_control windows that have expired (enddate < NOW()) but are still marked Open/Reopen.
+async function closeExpiredWindows() {
+  const pool = require("../../../config/db");
+  const DB = getDB();
+  if (!DB) throw new Error("Cannot resolve database name.");
+
+  pool.useDatabase(DB);
+
+  const [result] = await pool.query(
+    `UPDATE ef_control
+     SET status = 'Close'
+     WHERE enddate < NOW()
+       AND status IN ('Open', 'Reopen')`,
+  );
+
+  if (result.affectedRows > 0) {
+    console.log(
+      `🔒 Closed ${result.affectedRows} expired ef_control window(s).`,
+    );
+  }
+}
+
+let syncFailures = 0;
+const MAX_SYNC_FAILURES = 5;
 async function syncOpenship() {
   const pool = require("../../../config/db");
   const DB = getDB();
@@ -93,8 +117,22 @@ async function syncOpenship() {
     // 3. ef_systeminfos.SiteStatus is no longer used as a gate —
     //    checkFormEligibility now reads ef_control directly.
     //    No SiteStatus update needed here.
+    syncFailures = 0; // reset failure count on success
+    console.log(
+      `🔄 Synced ef_ships.openship with ${activeRows.length} active window(s).`,
+    );
   } catch (err) {
-    console.error("❌ emolument.scheduler syncOpenship error:", err.message);
+    syncFailures++;
+    console.error(
+      `❌ syncOpenship error (${syncFailures}/${MAX_SYNC_FAILURES}):`,
+      err.message,
+    );
+    if (syncFailures >= MAX_SYNC_FAILURES) {
+      console.error(
+        "🚨 syncOpenship has failed repeatedly — investigate immediately.",
+      );
+      // optionally: process.exit(1) or emit an alert
+    }
   }
 }
 
@@ -120,10 +158,14 @@ async function syncOpenship() {
 async function archivePreviousCycleIfNeeded() {
   const pool = require("../../../config/db");
   const DB = getDB();
+  if (!DB)
+    throw new Error(
+      "Cannot resolve database name — check MYSQL_DB_OFFICERS env var.",
+    );
   try {
     pool.useDatabase(DB);
 
-    const [yearRows] = await pool.query(
+    const [yearRows] = await pool.smartQuery(
       `SELECT processingyear FROM ef_control
        WHERE status IN ('Open','Reopen')
        ORDER BY processingyear DESC LIMIT 1`,
@@ -134,7 +176,7 @@ async function archivePreviousCycleIfNeeded() {
     const currentYear = String(yearRows[0].processingyear);
 
     // All personnel whose FormYear is from a previous cycle
-    const [staleRows] = await pool.query(
+    const [staleRows] = await pool.smartQuery(
       `SELECT serviceNumber, FormYear FROM ef_personalinfos
        WHERE FormYear IS NOT NULL
          AND FormYear != ?`,
@@ -143,45 +185,64 @@ async function archivePreviousCycleIfNeeded() {
 
     if (!staleRows.length) return;
 
-    const prevYear = String(staleRows[0].FormYear);
+    // Fix: collect all distinct previous years
+    const prevYears = [...new Set(staleRows.map((r) => String(r.FormYear)))];
+
+    // Log them all
     console.log(
-      `📦 New cycle: ${prevYear} → ${currentYear}. Archiving ${staleRows.length} records.`,
+      `📦 New cycle → ${currentYear}. Previous years found: ${prevYears.join(", ")}`,
     );
 
-    // Step 1: Snapshot ALL ef_emolument_forms from previous year (no snapshot yet)
-    await pool.query(
-      `UPDATE ef_emolument_forms f
+    const placeholders = prevYears.map(() => "?").join(",");
+
+    await pool.smartTransaction(async (conn) => {
+      // Step 1: Snapshot ALL ef_emolument_forms from previous years (no snapshot yet)
+      await conn.query(
+        `UPDATE ef_emolument_forms f
        INNER JOIN ef_personalinfos p ON p.serviceNumber = f.service_no
        SET f.snapshot   = COALESCE(f.snapshot, JSON_OBJECT(
                             'archived', true,
                             'archivedAt', NOW(),
-                            'previousYear', ?,
+                            'previousYear', f.form_year,
                             'previousStatus', p.Status,
                             'wasConfirmed', IF(p.emolumentform = 'Yes', true, false)
                           )),
            f.updated_at = NOW()
-       WHERE f.form_year = ?
+       WHERE f.form_year IN (${placeholders})
          AND f.snapshot  IS NULL`,
-      [prevYear, prevYear],
-    );
+        [...prevYears],
+      );
 
-    // Step 2: Reset ALL ef_personalinfos cycle fields for everyone
-    await pool.query(
-      `UPDATE ef_personalinfos
+      // Step 2: Reset ALL ef_personalinfos cycle fields for everyone
+      await conn.query(
+        `UPDATE ef_personalinfos
        SET Status        = NULL,
            formNumber    = NULL,
            FormYear      = NULL,
            emolumentform = NULL,
+           fo_date = NULL,
+           fo_name = NULL,
+           fo_rank = NULL,
+           fo_svcno = NULL,
+           cdr_date = NULL,
+           cdr_name = NULL,
+           cdr_rank = NULL,
+           cdr_svcno = NULL,
+           div_off_date = NULL,
+           div_off_name = NULL,
+           div_off_rank = NULL,
+           div_off_svcno = NULL,
            dateModify    = NOW()`,
-    );
+      );
 
-    // Step 3: Reset form number counters for the new cycle
-    await pool.query(
-      `UPDATE ef_systeminfos
+      // Step 3: Reset form number counters for the new cycle
+      await conn.query(
+        `UPDATE ef_systeminfos
        SET OfficersFormNo = 1,
            RatingsFormNo  = 1,
            TrainingFormNo = 1`,
-    );
+      );
+    });
 
     console.log(
       `✅ Archive complete. ${staleRows.length} records reset for cycle ${currentYear}.`,
@@ -195,13 +256,17 @@ async function archivePreviousCycleIfNeeded() {
 }
 
 // Run every minute
-cron.schedule("* * * * *", syncOpenship);
+cron.schedule("* * * * *", async () => {
+  await closeExpiredWindows();
+  await syncOpenship();
+});
 
 // On startup: wait for pool to be ready, then sync + archive
 (async () => {
   try {
     const pool = require("../../../config/db");
     await waitForPool(pool);
+    await closeExpiredWindows();
     await syncOpenship();
     await archivePreviousCycleIfNeeded();
   } catch (err) {

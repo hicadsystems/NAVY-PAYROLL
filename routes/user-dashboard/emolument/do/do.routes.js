@@ -59,8 +59,15 @@ function resolveDoShips(req) {
 
 router.get("/ship/:ship/personnel", requireEmolRole("DO"), async (req, res) => {
   const { ship } = req.params;
+  const { limit, page = 1 } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
+
   try {
-    const result = await doService.listSubmittedForms(ship);
+    const result = await doService.listSubmittedForms(
+      ship,
+      Number(limit),
+      offset,
+    );
     if (!result.success)
       return res.status(result.code).json({ error: result.message });
     return res.json(result.data);
@@ -123,8 +130,11 @@ router.post(
       const result = await doService.reviewForm(
         formId,
         doShip,
-        req.body,
-        req.user_id,
+        {
+          do_svcno: req.user_id,
+          do_name: req.user_name,
+          do_rank: req.user_rank,
+        },
         req.ip,
       );
       if (!result.success)
@@ -166,7 +176,11 @@ router.post(
         formId,
         doShip,
         req.body,
-        req.user_id,
+        {
+          do_svcno: req.user_id,
+          do_name: req.user_name,
+          do_rank: req.user_rank,
+        },
         req.ip,
       );
       if (!result.success)
@@ -178,5 +192,54 @@ router.post(
     }
   },
 );
+
+// ─────────────────────────────────────────────────────────────
+// GET /do/ship/:ship/stats
+// List status statistics for forms on a ship.
+// requireEmolRole('DO') scopes the ship from req.params.ship.
+// ─────────────────────────────────────────────────────────────
+
+router.get("/ship/:ship/stats", requireEmolRole("DO"), async (req, res) => {
+  const { ship } = req.params;
+  const svc = req.user_id; // Use DO's service number to get their specific stats if needed
+  try {
+    const result = await doService.getStatusStats(ship, svc);
+    if (!result.success)
+      return res.status(result.code).json({ error: result.message });
+    return res.json(result.data);
+  } catch (err) {
+    console.error("❌ GET /do/ship/:ship/stats:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /do/ship/:ship/reviewed
+// List all REVIEWED forms on a ship.
+// requireEmolRole('DO') scopes the ship from req.params.ship.
+// ─────────────────────────────────────────────────────────────
+
+router.get("/ship/:ship/reviewed", requireEmolRole("DO"), async (req, res) => {
+  const { ship } = req.params;
+
+  const svc = req.user_id; // Use DO's service number to get their specific stats if needed
+
+  const { limit, page = 1 } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
+  try {
+    const result = await doService.listReviewedForms(
+      ship,
+      svc,
+      Number(limit),
+      offset,
+    );
+    if (!result.success)
+      return res.status(result.code).json({ error: result.message });
+    return res.json(result.data);
+  } catch (err) {
+    console.error("❌ GET /do/ship/:ship/reviewed:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
 
 module.exports = router;

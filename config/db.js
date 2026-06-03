@@ -240,8 +240,8 @@ const pool = {
       throw new Error(`❌ No database selected for session ${sessionId}`);
     }
 
+    const connection = await adapter.getConnection(currentDatabase);
     try {
-      const connection = await adapter.getConnection(currentDatabase);
       await adapter.beginTransaction(connection);
 
       const smartConnection = {
@@ -262,14 +262,16 @@ const pool = {
 
       const result = await callback(smartConnection);
       await adapter.commitTransaction(connection);
-      adapter.releaseConnection(connection);
       return result;
     } catch (error) {
+      await adapter.rollbackTransaction(connection); // ✅ rollback on failure
       console.error(
         `❌ Transaction error on ${currentDatabase}:`,
         error.message,
       );
       throw error;
+    } finally {
+      adapter.releaseConnection(connection); // ✅ always release
     }
   },
 

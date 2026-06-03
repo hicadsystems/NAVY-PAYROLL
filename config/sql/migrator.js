@@ -82,32 +82,21 @@ class Migrator {
     const filepath = path.join(this.migrationsDir, filename);
     const content = await fs.readFile(filepath, "utf8");
 
-    // Split migration into UP and DOWN sections
     const upMatch = content.match(/-- UP\s+([\s\S]*?)(?=-- DOWN|$)/i);
-    const downMatch = content.match(/-- DOWN\s+([\s\S]*?)$/i);
 
     if (!upMatch) {
       throw new Error(`Migration ${filename} missing -- UP section`);
     }
 
-    const upSQL = upMatch[1]
-      .replace(/\r\n/g, "\n") // Standardize Windows newlines
-      .replace(/\r/g, "\n") // Standardize old Mac newlines
-      .replace(/\xA0/g, " ") // CRITICAL: Replace Non-Breaking Spaces with standard spaces
-      .replace(/--.*$/gm, "") // Remove SQL comments
-      .replace(/\/\/.*/g, "") // Remove JS-style comments
-      .replace(/\s+/g, " ") // Collapse all whitespace to single spaces for the parser
-      .trim();
+    const statements = this.parseStatements(upMatch[1]);
 
     await this.connection.beginTransaction();
 
     try {
-      // Execute UP migration
-      if (upSQL) {
-        await this.connection.query(upSQL);
+      for (const stmt of statements) {
+        await this.connection.query(stmt);
       }
 
-      // Record migration
       await this.connection.query(
         "INSERT INTO migrations (name, batch) VALUES (?, ?)",
         [filename, batch],
@@ -131,17 +120,15 @@ class Migrator {
       throw new Error(`Migration ${migration.name} missing -- DOWN section`);
     }
 
-    const downSQL = downMatch[1].trim();
+    const statements = this.parseStatements(downMatch[1]);
 
     await this.connection.beginTransaction();
 
     try {
-      // Execute DOWN migration
-      if (downSQL) {
-        await this.connection.query(downSQL);
+      for (const stmt of statements) {
+        await this.connection.query(stmt);
       }
 
-      // Remove migration record
       await this.connection.query("DELETE FROM migrations WHERE name = ?", [
         migration.name,
       ]);
@@ -152,6 +139,71 @@ class Migrator {
       await this.connection.rollback();
       throw error;
     }
+  }
+
+  // Add this new method to the class
+  parseStatements(sql) {
+    const normalized = sql
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .replace(/\xA0/g, " ");
+
+    const statements = [];
+    let current = "";
+    let inProcedure = false;
+    let delimiter = ";"; // track current delimiter
+
+    for (const line of normalized.split("\n")) {
+      const trimmed = line.trim();
+
+      // Handle DELIMITER changes — strip them entirely, just update internal tracker
+      const delimiterMatch = trimmed.match(/^DELIMITER\s+(\S+)$/i);
+      if (delimiterMatch) {
+        delimiter = delimiterMatch[1]; // e.g. '$$'
+        continue; // never send DELIMITER to MySQL
+      }
+
+      // Skip full-line comments and empty lines (outside procedures)
+      if (!inProcedure && (trimmed.startsWith("--") || trimmed === "")) {
+        continue;
+      }
+
+      // Detect entering a procedure/function body
+      if (/^(CREATE\s+PROCEDURE|CREATE\s+FUNCTION)/i.test(trimmed)) {
+        inProcedure = true;
+      }
+
+      current += line + "\n";
+
+      if (inProcedure) {
+        // End of procedure: END followed by current delimiter (END$$ or END;)
+        const escapedDelim = delimiter.replace(/[$^.*+?()[\]{}|\\]/g, "\\$&");
+        const endPattern = new RegExp(`^END\\s*${escapedDelim}\\s*$`, "i");
+        if (endPattern.test(trimmed)) {
+          // Normalize: replace END$$ with END so MySQL accepts it
+          const normalized = current
+            .trim()
+            .replace(new RegExp(`${escapedDelim}\\s*$`), "");
+          statements.push(normalized);
+          current = "";
+          inProcedure = false;
+          delimiter = ";"; // reset delimiter after procedure
+        }
+      } else {
+        // Normal statement ends at semicolon
+        if (trimmed.endsWith(";")) {
+          const stmt = current.trim().replace(/;$/, "").trim();
+          if (stmt) statements.push(stmt);
+          current = "";
+        }
+      }
+    }
+
+    // Catch any remaining statement without trailing semicolon
+    const remaining = current.trim().replace(/;$/, "").trim();
+    if (remaining) statements.push(remaining);
+
+    return statements.filter(Boolean);
   }
 
   async runMigrations(database = null) {
@@ -366,7 +418,7 @@ class Migrator {
       .replace(/\..+/, "")
       .replace("T", "_");
     const filename = `${timestamp}_${name}.sql`;
-    const filepath = path.join(`${this.migrationsDir}/migrations`, filename);
+    const filepath = path.join(`${this.migrationsDir}`, filename);
 
     const template = `-- Migration: ${name}
 -- Created: ${new Date().toISOString()}

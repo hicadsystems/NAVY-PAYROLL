@@ -66,6 +66,8 @@ const verifyToken = async (req, res, next) => {
   // ── 4. Attach user info to request ───────────────────────
   req.user_id = decoded.user_id;
   req.user_fullname = decoded.full_name;
+  req.user_name = decoded.name;
+  req.user_rank = decoded.rank;
   req.email = decoded.email;
   req.user_role = decoded.role;
   req.primary_class = decoded.primary_class;

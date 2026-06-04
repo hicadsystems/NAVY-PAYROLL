@@ -176,7 +176,7 @@ async function archivePreviousCycleIfNeeded() {
     const currentYear = String(yearRows[0].processingyear);
 
     // All personnel whose FormYear is from a previous cycle
-    const [staleRows] = await pool.smartQuery(
+    const [staleRows] = await pool.query(
       `SELECT serviceNumber, FormYear FROM ef_personalinfos
        WHERE FormYear IS NOT NULL
          AND FormYear != ?`,
@@ -193,12 +193,10 @@ async function archivePreviousCycleIfNeeded() {
       `📦 New cycle → ${currentYear}. Previous years found: ${prevYears.join(", ")}`,
     );
 
+    // Step 1: Snapshot ALL ef_emolument_forms from previous year (no snapshot yet)
     const placeholders = prevYears.map(() => "?").join(",");
-
-    await pool.smartTransaction(async (conn) => {
-      // Step 1: Snapshot ALL ef_emolument_forms from previous years (no snapshot yet)
-      await conn.query(
-        `UPDATE ef_emolument_forms f
+    await pool.query(
+      `UPDATE ef_emolument_forms f
        INNER JOIN ef_personalinfos p ON p.serviceNumber = f.service_no
        SET f.snapshot   = COALESCE(f.snapshot, JSON_OBJECT(
                             'archived', true,
@@ -210,12 +208,12 @@ async function archivePreviousCycleIfNeeded() {
            f.updated_at = NOW()
        WHERE f.form_year IN (${placeholders})
          AND f.snapshot  IS NULL`,
-        [...prevYears],
-      );
+      [...prevYears],
+    );
 
-      // Step 2: Reset ALL ef_personalinfos cycle fields for everyone
-      await conn.query(
-        `UPDATE ef_personalinfos
+    // Step 2: Reset ALL ef_personalinfos cycle fields for everyone
+    await pool.query(
+      `UPDATE ef_personalinfos
        SET Status        = NULL,
            formNumber    = NULL,
            FormYear      = NULL,
@@ -233,16 +231,15 @@ async function archivePreviousCycleIfNeeded() {
            div_off_rank = NULL,
            div_off_svcno = NULL,
            dateModify    = NOW()`,
-      );
+    );
 
-      // Step 3: Reset form number counters for the new cycle
-      await conn.query(
-        `UPDATE ef_systeminfos
+    // Step 3: Reset form number counters for the new cycle
+    await pool.query(
+      `UPDATE ef_systeminfos
        SET OfficersFormNo = 1,
            RatingsFormNo  = 1,
            TrainingFormNo = 1`,
-      );
-    });
+    );
 
     console.log(
       `✅ Archive complete. ${staleRows.length} records reset for cycle ${currentYear}.`,
@@ -259,6 +256,7 @@ async function archivePreviousCycleIfNeeded() {
 cron.schedule("* * * * *", async () => {
   await closeExpiredWindows();
   await syncOpenship();
+  await archivePreviousCycleIfNeeded();
 });
 
 // On startup: wait for pool to be ready, then sync + archive

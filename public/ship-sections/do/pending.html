@@ -126,7 +126,7 @@
                   }
                 </div>
               </div>
-              <button onclick="openDoReview('${r.form_id}','${r.Surname} (${r.serviceNumber})')"
+              <button onclick="openDoReview('${r.formNumber}','${r.Surname} (${r.serviceNumber})')"
                 class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors flex-shrink-0">
                 Review
               </button>
@@ -163,7 +163,7 @@
   function doReviewAction(action) {
     const remarks = document.getElementById("doReviewRemarks").value.trim();
     const msg = document.getElementById("doReviewMsg");
-    fetch("/do/forms/"+ doActiveFormId + "/" + action, {
+    fetch("/do/forms/" + doActiveFormId + "/" + action, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

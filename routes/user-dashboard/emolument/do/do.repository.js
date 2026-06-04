@@ -164,7 +164,7 @@ async function getFormDetail(formId) {
      LEFT JOIN ef_branches   br  ON br.code    = p.branch
      LEFT JOIN ef_localgovts lga ON lga.Id     = p.LocalGovt
      LEFT JOIN ef_states     st  ON st.StateId = p.StateofOrigin
-     WHERE ef.id = ?
+     WHERE ef.form_number = ?
        AND ef.status = 'SUBMITTED'
      LIMIT 1`,
     [formId],

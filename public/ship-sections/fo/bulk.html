@@ -131,6 +131,11 @@
           ? d.message || selected.length + " forms approved."
           : d.error || "Failed";
         msg.classList.remove("hidden");
+        // clear list and refresh after a short delay to show the message
+        setTimeout(() => {
+          msg.classList.add("hidden");
+          loadFoBulkList(foPendingCurrentPage);
+        }, 2000);
       })
       .catch(() => {
         msg.className =

@@ -113,13 +113,14 @@ router.post(
   "/forms/:form_id/review",
   requireFormRole("DO"),
   async (req, res) => {
+    console.log("Received review request");
     const formId = Number(req.params.form_id);
     const doShips = resolveDoShips(req);
 
     if (!Number.isInteger(formId) || formId < 1) {
       return res.status(400).json({ error: "Invalid form ID." });
     }
-
+    console.log(formId);
     // For scoped DOs, resolve their specific ship from formScope
     // requireFormRole attaches req.formScope = { ship, command }
     const doShip = req.isEmolAdmin

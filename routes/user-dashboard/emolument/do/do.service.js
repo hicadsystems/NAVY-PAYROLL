@@ -92,7 +92,7 @@ async function getForm(formId, doShips) {
 // do_svcno comes from req.user_id (the DO themselves)
 // ─────────────────────────────────────────────────────────────
 
-async function reviewForm(formId, doShip,  performedBy, ip) {
+async function reviewForm(formId, doShip, performedBy, ip) {
   const { do_name, do_rank, do_svcno } = performedBy;
 
   if (!do_name || !do_rank || !do_svcno) {
@@ -144,7 +144,7 @@ async function reviewForm(formId, doShip,  performedBy, ip) {
 
   // Approval trail
   await repo.insertFormApproval({
-    formId,
+    formId: form.form_id,
     action: "DO_REVIEWED",
     fromStatus: FORM_STATUS.SUBMITTED,
     toStatus: FORM_STATUS.DO_REVIEWED,
@@ -224,7 +224,7 @@ async function rejectForm(formId, doShip, body, performedBy, ip) {
   }
 
   await repo.insertFormApproval({
-    formId,
+    formId: form.form_id,
     action: "REJECTED",
     fromStatus: FORM_STATUS.SUBMITTED,
     toStatus: FORM_STATUS.REJECTED,

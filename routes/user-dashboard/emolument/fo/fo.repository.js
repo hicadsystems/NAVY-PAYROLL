@@ -108,7 +108,7 @@ async function getApprovedForms(ship, svc, limit, offset) {
             ON ef.service_no = p.serviceNumber
            AND ef.ship       = p.ship
      WHERE p.ship   = ?
-       AND p.Status NOT IN ('Filled','SUBMITTED','FO', 'DO_REVIEWED', "REJECTED")
+       AND p.Status IN ('CPO', 'FO_APPROVED')
        AND p.fo_svcno = ?
      ORDER BY p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`;
@@ -117,7 +117,7 @@ async function getApprovedForms(ship, svc, limit, offset) {
       SELECT COUNT(*) AS total
       FROM ef_personalinfos p
       WHERE p.ship   = ?
-       AND p.Status NOT IN ('Filled','SUBMITTED','FO', 'DO_REVIEWED', "REJECTED")
+       AND p.Status IN ('CPO', 'FO_APPROVED')
        AND p.fo_svcno = ?;
     `;
 
@@ -342,8 +342,8 @@ async function approveBulk(
     const [affected] = await conn.query(
       `SELECT serviceNumber FROM ef_personalinfos
        WHERE ship    = ?
-        AND formNumber IN ${placeholders}
-        AND Status  = 'Filled'
+        AND formNumber IN (${placeholders})
+        AND Status  = 'FO'
         AND (emolumentform IS NULL OR emolumentform != 'Yes')
        FOR UPDATE`,
       [ship, ...selected.map(String)],
@@ -361,8 +361,8 @@ async function approveBulk(
            fo_date    = NOW(),
            dateModify = NOW()
        WHERE ship    = ?
-        AND formNumber IN ${placeholders}
-        AND Status  = 'Filled'
+        AND formNumber IN (${placeholders})
+        AND Status  = 'FO'
         AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
       [legacyStatus, foName, foRank, foSvcNo, ship, ...selected.map(String)],
     );
@@ -414,7 +414,7 @@ async function approveClass(
       `SELECT serviceNumber FROM ef_personalinfos
        WHERE ship    = ?
          AND classes = ?
-         AND Status  = 'Filled'
+         AND Status  = 'FO'
          AND (emolumentform IS NULL OR emolumentform != 'Yes')
        FOR UPDATE`,
       [ship, classes],
@@ -433,7 +433,7 @@ async function approveClass(
            dateModify = NOW()
        WHERE ship    = ?
          AND classes = ?
-         AND Status  = 'Filled'
+         AND Status  = 'FO'
          AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
       [legacyStatus, foName, foRank, foSvcNo, ship, classes],
     );

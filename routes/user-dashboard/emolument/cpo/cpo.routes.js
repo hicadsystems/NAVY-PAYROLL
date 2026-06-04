@@ -263,7 +263,7 @@ router.post(
   async (req, res) => {
     const command = req.params.command;
 
-    const cpoCommand = req.isEmolAdmin ? "ALL" : req.formScope?.command || null;
+    const cpoCommand = req.params.command || req.formScope?.command;
 
     if (!cpoCommand) {
       return res
@@ -273,7 +273,6 @@ router.post(
 
     try {
       const result = await cpoService.confirmBulk(
-        command,
         req.body,
         {
           cpo_svcno: req.user_id,
@@ -305,7 +304,7 @@ router.post(
   async (req, res) => {
     const command = req.params.command || req.formScope?.command;
 
-    const cpoCommand = req.isEmolAdmin ? "ALL" : req.formScope?.command || null;
+    const cpoCommand = req.params.command || req.formScope?.command;
 
     if (!cpoCommand) {
       return res

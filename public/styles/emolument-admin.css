@@ -352,6 +352,17 @@ body {
   width: 100%;
   max-width: 380px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#shipOptionsList {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  flex: 1;
+  min-height: 0;
 }
 
 .ship-modal-title {

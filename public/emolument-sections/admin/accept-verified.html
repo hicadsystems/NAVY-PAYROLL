@@ -1,0 +1,522 @@
+<div class="p-4 md:p-6">
+  <div class="mb-6">
+    <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+      <h3 class="text-sm lg:text-lg font-bold text-navy">
+        CPO-Verified Forms Awaiting Admin Acceptance
+      </h3>
+      <span class="text-xs text-blue-900/40" id="verifiedCount"></span>
+    </div>
+    <p class="text-sm text-blue-900/50">
+      Review and accept CPO-confirmed forms before syncing to payroll
+    </p>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 mb-4">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div>
+        <label
+          class="text-xs font-semibold text-navy/60 uppercase tracking-wide"
+          >Payroll Class</label
+        >
+        <select
+          id="filterPayrollClass"
+          onchange="window.loadVerifiedForms(1)"
+          class="w-full mt-1 border border-amber-100 rounded-lg px-2 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy cursor-pointer"
+        >
+          <option value="">All Classes</option>
+        </select>
+      </div>
+      <div>
+        <label
+          class="text-xs font-semibold text-navy/60 uppercase tracking-wide"
+          >Ship</label
+        >
+        <select
+          id="filterShip"
+          onchange="window.loadVerifiedForms(1)"
+          class="w-full mt-1 border border-amber-100 rounded-lg px-2 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy cursor-pointer"
+        >
+          <option value="">All Ships</option>
+        </select>
+      </div>
+      <div>
+        <label
+          class="text-xs font-semibold text-navy/60 uppercase tracking-wide"
+          >Search</label
+        >
+        <input
+          id="searchSvcNo"
+          type="text"
+          placeholder="Svc no or name..."
+          class="w-full mt-1 border border-amber-100 rounded-lg px-2 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy"
+          onkeyup="window.applySearch()"
+        />
+      </div>
+      <div class="flex items-end gap-2">
+        <button
+          onclick="window.resetFilters()"
+          class="flex-1 px-3 py-2 bg-gray-100 text-navy/60 text-sm font-bold rounded-lg cursor-pointer border border-amber-100 hover:bg-gray-200 transition-colors"
+        >
+          <i class="fas fa-times mr-1"></i>Reset
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch Actions -->
+  <div
+    class="bg-white/60 rounded-xl border border-amber-100 shadow p-3 mb-4 hidden"
+    id="batchActionsBar"
+  >
+    <div class="flex items-center justify-between gap-2 flex-wrap">
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          id="selectAllCheckbox"
+          onchange="window.toggleSelectAll(this.checked)"
+          class="w-4 h-4 rounded accent-navy"
+        />
+        <span class="text-sm font-semibold text-navy">Select All</span>
+      </label>
+      <span class="text-sm text-navy/50" id="selectedCount">0 selected</span>
+      <div class="flex gap-2">
+        <button
+          onclick="window.batchReject()"
+          class="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-red-600 transition-colors"
+        >
+          <i class="fas fa-times mr-1"></i>Reject Selected
+        </button>
+        <button
+          onclick="window.batchAccept()"
+          class="px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-green-700 transition-colors"
+        >
+          <i class="fas fa-check mr-1"></i>Accept Selected
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grid -->
+  <div
+    id="verifiedGrid"
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+  >
+    <div
+      class="flex items-center justify-center py-12 text-navy/30 col-span-full"
+    >
+      <i class="fas fa-spinner fa-spin mr-2"></i>Loading…
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div
+    id="verifiedPagination"
+    class="flex items-center justify-between mt-6 hidden"
+  >
+    <button
+      id="prevBtn"
+      onclick="window.loadVerifiedForms(window.verifiedState.page - 1)"
+      class="px-3 py-2 text-sm font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+    >
+      <i class="fas fa-chevron-left mr-1"></i>Prev
+    </button>
+    <span id="pageInfo" class="text-sm text-navy/50"></span>
+    <button
+      id="nextBtn"
+      onclick="window.loadVerifiedForms(window.verifiedState.page + 1)"
+      class="px-3 py-2 text-sm font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+    >
+      Next <i class="fas fa-chevron-right ml-1"></i>
+    </button>
+  </div>
+
+  <!-- Reject Modal -->
+  <div
+    id="rejectModal"
+    class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+  >
+    <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+      <h3 class="font-black text-navy text-base mb-1 uppercase tracking-wide">
+        Reject Form
+      </h3>
+      <p class="text-sm text-blue-900/40 mb-4" id="rejectModalMeta"></p>
+      <div class="mb-4">
+        <label
+          class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-2"
+        >
+          Remarks <span class="text-red-500">*</span>
+        </label>
+        <textarea
+          id="rejectRemarks"
+          rows="3"
+          placeholder="Reason for rejection..."
+          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none focus:border-navy resize-none"
+        ></textarea>
+      </div>
+      <div class="flex gap-3">
+        <button
+          onclick="window.closeRejectModal()"
+          class="flex-1 py-2.5 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer border-none"
+        >
+          Cancel
+        </button>
+        <button
+          onclick="window.confirmReject()"
+          class="flex-1 py-2.5 bg-red-500 text-white font-bold text-sm rounded-lg hover:bg-red-600 transition-colors cursor-pointer border-none"
+        >
+          <i class="fas fa-times mr-1"></i>Reject
+        </button>
+      </div>
+      <div
+        id="rejectMsg"
+        class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"
+      ></div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem("token");
+    const ITEMS_PER_PAGE = 50;
+
+    window.verifiedState = {
+      page: 1,
+      pageSize: ITEMS_PER_PAGE,
+      total: 0,
+      totalPages: 1,
+      data: [],
+      selected: new Set(),
+      pendingReject: null,
+    };
+
+    // ── Initialize ──
+    (function init() {
+      loadPayrollClasses();
+      loadShips();
+      loadVerifiedForms(1);
+    })();
+
+    // ── Load dropdown data ──
+    function loadPayrollClasses() {
+      fetch("/admin/verified/meta/payroll-classes", {
+        headers: { Authorization: "Bearer " + token },
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        .then((classes) => {
+          const sel = document.getElementById("filterPayrollClass");
+          (classes || []).forEach((c) => {
+            const opt = document.createElement("option");
+            opt.value = c.id || c.code;
+            opt.textContent = c.name || c.code;
+            sel.appendChild(opt);
+          });
+        })
+        .catch(() => {
+          /* graceful fallback */
+        });
+    }
+
+    function loadShips() {
+      fetch("/admin/verified/meta/ships", {
+        headers: { Authorization: "Bearer " + token },
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        .then((ships) => {
+          const sel = document.getElementById("filterShip");
+          (ships || []).forEach((s) => {
+            const opt = document.createElement("option");
+            opt.value = s.name || s.id;
+            opt.textContent = s.name;
+            sel.appendChild(opt);
+          });
+        })
+        .catch(() => {
+          /* graceful fallback */
+        });
+    }
+
+    // ── Load verified forms ──
+    window.loadVerifiedForms = function (page = 1) {
+      page = Math.max(page, 1);
+      window.verifiedState.page = page;
+
+      const payrollclass = document.getElementById("filterPayrollClass").value;
+      const ship = document.getElementById("filterShip").value;
+
+      const params = new URLSearchParams({
+        page,
+        pageSize: ITEMS_PER_PAGE,
+        ...(payrollclass && { payrollclass }),
+        ...(ship && { ship }),
+      });
+
+      const grid = document.getElementById("verifiedGrid");
+      grid.innerHTML =
+        '<div class="flex items-center justify-center py-12 text-navy/30 col-span-full"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+
+      fetch(`/admin/verified?${params}`, {
+        headers: { Authorization: "Bearer " + token },
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        .then((data) => {
+          window.verifiedState.data = data.rows || [];
+          window.verifiedState.total = data.pagination.total;
+          window.verifiedState.totalPages = data.pagination.totalPages;
+
+          document.getElementById("verifiedCount").textContent =
+            `${data.pagination.total.toLocaleString()} form${data.pagination.total !== 1 ? "s" : ""}`;
+
+          renderGrid();
+          updatePagination();
+          showBatchActionsIfNeeded();
+        })
+        .catch((err) => {
+          console.error("Error loading verified forms:", err);
+          grid.innerHTML =
+            '<div class="col-span-full text-center py-12 text-navy/40"><p>Failed to load forms. Please try again.</p></div>';
+        });
+    };
+
+    // ── Render grid ──
+    function renderGrid() {
+      const grid = document.getElementById("verifiedGrid");
+      const data = window.verifiedState.data;
+
+      if (!data.length) {
+        grid.innerHTML =
+          '<div class="col-span-full text-center py-16 text-blue-900/30"><i class="fas fa-check-circle fa-2x mb-3 block text-green-300"></i><p class="font-semibold">No CPO-confirmed forms pending</p></div>';
+        return;
+      }
+
+      grid.innerHTML = data
+        .map((row) => {
+          const name = `${row.Surname || ""} ${row.OtherName || ""}`.trim();
+          const isSelected = window.verifiedState.selected.has(
+            row.serviceNumber,
+          );
+
+          return `
+          <div class="bg-white/60 rounded-xl border border-amber-100 shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col gap-3">
+            <!-- Checkbox -->
+            <div class="flex items-start gap-2">
+              <input type="checkbox" class="w-4 h-4 rounded accent-navy mt-0.5" 
+                ${isSelected ? "checked" : ""}
+                onchange="window.toggleSelect('${row.serviceNumber}', this.checked)" />
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-navy text-sm">${name}</div>
+                <div class="text-xs text-blue-900/50 font-mono mt-0.5">${row.serviceNumber}</div>
+              </div>
+            </div>
+
+            <!-- Status badge -->
+            <div class="flex flex-wrap gap-1">
+              <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-lg">
+                <i class="fas fa-check-circle mr-1"></i>CPO Verified
+              </span>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-2 pt-2 border-t border-amber-50">
+              <button onclick="window.viewForm('${row.serviceNumber}')"
+                class="flex-1 px-3 py-2 bg-navy/10 text-navy text-sm font-bold rounded-lg hover:bg-navy/20 transition-colors cursor-pointer border-none flex items-center justify-center gap-1">
+                <i class="fas fa-eye"></i>View
+              </button>
+              <button onclick="window.openRejectModal('${row.serviceNumber}', '${name}')"
+                class="px-3 py-2 bg-red-100 text-red-600 text-sm font-bold rounded-lg hover:bg-red-200 transition-colors cursor-pointer border-none">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        })
+        .join("");
+    }
+
+    // ── Selection ──
+    window.toggleSelect = function (svcno, checked) {
+      if (checked) {
+        window.verifiedState.selected.add(svcno);
+      } else {
+        window.verifiedState.selected.delete(svcno);
+      }
+      updateBatchActionsBar();
+    };
+
+    window.toggleSelectAll = function (checked) {
+      if (checked) {
+        window.verifiedState.data.forEach((row) => {
+          window.verifiedState.selected.add(row.serviceNumber);
+        });
+      } else {
+        window.verifiedState.selected.clear();
+      }
+      renderGrid();
+      updateBatchActionsBar();
+    };
+
+    function updateBatchActionsBar() {
+      const count = window.verifiedState.selected.size;
+      const bar = document.getElementById("batchActionsBar");
+      document.getElementById("selectedCount").textContent =
+        `${count} selected`;
+
+      if (count > 0 && bar.classList.contains("hidden")) {
+        bar.classList.remove("hidden");
+      } else if (count === 0 && !bar.classList.contains("hidden")) {
+        bar.classList.add("hidden");
+      }
+    }
+
+    function showBatchActionsIfNeeded() {
+      if (window.verifiedState.selected.size > 0) {
+        document.getElementById("batchActionsBar").classList.remove("hidden");
+      }
+    }
+
+    // ── Batch actions ──
+    window.batchAccept = function () {
+      if (window.verifiedState.selected.size === 0) return;
+
+      if (!confirm(`Accept ${window.verifiedState.selected.size} form(s)?`))
+        return;
+
+      const btn = event.target.closest("button");
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Processing…';
+
+      fetch("/admin/verified/accept", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          serviceNumbers: Array.from(window.verifiedState.selected),
+        }),
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        .then((res) => {
+          window.verifiedState.selected.clear();
+          loadVerifiedForms(1);
+          showToast("✓ Forms accepted", "bg-green-100 text-green-700");
+        })
+        .catch((err) => {
+          console.error("Error accepting forms:", err);
+          showToast("✗ Error accepting forms", "bg-red-100 text-red-700");
+        })
+        .finally(() => {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-check mr-1"></i>Accept Selected';
+        });
+    };
+
+    window.batchReject = function () {
+      if (window.verifiedState.selected.size === 0) return;
+      // For batch reject, we'd need individual remarks — for now, just ask for confirmation
+      alert(
+        "Batch reject not yet supported. Use individual reject for each form.",
+      );
+    };
+
+    // ── Individual reject ──
+    window.openRejectModal = function (svcno, name) {
+      window.verifiedState.pendingReject = svcno;
+      document.getElementById("rejectModalMeta").textContent =
+        `${name} (${svcno})`;
+      document.getElementById("rejectRemarks").value = "";
+      document.getElementById("rejectModal").classList.remove("hidden");
+    };
+
+    window.closeRejectModal = function () {
+      document.getElementById("rejectModal").classList.add("hidden");
+      window.verifiedState.pendingReject = null;
+    };
+
+    window.confirmReject = function () {
+      const svcno = window.verifiedState.pendingReject;
+      const remarks = document.getElementById("rejectRemarks").value.trim();
+
+      if (!remarks) {
+        alert("Please provide remarks for rejection");
+        return;
+      }
+
+      const btn = event.target.closest("button");
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Rejecting…';
+
+      fetch(`/admin/verified/${svcno}/reject`, {
+        method: "DELETE",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ remarks }),
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        .then((res) => {
+          window.closeRejectModal();
+          loadVerifiedForms(window.verifiedState.page);
+          showToast("✓ Form rejected", "bg-green-100 text-green-700");
+        })
+        .catch((err) => {
+          console.error("Error rejecting form:", err);
+          showToast("✗ Error rejecting form", "bg-red-100 text-red-700");
+        })
+        .finally(() => {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-times mr-1"></i>Reject';
+        });
+    };
+
+    // ── View form ──
+    window.viewForm = function (svcno) {
+      // Store return context in sessionStorage
+      sessionStorage.setItem("emolument_form_return_page", "accept-verified");
+      sessionStorage.setItem("emolument_form_svcno", svcno);
+      sessionStorage.setItem("active_ship_role", "EMOL_ADMIN");
+
+      // Open form in full-screen (similar to ship dashboard pattern)
+      window.location.href = `../emolument-form.html?svcno=${encodeURIComponent(svcno)}&mode=admin-verify`;
+    };
+
+    // ── Pagination ──
+    function updatePagination() {
+      const pagination = document.getElementById("verifiedPagination");
+      const { page, totalPages, total } = window.verifiedState;
+
+      document.getElementById("pageInfo").textContent =
+        `Page ${page} of ${totalPages} (${total.toLocaleString()} total)`;
+
+      document.getElementById("prevBtn").disabled = page === 1;
+      document.getElementById("nextBtn").disabled = page === totalPages;
+
+      if (totalPages > 1) {
+        pagination.classList.remove("hidden");
+      } else {
+        pagination.classList.add("hidden");
+      }
+    }
+
+    // ── Search ──
+    window.applySearch = function () {
+      loadVerifiedForms(1);
+    };
+
+    window.resetFilters = function () {
+      document.getElementById("filterPayrollClass").value = "";
+      document.getElementById("filterShip").value = "";
+      document.getElementById("searchSvcNo").value = "";
+      loadVerifiedForms(1);
+    };
+
+    // ── Toast ──
+    function showToast(msg, classes) {
+      const toast = document.createElement("div");
+      toast.className = `fixed bottom-4 right-4 px-4 py-3 rounded-lg font-semibold text-sm shadow-lg ${classes}`;
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+  </script>
+</div>

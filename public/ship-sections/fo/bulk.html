@@ -77,6 +77,9 @@
             <div class="font-bold text-navy text-sm">${r.Surname || ""} ${r.OtherName || ""}</div>
             <div class="text-xs text-blue-900/40">${r.serviceNumber}</div>
           </div>
+          <button onclick="viewForm('${r.serviceNumber}', 'EMOL_FO')" class="px-2 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg cursor-pointer border border-blue-200 hover:bg-blue-100 transition-colors flex-shrink-0">
+            <i class="fas fa-eye mr-1"></i>View
+          </button>
           <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-500 flex-shrink-0">DO Reviewed</span>
         </div>`,
            )
@@ -94,6 +97,14 @@
           '<div class="text-center py-6 text-red-400 text-sm">Failed to load</div>';
       });
   })();
+
+  function viewForm(svcno, role) {
+    sessionStorage.setItem("emolument_form_return_page", "ship-dashboard");
+    sessionStorage.setItem("active_ship_role", role);
+    sessionStorage.setItem("emolument_form_svcno", svcno);
+    window.location.href =
+      "../../pages/emolument-form.html?svcno=" + encodeURIComponent(svcno);
+  }
 
   function foToggleAll(cb) {
     document

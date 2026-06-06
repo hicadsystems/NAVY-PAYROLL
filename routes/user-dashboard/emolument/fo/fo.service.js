@@ -103,11 +103,11 @@ async function getForm(formId, foShips) {
 async function approveForm(formId, foShip, performedBy, ip) {
   const { fo_svcno, fo_name, fo_rank } = performedBy;
 
-  if (!fo_name || !fo_rank || !fo_date) {
+  if (!fo_name || !fo_rank) {
     return {
       success: false,
       code: 400,
-      message: "fo_name, fo_rank, and fo_date are required.",
+      message: "fo_name and fo_rank are required.",
     };
   }
 
@@ -138,7 +138,6 @@ async function approveForm(formId, foShip, performedBy, ip) {
     fo_name,
     fo_rank,
     fo_svcno, // FO's own service number
-    fo_date,
     legacyStatus,
   );
 
@@ -154,11 +153,11 @@ async function approveForm(formId, foShip, performedBy, ip) {
   invalidateShipCache(form.ship);
 
   await repo.insertFormApproval({
-    formId,
+    formId: form.form_id,
     action: "FO_APPROVED",
     fromStatus: FORM_STATUS.DO_REVIEWED,
     toStatus: FORM_STATUS.FO_APPROVED,
-    performedBy,
+    performedBy: fo_svcno,
     performerRole: "FO",
     remarks: null,
   });
@@ -341,7 +340,7 @@ async function approveClass(ship, body, performedBy, ip) {
   await Promise.all(
     formRows.map((f) =>
       repo.insertFormApproval({
-        formId: f.id,
+        formId: f.form_id,
         action: "FO_APPROVED",
         fromStatus: FORM_STATUS.DO_REVIEWED, // bulk came from 'Filled' = SUBMITTED, but for approval trail we show DO_REVIEWED → FO_APPROVED
         toStatus: FORM_STATUS.FO_APPROVED,
@@ -428,7 +427,7 @@ async function rejectForm(formId, foShip, body, performedBy, ip) {
   }
 
   await repo.insertFormApproval({
-    formId,
+    formId: form.form_id,
     action: "REJECTED",
     fromStatus: FORM_STATUS.DO_REVIEWED,
     toStatus: FORM_STATUS.REJECTED,

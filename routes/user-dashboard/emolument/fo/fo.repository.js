@@ -167,7 +167,7 @@ async function getFormDetail(formId) {
      LEFT JOIN ef_branches   br  ON br.code    = p.branch
      LEFT JOIN ef_localgovts lga ON lga.Id     = p.LocalGovt
      LEFT JOIN ef_states     st  ON st.StateId = p.StateofOrigin
-     WHERE ef.id     = ?
+     WHERE ef.form_number     = ?
        AND ef.status = 'DO_REVIEWED'
      LIMIT 1`,
     [formId],
@@ -271,7 +271,6 @@ async function approveSingle(
   foName,
   foRank,
   foSvcNo,
-  foDate,
   legacyStatus,
 ) {
   return withTransaction(async (conn) => {
@@ -282,12 +281,12 @@ async function approveSingle(
            fo_name    = ?,
            fo_rank    = ?,
            fo_svcno   = ?,
-           fo_date    = ?,
+           fo_date    = NOW(),
            dateModify = NOW()
        WHERE serviceNumber = ?
          AND ship          = ?
          AND Status        = 'FO'`,
-      [legacyStatus, foName, foRank, foSvcNo, foDate, serviceNo, ship],
+      [legacyStatus, foName, foRank, foSvcNo, serviceNo, ship],
     );
 
     if (r1.affectedRows === 0) {
@@ -301,7 +300,7 @@ async function approveSingle(
       `UPDATE ef_emolument_forms
        SET status     = 'FO_APPROVED',
            updated_at = NOW()
-       WHERE id     = ?
+       WHERE form_number     = ?
          AND status  = 'DO_REVIEWED'`,
       [formId],
     );
@@ -380,7 +379,7 @@ async function approveBulk(
       [...serviceNumbers, ship],
     );
 
-    return { count: result.affectedRows, serviceNumbers: selected };
+    return { count: result.affectedRows, serviceNumbers };
   });
 }
 

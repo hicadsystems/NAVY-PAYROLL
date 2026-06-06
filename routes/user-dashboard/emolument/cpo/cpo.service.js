@@ -200,7 +200,7 @@ async function confirmForm(formId, cpoCommand, performedBy, ip) {
     success: true,
     message: "Form confirmed successfully.",
     data: {
-      formId,
+      formId: form.form_id,
       serviceNumber: form.serviceNumber,
       formNumber: form.formNumber,
       formYear: form.FormYear,
@@ -282,7 +282,7 @@ async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
     success: true,
     message: "Form rejected. Personnel will need to re-fill and resubmit.",
     data: {
-      formId,
+      formId: form.form_id,
       serviceNumber: form.serviceNumber,
       newStatus: FORM_STATUS.REJECTED,
     },
@@ -301,18 +301,6 @@ async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
 async function confirmBulk(body, performedBy, cpoCommand, ip) {
   const { selected } = body;
   const { cpo_svcno, cpo_name, cpo_rank } = performedBy;
-  console.log(
-    "confirmBulk called with selected:",
-    selected,
-    "with body:",
-    body,
-  );
-  console.log("confirmBulk called with performedBy:", {
-    cpo_svcno,
-    cpo_name,
-    cpo_rank,
-  });
-  console.log("performedBY", performedBy);
 
   if (!cpo_name || !cpo_rank) {
     return {
@@ -385,10 +373,6 @@ async function confirmBulk(body, performedBy, cpoCommand, ip) {
     };
   }
 
-  console.log(
-    `Bulk confirm: ${count} confirmed, ${skipped.length} skipped (stale/already confirmed).`,
-  );
-  console.log("confirmedFormIds:", confirmedFormIds);
   invalidateCommandCache(cpoCommand);
 
   // Approval trail — one entry per confirmed form

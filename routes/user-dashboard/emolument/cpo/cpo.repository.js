@@ -191,7 +191,7 @@ async function getFormDetail(formId) {
      LEFT JOIN ef_branches   br  ON br.code    = p.branch
      LEFT JOIN ef_localgovts lga ON lga.Id     = p.LocalGovt
      LEFT JOIN ef_states     st  ON st.StateId = p.StateofOrigin
-     WHERE ef.id     = ?
+     WHERE ef.form_number     = ?
        AND ef.status = 'FO_APPROVED'
      LIMIT 1`,
     [formId],
@@ -319,7 +319,7 @@ async function confirmFormWithHistory(
     // 1. Update ef_personalinfos — gate on Status='CPO' and command match
     const [r1] = await conn.query(
       `UPDATE ef_personalinfos
-      SET Status        = ?,
+      SET \`Status\`        = ?,
           emolumentform = 'Yes',
           hod_svcno     = ?,
           hod_name      = ?,
@@ -329,7 +329,7 @@ async function confirmFormWithHistory(
           dateModify    = NOW()
       WHERE serviceNumber = ?
         AND command       = ?
-        AND Status        = 'CPO'
+        AND \`Status\`        = 'CPO'
         AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
       [legacyStatus, cpoSvcNo, cpoName, cpoRank, serviceNo, command],
     );
@@ -347,7 +347,7 @@ async function confirmFormWithHistory(
       SET status     = 'CPO_CONFIRMED',
           snapshot   = ?,
           updated_at = NOW()
-      WHERE id     = ?
+      WHERE form_number     = ?
         AND status  = 'FO_APPROVED'`,
       [JSON.stringify(snapshot), formId],
     );
@@ -358,9 +358,9 @@ async function confirmFormWithHistory(
     await conn.query(
       `INSERT INTO ef_personalinfoshist (
         FormYear,
-        serviceNumber, Surname, OtherName, Title, Rank,
+        serviceNumber, Surname, OtherName, Title, \`Rank\`,
         payrollclass, classes, ship, command, branch,
-        Status, formNumber, emolumentform,
+        \`Status\`, formNumber, emolumentform,
         confirmedBy, dateconfirmed,
         div_off_name, div_off_rank, div_off_svcno, div_off_date,
         hod_name,     hod_rank,     hod_svcno,     hod_date,
@@ -369,9 +369,9 @@ async function confirmFormWithHistory(
       )
       SELECT
         ?,
-        serviceNumber, Surname, OtherName, Title, Rank,
+        serviceNumber, Surname, OtherName, Title, \`Rank\`,
         payrollclass, classes, ship, command, branch,
-        Status, formNumber, emolumentform,
+        \`Status\`, formNumber, emolumentform,
         confirmedBy, dateconfirmed,
         div_off_name, div_off_rank, div_off_svcno, div_off_date,
         hod_name,     hod_rank,     hod_svcno,     hod_date,
@@ -406,7 +406,7 @@ async function getFormsByFormNumbers(formNumbers, status) {
      JOIN ef_emolument_forms ef
        ON ef.service_no = p.serviceNumber
      WHERE p.formNumber IN (${placeholders})
-       AND p.Status     = ?
+       AND p.\`Status\`     = ?
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')`,
     [...formNumbers.map(String), status],
   );
@@ -439,7 +439,7 @@ async function getFormsByClass(classes, status, cpoCommand) {
      JOIN ef_emolument_forms ef
        ON ef.service_no = p.serviceNumber
      WHERE p.classes = ?
-       AND p.Status  = ?
+       AND p.\`Status\`  = ?
        ${commandClause}
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')`,
     params,
@@ -496,7 +496,7 @@ async function confirmBulkWithHistory(
       //    Mirrors the single confirmFormWithHistory gate exactly.
       const [r1] = await conn.query(
         `UPDATE ef_personalinfos
-         SET Status        = ?,
+         SET \`Status\`        = ?,
              emolumentform = 'Yes',
              hod_svcno     = ?,
              hod_name      = ?,
@@ -531,8 +531,8 @@ async function confirmBulkWithHistory(
              snapshot   = ?,
              updated_at = NOW()
          WHERE id     = ?
-           AND status  = 'FO_APPROVED'`,
-        [JSON.stringify(snapshot), form.id],
+           AND \`Status\`  = 'FO_APPROVED'`,
+        [JSON.stringify(snapshot), form.form_id],
       );
 
       // 3. Insert history record — INSERT IGNORE is idempotent on the
@@ -587,7 +587,7 @@ async function rejectForm(serviceNo, formId, command) {
          dateModify = NOW()
      WHERE serviceNumber = ?
        AND command       = ?
-       AND Status        = 'CPO'`,
+       AND \`Status\`        = 'CPO'`,
       [serviceNo, command],
     );
 
@@ -601,8 +601,8 @@ async function rejectForm(serviceNo, formId, command) {
       `UPDATE ef_emolument_forms
      SET status     = 'REJECTED',
          updated_at = NOW()
-     WHERE id     = ?
-       AND status  = 'FO_APPROVED'`,
+     WHERE form_number     = ?
+       AND \`Status\`  = 'FO_APPROVED'`,
       [formId],
     );
 

@@ -248,11 +248,6 @@ const requireEmolRole = (requiredRole) => {
         return false;
       });
 
-      console.log(
-        `🔐 requireEmolRole(${requiredRole}) - resolved ship: ${shipVal}, command: ${commandVal}`,
-      );
-      console.log("User roles:", req.emolRoles);
-
       if (!passes) {
         return res.status(403).json({
           error: `Access denied. Required emolument role: ${requiredRole}`,

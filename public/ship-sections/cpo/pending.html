@@ -98,7 +98,7 @@
             <div class="font-bold text-navy text-sm">${r.Surname || ""} ${r.OtherName || ""}</div>
             <div class="text-xs text-blue-900/40 mt-0.5">${r.serviceNumber} · FO approved ${r.fo_date ? new Date(r.fo_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "—"}</div>
           </div>
-          <button onclick="openCpoConfirm('${r.form_id}','${r.Surname} (${r.serviceNumber})')" class="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-green-700 transition-colors flex-shrink-0">
+          <button onclick="openCpoConfirm('${r.formNumber}','${r.Surname} (${r.serviceNumber})')" class="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-green-700 transition-colors flex-shrink-0">
             Confirm
           </button>
         </div>`,

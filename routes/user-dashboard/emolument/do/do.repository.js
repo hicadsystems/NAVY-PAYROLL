@@ -296,7 +296,7 @@ async function markDoReviewed(
       `UPDATE ef_emolument_forms
        SET status     = 'DO_REVIEWED',
            updated_at = NOW()
-       WHERE id = ? AND status = 'SUBMITTED'`,
+       WHERE form_number = ? AND status = 'SUBMITTED'`,
       [formId],
     );
 
@@ -335,7 +335,7 @@ async function rejectForm(serviceNo, formId, ship) {
       `UPDATE ef_emolument_forms
        SET status     = 'REJECTED',
            updated_at = NOW()
-       WHERE id = ? AND status = 'SUBMITTED'`,
+       WHERE form_number = ? AND status = 'SUBMITTED'`,
       [formId],
     );
 

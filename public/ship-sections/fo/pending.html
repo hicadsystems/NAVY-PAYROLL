@@ -98,7 +98,7 @@
             <div class="font-bold text-navy text-sm">${r.Surname || ""} ${r.OtherName || ""}</div>
             <div class="text-xs text-blue-900/40 mt-0.5">${r.serviceNumber} · DO reviewed ${r.div_off_date ? new Date(r.div_off_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "—"}</div>
           </div>
-          <button onclick="openFoApproval('${r.form_id}','${r.Surname || ""} (${r.serviceNumber})')" class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors flex-shrink-0">
+          <button onclick="openFoApproval('${r.formNumber}','${r.Surname || ""} (${r.serviceNumber})')" class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors flex-shrink-0">
             Approve
           </button>
         </div>`,

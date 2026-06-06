@@ -2112,8 +2112,22 @@
           document
             .querySelectorAll(".toggle-row input")
             .forEach((el) => (el.disabled = true));
-          // Hide action bar entirely — no save or submit
-          document.getElementById("action-bar").classList.add("hidden");
+
+          // Check if user has a role (is reviewing this form)
+          const urlParams = new URLSearchParams(window.location.search);
+          const reviewMode = urlParams.get("mode");
+          const hasRole =
+            sessionStorage.getItem("active_ship_role") || reviewMode;
+
+          // Only hide action bar if not in role review mode
+          if (!hasRole) {
+            document.getElementById("action-bar").classList.add("hidden");
+          } else {
+            // In role mode: show action bar, but hide personnel buttons
+            document.getElementById("action-bar").classList.remove("hidden");
+            document.getElementById("btn-save").style.display = "none";
+            document.getElementById("btn-submit").style.display = "none";
+          }
 
           // Disable photo upload zones
           document.querySelectorAll(".photo-zone").forEach((zone) => {

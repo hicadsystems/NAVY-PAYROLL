@@ -139,7 +139,7 @@ async function getConfirmedFormDetail(serviceNo) {
     `SELECT
        p.serviceNumber, p.Surname, p.OtherName, p.Rank,
        p.payrollclass, p.classes, p.ship, p.command,
-       p.email, p.gsm_number, p.Status, p.emolumentform,
+       p.email, p.gsm_number, p.Status, p.emolumentform, p.formNumber, p.FormYear,
        f.id          AS formId,
        f.status      AS formStatus,
        f.form_number AS formNumber,
@@ -159,7 +159,7 @@ async function getConfirmedFormDetail(serviceNo) {
      INNER JOIN ef_emolument_forms f
        ON f.service_no = p.serviceNumber
       AND f.status     = 'CPO_CONFIRMED'
-     WHERE p.serviceNumber = ?
+     WHERE p.formNumber = ?
      LIMIT 1`,
     [serviceNo],
   );

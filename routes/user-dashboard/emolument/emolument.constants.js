@@ -121,7 +121,7 @@ function resolveFormType(payrollclass) {
 
 // ─────────────────────────────────────────────────────────────
 // FORM NUMBER COLUMN MAP
-// Maps payrollclass to ef_systeminfos column name.
+// Maps payrollclass to ef_control column name.
 // ─────────────────────────────────────────────────────────────
 
 const FORM_NO_COLUMN = Object.freeze({
@@ -130,7 +130,7 @@ const FORM_NO_COLUMN = Object.freeze({
 });
 
 /**
- * Get the ef_systeminfos column for form number tracking.
+ * Get the ef_control column for form number tracking.
  * @param {string|number} payrollclass
  * @returns {string}
  */

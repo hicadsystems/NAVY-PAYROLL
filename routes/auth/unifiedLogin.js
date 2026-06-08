@@ -138,8 +138,8 @@ router.post("/pre-login", async (req, res) => {
     const tokenPayload = {
       user_id,
       full_name,
-      name: `${emp.Surname.trim()} ${emp.OtherName?.trim() || ""}`.trim(),
-      rank: emp.Title.trim().toUpperCase().replace(/\./g, ""), // e.g. "CPT" from "Capt."
+      name: `${emp.Surname?.trim()} ${emp.OtherName?.trim() || ""}`.trim(),
+      rank: emp.Title?.trim()?.toUpperCase()?.replace(/\./g, ""), // e.g. "CPT" from "Capt."
       email: emp.email || null,
       role: payrollRole, // null for non-payroll
       primary_class: primaryClass, // null for non-payroll

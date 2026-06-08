@@ -239,10 +239,11 @@
         .then((r) => (r.ok ? r.json() : Promise.reject()))
         .then((raw) => {
           const all = Array.isArray(raw) ? raw : raw.rows || raw.data || [];
+          const meta = raw?.pagination||{}
           // Pending = Verified but not yet confirmed in hr_employees
           const rows = all.filter((r) => r.emolumentform !== "Yes");
 
-          if (!rows.length) {
+          if (!all.length) {
             el.innerHTML = `<div class="text-center py-6 text-navy/40 text-sm">
             <i class="fas fa-check-circle fa-2x mb-2 block text-green-300"></i>
             No verified records pending sync for ${esc(labelFor(cls))}
@@ -253,7 +254,7 @@
           el.innerHTML = `
           <div class="flex items-center gap-3 mb-3 p-3 bg-amber-50 rounded-lg">
             <i class="fas fa-info-circle text-amber-500"></i>
-            <span class="text-sm font-semibold text-amber-700">${rows.length} verified record(s) pending sync</span>
+            <span class="text-sm font-semibold text-amber-700">${meta.total} verified record(s) pending sync</span>
           </div>
           <div class="overflow-x-auto max-h-72">
             <table class="w-full text-sm">
@@ -264,7 +265,7 @@
                 <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide hidden md:table-cell">Form #</th>
               </tr></thead>
               <tbody>
-                ${rows
+                ${all
                   .map(
                     (
                       r,

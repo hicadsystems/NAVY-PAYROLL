@@ -838,7 +838,7 @@
         const scopeType = appt === 'CPO' ? 'COMMAND' : 'SHIP';
         // CPO scope is the command NAME (not Id) — look it up
         const cmdObj = _commands.find(c => String(c.Id) === String(cmdId));
-        const scopeValue = appt === 'CPO' ? (cmdObj?.commandName || '') : ship;
+        const scopeValue = appt === 'CPO' ? (cmdObj?.code || '') : ship;
 
         const r = await fetch('/admin/roles/assign', {
           method: 'POST', headers: H,

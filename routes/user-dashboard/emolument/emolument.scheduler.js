@@ -152,7 +152,7 @@ async function syncOpenship() {
 //    hr_employees.emolumentform stays 'Yes' as the permanent
 //    payroll sync record — not touched here.
 //
-// 3. Reset ef_systeminfos form number counters to 1 so the new
+// 3. Reset ef_control form number counters to 1 so the new
 //    cycle starts with fresh sequential form numbers.
 // ─────────────────────────────────────────────────────────────
 async function archivePreviousCycleIfNeeded() {
@@ -226,6 +226,10 @@ async function archivePreviousCycleIfNeeded() {
            cdr_name = NULL,
            cdr_rank = NULL,
            cdr_svcno = NULL,
+           hod_date = NULL,
+           hod_name = NULL,
+           hod_rank = NULL,
+           hod_svcno = NULL,
            div_off_date = NULL,
            div_off_name = NULL,
            div_off_rank = NULL,
@@ -235,7 +239,7 @@ async function archivePreviousCycleIfNeeded() {
 
     // Step 3: Reset form number counters for the new cycle
     await pool.query(
-      `UPDATE ef_systeminfos
+      `UPDATE ef_control
        SET OfficersFormNo = 1,
            RatingsFormNo  = 1,
            TrainingFormNo = 1`,

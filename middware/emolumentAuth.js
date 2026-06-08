@@ -216,7 +216,11 @@ const requirePersonnel = async (req, res, next) => {
 //   GET  /admin/reports         → requireEmolRole('EMOL_ADMIN')
 // ─────────────────────────────────────────────────────────────────────────────
 
-const requireEmolRole = (requiredRole) => {
+const requireEmolRole = (...requiredRoles) => {
+  if (!requiredRoles.length) {
+    throw new Error("requireEmolRole: at least one role must be specified");
+  }
+
   return async (req, res, next) => {
     if (!req.user_id) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -231,33 +235,40 @@ const requireEmolRole = (requiredRole) => {
         return next();
       }
 
-      // Determine scope value from request for the required role
-      // We try both SHIP and COMMAND scope types since the role definition
-      // tells us which applies — but we resolve both and let hasRole decide
-      const shipVal = resolveRequestScope(req, "SHIP");
-      const commandVal = resolveRequestScope(req, "COMMAND");
-
-      // hasRole checks each row's scope_type and matches accordingly
       const passes = req.emolRoles.some((r) => {
-        if (r.role !== requiredRole) return false;
-        if (r.scope_type === "GLOBAL") return true;
-        if (r.scope_type === "SHIP")
-          return shipVal && r.scope_value === shipVal;
-        if (r.scope_type === "COMMAND")
-          return commandVal && r.scope_value === commandVal;
-        return false;
+        if (!requiredRoles.includes(r.role)) return false;
+        console.log(`Checking role ${r.role} with ${requiredRoles.join(", ")}`);
+
+        switch (r.scope_type) {
+          case "GLOBAL":
+            return true;
+          case "SHIP": {
+            const scopeVal = resolveRequestScope(req, "SHIP");
+            return !!scopeVal && r.scope_value === scopeVal;
+          }
+          case "COMMAND": {
+            const scopeVal = resolveRequestScope(req, "COMMAND");
+            return !!scopeVal && r.scope_value === scopeVal;
+          }
+          default:
+            return false;
+        }
       });
 
       if (!passes) {
+        console.log('no passws')
         return res.status(403).json({
-          error: `Access denied. Required emolument role: ${requiredRole}`,
+          error: `Access denied. Required role: ${requiredRoles.join(" or ")}`,
         });
       }
 
       req.isPersonnel = await isPersonnel(req.user_id);
       next();
     } catch (err) {
-      console.error(`❌ requireEmolRole(${requiredRole}) error:`, err);
+      console.error(
+        `❌ requireEmolRole(${requiredRoles.join(", ")}) error:`,
+        err,
+      );
       res.status(500).json({ error: "Server error" });
     }
   };

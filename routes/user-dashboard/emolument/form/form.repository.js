@@ -650,7 +650,7 @@ async function saveAllowances(serviceNo, allowances, validAllowTypes) {
 //
 // Steps OUTSIDE transaction (called by service after commit):
 //   - upsertEmolumentForm → ef_emolument_forms (safe to retry)
-//   - incrementFormNumber → ef_systeminfos counter
+//   - incrementFormNumber → ef_control counter
 //   - insertFormApproval  → ef_form_approvals
 //   - insertAuditLog      → ef_audit_logs
 // ─────────────────────────────────────────────────────────────
@@ -983,7 +983,7 @@ async function upsertEmolumentForm(
 async function getCurrentFormNumber(formNoColumn) {
   pool.useDatabase(DB());
   const [rows] = await pool.query(
-    `SELECT \`${formNoColumn}\` AS formNo FROM ef_systeminfos LIMIT 1`,
+    `SELECT \`${formNoColumn}\` AS formNo FROM ef_control LIMIT 1`,
   );
   return rows[0]?.formNo ?? 1;
 }
@@ -991,7 +991,7 @@ async function getCurrentFormNumber(formNoColumn) {
 async function incrementFormNumber(formNoColumn) {
   pool.useDatabase(DB());
   await pool.query(
-    `UPDATE ef_systeminfos SET \`${formNoColumn}\` = \`${formNoColumn}\` + 1`,
+    `UPDATE ef_control SET \`${formNoColumn}\` = \`${formNoColumn}\` + 1`,
   );
 }
 

@@ -76,18 +76,22 @@ router.use(verifyToken);
 // ─────────────────────────────────────────────────────────────
 // GET /form/load
 // Personnel load their own form. EMOL_ADMIN can load any form
-// by passing ?admin=1&svcno=X.
+// by passing ?admin=1&svcno=X&ship=CPO.
 // ─────────────────────────────────────────────────────────────
 router.get("/load", async (req, res) => {
   try {
     const isAdmin = req.query.admin === "1" && req.query.svcno;
+    console.log(isAdmin)
 
     if (isAdmin) {
       // Must be EMOL_ADMIN
+      console.log('is admin')
+        console.log(`service number ${req.query.svcno}`)
       const allowed = await new Promise((resolve) => {
-        requireEmolRole("EMOL_ADMIN")(req, res, (err) => resolve(!err));
+        requireEmolRole("EMOL_ADMIN","DO","FO","CPO")(req, res, (err) => resolve(!err));
       });
       if (!allowed) return; // requireEmolRole already sent 403
+    
       const result = await formService.loadForm(req.query.svcno);
       if (!result.success)
         return res.status(result.code).json({ error: result.message });

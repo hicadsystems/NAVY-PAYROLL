@@ -18,7 +18,7 @@
  *                                          Query: ?payrollclass=1&ship=&command=
  *                                                 &page=1&pageSize=50
  *
- *  GET  /admin/verified/:svcno           → full form detail + approval trail
+ *  GET  /admin/verified/:formNumber           → full form detail + approval trail
  *                                          for a single CPO_CONFIRMED personnel
  *
  *  POST /admin/verified/accept           → mark one or more forms as accepted
@@ -27,7 +27,7 @@
  *                                           that is done via /admin/payroll/sync)
  *                                          Body: { serviceNumbers: ['X123', ...] }
  *
- *  DELETE /admin/verified/:svcno/reject  → admin can still reject a CPO_CONFIRMED
+ *  DELETE /admin/verified/:formNumber/reject  → admin can still reject a CPO_CONFIRMED
  *                                          form if something is wrong before sync.
  *                                          Body: { ship, remarks }
  *                                          (wraps existing adminService.rejectForm
@@ -91,25 +91,25 @@ router.get("/verified", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /admin/verified/:svcno
+// GET /admin/verified/:formNumber
 // Full form detail + approval trail for a single confirmed person.
 // ─────────────────────────────────────────────────────────────
 
-router.get("/verified/:svcno", async (req, res) => {
-  const { svcno } = req.params;
+router.get("/verified/:formNumber", async (req, res) => {
+  const { formNumber } = req.params;
 
   try {
-    const form = await repo.getConfirmedFormDetail(svcno);
+    const form = await repo.getConfirmedFormDetail(formNumber);
     if (!form)
       return res
         .status(404)
-        .json({ error: `No CPO_CONFIRMED form found for ${svcno}.` });
+        .json({ error: `No CPO_CONFIRMED form found for ${formNumber}.` });
 
     const approvals = await adminRepo.getFormApprovals(form.formId);
 
     return res.json({ ...form, approvals });
   } catch (err) {
-    console.error("❌ GET /admin/verified/:svcno:", err);
+    console.error("❌ GET /admin/verified/:formNumber:", err);
     return res.status(500).json({ error: "Server error" });
   }
 });
@@ -162,14 +162,14 @@ router.post("/verified/accept", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// DELETE /admin/verified/:svcno/reject
+// DELETE /admin/verified/:formNumber/reject
 // Admin can reject a CPO_CONFIRMED form before payroll sync
 // if a data issue is found post-confirmation.
 // Body: { ship, remarks }
 // ─────────────────────────────────────────────────────────────
 
-router.delete("/verified/:svcno/reject", async (req, res) => {
-  const { svcno } = req.params;
+router.delete("/verified/:formNumber/reject", async (req, res) => {
+  const { formNumber } = req.params;
   const { ship, remarks } = req.body;
 
   if (!ship) return res.status(400).json({ error: "ship is required." });
@@ -178,11 +178,13 @@ router.delete("/verified/:svcno/reject", async (req, res) => {
 
   try {
     // Resolve form_id for this personnel's confirmed form
-    const formRow = await repo.getConfirmedFormDetail(svcno);
+    const formRow = await repo.getConfirmedFormDetail(formNumber);
     if (!formRow)
       return res
         .status(404)
-        .json({ error: `No CPO_CONFIRMED form found for ${svcno}.` });
+        .json({ error: `No CPO_CONFIRMED form found for ${formNumber}.` });
+
+    const svcno = formRow.serviceNumber;
 
     // Hard reject: clear ef_personalinfos + set ef_emolument_forms = REJECTED
     const reset = await repo.forceRejectConfirmedForm(
@@ -191,12 +193,9 @@ router.delete("/verified/:svcno/reject", async (req, res) => {
       ship,
     );
     if (!reset)
-      return res
-        .status(409)
-        .json({
-          error:
-            "Form could not be rejected (already synced or ship mismatch).",
-        });
+      return res.status(409).json({
+        error: "Form could not be rejected (already synced or ship mismatch).",
+      });
 
     await adminRepo.insertFormApproval({
       formId: formRow.formId,

@@ -1,0 +1,705 @@
+<div class="p-4 md:p-6">
+  <div class="mb-6">
+    <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+      <h3 class="text-sm lg:text-lg font-bold text-navy">
+        CPO-Verified Forms Awaiting Admin Acceptance
+      </h3>
+      <span class="text-xs text-blue-900/40" id="verifiedCount"></span>
+    </div>
+    <p class="text-sm text-blue-900/50">
+      Review and accept CPO-confirmed forms before syncing to payroll
+    </p>
+  </div>
+
+  <!-- Batch Actions -->
+  <div
+    class="bg-white/60 rounded-xl border border-amber-100 shadow p-3 mb-4 hidden"
+    id="batchActionsBar"
+  >
+    <div class="flex items-center justify-between gap-2 flex-wrap">
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          id="selectAllCheckbox"
+          onchange="toggleSelectAll(this.checked)"
+          class="w-4 h-4 rounded accent-navy"
+        />
+        <span class="text-sm font-semibold text-navy">Select All</span>
+      </label>
+      <span class="text-sm text-navy/50" id="selectedCount">0 selected</span>
+      <div class="flex gap-2">
+        <button
+          onclick="batchAccept(event)"
+          class="px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-green-700 transition-colors"
+        >
+          <i class="fas fa-check mr-1"></i>Accept Selected
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grid -->
+  <div
+    id="verifiedGrid"
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+  >
+    <div
+      class="flex items-center justify-center py-12 text-navy/30 col-span-full"
+    >
+      <i class="fas fa-spinner fa-spin mr-2"></i>Loading…
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div
+    id="verifiedPagination"
+    class="flex items-center justify-between mt-6 hidden"
+  >
+    <button
+      id="prevBtn"
+      onclick="loadVerifiedForms(verifiedState.page - 1)"
+      class="px-3 py-2 text-sm font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+    >
+      <i class="fas fa-chevron-left mr-1"></i>Prev
+    </button>
+    <span id="pageInfo" class="text-sm text-navy/50"></span>
+    <button
+      id="nextBtn"
+      onclick="loadVerifiedForms(verifiedState.page + 1)"
+      class="px-3 py-2 text-sm font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+    >
+      Next <i class="fas fa-chevron-right ml-1"></i>
+    </button>
+  </div>
+
+  <!-- Detail Modal -->
+  <div
+    id="detailModal"
+    class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+  >
+    <div
+      class="bg-white rounded-2xl p-6 w-full max-w-4xl shadow-2xl max-h-[90vh] overflow-y-auto"
+    >
+      <div
+        class="flex items-center justify-between mb-4 pb-4 border-b border-amber-100"
+      >
+        <div>
+          <h3
+            class="font-black text-navy text-base uppercase tracking-wide"
+            id="detailTitle"
+          ></h3>
+          <p class="text-sm text-blue-900/40 mt-1" id="detailMeta"></p>
+        </div>
+        <button
+          onclick="closeDetailModal()"
+          class="p-2 text-navy/40 hover:text-navy hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <i class="fas fa-times fa-lg"></i>
+        </button>
+      </div>
+
+      <div class="flex gap-2 mb-4 border-b border-amber-100">
+        <button
+          onclick="switchDetailTab('form')"
+          class="px-4 py-2 text-sm font-semibold text-navy border-b-2 border-navy"
+          id="tabForm"
+        >
+          <i class="fas fa-file mr-1"></i>Form Details
+        </button>
+        <button
+          onclick="switchDetailTab('approvals')"
+          class="px-4 py-2 text-sm font-semibold text-navy/40 border-b-2 border-transparent hover:text-navy transition-colors"
+          id="tabApprovals"
+        >
+          <i class="fas fa-check-double mr-1"></i>Approval Trail
+        </button>
+      </div>
+
+      <div id="detailFormTab" class="mb-6">
+        <div id="detailContent" class="space-y-3 text-sm">
+          <div class="flex items-center justify-center py-8 text-navy/30">
+            <i class="fas fa-spinner fa-spin mr-2"></i>Loading form details…
+          </div>
+        </div>
+      </div>
+
+      <div id="detailApprovalsTab" class="hidden mb-6">
+        <div id="approvalsContent" class="space-y-2">
+          <div class="flex items-center justify-center py-8 text-navy/30">
+            <i class="fas fa-spinner fa-spin mr-2"></i>Loading approval trail…
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-4 border-t border-amber-100">
+        <button
+          onclick="closeDetailModal()"
+          class="flex-1 py-2.5 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer border-none"
+        >
+          Close
+        </button>
+        <button
+          onclick="detailReject()"
+          class="px-4 py-2.5 bg-red-100 text-red-600 font-bold text-sm rounded-lg hover:bg-red-200 transition-colors cursor-pointer border-none"
+        >
+          <i class="fas fa-times mr-1"></i>Reject
+        </button>
+        <button
+          onclick="detailAccept(event)"
+          class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none"
+        >
+          <i class="fas fa-check mr-1"></i>Accept
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Modal -->
+  <div
+    id="rejectModal"
+    class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+  >
+    <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+      <h3 class="font-black text-navy text-base mb-1 uppercase tracking-wide">
+        Reject Form
+      </h3>
+      <p class="text-sm text-blue-900/40 mb-4" id="rejectModalMeta"></p>
+      <div class="mb-4">
+        <label
+          class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-2"
+        >
+          Remarks <span class="text-red-500">*</span>
+        </label>
+        <textarea
+          id="rejectRemarks"
+          rows="3"
+          placeholder="Reason for rejection..."
+          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none focus:border-navy resize-none"
+        ></textarea>
+      </div>
+      <div class="flex gap-3">
+        <button
+          onclick="closeRejectModal()"
+          class="flex-1 py-2.5 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer border-none"
+        >
+          Cancel
+        </button>
+        <button
+          onclick="confirmReject(event)"
+          class="flex-1 py-2.5 bg-red-500 text-white font-bold text-sm rounded-lg hover:bg-red-600 transition-colors cursor-pointer border-none"
+        >
+          <i class="fas fa-times mr-1"></i>Reject
+        </button>
+      </div>
+      <div
+        id="rejectMsg"
+        class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"
+      ></div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem("token");
+    const ITEMS_PER_PAGE = 50;
+
+    const verifiedState = {
+      page: 1,
+      pageSize: ITEMS_PER_PAGE,
+      total: 0,
+      totalPages: 1,
+      data: [],
+      selected: new Set(),
+      pendingReject: null,
+      currentDetail: null,
+      currentDetailTab: "form",
+    };
+
+    // ── Load verified forms ──
+    function loadVerifiedForms(page = 1) {
+      page = Math.max(page, 1);
+      verifiedState.page = page;
+
+      const params = new URLSearchParams({ page, pageSize: ITEMS_PER_PAGE });
+      const grid = document.getElementById("verifiedGrid");
+
+      grid.innerHTML =
+        '<div class="flex items-center justify-center py-12 text-navy/30 col-span-full"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+
+      fetch(`/admin/verified?${params}`, {
+        headers: { Authorization: "Bearer " + token },
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        .then((data) => {
+          verifiedState.data = data.rows || [];
+          verifiedState.total = data.pagination.total;
+          verifiedState.totalPages = data.pagination.totalPages;
+
+          document.getElementById("verifiedCount").textContent =
+            `${data.pagination.total.toLocaleString()} form${data.pagination.total !== 1 ? "s" : ""}`;
+
+          renderGrid();
+          updatePagination();
+          showBatchActionsIfNeeded();
+        })
+        .catch((err) => {
+          console.error("Error loading verified forms:", err);
+          grid.innerHTML =
+            '<div class="col-span-full text-center py-12 text-navy/40"><p>Failed to load forms. Please try again.</p></div>';
+        });
+    }
+
+    // ── Render grid ──
+    function renderGrid() {
+      const grid = document.getElementById("verifiedGrid");
+      const { data, selected } = verifiedState;
+
+      if (!data.length) {
+        grid.innerHTML =
+          '<div class="col-span-full text-center py-16 text-blue-900/30"><i class="fas fa-check-circle fa-2x mb-3 block text-green-300"></i><p class="font-semibold">No CPO-confirmed forms pending</p></div>';
+        return;
+      }
+
+      grid.innerHTML = data
+        .map((row) => {
+          const name = `${row.Surname || ""} ${row.OtherName || ""}`.trim();
+          const isSelected = selected.has(row.serviceNumber);
+
+          return `
+            <div class="bg-white/60 rounded-xl border border-amber-100 shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col gap-3">
+              <div class="flex items-start gap-2">
+                <input type="checkbox" class="w-4 h-4 rounded accent-navy mt-0.5"
+                  ${isSelected ? "checked" : ""}
+                  onchange="toggleSelect('${row.serviceNumber}', this.checked)" />
+                <div class="flex-1 min-w-0">
+                  <div class="font-bold text-navy text-sm">${name}</div>
+                  <div class="text-xs text-blue-900/50 font-mono mt-0.5">${row.serviceNumber} • ${row.Rank}</div>
+                  <div class="text-xs text-blue-900/50 mt-1">${row.ship || "N/A"}</div>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-1">
+                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-lg">
+                  <i class="fas fa-check-circle mr-1"></i>CPO Verified
+                </span>
+              </div>
+              <div class="flex gap-2 pt-2 border-t border-amber-50">
+                <button onclick="viewForm('${row.formNumber}')"
+                  class="flex-1 px-3 py-2 bg-navy/10 text-navy text-sm font-bold rounded-lg hover:bg-navy/20 transition-colors cursor-pointer border-none flex items-center justify-center gap-1">
+                  <i class="fas fa-eye"></i>View
+                </button>
+                <button onclick="openRejectModal('${row.formNumber}', '${name}')"
+                  class="px-3 py-2 bg-red-100 text-red-600 text-sm font-bold rounded-lg hover:bg-red-200 transition-colors cursor-pointer border-none">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    // ── Selection ──
+    function toggleSelect(svcno, checked) {
+      checked
+        ? verifiedState.selected.add(svcno)
+        : verifiedState.selected.delete(svcno);
+      updateBatchActionsBar();
+    }
+
+    function toggleSelectAll(checked) {
+      if (checked) {
+        verifiedState.data.forEach((row) =>
+          verifiedState.selected.add(row.serviceNumber),
+        );
+      } else {
+        verifiedState.selected.clear();
+      }
+      renderGrid();
+      updateBatchActionsBar();
+    }
+
+    function updateBatchActionsBar() {
+      const count = verifiedState.selected.size;
+      const bar = document.getElementById("batchActionsBar");
+      document.getElementById("selectedCount").textContent =
+        `${count} selected`;
+      bar.classList.toggle("hidden", count === 0);
+    }
+
+    function showBatchActionsIfNeeded() {
+      if (verifiedState.selected.size > 0) {
+        document.getElementById("batchActionsBar").classList.remove("hidden");
+      }
+    }
+
+    // ── Batch accept ──
+    function batchAccept(e) {
+      if (verifiedState.selected.size === 0) return;
+      if (!confirm(`Accept ${verifiedState.selected.size} form(s)?`)) return;
+
+      const btn = e.target.closest("button");
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Processing…';
+
+      fetch("/admin/verified/accept", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          serviceNumbers: Array.from(verifiedState.selected),
+        }),
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        .then(() => {
+          verifiedState.selected.clear();
+          loadVerifiedForms(1);
+          showToast("✓ Forms accepted", "bg-green-100 text-green-700");
+        })
+        .catch((err) => {
+          console.error("Error accepting forms:", err);
+          showToast("✗ Error accepting forms", "bg-red-100 text-red-700");
+        })
+        .finally(() => {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-check mr-1"></i>Accept Selected';
+        });
+    }
+
+    // ── Reject modal ──
+    function openRejectModal(svcno, name) {
+      verifiedState.pendingReject = svcno;
+      document.getElementById("rejectModalMeta").textContent =
+        `${name} (${svcno})`;
+      document.getElementById("rejectRemarks").value = "";
+
+      const modal = document.getElementById("rejectModal");
+      document.body.appendChild(modal); // teleport to body
+      modal.classList.remove("hidden");
+    }
+
+    function closeRejectModal() {
+      const modal = document.getElementById("rejectModal");
+      modal.classList.add("hidden");
+      document.body.appendChild(modal);
+      verifiedState.pendingReject = null;
+    }
+
+    function confirmReject(e) {
+      const svcno = verifiedState.pendingReject;
+      const remarks = document.getElementById("rejectRemarks").value.trim();
+
+      if (!remarks) {
+        alert("Please provide remarks for rejection");
+        return;
+      }
+
+      const btn = e.target.closest("button");
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Rejecting…';
+
+      fetch(`/admin/verified/${svcno}/reject`, {
+        method: "DELETE",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ remarks }),
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        .then(() => {
+          closeRejectModal();
+          loadVerifiedForms(verifiedState.page);
+          showToast("✓ Form rejected", "bg-green-100 text-green-700");
+        })
+        .catch((err) => {
+          console.error("Error rejecting form:", err);
+          showToast("✗ Error rejecting form", "bg-red-100 text-red-700");
+        })
+        .finally(() => {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-times mr-1"></i>Reject';
+        });
+    }
+
+    // ── Detail modal ──
+    // ── Detail modal ──
+    function viewForm(svcno) {
+      verifiedState.currentDetail = svcno;
+      verifiedState.currentDetailTab = "form";
+
+      const modal = document.getElementById("detailModal");
+      document.body.appendChild(modal); // teleport to body
+      modal.classList.remove("hidden");
+
+      document.getElementById("detailTitle").textContent =
+        `Review Form - ${svcno}`;
+      document.getElementById("detailMeta").textContent = "Loading details...";
+
+      switchDetailTab("form");
+      loadFormDetail(svcno);
+    }
+
+    function closeDetailModal() {
+      const modal = document.getElementById("detailModal");
+      modal.classList.add("hidden");
+      document.body.appendChild(modal); // keep it on body for next time
+      verifiedState.currentDetail = null;
+    }
+
+    function switchDetailTab(tab) {
+      verifiedState.currentDetailTab = tab;
+
+      document
+        .getElementById("detailFormTab")
+        .classList.toggle("hidden", tab !== "form");
+      document
+        .getElementById("detailApprovalsTab")
+        .classList.toggle("hidden", tab !== "approvals");
+
+      const isForm = tab === "form";
+      const tabForm = document.getElementById("tabForm");
+      const tabApprovals = document.getElementById("tabApprovals");
+
+      tabForm.classList.toggle("border-navy", isForm);
+      tabForm.classList.toggle("border-transparent", !isForm);
+      tabForm.classList.toggle("text-navy", isForm);
+      tabForm.classList.toggle("text-navy/40", !isForm);
+
+      tabApprovals.classList.toggle("border-navy", !isForm);
+      tabApprovals.classList.toggle("border-transparent", isForm);
+      tabApprovals.classList.toggle("text-navy", !isForm);
+      tabApprovals.classList.toggle("text-navy/40", isForm);
+    }
+
+    function loadFormDetail(svcno) {
+      fetch(`/admin/verified/${svcno}`, {
+        headers: { Authorization: "Bearer " + token },
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        .then((data) => {
+          const name = `${data.Surname || ""} ${data.OtherName || ""}`.trim();
+          document.getElementById("detailMeta").textContent =
+            `${name} • ${data.serviceNumber} • ${data.Rank} • ${data.ship}`;
+          renderFormDetails(data);
+          renderApprovalTrail(data.approvals || []);
+        })
+        .catch((err) => {
+          console.error("Error loading form detail:", err);
+          document.getElementById("detailContent").innerHTML =
+            '<div class="text-center py-6 text-red-600"><p>Failed to load form details</p></div>';
+          document.getElementById("approvalsContent").innerHTML =
+            '<div class="text-center py-6 text-red-600"><p>Failed to load approval trail</p></div>';
+        });
+    }
+
+    function renderFormDetails(data) {
+      const snapshot = data.snapshot || {};
+
+      let html = `
+        <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
+          <h4 class="font-bold text-navy text-sm mb-3 flex items-center gap-2">
+            <i class="fas fa-user text-blue-600"></i> Personal Information
+          </h4>
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div><span class="text-navy/60">Service No:</span> <span class="font-semibold">${data.serviceNumber}</span></div>
+            <div><span class="text-navy/60">Rank:</span> <span class="font-semibold">${data.Rank}</span></div>
+            <div><span class="text-navy/60">Name:</span> <span class="font-semibold">${data.Surname} ${data.OtherName}</span></div>
+            <div><span class="text-navy/60">Payroll Class:</span> <span class="font-semibold">${data.payrollclass}</span></div>
+            <div><span class="text-navy/60">Ship:</span> <span class="font-semibold">${data.ship}</span></div>
+            <div><span class="text-navy/60">Command:</span> <span class="font-semibold">${data.command}</span></div>
+            <div><span class="text-navy/60">Email:</span> <span class="font-semibold font-mono text-xs">${data.email}</span></div>
+            <div><span class="text-navy/60">GSM:</span> <span class="font-semibold font-mono">${data.gsm_number}</span></div>
+          </div>
+        </div>
+
+        <div class="bg-amber-50 rounded-lg p-4 border border-amber-100">
+          <h4 class="font-bold text-navy text-sm mb-3 flex items-center gap-2">
+            <i class="fas fa-file text-amber-600"></i> Form Information
+          </h4>
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div><span class="text-navy/60">Form ID:</span> <span class="font-mono font-semibold">${data.formId}</span></div>
+            <div><span class="text-navy/60">Form Year:</span> <span class="font-semibold">${data.formYear}</span></div>
+            <div><span class="text-navy/60">Status:</span> <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded inline-block">${data.formStatus}</span></div>
+            <div><span class="text-navy/60">Submitted:</span> <span class="font-mono text-xs">${data.submitted_at ? new Date(data.submitted_at).toLocaleDateString() : "N/A"}</span></div>
+            ${data.accepted_at ? `<div><span class="text-navy/60">Accepted:</span> <span class="font-mono text-xs">${new Date(data.accepted_at).toLocaleDateString()}</span></div>` : ""}
+            ${data.synced_at ? `<div><span class="text-navy/60">Synced:</span> <span class="font-mono text-xs">${new Date(data.synced_at).toLocaleDateString()}</span></div>` : ""}
+          </div>
+        </div>
+      `;
+
+      if (Object.keys(snapshot).length > 0) {
+        const entries = Object.entries(snapshot).slice(0, 30);
+        const overflow = Object.keys(snapshot).length - 30;
+
+        html += `
+          <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h4 class="font-bold text-navy text-sm mb-3 flex items-center gap-2">
+              <i class="fas fa-clipboard text-gray-600"></i> Form Data Snapshot
+            </h4>
+            <div class="space-y-2 text-sm max-h-96 overflow-y-auto">
+              ${entries
+                .map(([key, value]) => {
+                  const displayValue =
+                    typeof value === "object"
+                      ? JSON.stringify(value).substring(0, 50) + "..."
+                      : String(value).substring(0, 100);
+                  return `
+                  <div class="flex justify-between items-start gap-2 pb-2 border-b border-gray-200">
+                    <span class="text-navy/60 font-mono text-xs flex-shrink-0">${key}:</span>
+                    <span class="font-semibold text-right max-w-xs text-xs break-words">${displayValue}</span>
+                  </div>
+                `;
+                })
+                .join("")}
+              ${overflow > 0 ? `<div class="text-center py-2 text-navy/40 text-xs">+ ${overflow} more fields</div>` : ""}
+            </div>
+          </div>
+        `;
+      }
+
+      document.getElementById("detailContent").innerHTML = html;
+    }
+
+    function renderApprovalTrail(approvals) {
+      const content = document.getElementById("approvalsContent");
+
+      if (!approvals.length) {
+        content.innerHTML = `
+          <div class="text-center py-8 text-navy/30">
+            <i class="fas fa-inbox text-2xl mb-2 block"></i>
+            No approvals recorded yet
+          </div>
+        `;
+        return;
+      }
+
+      const statusColor = {
+        SUBMITTED: "blue",
+        DO_REVIEWED: "indigo",
+        FO_APPROVED: "purple",
+        CPO_CONFIRMED: "green",
+        ADMIN_ACCEPTED: "emerald",
+        SYNCED: "teal",
+        REJECTED: "red",
+      };
+
+      const statusIcon = {
+        SUBMITTED: "fa-paper-plane",
+        DO_REVIEWED: "fa-eye",
+        FO_APPROVED: "fa-check",
+        CPO_CONFIRMED: "fa-certificate",
+        ADMIN_ACCEPTED: "fa-thumbs-up",
+        SYNCED: "fa-cloud-upload-alt",
+        REJECTED: "fa-times-circle",
+      };
+
+      content.innerHTML = `
+        <div class="space-y-2">
+          ${approvals
+            .map((approval, idx) => {
+              const color = statusColor[approval.action] || "gray";
+              const icon = statusIcon[approval.action] || "fa-dot-circle";
+              const isLast = idx === approvals.length - 1;
+
+              return `
+              <div class="flex gap-3 pb-3 ${isLast ? "" : "border-b border-amber-100"}">
+                <div class="flex-shrink-0">
+                  <div class="w-8 h-8 rounded-full bg-${color}-100 flex items-center justify-center">
+                    <i class="fas ${icon} text-${color}-600 text-xs"></i>
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-sm text-navy">${approval.action}</div>
+                  <div class="text-xs text-navy/50 mt-0.5">
+                    ${approval.performedBy ? `by ${approval.performedBy}` : ""}
+                    ${approval.performerRole ? `(${approval.performerRole})` : ""}
+                    • ${approval.performed_at ? new Date(approval.performed_at).toLocaleString() : "N/A"}
+                  </div>
+                  ${approval.remarks ? `<div class="text-xs text-navy/70 mt-1 italic">"${approval.remarks}"</div>` : ""}
+                </div>
+              </div>
+            `;
+            })
+            .join("")}
+        </div>
+      `;
+    }
+
+    // ── Detail modal actions ──
+    function detailAccept(e) {
+      const svcno = verifiedState.currentDetail;
+      if (!svcno) return;
+      if (!confirm(`Accept this form for ${svcno}?`)) return;
+
+      const btn = e.target.closest("button");
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Accepting…';
+
+      fetch("/admin/verified/accept", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ serviceNumbers: [svcno] }),
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        .then(() => {
+          closeDetailModal();
+          loadVerifiedForms(verifiedState.page);
+          showToast("✓ Form accepted", "bg-green-100 text-green-700");
+        })
+        .catch((err) => {
+          console.error("Error accepting form:", err);
+          showToast("✗ Error accepting form", "bg-red-100 text-red-700");
+        })
+        .finally(() => {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-check mr-1"></i>Accept';
+        });
+    }
+
+    function detailReject() {
+      const svcno = verifiedState.currentDetail;
+      if (!svcno) return;
+
+      const person = verifiedState.data.find((r) => r.serviceNumber === svcno);
+      const name = person ? `${person.Surname} ${person.OtherName}` : svcno;
+
+      verifiedState.pendingReject = svcno;
+      document.getElementById("rejectModalMeta").textContent =
+        `${name} (${svcno})`;
+      document.getElementById("rejectRemarks").value = "";
+
+      closeDetailModal();
+      document.getElementById("rejectModal").classList.remove("hidden");
+    }
+
+    // ── Pagination ──
+    function updatePagination() {
+      const { page, totalPages, total } = verifiedState;
+
+      document.getElementById("pageInfo").textContent =
+        `Page ${page} of ${totalPages} (${total.toLocaleString()} total)`;
+      document.getElementById("prevBtn").disabled = page === 1;
+      document.getElementById("nextBtn").disabled = page === totalPages;
+
+      document
+        .getElementById("verifiedPagination")
+        .classList.toggle("hidden", totalPages <= 1);
+    }
+
+    // ── Toast ──
+    function showToast(msg, classes) {
+      const toast = document.createElement("div");
+      toast.className = `fixed bottom-4 right-4 px-4 py-3 rounded-lg font-semibold text-sm shadow-lg ${classes}`;
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ── Init ──
+    loadVerifiedForms(1);
+  </script>
+</div>

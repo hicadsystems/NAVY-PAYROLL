@@ -41,9 +41,9 @@
  *  router.get('/dashboard', verifyToken, requireAnyEmolRole, handler);
  */
 
-'use strict';
+"use strict";
 
-const pool = require('../config/db');
+const pool = require("../config/db");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INTERNAL: DB LOOKUPS
@@ -81,7 +81,7 @@ async function isPersonnel(userId) {
  */
 async function resolveFormScope(formId) {
   const [rows] = await pool.query(
-    `SELECT ship, command FROM ef_emolument_forms WHERE id = ? LIMIT 1`,
+    `SELECT ship, command FROM ef_emolument_forms WHERE form_number = ? LIMIT 1`,
     [formId],
   );
   if (!rows.length) return null;
@@ -101,17 +101,13 @@ async function resolveFormScope(formId) {
  * @returns {string|null}
  */
 function resolveRequestScope(req, scopeType) {
-  if (scopeType === 'SHIP') {
-    return req.params?.ship   ||
-           req.body?.ship     ||
-           req.query?.ship    ||
-           null;
+  if (scopeType === "SHIP") {
+    return req.params?.ship || req.body?.ship || req.query?.ship || null;
   }
-  if (scopeType === 'COMMAND') {
-    return req.params?.command ||
-           req.body?.command   ||
-           req.query?.command  ||
-           null;
+  if (scopeType === "COMMAND") {
+    return (
+      req.params?.command || req.body?.command || req.query?.command || null
+    );
   }
   return null; // GLOBAL — no value needed
 }
@@ -133,7 +129,7 @@ function hasRole(roles, requiredRole, scopeValue = null) {
     if (r.role !== requiredRole) return false;
 
     // GLOBAL scope always passes regardless of scopeValue
-    if (r.scope_type === 'GLOBAL') return true;
+    if (r.scope_type === "GLOBAL") return true;
 
     // Scoped role — scopeValue must be provided and must match
     if (!scopeValue) return false;
@@ -145,7 +141,7 @@ function hasRole(roles, requiredRole, scopeValue = null) {
  * Check whether a user is an EMOL_ADMIN (shortcut).
  */
 function isAdmin(roles) {
-  return roles.some((r) => r.role === 'EMOL_ADMIN');
+  return roles.some((r) => r.role === "EMOL_ADMIN");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -155,7 +151,7 @@ function isAdmin(roles) {
 
 async function attachRoles(req) {
   if (req.emolRoles) return; // already loaded this request
-  req.emolRoles   = await fetchEmolRoles(req.user_id);
+  req.emolRoles = await fetchEmolRoles(req.user_id);
   req.isEmolAdmin = isAdmin(req.emolRoles);
 }
 
@@ -167,7 +163,7 @@ async function attachRoles(req) {
 
 const loadEmolRoles = async (req, res, next) => {
   if (!req.user_id) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
@@ -175,8 +171,8 @@ const loadEmolRoles = async (req, res, next) => {
     req.isPersonnel = await isPersonnel(req.user_id);
     next();
   } catch (err) {
-    console.error('❌ loadEmolRoles error:', err);
-    res.status(500).json({ error: 'Server error loading emolument roles' });
+    console.error("❌ loadEmolRoles error:", err);
+    res.status(500).json({ error: "Server error loading emolument roles" });
   }
 };
 
@@ -188,14 +184,14 @@ const loadEmolRoles = async (req, res, next) => {
 
 const requirePersonnel = async (req, res, next) => {
   if (!req.user_id) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
     const found = await isPersonnel(req.user_id);
     if (!found) {
       return res.status(403).json({
-        error: 'Access denied. Personnel record not found.',
+        error: "Access denied. Personnel record not found.",
       });
     }
 
@@ -203,8 +199,8 @@ const requirePersonnel = async (req, res, next) => {
     req.isPersonnel = true;
     next();
   } catch (err) {
-    console.error('❌ requirePersonnel error:', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error("❌ requirePersonnel error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -223,7 +219,7 @@ const requirePersonnel = async (req, res, next) => {
 const requireEmolRole = (requiredRole) => {
   return async (req, res, next) => {
     if (!req.user_id) {
-      return res.status(401).json({ error: 'Not authenticated' });
+      return res.status(401).json({ error: "Not authenticated" });
     }
 
     try {
@@ -238,19 +234,19 @@ const requireEmolRole = (requiredRole) => {
       // Determine scope value from request for the required role
       // We try both SHIP and COMMAND scope types since the role definition
       // tells us which applies — but we resolve both and let hasRole decide
-      const shipVal    = resolveRequestScope(req, 'SHIP');
-      const commandVal = resolveRequestScope(req, 'COMMAND');
+      const shipVal = resolveRequestScope(req, "SHIP");
+      const commandVal = resolveRequestScope(req, "COMMAND");
 
       // hasRole checks each row's scope_type and matches accordingly
       const passes = req.emolRoles.some((r) => {
         if (r.role !== requiredRole) return false;
-        if (r.scope_type === 'GLOBAL') return true;
-        if (r.scope_type === 'SHIP')    return shipVal    && r.scope_value === shipVal;
-        if (r.scope_type === 'COMMAND') return commandVal && r.scope_value === commandVal;
+        if (r.scope_type === "GLOBAL") return true;
+        if (r.scope_type === "SHIP")
+          return shipVal && r.scope_value === shipVal;
+        if (r.scope_type === "COMMAND")
+          return commandVal && r.scope_value === commandVal;
         return false;
       });
-      
-      console.log(`🔐 requireEmolRole(${requiredRole}) - resolved ship: ${shipVal}, command: ${commandVal}`);
 
       if (!passes) {
         return res.status(403).json({
@@ -262,7 +258,7 @@ const requireEmolRole = (requiredRole) => {
       next();
     } catch (err) {
       console.error(`❌ requireEmolRole(${requiredRole}) error:`, err);
-      res.status(500).json({ error: 'Server error' });
+      res.status(500).json({ error: "Server error" });
     }
   };
 };
@@ -285,7 +281,7 @@ const requireEmolRole = (requiredRole) => {
 const requireFormRole = (requiredRole) => {
   return async (req, res, next) => {
     if (!req.user_id) {
-      return res.status(401).json({ error: 'Not authenticated' });
+      return res.status(401).json({ error: "Not authenticated" });
     }
 
     try {
@@ -307,14 +303,16 @@ const requireFormRole = (requiredRole) => {
       const formId = req.params?.form_id || req.params?.id;
       if (!formId) {
         // No form_id — fall back to request-level scope (same as requireEmolRole)
-        const shipVal    = resolveRequestScope(req, 'SHIP');
-        const commandVal = resolveRequestScope(req, 'COMMAND');
+        const shipVal = resolveRequestScope(req, "SHIP");
+        const commandVal = resolveRequestScope(req, "COMMAND");
 
         const passes = req.emolRoles.some((r) => {
           if (r.role !== requiredRole) return false;
-          if (r.scope_type === 'GLOBAL') return true;
-          if (r.scope_type === 'SHIP')    return shipVal    && r.scope_value === shipVal;
-          if (r.scope_type === 'COMMAND') return commandVal && r.scope_value === commandVal;
+          if (r.scope_type === "GLOBAL") return true;
+          if (r.scope_type === "SHIP")
+            return shipVal && r.scope_value === shipVal;
+          if (r.scope_type === "COMMAND")
+            return commandVal && r.scope_value === commandVal;
           return false;
         });
 
@@ -331,16 +329,18 @@ const requireFormRole = (requiredRole) => {
       // Resolve ship and command from the form record
       const formScope = await resolveFormScope(formId);
       if (!formScope) {
-        return res.status(404).json({ error: 'Form not found' });
+        return res.status(404).json({ error: "Form not found" });
       }
 
       req.formScope = formScope; // attach for downstream handlers
 
       const passes = req.emolRoles.some((r) => {
         if (r.role !== requiredRole) return false;
-        if (r.scope_type === 'GLOBAL') return true;
-        if (r.scope_type === 'SHIP')    return formScope.ship    && r.scope_value === formScope.ship;
-        if (r.scope_type === 'COMMAND') return formScope.command && r.scope_value === formScope.command;
+        if (r.scope_type === "GLOBAL") return true;
+        if (r.scope_type === "SHIP")
+          return formScope.ship && r.scope_value === formScope.ship;
+        if (r.scope_type === "COMMAND")
+          return formScope.command && r.scope_value === formScope.command;
         return false;
       });
 
@@ -354,7 +354,7 @@ const requireFormRole = (requiredRole) => {
       next();
     } catch (err) {
       console.error(`❌ requireFormRole(${requiredRole}) error:`, err);
-      res.status(500).json({ error: 'Server error' });
+      res.status(500).json({ error: "Server error" });
     }
   };
 };
@@ -368,29 +368,31 @@ const requireFormRole = (requiredRole) => {
 
 const requireShipAccess = async (req, res, next) => {
   if (!req.user_id) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
     const ship = req.params?.ship || req.body?.ship || req.query?.ship;
     if (!ship) {
-      return res.status(400).json({ error: 'Ship name is required' });
+      return res.status(400).json({ error: "Ship name is required" });
     }
 
     await attachRoles(req);
 
     // EMOL_ADMIN bypasses
     if (req.isEmolAdmin) {
-      req.user_ship      = ship;
-      req.user_ship_role = 'EMOL_ADMIN';
-      req.isPersonnel    = true;
+      req.user_ship = ship;
+      req.user_ship_role = "EMOL_ADMIN";
+      req.isPersonnel = true;
       return next();
     }
 
     // Find the matching DO or FO role for this ship
-    const matchingRole = req.emolRoles.find((r) =>
-      ['DO', 'FO'].includes(r.role) &&
-      (r.scope_type === 'GLOBAL' || (r.scope_type === 'SHIP' && r.scope_value === ship)),
+    const matchingRole = req.emolRoles.find(
+      (r) =>
+        ["DO", "FO"].includes(r.role) &&
+        (r.scope_type === "GLOBAL" ||
+          (r.scope_type === "SHIP" && r.scope_value === ship)),
     );
 
     if (!matchingRole) {
@@ -399,13 +401,13 @@ const requireShipAccess = async (req, res, next) => {
       });
     }
 
-    req.user_ship      = ship;
+    req.user_ship = ship;
     req.user_ship_role = matchingRole.role; // 'DO' or 'FO'
-    req.isPersonnel    = true;
+    req.isPersonnel = true;
     next();
   } catch (err) {
-    console.error('❌ requireShipAccess error:', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error("❌ requireShipAccess error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -417,13 +419,14 @@ const requireShipAccess = async (req, res, next) => {
 
 const requireCommandAccess = async (req, res, next) => {
   if (!req.user_id) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const command = req.params?.command || req.body?.command || req.query?.command;
+    const command =
+      req.params?.command || req.body?.command || req.query?.command;
     if (!command) {
-      return res.status(400).json({ error: 'Command is required' });
+      return res.status(400).json({ error: "Command is required" });
     }
 
     await attachRoles(req);
@@ -431,13 +434,15 @@ const requireCommandAccess = async (req, res, next) => {
     // EMOL_ADMIN bypasses
     if (req.isEmolAdmin) {
       req.user_command = command;
-      req.isPersonnel  = true;
+      req.isPersonnel = true;
       return next();
     }
 
-    const hasCPO = req.emolRoles.some((r) =>
-      r.role === 'CPO' &&
-      (r.scope_type === 'GLOBAL' || (r.scope_type === 'COMMAND' && r.scope_value === command)),
+    const hasCPO = req.emolRoles.some(
+      (r) =>
+        r.role === "CPO" &&
+        (r.scope_type === "GLOBAL" ||
+          (r.scope_type === "COMMAND" && r.scope_value === command)),
     );
 
     if (!hasCPO) {
@@ -447,11 +452,11 @@ const requireCommandAccess = async (req, res, next) => {
     }
 
     req.user_command = command;
-    req.isPersonnel  = true;
+    req.isPersonnel = true;
     next();
   } catch (err) {
-    console.error('❌ requireCommandAccess error:', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error("❌ requireCommandAccess error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -463,7 +468,7 @@ const requireCommandAccess = async (req, res, next) => {
 
 const requireAnyEmolRole = async (req, res, next) => {
   if (!req.user_id) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
@@ -471,15 +476,15 @@ const requireAnyEmolRole = async (req, res, next) => {
 
     if (req.emolRoles.length === 0) {
       return res.status(403).json({
-        error: 'Access denied. No elevated emolument role assigned.',
+        error: "Access denied. No elevated emolument role assigned.",
       });
     }
 
     req.isPersonnel = true;
     next();
   } catch (err) {
-    console.error('❌ requireAnyEmolRole error:', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error("❌ requireAnyEmolRole error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 };
 

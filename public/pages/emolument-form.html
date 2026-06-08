@@ -415,6 +415,16 @@
         }
       }
 
+      /* ── Form Header — always solid navy background ── */
+      #form-header {
+        background: #0b1e3d !important;
+        border: none;
+      }
+
+      #form-header::before {
+        display: none !important;
+      }
+
       /* ── Print ── */
       @media print {
         body::before {
@@ -1520,7 +1530,33 @@
         </p>
 
         <!-- Right: Buttons -->
-        <div class="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+        <div
+          class="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto flex-wrap"
+        >
+          <!-- Back button -->
+          <button
+            id="btn-back"
+            onclick="window.goBack()"
+            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-gray-300 text-gray-600 text-sm font-semibold hover:border-gray-400 hover:text-gray-700 transition-all"
+            title="Go back"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back
+          </button>
+
+          <!-- Personnel action buttons (personnel viewing their own form) -->
           <button
             id="btn-save"
             onclick="saveDraft()"
@@ -1561,6 +1597,57 @@
             </svg>
             Submit Form
           </button>
+
+          <!-- Role-based approval buttons (hidden by default, shown based on role) -->
+          <div
+            id="role-buttons"
+            class="hidden flex items-center gap-2 flex-shrink-0 w-full sm:w-auto flex-wrap border-l border-gray-200 pl-3 ml-3"
+          >
+            <!-- DO: Authenticate/Reject -->
+            <button
+              id="btn-do-review"
+              onclick="roleAction('do-review')"
+              class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all hidden"
+            >
+              <i class="fas fa-check"></i>Authenticate
+            </button>
+
+            <!-- FO: Approve/Reject -->
+            <button
+              id="btn-fo-approve"
+              onclick="roleAction('fo-approve')"
+              class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-all hidden"
+            >
+              <i class="fas fa-check"></i>Approve
+            </button>
+
+            <!-- CPO: Confirm/Reject -->
+            <button
+              id="btn-cpo-confirm"
+              onclick="roleAction('cpo-confirm')"
+              class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-all hidden"
+            >
+              <i class="fas fa-stamp"></i>Confirm
+            </button>
+
+            <!-- Admin: Accept/Reject -->
+            <button
+              id="btn-admin-accept"
+              onclick="roleAction('admin-accept')"
+              class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-all hidden"
+            >
+              <i class="fas fa-check-circle"></i>Accept
+            </button>
+
+            <!-- Universal Reject button for all roles -->
+            <button
+              id="btn-reject"
+              onclick="roleAction('reject')"
+              class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-all hidden"
+            >
+              <i class="fas fa-times"></i>Reject
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1569,6 +1656,50 @@
     <div id="toast" class="bg-white border border-smoke-dark text-ink">
       <span id="toast-icon"></span>
       <span id="toast-msg"></span>
+    </div>
+
+    <!-- Role action modal -->
+    <div
+      id="roleActionModal"
+      class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+    >
+      <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+        <h3
+          class="font-black text-navy text-base mb-1 uppercase tracking-wide"
+          id="roleActionTitle"
+        >
+          Action
+        </h3>
+        <p class="text-sm text-blue-900/40 mb-4" id="roleActionMeta"></p>
+        <div class="mb-4">
+          <label
+            class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-2"
+          >
+            Remarks <span class="text-red-500">*</span>
+          </label>
+          <textarea
+            id="roleActionRemarks"
+            rows="3"
+            placeholder="Add your remarks..."
+            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none focus:border-navy resize-none"
+          ></textarea>
+        </div>
+        <div class="flex gap-3">
+          <button
+            onclick="window.closeRoleActionModal()"
+            class="flex-1 py-2.5 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer border-none"
+          >
+            Cancel
+          </button>
+          <button
+            id="roleActionConfirmBtn"
+            onclick="window.confirmRoleAction()"
+            class="flex-1 py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-navy-light transition-colors cursor-pointer border-none"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- ═══════════════════════════════════════════
@@ -1584,6 +1715,8 @@
       let isDirty = false;
       let pendingNavigation = null;
       window.formLocked = false;
+      window.currentRole = null; // Current user's role: EMOL_ADMIN, EMOL_CPO, EMOL_DO, EMOL_FO
+      window.pendingRoleAction = null; // Pending role action type: 'do-review', 'fo-approve', 'cpo-confirm', 'admin-accept', 'reject'
 
       // ── LABEL OVERRIDES ───────────────────────────────
 
@@ -1979,8 +2112,22 @@
           document
             .querySelectorAll(".toggle-row input")
             .forEach((el) => (el.disabled = true));
-          // Hide action bar entirely — no save or submit
-          document.getElementById("action-bar").classList.add("hidden");
+
+          // Check if user has a role (is reviewing this form)
+          const urlParams = new URLSearchParams(window.location.search);
+          const reviewMode = urlParams.get("mode");
+          const hasRole =
+            sessionStorage.getItem("active_ship_role") || reviewMode;
+
+          // Only hide action bar if not in role review mode
+          if (!hasRole) {
+            document.getElementById("action-bar").classList.add("hidden");
+          } else {
+            // In role mode: show action bar, but hide personnel buttons
+            document.getElementById("action-bar").classList.remove("hidden");
+            document.getElementById("btn-save").style.display = "none";
+            document.getElementById("btn-submit").style.display = "none";
+          }
 
           // Disable photo upload zones
           document.querySelectorAll(".photo-zone").forEach((zone) => {
@@ -2015,6 +2162,9 @@
 
         // Section scroll observer
         initScrollObserver();
+
+        // Initialize role-based buttons
+        initializeRoleButtons();
       }
 
       function prefillFields(data) {
@@ -2446,6 +2596,7 @@
             );
             document.getElementById("btn-save").disabled = true;
             document.getElementById("btn-submit").disabled = true;
+            document.getElementById("action-bar").classList.add("hidden");
             document
               .querySelectorAll(".field")
               .forEach((el) => (el.disabled = true));
@@ -2622,6 +2773,151 @@
       function proceedNavigation() {
         closeLeaveModal();
         if (pendingNavigation) pendingNavigation();
+      }
+
+      // ── Back button & persistence ────────────────────────────
+      window.goBack = function () {
+        const returnPage = sessionStorage.getItem("emolument_form_return_page");
+        if (returnPage === "accept-verified") {
+          // Return to accept-verified page
+          window.location.href =
+            "../emolument-sections/admin/accept-verified.html";
+        } else if (returnPage === "ship-dashboard") {
+          // Return to ship dashboard
+          const ship = sessionStorage.getItem("active_ship");
+          const role = sessionStorage.getItem("active_ship_role");
+          if (ship) sessionStorage.removeItem("active_form_id");
+          window.history.back();
+        } else {
+          // Default: go back
+          window.history.back();
+        }
+      };
+
+      // ── Role-based actions ───────────────────────────────────
+      window.roleAction = function (actionType) {
+        const svcno = formData?.serviceNumber;
+        const name =
+          `${formData?.Surname || ""} ${formData?.OtherName || ""}`.trim();
+
+        window.pendingRoleAction = actionType;
+
+        const titles = {
+          "do-review": "Authenticate Form",
+          "fo-approve": "Approve Form",
+          "cpo-confirm": "Confirm Form",
+          "admin-accept": "Accept Form",
+          reject: "Reject Form",
+        };
+
+        document.getElementById("roleActionTitle").textContent =
+          titles[actionType] || "Action";
+        document.getElementById("roleActionMeta").textContent =
+          `${name} (${svcno})`;
+        document.getElementById("roleActionRemarks").value = "";
+        document.getElementById("roleActionModal").classList.remove("hidden");
+      };
+
+      window.closeRoleActionModal = function () {
+        document.getElementById("roleActionModal").classList.add("hidden");
+        window.pendingRoleAction = null;
+      };
+
+      window.confirmRoleAction = function () {
+        const remarks = document
+          .getElementById("roleActionRemarks")
+          .value.trim();
+        const actionType = window.pendingRoleAction;
+
+        if (!remarks) {
+          alert("Please provide remarks");
+          return;
+        }
+
+        const svcno = formData?.serviceNumber;
+        const btn = document.getElementById("roleActionConfirmBtn");
+        btn.disabled = true;
+        btn.textContent = "Processing…";
+
+        const endpoints = {
+          "do-review": `/do/personnel/${svcno}/review`,
+          "fo-approve": `/fo/personnel/${svcno}/approve`,
+          "cpo-confirm": `/cpo/personnel/${svcno}/confirm`,
+          "admin-accept": `/admin/verified/accept`,
+          reject: `/form/${formData?.formId}/reject`,
+        };
+
+        const url = endpoints[actionType];
+        const method = actionType === "admin-accept" ? "POST" : "PUT";
+        const body =
+          actionType === "admin-accept"
+            ? { serviceNumbers: [svcno] }
+            : { remarks };
+
+        fetch(url, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken()}`,
+          },
+          body: JSON.stringify(body),
+        })
+          .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+          .then((data) => {
+            showToast(
+              `✓ Form ${actionType.split("-")[1] || "action"} successful`,
+              "success",
+            );
+            window.closeRoleActionModal();
+            // Clear session and go back after 1s
+            setTimeout(() => {
+              sessionStorage.removeItem("emolument_form_return_page");
+              sessionStorage.removeItem("active_form_id");
+              window.goBack();
+            }, 1000);
+          })
+          .catch((err) => {
+            console.error("Error:", err);
+            showToast("✗ Error processing action", "error");
+          })
+          .finally(() => {
+            btn.disabled = false;
+            btn.textContent = "Confirm";
+          });
+      };
+
+      // ── Initialize role-based UI ─────────────────────────────
+      function initializeRoleButtons() {
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get("mode");
+        const roleButtonsDiv = document.getElementById("role-buttons");
+
+        // Determine role from sessionStorage or URL mode
+        let role = sessionStorage.getItem("active_ship_role");
+        if (mode === "admin-verify") role = "EMOL_ADMIN";
+        if (mode === "do-review") role = "EMOL_DO";
+        if (mode === "fo-approve") role = "EMOL_FO";
+        if (mode === "cpo-confirm") role = "EMOL_CPO";
+
+        window.currentRole = role;
+
+        if (role) {
+          roleButtonsDiv.classList.remove("hidden");
+
+          // Show/hide appropriate buttons based on role
+          const btnMap = {
+            EMOL_DO: "btn-do-review",
+            EMOL_FO: "btn-fo-approve",
+            EMOL_CPO: "btn-cpo-confirm",
+            EMOL_ADMIN: "btn-admin-accept",
+          };
+
+          const btnId = btnMap[role];
+          if (btnId) {
+            document.getElementById(btnId).classList.remove("hidden");
+            document.getElementById("btn-reject").classList.remove("hidden");
+          }
+        }
       }
     </script>
   </body>

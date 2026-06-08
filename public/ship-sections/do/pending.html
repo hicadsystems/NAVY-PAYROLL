@@ -44,7 +44,7 @@
         <i class="fas fa-times mr-1"></i>Reject
       </button>
       <button
-        onclick="doReviewAction('approve')"
+        onclick="doReviewAction('review')"
         class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none"
       >
         <i class="fas fa-check mr-1"></i>Authenticate
@@ -126,10 +126,14 @@
                   }
                 </div>
               </div>
-              <button onclick="openDoReview('${r.form_id}','${r.Surname} (${r.serviceNumber})')"
-                class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors flex-shrink-0">
-                Review
-              </button>
+              <div class="flex gap-2 flex-shrink-0">
+                <button onclick="viewForm('${r.serviceNumber}', 'EMOL_DO')" class="px-2 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg cursor-pointer border border-blue-200 hover:bg-blue-100 transition-colors">
+                  <i class="fas fa-eye mr-1"></i>View
+                </button>
+                <button onclick="openDoReview('${r.formNumber}','${r.Surname} (${r.serviceNumber})')" class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors">
+                  Review
+                </button>
+              </div>
             </div>`,
             )
             .join("")}
@@ -163,7 +167,7 @@
   function doReviewAction(action) {
     const remarks = document.getElementById("doReviewRemarks").value.trim();
     const msg = document.getElementById("doReviewMsg");
-    fetch("/ship/do/" + action, {
+    fetch("/do/forms/" + doActiveFormId + "/" + action, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -194,6 +198,14 @@
         msg.textContent = "Server error";
         msg.classList.remove("hidden");
       });
+  }
+
+  function viewForm(svcno, role) {
+    sessionStorage.setItem("emolument_form_return_page", "ship-dashboard");
+    sessionStorage.setItem("active_ship_role", role);
+    sessionStorage.setItem("emolument_form_svcno", svcno);
+    window.location.href =
+      "../../pages/emolument-form.html?svcno=" + encodeURIComponent(svcno);
   }
 
   loadDoPending(1);

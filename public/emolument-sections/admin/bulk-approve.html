@@ -1,16 +1,29 @@
 <div class="p-2 md:p-4 lg:p-6">
   <div class="mb-2 md:mb-4 lg:mb-6">
-    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">Approve all verified forms for a ship or command at once</h3>
+    <h3
+      class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
+    >
+      Approve all verified forms for a ship or command at once
+    </h3>
   </div>
 
-  <div class="max-w-lg mr-auto ml-auto bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
-    <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Select Ship / Command</h3>
+  <div
+    class="max-w-lg mr-auto ml-auto bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4"
+  >
+    <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">
+      Select Ship / Command
+    </h3>
     <div class="flex gap-2">
-      <select id="bulkShipSelect" class="flex-1 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
+      <select
+        id="bulkShipSelect"
+        class="flex-1 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
+      >
         <option value="">— Select ship or command —</option>
       </select>
-      <button onclick="loadBulkPreview(1)"
-        class="px-4 py-2 bg-navy text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors">
+      <button
+        onclick="loadBulkPreview(1)"
+        class="px-4 py-2 bg-navy text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors"
+      >
         <i class="fas fa-search"></i>
       </button>
     </div>
@@ -20,54 +33,83 @@
     <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
       <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
-          <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Forms Ready for Approval</h3>
+          <h3 class="font-bold text-navy text-sm uppercase tracking-wide">
+            Forms Ready for Approval
+          </h3>
           <p class="text-xs text-blue-900/40 mt-0.5" id="bulkPreviewMeta"></p>
         </div>
         <div class="flex items-center gap-2">
-          <input type="checkbox" id="selectAll" onchange="toggleAll(this)" class="accent-navy w-4 h-4" />
-          <label for="selectAll" class="text-xs font-bold text-navy/60">Select All</label>
+          <input
+            type="checkbox"
+            id="selectAll"
+            onchange="toggleAll(this)"
+            class="accent-navy w-4 h-4"
+          />
+          <label for="selectAll" class="text-xs font-bold text-navy/60"
+            >Select All</label
+          >
         </div>
       </div>
       <div id="bulkList"></div>
     </div>
 
     <div class="flex gap-3">
-      <button onclick="executeBulkApprove()"
-        class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none">
-        <i class="fas fa-check-double mr-2"></i>Approve Selected (<span id="selectedCount">0</span>)
+      <button
+        onclick="executeBulkApprove()"
+        class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none"
+      >
+        <i class="fas fa-check-double mr-2"></i>Approve Selected (<span
+          id="selectedCount"
+          >0</span
+        >)
       </button>
     </div>
-    <div id="bulkMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
+    <div
+      id="bulkMsg"
+      class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"
+    ></div>
   </div>
 </div>
 
 <script>
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
 
   let currentPage = 1;
   let totalForms = 0;
-  let currentPageForms = [];         // forms on the current page only
+  let currentPageForms = []; // forms on the current page only
   const selectedFormNumbers = new Set(); // persists across page turns
 
   const PAGE_SIZE = 16;
 
   (function () {
-    fetch('/admin/ships', { headers: { Authorization: 'Bearer ' + token } })
-      .then(r => r.ok ? r.json() : [])
-      .then(ships => {
-        const sel = document.getElementById('bulkShipSelect');
-        ships.forEach(s => {
-          const opt = document.createElement('option');
-          opt.value = s.name || s.ship_name || s.shipName;
-          opt.textContent = s.name || s.ship_name || s.shipName;
+    fetch("/admin/ships", { headers: { Authorization: "Bearer " + token } })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((ships) => {
+        const sel = document.getElementById("bulkShipSelect");
+
+        ships.forEach((s) => {
+          const name = s.name || s.ship_name || s.shipName || "";
+          const code = s.code ? ` [${s.code}]` : "";
+
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = `${name} -- ${code}`;
+          opt.title = code ? `Code: ${s.code}` : name;
           sel.appendChild(opt);
         });
+
+        const sorted = [...sel.options]
+          .slice(1)
+          .sort((a, b) =>
+            a.textContent.trim().localeCompare(b.textContent.trim()),
+          );
+
+        sorted.forEach((opt) => sel.appendChild(opt));
       })
       .catch(() => {});
   })();
-
   async function loadBulkPreview(page = 1) {
-    const ship = document.getElementById('bulkShipSelect').value;
+    const ship = document.getElementById("bulkShipSelect").value;
     if (!ship) return;
 
     // Reset selections when changing ship (new search from page 1)
@@ -75,30 +117,35 @@
 
     currentPage = page;
 
-    const el = document.getElementById('bulkList');
-    el.innerHTML = '<div class="flex items-center justify-center py-6 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
-    document.getElementById('bulkPreviewWrapper').classList.remove('hidden');
+    const el = document.getElementById("bulkList");
+    el.innerHTML =
+      '<div class="flex items-center justify-center py-6 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+    document.getElementById("bulkPreviewWrapper").classList.remove("hidden");
 
-    fetch(`/admin/bulk-approve/preview?ship=${encodeURIComponent(ship)}&page=${page}&limit=${PAGE_SIZE}`, {
-      headers: { Authorization: 'Bearer ' + token }
-    })
-      .then(r => r.ok ? r.json() : { eligible: 0, rows: [] })
-      .then(res => {
+    fetch(
+      `/admin/bulk-approve/preview?ship=${encodeURIComponent(ship)}&page=${page}&limit=${PAGE_SIZE}`,
+      {
+        headers: { Authorization: "Bearer " + token },
+      },
+    )
+      .then((r) => (r.ok ? r.json() : { eligible: 0, rows: [] }))
+      .then((res) => {
         currentPageForms = res.rows || [];
         totalForms = res.eligible || 0;
 
         // Auto-select incoming rows that haven't been explicitly deselected.
         // On page 1 (fresh search) selectedFormNumbers was just cleared so
         // all rows get selected. On subsequent pages, only new rows are added.
-        currentPageForms.forEach(r => {
+        currentPageForms.forEach((r) => {
           if (r.formNumber) selectedFormNumbers.add(r.formNumber);
         });
 
-        document.getElementById('bulkPreviewMeta').textContent =
-          ship + ' · ' + totalForms + ' form(s) pending approval';
+        document.getElementById("bulkPreviewMeta").textContent =
+          ship + " · " + totalForms + " form(s) pending approval";
 
         if (!currentPageForms.length) {
-          el.innerHTML = '<div class="text-center py-6 text-blue-900/30 text-sm">No forms pending approval for this ship</div>';
+          el.innerHTML =
+            '<div class="text-center py-6 text-blue-900/30 text-sm">No forms pending approval for this ship</div>';
           updateSelectAllState();
           updateSelectedCount();
           return;
@@ -106,35 +153,42 @@
 
         el.innerHTML = `
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
-            ${currentPageForms.map((r) => {
-              const isSel = selectedFormNumbers.has(r.formNumber);
-              return `
+            ${currentPageForms
+              .map((r) => {
+                const isSel = selectedFormNumbers.has(r.formNumber);
+                return `
                 <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 flex items-center gap-4">
                   <input type="checkbox" class="fo-bulk-chk accent-navy w-4 h-4 flex-shrink-0"
-                    data-formnumber="${r.formNumber}" ${isSel ? 'checked' : ''}
+                    data-formnumber="${r.formNumber}" ${isSel ? "checked" : ""}
                     onchange="toggleCard(this)" />
                   <div class="flex-1 min-w-0">
-                    <div class="font-bold text-navy text-sm">${r.Surname || ''} ${r.OtherName || ''}</div>
+                    <div class="font-bold text-navy text-sm">${r.Surname || ""} ${r.OtherName || ""}</div>
                     <div class="text-xs text-blue-900/40">${r.serviceNumber}</div>
                   </div>
                   <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-500 flex-shrink-0">
-                    ${(r.Status || '').replace('_', ' ')}
+                    ${(r.Status || "").replace("_", " ")}
                   </span>
                 </div>`;
-            }).join('')}
+              })
+              .join("")}
           </div>
-          ${paginatorHTML(page, Math.ceil(totalForms / PAGE_SIZE), 'adminBulkList')}`;
+          ${paginatorHTML(page, Math.ceil(totalForms / PAGE_SIZE), "adminBulkList")}`;
 
-        el.querySelectorAll('[data-paginator="adminBulkList"]').forEach(btn => {
-          btn.addEventListener('click', () => loadBulkPreview(+btn.dataset.page));
-        });
+        el.querySelectorAll('[data-paginator="adminBulkList"]').forEach(
+          (btn) => {
+            btn.addEventListener("click", () =>
+              loadBulkPreview(+btn.dataset.page),
+            );
+          },
+        );
 
         updateSelectAllState();
         updateSelectedCount();
       })
       .catch((err) => {
         console.error(err);
-        el.innerHTML = '<div class="text-center py-6 text-red-400 text-sm">Failed to load</div>';
+        el.innerHTML =
+          '<div class="text-center py-6 text-red-400 text-sm">Failed to load</div>';
       });
   }
 
@@ -149,58 +203,81 @@
   function toggleAll(cb) {
     if (cb.checked) {
       // Select every form on the current page
-      currentPageForms.forEach(r => { if (r.formNumber) selectedFormNumbers.add(r.formNumber); });
+      currentPageForms.forEach((r) => {
+        if (r.formNumber) selectedFormNumbers.add(r.formNumber);
+      });
     } else {
       // Deselect every form on the current page only
-      currentPageForms.forEach(r => { if (r.formNumber) selectedFormNumbers.delete(r.formNumber); });
+      currentPageForms.forEach((r) => {
+        if (r.formNumber) selectedFormNumbers.delete(r.formNumber);
+      });
     }
     // Sync visible checkboxes
-    document.querySelectorAll('.fo-bulk-chk').forEach(c => { c.checked = cb.checked; });
+    document.querySelectorAll(".fo-bulk-chk").forEach((c) => {
+      c.checked = cb.checked;
+    });
     updateSelectedCount();
   }
 
   function updateSelectAllState() {
-    const selectAll = document.getElementById('selectAll');
-    if (!currentPageForms.length) { selectAll.checked = false; selectAll.indeterminate = false; return; }
-    const checkedOnPage = currentPageForms.filter(r => selectedFormNumbers.has(r.formNumber)).length;
-    selectAll.indeterminate = checkedOnPage > 0 && checkedOnPage < currentPageForms.length;
+    const selectAll = document.getElementById("selectAll");
+    if (!currentPageForms.length) {
+      selectAll.checked = false;
+      selectAll.indeterminate = false;
+      return;
+    }
+    const checkedOnPage = currentPageForms.filter((r) =>
+      selectedFormNumbers.has(r.formNumber),
+    ).length;
+    selectAll.indeterminate =
+      checkedOnPage > 0 && checkedOnPage < currentPageForms.length;
     selectAll.checked = checkedOnPage === currentPageForms.length;
   }
 
   function updateSelectedCount() {
-    document.getElementById('selectedCount').textContent = selectedFormNumbers.size;
+    document.getElementById("selectedCount").textContent =
+      selectedFormNumbers.size;
   }
 
   async function executeBulkApprove() {
     const selected = [...selectedFormNumbers];
-    const msg = document.getElementById('bulkMsg');
-    const ship = document.getElementById('bulkShipSelect').value;
+    const msg = document.getElementById("bulkMsg");
+    const ship = document.getElementById("bulkShipSelect").value;
 
     if (!selected.length) {
-      msg.className = 'mt-3 p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600';
-      msg.textContent = 'No forms selected.';
-      msg.classList.remove('hidden');
+      msg.className =
+        "mt-3 p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
+      msg.textContent = "No forms selected.";
+      msg.classList.remove("hidden");
       return;
     }
 
     if (!confirm(`Approve ${selected.length} form(s)?`)) return;
 
-    fetch('/admin/bulk-approve', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ selected, ship })
+    fetch("/admin/bulk-approve", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token,
+      },
+      body: JSON.stringify({ selected, ship }),
     })
-      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
       .then(async ({ ok, d }) => {
-        msg.className = 'mt-3 p-3 rounded-lg text-sm font-semibold ' + (ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600');
-        msg.textContent = ok ? (d.message || `${selected.length} forms approved.`) : (d.error || 'Failed');
-        msg.classList.remove('hidden');
+        msg.className =
+          "mt-3 p-3 rounded-lg text-sm font-semibold " +
+          (ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600");
+        msg.textContent = ok
+          ? d.message || `${selected.length} forms approved.`
+          : d.error || "Failed";
+        msg.classList.remove("hidden");
         if (ok) await loadBulkPreview(1);
       })
       .catch(() => {
-        msg.className = 'mt-3 p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600';
-        msg.textContent = 'Server error';
-        msg.classList.remove('hidden');
+        msg.className =
+          "mt-3 p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
+        msg.textContent = "Server error";
+        msg.classList.remove("hidden");
       });
   }
 </script>

@@ -171,7 +171,7 @@ async function confirmForm(formId, cpoCommand, performedBy, ip) {
 
   // Approval trail
   await repo.insertFormApproval({
-    formId,
+    formId: form.form_id,
     action: "CPO_CONFIRMED",
     fromStatus: FORM_STATUS.FO_APPROVED,
     toStatus: FORM_STATUS.CPO_CONFIRMED,
@@ -200,7 +200,7 @@ async function confirmForm(formId, cpoCommand, performedBy, ip) {
     success: true,
     message: "Form confirmed successfully.",
     data: {
-      formId,
+      formId: form.form_id,
       serviceNumber: form.serviceNumber,
       formNumber: form.formNumber,
       formYear: form.FormYear,
@@ -255,7 +255,7 @@ async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
   }
 
   await repo.insertFormApproval({
-    formId,
+    formId: form.form_id,
     action: "REJECTED",
     fromStatus: FORM_STATUS.FO_APPROVED,
     toStatus: FORM_STATUS.REJECTED,
@@ -274,7 +274,7 @@ async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
       rejectedBy: cpo_svcno,
       remarks: remarks.trim(),
     },
-    performedBy:cpo_svcno,
+    performedBy: cpo_svcno,
     ipAddress: ip,
   });
 
@@ -282,7 +282,7 @@ async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
     success: true,
     message: "Form rejected. Personnel will need to re-fill and resubmit.",
     data: {
-      formId,
+      formId: form.form_id,
       serviceNumber: form.serviceNumber,
       newStatus: FORM_STATUS.REJECTED,
     },
@@ -298,7 +298,7 @@ async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
 // Mirrors approveBulk (FO) — same shape, CPO stage.
 // ─────────────────────────────────────────────────────────────
 
-async function confirmBulk( body, performedBy, cpoCommand, ip) {
+async function confirmBulk(body, performedBy, cpoCommand, ip) {
   const { selected } = body;
   const { cpo_svcno, cpo_name, cpo_rank } = performedBy;
 
@@ -436,7 +436,7 @@ async function confirmBulk( body, performedBy, cpoCommand, ip) {
 // classes: 1 = Officers, 2 = Ratings, 3 = Training
 // ─────────────────────────────────────────────────────────────
 
-async function confirmClass( body, performedBy, cpoCommand, ip) {
+async function confirmClass(body, performedBy, cpoCommand, ip) {
   const { classes } = body;
   const { cpo_svcno, cpo_name, cpo_rank } = performedBy;
 

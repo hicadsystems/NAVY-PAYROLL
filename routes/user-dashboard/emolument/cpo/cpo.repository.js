@@ -119,19 +119,19 @@ async function getCPOConfirmedForms(command, svc, limit, offset) {
        p.formNumber, p.FormYear, p.Status,
        p.div_off_name, p.div_off_rank, p.div_off_svcno, p.div_off_date,
        p.fo_name,     p.fo_rank,     p.fo_svcno,     p.fo_date,
-       p.cdr_date,
+       p.hod_date,
        ef.id          AS form_id,
        ef.status      AS form_status,
        ef.submitted_at,
        ef.updated_at  AS last_updated
      FROM ef_personalinfos p
-     JOIN ef_emolument_forms ef
+     LEFT JOIN ef_emolument_forms ef
            ON ef.service_no = p.serviceNumber
           AND ef.command    = p.command
      WHERE p.command = ?
        AND p.Status IN ('Verified', 'CPO_CONFIRMED')
        AND p.emolumentform = 'Yes'
-       AND p.cdr_svcno = ?
+       AND p.hod_svcno = ?
      ORDER BY p.ship ASC, p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`;
 
@@ -141,7 +141,7 @@ async function getCPOConfirmedForms(command, svc, limit, offset) {
       WHERE p.command = ?
        AND p.Status IN ('Verified', 'CPO_CONFIRMED')
        AND p.emolumentform = 'Yes'
-       AND p.cdr_svcno = ?;
+       AND p.hod_svcno = ?;
     `;
   const [[rows], [countResults]] = await Promise.all([
     pool.query(confirmedQuery, [command, svc, limit, offset]),
@@ -191,7 +191,7 @@ async function getFormDetail(formId) {
      LEFT JOIN ef_branches   br  ON br.code    = p.branch
      LEFT JOIN ef_localgovts lga ON lga.Id     = p.LocalGovt
      LEFT JOIN ef_states     st  ON st.StateId = p.StateofOrigin
-     WHERE ef.id     = ?
+     WHERE ef.form_number     = ?
        AND ef.status = 'FO_APPROVED'
      LIMIT 1`,
     [formId],
@@ -319,7 +319,7 @@ async function confirmFormWithHistory(
     // 1. Update ef_personalinfos — gate on Status='CPO' and command match
     const [r1] = await conn.query(
       `UPDATE ef_personalinfos
-      SET Status        = ?,
+      SET \`Status\`        = ?,
           emolumentform = 'Yes',
           hod_svcno     = ?,
           hod_name      = ?,
@@ -329,7 +329,7 @@ async function confirmFormWithHistory(
           dateModify    = NOW()
       WHERE serviceNumber = ?
         AND command       = ?
-        AND Status        = 'CPO'
+        AND \`Status\`        = 'CPO'
         AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
       [legacyStatus, cpoSvcNo, cpoName, cpoRank, serviceNo, command],
     );
@@ -347,7 +347,7 @@ async function confirmFormWithHistory(
       SET status     = 'CPO_CONFIRMED',
           snapshot   = ?,
           updated_at = NOW()
-      WHERE id     = ?
+      WHERE form_number     = ?
         AND status  = 'FO_APPROVED'`,
       [JSON.stringify(snapshot), formId],
     );
@@ -358,9 +358,9 @@ async function confirmFormWithHistory(
     await conn.query(
       `INSERT INTO ef_personalinfoshist (
         FormYear,
-        serviceNumber, Surname, OtherName, Title, Rank,
+        serviceNumber, Surname, OtherName, Title, \`Rank\`,
         payrollclass, classes, ship, command, branch,
-        Status, formNumber, emolumentform,
+        \`Status\`, formNumber, emolumentform,
         confirmedBy, dateconfirmed,
         div_off_name, div_off_rank, div_off_svcno, div_off_date,
         hod_name,     hod_rank,     hod_svcno,     hod_date,
@@ -369,9 +369,9 @@ async function confirmFormWithHistory(
       )
       SELECT
         ?,
-        serviceNumber, Surname, OtherName, Title, Rank,
+        serviceNumber, Surname, OtherName, Title, \`Rank\`,
         payrollclass, classes, ship, command, branch,
-        Status, formNumber, emolumentform,
+        \`Status\`, formNumber, emolumentform,
         confirmedBy, dateconfirmed,
         div_off_name, div_off_rank, div_off_svcno, div_off_date,
         hod_name,     hod_rank,     hod_svcno,     hod_date,
@@ -397,15 +397,17 @@ async function confirmFormWithHistory(
 //          AND emolumentform != 'Yes' (not already confirmed)
 // ─────────────────────────────────────────────────────────────
 
-async function getFormsByFormNumbers(formNumbers,  status) {
+async function getFormsByFormNumbers(formNumbers, status) {
   const placeholders = formNumbers.map(() => "?").join(",");
 
   const [rows] = await pool.query(
-    `SELECT id, serviceNumber, formNumber, command, FormYear
-     FROM ef_personalinfos
-     WHERE formNumber IN (${placeholders})
-       AND Status     = ?
-       AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
+    `SELECT p.id, p.serviceNumber, p.formNumber, p.command, p.FormYear, ef.id  AS form_id
+     FROM ef_personalinfos p
+     JOIN ef_emolument_forms ef
+       ON ef.service_no = p.serviceNumber
+     WHERE p.formNumber IN (${placeholders})
+       AND p.\`Status\`     = ?
+       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')`,
     [...formNumbers.map(String), status],
   );
 
@@ -419,26 +421,27 @@ async function getFormsByFormNumbers(formNumbers,  status) {
 // service layer doesn't need a post-fetch filter step.
 //
 // When cpoCommand = 'ALL' no command clause is added.
-// Filters: Status = @status 
+// Filters: Status = @status
 //          AND classes = @classes
 //          AND command = @cpoCommand (unless 'ALL')
 //          AND emolumentform != 'Yes'
 // ─────────────────────────────────────────────────────────────
 
-async function getFormsByClass( classes, status, cpoCommand) {
+async function getFormsByClass(classes, status, cpoCommand) {
   const params = [classes, status];
-  const commandClause =
-    cpoCommand !== "ALL" ? "AND command = ?" : "";
+  const commandClause = cpoCommand !== "ALL" ? "AND p.command = ?" : "";
 
   if (cpoCommand !== "ALL") params.push(cpoCommand);
 
   const [rows] = await pool.query(
-    `SELECT id, serviceNumber, formNumber, command, FormYear
-     FROM ef_personalinfos
-     WHERE classes = ?
-       AND Status  = ?
+    `SELECT p.id, p.serviceNumber, p.formNumber, p.command, p.FormYear, ef.id  AS form_id
+     FROM ef_personalinfos p
+     JOIN ef_emolument_forms ef
+       ON ef.service_no = p.serviceNumber
+     WHERE p.classes = ?
+       AND p.\`Status\`  = ?
        ${commandClause}
-       AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
+       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')`,
     params,
   );
 
@@ -493,7 +496,7 @@ async function confirmBulkWithHistory(
       //    Mirrors the single confirmFormWithHistory gate exactly.
       const [r1] = await conn.query(
         `UPDATE ef_personalinfos
-         SET Status        = ?,
+         SET \`Status\`        = ?,
              emolumentform = 'Yes',
              hod_svcno     = ?,
              hod_name      = ?,
@@ -505,7 +508,14 @@ async function confirmBulkWithHistory(
            AND command       = ?
            AND Status        = 'CPO'
            AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
-        [legacyStatus, cpoSvcNo, cpoName, cpoRank, form.serviceNumber, form.command],
+        [
+          legacyStatus,
+          cpoSvcNo,
+          cpoName,
+          cpoRank,
+          form.serviceNumber,
+          form.command,
+        ],
       );
 
       if (r1.affectedRows === 0) {
@@ -521,8 +531,8 @@ async function confirmBulkWithHistory(
              snapshot   = ?,
              updated_at = NOW()
          WHERE id     = ?
-           AND status  = 'FO_APPROVED'`,
-        [JSON.stringify(snapshot), form.id],
+           AND \`Status\`  = 'FO_APPROVED'`,
+        [JSON.stringify(snapshot), form.form_id],
       );
 
       // 3. Insert history record — INSERT IGNORE is idempotent on the
@@ -531,9 +541,9 @@ async function confirmBulkWithHistory(
       await conn.query(
         `INSERT IGNORE INTO ef_personalinfoshist (
           FormYear,
-          serviceNumber, Surname, OtherName, Title, Rank,
+          serviceNumber, Surname, OtherName, Title, \`Rank\`,
           payrollclass, classes, ship, command, branch,
-          Status, formNumber, emolumentform,
+          \`Status\`, formNumber, emolumentform,
           confirmedBy, dateconfirmed,
           div_off_name, div_off_rank, div_off_svcno, div_off_date,
           hod_name,     hod_rank,     hod_svcno,     hod_date,
@@ -542,9 +552,9 @@ async function confirmBulkWithHistory(
         )
         SELECT
           ?,
-          serviceNumber, Surname, OtherName, Title, Rank,
+          serviceNumber, Surname, OtherName, Title, \`Rank\`,
           payrollclass, classes, ship, command, branch,
-          Status, formNumber, emolumentform,
+          \`Status\`, formNumber, emolumentform,
           confirmedBy, dateconfirmed,
           div_off_name, div_off_rank, div_off_svcno, div_off_date,
           hod_name,     hod_rank,     hod_svcno,     hod_date,
@@ -556,7 +566,7 @@ async function confirmBulkWithHistory(
       );
 
       count++;
-      confirmedFormIds.push(form.id);
+      confirmedFormIds.push(form.form_id);
     }
 
     return { count, confirmedFormIds, skipped };
@@ -577,7 +587,7 @@ async function rejectForm(serviceNo, formId, command) {
          dateModify = NOW()
      WHERE serviceNumber = ?
        AND command       = ?
-       AND Status        = 'CPO'`,
+       AND \`Status\`        = 'CPO'`,
       [serviceNo, command],
     );
 
@@ -591,8 +601,8 @@ async function rejectForm(serviceNo, formId, command) {
       `UPDATE ef_emolument_forms
      SET status     = 'REJECTED',
          updated_at = NOW()
-     WHERE id     = ?
-       AND status  = 'FO_APPROVED'`,
+     WHERE form_number     = ?
+       AND \`Status\`  = 'FO_APPROVED'`,
       [formId],
     );
 
@@ -667,8 +677,8 @@ async function getStatusStats(command, svc) {
     `SELECT
         COUNT(CASE WHEN status IN ('CPO', 'FO_APPROVED') THEN 1 END) AS pending,
         COUNT(CASE WHEN command = ? THEN 1 END) AS total,
-        COUNT(CASE WHEN status IN ('CPO_APPROVED', 'Verified') AND cdr_svcno = ? THEN 1 END) AS confirmed,
-        COUNT(CASE WHEN status = 'REJECTED' AND cdr_svcno = ? THEN 1 END) AS rejected
+        COUNT(CASE WHEN status IN ('CPO_APPROVED', 'Verified') AND hod_svcno = ? THEN 1 END) AS confirmed,
+        COUNT(CASE WHEN status = 'REJECTED' AND hod_svcno = ? THEN 1 END) AS rejected
       FROM ef_personalinfos
       WHERE command = ? 
    `,

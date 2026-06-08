@@ -137,7 +137,8 @@ async function getPersonCore(serviceNo) {
   pool.useDatabase(DB());
   const [rows] = await pool.query(
     `SELECT serviceNumber, Status, emolumentform, ship,
-            payrollclass, classes, exittype, formNumber
+            payrollclass, classes, exittype, formNumber,
+            command
      FROM ef_personalinfos
      WHERE serviceNumber = ? LIMIT 1`,
     [serviceNo],
@@ -252,14 +253,21 @@ async function loadAllowances(serviceNo) {
 
   const [gbc] = await pool.query(
     `SELECT GBC, GBC_Number from ef_personalinfos WHERE serviceNumber = ? AND GBC IS NOT NULL LIMIT 1`,
-    [serviceNo]
+    [serviceNo],
   );
 
   const out = {};
   rows.forEach((r) => {
     out[r.allow_type] = r;
   });
-  out['GCB'] = gbc[0]?.GBC ? { allow_type: 'GCB', is_active: 1, specify: null , gcb_number: gbc[0].GBC_Number } : undefined;
+  out["GCB"] = gbc[0]?.GBC
+    ? {
+        allow_type: "GCB",
+        is_active: 1,
+        specify: null,
+        gcb_number: gbc[0].GBC_Number,
+      }
+    : undefined;
   return out;
 }
 
@@ -1060,7 +1068,7 @@ async function getEmolumentFormId(serviceNo, formYear) {
 // Gets Banks, Ships, Specializations and all other select options in the frontend
 async function getFormOptions() {
   const connection = await pool.getConnection();
-  
+
   try {
     await connection.query(`USE ??`, [DB()]);
 
@@ -1075,37 +1083,49 @@ async function getFormOptions() {
       lgasResult,
       relationshipsResult,
       entryModesResult,
-      rankResult
+      rankResult,
     ] = await Promise.all([
       // Banks
-      connection.query('SELECT bankcode AS id, bankname AS name FROM ef_banks'),
-      
+      connection.query("SELECT bankcode AS id, bankname AS name FROM ef_banks"),
+
       // Commands
-      connection.query('SELECT code as id, commandName AS name FROM ef_commands'),
-      
+      connection.query(
+        "SELECT code as id, commandName AS name FROM ef_commands",
+      ),
+
       // Branches
-      connection.query('SELECT code AS id, branchName AS name FROM ef_branches'),
-      
+      connection.query(
+        "SELECT code AS id, branchName AS name FROM ef_branches",
+      ),
+
       // Ships (with command association)
-      connection.query('SELECT Id AS id, shipName AS name, commandid FROM ef_ships'),
-      
+      connection.query(
+        "SELECT Id AS id, shipName AS name, commandid FROM ef_ships",
+      ),
+
       // Specializations
-      connection.query('SELECT Id AS id, specname AS name FROM ef_specialisationareas'),
-      
+      connection.query(
+        "SELECT Id AS id, specname AS name FROM ef_specialisationareas",
+      ),
+
       // States
-      connection.query('SELECT StateId AS id, Name AS name FROM ef_states'),
-      
+      connection.query("SELECT StateId AS id, Name AS name FROM ef_states"),
+
       // Local Governments (with state association)
-      connection.query('SELECT Id AS id, lgaName AS name, stateId FROM ef_localgovts'),
-      
+      connection.query(
+        "SELECT Id AS id, lgaName AS name, stateId FROM ef_localgovts",
+      ),
+
       // Relationships (for NOK)
-      connection.query('SELECT Id AS id, description AS name FROM ef_relationships'),
-      
+      connection.query(
+        "SELECT Id AS id, description AS name FROM ef_relationships",
+      ),
+
       // Entry Modes (Type of Commissioning)
-      connection.query('SELECT Id AS id, Name AS name FROM ef_entrymodes'),
+      connection.query("SELECT Id AS id, Name AS name FROM ef_entrymodes"),
 
       // Ranks
-      connection.query('SELECT Id AS id, rankName AS name FROM ef_ranks')
+      connection.query("SELECT Id AS id, rankName AS name FROM ef_ranks"),
     ]);
 
     return {
@@ -1118,18 +1138,15 @@ async function getFormOptions() {
       lgas: lgasResult[0],
       relationships: relationshipsResult[0],
       entryModes: entryModesResult[0],
-      ranks: rankResult[0]
+      ranks: rankResult[0],
     };
-
   } catch (error) {
-    console.error('Error fetching form options:', error);
+    console.error("Error fetching form options:", error);
     throw error;
   } finally {
     connection.release();
   }
 }
-
-
 
 module.exports = {
   getSystemInfo,
@@ -1161,5 +1178,5 @@ module.exports = {
   insertAuditLog,
   insertFormApproval,
   getEmolumentFormId,
-  getFormOptions
+  getFormOptions,
 };

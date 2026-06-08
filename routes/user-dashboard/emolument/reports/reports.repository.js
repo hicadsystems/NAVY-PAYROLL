@@ -175,7 +175,7 @@ async function getDashboardCounts() {
          SUM(CASE WHEN Status = 'Filled'      THEN 1 ELSE 0 END)   AS total_submitted,
          SUM(CASE WHEN Status = 'FO'          THEN 1 ELSE 0 END)   AS total_do_reviewed,
          SUM(CASE WHEN Status = 'CPO'         THEN 1 ELSE 0 END)   AS total_fo_approved,
-         SUM(CASE WHEN Status = 'Verified'    THEN 1 ELSE 0 END)   AS total_cpo_confirmed,
+         SUM(CASE WHEN Status IN ('Verified', 'Updated')    THEN 1 ELSE 0 END)   AS total_cpo_confirmed,
          SUM(CASE WHEN (Status IS NULL OR Status = '')
                    AND (emolumentform IS NULL OR emolumentform != 'Yes')
                   THEN 1 ELSE 0 END)                               AS total_not_filed
@@ -191,7 +191,7 @@ async function getDashboardCounts() {
          SUM(CASE WHEN Status = 'Filled'      THEN 1 ELSE 0 END)   AS submitted,
          SUM(CASE WHEN Status = 'FO'          THEN 1 ELSE 0 END)   AS do_reviewed,
          SUM(CASE WHEN Status = 'CPO'         THEN 1 ELSE 0 END)   AS fo_approved,
-         SUM(CASE WHEN Status = 'Verified'    THEN 1 ELSE 0 END)   AS cpo_confirmed,
+         SUM(CASE WHEN Status IN ('Verified', 'Updated')    THEN 1 ELSE 0 END)   AS cpo_confirmed,
          SUM(CASE WHEN (Status IS NULL OR Status = '')
                    AND (emolumentform IS NULL OR emolumentform != 'Yes')
                   THEN 1 ELSE 0 END)                               AS not_filed

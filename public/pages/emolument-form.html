@@ -1836,16 +1836,17 @@
       if (!remarks) { alert("Please provide remarks"); return; }
 
       const svcno = formData?.serviceNumber;
+      const formNumber = formData?.formNumber
       const btn = document.getElementById("roleActionConfirmBtn");
       btn.disabled = true;
       btn.textContent = "Processing…";
 
       const endpoints = {
-        "do-review": `/do/personnel/${svcno}/review`,
-        "fo-approve": `/fo/form/${svcno}/approve`,
-        "cpo-confirm": `/cpo/personnel/${svcno}/confirm`,
+        "do-review": `/do/personnel/${formNumber}/review`,
+        "fo-approve": `/fo/form/${formNumber}/approve`,
+        "cpo-confirm": `/cpo/personnel/${formNumber}/confirm`,
         "admin-accept": `/admin/verified/accept`,
-        "reject": `/form/${formData?.formId}/reject`,
+        "reject": `/form/${formNumber}/reject`,
       };
 
       const isAdminAccept = actionType === "admin-accept";

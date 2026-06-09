@@ -2,20 +2,26 @@
 
 <div class="p-2 md:p-4 lg:p-6">
   <div class="mb-2 md:mb-4 lg:mb-6">
-    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">Full log of all system actions and
-      changes</h3>
+    <h3
+      class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
+    >
+      Full log of all system actions and changes
+    </h3>
   </div>
 
   <!-- ── Filters ─────────────────────────────────────────── -->
   <div class="p-4 mb-4">
-    <h4 class="font-bold text-navy text-xs uppercase tracking-wide mb-3">Filters</h4>
+    <h4 class="font-bold text-navy text-xs uppercase tracking-wide mb-3">
+      Filters
+    </h4>
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-
       <!-- Action type — populated from backend -->
       <div class="flex flex-col gap-1">
         <label class="text-xs font-semibold text-navy/60">Action</label>
-        <select id="auditFilterAction"
-          class="text-xs border border-amber-100 rounded-lg px-2 py-1.5 bg-white text-navy focus:outline-none focus:border-navy/30">
+        <select
+          id="auditFilterAction"
+          class="text-xs border border-amber-100 rounded-lg px-2 py-1.5 bg-white text-navy focus:outline-none focus:border-navy/30"
+        >
           <option value="">All actions</option>
           <!-- options injected by loadAuditMeta() -->
         </select>
@@ -24,8 +30,10 @@
       <!-- Table name — populated from backend -->
       <div class="flex flex-col gap-1">
         <label class="text-xs font-semibold text-navy/60">Table</label>
-        <select id="auditFilterTable"
-          class="text-xs border border-amber-100 rounded-lg px-2 py-1.5 bg-white text-navy focus:outline-none focus:border-navy/30">
+        <select
+          id="auditFilterTable"
+          class="text-xs border border-amber-100 rounded-lg px-2 py-1.5 bg-white text-navy focus:outline-none focus:border-navy/30"
+        >
           <option value="">All tables</option>
           <!-- options injected by loadAuditMeta() -->
         </select>
@@ -34,42 +42,63 @@
       <!-- Performed by -->
       <div class="flex flex-col gap-1">
         <label class="text-xs font-semibold text-navy/60">Performed by</label>
-        <input id="auditFilterBy" type="text" placeholder="Svc no / user ID"
-          class="text-xs border border-amber-100 rounded-lg px-2 py-1.5 bg-white text-navy focus:outline-none focus:border-navy/30" />
+        <input
+          id="auditFilterBy"
+          type="text"
+          placeholder="Svc no / user ID"
+          class="text-xs border border-amber-100 rounded-lg px-2 py-1.5 bg-white text-navy focus:outline-none focus:border-navy/30"
+        />
       </div>
 
       <!-- Record key -->
       <div class="flex flex-col gap-1">
         <label class="text-xs font-semibold text-navy/60">Record key</label>
-        <input id="auditFilterKey" type="text" placeholder="e.g. N/1234"
-          class="text-xs border border-amber-100 rounded-lg px-2 py-1.5 bg-white text-navy focus:outline-none focus:border-navy/30" />
+        <input
+          id="auditFilterKey"
+          type="text"
+          placeholder="e.g. N/1234"
+          class="text-xs border border-amber-100 rounded-lg px-2 py-1.5 bg-white text-navy focus:outline-none focus:border-navy/30"
+        />
       </div>
 
       <!-- Date from -->
       <div class="flex flex-col gap-1">
         <label class="text-xs font-semibold text-navy/60">From</label>
-        <input id="auditFilterFrom" type="date"
-          class="text-xs border border-amber-100 rounded-lg px-2 py-1.5 bg-white text-navy focus:outline-none focus:border-navy/30" />
+        <input
+          id="auditFilterFrom"
+          type="date"
+          class="text-xs border border-amber-100 rounded-lg px-2 py-1.5 bg-white text-navy focus:outline-none focus:border-navy/30"
+        />
       </div>
 
       <!-- Date to -->
       <div class="flex flex-col gap-1">
         <label class="text-xs font-semibold text-navy/60">To</label>
-        <input id="auditFilterTo" type="date"
-          class="text-xs border border-amber-100 rounded-lg px-2 py-1.5 bg-white text-navy focus:outline-none focus:border-navy/30" />
+        <input
+          id="auditFilterTo"
+          type="date"
+          class="text-xs border border-amber-100 rounded-lg px-2 py-1.5 bg-white text-navy focus:outline-none focus:border-navy/30"
+        />
       </div>
     </div>
 
     <div class="flex items-center gap-2 mt-3">
-      <button onclick="applyAuditFilters()"
-        class="px-4 py-1.5 bg-navy text-white text-xs font-bold rounded-lg hover:bg-navy/80 transition-colors cursor-pointer border-none">
+      <button
+        onclick="applyAuditFilters()"
+        class="px-4 py-1.5 bg-navy text-white text-xs font-bold rounded-lg hover:bg-navy/80 transition-colors cursor-pointer border-none"
+      >
         Search
       </button>
-      <button onclick="resetAuditFilters()"
-        class="px-4 py-1.5 bg-white text-navy text-xs font-semibold rounded-lg border border-amber-100 hover:bg-amber-50 transition-colors cursor-pointer">
+      <button
+        onclick="resetAuditFilters()"
+        class="px-4 py-1.5 bg-white text-navy text-xs font-semibold rounded-lg border border-amber-100 hover:bg-amber-50 transition-colors cursor-pointer"
+      >
         Reset
       </button>
-      <span id="auditResultCount" class="ml-auto text-xs text-blue-900/40"></span>
+      <span
+        id="auditResultCount"
+        class="ml-auto text-xs text-blue-900/40"
+      ></span>
     </div>
   </div>
 
@@ -99,38 +128,71 @@
     </div>
 
     <!-- Pagination -->
-    <div class="flex items-center justify-between px-4 py-3 border-t border-amber-50" id="auditPagination">
-      <button id="auditPrevBtn" onclick="auditChangePage(-1)"
-        class="px-3 py-1 text-xs font-semibold bg-white border border-amber-100 rounded-lg text-navy hover:bg-amber-50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+    <div
+      class="flex items-center justify-between px-4 py-3 border-t border-amber-50"
+      id="auditPagination"
+    >
+      <button
+        id="auditPrevBtn"
+        onclick="auditChangePage(-1)"
+        class="px-3 py-1 text-xs font-semibold bg-white border border-amber-100 rounded-lg text-navy hover:bg-amber-50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+      >
         ← Prev
       </button>
       <span id="auditPageInfo" class="text-xs text-blue-900/40"></span>
-      <button id="auditNextBtn" onclick="auditChangePage(1)"
-        class="px-3 py-1 text-xs font-semibold bg-white border border-amber-100 rounded-lg text-navy hover:bg-amber-50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+      <button
+        id="auditNextBtn"
+        onclick="auditChangePage(1)"
+        class="px-3 py-1 text-xs font-semibold bg-white border border-amber-100 rounded-lg text-navy hover:bg-amber-50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+      >
         Next →
       </button>
     </div>
   </div>
 
   <!-- ── Detail modal ─────────────────────────────────────── -->
-  <div id="auditDetailModal"
-    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        <h4 class="font-bold text-navy text-sm" id="auditModalTitle">Audit Detail</h4>
-        <button onclick="closeAuditModal()"
-          class="text-navy/40 hover:text-navy text-lg font-bold bg-transparent border-none cursor-pointer">✕</button>
+  <div
+    id="auditDetailModal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+  >
+    <div
+      class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col"
+    >
+      <div
+        class="flex items-center justify-between px-5 py-4 border-b border-gray-100"
+      >
+        <h4 class="font-bold text-navy text-sm" id="auditModalTitle">
+          Audit Detail
+        </h4>
+        <button
+          onclick="closeAuditModal()"
+          class="text-navy/40 hover:text-navy text-lg font-bold bg-transparent border-none cursor-pointer"
+        >
+          ✕
+        </button>
       </div>
       <div class="overflow-y-auto px-5 py-4 space-y-4 flex-1">
         <div>
-          <div class="text-xs font-semibold text-navy/50 uppercase mb-1">Old Values</div>
-          <pre id="auditModalOld"
-            class="text-xs bg-gray-50 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap text-gray-700">–</pre>
+          <div class="text-xs font-semibold text-navy/50 uppercase mb-1">
+            Old Values
+          </div>
+          <pre
+            id="auditModalOld"
+            class="text-xs bg-gray-50 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap text-gray-700"
+          >
+–</pre
+          >
         </div>
         <div>
-          <div class="text-xs font-semibold text-navy/50 uppercase mb-1">New Values</div>
-          <pre id="auditModalNew"
-            class="text-xs bg-green-50 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap text-gray-700">–</pre>
+          <div class="text-xs font-semibold text-navy/50 uppercase mb-1">
+            New Values
+          </div>
+          <pre
+            id="auditModalNew"
+            class="text-xs bg-green-50 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap text-gray-700"
+          >
+–</pre
+          >
         </div>
       </div>
     </div>
@@ -139,7 +201,7 @@
 
 <script>
   (() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
 
     // ── State ──────────────────────────────────────────────────
     let auditState = { page: 1, pageSize: 10, total: 0, pages: 1, filters: {} };
@@ -150,33 +212,35 @@
 
     // ── Meta (action types + table names from backend) ─────────
     function loadAuditMeta() {
-      fetch('/audit/meta', { headers: { Authorization: 'Bearer ' + token } })
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
+      fetch("/audit/meta", { headers: { Authorization: "Bearer " + token } })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
           if (!d) return;
 
-          const actionSel = document.getElementById('auditFilterAction');
-          (d.actionTypes || []).forEach(a => {
-            const opt = document.createElement('option');
+          const actionSel = document.getElementById("auditFilterAction");
+          (d.actionTypes || []).forEach((a) => {
+            const opt = document.createElement("option");
             opt.value = a;
             opt.textContent = a;
             actionSel.appendChild(opt);
           });
 
-          const tableSel = document.getElementById('auditFilterTable');
-          (d.tableNames || []).forEach(t => {
-            const opt = document.createElement('option');
+          const tableSel = document.getElementById("auditFilterTable");
+          (d.tableNames || []).forEach((t) => {
+            const opt = document.createElement("option");
             opt.value = t;
             opt.textContent = t;
             tableSel.appendChild(opt);
           });
         })
-        .catch(() => {/* dropdowns stay static — non-fatal */ });
+        .catch(() => {
+          /* dropdowns stay static — non-fatal */
+        });
     }
 
     // ── Fetch logs ────────────────────────────────────────────
     function fetchAuditLogs() {
-      const body = document.getElementById('auditTableBody');
+      const body = document.getElementById("auditTableBody");
       body.innerHTML = `<tr><td colspan="7" class="px-3 py-8 text-center text-blue-900/30">
       <i class="fas fa-spinner fa-spin mr-2"></i>Loading…</td></tr>`;
 
@@ -184,19 +248,21 @@
         page: auditState.page,
         pageSize: auditState.pageSize,
         ...Object.fromEntries(
-          Object.entries(auditState.filters).filter(([, v]) => v)
+          Object.entries(auditState.filters).filter(([, v]) => v),
         ),
       });
 
-      fetch(`/audit?${params}`, { headers: { Authorization: 'Bearer ' + token } })
-        .then(r => r.ok ? r.json() : Promise.reject(r))
-        .then(d => {
+      fetch(`/audit?${params}`, {
+        headers: { Authorization: "Bearer " + token },
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+        .then((d) => {
           auditState.total = d.pagination.total;
           auditState.pages = d.pagination.pages;
           renderAuditRows(d.logs);
           renderAuditPagination();
-          document.getElementById('auditResultCount').textContent =
-            `${d.pagination.total.toLocaleString()} record${d.pagination.total !== 1 ? 's' : ''}`;
+          document.getElementById("auditResultCount").textContent =
+            `${d.pagination.total.toLocaleString()} record${d.pagination.total !== 1 ? "s" : ""}`;
         })
         .catch(() => {
           body.innerHTML = `<tr><td colspan="7" class="px-3 py-8 text-center text-red-400 text-xs">
@@ -206,54 +272,62 @@
 
     // ── Render rows ───────────────────────────────────────────
     const ACTION_COLORS = {
-      INSERT: 'bg-green-100 text-green-700',
-      UPDATE: 'bg-blue-100 text-blue-700',
-      DELETE: 'bg-red-100 text-red-600',
-      REJECTED: 'bg-red-100 text-red-600',
-      SUBMITTED: 'bg-yellow-100 text-yellow-700',
-      DO_REVIEWED: 'bg-purple-100 text-purple-700',
-      FO_APPROVED: 'bg-indigo-100 text-indigo-700',
-      CPO_CONFIRMED: 'bg-emerald-100 text-emerald-700',
-      DRAFT_SAVED: 'bg-gray-100 text-gray-500',
+      INSERT: "bg-green-100 text-green-700",
+      UPDATE: "bg-blue-100 text-blue-700",
+      DELETE: "bg-red-100 text-red-600",
+      REJECTED: "bg-red-100 text-red-600",
+      SUBMITTED: "bg-yellow-100 text-yellow-700",
+      DO_REVIEWED: "bg-purple-100 text-purple-700",
+      FO_APPROVED: "bg-indigo-100 text-indigo-700",
+      CPO_CONFIRMED: "bg-emerald-100 text-emerald-700",
+      DRAFT_SAVED: "bg-gray-100 text-gray-500",
     };
 
     function renderAuditRows(logs) {
-      const body = document.getElementById('auditTableBody');
+      const body = document.getElementById("auditTableBody");
       if (!logs.length) {
         body.innerHTML = `<tr><td colspan="7" class="px-3 py-8 text-center text-blue-900/30 text-xs">
         No audit entries match the current filters.</td></tr>`;
         return;
       }
 
-      body.innerHTML = logs.map((row, i) => {
-        const color = ACTION_COLORS[row.action] || 'bg-gray-100 text-gray-600';
-        const hasChanges = row.old_values !== null || row.new_values !== null;
-        const ts = row.performed_at
-          ? new Date(row.performed_at).toLocaleString('en-GB', {
-            day: '2-digit', month: 'short', year: 'numeric',
-            hour: '2-digit', minute: '2-digit',
-          })
-          : '–';
+      body.innerHTML = logs
+        .map((row, i) => {
+          const color =
+            ACTION_COLORS[row.action] || "bg-gray-100 text-gray-600";
+          const hasChanges = row.old_values !== null || row.new_values !== null;
+          const ts = row.performed_at
+            ? new Date(row.performed_at).toLocaleString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "–";
 
-        return `<tr class="border-t border-amber-50 hover:bg-amber-50/40 transition-colors ${i % 2 === 0 ? '' : 'bg-white/30'}">
+          return `<tr class="border-t border-amber-50 hover:bg-amber-50/40 transition-colors ${i % 2 === 0 ? "" : "bg-white/30"}">
         <td class="px-3 py-2 whitespace-nowrap text-blue-900/60">${ts}</td>
         <td class="px-3 py-2">
-          <span class="px-2 py-0.5 rounded-full text-xs font-bold ${color}">${row.action || '–'}</span>
+          <span class="px-2 py-0.5 rounded-full text-xs font-bold ${color}">${row.action || "–"}</span>
         </td>
-        <td class="px-3 py-2 font-mono text-blue-900/70">${row.table_name || '–'}</td>
-        <td class="px-3 py-2 font-mono font-semibold text-navy">${row.record_key || '–'}</td>
-        <td class="px-3 py-2 text-blue-900/70">${row.performed_by || '–'}</td>
-        <td class="px-3 py-2 text-blue-900/40 font-mono">${row.ip_address || '–'}</td>
+        <td class="px-3 py-2 font-mono text-blue-900/70">${row.table_name || "–"}</td>
+        <td class="px-3 py-2 font-mono font-semibold text-navy">${row.record_key || "–"}</td>
+        <td class="px-3 py-2 text-blue-900/70">${row.performed_by || "–"}</td>
+        <td class="px-3 py-2 text-blue-900/40 font-mono">${row.ip_address || "–"}</td>
         <td class="px-3 py-2">
-          ${hasChanges
-            ? `<button onclick="openAuditModal(${i})"
+          ${
+            hasChanges
+              ? `<button onclick="openAuditModal(${i})"
                 class="px-2 py-1 text-xs bg-navy/10 text-navy rounded-lg hover:bg-navy/20 transition-colors cursor-pointer border-none font-semibold">
                 View
                </button>`
-            : '<span class="text-blue-900/20">–</span>'}
+              : '<span class="text-blue-900/20">–</span>'
+          }
         </td>
       </tr>`;
-      }).join('');
+        })
+        .join("");
 
       // stash data for modal
       window._auditRows = logs;
@@ -262,33 +336,39 @@
     // ── Pagination ────────────────────────────────────────────
     function renderAuditPagination() {
       const { page, pages, total, pageSize } = auditState;
-      const start = ((page - 1) * pageSize) + 1;
+      const start = (page - 1) * pageSize + 1;
       const end = Math.min(page * pageSize, total);
-      document.getElementById('auditPageInfo').textContent =
-        total ? `${start}–${end} of ${total.toLocaleString()}` : '0 records';
-      document.getElementById('auditPrevBtn').disabled = page <= 1;
-      document.getElementById('auditNextBtn').disabled = page >= pages;
+      document.getElementById("auditPageInfo").textContent = total
+        ? `${start}–${end} of ${total.toLocaleString()}`
+        : "0 records";
+      document.getElementById("auditPrevBtn").disabled = page <= 1;
+      document.getElementById("auditNextBtn").disabled = page >= pages;
     }
 
     // ── Public helpers called by inline handlers ──────────────
     window.applyAuditFilters = function () {
       auditState.filters = {
-        action: document.getElementById('auditFilterAction').value,
-        tableName: document.getElementById('auditFilterTable').value,
-        performedBy: document.getElementById('auditFilterBy').value.trim(),
-        recordKey: document.getElementById('auditFilterKey').value.trim(),
-        dateFrom: document.getElementById('auditFilterFrom').value,
-        dateTo: document.getElementById('auditFilterTo').value,
+        action: document.getElementById("auditFilterAction").value,
+        tableName: document.getElementById("auditFilterTable").value,
+        performedBy: document.getElementById("auditFilterBy").value.trim(),
+        recordKey: document.getElementById("auditFilterKey").value.trim(),
+        dateFrom: document.getElementById("auditFilterFrom").value,
+        dateTo: document.getElementById("auditFilterTo").value,
       };
       auditState.page = 1;
       fetchAuditLogs();
     };
 
     window.resetAuditFilters = function () {
-      ['auditFilterAction', 'auditFilterTable'].forEach(id =>
-        document.getElementById(id).value = '');
-      ['auditFilterBy', 'auditFilterKey', 'auditFilterFrom', 'auditFilterTo'].forEach(id =>
-        document.getElementById(id).value = '');
+      ["auditFilterAction", "auditFilterTable"].forEach(
+        (id) => (document.getElementById(id).value = ""),
+      );
+      [
+        "auditFilterBy",
+        "auditFilterKey",
+        "auditFilterFrom",
+        "auditFilterTo",
+      ].forEach((id) => (document.getElementById(id).value = ""));
       auditState.filters = {};
       auditState.page = 1;
       fetchAuditLogs();
@@ -304,22 +384,30 @@
     window.openAuditModal = function (idx) {
       const row = (window._auditRows || [])[idx];
       if (!row) return;
-      document.getElementById('auditModalTitle').textContent =
-        `${row.action} · ${row.table_name} · ${row.record_key || '–'}`;
-      document.getElementById('auditModalOld').textContent =
-        row.old_values ? JSON.stringify(row.old_values, null, 2) : '–';
-      document.getElementById('auditModalNew').textContent =
-        row.new_values ? JSON.stringify(row.new_values, null, 2) : '–';
-      document.getElementById('auditDetailModal').classList.remove('hidden');
+      document.getElementById("auditModalTitle").textContent =
+        `${row.action} · ${row.table_name} · ${row.record_key || "–"}`;
+      document.getElementById("auditModalOld").textContent = row.old_values
+        ? JSON.stringify(row.old_values, null, 2)
+        : "–";
+      document.getElementById("auditModalNew").textContent = row.new_values
+        ? JSON.stringify(row.new_values, null, 2)
+        : "–";
+      document.getElementById("auditDetailModal").classList.remove("hidden");
     };
 
     window.closeAuditModal = function () {
-      document.getElementById('auditDetailModal').classList.add('hidden');
+      document.getElementById("auditDetailModal").classList.add("hidden");
     };
 
     // Close modal on backdrop click
-    document.getElementById('auditDetailModal').addEventListener('click', function (e) {
-      if (e.target === this) closeAuditModal();
-    });
+    document
+      .getElementById("auditDetailModal")
+      .addEventListener("click", function (e) {
+        if (e.target === this) closeAuditModal();
+      });
+
+    // Hoist modal to body on load so overlay covers full viewport
+    const modal = document.getElementById("auditDetailModal");
+    document.body.appendChild(modal);
   })();
 </script>

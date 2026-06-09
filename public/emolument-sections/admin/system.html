@@ -1075,5 +1075,12 @@
 
     /* ── boot ─────────────────────────────────────────── */
     sysLoadData();
+
+    // Hoist modals to body so overlay covers full viewport including sidebar
+    const modalIds = ["sys-modal", "sys-confirm"];
+    modalIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) document.body.appendChild(el);
+    });
   })();
 </script>

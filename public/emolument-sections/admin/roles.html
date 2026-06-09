@@ -26,7 +26,7 @@
     position: fixed;
     inset: 0;
     z-index: 9999;
-    background: rgba(15, 23, 42, .55);
+    background: rgba(15, 23, 42, 0.55);
     backdrop-filter: blur(3px);
     display: none;
     align-items: center;
@@ -45,14 +45,14 @@
     max-width: 520px;
     max-height: 92vh;
     overflow-y: auto;
-    box-shadow: 0 24px 64px rgba(15, 23, 42, .22);
-    animation: rm-pop .16s ease;
+    box-shadow: 0 24px 64px rgba(15, 23, 42, 0.22);
+    animation: rm-pop 0.16s ease;
   }
 
   @keyframes rm-pop {
     from {
       opacity: 0;
-      transform: scale(.96) translateY(8px);
+      transform: scale(0.96) translateY(8px);
     }
 
     to {
@@ -66,38 +66,38 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: .6rem .75rem;
-    border-radius: .5rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.5rem;
     cursor: pointer;
     border: 1px solid transparent;
-    transition: all .13s;
+    transition: all 0.13s;
   }
 
   #rm-root .rm-role-item:hover {
-    background: rgba(245, 158, 11, .06);
+    background: rgba(245, 158, 11, 0.06);
   }
 
   #rm-root .rm-role-item.active {
-    background: rgba(30, 58, 95, .06);
-    border-color: rgba(30, 58, 95, .12);
+    background: rgba(30, 58, 95, 0.06);
+    border-color: rgba(30, 58, 95, 0.12);
   }
 
   /* menu checkbox rows */
   #rm-root .rm-menu-row {
     display: flex;
     align-items: flex-start;
-    gap: .6rem;
-    padding: .45rem .5rem;
-    border-radius: .4rem;
-    transition: background .12s;
+    gap: 0.6rem;
+    padding: 0.45rem 0.5rem;
+    border-radius: 0.4rem;
+    transition: background 0.12s;
     cursor: pointer;
   }
 
   #rm-root .rm-menu-row:hover {
-    background: rgba(30, 58, 95, .04);
+    background: rgba(30, 58, 95, 0.04);
   }
 
-  #rm-root .rm-menu-row input[type=checkbox] {
+  #rm-root .rm-menu-row input[type="checkbox"] {
     margin-top: 2px;
     accent-color: #1e3a5f;
     flex-shrink: 0;
@@ -115,14 +115,14 @@
     z-index: 10000;
     background: #1e3a5f;
     color: #fff;
-    padding: .5rem 1.3rem;
+    padding: 0.5rem 1.3rem;
     border-radius: 99px;
-    font-size: .77rem;
+    font-size: 0.77rem;
     font-weight: 700;
     white-space: nowrap;
     pointer-events: none;
     opacity: 0;
-    transition: all .22s ease;
+    transition: all 0.22s ease;
   }
 
   #rm-toast.show {
@@ -138,51 +138,66 @@
 <div id="rm-toast"></div>
 
 <!-- Full-screen modal -->
-<div id="rm-modal" onclick="if(event.target===this)_rm.modal.close()">
+<div id="rm-modal" onclick="if (event.target === this) _rm.modal.close();">
   <div class="rm-box">
-    <div class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
-      <h2 id="rm-modal-title" class="text-sm font-black text-navy uppercase tracking-wide"></h2>
-      <button onclick="_rm.modal.close()"
-        class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 cursor-pointer border-none bg-transparent text-lg leading-none">✕</button>
+    <div
+      class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100"
+    >
+      <h2
+        id="rm-modal-title"
+        class="text-sm font-black text-navy uppercase tracking-wide"
+      ></h2>
+      <button
+        onclick="_rm.modal.close()"
+        class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 cursor-pointer border-none bg-transparent text-lg leading-none"
+      >
+        ✕
+      </button>
     </div>
     <div id="rm-modal-body" class="px-5 py-4"></div>
   </div>
 </div>
 
 <div id="rm-root" class="p-2 md:p-4 lg:p-6">
-
   <!-- ══════════════════════════════════════════════════════
        VIEW 1 — ASSIGNMENT  (original layout preserved)
   ══════════════════════════════════════════════════════ -->
   <div id="rm-view-assign" class="rm-view active">
-
     <div class="mb-2 md:mb-4 lg:mb-6">
-      <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">
+      <h3
+        class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
+      >
         Admin Role Management
       </h3>
     </div>
 
     <div class="flex flex-col lg:flex-row gap-4">
-
       <!-- LEFT: active assignments table -->
       <div class="flex-1 min-w-0">
         <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4">
-
           <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-            <h3 class="font-bold text-navy text-sm uppercase tracking-wide">Active Role Assignments</h3>
+            <h3 class="font-bold text-navy text-sm uppercase tracking-wide">
+              Active Role Assignments
+            </h3>
             <div class="flex gap-2">
               <!-- Configure button — opens role catalog -->
-              <button onclick="_rm.nav.toConfigure()"
-                class="px-3 py-1.5 border border-amber-200 text-amber-700 bg-amber-50 text-xs font-bold rounded-lg hover:bg-amber-100 transition-colors cursor-pointer">
+              <button
+                onclick="_rm.nav.toConfigure()"
+                class="px-3 py-1.5 border border-amber-200 text-amber-700 bg-amber-50 text-xs font-bold rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"
+              >
                 <i class="fas fa-sliders-h mr-1"></i>Configure
               </button>
               <!-- Role filter — populated from catalog -->
-              <select id="rm-filter-role"
-                class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none">
+              <select
+                id="rm-filter-role"
+                class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none"
+              >
                 <option value="">All Roles</option>
               </select>
-              <button onclick="_rm.assignments.load(1)"
-                class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors">
+              <button
+                onclick="_rm.assignments.load(1)"
+                class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors"
+              >
                 <i class="fas fa-search"></i>
               </button>
             </div>
@@ -196,14 +211,26 @@
           </div>
 
           <!-- Pagination -->
-          <div id="rm-assign-pg" class="flex items-center justify-between mt-3 hidden">
-            <button id="rm-pg-prev" onclick="_rm.assignments.page(-1)"
-              class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
+          <div
+            id="rm-assign-pg"
+            class="flex items-center justify-between mt-3 hidden"
+          >
+            <button
+              id="rm-pg-prev"
+              onclick="_rm.assignments.page(-1)"
+              class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+            >
               <i class="fas fa-chevron-left mr-1"></i>Prev
             </button>
-            <span id="rm-pg-info" class="text-xs text-navy/40 font-semibold"></span>
-            <button id="rm-pg-next" onclick="_rm.assignments.page(1)"
-              class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
+            <span
+              id="rm-pg-info"
+              class="text-xs text-navy/40 font-semibold"
+            ></span>
+            <button
+              id="rm-pg-next"
+              onclick="_rm.assignments.page(1)"
+              class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+            >
               Next<i class="fas fa-chevron-right ml-1"></i>
             </button>
           </div>
@@ -213,68 +240,95 @@
       <!-- RIGHT: assign form -->
       <div class="lg:w-80 flex-shrink-0">
         <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
-          <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">Assign Role</h3>
+          <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">
+            Assign Role
+          </h3>
           <div class="space-y-3">
-
             <div>
-              <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Service Number</label>
-              <input id="rm-a-user" type="text" placeholder="e.g. NA/0012345"
-                class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
+              <label
+                class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
+                >Service Number</label
+              >
+              <input
+                id="rm-a-user"
+                type="text"
+                placeholder="e.g. NA/0012345"
+                class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy"
+              />
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Role</label>
-              <select id="rm-a-role"
-                class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
+              <label
+                class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
+                >Role</label
+              >
+              <select
+                id="rm-a-role"
+                class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
+              >
                 <option value="">— Select role —</option>
               </select>
             </div>
 
-            <div id="rm-a-msg" class="hidden text-xs font-semibold rounded-lg px-3 py-2"></div>
+            <div
+              id="rm-a-msg"
+              class="hidden text-xs font-semibold rounded-lg px-3 py-2"
+            ></div>
 
-            <button onclick="_rm.assignments.assign()"
-              class="w-full py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
+            <button
+              onclick="_rm.assignments.assign()"
+              class="w-full py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none"
+            >
               <i class="fas fa-plus mr-2"></i>Assign Role
             </button>
           </div>
         </div>
       </div>
-
     </div>
-  </div><!-- /rm-view-assign -->
-
+  </div>
+  <!-- /rm-view-assign -->
 
   <!-- ══════════════════════════════════════════════════════
        VIEW 2 — CONFIGURE ROLES
   ══════════════════════════════════════════════════════ -->
   <div id="rm-view-configure" class="rm-view">
-
     <div class="mb-4 flex items-center gap-3">
-      <button onclick="_rm.nav.toAssign()"
-        class="w-8 h-8 flex items-center justify-center rounded-full border border-amber-100 bg-white hover:bg-amber-50 text-navy transition-colors cursor-pointer text-sm flex-shrink-0">
+      <button
+        onclick="_rm.nav.toAssign()"
+        class="w-8 h-8 flex items-center justify-center rounded-full border border-amber-100 bg-white hover:bg-amber-50 text-navy transition-colors cursor-pointer text-sm flex-shrink-0"
+      >
         <i class="fas fa-arrow-left"></i>
       </button>
       <div>
         <h3 class="text-sm lg:text-lg font-bold text-navy">Configure Roles</h3>
-        <p class="text-xs text-navy/45 mt-0.5">Create and edit admin roles with their menu access</p>
+        <p class="text-xs text-navy/45 mt-0.5">
+          Create and edit admin roles with their menu access
+        </p>
       </div>
-      <button onclick="_rm.catalog.openForm(null)"
-        class="ml-auto px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none flex-shrink-0">
+      <button
+        onclick="_rm.catalog.openForm(null)"
+        class="ml-auto px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none flex-shrink-0"
+      >
         <i class="fas fa-plus mr-1"></i>New Role
       </button>
     </div>
 
     <!-- Desktop: 2-col. Mobile: stacked -->
     <div class="flex flex-col lg:flex-row gap-4">
-
       <!-- LEFT: role list -->
       <div class="lg:w-64 flex-shrink-0">
-        <div class="bg-white/60 rounded-xl border border-amber-100 shadow overflow-hidden">
+        <div
+          class="bg-white/60 rounded-xl border border-amber-100 shadow overflow-hidden"
+        >
           <div class="px-4 py-3 border-b border-amber-50">
-            <h4 class="text-xs font-black text-navy uppercase tracking-wide">Defined Roles</h4>
+            <h4 class="text-xs font-black text-navy uppercase tracking-wide">
+              Defined Roles
+            </h4>
           </div>
           <div id="rm-catalog-list" class="p-2 space-y-0.5">
-            <div class="flex items-center justify-center py-8 text-navy/30 text-sm">
+            <div
+              class="flex items-center justify-center py-8 text-navy/30 text-sm"
+            >
               <i class="fas fa-spinner fa-spin mr-2"></i>
             </div>
           </div>
@@ -283,92 +337,119 @@
 
       <!-- RIGHT: edit / create panel -->
       <div class="flex-1 min-w-0">
-        <div id="rm-catalog-panel" class="bg-white/60 rounded-xl border border-amber-100 shadow p-5">
+        <div
+          id="rm-catalog-panel"
+          class="bg-white/60 rounded-xl border border-amber-100 shadow p-5"
+        >
           <p class="text-center text-sm text-navy/30 py-8">
-            Select a role to edit, or click <strong>New Role</strong> to create one.
+            Select a role to edit, or click <strong>New Role</strong> to create
+            one.
           </p>
         </div>
       </div>
-
     </div>
-  </div><!-- /rm-view-configure -->
-
-</div><!-- /rm-root -->
-
+  </div>
+  <!-- /rm-view-configure -->
+</div>
+<!-- /rm-root -->
 
 <script>
   (function () {
-    'use strict';
+    "use strict";
 
-    const TOKEN = localStorage.getItem('token');
+    const TOKEN = localStorage.getItem("token");
     const PAGE_SIZE = 10;
-    const H = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN };
+    const H = {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + TOKEN,
+    };
 
     /* ── util ─────────────────────────────────────────────── */
     function esc(s) {
-      return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
     }
     function api(url, opts = {}) {
-      return fetch(url, { ...opts, headers: { ...H, ...(opts.headers || {}) } })
-        .then(r => r.ok ? r.json() : r.json().then(d => Promise.reject(d)));
+      return fetch(url, {
+        ...opts,
+        headers: { ...H, ...(opts.headers || {}) },
+      }).then((r) =>
+        r.ok ? r.json() : r.json().then((d) => Promise.reject(d)),
+      );
     }
     function toast(msg, err) {
-      const el = document.getElementById('rm-toast');
+      const el = document.getElementById("rm-toast");
       if (!el) return;
       el.textContent = msg;
-      el.className = 'show' + (err ? ' is-err' : '');
+      el.className = "show" + (err ? " is-err" : "");
       clearTimeout(el._t);
-      el._t = setTimeout(() => { el.className = ''; }, 2800);
+      el._t = setTimeout(() => {
+        el.className = "";
+      }, 2800);
     }
     function showMsg(id, txt, ok) {
       const el = document.getElementById(id);
       if (!el) return;
       el.textContent = txt;
-      el.className = `text-xs font-semibold rounded-lg px-3 py-2 ${ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`;
-      el.classList.remove('hidden');
+      el.className = `text-xs font-semibold rounded-lg px-3 py-2 ${ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`;
+      el.classList.remove("hidden");
     }
-    function hideMsg(id) { document.getElementById(id)?.classList.add('hidden'); }
+    function hideMsg(id) {
+      document.getElementById(id)?.classList.add("hidden");
+    }
 
     /* ── state ────────────────────────────────────────────── */
-    let _catalog = [];   // all custom roles from /admin/role-catalog
-    let _allMenus = [];   // from /admin/role-catalog/menus
-    let _rows = [];   // assignment rows
+    let _catalog = []; // all custom roles from /admin/role-catalog
+    let _allMenus = []; // from /admin/role-catalog/menus
+    let _rows = []; // assignment rows
     let _page = 1;
     let _editing = null; // role id being edited in configure panel
 
     /* ── modal ────────────────────────────────────────────── */
     const modal = {
       open(title, html) {
-        document.getElementById('rm-modal-title').textContent = title;
-        document.getElementById('rm-modal-body').innerHTML = html;
-        document.getElementById('rm-modal').classList.add('open');
+        document.getElementById("rm-modal-title").textContent = title;
+        document.getElementById("rm-modal-body").innerHTML = html;
+        document.getElementById("rm-modal").classList.add("open");
       },
-      close() { document.getElementById('rm-modal').classList.remove('open'); },
+      close() {
+        document.getElementById("rm-modal").classList.remove("open");
+      },
     };
 
     /* ── navigation ───────────────────────────────────────── */
     const nav = {
       to(key) {
-        document.querySelectorAll('#rm-root .rm-view').forEach(v => v.classList.remove('active'));
-        document.getElementById('rm-view-' + key)?.classList.add('active');
+        document
+          .querySelectorAll("#rm-root .rm-view")
+          .forEach((v) => v.classList.remove("active"));
+        document.getElementById("rm-view-" + key)?.classList.add("active");
       },
-      toAssign() { this.to('assign'); },
-      toConfigure() { this.to('configure'); catalog.load(); },
+      toAssign() {
+        this.to("assign");
+      },
+      toConfigure() {
+        this.to("configure");
+        catalog.load();
+      },
     };
 
     /* ── ASSIGNMENTS ──────────────────────────────────────── */
     const assignments = {
       load(pg) {
         if (pg !== undefined) _page = pg;
-        const roleId = document.getElementById('rm-filter-role')?.value || '';
-        const tbody = document.getElementById('rm-assign-table');
+        const roleId = document.getElementById("rm-filter-role")?.value || "";
+        const tbody = document.getElementById("rm-assign-table");
         tbody.innerHTML = `<div class="flex items-center justify-center py-8 text-navy/30">
         <i class="fas fa-spinner fa-spin mr-2"></i></div>`;
 
-        const q = roleId ? '?admin_role_id=' + encodeURIComponent(roleId) : '';
-        api('/admin/role-assignments' + q)
-          .then(data => {
-            _rows = Array.isArray(data) ? data : (data?.data || []);
+        const q = roleId ? "?admin_role_id=" + encodeURIComponent(roleId) : "";
+        api("/admin/role-assignments" + q)
+          .then((data) => {
+            _rows = Array.isArray(data) ? data : data?.data || [];
             _page = 1;
             this.render();
           })
@@ -378,17 +459,17 @@
       },
 
       render() {
-        const tbody = document.getElementById('rm-assign-table');
+        const tbody = document.getElementById("rm-assign-table");
         const total = _rows.length;
         const pages = Math.ceil(total / PAGE_SIZE) || 1;
         _page = Math.max(1, Math.min(_page, pages));
         const slice = _rows.slice((_page - 1) * PAGE_SIZE, _page * PAGE_SIZE);
-        const pg = document.getElementById('rm-assign-pg');
-        const pi = document.getElementById('rm-pg-info');
+        const pg = document.getElementById("rm-assign-pg");
+        const pi = document.getElementById("rm-pg-info");
 
         if (!slice.length) {
           tbody.innerHTML = `<div class="text-center py-8 text-blue-900/30 text-sm">No assignments found</div>`;
-          pg?.classList.add('hidden');
+          pg?.classList.add("hidden");
           return;
         }
 
@@ -404,13 +485,15 @@
               </tr>
             </thead>
             <tbody>
-              ${slice.map(r => `
+              ${slice
+                .map(
+                  (r) => `
               <tr class="border-b border-amber-50 hover:bg-amber-50/30">
                 <td class="py-2 text-xs">
-                  <span class="font-bold text-navy">${esc(r.Surname || '')} ${esc(r.OtherName || '')}</span>
+                  <span class="font-bold text-navy">${esc(r.Surname || "")} ${esc(r.OtherName || "")}</span>
                   <span class="block text-navy/40 font-mono">${esc(r.user_id)}</span>
                 </td>
-                <td class="py-2 text-xs text-navy/50 hidden sm:table-cell">${esc(r.ship || '—')}</td>
+                <td class="py-2 text-xs text-navy/50 hidden sm:table-cell">${esc(r.ship || "—")}</td>
                 <td class="py-2">
                   <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-navy/10 text-navy">
                     ${esc(r.role_name)}
@@ -422,25 +505,32 @@
                     Revoke
                   </button>
                 </td>
-              </tr>`).join('')}
+              </tr>`,
+                )
+                .join("")}
             </tbody>
           </table>
         </div>`;
 
         if (pages > 1) {
-          pg?.classList.remove('hidden');
+          pg?.classList.remove("hidden");
           if (pi) pi.textContent = `Page ${_page} of ${pages} · ${total} total`;
-          document.getElementById('rm-pg-prev').disabled = _page <= 1;
-          document.getElementById('rm-pg-next').disabled = _page >= pages;
+          document.getElementById("rm-pg-prev").disabled = _page <= 1;
+          document.getElementById("rm-pg-next").disabled = _page >= pages;
         } else {
-          pg?.classList.add('hidden');
+          pg?.classList.add("hidden");
         }
       },
 
-      page(dir) { _page += dir; this.render(); },
+      page(dir) {
+        _page += dir;
+        this.render();
+      },
 
       confirmRevoke(id, userId) {
-        modal.open('Revoke Assignment', `
+        modal.open(
+          "Revoke Assignment",
+          `
         <div class="space-y-4">
           <div class="flex gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
             <i class="fas fa-exclamation-triangle text-red-400 mt-0.5 flex-shrink-0"></i>
@@ -458,40 +548,58 @@
               Yes, Revoke
             </button>
           </div>
-        </div>`);
+        </div>`,
+        );
       },
 
       async doRevoke(id, userId) {
         try {
-          await api(`/admin/roles/${id}/revoke`, { method: 'DELETE' });
+          await api(`/admin/roles/${id}/revoke`, { method: "DELETE" });
           toast(`Role revoked for ${userId}`);
           modal.close();
           this.load(1);
         } catch (err) {
-          showMsg('rm-rv-msg', err?.error || err?.message || 'Server error.', false);
+          showMsg(
+            "rm-rv-msg",
+            err?.error || err?.message || "Server error.",
+            false,
+          );
         }
       },
 
       async assign() {
-        const user = document.getElementById('rm-a-user')?.value.trim();
-        const roleId = document.getElementById('rm-a-role')?.value;
-        hideMsg('rm-a-msg');
+        const user = document.getElementById("rm-a-user")?.value.trim();
+        const roleId = document.getElementById("rm-a-role")?.value;
+        hideMsg("rm-a-msg");
 
-        if (!user) { showMsg('rm-a-msg', 'Service number is required.', false); return; }
-        if (!roleId) { showMsg('rm-a-msg', 'Please select a role.', false); return; }
+        if (!user) {
+          showMsg("rm-a-msg", "Service number is required.", false);
+          return;
+        }
+        if (!roleId) {
+          showMsg("rm-a-msg", "Please select a role.", false);
+          return;
+        }
 
         try {
-          await api('/admin/role-assignments', {
-            method: 'POST',
-            body: JSON.stringify({ user_id: user, admin_role_id: Number(roleId) }),
+          await api("/admin/role-assignments", {
+            method: "POST",
+            body: JSON.stringify({
+              user_id: user,
+              admin_role_id: Number(roleId),
+            }),
           });
           toast(`Role assigned to ${user}`);
-          document.getElementById('rm-a-user').value = '';
-          document.getElementById('rm-a-role').value = '';
-          hideMsg('rm-a-msg');
+          document.getElementById("rm-a-user").value = "";
+          document.getElementById("rm-a-role").value = "";
+          hideMsg("rm-a-msg");
           this.load(1);
         } catch (err) {
-          showMsg('rm-a-msg', err?.error || err?.message || 'Server error.', false);
+          showMsg(
+            "rm-a-msg",
+            err?.error || err?.message || "Server error.",
+            false,
+          );
         }
       },
     };
@@ -499,13 +607,17 @@
     /* ── CATALOG ──────────────────────────────────────────── */
     const catalog = {
       async load() {
-        const listEl = document.getElementById('rm-catalog-list');
+        const listEl = document.getElementById("rm-catalog-list");
         listEl.innerHTML = `<div class="flex items-center justify-center py-8 text-navy/30 text-sm">
         <i class="fas fa-spinner fa-spin mr-2"></i></div>`;
 
         try {
-          _catalog = await api('/admin/role-catalog').then(d => Array.isArray(d) ? d : (d?.data || []));
-          _allMenus = await api('/admin/role-catalog/menus').then(d => Array.isArray(d) ? d : (d?.data || []));
+          _catalog = await api("/admin/role-catalog").then((d) =>
+            Array.isArray(d) ? d : d?.data || [],
+          );
+          _allMenus = await api("/admin/role-catalog/menus").then((d) =>
+            Array.isArray(d) ? d : d?.data || [],
+          );
         } catch {
           listEl.innerHTML = `<div class="text-center py-8 text-red-400 text-sm">Failed to load roles</div>`;
           return;
@@ -517,82 +629,95 @@
       },
 
       renderList() {
-        const listEl = document.getElementById('rm-catalog-list');
+        const listEl = document.getElementById("rm-catalog-list");
         if (!_catalog.length) {
           listEl.innerHTML = `<div class="text-center py-8 text-navy/30 text-sm">No roles defined yet</div>`;
           return;
         }
-        listEl.innerHTML = _catalog.map(r => `
-        <div class="rm-role-item ${_editing === r.id ? 'active' : ''}" onclick="_rm.catalog.openForm(${r.id})">
+        listEl.innerHTML = _catalog
+          .map(
+            (r) => `
+        <div class="rm-role-item ${_editing === r.id ? "active" : ""}" onclick="_rm.catalog.openForm(${r.id})">
           <div class="min-w-0">
             <p class="text-xs font-bold text-navy truncate">${esc(r.name)}</p>
-            ${r.description ? `<p class="text-xs text-navy/40 truncate mt-0.5">${esc(r.description)}</p>` : ''}
+            ${r.description ? `<p class="text-xs text-navy/40 truncate mt-0.5">${esc(r.description)}</p>` : ""}
           </div>
           <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
             <span class="text-xs text-navy/30">${(r.menuIds || []).length} menus</span>
-            ${r.id === 1
-            ? `<span class="text-xs font-bold text-amber-600 px-1.5 py-0.5 bg-amber-50 rounded">Built-in</span>`
-            : `<button onclick="event.stopPropagation();_rm.catalog.confirmDelete(${r.id},'${esc(r.name)}')"
+            ${
+              r.id === 1
+                ? `<span class="text-xs font-bold text-amber-600 px-1.5 py-0.5 bg-amber-50 rounded">Built-in</span>`
+                : `<button onclick="event.stopPropagation();_rm.catalog.confirmDelete(${r.id},'${esc(r.name)}')"
                   class="text-red-300 hover:text-red-500 cursor-pointer border-none bg-transparent p-0 text-xs">
                   <i class="fas fa-trash"></i>
                 </button>`
-          }
+            }
           </div>
-        </div>`).join('');
+        </div>`,
+          )
+          .join("");
       },
 
       openForm(id) {
         _editing = id;
         this.renderList(); // update active state
 
-        const role = id ? _catalog.find(r => r.id === id) : null;
+        const role = id ? _catalog.find((r) => r.id === id) : null;
         const isBuiltin = role?.id === 1;
-        const panelEl = document.getElementById('rm-catalog-panel');
+        const panelEl = document.getElementById("rm-catalog-panel");
 
         // Group menus by groupName for checkboxes
         const groups = {};
-        _allMenus.forEach(m => {
-          const g = m.groupName || 'General';
+        _allMenus.forEach((m) => {
+          const g = m.groupName || "General";
           (groups[g] = groups[g] || []).push(m);
         });
         const checkedIds = new Set((role?.menuIds || []).map(Number));
 
-        const menuHtml = Object.entries(groups).map(([grp, menus]) => `
+        const menuHtml = Object.entries(groups)
+          .map(
+            ([grp, menus]) => `
         <div class="mb-3">
           <p class="text-xs font-black uppercase tracking-widest text-navy/35 mb-1.5">${esc(grp)}</p>
-          ${menus.map(m => `
+          ${menus
+            .map(
+              (m) => `
             <label class="rm-menu-row">
-              <input type="checkbox" value="${m.Id}" ${checkedIds.has(m.Id) ? 'checked' : ''}
-                ${isBuiltin ? 'disabled' : ''}
+              <input type="checkbox" value="${m.Id}" ${checkedIds.has(m.Id) ? "checked" : ""}
+                ${isBuiltin ? "disabled" : ""}
                 class="rm-menu-cb" />
               <div>
-                <p class="text-xs font-semibold text-navy">${esc(m.Name || m.Code || '')}</p>
-                ${m.Description ? `<p class="text-xs text-navy/40">${esc(m.Description)}</p>` : ''}
+                <p class="text-xs font-semibold text-navy">${esc(m.Name || m.Code || "")}</p>
+                ${m.Description ? `<p class="text-xs text-navy/40">${esc(m.Description)}</p>` : ""}
               </div>
-            </label>`).join('')}
-        </div>`).join('');
+            </label>`,
+            )
+            .join("")}
+        </div>`,
+          )
+          .join("");
 
         panelEl.innerHTML = `
         <div class="space-y-4">
           <div class="flex items-center justify-between">
             <h4 class="text-xs font-black text-navy uppercase tracking-wide">
-              ${id ? 'Edit Role' : 'New Role'}
+              ${id ? "Edit Role" : "New Role"}
             </h4>
-            ${isBuiltin ? `<span class="text-xs font-bold text-amber-600 px-2 py-0.5 bg-amber-50 rounded-full">Built-in — read only</span>` : ''}
+            ${isBuiltin ? `<span class="text-xs font-bold text-amber-600 px-2 py-0.5 bg-amber-50 rounded-full">Built-in — read only</span>` : ""}
           </div>
 
           <div>
             <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Role Name</label>
-            <input id="rm-cf-name" type="text" value="${esc(role?.name || '')}"
-              placeholder="e.g. Finance Reviewer" ${isBuiltin ? 'readonly' : ''}
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy ${isBuiltin ? 'opacity-60' : ''}" />
+            <input id="rm-cf-name" type="text" value="${esc(role?.name || "")}"
+              placeholder="e.g. Finance Reviewer" ${isBuiltin ? "readonly" : ""}
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy ${isBuiltin ? "opacity-60" : ""}" />
           </div>
 
           <div>
             <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Description</label>
-            <input id="rm-cf-desc" type="text" value="${esc(role?.description || '')}"
-              placeholder="Brief description of this role" ${isBuiltin ? 'readonly' : ''}
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy ${isBuiltin ? 'opacity-60' : ''}" />
+            <input id="rm-cf-desc" type="text" value="${esc(role?.description || "")}"
+              placeholder="Brief description of this role" ${isBuiltin ? "readonly" : ""}
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy ${isBuiltin ? "opacity-60" : ""}" />
           </div>
 
           <div>
@@ -604,42 +729,63 @@
 
           <div id="rm-cf-msg" class="hidden text-xs font-semibold rounded-lg px-3 py-2"></div>
 
-          ${isBuiltin ? '' : `
-          <button onclick="_rm.catalog.save(${id || 'null'})"
+          ${
+            isBuiltin
+              ? ""
+              : `
+          <button onclick="_rm.catalog.save(${id || "null"})"
             class="w-full py-2.5 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
-            <i class="fas fa-save mr-2"></i>${id ? 'Save Changes' : 'Create Role'}
-          </button>`}
+            <i class="fas fa-save mr-2"></i>${id ? "Save Changes" : "Create Role"}
+          </button>`
+          }
         </div>`;
       },
 
       async save(id) {
-        const name = document.getElementById('rm-cf-name')?.value.trim();
-        const desc = document.getElementById('rm-cf-desc')?.value.trim();
-        const menuIds = [...document.querySelectorAll('.rm-menu-cb:checked')].map(cb => Number(cb.value));
-        hideMsg('rm-cf-msg');
+        const name = document.getElementById("rm-cf-name")?.value.trim();
+        const desc = document.getElementById("rm-cf-desc")?.value.trim();
+        const menuIds = [
+          ...document.querySelectorAll(".rm-menu-cb:checked"),
+        ].map((cb) => Number(cb.value));
+        hideMsg("rm-cf-msg");
 
-        if (!name) { showMsg('rm-cf-msg', 'Role name is required.', false); return; }
+        if (!name) {
+          showMsg("rm-cf-msg", "Role name is required.", false);
+          return;
+        }
 
         try {
           const body = { name, description: desc, menuIds };
           if (id) {
-            await api(`/admin/role-catalog/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+            await api(`/admin/role-catalog/${id}`, {
+              method: "PUT",
+              body: JSON.stringify(body),
+            });
             toast(`Role "${name}" updated`);
           } else {
-            await api('/admin/role-catalog', { method: 'POST', body: JSON.stringify(body) });
+            await api("/admin/role-catalog", {
+              method: "POST",
+              body: JSON.stringify(body),
+            });
             toast(`Role "${name}" created`);
           }
           await this.load();
           // re-open the saved role to reflect updated state
-          const saved = _catalog.find(r => r.name === name);
+          const saved = _catalog.find((r) => r.name === name);
           if (saved) this.openForm(saved.id);
         } catch (err) {
-          showMsg('rm-cf-msg', err?.error || err?.message || 'Server error.', false);
+          showMsg(
+            "rm-cf-msg",
+            err?.error || err?.message || "Server error.",
+            false,
+          );
         }
       },
 
       confirmDelete(id, name) {
-        modal.open('Delete Role', `
+        modal.open(
+          "Delete Role",
+          `
         <div class="space-y-4">
           <div class="flex gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
             <i class="fas fa-exclamation-triangle text-red-400 mt-0.5 flex-shrink-0"></i>
@@ -657,32 +803,38 @@
               Yes, Delete
             </button>
           </div>
-        </div>`);
+        </div>`,
+        );
       },
 
       async doDelete(id, name) {
         try {
-          await api(`/admin/role-catalog/${id}`, { method: 'DELETE' });
+          await api(`/admin/role-catalog/${id}`, { method: "DELETE" });
           toast(`Role "${name}" deleted`);
           modal.close();
           _editing = null;
-          document.getElementById('rm-catalog-panel').innerHTML =
+          document.getElementById("rm-catalog-panel").innerHTML =
             `<p class="text-center text-sm text-navy/30 py-8">Select a role to edit, or click <strong>New Role</strong> to create one.</p>`;
           await this.load();
         } catch (err) {
-          showMsg('rm-del-msg', err?.error || err?.message || 'Server error.', false);
+          showMsg(
+            "rm-del-msg",
+            err?.error || err?.message || "Server error.",
+            false,
+          );
         }
       },
     };
 
     /* ── populate role dropdowns (filter + assign form) ──── */
     function populateRoleDropdowns() {
-      const filter = document.getElementById('rm-filter-role');
-      const assign = document.getElementById('rm-a-role');
+      const filter = document.getElementById("rm-filter-role");
+      const assign = document.getElementById("rm-a-role");
       if (!filter || !assign) return;
 
-      const opts = _catalog.map(r =>
-        `<option value="${r.id}">${esc(r.name)}</option>`).join('');
+      const opts = _catalog
+        .map((r) => `<option value="${r.id}">${esc(r.name)}</option>`)
+        .join("");
 
       filter.innerHTML = `<option value="">All Roles</option>${opts}`;
       assign.innerHTML = `<option value="">— Select role —</option>${opts}`;
@@ -693,13 +845,16 @@
 
     /* ── boot ─────────────────────────────────────────────── */
     // Load catalog first (to populate dropdowns), then assignments
-    api('/admin/role-catalog')
-      .then(d => {
-        _catalog = Array.isArray(d) ? d : (d?.data || []);
+    api("/admin/role-catalog")
+      .then((d) => {
+        _catalog = Array.isArray(d) ? d : d?.data || [];
         populateRoleDropdowns();
         assignments.load(1);
       })
       .catch(() => assignments.load(1));
 
+    // Hoist modal to body on load so overlay covers full viewport
+    const fullModal = document.getElementById("rm-modal");
+    document.body.appendChild(fullModal);
   })();
 </script>

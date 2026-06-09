@@ -97,11 +97,11 @@
   @keyframes ah-pulse {
     0%,
     100% {
-      opacity: 1
+      opacity: 1;
     }
 
     50% {
-      opacity: 0.4
+      opacity: 0.4;
     }
   }
 
@@ -135,7 +135,9 @@
     padding: 0.32rem 0;
     position: absolute;
     width: 100%;
-    transition: opacity 0.35s ease, transform 0.35s ease;
+    transition:
+      opacity 0.35s ease,
+      transform 0.35s ease;
   }
 
   .ah-ship-row.ah-tick-hidden {
@@ -267,6 +269,7 @@
     align-items: center;
     justify-content: center;
     padding: 1rem;
+    backdrop-filter: blur(2px);
   }
 
   .ah-modal {
@@ -380,170 +383,387 @@
   }
 
   @keyframes ah-spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>
 
 <div class="p-2 md:p-4 lg:p-6">
-
   <!-- Greeting -->
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;margin-bottom:1rem;">
+  <div
+    style="
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    "
+  >
     <div>
       <h2 class="ah-name" id="ah-name">Admin Dashboard</h2>
     </div>
     <button class="ah-refresh" onclick="window.ahLoad(true)">
       <span class="ah-rdot" id="ah-rdot"></span>
       <span id="ah-rlbl">Live</span>
-      <i class="fas fa-sync-alt" style="font-size:8px" id="ah-rspin"></i>
+      <i class="fas fa-sync-alt" style="font-size: 8px" id="ah-rspin"></i>
     </button>
   </div>
 
   <section class="flex justify-center p-2 md:p-4">
     <div class="w-full max-w-7xl">
-
       <div class="grid grid-cols-4">
-
         <!-- ROW 1: Officers -->
         <div class="p-2 border-b-2 border-gray-200">
-          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Officers</p>
+          <p
+            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+          >
+            Officers
+          </p>
           <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl text-xs md:text-xs" style="font-size:clamp(9px,1.5vw,12px)">All Officers</span>
-            <i class="fas fa-user text-sky-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+            <span
+              class="ah-cell-lbl text-xs md:text-xs"
+              style="font-size: clamp(9px, 1.5vw, 12px)"
+              >All Officers</span
+            >
+            <i
+              class="fas fa-user text-sky-500"
+              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
+            ></i>
           </div>
-          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
-            id="s-o-total"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          <p
+            class="ah-cell-val text-center font-bold text-gray-800"
+            style="font-size: clamp(14px, 2vw, 20px)"
+            id="s-o-total"
+          >
+            <span
+              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+            ></span>
           </p>
         </div>
         <div class="p-2 border-l-2 border-b-2 border-gray-200">
-          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <p
+            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+          >
+            &nbsp;
+          </p>
           <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Officers Approved</span>
-            <i class="fas fa-check-circle text-green-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
+              >Officers Approved</span
+            >
+            <i
+              class="fas fa-check-circle text-green-500"
+              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
+            ></i>
           </div>
-          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
-            id="s-o-conf"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          <p
+            class="ah-cell-val text-center font-bold text-gray-800"
+            style="font-size: clamp(14px, 2vw, 20px)"
+            id="s-o-conf"
+          >
+            <span
+              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+            ></span>
           </p>
         </div>
         <div class="p-2 border-l-2 border-b-2 border-gray-200">
-          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <p
+            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+          >
+            &nbsp;
+          </p>
           <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Awaiting Approval</span>
-            <i class="fas fa-clock text-amber-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
+              >Awaiting Approval</span
+            >
+            <i
+              class="fas fa-clock text-amber-500"
+              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
+            ></i>
           </div>
-          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
-            id="s-o-pend"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          <p
+            class="ah-cell-val text-center font-bold text-gray-800"
+            style="font-size: clamp(14px, 2vw, 20px)"
+            id="s-o-pend"
+          >
+            <span
+              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+            ></span>
           </p>
         </div>
         <div class="p-2 border-l-2 border-b-2 border-gray-200">
-          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <p
+            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+          >
+            &nbsp;
+          </p>
           <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Yet To Fill Form</span>
-            <i class="fas fa-times-circle text-red-400" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
+              >Yet To Fill Form</span
+            >
+            <i
+              class="fas fa-times-circle text-red-400"
+              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
+            ></i>
           </div>
-          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)" id="s-o-nf">
-            <span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span></p>
+          <p
+            class="ah-cell-val text-center font-bold text-gray-800"
+            style="font-size: clamp(14px, 2vw, 20px)"
+            id="s-o-nf"
+          >
+            <span
+              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+            ></span>
+          </p>
         </div>
 
         <!-- ROW 2: Ratings -->
         <div class="p-2 border-b-2 border-gray-200">
-          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Ratings</p>
+          <p
+            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+          >
+            Ratings
+          </p>
           <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">All Ratings</span>
-            <i class="fas fa-user text-sky-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
+              >All Ratings</span
+            >
+            <i
+              class="fas fa-user text-sky-500"
+              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
+            ></i>
           </div>
-          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
-            id="s-r-total"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          <p
+            class="ah-cell-val text-center font-bold text-gray-800"
+            style="font-size: clamp(14px, 2vw, 20px)"
+            id="s-r-total"
+          >
+            <span
+              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+            ></span>
           </p>
         </div>
         <div class="p-2 border-l-2 border-b-2 border-gray-200">
-          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <p
+            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+          >
+            &nbsp;
+          </p>
           <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Rating Approved</span>
-            <i class="fas fa-check-circle text-green-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
+              >Rating Approved</span
+            >
+            <i
+              class="fas fa-check-circle text-green-500"
+              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
+            ></i>
           </div>
-          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
-            id="s-r-conf"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          <p
+            class="ah-cell-val text-center font-bold text-gray-800"
+            style="font-size: clamp(14px, 2vw, 20px)"
+            id="s-r-conf"
+          >
+            <span
+              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+            ></span>
           </p>
         </div>
         <div class="p-2 border-l-2 border-b-2 border-gray-200">
-          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <p
+            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+          >
+            &nbsp;
+          </p>
           <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Awaiting Approval</span>
-            <i class="fas fa-clock text-amber-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
+              >Awaiting Approval</span
+            >
+            <i
+              class="fas fa-clock text-amber-500"
+              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
+            ></i>
           </div>
-          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
-            id="s-r-pend"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          <p
+            class="ah-cell-val text-center font-bold text-gray-800"
+            style="font-size: clamp(14px, 2vw, 20px)"
+            id="s-r-pend"
+          >
+            <span
+              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+            ></span>
           </p>
         </div>
         <div class="p-2 border-l-2 border-b-2 border-gray-200">
-          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <p
+            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+          >
+            &nbsp;
+          </p>
           <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Yet To Fill Form</span>
-            <i class="fas fa-times-circle text-red-400" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
+              >Yet To Fill Form</span
+            >
+            <i
+              class="fas fa-times-circle text-red-400"
+              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
+            ></i>
           </div>
-          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)" id="s-r-nf">
-            <span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span></p>
+          <p
+            class="ah-cell-val text-center font-bold text-gray-800"
+            style="font-size: clamp(14px, 2vw, 20px)"
+            id="s-r-nf"
+          >
+            <span
+              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+            ></span>
+          </p>
         </div>
 
         <!-- ROW 3: Training -->
         <div class="p-2">
-          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Training</p>
+          <p
+            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+          >
+            Training
+          </p>
           <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">All Trainee Personnel</span>
-            <i class="fas fa-user text-sky-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
+              >All Trainee Personnel</span
+            >
+            <i
+              class="fas fa-user text-sky-500"
+              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
+            ></i>
           </div>
-          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
-            id="s-t-total"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          <p
+            class="ah-cell-val text-center font-bold text-gray-800"
+            style="font-size: clamp(14px, 2vw, 20px)"
+            id="s-t-total"
+          >
+            <span
+              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+            ></span>
           </p>
         </div>
         <div class="p-2 border-l-2 border-gray-200">
-          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <p
+            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+          >
+            &nbsp;
+          </p>
           <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Trainee Approved</span>
-            <i class="fas fa-check-circle text-green-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
+              >Trainee Approved</span
+            >
+            <i
+              class="fas fa-check-circle text-green-500"
+              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
+            ></i>
           </div>
-          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
-            id="s-t-conf"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          <p
+            class="ah-cell-val text-center font-bold text-gray-800"
+            style="font-size: clamp(14px, 2vw, 20px)"
+            id="s-t-conf"
+          >
+            <span
+              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+            ></span>
           </p>
         </div>
         <div class="p-2 border-l-2 border-gray-200">
-          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <p
+            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+          >
+            &nbsp;
+          </p>
           <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Awaiting Approval</span>
-            <i class="fas fa-clock text-amber-500" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
+              >Awaiting Approval</span
+            >
+            <i
+              class="fas fa-clock text-amber-500"
+              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
+            ></i>
           </div>
-          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)"
-            id="s-t-pend"><span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span>
+          <p
+            class="ah-cell-val text-center font-bold text-gray-800"
+            style="font-size: clamp(14px, 2vw, 20px)"
+            id="s-t-pend"
+          >
+            <span
+              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+            ></span>
           </p>
         </div>
         <div class="p-2 border-l-2 border-gray-200">
-          <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">&nbsp;</p>
+          <p
+            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+          >
+            &nbsp;
+          </p>
           <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size:clamp(9px,1.5vw,12px)">Yet To Fill Form</span>
-            <i class="fas fa-times-circle text-red-400" style="font-size:clamp(9px,1.5vw,12px);flex-shrink:0"></i>
+            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
+              >Yet To Fill Form</span
+            >
+            <i
+              class="fas fa-times-circle text-red-400"
+              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
+            ></i>
           </div>
-          <p class="ah-cell-val text-center font-bold text-gray-800" style="font-size:clamp(14px,2vw,20px)" id="s-t-nf">
-            <span class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"></span></p>
+          <p
+            class="ah-cell-val text-center font-bold text-gray-800"
+            style="font-size: clamp(14px, 2vw, 20px)"
+            id="s-t-nf"
+          >
+            <span
+              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+            ></span>
+          </p>
         </div>
-
       </div>
     </div>
   </section>
 
   <!-- ── OVERALL + TOP SHIPS side by side on md+ ── -->
   <div class="mt-4 md:grid md:grid-cols-2 md:gap-4">
-
     <section class="flex justify-center mb-4 md:mb-0">
       <div class="frame-2 w-full p-4">
-        <p class="ah-lbl" style="margin-top:0;">Overall Completion</p>
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;">
-          <span style="font-size:1.6rem;font-weight:900;color:rgb(30 64 175);line-height:1;" id="ah-pct">—%</span>
-          <span style="font-size:0.72rem;color:rgba(30,64,175,0.45);" id="ah-of">— / — personnel</span>
+        <p class="ah-lbl" style="margin-top: 0">Overall Completion</p>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.4rem;
+          "
+        >
+          <span
+            style="
+              font-size: 1.6rem;
+              font-weight: 900;
+              color: rgb(30 64 175);
+              line-height: 1;
+            "
+            id="ah-pct"
+            >—%</span
+          >
+          <span
+            style="font-size: 0.72rem; color: rgba(30, 64, 175, 0.45)"
+            id="ah-of"
+            >— / — personnel</span
+          >
         </div>
         <div class="ah-prog-bar mb-2">
           <div class="ah-prog-fill" id="ah-fill"></div>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:rgba(30,64,175,0.38);">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.65rem;
+            color: rgba(30, 64, 175, 0.38);
+          "
+        >
           <span id="ah-conf-lbl">— confirmed</span>
           <span id="ah-nf-lbl">— not filed</span>
         </div>
@@ -552,39 +772,80 @@
 
     <section class="flex justify-center">
       <div class="frame-2 w-full p-4">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem;">
-          <p class="ah-lbl" style="margin-top:0;margin-bottom:0;">Top Ships by Completion</p>
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.35rem;
+          "
+        >
+          <p class="ah-lbl" style="margin-top: 0; margin-bottom: 0">
+            Top Ships by Completion
+          </p>
           <span class="ah-ticker-counter" id="ah-ticker-counter"></span>
         </div>
         <!-- Ticker: one ship at a time, cycles through top 10 -->
         <div class="ah-ship-ticker-wrap md:mt-5" id="ah-ships-list">
           <div class="ah-ship-row ah-tick-hidden" id="ah-ship-ticker">
-            <span class="ah-ship-rank text-sm md:text-lg" id="ah-t-rank">1</span>
-            <span class="ah-ship-name text-sm md:text-lg" id="ah-t-name">—</span>
-            <div class="ah-ship-bar"><div class="ah-ship-fill" id="ah-t-bar" style="width:0%"></div></div>
+            <span class="ah-ship-rank text-sm md:text-lg" id="ah-t-rank"
+              >1</span
+            >
+            <span class="ah-ship-name text-sm md:text-lg" id="ah-t-name"
+              >—</span
+            >
+            <div class="ah-ship-bar">
+              <div class="ah-ship-fill" id="ah-t-bar" style="width: 0%"></div>
+            </div>
             <span class="ah-ship-pct" id="ah-t-pct">—%</span>
             <button class="ah-ship-view" id="ah-t-view">View</button>
           </div>
         </div>
         <!-- Skeleton shown before data arrives -->
         <div id="ah-ships-sk">
-          <div class="ah-sk" style="height:10px;width:70%;margin-bottom:8px;display:block;border-radius:4px;"></div>
-          <div class="ah-sk" style="height:10px;width:85%;margin-bottom:8px;display:block;border-radius:4px;"></div>
-          <div class="ah-sk" style="height:10px;width:55%;display:block;border-radius:4px;"></div>
+          <div
+            class="ah-sk"
+            style="
+              height: 10px;
+              width: 70%;
+              margin-bottom: 8px;
+              display: block;
+              border-radius: 4px;
+            "
+          ></div>
+          <div
+            class="ah-sk"
+            style="
+              height: 10px;
+              width: 85%;
+              margin-bottom: 8px;
+              display: block;
+              border-radius: 4px;
+            "
+          ></div>
+          <div
+            class="ah-sk"
+            style="height: 10px; width: 55%; display: block; border-radius: 4px"
+          ></div>
         </div>
       </div>
     </section>
-
   </div>
-
 </div>
 
 <!-- ── Ship stats modal ── -->
-<div class="ah-modal-bg" id="ah-modal" style="display:none;" onclick="if(event.target===this)window.ahCloseModal()">
+<div
+  class="ah-modal-bg"
+  id="ah-modal"
+  style="display: none"
+  onclick="if (event.target === this) window.ahCloseModal();"
+>
   <div class="ah-modal">
     <div class="ah-modal-head">
       <span class="ah-modal-title" id="ah-modal-title">Ship Stats</span>
-      <button class="ah-modal-close" onclick="window.ahCloseModal()">&#x2715;</button>
+      <button class="ah-modal-close" onclick="window.ahCloseModal()">
+        &#x2715;
+      </button>
     </div>
     <div id="ah-modal-body"></div>
   </div>
@@ -592,21 +853,30 @@
 
 <script>
   (function () {
-    const TOKEN = localStorage.getItem('token');
+    const TOKEN = localStorage.getItem("token");
 
     /* ── Greeting ── */
     try {
-      const name = (localStorage.getItem('full_name') || 'Admin').trim().split(' ')[0];
+      const name = (localStorage.getItem("full_name") || "Admin")
+        .trim()
+        .split(" ")[0];
       const h = new Date().getHours();
-      const part = h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
-      const el = document.getElementById('ah-name');
-      if (el) el.textContent = 'Good ' + part + ', ' + name;
-    } catch (e) { }
+      const part = h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening";
+      const el = document.getElementById("ah-name");
+      if (el) el.textContent = "Good " + part + ", " + name;
+    } catch (e) {}
 
     /* ── Helpers ── */
-    function N(v) { return (v === undefined || v === null) ? '0' : Number(v).toLocaleString(); }
-    function pct(a, b) { return (!b || b === 0) ? 0 : Math.round(a / b * 100); }
-    function sid(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
+    function N(v) {
+      return v === undefined || v === null ? "0" : Number(v).toLocaleString();
+    }
+    function pct(a, b) {
+      return !b || b === 0 ? 0 : Math.round((a / b) * 100);
+    }
+    function sid(id, html) {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    }
 
     /* ── Ticker state ── */
     let _ships = [];
@@ -617,42 +887,51 @@
     function showShip(i, enterClass) {
       const s = _ships[i];
       if (!s) return;
-      const row = document.getElementById('ah-ship-ticker');
+      const row = document.getElementById("ah-ship-ticker");
       if (!row) return;
 
       /* Reset bar before swap */
-      const bar = document.getElementById('ah-t-bar');
-      if (bar) { bar.style.transition = 'none'; bar.style.width = '0%'; }
+      const bar = document.getElementById("ah-t-bar");
+      if (bar) {
+        bar.style.transition = "none";
+        bar.style.width = "0%";
+      }
 
-      row.className = 'ah-ship-row ah-tick-hidden';
-      document.getElementById('ah-t-rank').textContent = i + 1;
-      document.getElementById('ah-t-name').textContent = s.ship;
-      document.getElementById('ah-t-pct').textContent = (s.completion_pct || 0) + '%';
-      document.getElementById('ah-t-view').onclick = function () { window.ahOpenModal(i); };
+      row.className = "ah-ship-row ah-tick-hidden";
+      document.getElementById("ah-t-rank").textContent = i + 1;
+      document.getElementById("ah-t-name").textContent = s.ship;
+      document.getElementById("ah-t-pct").textContent =
+        (s.completion_pct || 0) + "%";
+      document.getElementById("ah-t-view").onclick = function () {
+        window.ahOpenModal(i);
+      };
 
-      const counter = document.getElementById('ah-ticker-counter');
-      if (counter) counter.textContent = (i + 1) + ' / ' + _ships.length;
+      const counter = document.getElementById("ah-ticker-counter");
+      if (counter) counter.textContent = i + 1 + " / " + _ships.length;
 
       requestAnimationFrame(function () {
-        row.className = 'ah-ship-row ' + enterClass;
+        row.className = "ah-ship-row " + enterClass;
         setTimeout(function () {
-          if (bar) { bar.style.transition = 'width 0.7s ease'; bar.style.width = (s.completion_pct || 0) + '%'; }
+          if (bar) {
+            bar.style.transition = "width 0.7s ease";
+            bar.style.width = (s.completion_pct || 0) + "%";
+          }
         }, 50);
       });
     }
 
     /* Transition to next ship */
     function tickNext() {
-      const row = document.getElementById('ah-ship-ticker');
+      const row = document.getElementById("ah-ship-ticker");
       if (!row) return;
-      row.className = 'ah-ship-row ah-tick-out-up';
+      row.className = "ah-ship-row ah-tick-out-up";
       setTimeout(function () {
         _tickIdx = (_tickIdx + 1) % _ships.length;
-        showShip(_tickIdx, 'ah-tick-out-down');
+        showShip(_tickIdx, "ah-tick-out-down");
         requestAnimationFrame(function () {
           setTimeout(function () {
-            const r = document.getElementById('ah-ship-ticker');
-            if (r) r.className = 'ah-ship-row ah-tick-in';
+            const r = document.getElementById("ah-ship-ticker");
+            if (r) r.className = "ah-ship-row ah-tick-in";
           }, 20);
         });
       }, 350);
@@ -660,12 +939,12 @@
 
     function startTicker() {
       /* Hide skeleton */
-      const sk = document.getElementById('ah-ships-sk');
-      if (sk) sk.style.display = 'none';
+      const sk = document.getElementById("ah-ships-sk");
+      if (sk) sk.style.display = "none";
 
       if (_tickTimer) clearInterval(_tickTimer);
       _tickIdx = 0;
-      showShip(0, 'ah-tick-in');
+      showShip(0, "ah-tick-in");
       _tickTimer = setInterval(tickNext, 3000);
     }
 
@@ -673,36 +952,63 @@
     window.ahOpenModal = function (i) {
       const s = _ships[i];
       if (!s) return;
-      document.getElementById('ah-modal-title').textContent = s.ship;
+      document.getElementById("ah-modal-title").textContent = s.ship;
 
       const cp = parseFloat(s.completion_pct) || 0;
-      const pipeline = Math.max(0, (s.total || 0) - (s.confirmed || 0) - (s.not_filed || 0));
-      const badgeCls = cp >= 75 ? 'ah-badge-green' : cp >= 40 ? 'ah-badge-amber' : 'ah-badge-red';
-      const badgeLbl = cp >= 75 ? 'On Track' : cp >= 40 ? 'In Progress' : 'Behind';
+      const pipeline = Math.max(
+        0,
+        (s.total || 0) - (s.confirmed || 0) - (s.not_filed || 0),
+      );
+      const badgeCls =
+        cp >= 75
+          ? "ah-badge-green"
+          : cp >= 40
+            ? "ah-badge-amber"
+            : "ah-badge-red";
+      const badgeLbl =
+        cp >= 75 ? "On Track" : cp >= 40 ? "In Progress" : "Behind";
 
-      document.getElementById('ah-modal-body').innerHTML =
+      document.getElementById("ah-modal-body").innerHTML =
         '<div style="margin-bottom:0.75rem;">' +
-          '<div style="display:flex;align-items:center;justify-content:space-between;">' +
-            '<span class="ah-modal-pct">' + cp + '%</span>' +
-            '<span class="ah-modal-badge ' + badgeCls + '">' + badgeLbl + '</span>' +
-          '</div>' +
-          '<div class="ah-modal-prog-bar"><div class="ah-modal-prog-fill" id="ah-mpf"></div></div>' +
-        '</div>' +
-        '<div class="ah-modal-row"><span class="ah-modal-row-lbl">Total Personnel</span><span class="ah-modal-row-val">' + N(s.total) + '</span></div>' +
-        '<div class="ah-modal-row"><span class="ah-modal-row-lbl">Confirmed (CPO)</span><span class="ah-modal-row-val" style="color:#166534">' + N(s.confirmed) + '</span></div>' +
-        '<div class="ah-modal-row"><span class="ah-modal-row-lbl">In Pipeline</span><span class="ah-modal-row-val" style="color:#92400e">' + N(pipeline) + '</span></div>' +
-        '<div class="ah-modal-row"><span class="ah-modal-row-lbl">Not Filed</span><span class="ah-modal-row-val" style="color:#991b1b">' + N(s.not_filed || 0) + '</span></div>' +
-        '<div class="ah-modal-row"><span class="ah-modal-row-lbl">Fleet Rank</span><span class="ah-modal-row-val">#' + (i + 1) + ' of ' + _ships.length + '</span></div>';
+        '<div style="display:flex;align-items:center;justify-content:space-between;">' +
+        '<span class="ah-modal-pct">' +
+        cp +
+        "%</span>" +
+        '<span class="ah-modal-badge ' +
+        badgeCls +
+        '">' +
+        badgeLbl +
+        "</span>" +
+        "</div>" +
+        '<div class="ah-modal-prog-bar"><div class="ah-modal-prog-fill" id="ah-mpf"></div></div>' +
+        "</div>" +
+        '<div class="ah-modal-row"><span class="ah-modal-row-lbl">Total Personnel</span><span class="ah-modal-row-val">' +
+        N(s.total) +
+        "</span></div>" +
+        '<div class="ah-modal-row"><span class="ah-modal-row-lbl">Confirmed (CPO)</span><span class="ah-modal-row-val" style="color:#166534">' +
+        N(s.confirmed) +
+        "</span></div>" +
+        '<div class="ah-modal-row"><span class="ah-modal-row-lbl">In Pipeline</span><span class="ah-modal-row-val" style="color:#92400e">' +
+        N(pipeline) +
+        "</span></div>" +
+        '<div class="ah-modal-row"><span class="ah-modal-row-lbl">Not Filed</span><span class="ah-modal-row-val" style="color:#991b1b">' +
+        N(s.not_filed || 0) +
+        "</span></div>" +
+        '<div class="ah-modal-row"><span class="ah-modal-row-lbl">Fleet Rank</span><span class="ah-modal-row-val">#' +
+        (i + 1) +
+        " of " +
+        _ships.length +
+        "</span></div>";
 
-      document.getElementById('ah-modal').style.display = 'flex';
+      document.getElementById("ah-modal").style.display = "flex";
       setTimeout(function () {
-        const f = document.getElementById('ah-mpf');
-        if (f) f.style.width = cp + '%';
+        const f = document.getElementById("ah-mpf");
+        if (f) f.style.width = cp + "%";
       }, 80);
     };
 
     window.ahCloseModal = function () {
-      document.getElementById('ah-modal').style.display = 'none';
+      document.getElementById("ah-modal").style.display = "none";
     };
 
     /* ── Render ── */
@@ -715,11 +1021,17 @@
       const total = g.total_personnel || 0;
       const conf = g.total_confirmed || 0;
       const p = pct(conf, total);
-      sid('ah-pct', p + '%');
-      sid('ah-of', conf.toLocaleString() + ' / ' + total.toLocaleString() + ' personnel');
-      sid('ah-conf-lbl', conf.toLocaleString() + ' confirmed');
-      sid('ah-nf-lbl', N(g.total_not_filed) + ' not filed');
-      setTimeout(function () { const f = document.getElementById('ah-fill'); if (f) f.style.width = p + '%'; }, 80);
+      sid("ah-pct", p + "%");
+      sid(
+        "ah-of",
+        conf.toLocaleString() + " / " + total.toLocaleString() + " personnel",
+      );
+      sid("ah-conf-lbl", conf.toLocaleString() + " confirmed");
+      sid("ah-nf-lbl", N(g.total_not_filed) + " not filed");
+      setTimeout(function () {
+        const f = document.getElementById("ah-fill");
+        if (f) f.style.width = p + "%";
+      }, 80);
 
       /*
        * Class rows  —  classes 1=Officers  2=Ratings  3=Training
@@ -727,21 +1039,23 @@
        * Awaiting   = submitted + do_reviewed + fo_approved
        * Not Filed  = not_filed
        */
-      const pfx = { 1: 's-o', 2: 's-r', 3: 's-t' };
+      const pfx = { 1: "s-o", 2: "s-r", 3: "s-t" };
       byC.forEach(function (c) {
-        const px = pfx[c.classes]; if (!px) return;
-        const awaiting = (c.submitted || 0) + (c.do_reviewed || 0) + (c.fo_approved || 0);
-        sid(px + '-total', N(c.total));
-        sid(px + '-conf',  N(c.cpo_confirmed));   /* ← fixed: was c.confirmed */
-        sid(px + '-pend',  N(awaiting));
-        sid(px + '-nf',    N(c.not_filed));
+        const px = pfx[c.classes];
+        if (!px) return;
+        const awaiting =
+          (c.submitted || 0) + (c.do_reviewed || 0) + (c.fo_approved || 0);
+        sid(px + "-total", N(c.total));
+        sid(px + "-conf", N(c.cpo_confirmed)); /* ← fixed: was c.confirmed */
+        sid(px + "-pend", N(awaiting));
+        sid(px + "-nf", N(c.not_filed));
       });
 
       /* Cache badge */
-      const dot = document.getElementById('ah-rdot');
-      const lbl = document.getElementById('ah-rlbl');
-      if (dot) dot.className = 'ah-rdot' + (data.cached ? ' stale' : '');
-      if (lbl) lbl.textContent = data.cached ? 'Cached' : 'Live';
+      const dot = document.getElementById("ah-rdot");
+      const lbl = document.getElementById("ah-rlbl");
+      if (dot) dot.className = "ah-rdot" + (data.cached ? " stale" : "");
+      if (lbl) lbl.textContent = data.cached ? "Cached" : "Live";
 
       /* Start ticker if ships arrived */
       if (_ships.length) startTicker();
@@ -750,36 +1064,53 @@
     /* ── Fetch ── */
     function fetch_(bust) {
       if (!TOKEN) return;
-      const spin = document.getElementById('ah-rspin');
-      if (spin) spin.style.animation = 'ah-spin 0.7s linear infinite';
+      const spin = document.getElementById("ah-rspin");
+      if (spin) spin.style.animation = "ah-spin 0.7s linear infinite";
 
       const go = function () {
-        fetch('/reports/dashboard', { headers: { Authorization: 'Bearer ' + TOKEN } })
-          .then(function (r) { return r.ok ? r.json() : null; })
+        fetch("/reports/dashboard", {
+          headers: { Authorization: "Bearer " + TOKEN },
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
           .then(function (res) {
             if (!res) return;
             /* Route does res.json(result.data) — payload IS the data object.
                Support both shapes: { data: {...} } and the data object directly. */
-            const payload = (res.global !== undefined) ? res : (res.data || null);
+            const payload = res.global !== undefined ? res : res.data || null;
             if (payload) render(payload);
           })
-          .catch(function () { })
-          .finally(function () { if (spin) spin.style.animation = ''; });
+          .catch(function () {})
+          .finally(function () {
+            if (spin) spin.style.animation = "";
+          });
       };
 
       if (bust) {
-        fetch('/reports/cache/bust', {
-          method: 'POST',
-          headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scope: 'all' }),
-        }).catch(function () { }).finally(go);
+        fetch("/reports/cache/bust", {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + TOKEN,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ scope: "all" }),
+        })
+          .catch(function () {})
+          .finally(go);
       } else {
         go();
       }
     }
 
-    window.ahLoad = function (bust) { fetch_(bust); };
+    window.ahLoad = function (bust) {
+      fetch_(bust);
+    };
 
     fetch_(false);
+
+    // Hoist modal to body on load so overlay covers full viewport
+    const modal = document.getElementById("ah-modal");
+    document.body.appendChild(modal);
   })();
 </script>

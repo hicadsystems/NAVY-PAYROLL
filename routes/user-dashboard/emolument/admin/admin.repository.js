@@ -577,13 +577,36 @@ async function updateServiceNumber(oldSvcNo, newSvcNo) {
 async function getConfirmedForSync(payrollclass) {
   pool.useDatabase(DB());
   const [rows] = await pool.query(
-    `SELECT serviceNumber FROM ef_personalinfos
-     WHERE emolumentform = 'Yes'
-       AND payrollclass  = ?
-       AND Status IN ('Verified', 'Updated')`,
+    `SELECT
+       p.serviceNumber, p.Surname, p.OtherName, p.Rank,
+       p.payrollclass, p.classes, p.ship, p.command,
+       p.email, p.gsm_number, p.Status, p.emolumentform,
+       p.formNumber, p.FormYear,
+       f.id           AS formId,
+       f.status       AS formStatus,
+       f.form_number  AS formNumber,
+       f.form_year    AS formYear,
+       f.submitted_at
+     FROM ef_personalinfos p
+     INNER JOIN ef_emolument_forms f
+       ON f.service_no = p.serviceNumber
+      AND f.status     = 'CPO_CONFIRMED'
+     WHERE p.emolumentform = 'Yes'
+       AND p.payrollclass  = ?
+       AND p.Status IN ('Verified', 'Updated')
+       AND EXISTS (
+         SELECT 1 FROM ef_form_approvals fa
+         WHERE fa.form_id = f.id
+           AND fa.action  = 'ADMIN_ACCEPTED'
+       )
+       AND NOT EXISTS (
+         SELECT 1 FROM ef_form_approvals fa
+         WHERE fa.form_id = f.id
+           AND fa.action  = 'SYNCED'
+       )`,
     [payrollclass],
   );
-  return rows.map((r) => r.serviceNumber);
+  return rows; // return full objects, not just serviceNumber
 }
 
 // Returns { serviceNumber → formId } map for CPO_CONFIRMED forms
@@ -598,10 +621,19 @@ async function getFormIdMapForSync(payrollclass) {
      WHERE p.emolumentform = 'Yes'
        AND p.payrollclass  = ?
        AND p.Status       IN ('Verified', 'Updated')
-       AND f.status        = 'CPO_CONFIRMED'`,
+       AND f.status        = 'CPO_CONFIRMED'
+       AND EXISTS (
+         SELECT 1 FROM ef_form_approvals fa
+         WHERE fa.form_id = f.id
+           AND fa.action  = 'ADMIN_ACCEPTED'
+       )
+       AND NOT EXISTS (
+         SELECT 1 FROM ef_form_approvals fa
+         WHERE fa.form_id = f.id
+           AND fa.action  = 'SYNCED'
+       )`,
     [payrollclass],
   );
-  // Build a plain object map: serviceNo → formId
   return Object.fromEntries(rows.map((r) => [r.serviceNo, r.formId]));
 }
 

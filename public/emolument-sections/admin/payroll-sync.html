@@ -219,74 +219,70 @@
       const el = document.getElementById("syncPreview");
       if (!cls) {
         el.innerHTML = `<div class="flex items-center justify-center py-8 text-navy/30 flex-col gap-2">
-        <i class="fas fa-table-list fa-lg"></i>
-        <span class="text-xs">Select a pay class to preview records</span>
-      </div>`;
+      <i class="fas fa-table-list fa-lg"></i>
+      <span class="text-xs">Select a pay class to preview records</span>
+    </div>`;
         return;
       }
 
       el.innerHTML =
         '<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
 
-      // /admin/personnel filters: status=Verified + payrollclass — emolumentform!='Yes' is what makes them pending
-      const params = new URLSearchParams({
-        status: "Verified",
-        payrollclass: cls,
-        pageSize: "50",
-      });
+      // Correct endpoint — returns only ADMIN_ACCEPTED + not yet SYNCED
+      const params = new URLSearchParams({ payrollclass: cls });
 
-      fetch(`/admin/personnel?${params}`, { headers: H })
+      fetch(`/admin/payroll/sync-preview?${params}`, { headers: H })
         .then((r) => (r.ok ? r.json() : Promise.reject()))
-        .then((raw) => {
-          const all = Array.isArray(raw) ? raw : raw.rows || raw.data || [];
-          const meta = raw?.pagination||{}
-          // Pending = Verified but not yet confirmed in hr_employees
-          const rows = all.filter((r) => r.emolumentform !== "Yes");
+        .then((data) => {
+          const rows = Array.isArray(data)
+            ? data
+            : data.rows || data.data || [];
+          const total = data?.pagination?.total ?? rows.length;
 
-          if (!all.length) {
+          if (!rows.length) {
+            document.getElementById("syncBtn").disabled = true;
             el.innerHTML = `<div class="text-center py-6 text-navy/40 text-sm">
-            <i class="fas fa-check-circle fa-2x mb-2 block text-green-300"></i>
-            No verified records pending sync for ${esc(labelFor(cls))}
-          </div>`;
+          <i class="fas fa-check-circle fa-2x mb-2 block text-green-300"></i>
+          No accepted records pending sync for ${esc(labelFor(cls))}
+        </div>`;
             return;
           }
+
           document.getElementById("syncBtn").disabled = false;
           el.innerHTML = `
-          <div class="flex items-center gap-3 mb-3 p-3 bg-amber-50 rounded-lg">
-            <i class="fas fa-info-circle text-amber-500"></i>
-            <span class="text-sm font-semibold text-amber-700">${meta.total} verified record(s) pending sync</span>
-          </div>
-          <div class="overflow-x-auto max-h-72">
-            <table class="w-full text-sm">
-              <thead><tr class="border-b border-amber-100 sticky top-0 bg-white">
-                <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Svc No</th>
-                <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Name</th>
-                <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide hidden sm:table-cell">Ship</th>
-                <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide hidden md:table-cell">Form #</th>
-              </tr></thead>
-              <tbody>
-                ${all
-                  .map(
-                    (
-                      r,
-                    ) => `<tr class="border-b border-amber-50 hover:bg-amber-50/30">
+        <div class="flex items-center gap-3 mb-3 p-3 bg-amber-50 rounded-lg">
+          <i class="fas fa-info-circle text-amber-500"></i>
+          <span class="text-sm font-semibold text-amber-700">${total} accepted record(s) ready to sync</span>
+        </div>
+        <div class="overflow-x-auto max-h-72">
+          <table class="w-full text-sm">
+            <thead><tr class="border-b border-amber-100 sticky top-0 bg-white">
+              <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Svc No</th>
+              <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Name</th>
+              <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide hidden sm:table-cell">Ship</th>
+              <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide hidden md:table-cell">Form #</th>
+            </tr></thead>
+            <tbody>
+              ${rows
+                .map(
+                  (r) => `
+                <tr class="border-b border-amber-50 hover:bg-amber-50/30">
                   <td class="py-2 font-mono font-semibold text-navy text-xs">${esc(r.serviceNumber)}</td>
                   <td class="py-2 text-navy/70 text-xs">${esc(r.Surname || "")} ${esc(r.OtherName || "")}</td>
                   <td class="py-2 text-navy/50 text-xs hidden sm:table-cell">${esc(r.ship || "—")}</td>
                   <td class="py-2 text-navy/40 text-xs font-mono hidden md:table-cell">${esc(r.formNumber || "—")}</td>
                 </tr>`,
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </div>`;
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </div>`;
         })
         .catch(() => {
           el.innerHTML =
             '<div class="text-center py-6 text-red-400 text-sm">Failed to load preview</div>';
         });
     }
-
     // ── History from audit log ─────────────────────────────
     async function loadHistory(cls) {
       const logBody = document.getElementById("logBody");

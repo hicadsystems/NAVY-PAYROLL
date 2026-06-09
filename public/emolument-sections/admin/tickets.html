@@ -223,14 +223,13 @@
   }
 
   @keyframes atk-pulse {
-
     0%,
     100% {
-      opacity: 1
+      opacity: 1;
     }
 
     50% {
-      opacity: .4
+      opacity: 0.4;
     }
   }
 
@@ -404,86 +403,142 @@
 </style>
 
 <div class="p-2 md:p-4 lg:p-6">
-
   <div class="mb-4">
-    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">Support Tickets</h3>
+    <h3
+      class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
+    >
+      Support Tickets
+    </h3>
   </div>
 
   <!-- Stat cards -->
   <div class="atk-stats">
     <div class="atk-stat">
       <div class="atk-stat-lbl">Total</div>
-      <div class="atk-stat-val" id="atk-s-total"><span class="atk-sk"
-          style="width:40px;height:22px;display:inline-block;"></span></div>
+      <div class="atk-stat-val" id="atk-s-total">
+        <span
+          class="atk-sk"
+          style="width: 40px; height: 22px; display: inline-block"
+        ></span>
+      </div>
     </div>
     <div class="atk-stat">
       <div class="atk-stat-lbl">Open</div>
-      <div class="atk-stat-val" id="atk-s-open" style="color:#92400e;"><span class="atk-sk"
-          style="width:35px;height:22px;display:inline-block;"></span></div>
+      <div class="atk-stat-val" id="atk-s-open" style="color: #92400e">
+        <span
+          class="atk-sk"
+          style="width: 35px; height: 22px; display: inline-block"
+        ></span>
+      </div>
     </div>
     <div class="atk-stat">
       <div class="atk-stat-lbl">Responded</div>
-      <div class="atk-stat-val" id="atk-s-responded" style="color:#166534;"><span class="atk-sk"
-          style="width:35px;height:22px;display:inline-block;"></span></div>
+      <div class="atk-stat-val" id="atk-s-responded" style="color: #166534">
+        <span
+          class="atk-sk"
+          style="width: 35px; height: 22px; display: inline-block"
+        ></span>
+      </div>
     </div>
     <div class="atk-stat">
       <div class="atk-stat-lbl">Closed</div>
-      <div class="atk-stat-val" id="atk-s-closed" style="color:#475569;"><span class="atk-sk"
-          style="width:35px;height:22px;display:inline-block;"></span></div>
+      <div class="atk-stat-val" id="atk-s-closed" style="color: #475569">
+        <span
+          class="atk-sk"
+          style="width: 35px; height: 22px; display: inline-block"
+        ></span>
+      </div>
     </div>
   </div>
 
   <!-- Table card -->
   <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4">
     <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-      <h3 class="font-bold text-navy text-sm uppercase tracking-wide">All Tickets</h3>
+      <h3 class="font-bold text-navy text-sm uppercase tracking-wide">
+        All Tickets
+      </h3>
       <span class="text-xs text-blue-900/40" id="atk-count"></span>
     </div>
 
     <!-- Filter tabs -->
     <div class="atk-tab-row">
-      <button class="atk-tab active" data-status="all" onclick="atkSetStatus('all')">All</button>
-      <button class="atk-tab" data-status="open" onclick="atkSetStatus('open')">Open</button>
-      <button class="atk-tab" data-status="responded" onclick="atkSetStatus('responded')">Responded</button>
-      <button class="atk-tab" data-status="closed" onclick="atkSetStatus('closed')">Closed</button>
+      <button
+        class="atk-tab active"
+        data-status="all"
+        onclick="atkSetStatus('all')"
+      >
+        All
+      </button>
+      <button class="atk-tab" data-status="open" onclick="atkSetStatus('open')">
+        Open
+      </button>
+      <button
+        class="atk-tab"
+        data-status="responded"
+        onclick="atkSetStatus('responded')"
+      >
+        Responded
+      </button>
+      <button
+        class="atk-tab"
+        data-status="closed"
+        onclick="atkSetStatus('closed')"
+      >
+        Closed
+      </button>
     </div>
 
     <!-- Search -->
     <div class="flex gap-2 mb-3">
-      <input id="atk-search" type="text" placeholder="Search name, service no or ship…"
+      <input
+        id="atk-search"
+        type="text"
+        placeholder="Search name, service no or ship…"
         class="flex-1 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
-        oninput="atkSearchDebounce()" />
-      <button onclick="atkClearSearch()"
-        class="px-3 py-2 bg-gray-100 text-navy/60 text-sm font-bold rounded-lg cursor-pointer border border-amber-100 hover:bg-gray-200 transition-colors">
+        oninput="atkSearchDebounce()"
+      />
+      <button
+        onclick="atkClearSearch()"
+        class="px-3 py-2 bg-gray-100 text-navy/60 text-sm font-bold rounded-lg cursor-pointer border border-amber-100 hover:bg-gray-200 transition-colors"
+      >
         <i class="fas fa-times"></i>
       </button>
     </div>
 
     <!-- Table -->
-    <div style="overflow-x:auto;" id="atk-table-wrap">
+    <div style="overflow-x: auto" id="atk-table-wrap">
       <div class="atk-empty"><i class="fas fa-spinner fa-spin mr-2"></i></div>
     </div>
 
     <!-- Pagination -->
     <div class="atk-pagination hidden" id="atk-pagination">
-      <button class="atk-pg-btn" id="atk-prev" onclick="atkChangePage(-1)"><i
-          class="fas fa-chevron-left mr-1"></i>Prev</button>
+      <button class="atk-pg-btn" id="atk-prev" onclick="atkChangePage(-1)">
+        <i class="fas fa-chevron-left mr-1"></i>Prev
+      </button>
       <span class="atk-pg-info" id="atk-pg-info"></span>
-      <button class="atk-pg-btn" id="atk-next" onclick="atkChangePage(1)">Next<i
-          class="fas fa-chevron-right ml-1"></i></button>
+      <button class="atk-pg-btn" id="atk-next" onclick="atkChangePage(1)">
+        Next<i class="fas fa-chevron-right ml-1"></i>
+      </button>
     </div>
   </div>
 </div>
 
 <!-- ── Modal ──────────────────────────────────────────────── -->
-<div class="atk-modal-bg" id="atk-modal" style="display:none;" onclick="if(event.target===this)atkCloseModal()">
+<div
+  class="atk-modal-bg"
+  id="atk-modal"
+  style="display: none"
+  onclick="if (event.target === this) atkCloseModal();"
+>
   <div class="atk-modal">
     <div class="atk-modal-head">
       <div>
         <div class="atk-modal-title" id="atk-m-subject">—</div>
-        <div style="margin-top:4px;" id="atk-m-badge"></div>
+        <div style="margin-top: 4px" id="atk-m-badge"></div>
       </div>
-      <button class="atk-modal-close" onclick="atkCloseModal()">&#x2715;</button>
+      <button class="atk-modal-close" onclick="atkCloseModal()">
+        &#x2715;
+      </button>
     </div>
 
     <!-- Submitter meta -->
@@ -494,8 +549,10 @@
     <div class="atk-modal-body-text" id="atk-m-body">—</div>
 
     <!-- Previous response -->
-    <div id="atk-m-prev-resp" style="display:none;" class="atk-prev-resp">
-      <div class="atk-prev-resp-lbl"><i class="fas fa-reply mr-1"></i>Previous Response</div>
+    <div id="atk-m-prev-resp" style="display: none" class="atk-prev-resp">
+      <div class="atk-prev-resp-lbl">
+        <i class="fas fa-reply mr-1"></i>Previous Response
+      </div>
       <div class="atk-prev-resp-text" id="atk-m-prev-text">—</div>
       <div class="atk-prev-resp-by" id="atk-m-prev-by"></div>
     </div>
@@ -503,27 +560,43 @@
     <!-- Reply area (hidden when closed) -->
     <div id="atk-m-reply-area">
       <label class="atk-field-lbl">Your Response</label>
-      <textarea class="atk-textarea" id="atk-m-reply" rows="4" placeholder="Type your response here…"></textarea>
-      <div id="atk-m-msg" class="atk-modal-msg" style="display:none;"></div>
+      <textarea
+        class="atk-textarea"
+        id="atk-m-reply"
+        rows="4"
+        placeholder="Type your response here…"
+      ></textarea>
+      <div id="atk-m-msg" class="atk-modal-msg" style="display: none"></div>
       <div class="atk-modal-footer">
-        <button onclick="atkCloseModal()"
-          class="flex-1 py-2 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 cursor-pointer border border-amber-100 transition-colors">
+        <button
+          onclick="atkCloseModal()"
+          class="flex-1 py-2 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 cursor-pointer border border-amber-100 transition-colors"
+        >
           Cancel
         </button>
-        <button onclick="atkSendResponse()" id="atk-m-send-btn"
-          class="flex-1 py-2 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 cursor-pointer border-none transition-colors">
+        <button
+          onclick="atkSendResponse()"
+          id="atk-m-send-btn"
+          class="flex-1 py-2 bg-navy text-white font-bold text-sm rounded-lg hover:bg-blue-800 cursor-pointer border-none transition-colors"
+        >
           <i class="fas fa-paper-plane mr-1"></i>Send Response
         </button>
-        <button onclick="atkCloseTicket()" id="atk-m-close-btn"
-          class="py-2 px-3 bg-gray-100 text-slate-500 font-bold text-sm rounded-lg hover:bg-gray-200 cursor-pointer border border-gray-200 transition-colors">
+        <button
+          onclick="atkCloseTicket()"
+          id="atk-m-close-btn"
+          class="py-2 px-3 bg-gray-100 text-slate-500 font-bold text-sm rounded-lg hover:bg-gray-200 cursor-pointer border border-gray-200 transition-colors"
+        >
           <i class="fas fa-times-circle mr-1"></i>Close
         </button>
       </div>
     </div>
 
     <!-- Closed note -->
-    <div id="atk-m-closed-note" style="display:none;"
-      class="text-center text-xs text-slate-400 font-semibold mt-3 py-2 border-t border-gray-100">
+    <div
+      id="atk-m-closed-note"
+      style="display: none"
+      class="text-center text-xs text-slate-400 font-semibold mt-3 py-2 border-t border-gray-100"
+    >
       This ticket is closed. No further action required.
     </div>
   </div>
@@ -531,11 +604,11 @@
 
 <script>
   (function () {
-    var TOKEN = localStorage.getItem('token');
+    var TOKEN = localStorage.getItem("token");
     var PAGE_SIZE = 10;
-    var _status = 'all';
+    var _status = "all";
     var _page = 1;
-    var _search = '';
+    var _search = "";
     var _debounce = null;
     var _activeId = null;
 
@@ -543,72 +616,93 @@
     // This is the root cause of "Unexpected end of input": JSON.stringify
     // inside an onclick="" attribute breaks if ANY field contains a quote,
     // apostrophe, angle bracket, or newline.
-    var _ticketStore = {};   // id → ticket object
+    var _ticketStore = {}; // id → ticket object
 
     /* ── Helpers ── */
-    function N(v) { return (!v && v !== 0) ? '0' : Number(v).toLocaleString(); }
+    function N(v) {
+      return !v && v !== 0 ? "0" : Number(v).toLocaleString();
+    }
 
     function esc(s) {
-      return String(s || '')
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
     }
 
     function fmtDate(d) {
-      if (!d) return '—';
-      return new Date(d).toLocaleDateString('en-GB', {
-        day: 'numeric', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit'
+      if (!d) return "—";
+      return new Date(d).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     }
 
     /* ── Load counts ── */
     function loadCounts() {
-      fetch('/tickets/counts', { headers: { Authorization: 'Bearer ' + TOKEN } })
-        .then(function (r) { return r.ok ? r.json() : null; })
+      fetch("/tickets/counts", {
+        headers: { Authorization: "Bearer " + TOKEN },
+      })
+        .then(function (r) {
+          return r.ok ? r.json() : null;
+        })
         .then(function (d) {
           if (!d) return;
-          document.getElementById('atk-s-total').textContent = N(d.total);
-          document.getElementById('atk-s-open').textContent = N(d.open);
-          document.getElementById('atk-s-responded').textContent = N(d.responded);
-          document.getElementById('atk-s-closed').textContent = N(d.closed);
+          document.getElementById("atk-s-total").textContent = N(d.total);
+          document.getElementById("atk-s-open").textContent = N(d.open);
+          document.getElementById("atk-s-responded").textContent = N(
+            d.responded,
+          );
+          document.getElementById("atk-s-closed").textContent = N(d.closed);
         })
-        .catch(function () { });
+        .catch(function () {});
     }
 
     /* ── Load tickets ── */
     function loadTickets() {
-      var wrap = document.getElementById('atk-table-wrap');
-      wrap.innerHTML = '<div class="atk-empty"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+      var wrap = document.getElementById("atk-table-wrap");
+      wrap.innerHTML =
+        '<div class="atk-empty"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
 
       var params = new URLSearchParams({ page: _page, pageSize: PAGE_SIZE });
-      if (_status && _status !== 'all') params.set('status', _status);
-      if (_search) params.set('search', _search);
+      if (_status && _status !== "all") params.set("status", _status);
+      if (_search) params.set("search", _search);
 
-      fetch('/tickets?' + params, { headers: { Authorization: 'Bearer ' + TOKEN } })
-        .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      fetch("/tickets?" + params, {
+        headers: { Authorization: "Bearer " + TOKEN },
+      })
+        .then(function (r) {
+          return r.ok ? r.json() : Promise.reject(r.status);
+        })
         .then(function (data) {
           var rows = data.rows || [];
           var pagination = data.pagination || {};
 
           // Populate store — keyed by ticket id
           _ticketStore = {};
-          rows.forEach(function (t) { _ticketStore[t.id] = t; });
+          rows.forEach(function (t) {
+            _ticketStore[t.id] = t;
+          });
 
           renderTable(rows);
           renderPagination(pagination);
 
-          var countEl = document.getElementById('atk-count');
-          if (countEl) countEl.textContent = N(pagination.total) + ' ticket(s)';
+          var countEl = document.getElementById("atk-count");
+          if (countEl) countEl.textContent = N(pagination.total) + " ticket(s)";
         })
         .catch(function () {
-          wrap.innerHTML = '<div class="atk-empty" style="color:#f87171;">Failed to load tickets.</div>';
+          wrap.innerHTML =
+            '<div class="atk-empty" style="color:#f87171;">Failed to load tickets.</div>';
         });
     }
 
     /* ── Render table (slim: svc no, ship, subject, message, response, status, action) ── */
     function renderTable(rows) {
-      var wrap = document.getElementById('atk-table-wrap');
+      var wrap = document.getElementById("atk-table-wrap");
       if (!rows.length) {
         wrap.innerHTML = '<div class="atk-empty">No tickets found.</div>';
         return;
@@ -616,60 +710,81 @@
 
       var html =
         '<table class="atk-table">' +
-        '<thead><tr>' +
-        '<th>Svc. No.</th>' +
-        '<th>Ship</th>' +
-        '<th>Subject</th>' +
-        '<th>Message</th>' +
-        '<th>Response</th>' +
-        '<th>Status</th>' +
-        '<th></th>' +
-        '</tr></thead><tbody>';
+        "<thead><tr>" +
+        "<th>Svc. No.</th>" +
+        "<th>Ship</th>" +
+        "<th>Subject</th>" +
+        "<th>Message</th>" +
+        "<th>Response</th>" +
+        "<th>Status</th>" +
+        "<th></th>" +
+        "</tr></thead><tbody>";
 
       rows.forEach(function (t) {
-        var badgeCls = t.status === 'responded' ? 'atk-responded'
-          : t.status === 'closed' ? 'atk-closed'
-            : 'atk-open';
+        var badgeCls =
+          t.status === "responded"
+            ? "atk-responded"
+            : t.status === "closed"
+              ? "atk-closed"
+              : "atk-open";
 
         // Safe: id is always a plain integer — no escaping hazard
         html +=
-          '<tr>' +
-          '<td>' +
-          '<div class="atk-name">' + esc(t.user_id) + '</div>' +
-          '</td>' +
-          '<td style="font-size:0.7rem;white-space:nowrap;">' + esc(t.ship || '—') + '</td>' +
-          '<td style="font-size:0.7rem;font-weight:600;color:rgb(30 64 175);white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;">' + esc(t.subject) + '</td>' +
-          '<td><div class="atk-clip">' + esc(t.body) + '</div></td>' +
-          '<td><div class="atk-clip' + (t.response ? ' green' : '') + '">' +
-          (t.response ? esc(t.response) : '<span style="color:rgba(30,64,175,0.2);font-size:0.65rem;">—</span>') +
-          '</div></td>' +
-          '<td><span class="atk-badge ' + badgeCls + '">' + t.status + '</span></td>' +
-          '<td>' +
-          '<button class="atk-btn atk-btn-view" onclick="atkOpenModal(' + t.id + ')">' +
+          "<tr>" +
+          "<td>" +
+          '<div class="atk-name">' +
+          esc(t.user_id) +
+          "</div>" +
+          "</td>" +
+          '<td style="font-size:0.7rem;white-space:nowrap;">' +
+          esc(t.ship || "—") +
+          "</td>" +
+          '<td style="font-size:0.7rem;font-weight:600;color:rgb(30 64 175);white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;">' +
+          esc(t.subject) +
+          "</td>" +
+          '<td><div class="atk-clip">' +
+          esc(t.body) +
+          "</div></td>" +
+          '<td><div class="atk-clip' +
+          (t.response ? " green" : "") +
+          '">' +
+          (t.response
+            ? esc(t.response)
+            : '<span style="color:rgba(30,64,175,0.2);font-size:0.65rem;">—</span>') +
+          "</div></td>" +
+          '<td><span class="atk-badge ' +
+          badgeCls +
+          '">' +
+          t.status +
+          "</span></td>" +
+          "<td>" +
+          '<button class="atk-btn atk-btn-view" onclick="atkOpenModal(' +
+          t.id +
+          ')">' +
           '<i class="fas fa-eye mr-1"></i>View' +
-          '</button>' +
-          '</td>' +
-          '</tr>';
+          "</button>" +
+          "</td>" +
+          "</tr>";
       });
 
-      html += '</tbody></table>';
+      html += "</tbody></table>";
       wrap.innerHTML = html;
     }
 
     /* ── Pagination ── */
     function renderPagination(p) {
-      var el = document.getElementById('atk-pagination');
-      var info = document.getElementById('atk-pg-info');
-      var prev = document.getElementById('atk-prev');
-      var next = document.getElementById('atk-next');
+      var el = document.getElementById("atk-pagination");
+      var info = document.getElementById("atk-pg-info");
+      var prev = document.getElementById("atk-prev");
+      var next = document.getElementById("atk-next");
       if (!el) return;
       if (p.totalPages > 1) {
-        el.classList.remove('hidden');
-        if (info) info.textContent = 'Page ' + p.page + ' of ' + p.totalPages;
-        if (prev) prev.disabled = (p.page <= 1);
-        if (next) next.disabled = (p.page >= p.totalPages);
+        el.classList.remove("hidden");
+        if (info) info.textContent = "Page " + p.page + " of " + p.totalPages;
+        if (prev) prev.disabled = p.page <= 1;
+        if (next) next.disabled = p.page >= p.totalPages;
       } else {
-        el.classList.add('hidden');
+        el.classList.add("hidden");
       }
     }
 
@@ -680,9 +795,10 @@
 
     /* ── Status tabs ── */
     window.atkSetStatus = function (status) {
-      _status = status; _page = 1;
-      document.querySelectorAll('.atk-tab').forEach(function (t) {
-        t.classList.toggle('active', t.dataset.status === status);
+      _status = status;
+      _page = 1;
+      document.querySelectorAll(".atk-tab").forEach(function (t) {
+        t.classList.toggle("active", t.dataset.status === status);
       });
       loadTickets();
     };
@@ -691,15 +807,16 @@
     window.atkSearchDebounce = function () {
       clearTimeout(_debounce);
       _debounce = setTimeout(function () {
-        _search = document.getElementById('atk-search').value.trim();
+        _search = document.getElementById("atk-search").value.trim();
         _page = 1;
         loadTickets();
       }, 350);
     };
 
     window.atkClearSearch = function () {
-      document.getElementById('atk-search').value = '';
-      _search = ''; _page = 1;
+      document.getElementById("atk-search").value = "";
+      _search = "";
+      _page = 1;
       loadTickets();
     };
 
@@ -709,126 +826,165 @@
       if (!t) return;
       _activeId = t.id;
 
-      var badgeCls = t.status === 'responded' ? 'atk-responded'
-        : t.status === 'closed' ? 'atk-closed'
-          : 'atk-open';
+      var badgeCls =
+        t.status === "responded"
+          ? "atk-responded"
+          : t.status === "closed"
+            ? "atk-closed"
+            : "atk-open";
 
-      document.getElementById('atk-m-subject').textContent = t.subject || '—';
-      document.getElementById('atk-m-badge').innerHTML =
-        '<span class="atk-badge ' + badgeCls + '">' + t.status + '</span>';
+      document.getElementById("atk-m-subject").textContent = t.subject || "—";
+      document.getElementById("atk-m-badge").innerHTML =
+        '<span class="atk-badge ' + badgeCls + '">' + t.status + "</span>";
 
       // Meta strip — all values go through textContent / esc, never innerHTML with raw data
-      var meta = document.getElementById('atk-m-meta');
-      meta.innerHTML = '';
+      var meta = document.getElementById("atk-m-meta");
+      meta.innerHTML = "";
       [
-        ['fa-id-badge', (t.full_name || '—') + ' · ' + (t.user_id || '—')],
-        ['fa-ship', t.ship || '—'],
-        ['fa-envelope', t.email || null],
-        ['fa-phone', t.phone || null],
-        ['fa-clock', fmtDate(t.created_at)],
+        ["fa-id-badge", (t.full_name || "—") + " · " + (t.user_id || "—")],
+        ["fa-ship", t.ship || "—"],
+        ["fa-envelope", t.email || null],
+        ["fa-phone", t.phone || null],
+        ["fa-clock", fmtDate(t.created_at)],
       ].forEach(function (pair) {
         if (pair[1] === null) return;
-        var span = document.createElement('span');
-        var icon = document.createElement('i');
-        icon.className = 'fas ' + pair[0];
-        icon.style.fontSize = '10px';
+        var span = document.createElement("span");
+        var icon = document.createElement("i");
+        icon.className = "fas " + pair[0];
+        icon.style.fontSize = "10px";
         span.appendChild(icon);
-        span.appendChild(document.createTextNode(' ' + pair[1]));
+        span.appendChild(document.createTextNode(" " + pair[1]));
         meta.appendChild(span);
       });
 
       // Original message — textContent is XSS-safe, preserves newlines via pre-wrap
-      document.getElementById('atk-m-body').textContent = t.body || '—';
+      document.getElementById("atk-m-body").textContent = t.body || "—";
 
       // Previous response
-      var prevEl = document.getElementById('atk-m-prev-resp');
+      var prevEl = document.getElementById("atk-m-prev-resp");
       if (t.response) {
-        document.getElementById('atk-m-prev-text').textContent = t.response;
-        document.getElementById('atk-m-prev-by').textContent =
-          '— ' + (t.responded_by || 'Admin') + ' · ' + fmtDate(t.responded_at);
-        prevEl.style.display = 'block';
+        document.getElementById("atk-m-prev-text").textContent = t.response;
+        document.getElementById("atk-m-prev-by").textContent =
+          "— " + (t.responded_by || "Admin") + " · " + fmtDate(t.responded_at);
+        prevEl.style.display = "block";
       } else {
-        prevEl.style.display = 'none';
+        prevEl.style.display = "none";
       }
 
       // Reply vs closed
-      var replyArea = document.getElementById('atk-m-reply-area');
-      var closedNote = document.getElementById('atk-m-closed-note');
-      document.getElementById('atk-m-reply').value = '';
-      document.getElementById('atk-m-msg').style.display = 'none';
+      var replyArea = document.getElementById("atk-m-reply-area");
+      var closedNote = document.getElementById("atk-m-closed-note");
+      document.getElementById("atk-m-reply").value = "";
+      document.getElementById("atk-m-msg").style.display = "none";
 
-      if (t.status === 'closed') {
-        replyArea.style.display = 'none';
-        closedNote.style.display = 'block';
+      if (t.status === "closed") {
+        replyArea.style.display = "none";
+        closedNote.style.display = "block";
       } else {
-        replyArea.style.display = 'block';
-        closedNote.style.display = 'none';
+        replyArea.style.display = "block";
+        closedNote.style.display = "none";
       }
 
-      document.getElementById('atk-modal').style.display = 'flex';
+      document.getElementById("atk-modal").style.display = "flex";
     };
 
     window.atkCloseModal = function () {
-      document.getElementById('atk-modal').style.display = 'none';
+      document.getElementById("atk-modal").style.display = "none";
       _activeId = null;
     };
 
     /* ── Send response ── */
     window.atkSendResponse = function () {
       if (!_activeId) return;
-      var reply = document.getElementById('atk-m-reply').value.trim();
-      var msgEl = document.getElementById('atk-m-msg');
-      var sendBtn = document.getElementById('atk-m-send-btn');
+      var reply = document.getElementById("atk-m-reply").value.trim();
+      var msgEl = document.getElementById("atk-m-msg");
+      var sendBtn = document.getElementById("atk-m-send-btn");
 
       function showMsg(text, ok) {
-        msgEl.style.display = 'block';
-        msgEl.style.background = ok ? 'rgba(34,197,94,0.08)' : 'rgba(248,113,113,0.12)';
-        msgEl.style.color = ok ? '#166534' : '#dc2626';
+        msgEl.style.display = "block";
+        msgEl.style.background = ok
+          ? "rgba(34,197,94,0.08)"
+          : "rgba(248,113,113,0.12)";
+        msgEl.style.color = ok ? "#166534" : "#dc2626";
         msgEl.textContent = text;
       }
 
-      if (!reply) { showMsg('Please type a response before sending.', false); return; }
+      if (!reply) {
+        showMsg("Please type a response before sending.", false);
+        return;
+      }
 
       sendBtn.disabled = true;
       sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Sending…';
 
-      fetch('/tickets/' + _activeId + '/respond', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN },
+      fetch("/tickets/" + _activeId + "/respond", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + TOKEN,
+        },
         body: JSON.stringify({ response: reply }),
       })
-        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (r) {
+          return r.json().then(function (d) {
+            return { ok: r.ok, d: d };
+          });
+        })
         .then(function (res) {
           if (res.ok) {
-            showMsg('Response sent successfully.', true);
-            setTimeout(function () { atkCloseModal(); loadTickets(); loadCounts(); }, 900);
+            showMsg("Response sent successfully.", true);
+            setTimeout(function () {
+              atkCloseModal();
+              loadTickets();
+              loadCounts();
+            }, 900);
           } else {
-            showMsg(res.d.error || 'Failed to send response.', false);
+            showMsg(res.d.error || "Failed to send response.", false);
           }
         })
-        .catch(function () { showMsg('Server error. Please try again.', false); })
+        .catch(function () {
+          showMsg("Server error. Please try again.", false);
+        })
         .finally(function () {
           sendBtn.disabled = false;
-          sendBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i>Send Response';
+          sendBtn.innerHTML =
+            '<i class="fas fa-paper-plane mr-1"></i>Send Response';
         });
     };
 
     /* ── Close ticket ── */
     window.atkCloseTicket = function () {
       if (!_activeId) return;
-      if (!confirm('Mark this ticket as closed? The user will see it as resolved.')) return;
+      if (
+        !confirm(
+          "Mark this ticket as closed? The user will see it as resolved.",
+        )
+      )
+        return;
 
-      fetch('/tickets/' + _activeId + '/close', {
-        method: 'PATCH',
-        headers: { Authorization: 'Bearer ' + TOKEN },
+      fetch("/tickets/" + _activeId + "/close", {
+        method: "PATCH",
+        headers: { Authorization: "Bearer " + TOKEN },
       })
-        .then(function (r) { return r.ok; })
-        .then(function (ok) { if (ok) { atkCloseModal(); loadTickets(); loadCounts(); } })
-        .catch(function () { });
+        .then(function (r) {
+          return r.ok;
+        })
+        .then(function (ok) {
+          if (ok) {
+            atkCloseModal();
+            loadTickets();
+            loadCounts();
+          }
+        })
+        .catch(function () {});
     };
 
     /* ── Init ── */
     loadCounts();
     loadTickets();
+
+    // Hoist modal to body on load so overlay covers full viewport
+    const modal = document.getElementById("atk-modal");
+    document.body.appendChild(modal);
   })();
 </script>

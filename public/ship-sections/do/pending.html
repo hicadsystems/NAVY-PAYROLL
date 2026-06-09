@@ -205,7 +205,13 @@
     sessionStorage.setItem("active_ship_role", role);
     sessionStorage.setItem("emolument_form_svcno", svcno);
     window.location.href =
-      "../../pages/emolument-form.html?svcno=" + encodeURIComponent(svcno) + "&role=" + encodeURIComponent(role) + "&admin=1" + "&ship=" + encodeURIComponent(ship);
+      "../../pages/emolument-form.html?svcno=" +
+      encodeURIComponent(svcno) +
+      "&role=" +
+      encodeURIComponent(role) +
+      "&admin=1" +
+      "&ship=" +
+      encodeURIComponent(ship);
   }
 
   loadDoPending(1);

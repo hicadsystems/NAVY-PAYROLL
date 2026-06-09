@@ -170,7 +170,7 @@
   </div>
 
   <!-- ══ MODAL: ADD/EDIT SHIP ══ -->
-  <div id="shipModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+  <div id="shipModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
     onclick="bgClose(event,'shipModal')">
     <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md">
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
@@ -212,7 +212,7 @@
   </div>
 
   <!-- ══ MODAL: ADD/EDIT SHIP USER ══ -->
-  <div id="userModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+  <div id="userModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
     onclick="bgClose(event,'userModal')">
     <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 sticky top-0 bg-white z-10">
@@ -281,7 +281,7 @@
   </div>
 
   <!-- ══ MODAL: UPLOAD ══ -->
-  <div id="uploadModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+  <div id="uploadModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
     onclick="bgClose(event,'uploadModal')">
     <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md">
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
@@ -324,7 +324,7 @@
   </div>
 
   <!-- ══ MODAL: CONFIRM ══ -->
-  <div id="confirmModal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+  <div id="confirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
     <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
       <div id="confirmIconWrap" class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
         <i id="confirmIcon" class="text-xl"></i>
@@ -942,6 +942,13 @@
       a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(content);
       a.download = filename; a.click();
     }
+
+    // Hoist modals to body so overlay covers full viewport including sidebar
+    const modalIds = ["shipModal", "userModal", "confirmModal", "uploadModal", "commissionModal"];
+    modalIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) document.body.appendChild(el);
+    });
   </script>
 </body>
 

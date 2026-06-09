@@ -549,7 +549,17 @@ router.get("/payroll/sync-preview", async (req, res) => {
     const result = await adminService.syncPayrollPreview(cls);
     if (!result.success)
       return res.status(result.code).json({ error: result.message });
-    return res.json(result.data);
+
+    const rows = Array.isArray(result.data) ? result.data : [];
+    return res.json({
+      rows,
+      pagination: {
+        total: rows.length,
+        page: 1,
+        pageSize: rows.length,
+        totalPages: 1,
+      },
+    });
   } catch (err) {
     console.error("❌ GET /admin/payroll/sync-preview:", err);
     return res.status(500).json({ error: "Server error" });

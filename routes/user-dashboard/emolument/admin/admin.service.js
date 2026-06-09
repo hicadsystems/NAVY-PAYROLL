@@ -648,24 +648,16 @@ async function syncPayrollPreview(payrollclassRaw) {
       message: `payrollclass must be one of: ${VALID_PAYROLL_CLASSES.join(", ")}, or ALL.`,
     };
 
-  const preview = [];
+  const rows = [];
 
   for (const cls of classes) {
-    const serviceNumbers = await repo.getConfirmedForSync(cls);
-    preview.push({
-      payrollclass: cls,
-      label: PAYROLL_CLASS_LABELS[cls],
-      pendingSync: serviceNumbers.length,
-      serviceNumbers,
-    });
+    const classRows = await repo.getConfirmedForSync(cls);
+    rows.push(...classRows);
   }
 
   return {
     success: true,
-    data: {
-      classes: preview,
-      totalPending: preview.reduce((sum, c) => sum + c.pendingSync, 0),
-    },
+    data: rows,
   };
 }
 
@@ -690,9 +682,9 @@ async function syncPayroll(body, performedBy, ip) {
   let totalFailed = 0;
 
   for (const cls of classes) {
-    const serviceNumbers = await repo.getConfirmedForSync(cls);
+    const rows = await repo.getConfirmedForSync(cls);
 
-    if (!serviceNumbers.length) {
+    if (!rows.length) {
       summary.push({
         payrollclass: cls,
         label: PAYROLL_CLASS_LABELS[cls],
@@ -708,7 +700,8 @@ async function syncPayroll(body, performedBy, ip) {
     // Resolve form IDs once for this class so we can write SYNCED approval rows
     const formIdMap = await repo.getFormIdMapForSync(cls);
 
-    for (const svcNo of serviceNumbers) {
+    for (const row of rows) {
+      const svcNo = row.serviceNumber;
       try {
         await repo.markSyncedInPersonnel(svcNo, cls);
         await repo.syncToHrEmployees(svcNo);
@@ -720,7 +713,7 @@ async function syncPayroll(body, performedBy, ip) {
             formId,
             action: "SYNCED",
             fromStatus: "CPO_CONFIRMED",
-            toStatus: "CPO_CONFIRMED", // status on ef_emolument_forms does not change on sync
+            toStatus: "CPO_CONFIRMED",
             performedBy,
             performerRole: "EMOL_ADMIN",
             remarks: `Payroll sync — class ${cls} (${PAYROLL_CLASS_LABELS[cls]})`,

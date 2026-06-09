@@ -260,8 +260,7 @@
 <!-- Commission Modal -->
 <div
   id="commissionModal"
-  class="fixed inset-0 z-50 hidden flex items-center justify-center"
-  style="background: rgba(0, 0, 0, 0.4)"
+  class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
 >
   <div
     class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 relative"
@@ -909,5 +908,9 @@
     window.rptChangePage = function (dir) {
       window.loadPersonnelList(_page + dir);
     };
+
+    // Hoist modal to body on load so overlay covers full viewport
+    const modal = document.getElementById("commissionModal");
+    document.body.appendChild(modal);
   })();
 </script>

@@ -63,6 +63,7 @@
 <script>
   let cpoActiveFormId = null;
   let cpoPendingCurrentPage = 1;
+  console.log(command, 'command')
 
   function loadCpoPending(page) {
     page = page || 1;
@@ -181,7 +182,12 @@
     sessionStorage.setItem("active_ship_role", role);
     sessionStorage.setItem("emolument_form_svcno", svcno);
     window.location.href =
-      "../../pages/emolument-form.html?svcno=" + encodeURIComponent(svcno);
+      "../../pages/emolument-form.html?svcno=" + encodeURIComponent(svcno) +
+      "&role=" +
+      encodeURIComponent(role) +
+      "&admin=1" +
+      "&command=" +
+      encodeURIComponent(command);
   }
 
   loadCpoPending(1);

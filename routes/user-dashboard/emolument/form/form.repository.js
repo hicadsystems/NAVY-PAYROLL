@@ -1125,7 +1125,7 @@ async function getFormOptions() {
       connection.query("SELECT Id AS id, Name AS name FROM ef_entrymodes"),
 
       // Ranks
-      connection.query("SELECT Id AS id, rankName AS name FROM ef_ranks"),
+      connection.query("SELECT Id AS id, rankName AS name, rankType AS type FROM ef_ranks"),
     ]);
 
     return {

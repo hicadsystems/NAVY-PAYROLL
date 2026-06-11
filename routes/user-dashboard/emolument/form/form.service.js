@@ -97,7 +97,7 @@ async function checkFormEligibility(person) {
 // ─────────────────────────────────────────────────────────────
 
 async function loadForm(serviceNo) {
-  console.log(`service number ${serviceNo} from form.service`)
+  console.log(`service number ${serviceNo} from form.service`);
   let person = await repo.getPersonCore(serviceNo);
 
   // ── First-timer path ─────────────────────────────────────

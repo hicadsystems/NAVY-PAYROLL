@@ -1,0 +1,1066 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 8pt;
+        color: #1a1a1a;
+        line-height: 1.35;
+      }
+
+      /* ── Full-bleed background ───────────────────────────────── */
+      .page-bg {
+        position: fixed;
+        inset: 0;
+        z-index: -3;
+      }
+      body.officer .page-bg {
+        background-color: #f8fbff;
+      }
+      body.rating .page-bg {
+        background-color: #fcf6e5;
+      }
+
+      /* ── Background watermark: big logo + diagonal year ─────── */
+      .bg-watermark {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 680px;
+        height: 680px;
+        z-index: -1;
+        pointer-events: none;
+      }
+      .bg-logo-img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        opacity: 0.05;
+      }
+      .bg-year-diag {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        font-family: "Arial Black", Arial, sans-serif;
+        font-size: 110pt;
+        font-weight: 900;
+        color: rgba(8, 38, 110, 0.07);
+        white-space: nowrap;
+        line-height: 1;
+        pointer-events: none;
+      }
+
+      /* ── Vertical side RESTRICTED stamps ────────────────────── */
+      .stamp-left,
+      .stamp-right {
+        position: fixed;
+        writing-mode: vertical-rl;
+        font-weight: 900;
+        font-size: 6.5pt;
+        letter-spacing: 5px;
+        color: #b00000;
+        opacity: 0.8;
+        top: 50%;
+        z-index: 10;
+      }
+      .stamp-left {
+        left: 2mm;
+        transform: translateY(-50%) rotate(180deg);
+      }
+      .stamp-right {
+        right: 2mm;
+        transform: translateY(-50%);
+      }
+
+      /* ── Pages ───────────────────────────────────────────────── */
+      .page {
+        padding: 10mm 14mm 8mm 14mm;
+        position: relative;
+      }
+      .page-break {
+        page-break-before: always;
+      }
+
+      /* ── Top / Bottom RESTRICTED ─────────────────────────────── */
+      .restricted-line {
+        text-align: center;
+        font-weight: 900;
+        font-size: 7pt;
+        letter-spacing: 4px;
+        color: #b00000;
+        margin-bottom: 3px;
+      }
+
+      /* ── Header ──────────────────────────────────────────────── */
+      .page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+      .annex-block {
+        font-size: 7.5pt;
+        text-align: right;
+        line-height: 1.4;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .photos-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        flex: 1;
+      }
+      .passport-photo {
+        width: 64px;
+        height: 74px;
+        border: 1px solid #555;
+        object-fit: cover;
+        display: block;
+      }
+      .photo-placeholder {
+        width: 64px;
+        height: 74px;
+        border: 1px dashed #aaa;
+        background: rgba(0, 0, 0, 0.04);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 5.5pt;
+        color: #888;
+        text-align: center;
+        line-height: 1.4;
+      }
+
+      /* ── Header logo + diagonal year ────────────────────────── */
+      .logo-wrap {
+        position: relative;
+        width: 88px;
+        height: 88px;
+        flex-shrink: 0;
+      }
+      .logo-wrap img {
+        width: 88px;
+        height: 88px;
+        object-fit: contain;
+        display: block;
+      }
+      .year-stamp {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        font-family: "Arial Black", Arial, sans-serif;
+        font-size: 19pt;
+        font-weight: 900;
+        color: rgba(8, 38, 110, 0.42);
+        white-space: nowrap;
+        pointer-events: none;
+        line-height: 1;
+      }
+
+      /* ── Form title ──────────────────────────────────────────── */
+      .form-title {
+        text-align: center;
+        font-size: 10.5pt;
+        font-weight: bold;
+        text-decoration: underline;
+        text-transform: uppercase;
+        margin: 5px 0 5px 0;
+        letter-spacing: 0.4px;
+      }
+
+      /* ── Section heading ─────────────────────────────────────── */
+      .section-heading {
+        font-weight: bold;
+        font-size: 8.5pt;
+        text-decoration: underline;
+        margin: 0 0 4px 0;
+      }
+      .section-note {
+        font-weight: normal;
+        font-style: italic;
+        font-size: 7.5pt;
+        text-decoration: none;
+      }
+
+      /* ── Field rows — extra vertical rhythm on page 1 ────────── */
+      .frow {
+        display: flex;
+        align-items: baseline;
+        margin-bottom: 4px;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .flabel {
+        font-weight: bold;
+        white-space: nowrap;
+        font-size: 8pt;
+      }
+      .fval {
+        border-bottom: 0.5px solid #c8c8c8;
+        min-width: 70px;
+        flex: 1;
+        padding: 0 2px 1px 2px;
+        font-size: 8pt;
+      }
+      .fval.sm {
+        flex: none;
+        width: 80px;
+      }
+      .fval.md {
+        flex: none;
+        width: 110px;
+      }
+      .fval.lg {
+        flex: none;
+        width: 160px;
+      }
+      .fval.xl {
+        flex: none;
+        width: 220px;
+      }
+
+      /* ── Multi-field inline row ──────────────────────────────── */
+      .inline-fields {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 4px;
+        flex-wrap: wrap;
+        align-items: baseline;
+      }
+      .inline-item {
+        display: flex;
+        align-items: baseline;
+        gap: 3px;
+      }
+
+      /* ── Sub-indentation ─────────────────────────────────────── */
+      .sub1 {
+        margin-left: 14px;
+      }
+      .sub2 {
+        margin-left: 26px;
+      }
+
+      /* ── NOK underlined italic labels ───────────────────────── */
+      .nok-label {
+        font-weight: bold;
+        text-decoration: underline;
+        font-style: italic;
+        font-size: 8pt;
+        margin: 4px 0 3px 0;
+      }
+
+      /* ── Q25/Q26 checklists — value directly after label ─────── */
+      .q-header {
+        font-size: 9.5pt;
+        font-weight: bold;
+        margin: 8px 0 4px 0;
+      }
+      .checklist {
+        margin-left: 14px;
+      }
+      .cl-row {
+        display: flex;
+        align-items: baseline;
+        margin-bottom: 3px;
+        gap: 6px;
+        /* No space-between — value sits right after label */
+      }
+      .cl-label {
+        font-size: 8pt;
+        /* no flex:1 — label takes its natural width */
+      }
+      .cl-val {
+        font-size: 8pt;
+        font-weight: bold;
+      }
+
+      /* ── Bank ────────────────────────────────────────────────── */
+      .bank-block {
+        margin-left: 14px;
+      }
+
+      /* ── Certification text ──────────────────────────────────── */
+      .certify-text {
+        font-size: 7.5pt;
+        font-style: italic;
+        margin: 10px 0 6px 0;
+      }
+
+      /* ── Signature area ──────────────────────────────────────── */
+      .sig-area {
+        display: flex;
+        justify-content: space-between;
+        margin: 14px 0 12px 0;
+      }
+      .sig-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 44%;
+      }
+      .sig-line {
+        width: 90%;
+        border-top: 1px dotted #555;
+        margin-bottom: 3px;
+      }
+      .sig-caption {
+        font-size: 7.5pt;
+        text-align: center;
+      }
+
+      /* ── NOTE box ────────────────────────────────────────────── */
+      .note-box {
+        border: 2px solid #1a56c4;
+        padding: 5px 8px;
+        text-align: center;
+        font-weight: bold;
+        font-size: 8pt;
+        color: #1a56c4;
+        margin: 10px 0;
+      }
+
+      /* ── Section B / C blocks ────────────────────────────────── */
+      .sec-block {
+        border-top: 1px solid #555;
+        padding-top: 8px;
+        margin-top: 16px;
+      }
+      .sec-block-title {
+        font-weight: bold;
+        font-size: 8.5pt;
+        text-decoration: underline;
+        margin-bottom: 5px;
+      }
+
+      /* ── Page footer ─────────────────────────────────────────── */
+      .page-footer {
+        text-align: center;
+        margin-top: 150px;
+        padding-top: 3px;
+        border-top: 0.5px solid #aaa;
+      }
+      .footer-pgnum {
+        font-weight: bold;
+        font-size: 7.5pt;
+      }
+      .footer-restr {
+        font-weight: 900;
+        font-size: 7pt;
+        letter-spacing: 4px;
+        color: #b00000;
+      }
+
+      /* ── Page 2 top row: Q25 left, alt-NOK photo right ──────── */
+      .p2-top-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        margin-bottom: 6px;
+      }
+      .p2-q25-col {
+        flex: 1;
+      }
+      .p2-photo-col {
+        flex-shrink: 0;
+        text-align: center;
+      }
+      .alt-nok-caption {
+        font-size: 7pt;
+        font-style: italic;
+        text-align: center;
+        margin-bottom: 2px;
+      }
+
+      /* ── Checklist columns — Yes/No aligned vertically ───────── */
+      .checklist-q25 .cl-label {
+        min-width: 195px;
+      }
+      .checklist-q26 .cl-label {
+        min-width: 282px;
+      }
+    </style>
+  </head>
+
+  <body
+    class="{{#if (eq data.formType 'OFFICER')}}officer{{else}}rating{{/if}}"
+  >
+    <!-- Full-bleed background -->
+    <div class="page-bg"></div>
+
+    <!-- Background watermark: large logo + diagonal year (fixed → both pages) -->
+    <div class="bg-watermark">
+      <img class="bg-logo-img" src="{{{logoDataUrl}}}" alt="" />
+      <div class="bg-year-diag">{{data.formYear}}</div>
+    </div>
+
+    <!-- Side stamps -->
+    <div class="stamp-left">RESTRICTED</div>
+    <div class="stamp-right">RESTRICTED</div>
+
+    <!-- ════════════════════  PAGE 1  ════════════════════ -->
+    <div class="page">
+      <div class="restricted-line">RESTRICTED</div>
+
+      <!-- Photos row + Annex annotation -->
+      <div class="page-header">
+        <div style="width: 90px; flex-shrink: 0"></div>
+
+        <div class="photos-row">
+          {{#if passportDataUrl}}
+          <img
+            class="passport-photo"
+            src="{{{passportDataUrl}}}"
+            alt="Officer Photo"
+          />
+          {{else}}
+          <div class="photo-placeholder">Attach<br />Officer<br />Passport</div>
+          {{/if}}
+
+          <div class="logo-wrap">
+            <img src="{{{logoDataUrl}}}" alt="Nigerian Navy" />
+            <div class="year-stamp">{{data.formYear}}</div>
+          </div>
+
+          {{#if nokPassportDataUrl}}
+          <img
+            class="passport-photo"
+            src="{{{nokPassportDataUrl}}}"
+            alt="Spouse Photo"
+          />
+          {{else}}
+          <div class="photo-placeholder">Attach<br />Spouse<br />Passport</div>
+          {{/if}}
+        </div>
+
+        <div class="annex-block">
+          <strong>Annex A to</strong><br />
+          NNO 21/90<br />
+          Dated 16 Aug 90
+        </div>
+      </div>
+
+      <div class="form-title">
+        Personal Emolument Record Form ({{data.formYear}}) &#8211; {{#if (eq
+        data.formType 'OFFICER')}}Officers{{else}}Ratings{{/if}}
+      </div>
+
+      <div class="section-heading">
+        SECTION A &nbsp;<span class="section-note"
+          >(To be completed in capital letters)</span
+        >
+      </div>
+
+      <div class="frow">
+        <span class="flabel">1.&nbsp;Surname:</span>
+        <span class="fval">{{data.Surname}}</span>
+      </div>
+
+      <div class="frow">
+        <span class="flabel">2.&nbsp;Other Names:</span>
+        <span class="fval">{{data.OtherName}}</span>
+      </div>
+
+      <div class="inline-fields">
+        <div class="inline-item">
+          <span class="flabel">3.&nbsp;Service Number:</span>
+          <span class="fval md">{{data.serviceNumber}}</span>
+        </div>
+        <div class="inline-item">
+          <span class="flabel">4.&nbsp;Rank:</span>
+          <span class="fval md">{{data.Rank}}</span>
+        </div>
+      </div>
+
+      <div class="inline-fields">
+        <div class="inline-item">
+          <span class="flabel">5.&nbsp;Date of Birth:</span>
+          <span class="fval md"
+            >{{#if data.Birthdate}}{{formatDate data.Birthdate}}{{/if}}</span
+          >
+        </div>
+        <div class="inline-item">
+          <span class="flabel">6.&nbsp;Date of Joining Svc:</span>
+          <span class="fval md"
+            >{{#if data.DateEmpl}}{{formatDate data.DateEmpl}}{{/if}}</span
+          >
+        </div>
+        <div class="inline-item">
+          <span class="flabel">7.&nbsp;Type of Commissioning:</span>
+          <span class="fval sm">{{data.entry_mode}}</span>
+        </div>
+      </div>
+
+      <div class="frow">
+        <span class="flabel">8.&nbsp;Date of Commissioning:</span>
+        <span class="fval md"
+          >{{#if data.advanceDate}}{{formatDate data.advanceDate}}{{/if}}</span
+        >
+      </div>
+
+      <div class="frow">
+        <span class="flabel">9.&nbsp;Residential Address:</span>
+        <span class="fval">{{data.home_address}}</span>
+      </div>
+
+      <div class="inline-fields">
+        <div class="inline-item">
+          <span class="flabel">10.&nbsp;Seniority on Present Rank:</span>
+          <span class="fval md"
+            >{{#if data.seniorityDate}}{{formatDate
+            data.seniorityDate}}{{/if}}</span
+          >
+        </div>
+        <div class="inline-item">
+          <span class="flabel">11.&nbsp;Run Out Date&nbsp;:</span>
+          <span class="fval md"
+            >{{#if data.runoutDate}}{{formatDate data.runoutDate}}{{/if}}</span
+          >
+        </div>
+      </div>
+
+      <div class="inline-fields">
+        <div class="inline-item">
+          <span class="flabel">12.&nbsp;Branch:</span>
+          <span class="fval md"
+            >{{#if
+            data.branchName}}{{data.branchName}}{{else}}{{data.branch}}{{/if}}</span
+          >
+        </div>
+        <div class="inline-item">
+          <span class="flabel">13.&nbsp;Specialisation:</span>
+          <span class="fval md">{{data.specialisation}}</span>
+        </div>
+      </div>
+
+      <div class="inline-fields">
+        <div class="inline-item">
+          <span class="flabel">14.&nbsp;Ship/Establishment&nbsp;:</span>
+          <span class="fval md">{{data.ship}}</span>
+        </div>
+        <div class="inline-item">
+          <span class="flabel">15.&nbsp;Command:</span>
+          <span class="fval md"
+            >{{#if
+            data.commandName}}{{data.commandName}}{{else}}{{data.command}}{{/if}}</span
+          >
+        </div>
+      </div>
+
+      <div class="inline-fields">
+        <div class="inline-item">
+          <span class="flabel">16.&nbsp;Present Appointment&nbsp;:</span>
+          <span class="fval md">{{data.division}}</span>
+        </div>
+        <div class="inline-item">
+          <span class="flabel">17.&nbsp;Nature of Appointment&nbsp;:</span>
+          <span class="fval md">{{data.entitlement}}</span>
+        </div>
+      </div>
+
+      <div class="inline-fields">
+        <div class="inline-item">
+          <span class="flabel">18.&nbsp;State of Origin:</span>
+          <span class="fval md"
+            >{{#if
+            data.stateName}}{{data.stateName}}{{else}}{{data.StateofOrigin}}{{/if}}</span
+          >
+        </div>
+        <div class="inline-item">
+          <span class="flabel">19.&nbsp;LGA&nbsp;:</span>
+          <span class="fval md"
+            >{{#if
+            data.lgaName}}{{data.lgaName}}{{else}}{{data.LocalGovt}}{{/if}}</span
+          >
+        </div>
+      </div>
+
+      <div class="frow">
+        <span class="flabel">20.&nbsp;Religion:</span>
+        <span class="fval md">{{data.religion}}</span>
+      </div>
+
+      <div style="margin-bottom: 4px">
+        <span class="flabel">21.</span>
+        <div class="sub1">
+          <div class="inline-fields" style="margin-bottom: 3px">
+            <div class="inline-item">
+              <span class="flabel">a.&nbsp;GSM No.&nbsp;(1):</span>
+              <span class="fval md">{{data.gsm_number}}</span>
+            </div>
+            <div class="inline-item">
+              <span class="flabel">(2):</span>
+              <span class="fval md">{{data.gsm_number2}}</span>
+            </div>
+          </div>
+          <div class="inline-fields">
+            <div class="inline-item">
+              <span class="flabel">b.&nbsp;E-Mail:</span>
+              <span class="fval lg">{{data.email}}</span>
+            </div>
+            <div class="inline-item">
+              <span class="flabel">c.&nbsp;Marital Status:</span>
+              <span class="fval sm">{{data.MaritalStatus}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 4px">
+        <div
+          class="inline-fields"
+          style="margin-bottom: 3px; flex-wrap: wrap; gap: 6px"
+        >
+          <div class="inline-item">
+            <span class="flabel">22.&nbsp;Name of Spouse:</span>
+            <span class="fval lg">{{data.spouse.full_name}}</span>
+          </div>
+          <span style="font-size: 7pt; font-style: italic; align-self: flex-end"
+            >(State Rank/Svc Number, if Personnel)</span
+          >
+        </div>
+        <div class="sub1">
+          <div style="margin-bottom: 3px; font-size: 8pt">
+            <span class="flabel">a.&nbsp;Names of Children:</span>
+            {{#each data.children}}
+            &nbsp;&nbsp;<strong>({{this.birth_order}}):</strong>&nbsp;{{this.child_name}}
+            {{/each}}
+          </div>
+          <div class="inline-fields" style="margin-bottom: 3px">
+            <div class="inline-item">
+              <span class="flabel">b.&nbsp;GSM No of Spouse&nbsp;(1):</span>
+              <span class="fval md">{{data.spouse.phone1}}</span>
+            </div>
+            <div class="inline-item">
+              <span class="flabel">(2):</span>
+              <span class="fval md">{{data.spouse.phone2}}</span>
+            </div>
+          </div>
+          <div class="frow">
+            <span class="flabel">c.&nbsp;E-mail of Spouse:</span>
+            <span class="fval lg">{{data.spouse.email}}</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 4px">
+        <div style="font-size: 7.5pt; margin-bottom: 3px">
+          <strong>23.</strong>&nbsp;Details of NOKs, (Note that NOK as used in
+          this Form includes potential administrator of a deceased
+          personnel&rsquo;s estate in relation to his personal emolument and
+          other perquisites of office).
+        </div>
+        <div class="sub1">
+          <div class="nok-label">
+            a.&nbsp;Next of Kin <em>(Attach Passport Photographs)</em>
+          </div>
+          <div class="sub2">
+            <div class="frow">
+              <span class="flabel">(1)&nbsp;Name&nbsp;:</span
+              ><span class="fval xl">{{data.nok.primary.full_name}}</span>
+            </div>
+            <div class="frow">
+              <span class="flabel">(2)&nbsp;Relationship&nbsp;:</span
+              ><span class="fval lg">{{data.nok.primary.relationship}}</span>
+            </div>
+            <div class="frow">
+              <span class="flabel">(3)&nbsp;Address&nbsp;:</span
+              ><span class="fval">{{data.nok.primary.address}}</span>
+            </div>
+            <div class="inline-fields">
+              <div class="inline-item">
+                <span class="flabel">(4)&nbsp;(a)&nbsp;GSM No&nbsp;:</span
+                ><span class="fval md">{{data.nok.primary.phone1}}</span>
+              </div>
+              <div class="inline-item">
+                <span class="flabel">(b)</span
+                ><span class="fval md">{{data.nok.primary.phone2}}</span>
+              </div>
+            </div>
+            <div class="frow">
+              <span class="flabel">(5)&nbsp;E-mail&nbsp;:</span
+              ><span class="fval lg">{{data.nok.primary.email}}</span>
+            </div>
+          </div>
+
+          <div class="nok-label" style="margin-top: 5px">
+            b.&nbsp;Alternate Next of Kin <em>(Attach Passport Photographs)</em>
+          </div>
+          <div class="sub2">
+            <div class="frow">
+              <span class="flabel">(1)&nbsp;Name&nbsp;:</span
+              ><span class="fval xl">{{data.nok.alternate.full_name}}</span>
+            </div>
+            <div class="frow">
+              <span class="flabel">(2)&nbsp;Relationship&nbsp;:</span
+              ><span class="fval lg">{{data.nok.alternate.relationship}}</span>
+            </div>
+            <div class="frow">
+              <span class="flabel">(3)&nbsp;Address&nbsp;:</span
+              ><span class="fval">{{data.nok.alternate.address}}</span>
+            </div>
+            <div class="inline-fields">
+              <div class="inline-item">
+                <span class="flabel">(4)&nbsp;(a)&nbsp;GSM No&nbsp;:</span
+                ><span class="fval md">{{data.nok.alternate.phone1}}</span>
+              </div>
+              <div class="inline-item">
+                <span class="flabel">(b)</span
+                ><span class="fval md">{{data.nok.alternate.phone2}}</span>
+              </div>
+            </div>
+            <div class="frow">
+              <span class="flabel">(5)&nbsp;E-mail&nbsp;:</span
+              ><span class="fval lg">{{data.nok.alternate.email}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 4px">
+        <div class="inline-fields" style="margin-bottom: 3px">
+          <span class="flabel">24.</span>
+          <div class="inline-item">
+            <span class="flabel">a.&nbsp;Accommodation Status&nbsp;:</span>
+            <span class="fval md">{{data.AcommodationStatus}}</span>
+          </div>
+        </div>
+        <div class="sub1">
+          <div class="frow">
+            <span class="flabel">b.&nbsp;Address of Accommodation&nbsp;:</span>
+            <span class="fval">{{data.AddressofAcommodation}}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-footer">
+        <div class="footer-pgnum">A-1</div>
+        <div class="footer-restr">RESTRICTED</div>
+      </div>
+    </div>
+    <!-- end page 1 -->
+
+    <!-- ════════════════════  PAGE 2  ════════════════════ -->
+    <div class="page page-break">
+      <div class="restricted-line">RESTRICTED</div>
+
+      <!-- ── Q25 + Alt NOK photo side by side at top ───────────── -->
+      <div class="p2-top-row">
+        <div class="p2-q25-col">
+          <div class="q-header">25. Do you Draw:</div>
+          <div class="checklist checklist-q25">
+            <div class="cl-row">
+              <span class="cl-label">a.&nbsp;&nbsp;Rent Subsidy :</span>
+              <span class="cl-val"
+                >&nbsp;{{#if data.allowances.RENT_SUBSIDY}}{{#if
+                data.allowances.RENT_SUBSIDY.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
+              >
+            </div>
+            <div class="cl-row">
+              <span class="cl-label"
+                >b.&nbsp;&nbsp;Call/Shift Duty Allowance :</span
+              >
+              <span class="cl-val"
+                >&nbsp;{{#if data.allowances.SHIFT_DUTY}}{{#if
+                data.allowances.SHIFT_DUTY.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
+              >
+            </div>
+            <div class="cl-row">
+              <span class="cl-label">c.&nbsp;&nbsp;Call Duty Allowance :</span>
+              <span class="cl-val"
+                >&nbsp;{{#if data.allowances.CALL_DUTY}}{{#if
+                data.allowances.CALL_DUTY.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
+              >
+            </div>
+            <div class="cl-row">
+              <span class="cl-label">d.&nbsp;&nbsp;Pilot Allowance :</span>
+              <span class="cl-val"
+                >&nbsp;{{#if data.allowances.PILOT}}{{#if
+                data.allowances.PILOT.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
+              >
+            </div>
+            <div class="cl-row">
+              <span class="cl-label">e.&nbsp;&nbsp;Aircrew Allowance :</span>
+              <span class="cl-val"
+                >&nbsp;{{#if data.allowances.AIRCREW}}{{#if
+                data.allowances.AIRCREW.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
+              >
+            </div>
+            <div class="cl-row">
+              <span class="cl-label">f.&nbsp;&nbsp;&nbsp;SBS Allowance :</span>
+              <span class="cl-val"
+                >&nbsp;{{#if data.allowances.SBC}}{{#if
+                data.allowances.SBC.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
+              >
+            </div>
+            <div class="cl-row">
+              <span class="cl-label">g.&nbsp;&nbsp;Hazard Allowance :</span>
+              <span class="cl-val"
+                >&nbsp;{{#if data.allowances.HAZARD}}{{#if
+                data.allowances.HAZARD.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
+              >
+            </div>
+            <div class="cl-row">
+              <span class="cl-label"
+                >h.&nbsp;&nbsp;Special Forces Allowance :</span
+              >
+              <span class="cl-val"
+                >&nbsp;{{#if data.allowances.SPECIAL_FORCES}}{{#if
+                data.allowances.SPECIAL_FORCES.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
+              >
+            </div>
+            <div class="cl-row">
+              <span class="cl-label"
+                >i.&nbsp;&nbsp;&nbsp;Other Allowances
+                <em>(Please Specify)</em>:</span
+              >
+              <span class="cl-val"
+                >&nbsp;{{#if data.allowances.OTHER}}{{#if
+                data.allowances.OTHER.is_active}}Yes&nbsp;&nbsp;{{data.allowances.OTHER.specify}}{{else}}No{{/if}}{{else}}No{{/if}}</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="p2-photo-col">
+          <div class="alt-nok-caption">Alternate NOK Passport</div>
+          {{#if altNokPassportDataUrl}}
+          <img
+            class="passport-photo"
+            src="{{{altNokPassportDataUrl}}}"
+            alt="Alternate NOK Photo"
+          />
+          {{else}}
+          <div class="photo-placeholder">Attach Alt<br />NOK Passport</div>
+          {{/if}}
+        </div>
+      </div>
+
+      <!-- ── Q26 ──────────────────────────────────────────────── -->
+      <div class="q-header">
+        26. Are you indebted to the following:
+        <em style="font-size: 8.5pt; font-weight: normal"
+          >(Please indicate year granted)</em
+        >
+      </div>
+      <div class="checklist checklist-q26">
+        <div class="cl-row">
+          <span class="cl-label"
+            >a.&nbsp;&nbsp;Federal Govt Staff Housing Loan Scheme :</span
+          >
+          <span class="cl-val"
+            >&nbsp;{{#if data.loans.FGSHLS}}{{#if
+            data.loans.FGSHLS.year_taken}}Yes
+            &nbsp;({{data.loans.FGSHLS.year_taken}}){{else}}No{{/if}}{{else}}No{{/if}}</span
+          >
+        </div>
+        <div class="cl-row">
+          <span class="cl-label"
+            >b.&nbsp;&nbsp;CNS Car Refurbishing Loan :</span
+          >
+          <span class="cl-val"
+            >&nbsp;{{#if data.loans.CAR}}{{#if data.loans.CAR.year_taken}}Yes
+            &nbsp;({{data.loans.CAR.year_taken}}){{else}}No{{/if}}{{else}}No{{/if}}</span
+          >
+        </div>
+        <div class="cl-row">
+          <span class="cl-label">c.&nbsp;&nbsp;Welfare Loan :</span>
+          <span class="cl-val"
+            >&nbsp;{{#if data.loans.WELFARE}}{{#if
+            data.loans.WELFARE.year_taken}}Yes
+            &nbsp;({{data.loans.WELFARE.year_taken}}){{else}}No{{/if}}{{else}}No{{/if}}</span
+          >
+        </div>
+        <div class="cl-row">
+          <span class="cl-label"
+            >d.&nbsp;&nbsp;NNMCS Loan <em>(Specify Type)</em> :</span
+          >
+          <span class="cl-val"
+            >&nbsp;{{#if data.loans.NNNCS}}{{#if
+            data.loans.NNNCS.year_taken}}Yes
+            &nbsp;({{data.loans.NNNCS.year_taken}}){{else}}No{{/if}}{{else}}No{{/if}}</span
+          >
+        </div>
+        <div class="cl-row">
+          <span class="cl-label">e.&nbsp;&nbsp;NNMFBL Loan :</span>
+          <span class="cl-val"
+            >&nbsp;{{#if data.loans.NNMFBL}}{{#if
+            data.loans.NNMFBL.year_taken}}Yes
+            &nbsp;({{data.loans.NNMFBL.year_taken}}){{else}}No{{/if}}{{else}}No{{/if}}</span
+          >
+        </div>
+        <div class="cl-row">
+          <span class="cl-label"
+            >f.&nbsp;&nbsp;&nbsp;Presidential Pioneer Car Finance Scheme :</span
+          >
+          <span class="cl-val"
+            >&nbsp;{{#if data.loans.PPCFS}}{{#if
+            data.loans.PPCFS.year_taken}}Yes
+            &nbsp;({{data.loans.PPCFS.year_taken}}){{else}}No{{/if}}{{else}}No{{/if}}</span
+          >
+        </div>
+        <div class="cl-row">
+          <span class="cl-label"
+            >g.&nbsp;&nbsp;Any Other Loan (Please Specify):</span
+          >
+          <span class="cl-val"
+            >&nbsp;{{#if data.loans.OTHER}}{{#if
+            data.loans.OTHER.year_taken}}Yes
+            &nbsp;({{data.loans.OTHER.year_taken}})&nbsp;{{data.loans.OTHER.specify}}{{else}}No{{/if}}{{else}}No{{/if}}</span
+          >
+        </div>
+      </div>
+
+      <!-- ── Q27 ──────────────────────────────────────────────── -->
+      <div class="q-header">27. Bank Account Details:</div>
+      <div class="bank-block">
+        <div class="frow" style="margin-bottom: 4px">
+          <span class="flabel">a.&nbsp;Salary Bank Account Name:</span>
+          <span class="fval xl">{{data.AccountName}}</span>
+        </div>
+        <div class="frow" style="margin-bottom: 4px">
+          <span class="flabel">b.&nbsp;Name of Bank&nbsp;:</span>
+          <span class="fval lg">{{data.Bankcode}}</span>
+        </div>
+        <div class="frow" style="margin-bottom: 4px">
+          <span class="flabel">c.&nbsp;Account Number&nbsp;:</span>
+          <span class="fval md">{{data.BankACNumber}}</span>
+        </div>
+      </div>
+
+      <div class="certify-text">
+        <em
+          >I certify that the information provided by me above are, to the best
+          of my knowledge, correct.</em
+        >
+      </div>
+
+      <div class="sig-area">
+        <div class="sig-block">
+          <div class="sig-line"></div>
+          <div class="sig-caption">Date</div>
+        </div>
+        <div class="sig-block">
+          <div class="sig-line"></div>
+          <div class="sig-caption">Officer&rsquo;s Signature</div>
+        </div>
+      </div>
+
+      <div class="note-box">
+        NOTE: CERTIFICATION OF FALSE INFORMATION ATTRACTS SEVERE PUNISHMENT
+      </div>
+
+      <!-- SECTION B -->
+      <div class="sec-block">
+        <div class="sec-block-title">
+          SECTION B &nbsp;
+          <span
+            style="font-weight: normal; font-style: italic; font-size: 7.5pt"
+            >(To be completed by HEAD OF DEPARTMENT in capital letters)</span
+          >
+        </div>
+        <div class="frow" style="margin-bottom: 5px">
+          <span class="flabel">Name:</span><span class="fval xl">&nbsp;</span>
+        </div>
+        <div class="inline-fields" style="margin-bottom: 5px">
+          <div class="inline-item">
+            <span class="flabel">Rank:</span><span class="fval lg">&nbsp;</span>
+          </div>
+          <div class="inline-item">
+            <span class="flabel">Sve Number&nbsp;:</span
+            ><span class="fval lg">&nbsp;</span>
+          </div>
+        </div>
+        <div class="certify-text">
+          <em
+            >I have verified the information provided by the Officer and found
+            them to be correct to the best of my knowledge.</em
+          >
+        </div>
+        <div class="sig-area">
+          <div class="sig-block">
+            <div class="sig-line"></div>
+            <div class="sig-caption">Date</div>
+          </div>
+          <div class="sig-block">
+            <div class="sig-line"></div>
+            <div class="sig-caption">Signature of Head of Department</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION C -->
+      <div class="sec-block">
+        <div class="sec-block-title">
+          SECTION C &nbsp;
+          <span
+            style="font-weight: normal; font-style: italic; font-size: 7.5pt"
+            >(To be completed by COMMANDING OFFICER in capital letters)</span
+          >
+        </div>
+        <div class="frow" style="margin-bottom: 5px">
+          <span class="flabel">Name:</span><span class="fval xl">&nbsp;</span>
+        </div>
+        <div class="inline-fields" style="margin-bottom: 5px">
+          <div class="inline-item">
+            <span class="flabel">Rank:</span><span class="fval lg">&nbsp;</span>
+          </div>
+          <div class="inline-item">
+            <span class="flabel">Sve Number&nbsp;:</span
+            ><span class="fval lg">&nbsp;</span>
+          </div>
+        </div>
+        <div class="certify-text">
+          <em
+            >I certify that the information provided by the Officer are correct
+            to the best of my knowledge.</em
+          >
+        </div>
+        <div class="sig-area">
+          <div class="sig-block">
+            <div class="sig-line"></div>
+            <div class="sig-caption">Date</div>
+          </div>
+          <div class="sig-block">
+            <div class="sig-line"></div>
+            <div class="sig-caption">
+              Signature and Stamp of Commanding Officer
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-footer">
+        <div class="footer-pgnum">A-2</div>
+        <div class="footer-restr">RESTRICTED</div>
+      </div>
+    </div>
+    <!-- end page 2 -->
+  </body>
+</html>

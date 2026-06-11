@@ -59,6 +59,7 @@ const {
   requireEmolRole,
 } = require("../../../../middware/emolumentAuth");
 const formService = require("./form.service");
+const formDownloadController = require("./form-download.controller");
 
 const router = express.Router();
 
@@ -81,17 +82,22 @@ router.use(verifyToken);
 router.get("/load", async (req, res) => {
   try {
     const isAdmin = req.query.admin === "1" && req.query.svcno;
-    console.log(isAdmin)
+    console.log(isAdmin);
 
     if (isAdmin) {
       // Must be EMOL_ADMIN
-      console.log('is admin')
-        console.log(`service number ${req.query.svcno}`)
+      console.log("is admin");
+      console.log(`service number ${req.query.svcno}`);
       const allowed = await new Promise((resolve) => {
-        requireEmolRole("EMOL_ADMIN","DO","FO","CPO")(req, res, (err) => resolve(!err));
+        requireEmolRole(
+          "EMOL_ADMIN",
+          "DO",
+          "FO",
+          "CPO",
+        )(req, res, (err) => resolve(!err));
       });
       if (!allowed) return; // requireEmolRole already sent 403
-    
+
       const result = await formService.loadForm(req.query.svcno);
       if (!result.success)
         return res.status(result.code).json({ error: result.message });
@@ -128,6 +134,16 @@ router.get("/options", async (req, res) => {
     return res.status(500).json({ error: "Internal Server error" });
   }
 });
+
+// ─────────────────────────────────────────────────────────────
+// GET /form/download
+// Download the currently authenticated personnel's emolument form as PDF.
+// ─────────────────────────────────────────────────────────────
+router.get(
+  "/download",
+  requirePersonnel,
+  formDownloadController.downloadFormPDF.bind(formDownloadController),
+);
 
 // ─────────────────────────────────────────────────────────────
 // GET /form/history/:year

@@ -229,6 +229,9 @@
         const bn = document.getElementById("bn-" + name);
         if (bn) bn.classList.add("active");
 
+        // Persist active section so F5 restores to the same place
+        try { localStorage.setItem("emol_personnel_section", name); } catch (e) {}
+
         // Load section if not yet loaded
         if (!loaded[name]) {
           loaded[name] = true;
@@ -382,8 +385,17 @@
         }
       }
 
-      // ── Init ────────────────────────────────────────────────
-      showSection("home", null);
+      // ── Init — restore last active section; redirect to full form if open ──
+      (function () {
+        var _saved;
+        try { _saved = localStorage.getItem("emol_personnel_section"); } catch (e) {}
+        if (_saved === "full-form") {
+          // User was on the full form before F5 — navigate straight back to it
+          location.href = "../pages/emolument-form.html";
+          return;
+        }
+        showSection(_saved || "home", null);
+      })();
       initShipButtons();
     </script>
   </body>

@@ -344,6 +344,18 @@ function loadEmolumentPage() {
         loadShipDashboardOverlay(shipName, role, scopeType);
       };
     } catch (e) {}
+
+    // Restore ship dashboard if it was open when the page was refreshed (F5).
+    // Opening the overlay immediately (cream background) prevents the emolument
+    // personnel/home from flashing before the ship dashboard appears.
+    var _savedShip = sessionStorage.getItem("active_ship");
+    if (_savedShip) {
+      loadShipDashboardOverlay(
+        _savedShip,
+        sessionStorage.getItem("active_ship_role") || "DO",
+        sessionStorage.getItem("active_ship_scope") || "SHIP"
+      );
+    }
   });
 
   container.appendChild(iframe);
@@ -374,9 +386,9 @@ function loadShipDashboardOverlay(shipName, role, scopeType) {
           '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ef4444;font-size:0.875rem;">Failed to load ship dashboard.</div>';
       });
   } else {
-    // Already loaded — just re-init with new ship/role
-    if (typeof window._reinitShipDashboard === "function") {
-      window._reinitShipDashboard(shipName, role, scopeType);
+    // Already loaded — show overlay and re-init with new ship/role
+    if (typeof window.loadShipDashboard === "function") {
+      window.loadShipDashboard(shipName, role, scopeType);
     }
   }
 }
@@ -385,7 +397,8 @@ function loadShipDashboardOverlay(shipName, role, scopeType) {
 window.addEventListener("closeShipDashboard", function () {
   var overlay = document.getElementById("ship-dashboard-overlay");
   if (overlay) overlay.style.display = "none";
-  shipDashboardLoaded = false; // allow fresh re-init on next ship open
+  // Don't reset shipDashboardLoaded — re-fetching causes const re-declaration errors.
+  // Re-entry always goes through window.loadShipDashboard which re-inits cleanly.
 });
 
 // Listen for openShipDashboard event (fired from within emolument pages)
@@ -447,6 +460,8 @@ document.querySelectorAll("button[data-page]").forEach(function (btn) {
 // ══════════════════════════════════════════════════════════
 (function restoreActivePage() {
   var saved = sessionStorage.getItem("activePage");
+  // If a ship was open but activePage wasn't saved, emolument must have been active
+  if (!saved && sessionStorage.getItem("active_ship")) saved = "emolument";
   if (saved && saved !== "home") {
     if (saved === "email") loadEmailPage();
     if (saved === "payslip") loadPayslipPage();

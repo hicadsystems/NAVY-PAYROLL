@@ -540,6 +540,7 @@
 
       <!-- Progress bar -->
       <div
+        id="progress-bar"
         class="bg-navy-light/95 border-t border-white/10 px-4 py-3 sticky top-10 z-50 backdrop-blur"
       >
         <div class="flex items-center justify-between mb-2">
@@ -1746,6 +1747,43 @@
 
         if (formType === "RATING") document.body.classList.add("ratings-theme");
 
+        // In admin iframe the SPA header is absent — stick progress bar to very top
+        if (isAdmin) {
+          const bar = document.getElementById("progress-bar");
+          if (bar) {
+            bar.classList.remove("top-10");
+            bar.classList.add("top-0");
+          }
+        }
+
+        // Mark that the form is open so F5 on the parent shell can restore it.
+        // Admin shell uses emol_admin_form_open; personnel shell uses emol_personnel_section
+        // so each shell only reacts to its own marker.
+        if (!isAdmin) {
+          const _shell = new URLSearchParams(location.search).get("shell");
+          if (_shell === "admin") {
+            try { localStorage.setItem("emol_admin_form_open", "1"); } catch (_) {}
+          } else {
+            try { localStorage.setItem("emol_personnel_section", "full-form"); } catch (_) {}
+          }
+        }
+
+        // Notify parent overlay (admin iframe) with personnel metadata
+        if (window !== window.top) {
+          window.parent.postMessage(
+            {
+              type: "emol_form_ready",
+              svcNo: data.serviceNumber,
+              name: [data.Surname, data.OtherName].filter(Boolean).join(" "),
+              rank: data.Rank,
+              formType,
+              formYear: data.formYear,
+              formStatus: data.formStatus,
+            },
+            "*",
+          );
+        }
+
         // Officer-only fields
         if (formType === "OFFICER") {
           showEl("field-entitlement");
@@ -2223,7 +2261,14 @@
         btn.disabled = true;
         label.textContent = "Generating…";
         try {
-          const res = await fetch("/form/download", {
+          const params = new URLSearchParams(location.search);
+          const isAdmin = params.get("admin") === "1";
+          const svcno = params.get("svcno");
+          const downloadUrl =
+            isAdmin && svcno
+              ? `/form/download?admin=1&svcno=${encodeURIComponent(svcno)}`
+              : "/form/download";
+          const res = await fetch(downloadUrl, {
             headers: { Authorization: `Bearer ${getToken()}` },
           });
           if (!res.ok) {
@@ -2486,6 +2531,29 @@
 
       // ── Back navigation ───────────────────────────────────────
       function goBack() {
+        const _params = new URLSearchParams(location.search);
+        const _isAdminMode = _params.get("admin") === "1";
+
+        if (_isAdminMode && window !== window.top) {
+          // Admin overlay: tell personnel.html to close the overlay
+          window.parent.postMessage({ type: "emol_close_overlay" }, "*");
+          return;
+        }
+
+        if (!_isAdminMode && window !== window.top) {
+          // Form was opened from either the personnel shell or the admin shell's "My Form".
+          // Route back to whichever shell opened it (tagged via ?shell=admin).
+          const _shell = _params.get("shell");
+          if (_shell === "admin") {
+            try { localStorage.removeItem("emol_admin_form_open"); } catch (_) {}
+            location.replace("../pages/emolument-admin.html");
+          } else {
+            try { localStorage.setItem("emol_personnel_section", "my-form"); } catch (_) {}
+            location.replace("../pages/emolument-personnel.html");
+          }
+          return;
+        }
+
         const returnPage = sessionStorage.getItem("emolument_form_return_page");
         if (returnPage === "accept-verified") {
           location.href = "../emolument-sections/admin/accept-verified.html";

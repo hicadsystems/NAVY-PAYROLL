@@ -137,13 +137,37 @@ router.get("/options", async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // GET /form/download
-// Download the currently authenticated personnel's emolument form as PDF.
+// Download a personnel emolument form as PDF.
+// Normal personnel: downloads their own form.
+// Admin (?admin=1&svcno=X): downloads any personnel's form after role check.
 // ─────────────────────────────────────────────────────────────
-router.get(
-  "/download",
-  requirePersonnel,
-  formDownloadController.downloadFormPDF.bind(formDownloadController),
-);
+router.get("/download", async (req, res) => {
+  try {
+    const isAdmin = req.query.admin === "1" && req.query.svcno;
+    if (isAdmin) {
+      const allowed = await new Promise((resolve) => {
+        requireEmolRole(
+          "EMOL_ADMIN",
+          "DO",
+          "FO",
+          "CPO",
+        )(req, res, (err) => resolve(!err));
+      });
+      if (!allowed) return;
+      req.downloadSvcNo = req.query.svcno;
+    } else {
+      await new Promise((resolve, reject) => {
+        requirePersonnel(req, res, (err) => (err ? reject(err) : resolve()));
+      });
+      req.downloadSvcNo = req.user_id;
+    }
+    return formDownloadController.downloadFormPDF(req, res);
+  } catch (err) {
+    console.error("❌ GET /form/download:", err);
+    if (!res.headersSent)
+      return res.status(500).json({ error: "Server error" });
+  }
+});
 
 // ─────────────────────────────────────────────────────────────
 // GET /form/history/:year

@@ -527,12 +527,21 @@
         "position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;background:#0B1E3D";
 
       overlay.innerHTML = `
-    <div style="flex-shrink:0;background:#0B1E3D;padding:10px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,0.08)">
-      <i class="fas fa-id-card" style="color:#C4932A;font-size:14px"></i>
-      <span style="font-family:monospace;font-weight:700;font-size:13px;color:#C4932A;letter-spacing:.05em">${svcNo}</span>
-      <span style="flex:1"></span>
+    <div style="flex-shrink:0;background:#0B1E3D;padding:8px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,0.08);flex-wrap:wrap;">
+      <i class="fas fa-id-card" style="color:#C4932A;font-size:14px;flex-shrink:0"></i>
 
-      <div id="pfo-history-wrap" style="display:none;align-items:center;gap:8px">
+      <!-- Personnel identity — filled by postMessage from iframe -->
+      <div style="display:flex;flex-direction:column;line-height:1.2;min-width:0">
+        <span id="pfo-name" style="font-weight:700;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px">${svcNo}</span>
+        <span id="pfo-meta" style="font-size:10px;color:rgba(196,147,42,0.7);font-weight:600;letter-spacing:.04em"></span>
+      </div>
+
+      <!-- Status badge -->
+      <!-- <span id="pfo-status-badge" style="display:none;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.04em;background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);flex-shrink:0"></span> -->
+
+      <span style="flex:1;min-width:0"></span>
+
+      <div id="pfo-history-wrap" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
         <label style="font-size:.68rem;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase">Year</label>
         <select id="pfo-year-sel"
           style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;
@@ -550,6 +559,12 @@
         </button>
       </div>
 
+      <button id="pfo-refresh-btn"
+        title="Reload form"
+        style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,.7);padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">
+        <i class="fas fa-sync-alt" style="font-size:11px"></i>
+      </button>
+
       <button id="pfo-close-btn"
         style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);color:white;padding:6px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
         <i class="fas fa-times" style="font-size:11px"></i> Close
@@ -565,40 +580,107 @@
       document.body.appendChild(overlay);
       document.body.style.overflow = "hidden";
 
+      // Persist svcNo so the overlay can be restored after a page refresh
+      localStorage.setItem("pfo_svcno", svcNo);
+
+      // Tell the top-level SPA shell to hide its header
+      window.top.postMessage({ type: "pfo_overlay_open" }, "*");
+
+      function closePfoOverlay() {
+        overlay.remove();
+        document.body.style.overflow = "";
+        window.removeEventListener("message", window._pfoMsgHandler);
+        (window._pfoHiddenEls || []).forEach(
+          ([el, d]) => (el.style.display = d),
+        );
+        window._pfoHiddenEls = null;
+        localStorage.removeItem("pfo_svcno");
+        // Restore the SPA shell header
+        window.top.postMessage({ type: "pfo_overlay_closed" }, "*");
+      }
+
       // Wire up close button
       overlay
         .querySelector("#pfo-close-btn")
-        .addEventListener("click", function () {
-          overlay.remove();
-          document.body.style.overflow = "";
-          window.removeEventListener("message", window._pfoMsgHandler);
-          (window._pfoHiddenEls || []).forEach(
-            ([el, d]) => (el.style.display = d),
-          );
-          window._pfoHiddenEls = null;
-        });
+        .addEventListener("click", closePfoOverlay);
 
-      // Hide SPA chrome (topbar, sidebar) while overlay is open
-      const _hidden = [];
-      [
-        "#topbar",
-        ".topbar",
-        "header.topbar",
-        "#sidebar",
-        ".sidebar",
-        "#main-nav",
-      ].forEach((sel) => {
-        document.querySelectorAll(sel).forEach((el) => {
-          if (el.style.display !== "none") {
-            _hidden.push([el, el.style.display]);
-            el.style.display = "none";
+      // Wire up refresh button
+      overlay
+        .querySelector("#pfo-refresh-btn")
+        .addEventListener("click", function () {
+          const iframe = document.getElementById("pfo-iframe");
+          if (iframe) {
+            // Reset name/meta to loading state
+            document.getElementById("pfo-name").textContent = svcNo;
+            document.getElementById("pfo-meta").textContent = "";
+            // const badge = document.getElementById("pfo-status-badge");
+            // badge.style.display = "none";
+            iframe.src = `./emolument-form.html?svcno=${encodeURIComponent(svcNo)}&admin=1`;
           }
         });
-      });
-      window._pfoHiddenEls = _hidden;
 
-      // Listen for postMessage from iframe (history years)
+      window._pfoHiddenEls = [];
+
+      const STATUS_LABELS = {
+        DRAFT: "Draft",
+        SUBMITTED: "Submitted",
+        DO_REVIEWED: "DO Reviewed",
+        FO_APPROVED: "FO Approved",
+        CPO_CONFIRMED: "Confirmed",
+      };
+      const STATUS_COLORS = {
+        DRAFT: "rgba(255,255,255,.1)",
+        SUBMITTED: "rgba(196,147,42,.25)",
+        DO_REVIEWED: "rgba(59,130,246,.3)",
+        FO_APPROVED: "rgba(139,92,246,.3)",
+        CPO_CONFIRMED: "rgba(34,197,94,.25)",
+      };
+
+      // Listen for postMessage from iframe
       window._pfoMsgHandler = function (e) {
+        // Form finished loading — update header with personnel metadata
+        if (e.data?.type === "emol_form_ready") {
+          const {
+            svcNo: sv,
+            name,
+            rank,
+            formType,
+            formYear,
+            formStatus,
+          } = e.data;
+          const nameEl = document.getElementById("pfo-name");
+          const metaEl = document.getElementById("pfo-meta");
+          // const badgeEl = document.getElementById("pfo-status-badge");
+          if (nameEl) nameEl.textContent = name || sv || svcNo;
+          if (metaEl) {
+            const typeLabel =
+              { OFFICER: "Officer", RATING: "Rating", TRAINING: "Training" }[
+                formType
+              ] || formType;
+            metaEl.textContent = [rank, sv, typeLabel, formYear]
+              .filter(Boolean)
+              .join(" · ");
+          }
+          // if (badgeEl && formStatus) {
+          //   badgeEl.textContent = STATUS_LABELS[formStatus] || formStatus;
+          //   badgeEl.style.background =
+          //     STATUS_COLORS[formStatus] || "rgba(255,255,255,.1)";
+          //   badgeEl.style.color =
+          //     formStatus === "CPO_CONFIRMED"
+          //       ? "rgba(134,239,172,.9)"
+          //       : "rgba(255,255,255,.75)";
+          //   badgeEl.style.display = "inline-block";
+          // }
+          return;
+        }
+
+        // Form's Back button pressed while in iframe — close overlay
+        if (e.data?.type === "emol_close_overlay") {
+          closePfoOverlay();
+          return;
+        }
+
+        // History year list
         if (e.data?.type === "emol_form_years") {
           const years = e.data.years || [];
           if (!years.length) return;
@@ -912,5 +994,11 @@
     // Hoist modal to body on load so overlay covers full viewport
     const modal = document.getElementById("commissionModal");
     document.body.appendChild(modal);
+
+    // Restore overlay if the page was refreshed while viewing a personnel form
+    const _savedSvcNo = localStorage.getItem("pfo_svcno");
+    if (_savedSvcNo) {
+      setTimeout(() => window.openPersonnelForm(_savedSvcNo), 150);
+    }
   })();
 </script>

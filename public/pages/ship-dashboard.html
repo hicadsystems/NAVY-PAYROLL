@@ -432,9 +432,9 @@
       const DO_REVIEWED_PAGE_SIZE = 12;
       const FO_APPROVED_PAGE_SIZE = 12;
       const CPO_CONFIRMED_PAGE_SIZE = 12;
-      const token = localStorage.getItem("token");
-      const ship = sessionStorage.getItem("active_ship");
-      const command = ship;
+      var token = localStorage.getItem("token");
+      var ship = sessionStorage.getItem("active_ship");
+      var command = ship;
 
       (function () {
         // ── MENU & FILE CONFIG ──────────────────────────────────
@@ -531,23 +531,34 @@
           // ── INIT ──────────────────────────────────────────────
 
           init(shipName, role, scopeType) {
-            this.currentShip =
-              shipName || sessionStorage.getItem("active_ship") || "—";
-            this.currentRole =
-              role || sessionStorage.getItem("active_ship_role") || "DO";
-            this.currentScope =
-              scopeType ||
-              sessionStorage.getItem("active_ship_scope") ||
-              "SHIP";
+            const newShip = shipName || sessionStorage.getItem("active_ship") || "—";
+            const newRole = role || sessionStorage.getItem("active_ship_role") || "DO";
+            const newScope = scopeType || sessionStorage.getItem("active_ship_scope") || "SHIP";
+            const sameShipRole = this.currentShip === newShip && this.currentRole === newRole;
 
-            // Reset state for fresh load
-            this.currentSection = null;
-            this.cache.clear();
-            this.history = [];
+            this.currentShip = newShip;
+            this.currentRole = newRole;
+            this.currentScope = newScope;
+
+            // Keep shared vars in sync so section scripts always use the current ship
+            ship = this.currentShip;
+            command = this.currentShip;
+            token = localStorage.getItem("token");
+
             this._clearAllTimers();
-
             this._updateHeader();
-            this._buildUI();
+
+            if (!sameShipRole) {
+              // Different ship or role — full rebuild
+              this.currentSection = null;
+              this.cache.clear();
+              this.history = [];
+              this._buildUI();
+            } else {
+              // Same ship re-open — keep DOM + cache, just reset nav position
+              this.currentSection = null;
+              this.history = [];
+            }
 
             // Restore last section for this ship+role, else default to first item
             const storageKey = `ship_section_${this.currentShip}_${this.currentRole}`;

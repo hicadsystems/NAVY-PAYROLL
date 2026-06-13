@@ -10,7 +10,7 @@ const path = require("path");
 class FormDownloadController extends BaseReportController {
   async downloadFormPDF(req, res) {
     try {
-      const serviceNo = req.user_id;
+      const serviceNo = req.downloadSvcNo || req.user_id;
       const result = await formService.loadForm(serviceNo);
 
       if (!result.success) {

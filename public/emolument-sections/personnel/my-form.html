@@ -1,51 +1,81 @@
-<div class="max-w-2xl mx-auto p-4 sm:p-6 bg-gradient-to-b from-white to-blue-50 min-h-screen">
-  <div class="flex flex-col md:flex-row sm:justify-between sm:items-start gap-3 mb-2">
-
+<div class="max-w-2xl mx-auto p-4 sm:p-6">
+  <div
+    class="flex flex-col md:flex-row sm:justify-between sm:items-start gap-3 mb-2"
+  >
     <div class="mb-3 sm:mb-5">
       <h2 class="text-xl font-black text-navy">My Emolument Form</h2>
-      <p class="text-[10px] md:text-sm text-blue-900/50 mt-1">Review, edit and submit your personal emolument
-        information</p>
+      <p class="text-[10px] md:text-sm text-blue-900/50 mt-1">
+        Review, edit and submit your personal emolument information
+      </p>
     </div>
 
     <div class="text-center">
-      <a href="../pages/emolument-form.html"
-        class="inline-flex items-center gap-2 px-5 py-2.5 bg-navy text-white text-sm font-bold rounded-lg hover:bg-blue-800 transition-colors">
+      <a
+        href="../pages/emolument-form.html"
+        class="inline-flex items-center gap-2 px-5 py-2.5 bg-navy text-white text-sm font-bold rounded-lg hover:bg-blue-800 transition-colors"
+      >
         <i class="fas fa-external-link-alt"></i> Open Full Form
       </a>
     </div>
   </div>
 
-
   <!-- Form status notice -->
-  <div id="formNotice" class="mb-4 hidden rounded-xl border p-3 text-sm font-semibold"></div>
+  <div
+    id="formNotice"
+    class="mb-4 hidden rounded-xl border p-3 text-sm font-semibold"
+  ></div>
 
   <!-- Form tabs -->
-  <div class="flex gap-1 mb-4 bg-white rounded-xl p-1 border border-blue-100 shadow-sm overflow-x-auto">
-    <button onclick="switchTab('core')" class="form-tab active flex-1 py-2 text-xs font-bold rounded-md transition-all"
-      data-tab="core">Personal</button>
-    <button onclick="switchTab('nok')" class="form-tab flex-1 py-2 text-xs font-bold rounded-md transition-all"
-      data-tab="nok">Next of Kin</button>
-    <button onclick="switchTab('loans')" class="form-tab flex-1 py-2 text-xs font-bold rounded-md transition-all"
-      data-tab="loans">Loans</button>
-    <button onclick="switchTab('allowances')" class="form-tab flex-1 py-2 text-xs font-bold rounded-md transition-all"
-      data-tab="allowances">Allowances</button>
+  <div
+    class="flex gap-1 mb-4 bg-white rounded-xl p-1 border border-blue-100 shadow-sm overflow-x-auto"
+  >
+    <button
+      onclick="switchTab('core')"
+      class="form-tab active flex-1 py-2 text-xs font-bold rounded-md transition-all"
+      data-tab="core"
+    >
+      Personal
+    </button>
+    <button
+      onclick="switchTab('nok')"
+      class="form-tab flex-1 py-2 text-xs font-bold rounded-md transition-all"
+      data-tab="nok"
+    >
+      Next of Kin
+    </button>
+    <button
+      onclick="switchTab('loans')"
+      class="form-tab flex-1 py-2 text-xs font-bold rounded-md transition-all"
+      data-tab="loans"
+    >
+      Loans
+    </button>
+    <button
+      onclick="switchTab('allowances')"
+      class="form-tab flex-1 py-2 text-xs font-bold rounded-md transition-all"
+      data-tab="allowances"
+    >
+      Allowances
+    </button>
   </div>
 
   <!-- Tab panels — content loaded per tab -->
   <div id="tab-core" class="form-panel">
-    <div class="bg-white rounded-xl border border-amber-100 shadow-sm p-5 space-y-4">
-
+    <div
+      class="bg-white rounded-xl border border-amber-100 shadow-sm p-5 space-y-4"
+    >
       <!-- Header -->
       <div class="flex items-center justify-between border-b pb-3">
         <h3 class="text-sm font-bold text-navy">Personal Information</h3>
-        <span class="text-[10px] px-2 py-1 rounded-full bg-green-100 text-green-700 font-semibold">
+        <span
+          class="text-[10px] px-2 py-1 rounded-full bg-green-100 text-green-700 font-semibold"
+        >
           Loaded
         </span>
       </div>
 
       <!-- Grid -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-
         <div>
           <p class="text-blue-900/40 text-xs">Full Name</p>
           <p id="p-fullname" class="font-semibold text-navy">—</p>
@@ -75,18 +105,17 @@
           <p class="text-blue-900/40 text-xs">Phone</p>
           <p id="p-phone" class="text-navy">—</p>
         </div>
-
       </div>
     </div>
   </div>
 
   <div id="tab-nok" class="form-panel hidden">
-    <div class="bg-white rounded-xl border border-amber-100 shadow-sm p-5 space-y-4">
-
+    <div
+      class="bg-white rounded-xl border border-amber-100 shadow-sm p-5 space-y-4"
+    >
       <h3 class="text-sm font-bold text-navy border-b pb-2">Next of Kin</h3>
 
       <div class="grid sm:grid-cols-2 gap-4 text-sm">
-
         <!-- Primary -->
         <div class="p-3 rounded-lg bg-blue-50">
           <p class="text-xs text-blue-900/40">Primary</p>
@@ -102,14 +131,12 @@
           <p id="nok2-rel" class="text-xs text-blue-900/60">—</p>
           <p id="nok2-phone" class="text-xs">—</p>
         </div>
-
       </div>
     </div>
   </div>
 
   <div id="tab-loans" class="form-panel hidden">
     <div class="bg-white rounded-xl border border-amber-100 shadow-sm p-5">
-
       <h3 class="text-sm font-bold text-navy mb-3">Loans</h3>
 
       <div class="overflow-x-auto">
@@ -125,17 +152,14 @@
           <tbody id="loan-table" class="text-navy"></tbody>
         </table>
       </div>
-
     </div>
   </div>
 
   <div id="tab-allowances" class="form-panel hidden">
     <div class="bg-white rounded-xl border border-amber-100 shadow-sm p-5">
-
       <h3 class="text-sm font-bold text-navy mb-3">Allowances</h3>
 
       <div id="allowance-list" class="flex flex-wrap gap-2"></div>
-
     </div>
   </div>
 </div>
@@ -172,19 +196,27 @@
 
 <script>
   function switchTab(name) {
-    document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.form-panel').forEach(p => p.classList.add('hidden'));
-    document.querySelector('[data-tab="' + name + '"]').classList.add('active');
-    document.getElementById('tab-' + name).classList.remove('hidden');
+    document
+      .querySelectorAll(".form-tab")
+      .forEach((t) => t.classList.remove("active"));
+    document
+      .querySelectorAll(".form-panel")
+      .forEach((p) => p.classList.add("hidden"));
+    document.querySelector('[data-tab="' + name + '"]').classList.add("active");
+    document.getElementById("tab-" + name).classList.remove("hidden");
   }
 
   function switchTab(name) {
-  document.querySelectorAll('.form-tab').forEach(t =>t.classList.remove('active'));
-  document.querySelectorAll('.form-panel').forEach(p =>p.classList.add('hidden'));
-  const btn = document.querySelector(`[data-tab="${name}"]`);
-  if (btn) btn.classList.add('active');
-  document.getElementById(`tab-${name}`).classList.remove('hidden');
-}
+    document
+      .querySelectorAll(".form-tab")
+      .forEach((t) => t.classList.remove("active"));
+    document
+      .querySelectorAll(".form-panel")
+      .forEach((p) => p.classList.add("hidden"));
+    const btn = document.querySelector(`[data-tab="${name}"]`);
+    if (btn) btn.classList.add("active");
+    document.getElementById(`tab-${name}`).classList.remove("hidden");
+  }
 
   let formData = null;
 
@@ -192,7 +224,7 @@
 
   async function loadMiniForm() {
     try {
-      const res = await authService.fetchWithAuth('/form/load');
+      const res = await authService.fetchWithAuth("/form/load");
       // const res = await fetch('/form/load');
       const data = await res.json();
 
@@ -203,84 +235,103 @@
       renderNok(data);
       renderLoans(data);
       renderAllowances(data);
-
     } catch (err) {
       console.error(err);
-      showNotice('Unable to load form data.', 'error');
+      showNotice("Unable to load form data.", "error");
     }
   }
 
-
   function handleFormState(data) {
-    const notice = document.getElementById('formNotice');
+    const notice = document.getElementById("formNotice");
 
     if (!data.canEdit) {
-      notice.className = "mb-4 rounded-xl border border-red-200 bg-red-50 text-red-700 p-3 text-sm font-semibold";
+      notice.className =
+        "mb-4 rounded-xl border border-red-200 bg-red-50 text-red-700 p-3 text-sm font-semibold";
       notice.textContent = data.editBlocked || "Form is locked.";
-      notice.classList.remove('hidden');
+      notice.classList.remove("hidden");
     } else if (data.formStatus) {
-      notice.className = "mb-4 rounded-xl border border-green-200 bg-green-50 text-green-700 p-3 text-sm font-semibold";
-      notice.textContent = "Status: " + data.formStatus.replace('_', ' ');
-      notice.classList.remove('hidden');
+      notice.className =
+        "mb-4 rounded-xl border border-green-200 bg-green-50 text-green-700 p-3 text-sm font-semibold";
+      notice.textContent = "Status: " + data.formStatus.replace("_", " ");
+      notice.classList.remove("hidden");
     }
   }
 
   function renderCore(data) {
-    document.getElementById('p-fullname').textContent =
-      `${data.Surname ?? ''} ${data.OtherName ?? ''}`;
+    document.getElementById("p-fullname").textContent =
+      `${data.Surname ?? ""} ${data.OtherName ?? ""}`;
 
-    document.getElementById('p-svc').textContent = data.serviceNumber ?? '—';
-    document.getElementById('p-rank').textContent = data.Rank ?? '—';
-    document.getElementById('p-command').textContent = data.commandName ?? '—';
-    document.getElementById('p-email').textContent = data.email ?? '—';
-    document.getElementById('p-phone').textContent = data.gsm_number ?? '—';
+    document.getElementById("p-svc").textContent = data.serviceNumber ?? "—";
+    document.getElementById("p-rank").textContent = data.Rank ?? "—";
+    document.getElementById("p-command").textContent = data.commandName ?? "—";
+    document.getElementById("p-email").textContent = data.email ?? "—";
+    document.getElementById("p-phone").textContent = data.gsm_number ?? "—";
   }
 
   function renderNok(data) {
     const p = data.nok?.primary || {};
     const a = data.nok?.alternate || {};
 
-    document.getElementById('nok1-name').textContent = p.full_name ?? '—';
-    document.getElementById('nok1-rel').textContent = p.relationship ?? '—';
-    document.getElementById('nok1-phone').textContent = p.phone1 ?? '—';
+    document.getElementById("nok1-name").textContent = p.full_name ?? "—";
+    document.getElementById("nok1-rel").textContent = p.relationship ?? "—";
+    document.getElementById("nok1-phone").textContent = p.phone1 ?? "—";
 
-    document.getElementById('nok2-name').textContent = a.full_name ?? '—';
-    document.getElementById('nok2-rel').textContent = a.relationship ?? '—';
-    document.getElementById('nok2-phone').textContent = a.phone1 ?? '—';
+    document.getElementById("nok2-name").textContent = a.full_name ?? "—";
+    document.getElementById("nok2-rel").textContent = a.relationship ?? "—";
+    document.getElementById("nok2-phone").textContent = a.phone1 ?? "—";
   }
 
   function renderLoans(data) {
     const loans = data.loans || {};
-    const tbody = document.getElementById('loan-table');
+    const tbody = document.getElementById("loan-table");
 
-    tbody.innerHTML = Object.values(loans).map(l => `
+    tbody.innerHTML = Object.values(loans)
+      .map(
+        (l) => `
     <tr class="border-b">
       <td class="py-2 font-semibold">${l.loan_type}</td>
-      <td>${l.amount ?? '-'}</td>
-      <td>${l.year_taken ?? '-'}</td>
-      <td>${l.balance ?? '-'}</td>
+      <td>${l.amount ?? "-"}</td>
+      <td>${l.year_taken ?? "-"}</td>
+      <td>${l.balance ?? "-"}</td>
     </tr>
-  `).join('');
+  `,
+      )
+      .join("");
   }
-  
-  function renderAllowances(data) {
-    const container = document.getElementById('allowance-list');
 
-    const allowances = Object.values(data.allowances || [])
-      .filter(a => a?.is_active);
+  function renderAllowances(data) {
+    const container = document.getElementById("allowance-list");
+
+    const allowances = Object.values(data.allowances || []).filter(
+      (a) => a?.is_active,
+    );
 
     if (!allowances.length) {
       container.innerHTML = `<p class="text-blue-900/40 text-sm">No active allowances</p>`;
       return;
     }
 
-    container.innerHTML = allowances.map(a => `
+    container.innerHTML = allowances
+      .map(
+        (a) => `
     <span class="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-semibold">
-      ${a.allow_type === 'OTHER' ? `OTHER: ${a.specify}` : a.allow_type}
+      ${a.allow_type === "OTHER" ? `OTHER: ${a.specify}` : a.allow_type}
     </span>
-  `).join('');
+  `,
+      )
+      .join("");
   }
-  
+
   loadMiniForm();
 
+  // Tag the "Open Full Form" link so emolument-form.html knows which shell to return to
+  (function () {
+    if (window.location.href.indexOf("emolument-admin.html") !== -1) {
+      document
+        .querySelectorAll('a[href*="emolument-form.html"]')
+        .forEach(function (l) {
+          l.href = l.href.split("?")[0] + "?shell=admin";
+        });
+    }
+  })();
 </script>

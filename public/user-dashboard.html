@@ -298,6 +298,17 @@
   <script src="script/user-dashboard.js"></script>
 
   <script>
+    /* ── Personnel-form overlay: hide/restore header on demand ── */
+    window.addEventListener("message", function (e) {
+      if (e.data?.type === "pfo_overlay_open") {
+        var h = document.querySelector("header");
+        if (h) h.style.display = "none";
+      } else if (e.data?.type === "pfo_overlay_closed") {
+        var h = document.querySelector("header");
+        if (h) h.style.display = "";
+      }
+    });
+
     /* ── Drawer helpers ──────────────────────────────── */
     function openDrawer() {
       document.getElementById("navDrawer").classList.add("open");

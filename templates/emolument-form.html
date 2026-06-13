@@ -362,7 +362,7 @@
       /* ── Page footer ─────────────────────────────────────────── */
       .page-footer {
         text-align: center;
-        margin-top: 150px;
+        margin-top: 120px;
         padding-top: 3px;
         border-top: 0.5px solid #aaa;
       }
@@ -489,11 +489,17 @@
 
       <div class="inline-fields">
         <div class="inline-item">
-          <span class="flabel">3.&nbsp;Service Number:</span>
+          <span class="flabel"
+            >3.&nbsp;{{#if (eq data.formType 'OFFICER')}}Service
+            Number{{else}}Official Number{{/if}}:</span
+          >
           <span class="fval md">{{data.serviceNumber}}</span>
         </div>
         <div class="inline-item">
-          <span class="flabel">4.&nbsp;Rank:</span>
+          <span class="flabel"
+            >4.&nbsp;{{#if (eq data.formType
+            'OFFICER')}}Rank{{else}}Rate{{/if}}:</span
+          >
           <span class="fval md">{{data.Rank}}</span>
         </div>
       </div>
@@ -511,14 +517,19 @@
             >{{#if data.DateEmpl}}{{formatDate data.DateEmpl}}{{/if}}</span
           >
         </div>
+        {{#if (eq data.formType 'OFFICER')}}
         <div class="inline-item">
           <span class="flabel">7.&nbsp;Type of Commissioning:</span>
           <span class="fval sm">{{data.entry_mode}}</span>
         </div>
+        {{/if}}
       </div>
 
       <div class="frow">
-        <span class="flabel">8.&nbsp;Date of Commissioning:</span>
+        <span class="flabel"
+          >8.&nbsp;{{#if (eq data.formType 'OFFICER')}}Date of
+          Commissioning{{else}}Date of Enlistment{{/if}}:</span
+        >
         <span class="fval md"
           >{{#if data.advanceDate}}{{formatDate data.advanceDate}}{{/if}}</span
         >
@@ -538,12 +549,33 @@
           >
         </div>
         <div class="inline-item">
-          <span class="flabel">11.&nbsp;Run Out Date&nbsp;:</span>
+          <span class="flabel"
+            >11.&nbsp;{{#if (eq data.formType 'OFFICER')}}Run Out
+            Date{{else}}Date of Joining Ship{{/if}}&nbsp;:</span
+          >
           <span class="fval md"
             >{{#if data.runoutDate}}{{formatDate data.runoutDate}}{{/if}}</span
           >
         </div>
       </div>
+
+      {{#unless (eq data.formType 'OFFICER')}}
+      <div class="inline-fields">
+        <div class="inline-item">
+          <span class="flabel"
+            >11a.&nbsp;Expiration of Current Engagement&nbsp;:</span
+          >
+          <span class="fval md"
+            >{{#if data.expirationOfEngagementDate}}{{formatDate
+            data.expirationOfEngagementDate}}{{/if}}</span
+          >
+        </div>
+        <div class="inline-item">
+          <span class="flabel">11b.&nbsp;Year of Advancement&nbsp;:</span>
+          <span class="fval sm">{{data.yearOfPromotion}}</span>
+        </div>
+      </div>
+      {{/unless}}
 
       <div class="inline-fields">
         <div class="inline-item">
@@ -573,6 +605,7 @@
         </div>
       </div>
 
+      {{#if (eq data.formType 'OFFICER')}}
       <div class="inline-fields">
         <div class="inline-item">
           <span class="flabel">16.&nbsp;Present Appointment&nbsp;:</span>
@@ -583,6 +616,7 @@
           <span class="fval md">{{data.entitlement}}</span>
         </div>
       </div>
+      {{/if}}
 
       <div class="inline-fields">
         <div class="inline-item">
@@ -784,13 +818,15 @@
             </div>
             <div class="cl-row">
               <span class="cl-label"
-                >b.&nbsp;&nbsp;Call/Shift Duty Allowance :</span
+                >b.&nbsp;&nbsp;{{#if (eq data.formType 'OFFICER')}}Call/Shift
+                Duty{{else}}Shift Duty{{/if}} Allowance :</span
               >
               <span class="cl-val"
                 >&nbsp;{{#if data.allowances.SHIFT_DUTY}}{{#if
                 data.allowances.SHIFT_DUTY.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
               >
             </div>
+            {{#unless (eq data.formType 'OFFICER')}}
             <div class="cl-row">
               <span class="cl-label">c.&nbsp;&nbsp;Call Duty Allowance :</span>
               <span class="cl-val"
@@ -798,29 +834,36 @@
                 data.allowances.CALL_DUTY.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
               >
             </div>
+            {{/unless}} {{#if (eq data.formType 'OFFICER')}}
             <div class="cl-row">
-              <span class="cl-label">d.&nbsp;&nbsp;Pilot Allowance :</span>
+              <span class="cl-label">c.&nbsp;&nbsp;Pilot Allowance :</span>
               <span class="cl-val"
                 >&nbsp;{{#if data.allowances.PILOT}}{{#if
                 data.allowances.PILOT.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
               >
             </div>
+            {{/if}}
             <div class="cl-row">
-              <span class="cl-label">e.&nbsp;&nbsp;Aircrew Allowance :</span>
+              <span class="cl-label">d.&nbsp;&nbsp;Aircrew Allowance :</span>
               <span class="cl-val"
                 >&nbsp;{{#if data.allowances.AIRCREW}}{{#if
                 data.allowances.AIRCREW.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
               >
             </div>
             <div class="cl-row">
-              <span class="cl-label">f.&nbsp;&nbsp;&nbsp;SBS Allowance :</span>
+              <span class="cl-label"
+                >e.&nbsp;&nbsp;{{#if (eq data.formType
+                'OFFICER')}}SBS{{else}}SBC{{/if}} Allowance :</span
+              >
               <span class="cl-val"
                 >&nbsp;{{#if data.allowances.SBC}}{{#if
                 data.allowances.SBC.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
               >
             </div>
             <div class="cl-row">
-              <span class="cl-label">g.&nbsp;&nbsp;Hazard Allowance :</span>
+              <span class="cl-label"
+                >f.&nbsp;&nbsp;&nbsp;Hazard Allowance :</span
+              >
               <span class="cl-val"
                 >&nbsp;{{#if data.allowances.HAZARD}}{{#if
                 data.allowances.HAZARD.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
@@ -828,16 +871,26 @@
             </div>
             <div class="cl-row">
               <span class="cl-label"
-                >h.&nbsp;&nbsp;Special Forces Allowance :</span
+                >g.&nbsp;&nbsp;Special Forces Allowance :</span
               >
               <span class="cl-val"
                 >&nbsp;{{#if data.allowances.SPECIAL_FORCES}}{{#if
                 data.allowances.SPECIAL_FORCES.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
               >
             </div>
+            {{#unless (eq data.formType 'OFFICER')}}
+            <div class="cl-row">
+              <span class="cl-label">h.&nbsp;&nbsp;GCB Allowance :</span>
+              <span class="cl-val"
+                >&nbsp;{{#if data.allowances.GCB}}{{#if
+                data.allowances.GCB.is_active}}Yes{{else}}No{{/if}}{{else}}No{{/if}}</span
+              >
+            </div>
+            {{/unless}}
             <div class="cl-row">
               <span class="cl-label"
-                >i.&nbsp;&nbsp;&nbsp;Other Allowances
+                >{{#if (eq data.formType
+                'OFFICER')}}h{{else}}i{{/if}}.&nbsp;&nbsp;&nbsp;Other Allowances
                 <em>(Please Specify)</em>:</span
               >
               <span class="cl-val"

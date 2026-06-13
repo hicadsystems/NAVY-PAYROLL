@@ -1,9 +1,35 @@
 <div class="p-4 md:p-6">
   <div class="mb-6">
     <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
-      <h3 class="text-sm lg:text-lg font-bold text-navy">
+      <h3
+        class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
+      >
         CPO-Verified Forms Awaiting Admin Acceptance
       </h3>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <select
+          id="filterShip"
+          onchange="applyFilters()"
+          class="text-xs border border-amber-100 rounded-lg px-3 py-1.5 bg-white text-navy focus:outline-none focus:border-navy"
+        >
+          <option value="">All Ships</option>
+        </select>
+        <select
+          id="filterClass"
+          onchange="applyFilters()"
+          class="text-xs border border-amber-100 rounded-lg px-3 py-1.5 bg-white text-navy focus:outline-none focus:border-navy"
+        >
+          <option value="">All Classes</option>
+          <option value="1">Officers</option>
+          <option value="2">Warrant Officers</option>
+          <option value="3">Ratings A</option>
+          <option value="4">Ratings B</option>
+          <option value="5">Ratings C</option>
+          <option value="6">Trainees</option>
+        </select>
+      </div>
+
       <span class="text-xs text-blue-900/40" id="verifiedCount"></span>
     </div>
     <p class="text-sm text-blue-900/50">
@@ -213,12 +239,45 @@
       currentDetailTab: "form",
     };
 
+    // ── Populate ship dropdown ──
+    (function () {
+      fetch("/admin/ships", { headers: { Authorization: "Bearer " + token } })
+        .then((r) => (r.ok ? r.json() : []))
+        .then((ships) => {
+          const sel = document.getElementById("filterShip");
+          ships.forEach((s) => {
+            const name = s.name || s.ship_name || s.shipName || "";
+            const opt = document.createElement("option");
+            opt.value = name;
+            opt.textContent = name + " -- " + (s.code ? ` [${s.code}]` : "");
+            sel.appendChild(opt);
+          });
+          const sorted = [...sel.options]
+            .slice(1)
+            .sort((a, b) =>
+              a.textContent.trim().localeCompare(b.textContent.trim()),
+            );
+          sorted.forEach((opt) => sel.appendChild(opt));
+        })
+        .catch(() => {});
+    })();
+
+    // ── Apply filters (reset to page 1) ──
+    function applyFilters() {
+      loadVerifiedForms(1);
+    }
+
     // ── Load verified forms ──
     function loadVerifiedForms(page = 1) {
       page = Math.max(page, 1);
       verifiedState.page = page;
 
+      const ship = document.getElementById("filterShip")?.value || "";
+      const cls = document.getElementById("filterClass")?.value || "";
+
       const params = new URLSearchParams({ page, pageSize: ITEMS_PER_PAGE });
+      if (ship) params.set("ship", ship);
+      if (cls) params.set("payrollclass", cls);
       const grid = document.getElementById("verifiedGrid");
 
       grid.innerHTML =

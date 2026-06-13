@@ -729,6 +729,15 @@
         }
 
         _handleInitialLoad() {
+          // If admin was on the full form (opened via "My Form" → "Open Full Form")
+          // before an F5 refresh, navigate straight back to it.
+          try {
+            if (localStorage.getItem("emol_admin_form_open") === "1") {
+              location.href = "../pages/emolument-form.html?shell=admin";
+              return;
+            }
+          } catch (_) {}
+
           // 1. Try the iframe's own hash first (back/forward within iframe)
           const hash = window.location.hash;
           const fromHash = hash.startsWith("#emol-") ? hash.slice(6) : null;

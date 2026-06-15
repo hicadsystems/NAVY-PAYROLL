@@ -23,8 +23,8 @@
         "click",
       ];
 
-      // Auto-initialize if logged in
-      if (this.isLoggedIn()) {
+      // Auto-initialize if logged in AND on dashboard
+      if (this.isLoggedIn() && this.isDashboard()) {
         this.startInactivityTracking();
       }
     }
@@ -41,8 +41,18 @@
         document.addEventListener(event, () => this.resetTimer(), true);
       });
 
+      // Stop tracking when leaving dashboard.html
+      window.addEventListener("pagehide", () => {
+        this.stopTracking();
+        console.log("⏹️ Inactivity tracking stopped (left dashboard)");
+      });
+
       // Start timer
       this.resetTimer();
+    }
+
+    isDashboard() {
+      return window.location.pathname.endsWith("dashboard.html");
     }
 
     resetTimer() {
@@ -172,8 +182,10 @@
         localStorage.setItem(this.ACCESS_TOKEN_KEY, data.token);
         localStorage.setItem(this.REFRESH_TOKEN_KEY, data.refresh_token);
 
-        // Start inactivity tracking
-        this.startInactivityTracking();
+        // Start inactivity tracking (dashboard only)
+        if (this.isDashboard()) {
+          this.startInactivityTracking();
+        }
 
         console.log("✅ Login successful");
         return data;
@@ -256,7 +268,7 @@
       //   If token expired, try refresh
       if (response.status === 401) {
         try {
-          await this.refreshToken();          // try refresh first
+          await this.refreshToken(); // try refresh first
           options.headers.Authorization = `Bearer ${this.getAccessToken()}`;
           response = await fetch(url, options); // retry once
           if (response.status === 401) await this.logout(); // still 401 → logout

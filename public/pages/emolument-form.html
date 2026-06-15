@@ -1369,6 +1369,7 @@
         <div
           class="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto flex-wrap"
         >
+          <!-- Back button: always visible -->
           <button
             id="btn-back"
             onclick="goBack()"
@@ -1390,10 +1391,33 @@
             Back
           </button>
 
+          <!-- Download PDF: always visible, available regardless of ownership/lock state -->
+          <button
+            id="btn-download"
+            onclick="downloadForm()"
+            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-teal-600 text-teal-600 text-sm font-semibold hover:bg-teal-600 hover:text-white transition-all"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              />
+            </svg>
+            <span id="btn-download-label">Download PDF</span>
+          </button>
+
+          <!-- Owner-only actions: Save Draft + Submit -->
           <button
             id="btn-save"
             onclick="saveDraft()"
-            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border-2 border-navy text-navy text-sm font-semibold hover:bg-navy hover:text-white transition-all"
+            class="hidden flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border-2 border-navy text-navy text-sm font-semibold hover:bg-navy hover:text-white transition-all"
           >
             <svg
               class="w-4 h-4"
@@ -1412,30 +1436,9 @@
           </button>
 
           <button
-            id="btn-download"
-            onclick="downloadForm()"
-            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg border-2 border-teal-600 text-teal-600 text-sm font-semibold hover:bg-teal-600 hover:text-white transition-all"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-              />
-            </svg>
-            <span id="btn-download-label">Download PDF</span>
-          </button>
-
-          <button
             id="btn-submit"
             onclick="submitForm()"
-            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg bg-navy text-white text-sm font-semibold hover:bg-navy-light transition-all shadow-md"
+            class="hidden flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-navy text-white text-sm font-semibold hover:bg-navy-light transition-all shadow-md"
           >
             <svg
               class="w-4 h-4"
@@ -1461,35 +1464,35 @@
             <button
               id="btn-do-review"
               onclick="roleAction('do-review')"
-              class="hidden flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all"
+              class="hidden flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all"
             >
               <i class="fas fa-check"></i>Authenticate
             </button>
             <button
               id="btn-fo-approve"
               onclick="roleAction('fo-approve')"
-              class="hidden flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-all"
+              class="hidden flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-all"
             >
               <i class="fas fa-check"></i>Approve
             </button>
             <button
               id="btn-cpo-confirm"
               onclick="roleAction('cpo-confirm')"
-              class="hidden flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-all"
+              class="hidden flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-all"
             >
               <i class="fas fa-stamp"></i>Confirm
             </button>
             <button
               id="btn-admin-accept"
               onclick="roleAction('admin-accept')"
-              class="hidden flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-all"
+              class="hidden flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-all"
             >
               <i class="fas fa-check-circle"></i>Accept
             </button>
             <button
               id="btn-reject"
               onclick="roleAction('reject')"
-              class="hidden flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-all"
+              class="hidden flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-all"
             >
               <i class="fas fa-times"></i>Reject
             </button>
@@ -1552,15 +1555,17 @@
       "use strict";
 
       // ── Module-level state ───────────────────────────────────
-      let formData = null; // full API response
-      let formType = null; // 'OFFICER' | 'RATING' | 'TRAINING'
-      let formOptions = null; // loaded from /form/options
+      let formData = null;
+      let formType = null;
+      let formOptions = null;
       let autoSaveTimer = null;
       let isDirty = false;
       let pendingNav = null;
       let formLocked = false;
       let currentRole = null;
       let pendingRoleAction = null;
+      // Fix 3: track whether the viewing user owns this form
+      let isOwnForm = false;
 
       // ── Constants ────────────────────────────────────────────
       const LABEL_OVERRIDES = {
@@ -1644,7 +1649,6 @@
         e.returnValue = "";
       });
 
-      // Allow SPA shell to trigger section navigation with an unsaved-changes guard
       document.addEventListener("emolNav", (e) => {
         withUnsavedGuard(() => {
           if (typeof showSection === "function") showSection(e.detail);
@@ -1680,7 +1684,12 @@
             true,
           );
           populateSelect("entry_mode", formOptions.entryModes, true);
-          populateSelect("Rank", formOptions.ranks, true);
+
+          // Fix 4: Rank options now include a `type` field.
+          // Populate based on personnel type: "NN/" prefix → CO (officer), else NCO (rating).
+          // At options-load time we don't yet know the personnel's service number,
+          // so load all ranks; we'll filter/re-populate after loadForm resolves the type.
+          populateRanksByType(formOptions.ranks, null);
 
           setupStateLGAFiltering();
         } catch (err) {
@@ -1690,18 +1699,55 @@
         }
       }
 
+      /**
+       * Fix 4: Populate the Rank select filtered by personnel commission type.
+       * Each rank option is expected to have a `type` field: "CO" for officers, "NCO" for ratings.
+       * Commission type is derived from the service number prefix:
+       *   - starts with "NN/" → CO (Officer)
+       *   - anything else    → NCO (Rating/Training)
+       * @param {Array} ranks - array of { id, name, type } objects
+       * @param {string|null} serviceNumber - the personnel's service number (null = show all)
+       */
+      function populateRanksByType(ranks, serviceNumber) {
+        const select = document.getElementById("Rank");
+        if (!select || !ranks) return;
+
+        let commissionType = null;
+        if (serviceNumber) {
+          commissionType = serviceNumber.toUpperCase().startsWith("NN/")
+            ? "CO"
+            : "NCO";
+        }
+
+        const filtered = commissionType
+          ? ranks.filter((r) => r.type === commissionType)
+          : ranks;
+
+        const first = select.options[0];
+        select.innerHTML = "";
+        if (first) select.appendChild(first);
+
+        filtered.forEach((rank) => {
+          const o = document.createElement("option");
+          o.value = String(rank.name); // ranks use name as value (useName=true pattern)
+          o.textContent = rank.name;
+          select.appendChild(o);
+        });
+      }
+
       async function loadForm() {
         try {
           const params = new URLSearchParams(location.search);
           const svcno = params.get("svcno");
           const isAdmin = params.get("admin") === "1";
           const ship = params.get("ship");
+          const command = params.get("command");
 
           if (isAdmin) hideSpaSurroundings();
 
           const url =
             isAdmin && svcno
-              ? `/form/load?admin=1&svcno=${encodeURIComponent(svcno)}&ship=${encodeURIComponent(ship)}`
+              ? `/form/load?admin=1&svcno=${encodeURIComponent(svcno)}&ship=${encodeURIComponent(ship)}&command=${encodeURIComponent(command)}`
               : "/form/load";
 
           const res = await fetch(url, {
@@ -1716,6 +1762,21 @@
 
           formData = data;
           formType = data.formType || "RATING";
+
+          // Fix 3: Determine if the logged-in user owns this form.
+          // The API should return `isOwner: true` when the user is viewing their own form.
+          // Fall back to comparing service numbers if isOwner flag is not present.
+          const loggedInSvcNo =
+            sessionStorage.getItem("serviceNumber") ||
+            localStorage.getItem("user_id");
+          isOwnForm =
+            !isAdmin && loggedInSvcNo && loggedInSvcNo === data.serviceNumber;
+
+          // Fix 4: Now that we have the service number, re-populate ranks filtered by type.
+          if (formOptions?.ranks) {
+            populateRanksByType(formOptions.ranks, data.serviceNumber);
+          }
+
           initForm(data);
         } catch (err) {
           console.error(err);
@@ -1762,9 +1823,13 @@
         if (!isAdmin) {
           const _shell = new URLSearchParams(location.search).get("shell");
           if (_shell === "admin") {
-            try { localStorage.setItem("emol_admin_form_open", "1"); } catch (_) {}
+            try {
+              localStorage.setItem("emol_admin_form_open", "1");
+            } catch (_) {}
           } else {
-            try { localStorage.setItem("emol_personnel_section", "full-form"); } catch (_) {}
+            try {
+              localStorage.setItem("emol_personnel_section", "full-form");
+            } catch (_) {}
           }
         }
 
@@ -1803,6 +1868,9 @@
           data.canEdit === false ||
           LOCKED_STATUSES.has(data.formStatus);
 
+        // Fix 2: Action bar is always shown; Back button is always visible.
+        showEl("action-bar", true);
+
         if (isLocked) {
           formLocked = true;
           document
@@ -1817,17 +1885,10 @@
             zone.style.cursor = "not-allowed";
           });
 
-          const hasRole =
-            sessionStorage.getItem("active_ship_role") ||
-            new URLSearchParams(location.search).get("mode");
-
-          showEl("action-bar", true);
+          // Fix 3: Only show owner-specific buttons when it's their form (and editable).
+          // When locked, hide Save Draft and Submit regardless.
           hide("btn-save");
           hide("btn-submit");
-
-          if (hasRole) {
-            // Role buttons shown by initRoleButtons()
-          }
 
           if (!isAdmin) {
             showFormNotice(
@@ -1838,7 +1899,15 @@
             );
           }
         } else {
-          showEl("action-bar", true);
+          // Editable form: only show Save/Submit if the logged-in user owns it.
+          if (isOwnForm) {
+            showEl("btn-save");
+            showEl("btn-submit");
+          } else {
+            hide("btn-save");
+            hide("btn-submit");
+          }
+
           document.querySelectorAll(".field").forEach((el) => {
             el.addEventListener("input", onFieldInput);
           });
@@ -1984,26 +2053,26 @@
           if (key === "GCB") {
             div.className = `toggle-row flex-col items-start gap-2${checked ? " active" : ""}`;
             div.innerHTML = `
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" id="allow_GCB" ${checked ? "checked" : ""}
-                       onchange="onAllowanceChange(this,'GCB')"
-                       style="accent-color:#2E5090;width:1rem;height:1rem;cursor:pointer;flex-shrink:0;">
-                <span class="text-sm text-ink font-medium">GCB Allowance</span>
-              </label>
-              <input class="field font-mono text-sm" type="text" id="gcb_number"
-                     placeholder="Enter GCB number"
-                     value="${existing["GCB"]?.gcb_number || ""}"
-                     ${checked ? "" : "disabled"}
-                     style="max-width:280px;">`;
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="allow_GCB" ${checked ? "checked" : ""}
+                     onchange="onAllowanceChange(this,'GCB')"
+                     style="accent-color:#2E5090;width:1rem;height:1rem;cursor:pointer;flex-shrink:0;">
+              <span class="text-sm text-ink font-medium">GCB Allowance</span>
+            </label>
+            <input class="field font-mono text-sm" type="text" id="gcb_number"
+                   placeholder="Enter GCB number"
+                   value="${existing["GCB"]?.gcb_number || ""}"
+                   ${checked ? "" : "disabled"}
+                   style="max-width:280px;">`;
           } else {
             div.className = `toggle-row${checked ? " active" : ""}`;
             div.innerHTML = `
-              <label class="flex items-center gap-2 w-full cursor-pointer">
-                <input type="checkbox" id="allow_${key}" ${checked ? "checked" : ""}
-                       onchange="onAllowanceChange(this,'${key}')"
-                       style="accent-color:#2E5090;width:1rem;height:1rem;cursor:pointer;">
-                <span class="text-sm text-ink">${label}</span>
-              </label>`;
+            <label class="flex items-center gap-2 w-full cursor-pointer">
+              <input type="checkbox" id="allow_${key}" ${checked ? "checked" : ""}
+                     onchange="onAllowanceChange(this,'${key}')"
+                     style="accent-color:#2E5090;width:1rem;height:1rem;cursor:pointer;">
+              <span class="text-sm text-ink">${label}</span>
+            </label>`;
           }
 
           grid.appendChild(div);
@@ -2041,20 +2110,20 @@
           const tr = document.createElement("tr");
           tr.className = "hover:bg-smoke/50 transition-colors";
           tr.innerHTML = `
-            <td class="py-2 px-3 text-sm font-medium text-ink">${label}</td>
-            <td class="py-1 px-3"><input class="field text-right font-mono text-sm" type="number" min="0" step="1000" id="loan_${key}_amount"     value="${loan.amount || ""}" placeholder="0.00"></td>
-            <td class="py-1 px-3"><input class="field font-mono text-sm"           type="text"   maxlength="4"        id="loan_${key}_year_taken" value="${loan.year_taken || ""}" placeholder="YYYY"></td>
-            <td class="py-1 px-3"><input class="field font-mono text-sm"           type="number" min="0"              id="loan_${key}_tenor"      value="${loan.tenor || ""}" placeholder="e.g. 24"></td>
-            <td class="py-1 px-3"><input class="field text-right font-mono text-sm" type="number" min="0" step="1000" id="loan_${key}_balance"    value="${loan.balance || ""}" placeholder="0.00"></td>`;
+          <td class="py-2 px-3 text-sm font-medium text-ink">${label}</td>
+          <td class="py-1 px-3"><input class="field text-right font-mono text-sm" type="number" min="0" step="1000" id="loan_${key}_amount"     value="${loan.amount || ""}" placeholder="0.00"></td>
+          <td class="py-1 px-3"><input class="field font-mono text-sm"           type="text"   maxlength="4"        id="loan_${key}_year_taken" value="${loan.year_taken || ""}" placeholder="YYYY"></td>
+          <td class="py-1 px-3"><input class="field font-mono text-sm"           type="number" min="0"              id="loan_${key}_tenor"      value="${loan.tenor || ""}" placeholder="e.g. 24"></td>
+          <td class="py-1 px-3"><input class="field text-right font-mono text-sm" type="number" min="0" step="1000" id="loan_${key}_balance"    value="${loan.balance || ""}" placeholder="0.00"></td>`;
           tbody.appendChild(tr);
 
           if (key === "OTHER") {
             const trSpec = document.createElement("tr");
             trSpec.innerHTML = `
-              <td colspan="5" class="px-3 pb-2">
-                <input class="field text-sm" type="text" id="loan_OTHER_specify"
-                       value="${loan.specify || ""}" placeholder="Specify other loan type">
-              </td>`;
+            <td colspan="5" class="px-3 pb-2">
+              <input class="field text-sm" type="text" id="loan_OTHER_specify"
+                     value="${loan.specify || ""}" placeholder="Specify other loan type">
+            </td>`;
             tbody.appendChild(trSpec);
           }
         });
@@ -2170,7 +2239,7 @@
             showToast("Draft saved.", "success");
           }
         } catch {
-          /* silent — user will see error on submit */
+          /* silent */
         }
       }
 
@@ -2418,7 +2487,7 @@
         if (el) el.textContent = text;
       }
 
-      function showEl(id, isBlock = false) {
+      function showEl(id) {
         const el = document.getElementById(id);
         if (el) el.classList.remove("hidden");
       }
@@ -2545,10 +2614,14 @@
           // Route back to whichever shell opened it (tagged via ?shell=admin).
           const _shell = _params.get("shell");
           if (_shell === "admin") {
-            try { localStorage.removeItem("emol_admin_form_open"); } catch (_) {}
+            try {
+              localStorage.removeItem("emol_admin_form_open");
+            } catch (_) {}
             location.replace("../pages/emolument-admin.html");
           } else {
-            try { localStorage.setItem("emol_personnel_section", "my-form"); } catch (_) {}
+            try {
+              localStorage.setItem("emol_personnel_section", "my-form");
+            } catch (_) {}
             location.replace("../pages/emolument-personnel.html");
           }
           return;
@@ -2608,18 +2681,22 @@
         btn.disabled = true;
         btn.textContent = "Processing…";
 
+        // Fix 1: Each role has its own reject endpoint.
+        // Approve/confirm/review endpoints are role-specific; reject uses the role-scoped path too.
         const endpoints = {
-          "do-review": `/do/personnel/${formNumber}/review`,
-          "fo-approve": `/fo/form/${formNumber}/approve`,
-          "cpo-confirm": `/cpo/personnel/${formNumber}/confirm`,
+          "do-review": `/do/forms/${formNumber}/review`,
+          "fo-approve": `/fo/forms/${formNumber}/approve`,
+          "cpo-confirm": `/cpo/forms/${formNumber}/confirm`,
           "admin-accept": `/admin/verified/accept`,
-          reject: `/form/${formNumber}/reject`,
+
+          // Reject endpoint is scoped to the current role
+          reject: getRoleRejectEndpoint(currentRole, formNumber),
         };
 
         const isAdminAccept = actionType === "admin-accept";
 
         fetch(endpoints[actionType], {
-          method: isAdminAccept ? "POST" : "PUT",
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${getToken()}`,
@@ -2651,6 +2728,23 @@
           });
       }
 
+      /**
+       * Fix 1: Returns the role-specific reject endpoint.
+       * Each approver role (DO, FO, CPO) has its own reject path.
+       */
+      function getRoleRejectEndpoint(role, formNumber) {
+        switch (role) {
+          case "EMOL_DO":
+            return `/do/forms/${formNumber}/reject`;
+          case "EMOL_FO":
+            return `/fo/forms/${formNumber}/reject`;
+          case "EMOL_CPO":
+            return `/cpo/forms/${formNumber}/reject`;
+          default:
+            return `/form/${formNumber}/reject`;
+        }
+      }
+
       function initRoleButtons() {
         const params = new URLSearchParams(location.search);
         const mode = params.get("mode");
@@ -2664,6 +2758,7 @@
         currentRole = role;
         if (!role) return;
 
+        // Fix 3: Role buttons are only shown when a role is active (i.e. not the form owner's own view).
         showEl("role-buttons");
 
         const btnMap = {

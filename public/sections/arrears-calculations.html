@@ -1,227 +1,753 @@
 <div class="p-6">
-  <!-- Form Header -->
-  <div id="arrearsForm" class="mb-6 flex flex-wrap justify-between items-center gap-y-2">
+  <!-- Form Header: Employee Search + Total Arrears -->
+  <div
+    id="arrearsForm"
+    class="mb-6 flex flex-wrap justify-between items-center gap-y-2"
+  >
+    <!-- Employee Search Dropdown -->
     <div class="relative w-3/4 md:w-1/2 lg:w-1/3">
       <div class="relative">
-        <input 
-          type="text" 
-          id="searchInput"
+        <input
+          type="text"
+          id="empSearchInput"
           class="w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-3 py-2"
           placeholder="Name or Number..."
-          autocomplete="off">
-        <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          autocomplete="off"
+        />
+        <span
+          class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
+        >
+          <svg
+            class="w-5 h-5 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </span>
       </div>
-      
-      <div id="dropdownList" class="absolute z-10 w-full mt-1 bg-yellow-50 border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto hidden">
-        <div class="py-1">
-          <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" data-value="NN001">
-            <span class="font-semibold text-blue-600">NN001</span> - Lt. James 
-          </div>
-          <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" data-value="NN002">
-            <span class="font-semibold text-blue-600">NN002</span> - Mr. Johnson
-          </div>
-          <div class="dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100" data-value="NN003">
-            <span class="font-semibold text-blue-600">NN003</span> - CPO Hicad
-          </div>
+      <div
+        id="empDropdownList"
+        class="absolute z-20 w-full mt-1 bg-yellow-50 border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto hidden"
+      >
+        <div class="py-1" id="empDropdownItems">
+          <div class="px-3 py-2 text-gray-400 text-sm">Loading...</div>
         </div>
       </div>
+      <!-- Hidden: stores selected empno -->
+      <input type="hidden" id="selectedEmpno" />
     </div>
+
+    <!-- Total Arrears Display -->
     <div class="flex items-center flex-wrap gap-2">
       <span class="font-bold text-blue-600 text-lg">TOTAL ARREARS:</span>
-      <div class="bg-pink-50 px-4 py-2 border-2 border-blue-500 rounded-md w-40 text-right text-blue-700 font-bold">
+      <div
+        id="totalArrearsDisplay"
+        class="bg-pink-50 px-4 py-2 border-2 border-blue-500 rounded-md w-40 text-right text-blue-700 font-bold"
+      >
         0.00
       </div>
     </div>
   </div>
 
-  <!-- Regular Section -->
+  <!-- REGULAR Section -->
   <div class="mb-6">
-    <h3 class="text-lg mb-4 text-blue-600 font-bold border-b pb-2">REGULAR</h3>
-    <div class="grid grid-cols-6 gap-x-4 gap-y-2" id="regularSection">
-      <!-- Headers -->
+    <div class="flex items-center justify-between border-b pb-2 mb-4">
+      <h3 class="text-lg text-blue-600 font-bold">REGULAR</h3>
+      <button
+        type="button"
+        id="addRegularRowBtn"
+        class="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white text-lg leading-none hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        title="Add regular row"
+        aria-label="Add regular row"
+      >
+        +
+      </button>
+    </div>
+    <div
+      class="grid gap-x-4 gap-y-2"
+      id="regularSection"
+      style="grid-template-columns: repeat(6, minmax(0, 1fr)) 2rem"
+    >
+      <!-- Column Headers -->
       <div class="col-span-1 font-medium text-sm text-center">Payroll Item</div>
       <div class="col-span-1 font-medium text-sm text-center">Start Date</div>
       <div class="col-span-1 font-medium text-sm text-center">Last Date</div>
-      <div class="col-span-1 font-medium text-sm text-center">OLD Salary Scale</div>
-      <div class="col-span-1 font-medium text-sm text-center">OLD GRADE LEVEL</div>
-      <div class="col-span-1 font-medium text-sm text-center">NEW GRADE LEVEL</div>
+      <div class="col-span-1 font-medium text-sm text-center">
+        OLD Salary Scale
+      </div>
+      <div class="col-span-1 font-medium text-sm text-center">
+        OLD GRADE LEVEL
+      </div>
+      <div class="col-span-1 font-medium text-sm text-center">
+        NEW GRADE LEVEL
+      </div>
+      <div></div>
     </div>
   </div>
 
-  <!-- Others Section -->
+  <!-- OTHERS Section -->
   <div class="mb-6">
-    <h3 class="text-lg mb-4 text-blue-600 font-bold border-b pb-2">OTHERS</h3>
-    <div class="grid grid-cols-5 gap-x-4 gap-y-2" id="othersSection">
-      <!-- Headers -->
+    <div class="flex items-center justify-between border-b pb-2 mb-4">
+      <h3 class="text-lg text-blue-600 font-bold">OTHERS</h3>
+      <button
+        type="button"
+        id="addOthersRowBtn"
+        class="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white text-lg leading-none hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        title="Add other row"
+        aria-label="Add other row"
+      >
+        +
+      </button>
+    </div>
+    <div
+      class="grid gap-x-4 gap-y-2"
+      id="othersSection"
+      style="grid-template-columns: repeat(5, minmax(0, 1fr)) 2rem"
+    >
+      <!-- Column Headers -->
       <div class="col-span-1 font-medium text-sm">Payroll Item</div>
       <div class="col-span-1 font-medium text-sm">Start Date</div>
       <div class="col-span-1 font-medium text-sm">End Date</div>
       <div class="col-span-1 font-medium text-sm">OLD Amount</div>
       <div class="col-span-1 font-medium text-sm">NEW Amount</div>
+      <div></div>
     </div>
   </div>
 
-  <!-- Total Arrear and Buttons -->
+  <!-- Results Table (hidden until Calculate returns data) -->
+  <div id="arrearsResultsWrapper" class="mb-6 hidden">
+    <h3 class="text-lg text-blue-600 font-bold border-b pb-2 mb-4">
+      COMPUTED ARREARS
+    </h3>
+    <div class="overflow-x-auto">
+      <table class="min-w-full border border-gray-200 rounded-lg text-sm">
+        <thead class="bg-blue-100 text-blue-900">
+          <tr>
+            <th class="py-2 px-3 border text-left">Type</th>
+            <th class="py-2 px-3 border text-left">Description</th>
+            <th class="py-2 px-3 border text-left">Section</th>
+            <th class="py-2 px-3 border text-right">Old Amount</th>
+            <th class="py-2 px-3 border text-right">New Amount</th>
+            <th class="py-2 px-3 border text-left">Duration</th>
+            <th class="py-2 px-3 border text-right">Net Arrears</th>
+          </tr>
+        </thead>
+        <tbody id="arrearsResultsBody" class="text-center"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
   <div class="flex flex-wrap gap-2 justify-end items-center mt-6 pt-4 border-t">
-    <button type="button" class="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-300">
+    <button
+      type="button"
+      id="cancelArrearsBtn"
+      class="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400"
+    >
       Cancel
     </button>
-    <button type="button" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+    <button
+      type="button"
+      id="calculateBtn"
+      class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+    >
       Calculate
     </button>
-    <button type="button" class="bg-yellow-500 text-white px-6 py-2 rounded hover:bg-yellow-700">
+    <button
+      type="button"
+      id="printArrearsBtn"
+      class="bg-yellow-500 text-white px-6 py-2 rounded hover:bg-yellow-600"
+    >
       Print
     </button>
   </div>
 </div>
 
 <script>
-  const auth = window.authService;
-  // searchable dropdown 
-  const searchInput = document.getElementById('searchInput');
-  const dropdownList = document.getElementById('dropdownList');
-  const dropdownItems = document.querySelectorAll('.dropdown-item');
+  (function () {
+    const auth = window.authService;
 
-  // Add hidden input to store the selected employee ID
-  const hiddenInput = document.createElement('input');
-  hiddenInput.type = 'hidden';
-  hiddenInput.name = 'arrearsName';
-  hiddenInput.id = 'arrearsName';
-  document.getElementById('arrearsForm').appendChild(hiddenInput);
+    // ─── State ───────────────────────────────────────────────────────────────
+    let allEmployees = [];
+    let allElements = []; // payroll element types
+    let allScales = []; // salary scales
+    let selectedEmpno = "";
 
-  // Show dropdown when input is clicked or focused
-  searchInput.addEventListener('focus', () => {
-    dropdownList.classList.remove('hidden');
-  });
+    // ─── Top-level DOM refs ───────────────────────────────────────────────────
+    const empSearchInput = document.getElementById("empSearchInput");
+    const empDropdownList = document.getElementById("empDropdownList");
+    const empDropdownItems = document.getElementById("empDropdownItems");
+    const selectedEmpnoInput = document.getElementById("selectedEmpno");
+    const totalDisplay = document.getElementById("totalArrearsDisplay");
+    const regularSection = document.getElementById("regularSection");
+    const othersSection = document.getElementById("othersSection");
+    const resultsWrapper = document.getElementById("arrearsResultsWrapper");
+    const resultsBody = document.getElementById("arrearsResultsBody");
 
-  // Filter items as user types
-  searchInput.addEventListener('input', function() {
-    const searchText = this.value.toLowerCase();
-    
-    dropdownItems.forEach(item => {
-      const text = item.textContent.toLowerCase();
-      const shouldShow = text.includes(searchText);
-      item.style.display = shouldShow ? 'block' : 'none';
-    });
-    
-    dropdownList.classList.remove('hidden');
-  });
-
-  // Handle item selection
-  dropdownItems.forEach(item => {
-    item.addEventListener('click', function() {
-      const value = this.getAttribute('data-value');
-      const text = this.textContent.trim();
-      
-      searchInput.value = text;
-      hiddenInput.value = value;
-      dropdownList.classList.add('hidden');
-    });
-  });
-
-  // Hide dropdown when clicking outside
-  document.addEventListener('click', function(e) {
-    if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) {
-      dropdownList.classList.add('hidden');
+    // ─── Generic fetch helper (mirrors reference file pattern) ───────────────
+    async function apiFetch(url, options = {}) {
+      const token = localStorage.getItem("token");
+      return auth.fetchWithAuth(url, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          ...(options.headers || {}),
+        },
+      });
     }
-  });
 
-  // Basic keyboard support
-  searchInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      dropdownList.classList.add('hidden');
-      this.blur();
+    // ─── Data loaders ─────────────────────────────────────────────────────────
+    async function loadEmployees() {
+      try {
+        const res = await apiFetch("/regno/employees", { method: "GET" });
+        const result = await res.json();
+        if (result.data && Array.isArray(result.data)) {
+          allEmployees = result.data;
+          renderEmployeeDropdown(allEmployees);
+        }
+      } catch (err) {
+        console.error("[arrears] loadEmployees:", err);
+      }
     }
-  });
 
-  // Utility: create element with classes + attributes
-  function createEl(tag, classes, attrs = {}) {
-    const el = document.createElement(tag);
-    if (classes) el.className = classes;
-    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
-    return el;
-  }
+    async function loadElementTypes() {
+      try {
+        const res = await apiFetch("/reference/elementtype", { method: "GET" });
+        const result = await res.json();
+        allElements = Array.isArray(result) ? result : result.data || [];
+      } catch (err) {
+        console.error("[arrears] loadElementTypes:", err);
+      }
+    }
 
-  // Add rows to REGULAR section
-  const regularSection = document.getElementById("regularSection");
-  const regularRows = 5;
-  for (let i = 0; i < regularRows; i++) {
-    // Payroll Item
-    const sel1 = createEl("select", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm min-h-[2rem]");
-    sel1.innerHTML = `<option value="">Select Item</option>`;
-    regularSection.appendChild(sel1);
+    async function loadSalaryScales() {
+      try {
+        const res = await apiFetch("/reference/salarygroup", { method: "GET" });
+        const result = await res.json();
+        allScales = Array.isArray(result) ? result : result.data || [];
+      } catch (err) {
+        console.error("[arrears] loadSalaryScales:", err);
+      }
+    }
 
-    // Start Date
-    const sd = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm min-h-[2rem]", {
-      type: "date",
-      placeholder: "DD/MM/YYYY",
+    // ─── Employee dropdown ────────────────────────────────────────────────────
+    function renderEmployeeDropdown(employees) {
+      empDropdownItems.innerHTML = "";
+      if (!employees.length) {
+        empDropdownItems.innerHTML =
+          '<div class="px-3 py-2 text-gray-400 text-sm">No employees found</div>';
+        return;
+      }
+      employees.forEach((emp) => {
+        const div = document.createElement("div");
+        div.className =
+          "dropdown-item px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 text-sm";
+        div.setAttribute("data-value", emp.Empl_ID);
+        div.innerHTML = `<span class="font-semibold text-blue-600">${emp.Empl_ID}</span> - ${emp.Surname} ${emp.OtherName}`;
+        div.addEventListener("click", () => {
+          selectedEmpno = emp.Empl_ID;
+          selectedEmpnoInput.value = emp.Empl_ID;
+          empSearchInput.value = `${emp.Empl_ID} - ${emp.Surname} ${emp.OtherName}`;
+          empDropdownList.classList.add("hidden");
+        });
+        empDropdownItems.appendChild(div);
+      });
+    }
+
+    empSearchInput.addEventListener("focus", () =>
+      empDropdownList.classList.remove("hidden"),
+    );
+    empSearchInput.addEventListener("input", function () {
+      const q = this.value.toLowerCase();
+      const filtered = allEmployees.filter((e) =>
+        `${e.Empl_ID} ${e.Surname} ${e.OtherName}`.toLowerCase().includes(q),
+      );
+      renderEmployeeDropdown(filtered);
+      empDropdownList.classList.remove("hidden");
     });
-    regularSection.appendChild(sd);
-
-    // Last Date
-    const ld = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm min-h-[2rem]", {
-      type: "date",
-      placeholder: "DD/MM/YYYY",
+    empSearchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        empDropdownList.classList.add("hidden");
+        empSearchInput.blur();
+      }
     });
-    regularSection.appendChild(ld);
-
-    // OLD Scale
-    const sel2 = createEl("select", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm min-h-[2rem]");
-    sel2.innerHTML = `<option value="">Select Scale</option>`;
-    regularSection.appendChild(sel2);
-
-    // OLD GL
-    const oldGl = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm text-right min-h-[2rem]", {
-      type: "text",
-      placeholder: "GGL",
+    document.addEventListener("click", (e) => {
+      if (
+        !empSearchInput.contains(e.target) &&
+        !empDropdownList.contains(e.target)
+      ) {
+        empDropdownList.classList.add("hidden");
+      }
     });
-    regularSection.appendChild(oldGl);
 
-    // NEW GL
-    const newGl = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm text-right min-h-[2rem]", {
-      type: "text",
-      placeholder: "GGL",
-    });
-    regularSection.appendChild(newGl);
-  }
+    // ─── Inline search-dropdown factory ──────────────────────────────────────
+    // Creates a self-contained search dropdown cell that mirrors the reference
+    // file's employee dropdown pattern. Returns { wrapper, getValue }.
+    //
+    // items:       array of objects
+    // valueField:  key to use as the stored value (e.g. 'PaymentType')
+    // labelFn:     fn(item) => display string
+    // placeholder: input placeholder text
+    // extraClass:  optional extra classes for the wrapper div
+    function makeSearchDropdown({
+      items,
+      valueField,
+      labelFn,
+      placeholder,
+      extraClass = "",
+    }) {
+      let selectedValue = "";
 
-  // Add rows to OTHERS section
-  const othersSection = document.getElementById("othersSection");
-  const otherRows = 3;
-  for (let i = 0; i < otherRows; i++) {
-    // Payroll Item
-    const sel = createEl("select", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-green-50 rounded-md px-2 py-1 text-sm min-h-[2rem]");
-    sel.innerHTML = `<option value="">Select Item</option>`;
-    othersSection.appendChild(sel);
+      // Outer wrapper — sits in the grid cell
+      const wrapper = document.createElement("div");
+      wrapper.className = `relative col-span-1 ${extraClass}`;
 
-    // Start Date
-    const sd = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-green-50 rounded-md px-2 py-1 text-sm min-h-[2rem]", {
-      type: "date",
-      placeholder: "DD/MM/YYYY",
-    });
-    othersSection.appendChild(sd);
+      // Text input
+      const input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = placeholder;
+      input.autocomplete = "off";
+      input.className =
+        "w-full border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm min-h-[2rem]";
 
-    // End Date
-    const ed = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-green-50 rounded-md px-2 py-1 text-sm min-h-[2rem]", {
-      type: "date",
-      placeholder: "DD/MM/YYYY",
-    });
-    othersSection.appendChild(ed);
+      // Chevron icon
+      const chevronSpan = document.createElement("span");
+      chevronSpan.className =
+        "absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none";
+      chevronSpan.innerHTML = `<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+    </svg>`;
 
-    // OLD Amount
-    const oldAmt = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-green-50 rounded-md px-2 py-1 text-sm text-right min-h-[2rem]", {
-      type: "number",
-    });
-    othersSection.appendChild(oldAmt);
+      // Dropdown list
+      const list = document.createElement("div");
+      list.className =
+        "absolute z-30 w-full mt-1 bg-yellow-50 border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto hidden";
 
-    // NEW Amount
-    const newAmt = createEl("input", "col-span-1 border border-blue-500 focus:border-yellow-500 bg-green-50 rounded-md px-2 py-1 text-sm text-right min-h-[2rem]", {
-      type: "number",
-    });
-    othersSection.appendChild(newAmt);
-  }
+      // Hidden value input
+      const hidden = document.createElement("input");
+      hidden.type = "hidden";
+
+      // Render items into list
+      function renderList(filter = "") {
+        list.innerHTML = "";
+        const q = filter.toLowerCase();
+        const matched = items.filter((item) =>
+          labelFn(item).toLowerCase().includes(q),
+        );
+        if (!matched.length) {
+          list.innerHTML =
+            '<div class="px-2 py-1 text-gray-400 text-xs">No results</div>';
+          return;
+        }
+        matched.forEach((item) => {
+          const div = document.createElement("div");
+          div.className =
+            "px-2 py-1 hover:bg-blue-50 cursor-pointer border-b border-gray-100 text-sm";
+          div.textContent = labelFn(item);
+          div.addEventListener("mousedown", (e) => {
+            e.preventDefault(); // prevent input blur before click fires
+            selectedValue = item[valueField];
+            hidden.value = selectedValue;
+            input.value = labelFn(item);
+            list.classList.add("hidden");
+          });
+          list.appendChild(div);
+        });
+      }
+
+      renderList();
+
+      input.addEventListener("focus", () => {
+        renderList(input.value);
+        list.classList.remove("hidden");
+      });
+      input.addEventListener("input", () => {
+        renderList(input.value);
+        list.classList.remove("hidden");
+      });
+      input.addEventListener("blur", () =>
+        setTimeout(() => list.classList.add("hidden"), 150),
+      );
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          list.classList.add("hidden");
+          input.blur();
+        }
+      });
+
+      const inputWrapper = document.createElement("div");
+      inputWrapper.className = "relative";
+      inputWrapper.appendChild(input);
+      inputWrapper.appendChild(chevronSpan);
+
+      wrapper.appendChild(inputWrapper);
+      wrapper.appendChild(list);
+      wrapper.appendChild(hidden);
+
+      return {
+        wrapper,
+        getValue: () => hidden.value,
+      };
+    }
+
+    // ─── DOM helpers ──────────────────────────────────────────────────────────
+    function createEl(tag, classes, attrs = {}) {
+      const el = document.createElement(tag);
+      if (classes) el.className = classes;
+      Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+      return el;
+    }
+
+    function createRemoveBtn(cellEls) {
+      const btn = createEl(
+        "button",
+        "flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-600 text-sm leading-none hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-300",
+        { type: "button", title: "Remove row", "aria-label": "Remove row" },
+      );
+      btn.textContent = "×";
+      btn.addEventListener("click", () => {
+        cellEls.forEach((el) => el.remove());
+        btn.remove();
+      });
+      return btn;
+    }
+
+    // ─── REGULAR row builder ──────────────────────────────────────────────────
+    // Each row: [payroll-item-dropdown] [startDate] [lastDate] [scale-dropdown] [oldGL] [newGL] [×]
+    // Returns a getter so Calculate can read the row's values.
+    const regularRowGetters = [];
+
+    function addRegularRow() {
+      const cells = [];
+
+      // Payroll Item — inline search dropdown
+      const itemDD = makeSearchDropdown({
+        items: allElements,
+        valueField: "PaymentType",
+        labelFn: (item) => `${item.PaymentType} - ${item.elmDesc}`,
+        placeholder: "Select Payroll Item",
+      });
+      cells.push(itemDD.wrapper);
+
+      // Start Date
+      const sd = createEl(
+        "input",
+        "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm min-h-[2rem]",
+        { type: "date" },
+      );
+      cells.push(sd);
+
+      // Last Date
+      const ld = createEl(
+        "input",
+        "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm min-h-[2rem]",
+        { type: "date" },
+      );
+      cells.push(ld);
+
+      // OLD Salary Scale — inline search dropdown
+      const scaleDD = makeSearchDropdown({
+        items: allScales,
+        valueField: "groupcode",
+        labelFn: (item) =>
+          `${item.groupcode}${item.grpdesc ? " - " + item.grpdesc : ""}`,
+        placeholder: "Select Scale",
+      });
+      cells.push(scaleDD.wrapper);
+
+      // OLD Grade Level
+      const oldGl = createEl(
+        "input",
+        "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm text-right min-h-[2rem]",
+        { type: "text", placeholder: "e.g. 0103", maxlength: "4" },
+      );
+      cells.push(oldGl);
+
+      // NEW Grade Level
+      const newGl = createEl(
+        "input",
+        "col-span-1 border border-blue-500 focus:border-yellow-500 bg-transparent rounded-md px-2 py-1 text-sm text-right min-h-[2rem]",
+        { type: "text", placeholder: "e.g. 0105", maxlength: "4" },
+      );
+      cells.push(newGl);
+
+      cells.forEach((el) => regularSection.appendChild(el));
+
+      // Remove button cell
+      const removeCell = createEl("div", "flex items-center justify-center");
+      const removeBtn = createRemoveBtn([...cells, removeCell]);
+      removeCell.appendChild(removeBtn);
+      regularSection.appendChild(removeCell);
+
+      // Register getter
+      const getter = () => ({
+        itemType: itemDD.getValue(),
+        subdate1: sd.value,
+        subdate2: ld.value,
+        salcode: scaleDD.getValue(),
+        oldGrdLevel: oldGl.value.trim(),
+        newGrdLevel: newGl.value.trim(),
+      });
+      regularRowGetters.push({ getter, removeCell });
+      // Clean up getter when row is removed
+      removeBtn.addEventListener(
+        "click",
+        () => {
+          const idx = regularRowGetters.findIndex(
+            (r) => r.removeCell === removeCell,
+          );
+          if (idx !== -1) regularRowGetters.splice(idx, 1);
+        },
+        { once: true },
+      );
+    }
+
+    // ─── OTHERS row builder ───────────────────────────────────────────────────
+    const othersRowGetters = [];
+
+    function addOthersRow() {
+      const cells = [];
+
+      // Payroll Item — inline search dropdown
+      const itemDD = makeSearchDropdown({
+        items: allElements,
+        valueField: "PaymentType",
+        labelFn: (item) => `${item.PaymentType} - ${item.elmDesc}`,
+        placeholder: "Select Payroll Item",
+        extraClass: "bg-green-50",
+      });
+      cells.push(itemDD.wrapper);
+
+      // Start Date
+      const sd = createEl(
+        "input",
+        "col-span-1 border border-blue-500 focus:border-yellow-500 bg-green-50 rounded-md px-2 py-1 text-sm min-h-[2rem]",
+        { type: "date" },
+      );
+      cells.push(sd);
+
+      // End Date
+      const ed = createEl(
+        "input",
+        "col-span-1 border border-blue-500 focus:border-yellow-500 bg-green-50 rounded-md px-2 py-1 text-sm min-h-[2rem]",
+        { type: "date" },
+      );
+      cells.push(ed);
+
+      // OLD Amount
+      const oldAmt = createEl(
+        "input",
+        "col-span-1 border border-blue-500 focus:border-yellow-500 bg-green-50 rounded-md px-2 py-1 text-sm text-right min-h-[2rem]",
+        { type: "number", step: "0.01", placeholder: "0.00" },
+      );
+      cells.push(oldAmt);
+
+      // NEW Amount
+      const newAmt = createEl(
+        "input",
+        "col-span-1 border border-blue-500 focus:border-yellow-500 bg-green-50 rounded-md px-2 py-1 text-sm text-right min-h-[2rem]",
+        { type: "number", step: "0.01", placeholder: "0.00" },
+      );
+      cells.push(newAmt);
+
+      cells.forEach((el) => othersSection.appendChild(el));
+
+      // Remove button cell
+      const removeCell = createEl("div", "flex items-center justify-center");
+      const removeBtn = createRemoveBtn([...cells, removeCell]);
+      removeCell.appendChild(removeBtn);
+      othersSection.appendChild(removeCell);
+
+      // Register getter
+      const getter = () => ({
+        itemType: itemDD.getValue(),
+        subdate1: sd.value,
+        subdate2: ed.value,
+        oldAmount: parseFloat(oldAmt.value) || 0,
+        newAmount: parseFloat(newAmt.value) || 0,
+      });
+      othersRowGetters.push({ getter, removeCell });
+      removeBtn.addEventListener(
+        "click",
+        () => {
+          const idx = othersRowGetters.findIndex(
+            (r) => r.removeCell === removeCell,
+          );
+          if (idx !== -1) othersRowGetters.splice(idx, 1);
+        },
+        { once: true },
+      );
+    }
+
+    // ─── Calculate ────────────────────────────────────────────────────────────
+    async function handleCalculate() {
+      if (!selectedEmpno) {
+        alert("Please select an employee first.");
+        return;
+      }
+
+      const regularRows = regularRowGetters
+        .map((r) => r.getter())
+        .filter((r) => r.itemType && r.subdate1 && r.subdate2);
+
+      const othersRows = othersRowGetters
+        .map((r) => r.getter())
+        .filter((r) => r.itemType && r.subdate1 && r.subdate2);
+
+      if (!regularRows.length && !othersRows.length) {
+        alert("Please fill in at least one row before calculating.");
+        return;
+      }
+
+      const calculateBtn = document.getElementById("calculateBtn");
+      calculateBtn.disabled = true;
+      calculateBtn.textContent = "Calculating...";
+
+      try {
+        const token = localStorage.getItem("token");
+
+        // Clear stale lines for this employee before fresh calculation
+        await auth.fetchWithAuth(`/arrears/lines/${selectedEmpno}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const res = await auth.fetchWithAuth("/arrears/calculate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            empno: selectedEmpno,
+            wstation: localStorage.getItem("wstation") || "HQ",
+            chkStoppage: false,
+            regularRows,
+            othersRows,
+          }),
+        });
+
+        const result = await res.json();
+
+        if (!result.success) {
+          alert(result.message || "Calculation failed.");
+          return;
+        }
+
+        renderResults(result.lines, result.total);
+      } catch (err) {
+        console.error("[arrears] calculate:", err);
+        alert("An error occurred during calculation.");
+      } finally {
+        calculateBtn.disabled = false;
+        calculateBtn.textContent = "Calculate";
+      }
+    }
+
+    // ─── Results renderer ─────────────────────────────────────────────────────
+    function formatMoney(n) {
+      return new Intl.NumberFormat("en-NG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(n);
+    }
+
+    function renderResults(lines, total) {
+      resultsBody.innerHTML = "";
+
+      if (!lines || !lines.length) {
+        resultsBody.innerHTML =
+          '<tr><td colspan="7" class="py-4 text-gray-400">No arrears computed.</td></tr>';
+      } else {
+        lines.forEach((line) => {
+          const tr = document.createElement("tr");
+          tr.className = line.skipped
+            ? "bg-gray-50 text-gray-400"
+            : "hover:bg-yellow-50";
+          tr.innerHTML = `
+          <td class="py-2 px-3 border text-left font-medium">${line.itemType}</td>
+          <td class="py-2 px-3 border text-left">${line.description}</td>
+          <td class="py-2 px-3 border text-left">
+            <span class="text-xs px-2 py-0.5 rounded-full ${line.rowType === "REGULAR" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}">
+              ${line.rowType}
+            </span>
+          </td>
+          <td class="py-2 px-3 border text-right">₦${formatMoney(line.oldAmount)}</td>
+          <td class="py-2 px-3 border text-right">₦${formatMoney(line.newAmount)}</td>
+          <td class="py-2 px-3 border text-left">${line.durationLabel}</td>
+          <td class="py-2 px-3 border text-right font-semibold ${line.netArrears < 0 ? "text-red-600" : "text-blue-700"}">
+            ₦${formatMoney(line.netArrears)}
+            ${line.skipped ? '<span class="text-xs text-gray-400 ml-1">(skipped)</span>' : ""}
+          </td>
+        `;
+          resultsBody.appendChild(tr);
+        });
+      }
+
+      totalDisplay.textContent = `₦${formatMoney(parseFloat(total) || 0)}`;
+      resultsWrapper.classList.remove("hidden");
+    }
+
+    // ─── Cancel ───────────────────────────────────────────────────────────────
+    async function handleCancel() {
+      if (selectedEmpno) {
+        try {
+          const token = localStorage.getItem("token");
+          await auth.fetchWithAuth(`/arrears/lines/${selectedEmpno}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        } catch (err) {
+          console.error("[arrears] cancel clear:", err);
+        }
+      }
+      // Reset UI
+      empSearchInput.value = "";
+      selectedEmpno = "";
+      selectedEmpnoInput.value = "";
+      totalDisplay.textContent = "0.00";
+      resultsWrapper.classList.add("hidden");
+      resultsBody.innerHTML = "";
+    }
+
+    // ─── Wire buttons ─────────────────────────────────────────────────────────
+    document
+      .getElementById("addRegularRowBtn")
+      .addEventListener("click", addRegularRow);
+    document
+      .getElementById("addOthersRowBtn")
+      .addEventListener("click", addOthersRow);
+    document
+      .getElementById("calculateBtn")
+      .addEventListener("click", handleCalculate);
+    document
+      .getElementById("cancelArrearsBtn")
+      .addEventListener("click", handleCancel);
+
+    // ─── Init ─────────────────────────────────────────────────────────────────
+    async function initialize() {
+      await Promise.all([
+        loadEmployees(),
+        loadElementTypes(),
+        loadSalaryScales(),
+      ]);
+
+      // Seed initial rows AFTER reference data is loaded so dropdowns have items
+      const initialRegularRows = 1;
+      for (let i = 0; i < initialRegularRows; i++) addRegularRow();
+
+      const initialOtherRows = 1;
+      for (let i = 0; i < initialOtherRows; i++) addOthersRow();
+    }
+
+    initialize();
+  })();
 </script>

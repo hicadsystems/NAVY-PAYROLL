@@ -69,13 +69,13 @@ async function getFromHrEmployees(serviceNo) {
        OtherName,
        Title,
        email,
-       TELEPHONE    AS gsm_number,
+       gsm_number,
        payrollclass,
        command,
        Location     AS ship,
        specialisation,
        bankcode,
-       accountno    AS BankACNumber,
+       BankACNumber,
        DateEmpl,
        Birthdate,
        emolumentform
@@ -100,11 +100,11 @@ async function initPersonnelFromHr(emp) {
 
   await pool.query(
     `INSERT INTO ef_personalinfos
-       (serviceNumber, Surname, OtherName, Title, Rank, email,
+       (serviceNumber, Surname, OtherName, Title, \`Rank\`, email,
         gsm_number, payrollclass, classes, command, ship,
         specialisation, Bankcode, BankACNumber,
-        DateEmpl, Birthdate, AccountName, upload)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+        DateEmpl, Birthdate, AccountName, rankId, upload)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)`,
     [
       emp.serviceNumber,
       emp.Surname ?? null,
@@ -1125,7 +1125,9 @@ async function getFormOptions() {
       connection.query("SELECT Id AS id, Name AS name FROM ef_entrymodes"),
 
       // Ranks
-      connection.query("SELECT Id AS id, rankName AS name, rankType AS type FROM ef_ranks"),
+      connection.query(
+        "SELECT Id AS id, rankName AS name, rankType AS type FROM ef_ranks",
+      ),
     ]);
 
     return {

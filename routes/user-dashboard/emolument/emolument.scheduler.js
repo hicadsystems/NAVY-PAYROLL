@@ -106,9 +106,14 @@ async function removeExpiredPersonnel() {
     `
     SELECT Empl_ID, DateLeft, exittype
     FROM hr_employees
-    WHERE DateLeft IS NOT NULL
-    OR
-    exittype IS NOT NULL;
+    WHERE (
+            DateLeft IS NOT NULL
+            AND DateLeft <> ''
+          )
+      OR (
+            exittype IS NOT NULL
+            AND TRIM(exittype) <> ''
+          );
     `,
   );
 
@@ -117,9 +122,8 @@ async function removeExpiredPersonnel() {
     return;
   }
 
-
   const expired = result.filter(
-  (r) => r.exittype != null || isDateLeftExpired(r.DateLeft),
+    (r) => r.exittype != null || isDateLeftExpired(r.DateLeft),
   );
 
   if (expired.length === 0) {
@@ -139,7 +143,7 @@ async function removeExpiredPersonnel() {
     DELETE FROM ef_personalinfos
     WHERE serviceNumber in (${placeholders})
     `,
-    [...ids.map(String)], 
+    [...ids.map(String)],
   );
   await pool.query(`SET FOREIGN_KEY_CHECKS = 1`);
 
@@ -345,6 +349,7 @@ cron.schedule("0 0 * * *", async () => {
     await closeExpiredWindows();
     await syncOpenship();
     await archivePreviousCycleIfNeeded();
+    await removeExpiredPersonnel();
   } catch (err) {
     console.error("❌ emolument.scheduler startup error:", err.message);
   }

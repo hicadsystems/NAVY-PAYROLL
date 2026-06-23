@@ -587,15 +587,15 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div class="lg:col-span-1">
           <label class="field-label">Surname <span class="req">*</span></label>
-          <input class="field" type="text" id="Surname" name="Surname" placeholder="e.g. ADEYEMI" />
+          <input class="field" type="text" id="Surname" name="Surname" placeholder="e.g. ADEYEMI" disabled/>
         </div>
         <div class="lg:col-span-2">
           <label class="field-label">Other Names <span class="req">*</span></label>
-          <input class="field" type="text" id="OtherName" name="OtherName" placeholder="e.g. Babatunde Kolade" />
+          <input class="field" type="text" id="OtherName" name="OtherName" placeholder="e.g. Babatunde Kolade" disabled />
         </div>
         <div>
           <label class="field-label">Rank / Title <span class="req">*</span></label>
-          <select class="field" id="Rank" name="Rank">
+          <select class="field" id="Rank" name="Rank" disabled>
             <option value="">— Select —</option>
           </select>
         </div>
@@ -605,7 +605,7 @@
         </div>
         <div>
           <label class="field-label">NIN</label>
-          <input class="field font-mono" type="text" id="NIN" name="NIN" placeholder="11-digit NIN" maxlength="11" />
+          <input class="field font-mono" type="text" id="NIN" name="NIN" placeholder="11-digit NIN" maxlength="11" disabled />
         </div>
         <div>
           <label class="field-label">Marital Status <span class="req">*</span></label>
@@ -619,7 +619,7 @@
         </div>
         <div>
           <label class="field-label">Date of Birth <span class="req">*</span></label>
-          <input class="field" type="date" id="Birthdate" name="Birthdate" />
+          <input class="field" type="date" id="Birthdate" name="Birthdate" disabled/>
         </div>
         <div>
           <label class="field-label">Religion</label>
@@ -662,7 +662,7 @@
 
         <div>
           <label class="field-label">Date of Joining Service <span class="req">*</span></label>
-          <input class="field" type="date" id="DateEmpl" name="DateEmpl" />
+          <input class="field" type="date" id="DateEmpl" name="DateEmpl" disabled />
         </div>
         <div>
           <label class="field-label">Seniority Date</label>
@@ -670,7 +670,7 @@
         </div>
         <div>
           <label class="field-label">Date of Commissioning</label>
-          <input class="field" type="date" id="advanceDate" name="advanceDate" />
+          <input class="field" type="date" id="advanceDate" name="advanceDate" disabled/>
         </div>
         <div>
           <label class="field-label">Run-Out Date</label>
@@ -679,11 +679,11 @@
         <!-- Rating-only fields; shown/hidden by toggleRatingOnlyFields() -->
         <div class="hidden" data-rating-only>
           <label class="field-label">Expiration of Current Engagement</label>
-          <input class="field" type="date" id="expirationOfEngagementDate" name="expirationOfEngagementDate" />
+          <input class="field" type="date" id="expirationOfEngagementDate" name="expirationOfEngagementDate" disabled/>
         </div>
         <div class="hidden" data-rating-only>
           <label class="field-label">Year of Advancement</label>
-          <input class="field" type="text" id="yearOfPromotion" name="yearOfPromotion" />
+          <input class="field" type="text" id="yearOfPromotion" name="yearOfPromotion" disabled />
         </div>
         <div>
           <label class="field-label">Command <span class="req">*</span></label>
@@ -958,11 +958,11 @@
         <div>
           <label class="field-label">Account Number <span class="req">*</span></label>
           <input class="field font-mono" type="text" id="BankACNumber" name="BankACNumber" placeholder="10-digit NUBAN"
-            maxlength="10" />
+            maxlength="10" disabled />
         </div>
         <div>
           <label class="field-label">Bank <span class="req">*</span></label>
-          <select class="field" id="Bankcode" name="Bankcode">
+          <select class="field" id="Bankcode" name="Bankcode" disabled>
             <option value="">— Select Bank —</option>
           </select>
         </div>

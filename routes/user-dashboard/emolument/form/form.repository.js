@@ -178,12 +178,14 @@ async function loadPersonCore(serviceNo) {
        br.branchName,
        lga.lgaName,
        st.Name AS stateName,
+       ef.id as formId,
        CONCAT(p.Surname, ' ', p.OtherName) AS fullAccountName
      FROM ef_personalinfos p
      LEFT JOIN ef_commands   cmd ON cmd.code    = p.command
      LEFT JOIN ef_branches   br  ON br.code     = p.branch
      LEFT JOIN ef_localgovts lga ON lga.Id      = p.LocalGovt
      LEFT JOIN ef_states     st  ON st.StateId  = p.StateofOrigin
+     LEFT JOIN ef_emolument_forms ef  ON ef.service_no  = p.serviceNumber
      WHERE p.serviceNumber = ?`,
     [serviceNo],
   );
@@ -1100,7 +1102,7 @@ async function getFormOptions() {
 
       // Ships (with command association)
       connection.query(
-        "SELECT Id AS id, shipName AS name, commandid FROM ef_ships",
+        "SELECT Id AS id, shipName AS name, code FROM ef_ships",
       ),
 
       // Specializations

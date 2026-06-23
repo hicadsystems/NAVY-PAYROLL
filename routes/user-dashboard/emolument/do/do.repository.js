@@ -164,7 +164,7 @@ async function getFormDetail(formId) {
      LEFT JOIN ef_branches   br  ON br.code    = p.branch
      LEFT JOIN ef_localgovts lga ON lga.Id     = p.LocalGovt
      LEFT JOIN ef_states     st  ON st.StateId = p.StateofOrigin
-     WHERE ef.form_number = ?
+     WHERE ef.id = ?
        AND ef.status = 'SUBMITTED'
      LIMIT 1`,
     [formId],
@@ -296,7 +296,7 @@ async function markDoReviewed(
       `UPDATE ef_emolument_forms
        SET status     = 'DO_REVIEWED',
            updated_at = NOW()
-       WHERE form_number = ? AND status = 'SUBMITTED'`,
+       WHERE id = ? AND status = 'SUBMITTED'`,
       [formId],
     );
 
@@ -335,7 +335,7 @@ async function rejectForm(serviceNo, formId, ship) {
       `UPDATE ef_emolument_forms
        SET status     = 'REJECTED',
            updated_at = NOW()
-       WHERE form_number = ? AND status = 'SUBMITTED'`,
+       WHERE id = ? AND status = 'SUBMITTED'`,
       [formId],
     );
 

@@ -44,19 +44,21 @@
 <body class="bg-slate-100 text-slate-800 min-h-screen text-sm font-sans">
 
   <!-- ══ TOP BAR ══ -->
-  <header class="bg-transparent sticky top-0 z-20">
-    <div class="flex items-center justify-between px-6 py-3 max-w-screen-xl mx-auto">
+  <header id="topHeader"
+    class="sticky top-0 z-40 backdrop-blur-md bg-white/70 border-b border-slate-200 transition-all duration-300">
+    <div id="topHeaderInner"
+      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-3 sm:px-6 py-3 max-w-screen-xl mx-auto transition-all duration-300">
       <div class="flex items-center gap-2 text-navy font-semibold text-sm tracking-wide">
         <i class="fas fa-ship text-navy text-base"></i>
         Ships Management
       </div>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap sm:flex-nowrap gap-2">
         <button id="btn-ships" onclick="switchPanel('ships')"
-          class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-navy/20 bg-navy text-white transition-all">
+          class="flex-1 sm:flex-none justify-center items-center gap-2 px-2 sm:px-3 py-1.5 text-xs font-semibold rounded-lg border border-navy/20 bg-navy text-white transition-all">
           <i class="fas fa-ship"></i> Ships
         </button>
         <button id="btn-users" onclick="switchPanel('users')"
-          class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg border border-navy/20 bg-navy/10 text-navy transition-all hover:bg-navy/20">
+          class="flex-1 sm:flex-none justify-center items-center gap-2 px-2 sm:px-3 py-1.5 text-xs font-semibold rounded-lg border border-navy/20 bg-navy/10 text-navy transition-all hover:bg-navy/20">
           <i class="fas fa-users"></i> Ship Users
         </button>
       </div>
@@ -93,10 +95,11 @@
 
     <!-- Table -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="overflow-x-auto"></div>
       <!-- Head -->
       <div
-        class="grid bg-slate-50 border-b border-slate-200 px-4 py-2.5 gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400"
-        style="grid-template-columns:1fr 160px 80px 70px;">
+        class="grid bg-slate-50 border-b border-slate-200 px-4 py-2.5 gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 overflow-x-auto"
+        style="grid-template-columns:minmax(180px,1fr) 150px 100px 90px;">
         <span>Ship / Command</span><span>Command Code</span><span>Status</span><span>Actions</span>
       </div>
       <!-- Rows -->
@@ -112,6 +115,7 @@
         <div id="sPageBtns" class="flex gap-1"></div>
       </div>
     </div>
+  </div>
   </div>
 
   <!-- ══ SHIP USERS PANEL ══ -->
@@ -148,10 +152,18 @@
     </div>
 
     <!-- Table -->
-    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
       <div
         class="grid bg-slate-50 border-b border-slate-200 px-4 py-2.5 gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400"
-        style="grid-template-columns:1.6fr 70px 100px 120px 90px 68px;">
+        style="
+      grid-template-columns:
+      minmax(180px,1.8fr)
+      80px
+      120px
+      180px
+      100px
+      80px;
+    ">
         <span>Name</span><span>Rank</span><span>Service
           No</span><span>Ship/Scope</span><span>Role</span><span>Actions</span>
       </div>
@@ -170,7 +182,8 @@
   </div>
 
   <!-- ══ MODAL: ADD/EDIT SHIP ══ -->
-  <div id="shipModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+  <div id="shipModal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
     onclick="bgClose(event,'shipModal')">
     <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md">
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
@@ -212,7 +225,8 @@
   </div>
 
   <!-- ══ MODAL: ADD/EDIT SHIP USER ══ -->
-  <div id="userModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+  <div id="userModal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
     onclick="bgClose(event,'userModal')">
     <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 sticky top-0 bg-white z-10">
@@ -281,7 +295,8 @@
   </div>
 
   <!-- ══ MODAL: UPLOAD ══ -->
-  <div id="uploadModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+  <div id="uploadModal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
     onclick="bgClose(event,'uploadModal')">
     <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md">
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
@@ -324,14 +339,15 @@
   </div>
 
   <!-- ══ MODAL: CONFIRM ══ -->
-  <div id="confirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+  <div id="confirmModal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
     <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
       <div id="confirmIconWrap" class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
         <i id="confirmIcon" class="text-xl"></i>
       </div>
       <h3 id="confirmTitle" class="text-sm font-black text-navy mb-2"></h3>
       <p id="confirmMsg" class="text-xs text-slate-500 mb-6"></p>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap sm:flex-nowrap gap-2">
         <button onclick="closeModal('confirmModal')"
           class="flex-1 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors">Cancel</button>
         <button id="confirmOkBtn"
@@ -347,6 +363,25 @@
 
   <script>
     'use strict';
+
+    window.addEventListener("scroll", () => {
+      const header = document.getElementById("topHeader");
+      const inner = document.getElementById("topHeaderInner");
+
+      if (window.scrollY > 50) {
+        inner.classList.remove("py-3");
+        inner.classList.add("py-1.5");
+
+        header.classList.remove("bg-white/70");
+        header.classList.add("bg-white/90");
+      } else {
+        inner.classList.remove("py-1.5");
+        inner.classList.add("py-3");
+
+        header.classList.remove("bg-white/90");
+        header.classList.add("bg-white/70");
+      }
+    });
 
     const T = localStorage.getItem('token');
     const H = { 'Authorization': 'Bearer ' + T, 'Content-Type': 'application/json' };
@@ -729,8 +764,16 @@
       el.innerHTML = rows.map(u => {
         const ud = JSON.stringify(u).replace(/'/g, '&#39;');
         return `
-      <div class="grid items-center px-4 py-2.5 gap-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors"
-           style="grid-template-columns:1.6fr 70px 100px 120px 90px 68px;">
+      <div class="grid min-w-[850px] bg-slate-50 border-b border-slate-200 px-4 py-2.5 gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400"
+ style="
+ grid-template-columns:
+ minmax(180px,1.8fr)
+ 80px
+ 120px
+ 180px
+ 100px
+ 80px;
+ ">
         <div class="text-xs font-semibold text-slate-800 truncate">${esc(u.Surname || '')} ${esc(u.OtherName || '')}</div>
         <div class="text-xs text-slate-500">${esc(u.Rank || '—')}</div>
         <div class="text-xs font-mono text-slate-600">${esc(u.user_id || '—')}</div>

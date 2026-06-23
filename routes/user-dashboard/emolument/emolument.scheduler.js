@@ -78,6 +78,78 @@ async function closeExpiredWindows() {
   }
 }
 
+function isDateLeftExpired(dateLeft) {
+  if (!dateLeft) return false;
+
+  // datetime: "2024-01-15T00:00:00.000Z" or "2024-01-15 00:00:00"
+  // string:   "20240115"
+  const isDatetimeFormat = dateLeft.includes("-") || dateLeft.includes("T");
+
+  if (isDatetimeFormat) {
+    return new Date(dateLeft) <= new Date();
+  }
+
+  // YYYYMMDD string comparison
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  return dateLeft <= today;
+}
+
+// Close any ef_control windows that have expired (enddate < NOW()) but are still marked Open/Reopen.
+async function removeExpiredPersonnel() {
+  const pool = require("../../../config/db");
+  const DB = getDB();
+  if (!DB) throw new Error("Cannot resolve database name.");
+
+  pool.useDatabase(DB);
+
+  const [result] = await pool.query(
+    `
+    SELECT Empl_ID, DateLeft, exittype
+    FROM hr_employees
+    WHERE (
+            DateLeft IS NOT NULL
+            AND DateLeft <> ''
+          )
+      OR (
+            exittype IS NOT NULL
+            AND TRIM(exittype) <> ''
+          );
+    `,
+  );
+
+  if (result.length <= 0) {
+    console.log(`🔒 No expired personnel.`);
+    return;
+  }
+
+  const expired = result.filter(
+    (r) => r.exittype != null || isDateLeftExpired(r.DateLeft),
+  );
+
+  if (expired.length === 0) {
+    console.log("🔒 No expired personnel.");
+    return;
+  }
+
+  const ids = expired.map((r) => r.Empl_ID);
+
+  const placeholders = ids.map(() => "?").join(",");
+
+  //Delete statement
+
+  await pool.query(`SET FOREIGN_KEY_CHECKS = 0`);
+  await pool.query(
+    `
+    DELETE FROM ef_personalinfos
+    WHERE serviceNumber in (${placeholders})
+    `,
+    [...ids.map(String)],
+  );
+  await pool.query(`SET FOREIGN_KEY_CHECKS = 1`);
+
+  console.log(`🗑️ ${ids.length} employee(s) removed from emolument.`);
+}
+
 let syncFailures = 0;
 const MAX_SYNC_FAILURES = 5;
 async function syncOpenship() {
@@ -263,6 +335,12 @@ cron.schedule("* * * * *", async () => {
   await archivePreviousCycleIfNeeded();
 });
 
+// Run everyday
+cron.schedule("0 0 * * *", async () => {
+  await archivePreviousCycleIfNeeded();
+  await removeExpiredPersonnel();
+});
+
 // On startup: wait for pool to be ready, then sync + archive
 (async () => {
   try {
@@ -271,6 +349,7 @@ cron.schedule("* * * * *", async () => {
     await closeExpiredWindows();
     await syncOpenship();
     await archivePreviousCycleIfNeeded();
+    await removeExpiredPersonnel();
   } catch (err) {
     console.error("❌ emolument.scheduler startup error:", err.message);
   }

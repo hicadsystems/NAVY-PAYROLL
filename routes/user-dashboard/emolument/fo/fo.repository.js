@@ -167,7 +167,7 @@ async function getFormDetail(formId) {
      LEFT JOIN ef_branches   br  ON br.code    = p.branch
      LEFT JOIN ef_localgovts lga ON lga.Id     = p.LocalGovt
      LEFT JOIN ef_states     st  ON st.StateId = p.StateofOrigin
-     WHERE ef.form_number     = ?
+     WHERE ef.id     = ?
        AND ef.status = 'DO_REVIEWED'
      LIMIT 1`,
     [formId],
@@ -300,7 +300,7 @@ async function approveSingle(
       `UPDATE ef_emolument_forms
        SET status     = 'FO_APPROVED',
            updated_at = NOW()
-       WHERE form_number     = ?
+       WHERE id     = ?
          AND status  = 'DO_REVIEWED'`,
       [formId],
     );
@@ -339,16 +339,19 @@ async function approveBulk(
     const placeholders = selected.map(() => "?").join(",");
 
     const [affected] = await conn.query(
-      `SELECT serviceNumber FROM ef_personalinfos
+      `SELECT service_no FROM ef_emolument_forms
        WHERE ship    = ?
-        AND formNumber IN (${placeholders})
-        AND Status  = 'FO'
-        AND (emolumentform IS NULL OR emolumentform != 'Yes')
+        AND id IN (${placeholders})
+        AND status  = 'DO_REVIEWED'
        FOR UPDATE`,
       [ship, ...selected.map(String)],
     );
 
     if (affected.length === 0) return { count: 0, serviceNumbers: [] };
+
+    const serviceNumbers = affected.map((r) => r.serviceNumber);
+    const svcPlaceholders = serviceNumbers.map(() => "?").join(",");
+
 
     // 2. Bulk update ef_personalinfos
     const [result] = await conn.query(
@@ -360,23 +363,22 @@ async function approveBulk(
            fo_date    = NOW(),
            dateModify = NOW()
        WHERE ship    = ?
-        AND formNumber IN (${placeholders})
+        AND serviceNumber IN (${svcPlaceholders})
         AND Status  = 'FO'
         AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
-      [legacyStatus, foName, foRank, foSvcNo, ship, ...selected.map(String)],
+      [legacyStatus, foName, foRank, foSvcNo, ship, ...serviceNumbers.map(String)],
     );
 
     // 3. Bulk update ef_emolument_forms
-    const serviceNumbers = affected.map((r) => r.serviceNumber);
-    const svcPlaceholders = serviceNumbers.map(() => "?").join(",");
+    
     await conn.query(
       `UPDATE ef_emolument_forms
        SET status     = 'FO_APPROVED',
            updated_at = NOW()
-       WHERE service_no IN (${svcPlaceholders})
+       WHERE id IN (${placeholders})
          AND ship     = ?
          AND status   IN ('SUBMITTED', 'DO_REVIEWED')`,
-      [...serviceNumbers, ship],
+      [...selected.map(String), ship],
     );
 
     return { count: result.affectedRows, serviceNumbers };

@@ -158,7 +158,8 @@ async function loadForm(serviceNo) {
   // Idempotent — does nothing if row already exists.
   // This gives the form a stable form_id before submission so
   // DO/FO/CPO routes can always reference it via ef_emolument_forms.
-  let formId = null;
+
+  let formId = core.formId;
   if (formYear && currentFormStatus === FORM_STATUS.DRAFT) {
     formId = await repo.initDraftForm(
       serviceNo,

@@ -16,6 +16,10 @@
       box-sizing: border-box;
     }
 
+    button>* {
+      pointer-events: none;
+    }
+
     body {
       font-family: "IBM Plex Sans", sans-serif;
       background: #f0f3f8;
@@ -972,77 +976,95 @@
 
   <!-- ── Fixed action bar ── -->
   <div id="action-bar"
-    class="hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-smoke-dark shadow-2xl z-40">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
-      <p class="text-[11px] text-muted flex-1 min-w-0 hidden sm:block leading-relaxed">
-        I certify that the information provided herein is true and correct to
-        the best of my knowledge.
-      </p>
+    class="hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-smoke-dark shadow-2xl z-40 flex flex-col gap-2 items-center justify-center">
 
-      <div class="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto flex-wrap">
-        <!-- Back button: always visible -->
-        <button id="btn-back" onclick="goBack()"
-          class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border-2 border-gray-300 text-gray-600 text-xs sm:text-sm font-semibold hover:border-gray-400 hover:text-gray-700 transition-all">
+    <p class="text-[11px] text-muted flex-1 min-w-0 leading-relaxed">
+      I certify that the information provided herein is true and correct to
+      the best of my knowledge.
+    </p>
 
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-          Back
+    <div class="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto flex-wrap items-center justify-center">
+      <!-- Back button -->
+      <button id="btn-back" onclick="goBack()"
+        class="flex-none flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg border-2 border-gray-300 text-gray-600 text-xs sm:text-sm font-semibold hover:border-gray-400 transition-all"
+        title="Back">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        <span class="hidden sm:inline">Back</span>
+      </button>
+
+      <!-- Download PDF -->
+      <button id="btn-download" onclick="downloadForm()"
+        class="flex-none flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg border-2 border-teal-600 text-teal-600 text-xs sm:text-sm font-semibold hover:bg-teal-600 hover:text-white transition-all"
+        title="Download PDF">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        <span id="btn-download-label" class="hidden sm:inline">Download PDF</span>
+      </button>
+
+      <!-- Save Draft -->
+      <button id="btn-save" onclick="saveDraft()"
+        class="hidden flex-none flex items-center justify-center gap-1.5 px-2.5 sm:px-5 py-2 sm:py-2.5 rounded-lg border-2 border-navy text-navy text-xs sm:text-sm font-semibold hover:bg-navy hover:text-white transition-all"
+        title="Save Draft">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+        </svg>
+        <span class="hidden sm:inline">Save Draft</span>
+      </button>
+
+      <!-- Submit -->
+      <button id="btn-submit" onclick="submitForm()"
+        class="hidden flex-none flex items-center justify-center gap-1.5 px-2.5 sm:px-6 py-2 sm:py-2.5 rounded-lg bg-navy text-white text-xs sm:text-sm font-semibold hover:bg-navy-light transition-all shadow-md"
+        title="Submit Form">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span id="btn-submit-label" class="hidden sm:inline">Submit Form</span>
+      </button>
+
+      <!-- Role-based approval buttons -->
+      <div id="role-buttons"
+        class="hidden flex items-center gap-2 flex-shrink-0 flex-wrap justify-center sm:border-l sm:border-gray-200 sm:pl-3 sm:ml-3">
+
+        <button id="btn-do-review" onclick="roleAction('do-review')"
+          class="hidden flex-none flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-blue-600 text-white text-xs sm:text-sm font-semibold hover:bg-blue-700 transition-all"
+          title="Authenticate">
+          <i class="fas fa-check"></i>
+          <span class="hidden sm:inline">Authenticate</span>
         </button>
 
-        <!-- Download PDF: always visible, available regardless of ownership/lock state -->
-        <button id="btn-download" onclick="downloadForm()"
-          class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border-2 border-teal-600 text-teal-600 text-xs sm:text-sm font-semibold hover:bg-teal-600 hover:text-white transition-all">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          <span id="btn-download-label">Download PDF</span>
+        <button id="btn-fo-approve" onclick="roleAction('fo-approve')"
+          class="hidden flex-none flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-green-600 text-white text-xs sm:text-sm font-semibold hover:bg-green-700 transition-all"
+          title="Approve">
+          <i class="fas fa-check"></i>
+          <span class="hidden sm:inline">Approve</span>
         </button>
 
-        <!-- Owner-only actions: Save Draft + Submit -->
-        <button id="btn-save" onclick="saveDraft()"
-          class="hidden flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg border-2 border-navy text-navy text-xs sm:text-sm font-semibold hover:bg-navy hover:text-white transition-all">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-          </svg>
-          Save Draft
+        <button id="btn-cpo-confirm" onclick="roleAction('cpo-confirm')"
+          class="hidden flex-none flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-emerald-600 text-white text-xs sm:text-sm font-semibold hover:bg-emerald-700 transition-all"
+          title="Confirm">
+          <i class="fas fa-stamp"></i>
+          <span class="hidden sm:inline">Confirm</span>
         </button>
 
-        <button id="btn-submit" onclick="submitForm()"
-          class="hidden flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg bg-navy text-white text-xs sm:text-sm font-semibold hover:bg-navy-light transition-all shadow-md">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span id="btn-submit-label">Submit Form</span>
+        <button id="btn-admin-accept" onclick="roleAction('admin-accept')"
+          class="hidden flex-none flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-purple-600 text-white text-xs sm:text-sm font-semibold hover:bg-purple-700 transition-all"
+          title="Accept">
+          <i class="fas fa-check-circle"></i>
+          <span class="hidden sm:inline">Accept</span>
         </button>
 
-        <!-- Role-based approval buttons -->
-        <div id="role-buttons"
-          class="hidden flex items-center gap-2 flex-shrink-0 w-full sm:w-auto flex-wrap sm:border-l sm:border-gray-200 sm:pl-3 sm:ml-3">
-          <button id="btn-do-review" onclick="roleAction('do-review')"
-            class="hidden flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-blue-600 text-white text-xs sm:text-sm font-semibold hover:bg-blue-700 transition-all">
-            <i class="fas fa-check"></i>Authenticate
-          </button>
-          <button id="btn-fo-approve" onclick="roleAction('fo-approve')"
-            class="hidden flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-green-600 text-white text-xs sm:text-sm font-semibold hover:bg-green-700 transition-all">
-            <i class="fas fa-check"></i>Approve
-          </button>
-          <button id="btn-cpo-confirm" onclick="roleAction('cpo-confirm')"
-            class="hidden flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-emerald-600 text-white text-xs sm:text-sm font-semibold hover:bg-emerald-700 transition-all">
-            <i class="fas fa-stamp"></i>Confirm
-          </button>
-          <button id="btn-admin-accept" onclick="roleAction('admin-accept')"
-            class="hidden flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-purple-600 text-white text-xs sm:text-sm font-semibold hover:bg-purple-700 transition-all">
-            <i class="fas fa-check-circle"></i>Accept
-          </button>
-          <button id="btn-reject" onclick="roleAction('reject')"
-            class="hidden flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-red-600 text-white text-xs sm:text-sm font-semibold hover:bg-red-700 transition-all">
-            <i class="fas fa-times"></i>Reject
-          </button>
-        </div>
+        <button id="btn-reject" onclick="roleAction('reject')"
+          class="hidden flex-none flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-red-600 text-white text-xs sm:text-sm font-semibold hover:bg-red-700 transition-all"
+          title="Reject">
+          <i class="fas fa-times"></i>
+          <span class="hidden sm:inline">Reject</span>
+        </button>
       </div>
     </div>
   </div>
@@ -1221,6 +1243,7 @@
         populateRanksByType(formOptions.ranks, null);
 
         setupStateLGAFiltering();
+        setupCommandShipFiltering();
       } catch (err) {
         console.error("Failed to load form options:", err);
         showToast("Failed to load form options. Please refresh.", "error");
@@ -1479,7 +1502,6 @@
         advanceDate: toDateStr(data.advanceDate),
         runoutDate: toDateStr(data.runoutDate),
         yearOfPromotion: data.yearOfPromotion,
-        ship: data.ship,
         specialisation: data.specialisation,
         entry_mode: data.entry_mode,
         confirmedBy: data.confirmedBy,
@@ -1496,6 +1518,18 @@
       };
 
       Object.entries(fields).forEach(([id, val]) => setVal(id, val));
+
+      if (data.command) {
+        populateSelect(
+          "ship",
+          formOptions.ships.filter((s) => String(s.code) === String(data.command)),
+          true
+        );
+        setVal("ship", data.ship);
+      } else {
+        // No command set — still try to prefill ship from full list
+        setVal("ship", data.ship);
+      }
 
       // Case-insensitive religion match
       const religionEl = document.getElementById("religion");
@@ -2005,6 +2039,16 @@
       });
     }
 
+    function setupCommandShipFiltering() {
+      document.getElementById("command")?.addEventListener("change", function () {
+        populateSelect(
+          "ship",
+          formOptions.ships.filter((s) => String(s.code) === String(this.value)),
+          true   // useName=true, matching your existing ship populate call
+        );
+        setVal("ship", ""); // reset ship when command changes
+      });
+    }
     function setupStateLGAFiltering() {
       document
         .getElementById("StateofOrigin")
@@ -2220,7 +2264,7 @@
       }
 
       const svcno = formData?.serviceNumber;
-      const formNumber = formData?.formNumber;
+      const formId = formData?.formId;
       const btn = document.getElementById("roleActionConfirmBtn");
       btn.disabled = true;
       btn.textContent = "Processing…";
@@ -2228,13 +2272,13 @@
       // Fix 1: Each role has its own reject endpoint.
       // Approve/confirm/review endpoints are role-specific; reject uses the role-scoped path too.
       const endpoints = {
-        "do-review": `/do/forms/${formNumber}/review`,
-        "fo-approve": `/fo/forms/${formNumber}/approve`,
-        "cpo-confirm": `/cpo/forms/${formNumber}/confirm`,
+        "do-review": `/do/forms/${formId}/review`,
+        "fo-approve": `/fo/forms/${formId}/approve`,
+        "cpo-confirm": `/cpo/forms/${formId}/confirm`,
         "admin-accept": `/admin/verified/accept`,
 
         // Reject endpoint is scoped to the current role
-        reject: getRoleRejectEndpoint(currentRole, formNumber),
+        reject: getRoleRejectEndpoint(currentRole, formId),
       };
 
       const isAdminAccept = actionType === "admin-accept";

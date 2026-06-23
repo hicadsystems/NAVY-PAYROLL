@@ -191,7 +191,7 @@ async function getFormDetail(formId) {
      LEFT JOIN ef_branches   br  ON br.code    = p.branch
      LEFT JOIN ef_localgovts lga ON lga.Id     = p.LocalGovt
      LEFT JOIN ef_states     st  ON st.StateId = p.StateofOrigin
-     WHERE ef.form_number     = ?
+     WHERE ef.id     = ?
        AND ef.status = 'FO_APPROVED'
      LIMIT 1`,
     [formId],
@@ -347,7 +347,7 @@ async function confirmFormWithHistory(
       SET status     = 'CPO_CONFIRMED',
           snapshot   = ?,
           updated_at = NOW()
-      WHERE form_number     = ?
+      WHERE id     = ?
         AND status  = 'FO_APPROVED'`,
       [JSON.stringify(snapshot), formId],
     );
@@ -601,7 +601,7 @@ async function rejectForm(serviceNo, formId, command) {
       `UPDATE ef_emolument_forms
      SET status     = 'REJECTED',
          updated_at = NOW()
-     WHERE form_number     = ?
+     WHERE id     = ?
        AND \`Status\`  = 'FO_APPROVED'`,
       [formId],
     );

@@ -81,7 +81,7 @@ async function isPersonnel(userId) {
  */
 async function resolveFormScope(formId) {
   const [rows] = await pool.query(
-    `SELECT ship, command FROM ef_emolument_forms WHERE form_number = ? LIMIT 1`,
+    `SELECT ship, command FROM ef_emolument_forms WHERE id = ? LIMIT 1`,
     [formId],
   );
   if (!rows.length) return null;

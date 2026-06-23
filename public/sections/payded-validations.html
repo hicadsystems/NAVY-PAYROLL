@@ -1,0 +1,130 @@
+<div class="max-w-7xl mx-auto">
+
+    <div id="approvalBanner"
+        class="mb-6 bg-yellow-50 border border-yellow-300 rounded-xl p-4 flex justify-between items-center">
+        <div>
+            <h2 class="font-bold text-yellow-800 text-lg">Pending Payment/Deduction Changes</h2>
+            <p class="text-yellow-700 text-sm">There are changes awaiting approval.</p>
+        </div>
+        <button class="bg-yellow-600 text-white px-4 py-2 rounded-lg">Review Changes</button>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-5 mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="font-bold text-2xl">Payment/Deduction Approval</h1>
+            <p class="text-gray-500 text-sm">Lock files before reviewing changes.</p>
+        </div>
+        <label class="flex gap-3 items-center font-semibold">
+            <span>Lock Payded Files</span>
+            <input id="lockToggle" type="checkbox" class="w-5 h-5">
+        </label>
+    </div>
+
+    <div id="lockedArea" class="hidden">
+        <div class="mb-4 flex justify-end">
+            <button id="bulkApproveBtn" class="bg-green-600 text-white px-5 py-2 rounded-lg">Approve
+                Selected</button>
+        </div>
+
+        <div id="grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+        <div class="mt-6 flex justify-between items-center">
+            <div class="text-sm text-gray-500">Showing <span id="start">0</span>-<span id="end">0</span> of <span
+                    id="total">0</span></div>
+            <div class="flex gap-3 items-center">
+                <button id="prev" class="px-4 py-2 bg-gray-100 rounded">Previous</button>
+                <span>Page <span id="page">1</span> of <span id="pages">1</span></span>
+                <button id="next" class="px-4 py-2 bg-gray-100 rounded">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="unlockMsg" class="bg-white rounded-xl p-10 text-center text-gray-500">Please lock payded files to start
+        approval.</div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-2xl p-6">
+            <div class="flex justify-between mb-5">
+                <h2 class="font-bold text-xl">Review Payment/Deduction</h2><button id="closeBtn">✕</button>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <input id="emplId" class="border p-2 rounded" placeholder="Employee ID">
+                <input id="payCode" class="border p-2 rounded" placeholder="Pay Code">
+                <input id="amount" type="number" class="border p-2 rounded" placeholder="Amount">
+                <input id="months" type="number" class="border p-2 rounded" placeholder="Months">
+                <select id="indicator" class="border p-2 rounded">
+                    <option>M</option>
+                    <option>Y</option>
+                </select>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button id="closeSaveBtn" class="px-4 py-2 border rounded">Close</button>
+                <button id="approveBtn" class="bg-green-600 text-white px-5 py-2 rounded">Approve</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script>
+    const pageSize = 6;
+    let page = 1, current = null, original = {};
+    const data = Array.from({ length: 23 }, (_, i) => ({ id: i + 1, payCode: 'PAY' + String(i + 1).padStart(3, '0'), emplId: 'NN' + String(i + 1).padStart(4, '0'), amount: (i + 1) * 10000, months: 12, indicator: 'M' }));
+
+    const grid = document.getElementById('grid');
+    const lockedArea = document.getElementById('lockedArea');
+    const unlockMsg = document.getElementById('unlockMsg');
+    const modal = document.getElementById('modal');
+
+    function render() {
+        const start = (page - 1) * pageSize;
+        const rows = data.slice(start, start + pageSize);
+        grid.innerHTML = '';
+        rows.forEach(r => {
+            const el = document.createElement('div');
+            el.className = 'bg-white border rounded-xl p-5 shadow hover:shadow-lg cursor-pointer';
+            el.innerHTML = `<div class="flex justify-between"><input class="pick w-5 h-5" type="checkbox" value="${r.id}" onclick="event.stopPropagation()"><span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">Pending</span></div><div class="mt-5"><p class="text-xs text-gray-500">ID</p><p class="font-bold">${r.id}</p><p class="mt-3 text-xs text-gray-500">Pay Code</p><p class="font-bold text-blue-700">${r.payCode}</p></div>`;
+            el.onclick = () => openModal(r.id);
+            grid.appendChild(el);
+        });
+        const pages = Math.ceil(data.length / pageSize);
+        document.getElementById('page').textContent = page;
+        document.getElementById('pages').textContent = pages;
+        document.getElementById('start').textContent = data.length ? start + 1 : 0;
+        document.getElementById('end').textContent = Math.min(start + pageSize, data.length);
+        document.getElementById('total').textContent = data.length;
+    }
+
+    function openModal(id) {
+        current = data.find(x => x.id === id);
+        original = { ...current };
+        ['emplId', 'payCode', 'amount', 'months', 'indicator'].forEach(k => document.getElementById(k).value = current[k]);
+        modal.classList.remove('hidden');
+    }
+    function closeModal() { modal.classList.add('hidden') }
+
+    function dirty() {
+        const out = {};
+        ['emplId', 'payCode', 'amount', 'months', 'indicator'].forEach(k => { const v = document.getElementById(k).value; if (String(v) !== String(original[k])) out[k] = v; });
+        return out;
+    }
+
+    document.getElementById('lockToggle').onchange = e => {
+        if (e.target.checked) { lockedArea.classList.remove('hidden'); unlockMsg.classList.add('hidden'); render(); }
+        else { lockedArea.classList.add('hidden'); unlockMsg.classList.remove('hidden'); }
+    }
+
+    document.getElementById('approveBtn').onclick = () => { alert('POST /payded/approve => ' + current.id); closeModal(); render(); }
+
+    document.getElementById('closeBtn').onclick = () => closeModal();
+    document.getElementById('closeSaveBtn').onclick = () => { const d = dirty(); if (Object.keys(d).length) alert('PATCH dirty fields: ' + JSON.stringify(d, null, 2)); closeModal(); }
+
+    document.getElementById('bulkApproveBtn').onclick = () => {
+        const ids = [...document.querySelectorAll('.pick:checked')].map(x => +x.value);
+        if (!ids.length) return alert('Select at least one');
+        alert('POST /payded/approve/bulk => ' + JSON.stringify(ids));
+    }
+
+    document.getElementById('prev').onclick = () => { if (page > 1) { page--; render(); } }
+    document.getElementById('next').onclick = () => { const p = Math.ceil(data.length / pageSize); if (page < p) { page++; render(); } }
+</script>
+</body>

@@ -207,7 +207,7 @@ async function approveBulk(ship, body, performedBy, ip) {
       success: false,
       code: 400,
       message:
-        "At least one service number must be selected for bulk approval.",
+        "At least one form must be selected for bulk approval.",
     };
   }
 

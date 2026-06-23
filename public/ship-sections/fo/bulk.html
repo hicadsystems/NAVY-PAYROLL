@@ -114,7 +114,7 @@
 
   function executeFoBulk() {
     const selected = [...document.querySelectorAll(".fo-bulk-chk:checked")]
-      .map((c) => foBulkForms[+c.dataset.idx]?.formNumber)
+      .map((c) => foBulkForms[+c.dataset.idx]?.formId)
       .filter(Boolean);
     const msg = document.getElementById("foBulkMsg");
     if (!selected.length) {

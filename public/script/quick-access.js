@@ -192,11 +192,11 @@ class QuickAccessManager {
         section: "arrears-calculations",
         title: "Arrears Calculations",
       },
-      "adjustments": {
+      adjustments: {
         id: "adjustments",
         label: "PayHead Adjustments",
         section: "adjustments",
-        title: "Pay Heads Adjustments",
+        title: "NHQ Allowances",
       },
 
       // File update options

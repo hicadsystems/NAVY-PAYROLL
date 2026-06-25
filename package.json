@@ -27,6 +27,7 @@
     "mysql2": "^3.14.4",
     "node-cache": "^5.1.2",
     "node-cron": "^4.2.1",
+    "nodemailer": "^9.0.1",
     "pdf-lib": "^1.17.1",
     "pdf-merger-js": "^5.1.2",
     "pdfkit": "^0.17.2",

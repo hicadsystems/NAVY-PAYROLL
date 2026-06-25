@@ -28,6 +28,7 @@ const personnelRoutes = require("./personnel-profile/personnels");
 
 //Data Entry
 const paymentDeductionsRoutes = require("./data-entry/paymentDeductions");
+const paymentDeductionsValidationRoutes = require("./data-entry/paymentDeductionsValidation");
 const arrearsCalculationsRoutes = require("./data-entry/arrearsCalculations");
 const cummulativePayrollRoutes = require("./data-entry/cummulativePayroll");
 const inputDocumentationRoutes = require("./data-entry/inputDocumentation");
@@ -94,45 +95,47 @@ const variationInputRoutes = require("./audit-trail/variationInput");
 const rangePaymentRoutes = require("./audit-trail/rangePayments");
 
 //User Dashboard
-  //email
-  const mailSystemRoutes = require("../routes/user-dashboard/email/mailSystem");
-  const cron = require("node-cron");
-  const { cleanupOrphanedAttachments } = require("./user-dashboard/email/mailSystem");
+//email
+const mailSystemRoutes = require("../routes/user-dashboard/email/mailSystem");
+const cron = require("node-cron");
+const {
+  cleanupOrphanedAttachments,
+} = require("./user-dashboard/email/mailSystem");
 
-  //payslip
-  const userPayslipRoutes = require('../routes/user-dashboard/payslips/userpayslip');
-  const adminPayslip = require("../routes/user-dashboard/payslips/adminpayslip");
-  
-  //emolument
-    //-- admin --
-    const emolumentAdminRoutes = require("../routes/user-dashboard/emolument/admin/admin.routes");
-    //-- roles --
-    const emolRolesRoutes = require("../routes/user-dashboard/emolument/admin/roles.routes");
-    //-- form view --
-    const formViewRoutes = require("../routes/user-dashboard/emolument/admin/form-view.routes");
-    //-- accept verified --
-    const acceptVerifiedRoutes = require("../routes/user-dashboard/emolument/admin/accept-verified.routes");
-    //-- audit --
-    const emolumentAuditRoutes = require("../routes/user-dashboard/emolument/audit/audit.routes");
-    //-- form --
-    const emolumentFormRoutes = require("../routes/user-dashboard/emolument/form/form.routes");
-    //-- system --
-    const emolumentSystemRoutes = require("../routes/user-dashboard/emolument/system/system.routes");
-    //-- ship --
-    const emolumentShipRoutes = require("../routes/user-dashboard/emolument/system/ships.routes");
-    //-- do --
-    const emolumentDoRoutes = require("../routes/user-dashboard/emolument/do/do.routes");
-    //-- fo --
-    const emolumentFoRoutes = require("../routes/user-dashboard/emolument/fo/fo.routes");
-    //-- cpo --
-    const emolumentCpoRoutes = require("../routes/user-dashboard/emolument/cpo/cpo.routes");
-    //-- reports --
-    const emolumentReportRoutes = require("../routes/user-dashboard/emolument/reports/reports.routes");
-    //-- documents --
-    const emolumentDocumentRoutes = require("../routes/user-dashboard/emolument/documents/documents.routes");
-    //-- tickets --
-    const emolumentTicketsRoutes = require("../routes/user-dashboard/emolument/tickets/tickets.routes");
-  //
+//payslip
+const userPayslipRoutes = require("../routes/user-dashboard/payslips/userpayslip");
+const adminPayslip = require("../routes/user-dashboard/payslips/adminpayslip");
+
+//emolument
+//-- admin --
+const emolumentAdminRoutes = require("../routes/user-dashboard/emolument/admin/admin.routes");
+//-- roles --
+const emolRolesRoutes = require("../routes/user-dashboard/emolument/admin/roles.routes");
+//-- form view --
+const formViewRoutes = require("../routes/user-dashboard/emolument/admin/form-view.routes");
+//-- accept verified --
+const acceptVerifiedRoutes = require("../routes/user-dashboard/emolument/admin/accept-verified.routes");
+//-- audit --
+const emolumentAuditRoutes = require("../routes/user-dashboard/emolument/audit/audit.routes");
+//-- form --
+const emolumentFormRoutes = require("../routes/user-dashboard/emolument/form/form.routes");
+//-- system --
+const emolumentSystemRoutes = require("../routes/user-dashboard/emolument/system/system.routes");
+//-- ship --
+const emolumentShipRoutes = require("../routes/user-dashboard/emolument/system/ships.routes");
+//-- do --
+const emolumentDoRoutes = require("../routes/user-dashboard/emolument/do/do.routes");
+//-- fo --
+const emolumentFoRoutes = require("../routes/user-dashboard/emolument/fo/fo.routes");
+//-- cpo --
+const emolumentCpoRoutes = require("../routes/user-dashboard/emolument/cpo/cpo.routes");
+//-- reports --
+const emolumentReportRoutes = require("../routes/user-dashboard/emolument/reports/reports.routes");
+//-- documents --
+const emolumentDocumentRoutes = require("../routes/user-dashboard/emolument/documents/documents.routes");
+//-- tickets --
+const emolumentTicketsRoutes = require("../routes/user-dashboard/emolument/tickets/tickets.routes");
+//
 //
 
 //file-upload-helper
@@ -176,6 +179,7 @@ module.exports = (app) => {
 
   //data entry
   app.use("/payded", paymentDeductionsRoutes);
+  app.use("/payded-validation", paymentDeductionsValidationRoutes);
   app.use("/arrears", arrearsCalculationsRoutes);
   app.use("/cumulative", cummulativePayrollRoutes);
   app.use("/documentation", inputDocumentationRoutes);
@@ -242,42 +246,48 @@ module.exports = (app) => {
   app.use("/rangepayments", rangePaymentRoutes);
 
   //user-dashboard
-    //email
-    app.use("/messages", mailSystemRoutes);
-    // Every hour at :00
-    cron.schedule("0 * * * *", () => {
-      cleanupOrphanedAttachments();
-    });
+  //email
+  app.use("/messages", mailSystemRoutes);
+  // Every hour at :00
+  cron.schedule("0 * * * *", () => {
+    cleanupOrphanedAttachments();
+  });
 
-    //emolument
-      //-- admin --
-      app.use("/admin", emolumentAdminRoutes, emolRolesRoutes, formViewRoutes, acceptVerifiedRoutes);
-      //-- audit --
-      app.use("/audit", emolumentAuditRoutes);
-      //-- form --
-      app.use("/form", emolumentFormRoutes);
-      //-- system --
-      app.use("/system/control", emolumentSystemRoutes);
-      require('../routes/user-dashboard/emolument/emolument.scheduler');
-      //-- ships--
-      app.use("/system", emolumentShipRoutes);
-      //-- do --
-      app.use("/do", emolumentDoRoutes);
-      //-- fo --
-      app.use("/fo", emolumentFoRoutes);
-      //-- cpo --
-      app.use("/cpo", emolumentCpoRoutes);
-      //-- reports --
-      app.use("/reports", emolumentReportRoutes);
-      //-- documents --
-      app.use("/documents", emolumentDocumentRoutes);
-      //-- tickets --
-      app.use("/tickets", emolumentTicketsRoutes);
-    //
+  //emolument
+  //-- admin --
+  app.use(
+    "/admin",
+    emolumentAdminRoutes,
+    emolRolesRoutes,
+    formViewRoutes,
+    acceptVerifiedRoutes,
+  );
+  //-- audit --
+  app.use("/audit", emolumentAuditRoutes);
+  //-- form --
+  app.use("/form", emolumentFormRoutes);
+  //-- system --
+  app.use("/system/control", emolumentSystemRoutes);
+  require("../routes/user-dashboard/emolument/emolument.scheduler");
+  //-- ships--
+  app.use("/system", emolumentShipRoutes);
+  //-- do --
+  app.use("/do", emolumentDoRoutes);
+  //-- fo --
+  app.use("/fo", emolumentFoRoutes);
+  //-- cpo --
+  app.use("/cpo", emolumentCpoRoutes);
+  //-- reports --
+  app.use("/reports", emolumentReportRoutes);
+  //-- documents --
+  app.use("/documents", emolumentDocumentRoutes);
+  //-- tickets --
+  app.use("/tickets", emolumentTicketsRoutes);
+  //
 
-    //payslip
-    app.use('/payslip', userPayslipRoutes);
-    app.use("/adm/payslip", adminPayslip);
+  //payslip
+  app.use("/payslip", userPayslipRoutes);
+  app.use("/adm/payslip", adminPayslip);
   //
 
   //file-upload-helper
@@ -285,7 +295,6 @@ module.exports = (app) => {
   app.use("/batchpersonnel", personnelUploadRoutes);
   app.use("/batchpayded", paydedUploadRoutes);
   app.use("/batchdocumentation", inputDocumentationUploadRoutes);
-
 
   //helpers
   app.use("/puppeteer", paydedReportRoutes);

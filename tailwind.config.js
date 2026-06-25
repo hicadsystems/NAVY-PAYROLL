@@ -111,10 +111,8 @@ module.exports = {
         mono: ["IBM Plex Mono", "monospace"],
       },
       screens: {
-        sm: "320px", // change to whatever fits your design
-        md: "768px",
-        lg: "1024px",
-        xl: "1280px",
+        xs: "640px",
+        custom: "766px",
       },
       boxShadow: {
         custom: "0 2px 5px 0 rgba(0,0,0,0.08)",

@@ -3,6 +3,53 @@ const pool = require("../../config/db"); // mysql2 pool
 const verifyToken = require("../../middware/authentication");
 const router = express.Router();
 
+// ── Data Entry lock guard ───────────────────────────────────────────
+// While BT05.sat is 500 (or beyond: 600/700), the Validation screen owns
+// py_payded — Data Entry must stop accepting any create/update/delete.
+// Only sat = 0 (or NULL, i.e. never locked) allows Data Entry writes.
+async function assertDataEntryUnlocked(res) {
+  const [rows] = await pool.query(
+    "SELECT sat FROM py_stdrate WHERE type = 'BT05' LIMIT 1",
+  );
+  const sat = rows[0] ? rows[0].sat : null;
+
+  if (sat === 500 || sat === 600 || sat === 700) {
+    res.status(409).json({
+      success: false,
+      message:
+        "Data entry is locked for validation. Unlock from the Payment/Deductions Validation screen before making changes.",
+      sat,
+    });
+    return false;
+  }
+  return true;
+}
+
+// ── Verified-row guard ──────────────────────────────────────────────
+// A row that has already been verified (verifiedby IS NOT NULL) stays
+// immutable from Data Entry no matter what BT05.sat is -- even after
+// unlocking back to sat = 0. To modify or delete a verified row, it must
+// be done from the Validation screen's Verified tab, which requires an
+// explicit "are you sure you want to modify this verified record?"
+// confirmation first.
+async function assertRowNotVerified(res, emplId, type) {
+  const [rows] = await pool.query(
+    "SELECT verifiedby FROM py_payded WHERE Empl_id = ? AND type = ?",
+    [emplId, type],
+  );
+
+  if (rows.length > 0 && rows[0].verifiedby) {
+    res.status(409).json({
+      success: false,
+      message:
+        "This record has already been verified and cannot be changed from Data Entry. Modify it from the Payment/Deduction Validation screen's Verified tab instead.",
+      verifiedby: rows[0].verifiedby,
+    });
+    return false;
+  }
+  return true;
+}
+
 // GET ALL ACTIVE DEDUCTIONS (ALL EMPLOYEES)
 router.get("/active/all", verifyToken, async (req, res) => {
   try {
@@ -46,11 +93,11 @@ router.get("/active/all", verifyToken, async (req, res) => {
       ${whereClause}
     `;
 
-        const [countResult] = await pool.query(countQuery, queryParams);
-        const totalRecords = countResult[0].total;
-        const totalPages = Math.ceil(totalRecords / limit);
+    const [countResult] = await pool.query(countQuery, queryParams);
+    const totalRecords = countResult[0].total;
+    const totalPages = Math.ceil(totalRecords / limit);
 
-        const query = `
+    const query = `
       SELECT 
         p.Empl_id,
         p.type,
@@ -64,7 +111,8 @@ router.get("/active/all", verifyToken, async (req, res) => {
         pi.inddesc AS indicator_description,
         p.nomth AS months_remaining,
         p.createdby,
-        p.datecreated
+        p.datecreated,
+        p.verifiedby
       FROM py_payded p
       LEFT JOIN py_payind pi 
         ON p.payind = pi.ind
@@ -479,6 +527,8 @@ router.get("/summary/:emplId", verifyToken, async (req, res) => {
 //Create Payded
 router.post("/", verifyToken, async (req, res) => {
   try {
+    if (!(await assertDataEntryUnlocked(res))) return;
+
     const { Empl_id, type, mak1, amtp, mak2, amttd, payind, nomth } = req.body;
 
     const createdby = req.user_fullname;
@@ -548,6 +598,8 @@ router.post("/", verifyToken, async (req, res) => {
 //Create Variations
 router.post("/variation", verifyToken, async (req, res) => {
   try {
+    if (!(await assertDataEntryUnlocked(res))) return;
+
     const { Empl_id, type, amt, amtad } = req.body;
 
     const createdby = req.user_fullname;
@@ -616,8 +668,13 @@ router.post("/variation", verifyToken, async (req, res) => {
 //Update Payded
 router.put("/:emplId/:type", verifyToken, async (req, res) => {
   try {
+    if (!(await assertDataEntryUnlocked(res))) return;
+
     const { emplId, type } = req.params;
     const decodedType = decodeURIComponent(type);
+
+    if (!(await assertRowNotVerified(res, emplId, decodedType))) return;
+
     const { amtp, amttd, mak1, payind, nomth, mak2 } = req.body;
 
     // Check if record exists
@@ -712,8 +769,13 @@ router.put("/:emplId/:type", verifyToken, async (req, res) => {
 //Update Variations
 router.put("/variation/:emplId/:type", verifyToken, async (req, res) => {
   try {
+    if (!(await assertDataEntryUnlocked(res))) return;
+
     const { emplId, type } = req.params;
     const decodedType = decodeURIComponent(type);
+
+    if (!(await assertRowNotVerified(res, emplId, decodedType))) return;
+
     const { amt, amtad } = req.body;
 
     // Check if record exists
@@ -789,8 +851,12 @@ router.put("/variation/:emplId/:type", verifyToken, async (req, res) => {
 
 router.patch("/:emplId/:type/deactivate", verifyToken, async (req, res) => {
   try {
+    if (!(await assertDataEntryUnlocked(res))) return;
+
     const { emplId, type } = req.params;
     const decodedType = decodeURIComponent(type);
+
+    if (!(await assertRowNotVerified(res, emplId, decodedType))) return;
 
     const query = `
       UPDATE py_payded
@@ -825,8 +891,13 @@ router.patch("/:emplId/:type/deactivate", verifyToken, async (req, res) => {
 // REACTIVATE DEDUCTION
 router.patch("/:emplId/:type/reactivate", verifyToken, async (req, res) => {
   try {
+    if (!(await assertDataEntryUnlocked(res))) return;
+
     const { emplId, type } = req.params;
     const decodedType = decodeURIComponent(type);
+
+    if (!(await assertRowNotVerified(res, emplId, decodedType))) return;
+
     const { amtp } = req.body;
 
     if (!amtp || amtp <= 0) {
@@ -869,8 +940,12 @@ router.patch("/:emplId/:type/reactivate", verifyToken, async (req, res) => {
 // DELETE DEDUCTION (HARD DELETE)
 router.delete("/:emplId/:type", verifyToken, async (req, res) => {
   try {
+    if (!(await assertDataEntryUnlocked(res))) return;
+
     const { emplId, type } = req.params;
     const decodedType = decodeURIComponent(type);
+
+    if (!(await assertRowNotVerified(res, emplId, decodedType))) return;
 
     const query = `
       DELETE FROM py_payded
@@ -1087,6 +1162,10 @@ router.post("/bulk", verifyToken, async (req, res) => {
   const connection = await pool.getConnection();
 
   try {
+    if (!(await assertDataEntryUnlocked(res))) {
+      return;
+    }
+
     const deductions = req.body;
 
     if (!Array.isArray(deductions) || deductions.length === 0) {

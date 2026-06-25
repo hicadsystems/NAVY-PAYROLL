@@ -6,7 +6,6 @@ const envFile =
 dotenv.config({ path: path.resolve(__dirname, envFile) });
 
 const config = {
-  
   app: {
     port: process.env.PORT,
     env: process.env.NODE_ENV || "development",
@@ -38,6 +37,14 @@ const config = {
     expiry: process.env.JWT_EXPIRY || "24h",
     refreshExpiry: process.env.JWT_REFRESH_EXPIRY || "7d",
     refreshSecret: process.env.JWT_REFRESH_SECRET,
+  },
+  email: {
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
+    user: process.env.SMTP_USER,
+    password: process.env.SMTP_PASS,
+    secure: process.env.SMTP_SECURE,
+    from: process.env.SMTP_FROM,
   },
 };
 

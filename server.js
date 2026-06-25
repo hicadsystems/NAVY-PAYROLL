@@ -11,6 +11,7 @@ const app = express();
 const session = require("express-session");
 const serveIndex = require("serve-index");
 const pool = require("./config/db");
+const emailService = require("./providers/email");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
@@ -18,13 +19,13 @@ const fs = require("fs");
 const https = require("https");
 const http = require("http");
 
-const PORT = parseInt(process.env.PORT)
-const HTTPS_PORT = parseInt(process.env.HTTPS_PORT)
-const HTTP_PORT = parseInt(process.env.HTTP_PORT)
-const LOCAL_IP = process.env.LOCAL_IP
-const LOCAL_DOMAIN = process.env.LOCAL_DOMAIN
-const SERVER_MODE = process.env.SERVER_MODE
-const BIND_ADDRESS = process.env.BIND_ADDRESS
+const PORT = parseInt(process.env.PORT);
+const HTTPS_PORT = parseInt(process.env.HTTPS_PORT);
+const HTTP_PORT = parseInt(process.env.HTTP_PORT);
+const LOCAL_IP = process.env.LOCAL_IP;
+const LOCAL_DOMAIN = process.env.LOCAL_DOMAIN;
+const SERVER_MODE = process.env.SERVER_MODE;
+const BIND_ADDRESS = process.env.BIND_ADDRESS;
 
 console.log("Running in", process.env.NODE_ENV);
 console.log(
@@ -138,6 +139,7 @@ function getSSLOptions() {
 // ── Start server ───────────────────────────────────────────
 async function startServer() {
   await seamlessWrapper.initialize();
+  await new emailService().startup();
   require("./routes")(app);
 
   const ssl = getSSLOptions();
@@ -208,3 +210,6 @@ startServer().catch((err) => {
   console.error("❌ Failed to start server:", err);
   process.exit(1);
 });
+
+process.on("SIGINT", () => new emailService().shutdown());
+process.on("SIGTERM", () => new emailService().shutdown());

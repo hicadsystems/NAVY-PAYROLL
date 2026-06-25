@@ -67,12 +67,27 @@ async function fetchEmolRoles(userId) {
  * Confirm user exists as active personnel in ef_personalinfos.
  */
 async function isPersonnel(userId) {
-  const [rows] = await pool.query(
-    `SELECT serviceNumber FROM ef_personalinfos
-     WHERE serviceNumber = ? LIMIT 1`,
+  const [personnelRows] = await pool.query(
+    `SELECT serviceNumber
+     FROM ef_personalinfos
+     WHERE serviceNumber = ?
+     LIMIT 1`,
     [userId],
   );
-  return rows.length > 0;
+
+  if (personnelRows.length > 0) {
+    return true;
+  }
+
+  const [employeeRows] = await pool.query(
+    `SELECT Empl_ID
+     FROM hr_employees
+     WHERE Empl_ID = ?
+     LIMIT 1`,
+    [userId],
+  );
+
+  return employeeRows.length > 0;
 }
 
 /**
@@ -256,7 +271,7 @@ const requireEmolRole = (...requiredRoles) => {
       });
 
       if (!passes) {
-        console.log('no passws')
+        console.log("no passws");
         return res.status(403).json({
           error: `Access denied. Required role: ${requiredRoles.join(" or ")}`,
         });

@@ -1,0 +1,1389 @@
+<!-- Payment/Deductions Validation Section -->
+<div class="max-w-7xl mx-auto p-6">
+  <!-- Unified status + period + lock/unlock bar. Background/border/icon swap based on sat. -->
+  <div
+    id="statusBar"
+    class="mb-6 rounded-xl p-4 border flex flex-wrap justify-between items-center gap-4 bg-gray-50 border-gray-300"
+  >
+    <div class="flex items-start gap-3">
+      <i
+        id="statusIcon"
+        class="fa-solid fa-lock-open text-gray-500 text-xl mt-0.5"
+      ></i>
+      <div>
+        <h2
+          id="statusTitle"
+          class="font-bold text-gray-700 text-lg leading-tight"
+        >
+          Data Entry is Open
+        </h2>
+        <p id="statusMessageText" class="text-gray-500 text-sm mt-0.5">
+          Validation has not started. Lock the Payments/Deductions data from
+          this period to begin reviewing and verifying entries.
+        </p>
+        <p class="text-gray-500 text-xs mt-1 font-medium" id="periodLabel">
+          &nbsp;
+        </p>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <button
+        id="lockBtn"
+        class="px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition flex items-center gap-2 hidden"
+      >
+        <i class="fa-solid fa-lock"></i> Lock for Validation
+      </button>
+
+      <button
+        id="unlockBtn"
+        class="px-5 py-2.5 bg-amber-500 text-white rounded-lg shadow hover:bg-amber-600 transition flex items-center gap-2 hidden"
+      >
+        <i class="fa-solid fa-lock-open"></i> Unlock
+      </button>
+    </div>
+  </div>
+
+  <!-- Page heading -->
+  <h1 class="font-bold text-2xl text-navy mb-4">
+    Payment/Deduction Validation
+  </h1>
+
+  <!-- Locked working area (tabs, search, grid, pagination) -->
+  <div id="lockedArea" class="hidden">
+    <!-- Tabs + Search + Verify All -->
+    <div
+      class="bg-white/50 rounded-xl border border-amber-50 shadow-sm p-3 mb-4 flex flex-wrap justify-between items-center gap-3"
+    >
+      <div class="flex flex-wrap gap-2">
+        <button
+          id="tab-pending"
+          class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition flex items-center gap-2"
+        >
+          Pending
+          <span
+            id="pendingCount"
+            class="bg-white/25 text-xs px-2 py-0.5 rounded-full"
+            >0</span
+          >
+        </button>
+        <button
+          id="tab-verified"
+          class="px-4 py-2 rounded-md bg-yellow-400 text-gray-900 hover:bg-blue-600 hover:text-white transition flex items-center gap-2"
+        >
+          Verified
+          <span
+            id="verifiedCount"
+            class="bg-black/10 text-xs px-2 py-0.5 rounded-full"
+            >0</span
+          >
+        </button>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative">
+          <input
+            type="text"
+            id="searchInput"
+            class="border border-gray-300 focus:border-blue-500 bg-white rounded-md px-4 py-2 pl-9 text-sm"
+            placeholder="Search by Service No, Name, or Type..."
+            autocomplete="off"
+          />
+          <span
+            class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+          >
+            <svg
+              class="w-4 h-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </span>
+        </div>
+
+        <button
+          id="verifyAllBtn"
+          class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <i class="fa-solid fa-check-double"></i> Verify All Pending
+        </button>
+      </div>
+    </div>
+
+    <!-- Grid: 2/3/5/6 columns at sm/md/lg/xl for ~50 compact cards per page -->
+    <div
+      id="grid"
+      class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2"
+    ></div>
+
+    <!-- Pagination -->
+    <div
+      class="mt-6 flex flex-wrap justify-between items-center gap-3 bg-white rounded-xl shadow p-4"
+    >
+      <div class="text-sm text-gray-500">
+        Showing <span id="startRecord">0</span>-<span id="endRecord">0</span> of
+        <span id="totalRecords">0</span>
+      </div>
+      <div class="flex gap-3 items-center">
+        <button
+          id="prevPage"
+          class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50"
+        >
+          Previous
+        </button>
+        <span class="text-sm"
+          >Page <span id="currentPage">1</span> of
+          <span id="totalPages">1</span></span
+        >
+        <button
+          id="nextPage"
+          class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Idle message (not locked) -->
+  <div
+    id="unlockMsg"
+    class="bg-white rounded-xl shadow p-10 text-center text-gray-500"
+  >
+    <i class="fa-solid fa-lock-open text-3xl text-gray-300 mb-3"></i>
+    <p>Lock Payments/Deductions to start validation.</p>
+  </div>
+</div>
+
+<!-- Review / Modify Modal -->
+<div
+  id="modal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+>
+  <div class="bg-white rounded-xl w-full max-w-2xl shadow-2xl">
+    <div
+      class="bg-navy px-6 py-4 rounded-t-xl flex justify-between items-center"
+    >
+      <h2 id="modalHeaderTitle" class="font-semibold text-lg text-white">
+        Review Payment/Deduction
+      </h2>
+      <button
+        id="closeBtn"
+        class="text-white hover:text-gray-200 text-2xl leading-none"
+      >
+        ×
+      </button>
+    </div>
+
+    <div class="p-6">
+      <div id="modalStatusBadge" class="mb-4"></div>
+
+      <div
+        id="viewOnlyNotice"
+        class="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-600 flex items-center gap-2 hidden"
+      >
+        <i class="fa-solid fa-eye text-gray-400"></i> This record has already
+        been verified and is view only.
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Employee ID</label>
+          <input
+            id="emplId"
+            disabled
+            class="border p-2 rounded w-full bg-gray-100 text-gray-700"
+          />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Type</label>
+          <input
+            id="payCode"
+            disabled
+            class="border p-2 rounded w-full bg-gray-100 text-gray-700"
+          />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Amount Payable</label>
+          <input
+            id="amount"
+            type="number"
+            step="0.01"
+            class="border p-2 rounded w-full"
+          />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Amount To Date</label>
+          <input
+            id="amttd"
+            type="number"
+            step="0.01"
+            class="border p-2 rounded w-full"
+          />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1"
+            >Number of Months</label
+          >
+          <input id="months" type="number" class="border p-2 rounded w-full" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Pay Indicator</label>
+          <select id="indicator" class="border p-2 rounded w-full"></select>
+        </div>
+      </div>
+
+      <div
+        id="verifiedInfo"
+        class="mt-4 bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800 hidden"
+      >
+        Verified by <span id="verifiedByLabel" class="font-semibold"></span> on
+        <span id="verifiedAtLabel" class="font-semibold"></span>
+      </div>
+    </div>
+
+    <div class="flex justify-between gap-3 bg-gray-50 px-6 py-4 rounded-b-xl">
+      <button
+        id="deleteBtn"
+        class="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition flex items-center gap-2"
+      >
+        <i class="fa-solid fa-trash"></i> Delete
+      </button>
+      <div class="flex gap-3">
+        <button
+          id="editVerifiedBtn"
+          class="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2"
+        >
+          <i class="fa-solid fa-pen"></i> Edit
+        </button>
+        <button
+          id="closeSaveBtn"
+          class="px-5 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+        >
+          Close
+        </button>
+        <button
+          id="saveModifyBtn"
+          class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+        >
+          Save Changes
+        </button>
+        <button
+          id="approveBtn"
+          class="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+        >
+          <i class="fa-solid fa-check"></i> Verify
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modify Verified Record Modal (gates both Edit and Delete on verified rows) -->
+<div
+  id="confirmModifyVerifiedModal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+>
+  <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+      Modify Verified Record?
+    </h3>
+    <p class="text-gray-600 mb-6" id="confirmModifyVerifiedText">
+      Are you sure you want to modify verified records of this employee?
+    </p>
+    <div class="flex justify-end space-x-4">
+      <button
+        id="cancelModifyVerifiedBtn"
+        class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+      >
+        Cancel
+      </button>
+      <button
+        id="confirmModifyVerifiedBtn"
+        class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800"
+      >
+        Continue
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div
+  id="confirmDeleteModal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+>
+  <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Confirm Delete</h3>
+    <p class="text-gray-600 mb-6">
+      Are you sure you want to delete this record? This action cannot be undone.
+    </p>
+    <div class="flex justify-end space-x-4">
+      <button
+        id="cancelDeleteBtn"
+        class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+      >
+        Cancel
+      </button>
+      <button
+        id="confirmDeleteBtn"
+        class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+      >
+        Delete
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Lock Confirmation Modal -->
+<div
+  id="confirmLockModal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+>
+  <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Lock Data Entry?</h3>
+    <p class="text-gray-600 mb-6">
+      This stops new Payment/Deduction entries until validation is complete.
+      Continue?
+    </p>
+    <div class="flex justify-end space-x-4">
+      <button
+        id="cancelLockBtn"
+        class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+      >
+        Cancel
+      </button>
+      <button
+        id="confirmLockBtn"
+        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
+        Lock
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Unlock Confirmation Modal -->
+<div
+  id="confirmUnlockModal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+>
+  <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+      Unlock for New Entries?
+    </h3>
+    <p class="text-gray-600 mb-6">
+      This re-opens Data Entry so new Payment/Deduction records can be added.
+      Already verified records stay verified. You'll need to lock and re-verify
+      any new entries before saving. Continue?
+    </p>
+    <div class="flex justify-end space-x-4">
+      <button
+        id="cancelUnlockBtn"
+        class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+      >
+        Cancel
+      </button>
+      <button
+        id="confirmUnlockBtn"
+        class="bg-amber-500 text-white px-4 py-2 rounded hover:bg-amber-600"
+      >
+        Unlock
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Verify All Confirmation Modal -->
+<div
+  id="confirmVerifyAllModal"
+  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+>
+  <div class="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+      Verify All Pending Records?
+    </h3>
+    <p class="text-gray-600 mb-6">
+      This marks every pending record as verified under your name. There is no
+      bulk delete — review individually if you're unsure. Continue?
+    </p>
+    <div class="flex justify-end space-x-4">
+      <button
+        id="cancelVerifyAllBtn"
+        class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+      >
+        Cancel
+      </button>
+      <button
+        id="confirmVerifyAllBtn"
+        class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+      >
+        Verify All
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Status / Result Modal (loading, success, error) -->
+<div
+  id="statusModal"
+  class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50"
+>
+  <div class="bg-white rounded-lg p-8 max-w-sm w-full mx-4 text-center">
+    <div id="statusSpinner" class="flex justify-center mb-4">
+      <div class="relative w-10 h-10">
+        <div
+          class="absolute left-1 w-[6px] bg-blue-600 rounded animate-grow-up"
+        ></div>
+        <div
+          class="absolute right-1 w-[6px] bg-blue-600 rounded animate-grow-down [animation-delay:0.3s]"
+        ></div>
+        <div
+          class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand [animation-delay:0.6s] -translate-y-1/2"
+        ></div>
+      </div>
+    </div>
+    <div id="statusTick" class="hidden flex justify-center mb-4">
+      <div
+        class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center"
+      >
+        <svg
+          class="w-6 h-6 text-white"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 13l4 4L19 7"
+          ></path>
+        </svg>
+      </div>
+    </div>
+    <div id="statusErrorIcon" class="hidden flex justify-center mb-4">
+      <div
+        class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center"
+      >
+        <svg
+          class="w-6 h-6 text-white"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          ></path>
+        </svg>
+      </div>
+    </div>
+    <p id="statusMessage" class="text-gray-700 font-medium">Processing...</p>
+  </div>
+</div>
+
+<style>
+  @keyframes grow-up {
+    0% {
+      height: 0;
+      bottom: 0;
+    }
+    100% {
+      height: 100%;
+      bottom: 0;
+    }
+  }
+  @keyframes grow-down {
+    0% {
+      height: 0;
+      top: 0;
+    }
+    100% {
+      height: 100%;
+      top: 0;
+    }
+  }
+  @keyframes expand {
+    0% {
+      width: 0;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    100% {
+      width: 100%;
+      left: 0;
+      transform: translateY(-50%);
+    }
+  }
+  .animate-grow-up {
+    animation: grow-up 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    bottom: 0;
+  }
+  .animate-grow-down {
+    animation: grow-down 0.6s ease-in-out infinite alternate;
+    position: absolute;
+    top: 0;
+  }
+  .animate-expand {
+    animation: expand 0.6s ease-in-out infinite alternate;
+  }
+</style>
+
+<script>
+  const auth = window.authService;
+  (function () {
+    const API_BASE = "/payded-validation";
+
+    // ---- Element refs ----
+    const periodLabel = document.getElementById("periodLabel");
+
+    const lockBtn = document.getElementById("lockBtn");
+    const unlockBtn = document.getElementById("unlockBtn");
+
+    const lockedArea = document.getElementById("lockedArea");
+    const unlockMsg = document.getElementById("unlockMsg");
+
+    const grid = document.getElementById("grid");
+    const tabPendingBtn = document.getElementById("tab-pending");
+    const tabVerifiedBtn = document.getElementById("tab-verified");
+    const pendingCountEl = document.getElementById("pendingCount");
+    const verifiedCountEl = document.getElementById("verifiedCount");
+    const searchInput = document.getElementById("searchInput");
+    const verifyAllBtn = document.getElementById("verifyAllBtn");
+
+    const prevPageBtn = document.getElementById("prevPage");
+    const nextPageBtn = document.getElementById("nextPage");
+    const currentPageSpan = document.getElementById("currentPage");
+    const totalPagesSpan = document.getElementById("totalPages");
+    const startRecordSpan = document.getElementById("startRecord");
+    const endRecordSpan = document.getElementById("endRecord");
+    const totalRecordsSpan = document.getElementById("totalRecords");
+
+    // Modal
+    const modal = document.getElementById("modal");
+    const modalHeaderTitle = document.getElementById("modalHeaderTitle");
+    const modalStatusBadge = document.getElementById("modalStatusBadge");
+    const viewOnlyNotice = document.getElementById("viewOnlyNotice");
+    const emplIdInput = document.getElementById("emplId");
+    const payCodeInput = document.getElementById("payCode");
+    const amountInput = document.getElementById("amount");
+    const amttdInput = document.getElementById("amttd");
+    const monthsInput = document.getElementById("months");
+    const indicatorSelect = document.getElementById("indicator");
+    const verifiedInfo = document.getElementById("verifiedInfo");
+    const verifiedByLabel = document.getElementById("verifiedByLabel");
+    const verifiedAtLabel = document.getElementById("verifiedAtLabel");
+    const closeBtn = document.getElementById("closeBtn");
+    const closeSaveBtn = document.getElementById("closeSaveBtn");
+    const saveModifyBtn = document.getElementById("saveModifyBtn");
+    const approveBtn = document.getElementById("approveBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
+    const editVerifiedBtn = document.getElementById("editVerifiedBtn");
+
+    // Confirm modals
+    const confirmDeleteModal = document.getElementById("confirmDeleteModal");
+    const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+    const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+
+    const confirmModifyVerifiedModal = document.getElementById(
+      "confirmModifyVerifiedModal",
+    );
+    const confirmModifyVerifiedText = document.getElementById(
+      "confirmModifyVerifiedText",
+    );
+    const cancelModifyVerifiedBtn = document.getElementById(
+      "cancelModifyVerifiedBtn",
+    );
+    const confirmModifyVerifiedBtn = document.getElementById(
+      "confirmModifyVerifiedBtn",
+    );
+
+    const confirmLockModal = document.getElementById("confirmLockModal");
+    const cancelLockBtn = document.getElementById("cancelLockBtn");
+    const confirmLockBtn = document.getElementById("confirmLockBtn");
+
+    const confirmUnlockModal = document.getElementById("confirmUnlockModal");
+    const cancelUnlockBtn = document.getElementById("cancelUnlockBtn");
+    const confirmUnlockBtn = document.getElementById("confirmUnlockBtn");
+
+    const confirmVerifyAllModal = document.getElementById(
+      "confirmVerifyAllModal",
+    );
+    const cancelVerifyAllBtn = document.getElementById("cancelVerifyAllBtn");
+    const confirmVerifyAllBtn = document.getElementById("confirmVerifyAllBtn");
+
+    // Status modal
+    const statusModal = document.getElementById("statusModal");
+    const statusSpinner = document.getElementById("statusSpinner");
+    const statusTick = document.getElementById("statusTick");
+    const statusErrorIcon = document.getElementById("statusErrorIcon");
+    const statusMessage = document.getElementById("statusMessage");
+
+    // ---- State ----
+    let currentSat = 0;
+    let currentTab = "pending"; // 'pending' | 'verified'
+    let currentPage = 1;
+    let recordsPerPage = 50;
+    let totalRecords = 0;
+    let totalPages = 1;
+    let searchQuery = "";
+    let rows = [];
+    let lookupMaps = {};
+    let activeRecord = null; // currently open in modal
+    let recordToDelete = null;
+    let pendingModifyAction = null; // 'edit' | 'delete' | null -- gated verified-row action
+    let searchDebounce = null;
+
+    // Unified status bar refs
+    const statusBar = document.getElementById("statusBar");
+    const statusIcon = document.getElementById("statusIcon");
+    const statusTitle = document.getElementById("statusTitle");
+    const statusMessageText = document.getElementById("statusMessageText");
+
+    // ---- Helpers ----
+    function escapeQuotes(str) {
+      if (!str) return "";
+      return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    function formatCurrency(amount) {
+      if (!amount && amount !== 0) return "₦0";
+      return new Intl.NumberFormat("en-NG", {
+        style: "currency",
+        currency: "NGN",
+      }).format(amount);
+    }
+
+    function formatDate(d) {
+      if (!d) return "-";
+      try {
+        return new Date(d).toLocaleString("en-NG", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        });
+      } catch {
+        return d;
+      }
+    }
+
+    function showModal(el) {
+      el.classList.remove("hidden");
+      el.classList.add("flex");
+    }
+    function hideModal(el) {
+      el.classList.add("hidden");
+      el.classList.remove("flex");
+    }
+
+    function showStatus(message, mode = "loading") {
+      statusMessage.textContent = message;
+      statusSpinner.classList.toggle("hidden", mode !== "loading");
+      statusTick.classList.toggle("hidden", mode !== "success");
+      statusErrorIcon.classList.toggle("hidden", mode !== "error");
+      showModal(statusModal);
+      if (mode !== "loading") {
+        setTimeout(() => hideModal(statusModal), 1800);
+      }
+    }
+
+    function hideStatus() {
+      hideModal(statusModal);
+    }
+
+    async function apiCall(path, options = {}) {
+      const res = await auth.fetchWithAuth(`${API_BASE}${path}`, {
+        headers: { "Content-Type": "application/json" },
+        ...options,
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.message || `Request failed (${res.status})`);
+      }
+      return body;
+    }
+
+    // ---- Dropdown lookups (Pay Indicator) ----
+    async function loadIndicatorOptions() {
+      try {
+        const res = await auth.fetchWithAuth("/reference/payindicator", {
+          headers: { "Content-Type": "application/json" },
+        });
+        const list = await res.json();
+        lookupMaps.payindicator = Object.fromEntries(
+          list.map((i) => [i.ind, i.inddesc]),
+        );
+        indicatorSelect.innerHTML = list
+          .map((i) => `<option value="${i.ind}">${i.inddesc}</option>`)
+          .join("");
+      } catch (err) {
+        console.error("Failed to load pay indicators:", err);
+      }
+    }
+
+    function resolveIndicator(code) {
+      return lookupMaps.payindicator?.[code] || code || "-";
+    }
+
+    // ---- Stage handling ----
+    // Status bar visual presets per sat value
+    const STAGE_PRESETS = {
+      open: {
+        barClasses: ["bg-gray-50", "border-gray-300"],
+        icon: "fa-lock-open",
+        iconClass: "text-gray-500",
+        titleClass: "text-gray-700",
+        title: "Data Entry is Open",
+        message:
+          "Validation has not started. Lock the Payments/Deductions data from this period to begin reviewing and verifying entries.",
+      },
+      pending: {
+        barClasses: ["bg-yellow-50", "border-yellow-300"],
+        icon: "fa-triangle-exclamation",
+        iconClass: "text-yellow-600",
+        titleClass: "text-yellow-800",
+        title: "Pending Payment/Deduction Verifications",
+        message:
+          "Data Entry is locked. Review and verify every record below before this period can proceed.",
+      },
+      complete: {
+        barClasses: ["bg-green-50", "border-green-300"],
+        icon: "fa-circle-check",
+        iconClass: "text-green-600",
+        titleClass: "text-green-800",
+        title: "All Records Verified",
+        message:
+          "Every record has been verified. Proceed to Save Payroll Files, or unlock to add new entries.",
+      },
+      saved: {
+        barClasses: ["bg-blue-50", "border-blue-300"],
+        icon: "fa-floppy-disk",
+        iconClass: "text-blue-600",
+        titleClass: "text-blue-800",
+        title: "Payroll Files Saved",
+        message:
+          "Payroll files have been saved for this period. Validation is closed and can no longer be unlocked.",
+      },
+    };
+    const ALL_BAR_BG_BORDER_CLASSES = Array.from(
+      new Set(Object.values(STAGE_PRESETS).flatMap((p) => p.barClasses)),
+    );
+    const ALL_TITLE_CLASSES = Array.from(
+      new Set(Object.values(STAGE_PRESETS).map((p) => p.titleClass)),
+    );
+    const ALL_ICON_CLASSES = Array.from(
+      new Set(Object.values(STAGE_PRESETS).map((p) => p.iconClass)),
+    );
+
+    function applyStatusBarPreset(presetKey) {
+      const preset = STAGE_PRESETS[presetKey];
+      statusBar.classList.remove(...ALL_BAR_BG_BORDER_CLASSES);
+      statusBar.classList.add(...preset.barClasses);
+
+      statusIcon.classList.remove(
+        "fa-lock-open",
+        "fa-triangle-exclamation",
+        "fa-circle-check",
+        "fa-floppy-disk",
+        ...ALL_ICON_CLASSES,
+      );
+      statusIcon.classList.add(preset.icon, preset.iconClass);
+
+      statusTitle.classList.remove(...ALL_TITLE_CLASSES);
+      statusTitle.classList.add(preset.titleClass);
+      statusTitle.textContent = preset.title;
+      statusMessageText.textContent = preset.message;
+    }
+
+    function applyStageUI() {
+      lockBtn.classList.add("hidden");
+      unlockBtn.classList.add("hidden");
+
+      if (currentSat === 500) {
+        applyStatusBarPreset("pending");
+        unlockBtn.classList.remove("hidden");
+        lockedArea.classList.remove("hidden");
+        unlockMsg.classList.add("hidden");
+      } else if (currentSat === 600) {
+        applyStatusBarPreset("complete");
+        unlockBtn.classList.remove("hidden");
+        lockedArea.classList.remove("hidden");
+        unlockMsg.classList.add("hidden");
+      } else if (currentSat === 700) {
+        applyStatusBarPreset("saved");
+        lockedArea.classList.remove("hidden");
+        unlockMsg.classList.add("hidden");
+      } else {
+        applyStatusBarPreset("open");
+        lockBtn.classList.remove("hidden");
+        lockedArea.classList.add("hidden");
+        unlockMsg.classList.remove("hidden");
+      }
+
+      // Verify-all / individual verify only make sense while sat = 500
+      verifyAllBtn.disabled = currentSat !== 500;
+    }
+
+    async function loadStage() {
+      try {
+        const data = await apiCall("/stage");
+        currentSat = data.sat;
+        if (data.year && data.month) {
+          const monthNames = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+          ];
+          const monthName = monthNames[parseInt(data.month) - 1] || data.month;
+          periodLabel.textContent = `Period: ${monthName} ${data.year}`;
+        }
+        applyStageUI();
+
+        if (data.canRenderValidationScreen) {
+          await Promise.all([loadStats(), loadRecords()]);
+        }
+      } catch (err) {
+        console.error("Error loading validation stage:", err);
+        showStatus(err.message || "Could not load validation stage", "error");
+      }
+    }
+
+    // ---- Stats (tab counts) ----
+    async function loadStats() {
+      try {
+        const data = await apiCall("/stats");
+        pendingCountEl.textContent = data.pending ?? 0;
+        verifiedCountEl.textContent = data.verified ?? 0;
+      } catch (err) {
+        console.error("Error loading validation stats:", err);
+      }
+    }
+
+    // ---- Records list ----
+    async function loadRecords() {
+      try {
+        const params = new URLSearchParams({
+          tab: currentTab,
+          page: currentPage,
+          limit: recordsPerPage,
+        });
+        if (searchQuery) params.set("search", searchQuery);
+
+        const data = await apiCall(`/?${params.toString()}`);
+        rows = data.data || [];
+        const p = data.pagination;
+        if (p) {
+          totalRecords = p.totalRecords;
+          totalPages = p.totalPages;
+          currentPage = p.currentPage;
+        } else {
+          totalRecords = rows.length;
+          totalPages = 1;
+        }
+        renderGrid();
+        updatePaginationUI();
+      } catch (err) {
+        console.error("Error loading validation records:", err);
+        grid.innerHTML = `<div class="col-span-full text-center text-red-500 py-10">${err.message}</div>`;
+      }
+    }
+
+    function renderGrid() {
+      grid.innerHTML = "";
+
+      if (!rows.length) {
+        grid.innerHTML = `<div class="col-span-full text-center text-gray-400 py-10 text-sm">No ${currentTab} records found.</div>`;
+        return;
+      }
+
+      rows.forEach((r) => {
+        const isVerified = !!r.verifiedby;
+        const displayName = r.full_name_short || r.full_name || "";
+        const card = document.createElement("div");
+        card.className =
+          "bg-white border rounded-lg p-3 shadow-sm hover:shadow-md cursor-pointer transition text-xs";
+        card.innerHTML = `
+          <div class="flex justify-between items-start mb-1.5">
+            <span class="text-[10px] leading-none ${isVerified ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"} px-1.5 py-0.5 rounded-full font-medium">
+              ${isVerified ? "Verified" : "Pending"}
+            </span>
+            <!--
+              Auto-verify quick action intentionally disabled per product
+              requirement -- verification must go through the review modal,
+              not a one-click icon on the card. Kept commented for reference.
+              <button class="quick-verify text-green-600 hover:text-green-700" title="Quick verify" data-emplid="${escapeQuotes(r.Empl_id)}" data-type="${escapeQuotes(r.type)}">
+                <i class="fa-solid fa-check-circle text-lg"></i>
+              </button>
+            -->
+          </div>
+          <p class="font-bold text-gray-800 truncate" title="${escapeQuotes(displayName)}">${r.Empl_id}${displayName ? " &middot; " + displayName : ""}</p>
+          <p class="text-blue-700 font-semibold mt-1">${r.type}</p>
+          <div class="mt-1.5 flex justify-between items-baseline">
+            <span class="text-gray-400">Payable</span>
+            <span class="font-semibold text-gray-700">${formatCurrency(r.amount_payable)}</span>
+          </div>
+          <div class="flex justify-between items-baseline">
+            <span class="text-gray-400">Indicator</span>
+            <span class="text-gray-600">${resolveIndicator(r.indicator)}</span>
+          </div>
+          ${isVerified ? `<div class="mt-1.5 pt-1.5 border-t text-[10px] text-gray-400 truncate" title="${escapeQuotes(r.verifiedby)} &middot; ${formatDate(r.dateverified)}">By ${r.verifiedby} &middot; ${formatDate(r.dateverified)}</div>` : ""}
+        `;
+        card.addEventListener("click", () => openModal(r));
+        grid.appendChild(card);
+      });
+
+      // Quick-verify icon is disabled (see comment above) -- no listener wired.
+    }
+
+    function updatePaginationUI() {
+      currentPageSpan.textContent = currentPage;
+      totalPagesSpan.textContent = totalPages;
+      const start =
+        totalRecords === 0 ? 0 : (currentPage - 1) * recordsPerPage + 1;
+      const end = Math.min(start + recordsPerPage - 1, totalRecords);
+      startRecordSpan.textContent = start;
+      endRecordSpan.textContent = end;
+      totalRecordsSpan.textContent = totalRecords;
+      prevPageBtn.disabled = currentPage <= 1;
+      nextPageBtn.disabled = currentPage >= totalPages;
+    }
+
+    // ---- Modal: open / save / verify / delete ----
+    // When a verified record is opened, fields start locked (view only).
+    // editingUnlockedForVerified becomes true only after the user confirms
+    // "are you sure you want to modify this verified record?" -- at that
+    // point fields become editable again for this one modal session.
+    let editingUnlockedForVerified = false;
+
+    function buildModalHeader(record) {
+      const name = record.full_name_short || record.full_name || "";
+      const who = name ? `${record.Empl_id} - ${name}` : record.Empl_id;
+      return `Review Payments and Deduction for ${who}`;
+    }
+
+    function openModal(record) {
+      activeRecord = record;
+      editingUnlockedForVerified = false;
+      const isVerified = !!record.verifiedby;
+
+      modalHeaderTitle.textContent = buildModalHeader(record);
+
+      emplIdInput.value = record.Empl_id;
+      payCodeInput.value = record.type;
+      amountInput.value = record.amount_payable ?? 0;
+      amttdInput.value = record.amount_to_date ?? 0;
+      monthsInput.value = record.months_remaining ?? 0;
+      indicatorSelect.value = record.indicator ?? "";
+
+      modalStatusBadge.innerHTML = `<span class="text-xs ${isVerified ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"} px-3 py-1 rounded-full font-medium">${isVerified ? "Verified" : "Pending"}</span>`;
+
+      if (isVerified) {
+        verifiedInfo.classList.remove("hidden");
+        verifiedByLabel.textContent = record.verifiedby;
+        verifiedAtLabel.textContent = formatDate(record.dateverified);
+      } else {
+        verifiedInfo.classList.add("hidden");
+      }
+
+      refreshModalEditState();
+      showModal(modal);
+    }
+
+    // Decides whether fields/buttons are editable for the record currently
+    // open in the modal, based on sat, verification status, and whether the
+    // user has explicitly unlocked a verified record for this session.
+    function refreshModalEditState() {
+      if (!activeRecord) return;
+      const isVerified = !!activeRecord.verifiedby;
+      const validationActive = currentSat === 500 || currentSat === 600;
+
+      // A verified record is view only until explicitly unlocked for editing;
+      // an unverified (pending) record is editable whenever validation is active.
+      const canEdit =
+        validationActive && (!isVerified || editingUnlockedForVerified);
+
+      [amountInput, amttdInput, monthsInput, indicatorSelect].forEach(
+        (el) => (el.disabled = !canEdit),
+      );
+
+      viewOnlyNotice.classList.toggle(
+        "hidden",
+        !(isVerified && !editingUnlockedForVerified),
+      );
+
+      saveModifyBtn.classList.toggle("hidden", !canEdit);
+      deleteBtn.classList.toggle("hidden", !validationActive);
+      // "Edit" affordance for verified rows that are still locked
+      editVerifiedBtn.classList.toggle(
+        "hidden",
+        !(validationActive && isVerified && !editingUnlockedForVerified),
+      );
+      // Verify button only for pending rows while validation is active
+      approveBtn.classList.toggle("hidden", !validationActive || isVerified);
+    }
+
+    function closeModalFn() {
+      hideModal(modal);
+      activeRecord = null;
+      editingUnlockedForVerified = false;
+    }
+
+    function dirtyFields() {
+      if (!activeRecord) return {};
+      const out = {};
+      if (
+        Number(amountInput.value) !== Number(activeRecord.amount_payable ?? 0)
+      )
+        out.amtp = Number(amountInput.value);
+      if (Number(amttdInput.value) !== Number(activeRecord.amount_to_date ?? 0))
+        out.amttd = Number(amttdInput.value);
+      if (
+        Number(monthsInput.value) !== Number(activeRecord.months_remaining ?? 0)
+      )
+        out.nomth = Number(monthsInput.value);
+      if (indicatorSelect.value !== (activeRecord.indicator ?? ""))
+        out.payind = indicatorSelect.value;
+      return out;
+    }
+
+    async function saveModifiedRecord() {
+      if (!activeRecord) return;
+      const changes = dirtyFields();
+      if (Object.keys(changes).length === 0) {
+        closeModalFn();
+        return;
+      }
+
+      try {
+        showStatus("Saving changes...", "loading");
+        const result = await apiCall(
+          `/${encodeURIComponent(activeRecord.Empl_id)}/${encodeURIComponent(activeRecord.type)}`,
+          {
+            method: "PUT",
+            body: JSON.stringify(changes),
+          },
+        );
+        hideStatus();
+        showStatus(
+          result.reVerified
+            ? "Verified record updated and re-stamped under your name"
+            : "Changes saved",
+          "success",
+        );
+        closeModalFn();
+        await Promise.all([loadStats(), loadRecords()]);
+      } catch (err) {
+        hideStatus();
+        showStatus(err.message || "Failed to save changes", "error");
+      }
+    }
+
+    async function verifyRecord(emplId, type) {
+      try {
+        showStatus("Verifying record...", "loading");
+        const result = await apiCall(
+          `/${encodeURIComponent(emplId)}/${encodeURIComponent(type)}/verify`,
+          {
+            method: "POST",
+          },
+        );
+        hideStatus();
+        showStatus("Record verified", "success");
+        if (result.allVerified) {
+          currentSat = result.sat;
+          applyStageUI();
+        }
+        await Promise.all([loadStats(), loadRecords()]);
+      } catch (err) {
+        hideStatus();
+        showStatus(err.message || "Failed to verify record", "error");
+      }
+    }
+
+    async function deleteRecord(emplId, type) {
+      try {
+        showStatus("Deleting record...", "loading");
+        await apiCall(
+          `/${encodeURIComponent(emplId)}/${encodeURIComponent(type)}`,
+          { method: "DELETE" },
+        );
+        hideStatus();
+        showStatus("Record deleted", "success");
+        await Promise.all([loadStats(), loadRecords()]);
+      } catch (err) {
+        hideStatus();
+        showStatus(err.message || "Failed to delete record", "error");
+      }
+    }
+
+    // ---- Lock / Unlock ----
+    async function lockForValidation() {
+      try {
+        showStatus("Locking data entry...", "loading");
+        const result = await apiCall("/lock", { method: "POST" });
+        currentSat = result.sat;
+        hideStatus();
+        showStatus("Locked for validation", "success");
+        applyStageUI();
+        currentTab = "pending";
+        currentPage = 1;
+        await Promise.all([loadStats(), loadRecords()]);
+        window.dispatchEvent(
+          new CustomEvent("payrollStatusChanged", {
+            detail: { satStage: currentSat, action: "payded-lock" },
+          }),
+        );
+      } catch (err) {
+        hideStatus();
+        showStatus(err.message || "Failed to lock for validation", "error");
+      }
+    }
+
+    async function unlockValidation() {
+      try {
+        showStatus("Unlocking...", "loading");
+        const result = await apiCall("/unlock", { method: "POST" });
+        currentSat = result.sat;
+        hideStatus();
+        showStatus(
+          "Unlocked. New entries can be added from Data Entry.",
+          "success",
+        );
+        applyStageUI();
+        window.dispatchEvent(
+          new CustomEvent("payrollStatusChanged", {
+            detail: { satStage: currentSat, action: "payded-unlock" },
+          }),
+        );
+      } catch (err) {
+        hideStatus();
+        showStatus(err.message || "Failed to unlock", "error");
+      }
+    }
+
+    async function verifyAllPending() {
+      try {
+        showStatus("Verifying all pending records...", "loading");
+        const result = await apiCall("/verify-all", { method: "POST" });
+        currentSat = result.sat;
+        hideStatus();
+        showStatus(`${result.affectedRows} record(s) verified`, "success");
+        applyStageUI();
+        currentTab = "pending";
+        currentPage = 1;
+        await Promise.all([loadStats(), loadRecords()]);
+        window.dispatchEvent(
+          new CustomEvent("payrollStatusChanged", {
+            detail: { satStage: currentSat, action: "payded-verify-all" },
+          }),
+        );
+      } catch (err) {
+        hideStatus();
+        showStatus(err.message || "Failed to verify all records", "error");
+      }
+    }
+
+    // ---- Tabs ----
+    function setActiveTab(tab) {
+      currentTab = tab;
+      currentPage = 1;
+      tabPendingBtn.classList.toggle("bg-blue-600", tab === "pending");
+      tabPendingBtn.classList.toggle("text-white", tab === "pending");
+      tabPendingBtn.classList.toggle("bg-yellow-400", tab !== "pending");
+      tabPendingBtn.classList.toggle("text-gray-900", tab !== "pending");
+
+      tabVerifiedBtn.classList.toggle("bg-blue-600", tab === "verified");
+      tabVerifiedBtn.classList.toggle("text-white", tab === "verified");
+      tabVerifiedBtn.classList.toggle("bg-yellow-400", tab !== "verified");
+      tabVerifiedBtn.classList.toggle("text-gray-900", tab !== "verified");
+
+      loadRecords();
+    }
+
+    // ---- Event listeners ----
+    lockBtn.addEventListener("click", () => showModal(confirmLockModal));
+    cancelLockBtn.addEventListener("click", () => hideModal(confirmLockModal));
+    confirmLockBtn.addEventListener("click", () => {
+      hideModal(confirmLockModal);
+      lockForValidation();
+    });
+
+    unlockBtn.addEventListener("click", () => showModal(confirmUnlockModal));
+    cancelUnlockBtn.addEventListener("click", () =>
+      hideModal(confirmUnlockModal),
+    );
+    confirmUnlockBtn.addEventListener("click", () => {
+      hideModal(confirmUnlockModal);
+      unlockValidation();
+    });
+
+    verifyAllBtn.addEventListener("click", () => {
+      if (verifyAllBtn.disabled) return;
+      showModal(confirmVerifyAllModal);
+    });
+    cancelVerifyAllBtn.addEventListener("click", () =>
+      hideModal(confirmVerifyAllModal),
+    );
+    confirmVerifyAllBtn.addEventListener("click", () => {
+      hideModal(confirmVerifyAllModal);
+      verifyAllPending();
+    });
+
+    tabPendingBtn.addEventListener("click", () => setActiveTab("pending"));
+    tabVerifiedBtn.addEventListener("click", () => setActiveTab("verified"));
+
+    searchInput.addEventListener("input", (e) => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => {
+        searchQuery = e.target.value.trim();
+        currentPage = 1;
+        loadRecords();
+      }, 350);
+    });
+
+    prevPageBtn.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        loadRecords();
+      }
+    });
+    nextPageBtn.addEventListener("click", () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        loadRecords();
+      }
+    });
+
+    closeBtn.addEventListener("click", closeModalFn);
+    closeSaveBtn.addEventListener("click", closeModalFn);
+    saveModifyBtn.addEventListener("click", saveModifiedRecord);
+    approveBtn.addEventListener("click", () => {
+      if (!activeRecord) return;
+      verifyRecord(activeRecord.Empl_id, activeRecord.type);
+      closeModalFn();
+    });
+
+    // "Edit" on an already-verified record -- requires explicit confirmation
+    // before fields unlock. Reuses the same gate as deleting a verified record.
+    editVerifiedBtn.addEventListener("click", () => {
+      if (!activeRecord) return;
+      pendingModifyAction = "edit";
+      const name = activeRecord.full_name_short || activeRecord.full_name || "";
+      const who = name
+        ? `${activeRecord.Empl_id} - ${name}`
+        : activeRecord.Empl_id;
+      confirmModifyVerifiedText.textContent = `Are you sure you want to modify verified records of ${who}?`;
+      showModal(confirmModifyVerifiedModal);
+    });
+
+    deleteBtn.addEventListener("click", () => {
+      if (!activeRecord) return;
+      const isVerified = !!activeRecord.verifiedby;
+
+      if (isVerified && !editingUnlockedForVerified) {
+        // Verified + still locked -> gate through the same confirm dialog first
+        pendingModifyAction = "delete";
+        const name =
+          activeRecord.full_name_short || activeRecord.full_name || "";
+        const who = name
+          ? `${activeRecord.Empl_id} - ${name}`
+          : activeRecord.Empl_id;
+        confirmModifyVerifiedText.textContent = `Are you sure you want to modify verified records of ${who}?`;
+        showModal(confirmModifyVerifiedModal);
+        return;
+      }
+
+      recordToDelete = {
+        emplId: activeRecord.Empl_id,
+        type: activeRecord.type,
+      };
+      showModal(confirmDeleteModal);
+    });
+
+    cancelModifyVerifiedBtn.addEventListener("click", () => {
+      hideModal(confirmModifyVerifiedModal);
+      pendingModifyAction = null;
+    });
+    confirmModifyVerifiedBtn.addEventListener("click", () => {
+      hideModal(confirmModifyVerifiedModal);
+      editingUnlockedForVerified = true;
+      refreshModalEditState();
+
+      if (pendingModifyAction === "delete" && activeRecord) {
+        recordToDelete = {
+          emplId: activeRecord.Empl_id,
+          type: activeRecord.type,
+        };
+        showModal(confirmDeleteModal);
+      }
+      // For "edit", refreshModalEditState() above already unlocked the fields --
+      // nothing further to do until the user clicks Save Changes.
+      pendingModifyAction = null;
+    });
+
+    cancelDeleteBtn.addEventListener("click", () => {
+      hideModal(confirmDeleteModal);
+      recordToDelete = null;
+    });
+    confirmDeleteBtn.addEventListener("click", () => {
+      hideModal(confirmDeleteModal);
+      if (recordToDelete) {
+        deleteRecord(recordToDelete.emplId, recordToDelete.type);
+        recordToDelete = null;
+      }
+      closeModalFn();
+    });
+
+    // Close modals on backdrop click
+    [
+      modal,
+      confirmDeleteModal,
+      confirmModifyVerifiedModal,
+      confirmLockModal,
+      confirmUnlockModal,
+      confirmVerifyAllModal,
+      statusModal,
+    ].forEach((m) => {
+      m.addEventListener("click", (e) => {
+        if (e.target === m) hideModal(m);
+      });
+    });
+
+    // React if Save Payroll Files (or another page) changes the stage
+    window.addEventListener("payrollStatusChanged", (event) => {
+      if (event.detail && typeof event.detail.satStage === "number") {
+        currentSat = event.detail.satStage;
+        applyStageUI();
+      } else {
+        loadStage();
+      }
+    });
+
+    // ---- Init ----
+    async function initialize() {
+      await loadIndicatorOptions();
+      await loadStage();
+    }
+
+    initialize();
+  })();
+</script>

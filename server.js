@@ -139,7 +139,7 @@ function getSSLOptions() {
 // ── Start server ───────────────────────────────────────────
 async function startServer() {
   await seamlessWrapper.initialize();
-  await new emailService().startup();
+  await emailService.startup();
   require("./routes")(app);
 
   const ssl = getSSLOptions();
@@ -211,5 +211,5 @@ startServer().catch((err) => {
   process.exit(1);
 });
 
-process.on("SIGINT", () => new emailService().shutdown());
-process.on("SIGTERM", () => new emailService().shutdown());
+process.on("SIGINT", () => emailService.shutdown());
+process.on("SIGTERM", () => emailService.shutdown());

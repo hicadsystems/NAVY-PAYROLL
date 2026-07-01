@@ -96,11 +96,11 @@ const rangePaymentRoutes = require("./audit-trail/rangePayments");
 
 //User Dashboard
 //email
-const mailSystemRoutes = require("../routes/user-dashboard/email/mailSystem");
+const mailSystemRoutes = require("../routes/user-dashboard/email/email.router");
 const cron = require("node-cron");
 const {
   cleanupOrphanedAttachments,
-} = require("./user-dashboard/email/mailSystem");
+} = require("./user-dashboard/email/email.service");
 
 //payslip
 const userPayslipRoutes = require("../routes/user-dashboard/payslips/userpayslip");

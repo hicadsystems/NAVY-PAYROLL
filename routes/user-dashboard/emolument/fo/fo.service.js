@@ -206,8 +206,7 @@ async function approveBulk(ship, body, performedBy, ip) {
     return {
       success: false,
       code: 400,
-      message:
-        "At least one form must be selected for bulk approval.",
+      message: "At least one form must be selected for bulk approval.",
     };
   }
 
@@ -448,6 +447,15 @@ async function rejectForm(formId, foShip, body, performedBy, ip) {
     },
     performedBy: fo_svcno,
     ipAddress: ip,
+  });
+
+  const message = `Your emolument form (ID: ${formId}) has been rejected by the Financial Officer (${fo_rank} ${fo_name}).\n\nRemarks: ${remarks.trim()}\n\nPlease re-fill and resubmit the form.`;
+  await sendMessage({
+    userId: fo_svcno,
+    userFullname: fo_name,
+    to_user_id: form.serviceNumber,
+    subject: "Form Rejected",
+    body: message,
   });
 
   return {

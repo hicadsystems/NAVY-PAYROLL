@@ -20,6 +20,7 @@ const {
   LEGACY_STATUS,
   toLegacyStatus,
 } = require("../emolument.constants");
+const { sendMessage } = require("../../email/email.service");
 
 // ─────────────────────────────────────────────────────────────
 // LIST SUBMITTED FORMS
@@ -187,7 +188,7 @@ async function reviewForm(formId, doShip, performedBy, ip) {
 
 async function rejectForm(formId, doShip, body, performedBy, ip) {
   const { remarks } = body;
-  const { do_svcno } = performedBy; // Only need svcno for performedBy in this case, but can expand if needed
+  const { do_name, do_rank, do_svcno } = performedBy; // Expanded for email
   if (!remarks || !remarks.trim()) {
     return {
       success: false,
@@ -246,6 +247,8 @@ async function rejectForm(formId, doShip, body, performedBy, ip) {
     performedBy: do_svcno,
     ipAddress: ip,
   });
+  const message = `Your emolument form (ID: ${formId}) has been rejected by the Divisional Officer (${do_rank} ${do_name}).\n\nRemarks: ${remarks.trim()}\n\nPlease re-fill and resubmit the form.`;
+  await sendMessage({userId: do_svcno, userFullname: do_name,to_user_id: form.serviceNumber, subject: "Form Rejected", body: message});
 
   return {
     success: true,

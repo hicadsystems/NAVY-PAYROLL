@@ -82,12 +82,9 @@ router.use(verifyToken);
 router.get("/load", async (req, res) => {
   try {
     const isAdmin = req.query.admin === "1" && req.query.svcno;
-    console.log(isAdmin);
 
     if (isAdmin) {
       // Must be EMOL_ADMIN
-      console.log("is admin");
-      console.log(`service number ${req.query.svcno}`);
       const allowed = await new Promise((resolve) => {
         requireEmolRole(
           "EMOL_ADMIN",

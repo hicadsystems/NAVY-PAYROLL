@@ -42,10 +42,15 @@
 "use strict";
 
 const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const pool = require("../../config/db");
 const config = require("../../config");
+const EmailProvider = require("../../providers/email");
+const { applyReplacements } = require("../../utils/email_helper");
 
 const SECRET = config.jwt.secret;
 const OFFICERS_DB = () => process.env.DB_OFFICERS || config.databases.officers;
@@ -350,32 +355,158 @@ router.post("/verify-identity", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// POST /auth/forgot/reset-password
-// Replaces: POST /users/pre-login/reset-password
+// POST /auth/forgot/forgot-password
+// Replaces: POST /users/pre-login/forgot-password
 // Resets in hr_employees, syncs to users if payroll user.
 // ─────────────────────────────────────────────────────────────
-router.post("/reset-password", async (req, res) => {
-  const { user_id, full_name, new_password } = req.body;
+router.post("/forgot-password", async (req, res) => {
+  const { user_id, email } = req.body;
 
-  if (!user_id || !full_name || !new_password) {
+  if (!user_id || !email) {
     return res.status(400).json({ error: "All fields are required" });
   }
-  if (new_password.length < 6) {
-    return res
-      .status(400)
-      .json({ error: "Password must be at least 6 characters long" });
-  }
+
+  const genericRes = {
+    message:
+      "If an account matching that information exists, a reset link has been sent to the associated email.",
+    user_id,
+  };
 
   try {
     pool.useDatabase(OFFICERS_DB());
 
     const [rows] = await pool.query(
-      `SELECT Empl_ID, Surname, OtherName, Title, exittype
-       FROM hr_employees WHERE Empl_ID = ? LIMIT 1`,
-      [user_id],
+      `SELECT Empl_ID, email, exittype
+       FROM hr_employees WHERE Empl_ID = ? AND email = ? LIMIT 1`,
+      [user_id, email],
     );
 
-    if (!rows.length) return res.status(404).json({ error: "User not found" });
+    // No match, OR account deactivated — identical response either way.
+    if (!rows.length || (rows[0].exittype && rows[0].exittype.trim() !== "")) {
+      console.warn(`[forgot-password] no match or inactive: ${user_id}`);
+      return res.json(genericRes);
+    }
+
+    const emp = rows[0];
+
+    // Generate token + hash
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 min
+
+    // Persist — overwrites any prior pending token for this user
+    await pool.query(
+      `UPDATE hr_employees
+       SET reset_hash = ?, reset_expires_at = ?
+       WHERE Empl_ID = ?`,
+      [tokenHash, expiresAt, emp.Empl_ID],
+    );
+
+    // Build email
+    const RESET_URL = `${process.env.BASE_URL}/reset-password.html?token=${rawToken}`;
+
+    const templateHtml = fs.readFileSync(
+      path.join(__dirname, "../../templates/password-reset-link.html"),
+      "utf-8",
+    );
+
+    const html = applyReplacements(templateHtml, {
+      RESET_URL,
+    });
+
+    await EmailProvider.sendMessage({
+      to: emp.email,
+      subject: "Password Reset",
+      html,
+      text: "",
+      from: "NNCPO",
+    });
+
+    console.log(`✅ Password reset link sent for ${user_id}`);
+    return res.json(genericRes);
+  } catch (err) {
+    console.error("❌ Forgot reset-password error:", err);
+    return res.json(genericRes); // still generic — no distinguishable error path
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /auth/verify-reset-token?token=...
+// Called by the frontend reset page on load to check validity BEFORE
+// showing the new-password form.
+// ---------------------------------------------------------------------------
+router.get("/verify-reset-token", async (req, res) => {
+  const { token } = req.query;
+
+  if (!token) {
+    return res.status(400).json({ valid: false, reason: "missing" });
+  }
+
+  try {
+    pool.useDatabase(OFFICERS_DB());
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const [rows] = await pool.query(
+      `SELECT Empl_ID, reset_expires_at
+       FROM hr_employees WHERE reset_hash = ? LIMIT 1`,
+      [tokenHash],
+    );
+
+    if (!rows.length) {
+      return res.status(400).json({ valid: false, reason: "invalid" });
+    }
+
+    const emp = rows[0];
+
+    if (new Date(emp.reset_expires_at) < new Date()) {
+      return res.status(400).json({ valid: false, reason: "expired" });
+    }
+
+    return res.json({ valid: true });
+  } catch (err) {
+    console.error("❌ verify-reset-token error:", err);
+    return res.status(500).json({ valid: false, reason: "server_error" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /auth/forgot/reset-password
+// Replaces: POST /users/pre-login/reset-password
+// Resets in hr_employees, syncs to users if payroll user.
+// ─────────────────────────────────────────────────────────────
+router.post("/reset-password", async (req, res) => {
+  const { token, new_password } = req.body;
+
+  if (!token || !new_password) {
+    return res
+      .status(400)
+      .json({ error: "Token and new password are required" });
+  }
+
+  if (new_password.length < 6) {
+    return res
+      .status(400)
+      .json({ error: "Password must be at least 6 characters" });
+  }
+
+  try {
+    pool.useDatabase(OFFICERS_DB());
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const [rows] = await pool.query(
+      `SELECT Empl_ID, Surname, OtherName, Title, exittype, reset_expires_at
+       FROM hr_employees WHERE reset_hash = ? LIMIT 1`,
+      [tokenHash],
+    );
+
+    if (!rows.length) {
+      return res.status(400).json({ error: "invalid" });
+    }
 
     const emp = rows[0];
 
@@ -385,38 +516,27 @@ router.post("/reset-password", async (req, res) => {
         .json({ error: "Account deactivated. Contact administrator." });
     }
 
-    // Re-verify identity before reset
-    const storedName = [emp.Title, emp.Surname, emp.OtherName]
-      .filter(Boolean)
-      .map((s) => s.trim())
-      .join(" ")
-      .toLowerCase();
-    const inputName = full_name.trim().toLowerCase();
-    const nameOk =
-      storedName === inputName ||
-      `${emp.Surname} ${emp.OtherName}`.trim().toLowerCase() === inputName ||
-      emp.Surname?.trim().toLowerCase() === inputName;
-
-    if (!nameOk) {
-      return res.status(401).json({
-        error:
-          "Identity verification failed. Incorrect: Full Name. Please check and try again.",
-      });
+    if (new Date(emp.reset_expires_at) < new Date()) {
+      return res.status(400).json({ error: "expired" });
     }
 
-    // Reset in hr_employees — source of truth
+    // const bcrypt = require('bcrypt');
+    // const passwordHash = await bcrypt.hash(new_password, 12);
+
+    // Update password AND clear the reset token in the same statement —
+    // this makes the token single-use; it can't be replayed after success.
     await pool.query(
       `UPDATE hr_employees
-       SET password = ?, force_change = 1, password_changed_at = NOW()
+       SET password = ?, reset_hash = NULL, reset_expires_at = NULL, force_change = 1, password_changed_at = NOW()
        WHERE Empl_ID = ?`,
-      [new_password, user_id],
+      [/* passwordHash */ new_password, emp.Empl_ID],
     );
 
-    console.log(`✅ Password reset for ${user_id}`);
-    return res.json({ message: "✅ Password reset successfully", user_id });
+    console.log(`✅ Password reset completed for ${emp.Empl_ID}`);
+    return res.json({ message: "Password reset successful" });
   } catch (err) {
-    console.error("❌ Forgot reset-password error:", err);
-    return res.status(500).json({ error: "Server error" });
+    console.error("❌ reset-password error:", err);
+    return res.status(500).json({ error: "server_error" });
   }
 });
 

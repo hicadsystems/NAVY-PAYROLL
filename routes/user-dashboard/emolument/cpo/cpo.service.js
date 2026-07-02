@@ -217,7 +217,7 @@ async function confirmForm(formId, cpoCommand, performedBy, ip) {
 
 async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
   const { remarks } = body;
-  const { cpo_svcno } = performedBy;
+  const { cpo_svcno, cpo_name, cpo_rank } = performedBy;
 
   if (!remarks || !remarks.trim()) {
     return {
@@ -276,6 +276,15 @@ async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
     },
     performedBy: cpo_svcno,
     ipAddress: ip,
+  });
+
+  const message = `Your emolument form (ID: ${formId}) has been rejected by the Central Pay Officer (${cpo_rank} ${cpo_name}).\n\nRemarks: ${remarks.trim()}\n\nPlease re-fill and resubmit the form.`;
+  await sendMessage({
+    userId: cpo_svcno,
+    userFullname: cpo_name,
+    to_user_id: form.serviceNumber,
+    subject: "Form Rejected",
+    body: message,
   });
 
   return {

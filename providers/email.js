@@ -111,4 +111,4 @@ class EmailProvider {
   }
 }
 
-module.exports = EmailProvider;
+module.exports = new EmailProvider();

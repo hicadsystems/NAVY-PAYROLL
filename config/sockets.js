@@ -1,15 +1,12 @@
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
-const { randomUUID } = require("crypto");
 const cfg = require("../config");
-const WhatsAppProvider = require("../providers/whatsapp");
 
 class SocketService {
   // =========================
   // STATIC SHARED STATE
   // =========================
   static io = null;
-  static whatsappProvider = new WhatsAppProvider();
 
   static activeRooms = new Map(); // room -> { users, contact, messages }
   static userSockets = new Map(); // userId -> socketId
@@ -90,114 +87,13 @@ class SocketService {
   // EVENTS
   // =========================
   static registerEvents(socket) {
-    socket.on("join_room", (data) => this.joinRoom(socket, data));
-
-    socket.on("leave_room", (data) => this.leaveRoom(socket, data));
-
-    socket.on("whatsapp_send", (data) =>
-      this.sendWhatsappMessage(socket, data),
-    );
-
-    socket.on("typing", (data) => this.typing(socket, data));
-
-    socket.on("stop_typing", (data) => this.stopTyping(socket, data));
+    socket.on("mail:read", (data) => this.markMailRead(socket, data));
 
     socket.on("disconnect", (reason) => this.onDisconnect(socket, reason));
 
     socket.on("error", (error) => this.onError(socket, error));
-  }
 
-  // =========================
-  // ROOM LOGIC
-  // =========================
-  static joinRoom(socket, { room, contact }) {
-    socket.join(room);
-
-    if (!this.activeRooms.has(room)) {
-      this.activeRooms.set(room, {
-        users: new Set(),
-        contact,
-        messages: [],
-      });
-    }
-
-    const roomData = this.activeRooms.get(room);
-    roomData.users.add(socket.userId);
-
-    socket.emit("room_joined", {
-      room,
-      contact,
-      messageCount: roomData.messages.length,
-    });
-  }
-
-  static leaveRoom(socket, { room }) {
-    socket.leave(room);
-
-    const roomData = this.activeRooms.get(room);
-    if (!roomData) return;
-
-    roomData.users.delete(socket.userId);
-
-    if (roomData.users.size === 0) {
-      this.activeRooms.delete(room);
-    }
-  }
-
-  // =========================
-  // WHATSAPP
-  // =========================
-  static async sendWhatsappMessage(socket, data) {
-    const { room, message, phone, contact, timestamp } = data;
-
-    try {
-      if (!this.activeRooms.has(room)) return;
-
-      const messageData = {
-        message_id: randomUUID(),
-        sender_id: socket.userId,
-        sender_name: socket.user?.name || "User",
-        message,
-        timestamp: timestamp || new Date().toISOString(),
-        status: "sent",
-        type: "outgoing",
-      };
-
-      const roomData = this.activeRooms.get(room);
-      roomData.messages.push(messageData);
-
-      const response = await this.whatsappProvider.sendMessage({
-        to: phone,
-        message,
-        from: socket.userId,
-        contact,
-      });
-
-      messageData.status = "delivered";
-      messageData.whatsapp_message_id = response.messageId;
-
-      this.io.to(room).emit("message_status", {
-        message_id: messageData.message_id,
-        status: "delivered",
-        timestamp: new Date().toISOString(),
-      });
-    } catch (err) {
-      socket.emit("error", {
-        message: "Failed to send message",
-        error: err.message,
-      });
-    }
-  }
-
-  // =========================
-  // UX EVENTS
-  // =========================
-  static typing(socket, { room, sender }) {
-    socket.to(room).emit("typing", { room, sender });
-  }
-
-  static stopTyping(socket, { room, sender }) {
-    socket.to(room).emit("stop_typing", { room, sender });
+    
   }
 
   // =========================
@@ -219,16 +115,29 @@ class SocketService {
   }
 
   // =========================
-  // ✅ STATIC GET ACTIVE ROOMS
+  // EMIT TO A SPECIFIC USER
   // =========================
-  static getActiveRooms() {
-    return Array.from(this.activeRooms.entries()).map(([room, data]) => ({
-      room,
-      contact: data.contact,
-      usersCount: data.users.size,
-      messageCount: data.messages.length,
-    }));
+  static emitToUser(userId, event, payload) {
+    const socketId = this.userSockets.get(userId);
+    if (socketId) {
+      this.io.to(socketId).emit(event, payload);
+    }
   }
+
+
+  static newMail(userId, message) {
+    this.emitToUser(userId, "mail:new", message);
+}
+
+static updateBadge(userId, unread) {
+    this.emitToUser(userId, "mail:badge", {
+        unread
+    });
+}
+
+static approvalUpdated(userId, approval) {
+    this.emitToUser(userId, "approval:update", approval);
+}
 }
 
 module.exports = SocketService;

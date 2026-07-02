@@ -117,11 +117,24 @@
       </div>
     </div>
 
-    <!-- Grid: 2/3/5/6 columns at sm/md/lg/xl for ~50 compact cards per page -->
-    <div
-      id="grid"
-      class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2"
-    ></div>
+    <!-- Table: list of records with inline edit per row -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
+            <th class="text-left font-semibold px-3 py-2.5">Status</th>
+            <th class="text-left font-semibold px-3 py-2.5">Employee</th>
+            <th class="text-left font-semibold px-3 py-2.5">Type</th>
+            <th class="text-right font-semibold px-3 py-2.5">Amount Payable</th>
+            <th class="text-right font-semibold px-3 py-2.5">Amount To Date</th>
+            <th class="text-right font-semibold px-3 py-2.5">Months</th>
+            <th class="text-left font-semibold px-3 py-2.5">Indicator</th>
+            <th class="text-right font-semibold px-3 py-2.5">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody" class="divide-y divide-gray-100"></tbody>
+      </table>
+    </div>
 
     <!-- Pagination -->
     <div
@@ -159,130 +172,6 @@
   >
     <i class="fa-solid fa-lock-open text-3xl text-gray-300 mb-3"></i>
     <p>Lock Payments/Deductions to start validation.</p>
-  </div>
-</div>
-
-<!-- Review / Modify Modal -->
-<div
-  id="modal"
-  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
->
-  <div class="bg-white rounded-xl w-full max-w-2xl shadow-2xl">
-    <div
-      class="bg-navy px-6 py-4 rounded-t-xl flex justify-between items-center"
-    >
-      <h2 id="modalHeaderTitle" class="font-semibold text-lg text-white">
-        Review Payment/Deduction
-      </h2>
-      <button
-        id="closeBtn"
-        class="text-white hover:text-gray-200 text-2xl leading-none"
-      >
-        ×
-      </button>
-    </div>
-
-    <div class="p-6">
-      <div id="modalStatusBadge" class="mb-4"></div>
-
-      <div
-        id="viewOnlyNotice"
-        class="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-600 flex items-center gap-2 hidden"
-      >
-        <i class="fa-solid fa-eye text-gray-400"></i> This record has already
-        been verified and is view only.
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs text-gray-500 mb-1">Employee ID</label>
-          <input
-            id="emplId"
-            disabled
-            class="border p-2 rounded w-full bg-gray-100 text-gray-700"
-          />
-        </div>
-        <div>
-          <label class="block text-xs text-gray-500 mb-1">Type</label>
-          <input
-            id="payCode"
-            disabled
-            class="border p-2 rounded w-full bg-gray-100 text-gray-700"
-          />
-        </div>
-        <div>
-          <label class="block text-xs text-gray-500 mb-1">Amount Payable</label>
-          <input
-            id="amount"
-            type="number"
-            step="0.01"
-            class="border p-2 rounded w-full"
-          />
-        </div>
-        <div>
-          <label class="block text-xs text-gray-500 mb-1">Amount To Date</label>
-          <input
-            id="amttd"
-            type="number"
-            step="0.01"
-            class="border p-2 rounded w-full"
-          />
-        </div>
-        <div>
-          <label class="block text-xs text-gray-500 mb-1"
-            >Number of Months</label
-          >
-          <input id="months" type="number" class="border p-2 rounded w-full" />
-        </div>
-        <div>
-          <label class="block text-xs text-gray-500 mb-1">Pay Indicator</label>
-          <select id="indicator" class="border p-2 rounded w-full"></select>
-        </div>
-      </div>
-
-      <div
-        id="verifiedInfo"
-        class="mt-4 bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800 hidden"
-      >
-        Verified by <span id="verifiedByLabel" class="font-semibold"></span> on
-        <span id="verifiedAtLabel" class="font-semibold"></span>
-      </div>
-    </div>
-
-    <div class="flex justify-between gap-3 bg-gray-50 px-6 py-4 rounded-b-xl">
-      <button
-        id="deleteBtn"
-        class="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition flex items-center gap-2"
-      >
-        <i class="fa-solid fa-trash"></i> Delete
-      </button>
-      <div class="flex gap-3">
-        <button
-          id="editVerifiedBtn"
-          class="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2"
-        >
-          <i class="fa-solid fa-pen"></i> Edit
-        </button>
-        <button
-          id="closeSaveBtn"
-          class="px-5 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition"
-        >
-          Close
-        </button>
-        <button
-          id="saveModifyBtn"
-          class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-        >
-          Save Changes
-        </button>
-        <button
-          id="approveBtn"
-          class="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
-        >
-          <i class="fa-solid fa-check"></i> Verify
-        </button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -554,7 +443,7 @@
     const lockedArea = document.getElementById("lockedArea");
     const unlockMsg = document.getElementById("unlockMsg");
 
-    const grid = document.getElementById("grid");
+    const tableBody = document.getElementById("tableBody");
     const tabPendingBtn = document.getElementById("tab-pending");
     const tabVerifiedBtn = document.getElementById("tab-verified");
     const pendingCountEl = document.getElementById("pendingCount");
@@ -569,27 +458,6 @@
     const startRecordSpan = document.getElementById("startRecord");
     const endRecordSpan = document.getElementById("endRecord");
     const totalRecordsSpan = document.getElementById("totalRecords");
-
-    // Modal
-    const modal = document.getElementById("modal");
-    const modalHeaderTitle = document.getElementById("modalHeaderTitle");
-    const modalStatusBadge = document.getElementById("modalStatusBadge");
-    const viewOnlyNotice = document.getElementById("viewOnlyNotice");
-    const emplIdInput = document.getElementById("emplId");
-    const payCodeInput = document.getElementById("payCode");
-    const amountInput = document.getElementById("amount");
-    const amttdInput = document.getElementById("amttd");
-    const monthsInput = document.getElementById("months");
-    const indicatorSelect = document.getElementById("indicator");
-    const verifiedInfo = document.getElementById("verifiedInfo");
-    const verifiedByLabel = document.getElementById("verifiedByLabel");
-    const verifiedAtLabel = document.getElementById("verifiedAtLabel");
-    const closeBtn = document.getElementById("closeBtn");
-    const closeSaveBtn = document.getElementById("closeSaveBtn");
-    const saveModifyBtn = document.getElementById("saveModifyBtn");
-    const approveBtn = document.getElementById("approveBtn");
-    const deleteBtn = document.getElementById("deleteBtn");
-    const editVerifiedBtn = document.getElementById("editVerifiedBtn");
 
     // Confirm modals
     const confirmDeleteModal = document.getElementById("confirmDeleteModal");
@@ -640,7 +508,11 @@
     let searchQuery = "";
     let rows = [];
     let lookupMaps = {};
-    let activeRecord = null; // currently open in modal
+    let indicatorList = []; // raw pay-indicator options, for inline row selects
+    // The row currently being edited inline (only one at a time).
+    //   { emplId, type, unlockedVerified }  or  null
+    let editingRow = null;
+    let pendingEditRecord = null; // verified row awaiting modify confirmation
     let recordToDelete = null;
     let pendingModifyAction = null; // 'edit' | 'delete' | null -- gated verified-row action
     let searchDebounce = null;
@@ -720,12 +592,10 @@
           headers: { "Content-Type": "application/json" },
         });
         const list = await res.json();
+        indicatorList = list;
         lookupMaps.payindicator = Object.fromEntries(
           list.map((i) => [i.ind, i.inddesc]),
         );
-        indicatorSelect.innerHTML = list
-          .map((i) => `<option value="${i.ind}">${i.inddesc}</option>`)
-          .join("");
       } catch (err) {
         console.error("Failed to load pay indicators:", err);
       }
@@ -733,6 +603,18 @@
 
     function resolveIndicator(code) {
       return lookupMaps.payindicator?.[code] || code || "-";
+    }
+
+    // Build <option> markup for an inline indicator <select>, marking `selected`.
+    function indicatorOptionsHtml(selectedCode) {
+      return indicatorList
+        .map(
+          (i) =>
+            `<option value="${i.ind}" ${
+              String(i.ind) === String(selectedCode ?? "") ? "selected" : ""
+            }>${i.inddesc}</option>`,
+        )
+        .join("");
     }
 
     // ---- Stage handling ----
@@ -899,59 +781,133 @@
           totalRecords = rows.length;
           totalPages = 1;
         }
-        renderGrid();
+        renderTable();
         updatePaginationUI();
       } catch (err) {
         console.error("Error loading validation records:", err);
-        grid.innerHTML = `<div class="col-span-full text-center text-red-500 py-10">${err.message}</div>`;
+        tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-red-500 py-10">${err.message}</td></tr>`;
       }
     }
 
-    function renderGrid() {
-      grid.innerHTML = "";
+    function isEditing(r) {
+      return (
+        editingRow &&
+        editingRow.emplId === r.Empl_id &&
+        editingRow.type === r.type
+      );
+    }
+
+    function renderTable() {
+      tableBody.innerHTML = "";
 
       if (!rows.length) {
-        grid.innerHTML = `<div class="col-span-full text-center text-gray-400 py-10 text-sm">No ${currentTab} records found.</div>`;
+        tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-gray-400 py-10 text-sm">No ${currentTab} records found.</td></tr>`;
         return;
       }
+
+      // Editing / verifying only make sense while validation is active.
+      const validationActive = currentSat === 500 || currentSat === 600;
 
       rows.forEach((r) => {
         const isVerified = !!r.verifiedby;
         const displayName = r.full_name_short || r.full_name || "";
-        const card = document.createElement("div");
-        card.className =
-          "bg-white border rounded-lg p-3 shadow-sm hover:shadow-md cursor-pointer transition text-xs";
-        card.innerHTML = `
-          <div class="flex justify-between items-start mb-1.5">
-            <span class="text-[10px] leading-none ${isVerified ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"} px-1.5 py-0.5 rounded-full font-medium">
-              ${isVerified ? "Verified" : "Pending"}
-            </span>
-            <!--
-              Auto-verify quick action intentionally disabled per product
-              requirement -- verification must go through the review modal,
-              not a one-click icon on the card. Kept commented for reference.
-              <button class="quick-verify text-green-600 hover:text-green-700" title="Quick verify" data-emplid="${escapeQuotes(r.Empl_id)}" data-type="${escapeQuotes(r.type)}">
-                <i class="fa-solid fa-check-circle text-lg"></i>
-              </button>
-            -->
-          </div>
-          <p class="font-bold text-gray-800 truncate" title="${escapeQuotes(displayName)}">${r.Empl_id}${displayName ? " &middot; " + displayName : ""}</p>
-          <p class="text-blue-700 font-semibold mt-1">${r.type}</p>
-          <div class="mt-1.5 flex justify-between items-baseline">
-            <span class="text-gray-400">Payable</span>
-            <span class="font-semibold text-gray-700">${formatCurrency(r.amount_payable)}</span>
-          </div>
-          <div class="flex justify-between items-baseline">
-            <span class="text-gray-400">Indicator</span>
-            <span class="text-gray-600">${resolveIndicator(r.indicator)}</span>
-          </div>
-          ${isVerified ? `<div class="mt-1.5 pt-1.5 border-t text-[10px] text-gray-400 truncate" title="${escapeQuotes(r.verifiedby)} &middot; ${formatDate(r.dateverified)}">By ${r.verifiedby} &middot; ${formatDate(r.dateverified)}</div>` : ""}
-        `;
-        card.addEventListener("click", () => openModal(r));
-        grid.appendChild(card);
-      });
+        const editing = isEditing(r);
 
-      // Quick-verify icon is disabled (see comment above) -- no listener wired.
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-gray-50 align-middle";
+
+        const badge = `<span class="text-[11px] ${
+          isVerified
+            ? "bg-green-100 text-green-800"
+            : "bg-yellow-100 text-yellow-800"
+        } px-2 py-0.5 rounded-full font-medium whitespace-nowrap">${
+          isVerified ? "Verified" : "Pending"
+        }</span>`;
+
+        const employeeCell = `<div class="font-semibold text-gray-800">${r.Empl_id}</div>${
+          displayName
+            ? `<div class="text-gray-400 text-xs truncate max-w-[180px]" title="${escapeQuotes(
+                displayName,
+              )}">${displayName}</div>`
+            : ""
+        }${
+          isVerified
+            ? `<div class="text-[10px] text-gray-400 mt-0.5 truncate max-w-[180px]" title="${escapeQuotes(
+                r.verifiedby,
+              )} &middot; ${formatDate(
+                r.dateverified,
+              )}">By ${r.verifiedby} &middot; ${formatDate(r.dateverified)}</div>`
+            : ""
+        }`;
+
+        let amountCell, amttdCell, monthsCell, indicatorCell, actionsCell;
+
+        if (editing) {
+          amountCell = `<input type="number" step="0.01" data-field="amount" value="${
+            r.amount_payable ?? 0
+          }" class="border border-gray-300 focus:border-blue-500 rounded px-2 py-1 w-28 text-right" />`;
+          amttdCell = `<input type="number" step="0.01" data-field="amttd" value="${
+            r.amount_to_date ?? 0
+          }" class="border border-gray-300 focus:border-blue-500 rounded px-2 py-1 w-28 text-right" />`;
+          monthsCell = `<input type="number" data-field="months" value="${
+            r.months_remaining ?? 0
+          }" class="border border-gray-300 focus:border-blue-500 rounded px-2 py-1 w-20 text-right" />`;
+          indicatorCell = `<select data-field="indicator" class="border border-gray-300 focus:border-blue-500 rounded px-2 py-1">${indicatorOptionsHtml(
+            r.indicator,
+          )}</select>`;
+
+          // Verify only makes sense for a still-pending record.
+          const verifyBtnEdit = isVerified
+            ? ""
+            : `<button data-action="verify" class="px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition text-xs flex items-center gap-1"><i class="fa-solid fa-check"></i> Verify</button>`;
+          actionsCell = `<div class="flex justify-end gap-2">
+              <button data-action="cancel" class="px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-100 transition text-xs">Cancel</button>
+              <button data-action="save" class="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-xs flex items-center gap-1"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+              ${verifyBtnEdit}
+            </div>`;
+        } else {
+          amountCell = `<span class="font-semibold text-gray-700">${formatCurrency(
+            r.amount_payable,
+          )}</span>`;
+          amttdCell = formatCurrency(r.amount_to_date);
+          monthsCell = r.months_remaining ?? 0;
+          indicatorCell = `<span class="text-gray-600">${resolveIndicator(
+            r.indicator,
+          )}</span>`;
+
+          if (validationActive) {
+            const verifyBtn = isVerified
+              ? ""
+              : `<button data-action="verify" class="px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition text-xs flex items-center gap-1"><i class="fa-solid fa-check"></i> Verify</button>`;
+            actionsCell = `<div class="flex justify-end gap-2">
+                <button data-action="edit" class="px-3 py-1.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition text-xs flex items-center gap-1"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button data-action="delete" class="px-3 py-1.5 text-red-600 border border-red-200 rounded-md hover:bg-red-50 transition text-xs flex items-center gap-1"><i class="fa-solid fa-trash"></i> Delete</button>
+                ${verifyBtn}
+              </div>`;
+          } else {
+            actionsCell = `<span class="text-gray-300 text-xs">&mdash;</span>`;
+          }
+        }
+
+        tr.innerHTML = `
+          <td class="px-3 py-2.5">${badge}</td>
+          <td class="px-3 py-2.5">${employeeCell}</td>
+          <td class="px-3 py-2.5 text-blue-700 font-semibold whitespace-nowrap">${r.type}</td>
+          <td class="px-3 py-2.5 text-right">${amountCell}</td>
+          <td class="px-3 py-2.5 text-right">${amttdCell}</td>
+          <td class="px-3 py-2.5 text-right">${monthsCell}</td>
+          <td class="px-3 py-2.5">${indicatorCell}</td>
+          <td class="px-3 py-2.5">${actionsCell}</td>
+        `;
+
+        tr.querySelectorAll("[data-action]").forEach((btn) => {
+          btn.addEventListener("click", () =>
+            handleRowAction(btn.dataset.action, r, tr),
+          );
+        });
+
+        tableBody.appendChild(tr);
+      });
     }
 
     function updatePaginationUI() {
@@ -967,116 +923,72 @@
       nextPageBtn.disabled = currentPage >= totalPages;
     }
 
-    // ---- Modal: open / save / verify / delete ----
-    // When a verified record is opened, fields start locked (view only).
-    // editingUnlockedForVerified becomes true only after the user confirms
-    // "are you sure you want to modify this verified record?" -- at that
-    // point fields become editable again for this one modal session.
-    let editingUnlockedForVerified = false;
-
-    function buildModalHeader(record) {
-      const name = record.full_name_short || record.full_name || "";
-      const who = name ? `${record.Empl_id} - ${name}` : record.Empl_id;
-      return `Review Payments and Deduction for ${who}`;
-    }
-
-    function openModal(record) {
-      activeRecord = record;
-      editingUnlockedForVerified = false;
-      const isVerified = !!record.verifiedby;
-
-      modalHeaderTitle.textContent = buildModalHeader(record);
-
-      emplIdInput.value = record.Empl_id;
-      payCodeInput.value = record.type;
-      amountInput.value = record.amount_payable ?? 0;
-      amttdInput.value = record.amount_to_date ?? 0;
-      monthsInput.value = record.months_remaining ?? 0;
-      indicatorSelect.value = record.indicator ?? "";
-
-      modalStatusBadge.innerHTML = `<span class="text-xs ${isVerified ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"} px-3 py-1 rounded-full font-medium">${isVerified ? "Verified" : "Pending"}</span>`;
-
-      if (isVerified) {
-        verifiedInfo.classList.remove("hidden");
-        verifiedByLabel.textContent = record.verifiedby;
-        verifiedAtLabel.textContent = formatDate(record.dateverified);
-      } else {
-        verifiedInfo.classList.add("hidden");
+    // ---- Inline row actions: edit / save / verify / delete ----
+    // A pending record can be edited inline directly. A verified record must
+    // first pass the "are you sure you want to modify this verified record?"
+    // confirmation before its row switches into edit mode (or is deleted).
+    function handleRowAction(action, record, tr) {
+      if (action === "edit") return startEdit(record);
+      if (action === "cancel") return cancelEdit();
+      if (action === "save") return saveRow(record, tr);
+      if (action === "delete") return requestDelete(record);
+      if (action === "verify") {
+        editingRow = null;
+        verifyRecord(record.Empl_id, record.type);
       }
-
-      refreshModalEditState();
-      showModal(modal);
     }
 
-    // Decides whether fields/buttons are editable for the record currently
-    // open in the modal, based on sat, verification status, and whether the
-    // user has explicitly unlocked a verified record for this session.
-    function refreshModalEditState() {
-      if (!activeRecord) return;
-      const isVerified = !!activeRecord.verifiedby;
-      const validationActive = currentSat === 500 || currentSat === 600;
-
-      // A verified record is view only until explicitly unlocked for editing;
-      // an unverified (pending) record is editable whenever validation is active.
-      const canEdit =
-        validationActive && (!isVerified || editingUnlockedForVerified);
-
-      [amountInput, amttdInput, monthsInput, indicatorSelect].forEach(
-        (el) => (el.disabled = !canEdit),
-      );
-
-      viewOnlyNotice.classList.toggle(
-        "hidden",
-        !(isVerified && !editingUnlockedForVerified),
-      );
-
-      saveModifyBtn.classList.toggle("hidden", !canEdit);
-      deleteBtn.classList.toggle("hidden", !validationActive);
-      // "Edit" affordance for verified rows that are still locked
-      editVerifiedBtn.classList.toggle(
-        "hidden",
-        !(validationActive && isVerified && !editingUnlockedForVerified),
-      );
-      // Verify button only for pending rows while validation is active
-      approveBtn.classList.toggle("hidden", !validationActive || isVerified);
+    function startEdit(record) {
+      const isVerified = !!record.verifiedby;
+      if (isVerified) {
+        // Gate editing of a verified record behind confirmation.
+        pendingModifyAction = "edit";
+        pendingEditRecord = record;
+        const name = record.full_name_short || record.full_name || "";
+        const who = name ? `${record.Empl_id} - ${name}` : record.Empl_id;
+        confirmModifyVerifiedText.textContent = `Are you sure you want to modify verified records of ${who}?`;
+        showModal(confirmModifyVerifiedModal);
+        return;
+      }
+      editingRow = {
+        emplId: record.Empl_id,
+        type: record.type,
+        unlockedVerified: false,
+      };
+      renderTable();
     }
 
-    function closeModalFn() {
-      hideModal(modal);
-      activeRecord = null;
-      editingUnlockedForVerified = false;
+    function cancelEdit() {
+      editingRow = null;
+      renderTable();
     }
 
-    function dirtyFields() {
-      if (!activeRecord) return {};
+    // Compares the row's inline input values against the original record and
+    // returns only the changed fields, keyed the way the API expects.
+    function dirtyFieldsFromRow(record, tr) {
       const out = {};
-      if (
-        Number(amountInput.value) !== Number(activeRecord.amount_payable ?? 0)
-      )
-        out.amtp = Number(amountInput.value);
-      if (Number(amttdInput.value) !== Number(activeRecord.amount_to_date ?? 0))
-        out.amttd = Number(amttdInput.value);
-      if (
-        Number(monthsInput.value) !== Number(activeRecord.months_remaining ?? 0)
-      )
-        out.nomth = Number(monthsInput.value);
-      if (indicatorSelect.value !== (activeRecord.indicator ?? ""))
-        out.payind = indicatorSelect.value;
+      const amount = Number(tr.querySelector('[data-field="amount"]').value);
+      const amttd = Number(tr.querySelector('[data-field="amttd"]').value);
+      const months = Number(tr.querySelector('[data-field="months"]').value);
+      const indicator = tr.querySelector('[data-field="indicator"]').value;
+      if (amount !== Number(record.amount_payable ?? 0)) out.amtp = amount;
+      if (amttd !== Number(record.amount_to_date ?? 0)) out.amttd = amttd;
+      if (months !== Number(record.months_remaining ?? 0)) out.nomth = months;
+      if (indicator !== (record.indicator ?? "")) out.payind = indicator;
       return out;
     }
 
-    async function saveModifiedRecord() {
-      if (!activeRecord) return;
-      const changes = dirtyFields();
+    async function saveRow(record, tr) {
+      const changes = dirtyFieldsFromRow(record, tr);
       if (Object.keys(changes).length === 0) {
-        closeModalFn();
+        cancelEdit();
         return;
       }
 
       try {
         showStatus("Saving changes...", "loading");
         const result = await apiCall(
-          `/${encodeURIComponent(activeRecord.Empl_id)}/${encodeURIComponent(activeRecord.type)}`,
+          `/${encodeURIComponent(record.Empl_id)}/${encodeURIComponent(record.type)}`,
           {
             method: "PUT",
             body: JSON.stringify(changes),
@@ -1089,12 +1001,28 @@
             : "Changes saved",
           "success",
         );
-        closeModalFn();
+        editingRow = null;
         await Promise.all([loadStats(), loadRecords()]);
       } catch (err) {
         hideStatus();
         showStatus(err.message || "Failed to save changes", "error");
       }
+    }
+
+    function requestDelete(record) {
+      const isVerified = !!record.verifiedby;
+      if (isVerified) {
+        // Deleting a verified record passes through the same confirm gate.
+        pendingModifyAction = "delete";
+        recordToDelete = { emplId: record.Empl_id, type: record.type };
+        const name = record.full_name_short || record.full_name || "";
+        const who = name ? `${record.Empl_id} - ${name}` : record.Empl_id;
+        confirmModifyVerifiedText.textContent = `Are you sure you want to modify verified records of ${who}?`;
+        showModal(confirmModifyVerifiedModal);
+        return;
+      }
+      recordToDelete = { emplId: record.Empl_id, type: record.type };
+      showModal(confirmDeleteModal);
     }
 
     async function verifyRecord(emplId, type) {
@@ -1273,70 +1201,31 @@
       }
     });
 
-    closeBtn.addEventListener("click", closeModalFn);
-    closeSaveBtn.addEventListener("click", closeModalFn);
-    saveModifyBtn.addEventListener("click", saveModifiedRecord);
-    approveBtn.addEventListener("click", () => {
-      if (!activeRecord) return;
-      verifyRecord(activeRecord.Empl_id, activeRecord.type);
-      closeModalFn();
-    });
-
-    // "Edit" on an already-verified record -- requires explicit confirmation
-    // before fields unlock. Reuses the same gate as deleting a verified record.
-    editVerifiedBtn.addEventListener("click", () => {
-      if (!activeRecord) return;
-      pendingModifyAction = "edit";
-      const name = activeRecord.full_name_short || activeRecord.full_name || "";
-      const who = name
-        ? `${activeRecord.Empl_id} - ${name}`
-        : activeRecord.Empl_id;
-      confirmModifyVerifiedText.textContent = `Are you sure you want to modify verified records of ${who}?`;
-      showModal(confirmModifyVerifiedModal);
-    });
-
-    deleteBtn.addEventListener("click", () => {
-      if (!activeRecord) return;
-      const isVerified = !!activeRecord.verifiedby;
-
-      if (isVerified && !editingUnlockedForVerified) {
-        // Verified + still locked -> gate through the same confirm dialog first
-        pendingModifyAction = "delete";
-        const name =
-          activeRecord.full_name_short || activeRecord.full_name || "";
-        const who = name
-          ? `${activeRecord.Empl_id} - ${name}`
-          : activeRecord.Empl_id;
-        confirmModifyVerifiedText.textContent = `Are you sure you want to modify verified records of ${who}?`;
-        showModal(confirmModifyVerifiedModal);
-        return;
-      }
-
-      recordToDelete = {
-        emplId: activeRecord.Empl_id,
-        type: activeRecord.type,
-      };
-      showModal(confirmDeleteModal);
-    });
+    // Row-level actions (edit / save / cancel / verify / delete) are wired up
+    // per row inside renderTable() via handleRowAction().
 
     cancelModifyVerifiedBtn.addEventListener("click", () => {
       hideModal(confirmModifyVerifiedModal);
       pendingModifyAction = null;
+      pendingEditRecord = null;
+      recordToDelete = null;
     });
     confirmModifyVerifiedBtn.addEventListener("click", () => {
       hideModal(confirmModifyVerifiedModal);
-      editingUnlockedForVerified = true;
-      refreshModalEditState();
 
-      if (pendingModifyAction === "delete" && activeRecord) {
-        recordToDelete = {
-          emplId: activeRecord.Empl_id,
-          type: activeRecord.type,
-        };
+      if (pendingModifyAction === "delete") {
+        // recordToDelete was already stashed when the gate was opened.
         showModal(confirmDeleteModal);
+      } else if (pendingModifyAction === "edit" && pendingEditRecord) {
+        // Unlock this verified row for inline editing.
+        editingRow = {
+          emplId: pendingEditRecord.Empl_id,
+          type: pendingEditRecord.type,
+          unlockedVerified: true,
+        };
+        pendingEditRecord = null;
+        renderTable();
       }
-      // For "edit", refreshModalEditState() above already unlocked the fields --
-      // nothing further to do until the user clicks Save Changes.
       pendingModifyAction = null;
     });
 
@@ -1350,12 +1239,11 @@
         deleteRecord(recordToDelete.emplId, recordToDelete.type);
         recordToDelete = null;
       }
-      closeModalFn();
+      editingRow = null;
     });
 
     // Close modals on backdrop click
     [
-      modal,
       confirmDeleteModal,
       confirmModifyVerifiedModal,
       confirmLockModal,

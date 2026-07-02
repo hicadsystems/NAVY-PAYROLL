@@ -51,6 +51,37 @@ async function getBt05(connection = pool) {
 }
 
 // ===================================================================
+// reconcileSat — single source of truth for the invariant:
+//   "while locked for validation (sat = 500), if there are no pending
+//    rows left to verify, validation is complete -> advance sat to 600."
+//
+// This is the ONE place that rule is enforced. Any code path that can empty
+// the pending queue (verify-one, verify-all, delete) or that just observes
+// the stage (the /stage poll, list, stats) should route through here instead
+// of re-implementing the 500->600 bump, so the state self-heals no matter how
+// the last pending row disappeared.
+//
+// Only ever touches sat when it is exactly 500: 0 (data entry open), 600
+// (already complete) and 700 (saved) are left untouched. Returns the BT05 row
+// with sat reflecting any advance that was just applied.
+// ===================================================================
+async function reconcileSat(connection = pool) {
+  const bt05 = await getBt05(connection);
+  if (!bt05 || bt05.sat !== 500) return bt05;
+
+  const [[pendingCount]] = await connection.query(
+    "SELECT COUNT(*) AS pending FROM py_payded WHERE verifiedby IS NULL",
+  );
+  if (pendingCount.pending === 0) {
+    await connection.query("UPDATE py_stdrate SET sat = 600 WHERE type = ?", [
+      BT05_TYPE,
+    ]);
+    bt05.sat = 600;
+  }
+  return bt05;
+}
+
+// ===================================================================
 // GET CURRENT VALIDATION STAGE
 // Frontend polls/loads this to decide what to render. Per spec: nothing
 // renders on the validation screen unless sat is 500, 600, or 700.
@@ -60,7 +91,9 @@ async function getBt05(connection = pool) {
 // ===================================================================
 router.get("/stage", verifyToken, async (req, res) => {
   try {
-    const bt05 = await getBt05();
+    // Self-heal on every poll: if locked with nothing left to verify,
+    // this advances sat 500 -> 600 before we report the stage.
+    const bt05 = await reconcileSat();
 
     if (!bt05) {
       return res.status(404).json({
@@ -216,7 +249,7 @@ router.post("/unlock", verifyToken, async (req, res) => {
 // ===================================================================
 router.get("/", verifyToken, async (req, res) => {
   try {
-    const bt05 = await getBt05();
+    const bt05 = await reconcileSat();
 
     if (!bt05 || ![500, 600, 700].includes(bt05.sat)) {
       return res.json({
@@ -325,7 +358,7 @@ router.get("/", verifyToken, async (req, res) => {
 // ===================================================================
 router.get("/stats", verifyToken, async (req, res) => {
   try {
-    const bt05 = await getBt05();
+    const bt05 = await reconcileSat();
 
     if (!bt05 || ![500, 600, 700].includes(bt05.sat)) {
       return res.json({
@@ -635,10 +668,18 @@ router.post("/verify-all", verifyToken, async (req, res) => {
 // "are you sure you want to modify this verified record?" confirmation
 // on the frontend before this endpoint is called. No "delete all"
 // endpoint exists, per spec.
+//
+// Deleting a row can empty the pending queue (e.g. every newly-added,
+// still-pending row gets deleted). When that happens while sat = 500 there
+// is nothing left to verify, so -- mirroring verify-one / verify-all / lock
+// -- advance sat 500 -> 600 instead of stranding the user on a validation
+// screen with an empty Pending tab and an unusable "Verify All" button.
 // ===================================================================
 router.delete("/:emplId/:type", verifyToken, async (req, res) => {
+  const connection = await pool.getConnection();
+  let transactionStarted = false;
   try {
-    const bt05 = await getBt05();
+    const bt05 = await getBt05(connection);
     if (!bt05 || ![500, 600].includes(bt05.sat)) {
       return res.status(409).json({
         success: false,
@@ -651,31 +692,54 @@ router.delete("/:emplId/:type", verifyToken, async (req, res) => {
     const { emplId, type } = req.params;
     const decodedType = decodeURIComponent(type);
 
-    const [result] = await pool.query(
+    await connection.beginTransaction();
+    transactionStarted = true;
+
+    const [result] = await connection.query(
       "DELETE FROM py_payded WHERE Empl_id = ? AND type = ?",
       [emplId, decodedType],
     );
 
     if (result.affectedRows === 0) {
+      await connection.rollback();
+      transactionStarted = false;
       return res.status(404).json({
         success: false,
         message: "Deduction not found",
       });
     }
 
+    // Deleting this row may have cleared the last pending record. Route through
+    // the shared invariant: if sat = 500 and nothing is pending, advance to 600.
+    const reconciled = await reconcileSat(connection);
+    const satAdvanced = bt05.sat === 500 && reconciled.sat === 600;
+
+    await connection.commit();
+    transactionStarted = false;
+
     res.json({
       success: true,
-      message: "Record deleted successfully",
+      message: satAdvanced
+        ? "Record deleted. No pending records remain -- validation complete."
+        : "Record deleted successfully",
       affectedRows: result.affectedRows,
+      sat: satAdvanced ? 600 : bt05.sat,
+      allVerified: satAdvanced,
     });
   } catch (error) {
+    if (transactionStarted) {
+      await connection.rollback();
+    }
     console.error("Error deleting payded row during validation:", error);
     res.status(500).json({
       success: false,
       message: "Error deleting record",
       error: error.message,
     });
+  } finally {
+    connection.release();
   }
 });
 
 module.exports = router;
+

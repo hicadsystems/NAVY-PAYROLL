@@ -5,19 +5,18 @@
 // ── Clear payroll class on dashboard load ──────────────────
 localStorage.removeItem("current_class");
 
+// // ══════════════════════════════════════════════════════════
+// // SOCKET.IO CONNECTION
+// // ══════════════════════════════════════════════════════════
+// const socket = initSocket();
 
-// ══════════════════════════════════════════════════════════
-// SOCKET.IO CONNECTION
-// ══════════════════════════════════════════════════════════
-const socket = initSocket();
+// socket.on("mail:new", (mail) => {
+//     // prepend new mail
+// });
 
-socket.on("mail:new", (mail) => {
-    // prepend new mail
-});
-
-socket.on("mail:badge", ({ unread }) => {
-    updateGlobalBadge(unread);
-});
+// socket.on("mail:badge", ({ unread }) => {
+//     updateGlobalBadge(unread);
+// });
 
 // ── Read capabilities from localStorage ───────────────────
 // Populated during pre-login by unified-login.js
@@ -286,10 +285,10 @@ function updateHeaderEmolMode(pageId) {
   }
 
   // Also hide any quick-action payroll buttons on the home page
- // Hide all payroll UI elements if user lacks permission
+  // Hide all payroll UI elements if user lacks permission
   if (!_canPayroll) {
     const payrollElements = document.querySelectorAll('[data-page="payroll"]');
-    payrollElements.forEach(el => el.style.display = "none");
+    payrollElements.forEach((el) => (el.style.display = "none"));
   }
 })();
 
@@ -367,7 +366,7 @@ function loadEmolumentPage() {
       loadShipDashboardOverlay(
         _savedShip,
         sessionStorage.getItem("active_ship_role") || "DO",
-        sessionStorage.getItem("active_ship_scope") || "SHIP"
+        sessionStorage.getItem("active_ship_scope") || "SHIP",
       );
     }
   });

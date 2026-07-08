@@ -103,7 +103,13 @@
     sessionStorage.setItem("active_ship_role", role);
     sessionStorage.setItem("emolument_form_svcno", svcno);
     window.location.href =
-      "../../pages/emolument-form.html?svcno=" + encodeURIComponent(svcno);
+      "../../pages/emolument-form.html?svcno=" +
+      encodeURIComponent(svcno) +
+      "&role=" +
+      encodeURIComponent(role) +
+      "&admin=1" +
+      "&ship=" +
+      encodeURIComponent(ship);
   }
 
   function foToggleAll(cb) {
@@ -114,7 +120,7 @@
 
   function executeFoBulk() {
     const selected = [...document.querySelectorAll(".fo-bulk-chk:checked")]
-      .map((c) => foBulkForms[+c.dataset.idx]?.formId)
+      .map((c) => foBulkForms[+c.dataset.idx]?.form_id)
       .filter(Boolean);
     const msg = document.getElementById("foBulkMsg");
     if (!selected.length) {

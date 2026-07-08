@@ -91,24 +91,23 @@ class SocketService {
   // CONNECTION HANDLER
   // =========================
   static handleConnections() {
-    this.io.on("connection", (socket) => {
-      // setupAuth now rejects tokenless connections before they reach
-      // here, but guard anyway in case auth logic changes later.
-      if (!socket.userId) {
-        socket.disconnect(true);
-        return;
-      }
+  this.io.on("connection", async (socket) => {
+    this.userSockets.set(socket.userId, socket.id);
 
-      this.userSockets.set(socket.userId, socket.id);
+    socket.emit("connected", { message: "Connected to support chat", userId: socket.userId });
 
-      socket.emit("connected", {
-        message: "Connected to support chat",
-        userId: socket.userId,
-      });
+    // sync badge immediately on (re)connect
+    try {
+      const unread = await require("../routes/user-dashboard/email/email.repository").getUnreadCount(socket.userId);
+      socket.emit("mail:badge", { unread });
+    } catch (e) {
+      console.error("Failed to send initial badge:", e.message);
+    }
 
-      this.registerEvents(socket);
-    });
-  }
+    this.registerEvents(socket);
+  });
+}
+
 
   // =========================
   // EVENTS

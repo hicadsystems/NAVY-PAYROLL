@@ -60,11 +60,13 @@
     white-space: nowrap;
     flex-shrink: 0;
   }
+
   .email-compose-btn:hover {
     background: #ffd95a;
     transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba(245, 200, 66, 0.3);
   }
+
   .email-compose-btn svg {
     width: 16px;
     height: 16px;
@@ -81,6 +83,7 @@
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
+
   .email-tabs::-webkit-scrollbar {
     display: none;
   }
@@ -102,9 +105,11 @@
     white-space: nowrap;
     flex-shrink: 0;
   }
+
   .email-tab:hover {
     color: rgba(200, 220, 255, 0.85);
   }
+
   .email-tab.active {
     color: #f5c842;
     border-bottom-color: #f5c842;
@@ -121,6 +126,7 @@
     text-align: center;
     display: none;
   }
+
   .email-badge.visible {
     display: inline-block;
   }
@@ -135,12 +141,15 @@
     min-height: 0;
     position: relative;
   }
+
   .email-list::-webkit-scrollbar {
     width: 4px;
   }
+
   .email-list::-webkit-scrollbar-track {
     background: transparent;
   }
+
   .email-list::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
@@ -159,14 +168,17 @@
     border: 1px solid transparent;
     flex-shrink: 0;
   }
+
   .email-row:hover {
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.07);
   }
+
   .email-row.unread {
     background: rgba(245, 200, 66, 0.05);
     border-color: rgba(245, 200, 66, 0.1);
   }
+
   .email-row.unread:hover {
     background: rgba(245, 200, 66, 0.09);
   }
@@ -178,6 +190,7 @@
     background: transparent;
     flex-shrink: 0;
   }
+
   .email-row.unread .email-dot {
     background: #f5c842;
     box-shadow: 0 0 6px rgba(245, 200, 66, 0.6);
@@ -191,6 +204,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
   .email-row.unread .email-sender {
     font-weight: 700;
     color: #fff;
@@ -202,6 +216,7 @@
     gap: 2px;
     min-width: 0;
   }
+
   .email-subject {
     font-size: 14px;
     font-weight: 500;
@@ -210,10 +225,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
   .email-row.unread .email-subject {
     font-weight: 700;
     color: #e8f0fe;
   }
+
   .email-body-preview {
     font-size: 12px;
     color: rgba(200, 220, 255, 0.35);
@@ -229,6 +246,7 @@
     color: rgba(200, 220, 255, 0.3);
     flex-shrink: 0;
   }
+
   .email-row-clip svg {
     width: 13px;
     height: 13px;
@@ -240,6 +258,7 @@
     text-align: right;
     white-space: nowrap;
   }
+
   .email-row.unread .email-time {
     color: #f5c842;
     font-weight: 600;
@@ -253,6 +272,7 @@
     margin-left: 4px;
     flex-shrink: 0;
   }
+
   .email-tick svg {
     width: 11px;
     height: 11px;
@@ -281,14 +301,17 @@
     opacity: 0;
     pointer-events: none;
   }
+
   .email-row:hover .email-dots-btn {
     opacity: 1;
     pointer-events: all;
   }
+
   .email-dots-btn:hover {
     background: rgba(255, 255, 255, 0.08);
     color: #fff;
   }
+
   .email-dots-btn svg {
     width: 16px;
     height: 16px;
@@ -307,6 +330,7 @@
     padding: 2px 7px;
     white-space: nowrap;
   }
+
   .email-rcpt-badge svg {
     width: 10px;
     height: 10px;
@@ -331,6 +355,7 @@
     transition: opacity 0.2s ease;
     padding: 16px;
   }
+
   .compose-picker-overlay.open {
     opacity: 1;
     pointer-events: all;
@@ -348,6 +373,7 @@
     transition: transform 0.22s ease;
     text-align: center;
   }
+
   .compose-picker-overlay.open .compose-picker-box {
     transform: translateY(0) scale(1);
   }
@@ -359,11 +385,13 @@
     color: #fff;
     margin-bottom: 6px;
   }
+
   .compose-picker-sub {
     font-size: 13px;
     color: rgba(200, 220, 255, 0.4);
     margin-bottom: 32px;
   }
+
   .compose-picker-cards {
     display: flex;
     gap: 14px;
@@ -383,11 +411,13 @@
     gap: 12px;
     min-width: 0;
   }
+
   .compose-picker-card:hover {
     background: rgba(245, 200, 66, 0.08);
     border-color: rgba(245, 200, 66, 0.35);
     transform: translateY(-2px);
   }
+
   .compose-picker-card-icon {
     width: 52px;
     height: 52px;
@@ -399,21 +429,25 @@
     justify-content: center;
     flex-shrink: 0;
   }
+
   .compose-picker-card-icon svg {
     width: 24px;
     height: 24px;
     stroke: #f5c842;
   }
+
   .compose-picker-card-label {
     font-size: 14px;
     font-weight: 700;
     color: #e8f0fe;
   }
+
   .compose-picker-card-desc {
     font-size: 11px;
     color: rgba(200, 220, 255, 0.35);
     line-height: 1.5;
   }
+
   .compose-picker-close {
     margin-top: 24px;
     background: none;
@@ -425,6 +459,7 @@
     transition: color 0.15s;
     padding: 8px 16px;
   }
+
   .compose-picker-close:hover {
     color: rgba(200, 220, 255, 0.6);
   }
@@ -443,16 +478,19 @@
     font-family: "DM Sans", sans-serif;
     animation: popIn 0.15s ease;
   }
+
   @keyframes popIn {
     from {
       opacity: 0;
       transform: scale(0.94) translateY(-4px);
     }
+
     to {
       opacity: 1;
       transform: scale(1) translateY(0);
     }
   }
+
   .tick-popover-title {
     font-size: 11px;
     font-weight: 700;
@@ -461,43 +499,52 @@
     letter-spacing: 0.1em;
     margin-bottom: 12px;
   }
+
   .tick-popover-row {
     display: flex;
     align-items: center;
     gap: 10px;
     margin-bottom: 10px;
   }
+
   .tick-popover-row:last-child {
     margin-bottom: 0;
   }
+
   .tick-popover-icon {
     flex-shrink: 0;
     display: flex;
     align-items: center;
     width: 28px;
   }
+
   .tick-popover-label {
     font-size: 12px;
     color: rgba(200, 220, 255, 0.45);
     width: 64px;
     flex-shrink: 0;
   }
+
   .tick-popover-val {
     font-size: 12px;
     color: #e8f0fe;
   }
+
   .tick-tier {
     margin-bottom: 12px;
   }
+
   .tick-tier:last-child {
     margin-bottom: 0;
   }
+
   .tick-tier-header {
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 6px;
   }
+
   .tick-tier-label {
     font-size: 11px;
     font-weight: 700;
@@ -505,16 +552,19 @@
     text-transform: uppercase;
     letter-spacing: 0.07em;
   }
+
   .tick-tier-count {
     font-size: 10px;
     color: rgba(200, 220, 255, 0.25);
   }
+
   .tick-tier-names {
     display: flex;
     flex-direction: column;
     gap: 3px;
     padding-left: 30px;
   }
+
   .tick-tier-person {
     font-size: 12px;
     color: rgba(200, 220, 255, 0.65);
@@ -526,15 +576,18 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
   .tick-tier-person:hover {
     background: rgba(255, 255, 255, 0.06);
     color: #e8f0fe;
   }
+
   .tick-tier-divider {
     height: 1px;
     background: rgba(255, 255, 255, 0.06);
     margin: 10px 0;
   }
+
   .tick-person-tooltip {
     position: fixed;
     z-index: 9999;
@@ -550,11 +603,13 @@
     pointer-events: none;
     animation: tipIn 0.1s ease;
   }
+
   @keyframes tipIn {
     from {
       opacity: 0;
       transform: translateY(2px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -575,6 +630,7 @@
     width: 100%;
     text-align: center;
   }
+
   .email-empty-icon {
     width: 60px;
     height: 60px;
@@ -586,18 +642,21 @@
     justify-content: center;
     margin-bottom: 6px;
   }
+
   .email-empty-icon svg {
     width: 26px;
     height: 26px;
     opacity: 0.35;
     stroke: rgba(200, 220, 255, 0.6);
   }
+
   .email-empty-title {
     font-size: 15px;
     font-weight: 500;
     color: rgba(200, 220, 255, 0.35);
     margin: 0;
   }
+
   .email-empty-sub {
     font-size: 12px;
     color: rgba(200, 220, 255, 0.18);
@@ -610,6 +669,7 @@
     align-items: center;
     justify-content: center;
   }
+
   .email-spinner {
     width: 32px;
     height: 32px;
@@ -618,6 +678,7 @@
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
+
   @keyframes spin {
     to {
       transform: rotate(360deg);
@@ -632,6 +693,7 @@
     padding: 12px 0;
     flex-shrink: 0;
   }
+
   .email-page-btn {
     padding: 8px 18px;
     background: rgba(255, 255, 255, 0.06);
@@ -643,14 +705,17 @@
     transition: all 0.2s;
     font-family: "DM Sans", sans-serif;
   }
+
   .email-page-btn:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.11);
     color: #fff;
   }
+
   .email-page-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
   }
+
   .email-page-info {
     font-size: 13px;
     color: rgba(200, 220, 255, 0.4);
@@ -675,6 +740,7 @@
     padding: 24px 16px;
     box-sizing: border-box;
   }
+
   .email-modal-overlay.open {
     opacity: 1;
     pointer-events: all;
@@ -694,6 +760,7 @@
     transition: transform 0.25s ease;
     overflow: hidden;
   }
+
   .email-modal-overlay.open .email-modal-box {
     transform: translateY(0);
   }
@@ -707,6 +774,7 @@
     flex-shrink: 0;
     gap: 12px;
   }
+
   .email-modal-title {
     font-family: "Cormorant Garamond", Georgia, serif;
     font-size: 24px;
@@ -715,6 +783,7 @@
     flex: 1;
     min-width: 0;
   }
+
   .email-modal-close {
     background: none;
     border: none;
@@ -724,9 +793,11 @@
     transition: color 0.2s;
     flex-shrink: 0;
   }
+
   .email-modal-close:hover {
     color: #fff;
   }
+
   .email-modal-close svg {
     width: 20px;
     height: 20px;
@@ -738,12 +809,15 @@
     padding: 24px 36px;
     min-height: 0;
   }
+
   .email-modal-body::-webkit-scrollbar {
     width: 4px;
   }
+
   .email-modal-body::-webkit-scrollbar-track {
     background: transparent;
   }
+
   .email-modal-body::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
@@ -760,6 +834,7 @@
   .email-field {
     margin-bottom: 16px;
   }
+
   .email-field label {
     display: block;
     font-size: 12px;
@@ -769,6 +844,7 @@
     letter-spacing: 0.08em;
     margin-bottom: 8px;
   }
+
   .email-field input,
   .email-field textarea {
     width: 100%;
@@ -785,14 +861,17 @@
     /* Prevent zoom on iOS */
     -webkit-text-size-adjust: 100%;
   }
+
   .email-field input:focus,
   .email-field textarea:focus {
     border-color: rgba(245, 200, 66, 0.5);
   }
+
   .email-field textarea {
     resize: vertical;
     min-height: 120px;
   }
+
   .email-field input::placeholder,
   .email-field textarea::placeholder {
     color: rgba(200, 220, 255, 0.2);
@@ -802,6 +881,7 @@
   .email-recipient-wrap {
     position: relative;
   }
+
   .email-recipient-results {
     position: absolute;
     top: calc(100% + 4px);
@@ -816,9 +896,11 @@
     display: none;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
   }
+
   .email-recipient-results.open {
     display: block;
   }
+
   .email-recipient-option {
     padding: 11px 16px;
     cursor: pointer;
@@ -827,14 +909,17 @@
     flex-direction: column;
     gap: 2px;
   }
+
   .email-recipient-option:hover {
     background: rgba(245, 200, 66, 0.08);
   }
+
   .email-recipient-name {
     font-size: 14px;
     color: #e8f0fe;
     font-weight: 500;
   }
+
   .email-recipient-email {
     font-size: 11px;
     color: rgba(200, 220, 255, 0.35);
@@ -850,6 +935,7 @@
     border-radius: 6px;
     margin-bottom: 8px;
   }
+
   .email-selected-recipient span {
     font-size: 13px;
     color: #f5c842;
@@ -860,6 +946,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
   .email-selected-recipient button {
     background: none;
     border: none;
@@ -871,6 +958,7 @@
     transition: color 0.2s;
     flex-shrink: 0;
   }
+
   .email-selected-recipient button:hover {
     color: #f5c842;
   }
@@ -879,7 +967,8 @@
   .email-recipients-field {
     margin-bottom: 16px;
   }
-  .email-recipients-field > label {
+
+  .email-recipients-field>label {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -890,13 +979,15 @@
     letter-spacing: 0.08em;
     margin-bottom: 8px;
   }
-  .email-recipients-field > label span {
+
+  .email-recipients-field>label span {
     font-size: 11px;
     font-weight: 400;
     color: rgba(200, 220, 255, 0.25);
     text-transform: none;
     letter-spacing: 0;
   }
+
   .email-recipient-box {
     min-height: 46px;
     padding: 6px 10px;
@@ -912,6 +1003,7 @@
     box-sizing: border-box;
     position: relative;
   }
+
   .email-recipient-box:focus-within {
     border-color: rgba(245, 200, 66, 0.5);
   }
@@ -931,21 +1023,25 @@
     max-width: 180px;
     animation: chipIn 0.15s ease;
   }
+
   @keyframes chipIn {
     from {
       opacity: 0;
       transform: scale(0.85);
     }
+
     to {
       opacity: 1;
       transform: scale(1);
     }
   }
+
   .rcpt-chip-name {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
   .rcpt-chip-remove {
     background: none;
     border: none;
@@ -959,9 +1055,11 @@
     transition: color 0.15s;
     flex-shrink: 0;
   }
+
   .rcpt-chip-remove:hover {
     color: #f5c842;
   }
+
   .rcpt-search-input {
     flex: 1;
     min-width: 120px;
@@ -974,14 +1072,17 @@
     padding: 4px 4px;
     -webkit-text-size-adjust: 100%;
   }
+
   .rcpt-search-input::placeholder {
     color: rgba(200, 220, 255, 0.2);
   }
+
   .rcpt-hint {
     font-size: 11px;
     color: rgba(200, 220, 255, 0.25);
     margin-top: 5px;
   }
+
   .rcpt-hint.warn {
     color: #f5c842;
   }
@@ -990,6 +1091,7 @@
   .email-attach-area {
     margin-bottom: 16px;
   }
+
   .email-attach-label {
     font-size: 12px;
     font-weight: 600;
@@ -999,6 +1101,7 @@
     margin-bottom: 8px;
     display: block;
   }
+
   .email-attach-btn {
     display: inline-flex;
     align-items: center;
@@ -1013,26 +1116,31 @@
     cursor: pointer;
     transition: all 0.2s;
   }
+
   .email-attach-btn:hover {
     background: rgba(245, 200, 66, 0.06);
     border-color: rgba(245, 200, 66, 0.3);
     color: #f5c842;
   }
+
   .email-attach-btn svg {
     width: 14px;
     height: 14px;
   }
+
   .email-attach-btn.disabled {
     opacity: 0.35;
     cursor: not-allowed;
     pointer-events: none;
   }
+
   .email-attach-list {
     display: flex;
     flex-direction: column;
     gap: 6px;
     margin-top: 10px;
   }
+
   .email-attach-item {
     display: flex;
     align-items: center;
@@ -1042,6 +1150,7 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
   }
+
   .email-attach-item-icon {
     width: 30px;
     height: 30px;
@@ -1052,15 +1161,18 @@
     justify-content: center;
     flex-shrink: 0;
   }
+
   .email-attach-item-icon svg {
     width: 15px;
     height: 15px;
     stroke: #f5c842;
   }
+
   .email-attach-item-info {
     flex: 1;
     min-width: 0;
   }
+
   .email-attach-item-name {
     font-size: 13px;
     color: #e8f0fe;
@@ -1068,10 +1180,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
   .email-attach-item-size {
     font-size: 11px;
     color: rgba(200, 220, 255, 0.35);
   }
+
   .email-attach-progress {
     height: 3px;
     background: rgba(255, 255, 255, 0.08);
@@ -1079,6 +1193,7 @@
     margin-top: 4px;
     overflow: hidden;
   }
+
   .email-attach-progress-bar {
     height: 100%;
     background: #f5c842;
@@ -1086,6 +1201,7 @@
     width: 0%;
     transition: width 0.2s;
   }
+
   .email-attach-item-remove {
     background: none;
     border: none;
@@ -1095,13 +1211,16 @@
     transition: color 0.2s;
     flex-shrink: 0;
   }
+
   .email-attach-item-remove:hover {
     color: #ff6060;
   }
+
   .email-attach-item-remove svg {
     width: 15px;
     height: 15px;
   }
+
   .email-attach-error {
     font-size: 12px;
     color: #ff8080;
@@ -1127,11 +1246,13 @@
     gap: 8px;
     -webkit-tap-highlight-color: transparent;
   }
+
   .email-send-btn:hover:not(:disabled) {
     background: #ffd95a;
     transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba(245, 200, 66, 0.3);
   }
+
   .email-send-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -1142,6 +1263,7 @@
   .email-read-box {
     max-width: 620px;
   }
+
   .email-read-meta {
     display: flex;
     flex-direction: column;
@@ -1151,16 +1273,19 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);
     margin-bottom: 20px;
   }
+
   .email-read-meta-row {
     display: flex;
     gap: 12px;
     font-size: 13px;
   }
+
   .email-read-meta-label {
     color: rgba(200, 220, 255, 0.4);
     width: 50px;
     flex-shrink: 0;
   }
+
   .email-read-meta-val {
     color: #e8f0fe;
     flex: 1;
@@ -1175,6 +1300,7 @@
     gap: 12px;
     margin-bottom: 16px;
   }
+
   .email-read-subject {
     font-family: "Cormorant Garamond", Georgia, serif;
     font-size: 22px;
@@ -1184,6 +1310,7 @@
     flex: 1;
     margin-bottom: 0;
   }
+
   .email-read-status-bar {
     display: none;
     align-items: center;
@@ -1191,9 +1318,11 @@
     flex-shrink: 0;
     padding-top: 6px;
   }
+
   .email-read-status-bar.visible {
     display: flex;
   }
+
   .email-read-status-label {
     font-family: "DM Sans", sans-serif;
     font-size: 11px;
@@ -1203,9 +1332,11 @@
     color: rgba(180, 200, 230, 0.65);
     transition: color 0.3s;
   }
+
   .email-read-status-label.read {
     color: #f5c842;
   }
+
   .email-read-body {
     font-size: 14px;
     color: rgba(200, 220, 255, 0.75);
@@ -1216,6 +1347,7 @@
   .email-read-attachments {
     margin-top: 20px;
   }
+
   .email-read-attach-label {
     font-size: 11px;
     font-weight: 700;
@@ -1224,11 +1356,13 @@
     letter-spacing: 0.1em;
     margin-bottom: 10px;
   }
+
   .email-read-attach-list {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
   }
+
   .email-read-attach-chip {
     display: inline-flex;
     align-items: center;
@@ -1245,16 +1379,19 @@
     color: inherit;
     -webkit-tap-highlight-color: transparent;
   }
+
   .email-read-attach-chip:hover {
     background: rgba(245, 200, 66, 0.08);
     border-color: rgba(245, 200, 66, 0.25);
   }
+
   .email-read-attach-chip svg {
     width: 15px;
     height: 15px;
     stroke: #f5c842;
     flex-shrink: 0;
   }
+
   .email-read-attach-chip-name {
     font-size: 13px;
     color: #e8f0fe;
@@ -1262,11 +1399,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
   .email-read-attach-chip-size {
     font-size: 11px;
     color: rgba(200, 220, 255, 0.35);
     flex-shrink: 0;
   }
+
   .email-read-attach-action {
     font-size: 10px;
     font-weight: 700;
@@ -1275,10 +1414,12 @@
     color: rgba(200, 220, 255, 0.3);
     flex-shrink: 0;
   }
+
   .email-read-attach-chip.already-downloaded {
     border-color: rgba(245, 200, 66, 0.2);
     background: rgba(245, 200, 66, 0.04);
   }
+
   .email-read-attach-downloaded {
     font-size: 10px;
     font-weight: 700;
@@ -1294,6 +1435,7 @@
     margin-top: 0;
     flex-wrap: wrap;
   }
+
   .email-read-delete {
     padding: 10px 20px;
     background: rgba(255, 80, 80, 0.1);
@@ -1305,10 +1447,12 @@
     cursor: pointer;
     transition: all 0.2s;
   }
+
   .email-read-delete:hover {
     background: rgba(255, 80, 80, 0.2);
     color: #ff8080;
   }
+
   .email-read-reply {
     padding: 10px 20px;
     background: rgba(245, 200, 66, 0.1);
@@ -1320,35 +1464,44 @@
     cursor: pointer;
     transition: all 0.2s;
   }
+
   .email-read-reply:hover {
     background: rgba(245, 200, 66, 0.18);
   }
 
   /* ── Nav vibrate ──────────────────────────────────────── */
   @keyframes navVibrate {
+
     0%,
     100% {
       transform: translateX(0) rotate(0deg);
     }
+
     15% {
       transform: translateX(-3px) rotate(-5deg);
     }
+
     30% {
       transform: translateX(3px) rotate(5deg);
     }
+
     45% {
       transform: translateX(-2px) rotate(-3deg);
     }
+
     60% {
       transform: translateX(2px) rotate(3deg);
     }
+
     75% {
       transform: translateX(-1px) rotate(-1deg);
     }
+
     90% {
       transform: translateX(1px) rotate(1deg);
     }
   }
+
   .nav-vibrate {
     animation: navVibrate 0.65s ease-in-out;
     display: inline-block;
@@ -1363,16 +1516,20 @@
     .email-wrap {
       width: 100%;
       padding: 20px 20px;
-      height: calc(100vh - 60px); /* account for shorter mobile header */
+      height: calc(100vh - 60px);
+      /* account for shorter mobile header */
       gap: 14px;
     }
+
     .email-title {
       font-size: 28px;
     }
+
     .email-modal-overlay {
       top: 60px;
       max-height: calc(100vh - 60px);
     }
+
     .compose-picker-overlay {
       top: 60px;
     }
@@ -1384,6 +1541,7 @@
       padding: 16px 14px;
       gap: 12px;
     }
+
     .email-title {
       font-size: 24px;
     }
@@ -1392,6 +1550,7 @@
     .email-compose-btn-text {
       display: none;
     }
+
     .email-compose-btn {
       padding: 10px 14px;
       border-radius: 10px;
@@ -1443,13 +1602,15 @@
     .email-subject {
       font-size: 13px;
       width: 100%;
-      max-width: calc(100% - 20px); /* leave space for unread dot */
+      max-width: calc(100% - 20px);
+      /* leave space for unread dot */
     }
 
     /* Hide body preview and clip icon on mobile */
     .email-body-preview {
       display: none;
     }
+
     .email-row-clip {
       display: none;
     }
@@ -1460,6 +1621,7 @@
       bottom: 10px;
       right: 12px;
     }
+
     /* Always show dots btn on mobile (no hover) */
     .email-dots-btn {
       opacity: 1;
@@ -1476,15 +1638,19 @@
     .email-modal-header {
       padding: 18px 20px 14px;
     }
+
     .email-modal-title {
       font-size: 20px;
     }
+
     .email-modal-body {
       padding: 16px 20px;
     }
+
     .email-modal-footer {
       padding: 12px 20px 20px;
     }
+
     .email-modal-box {
       border-radius: 14px;
       max-height: calc(100vh - 60px - 32px);
@@ -1495,35 +1661,45 @@
       padding: 28px 20px;
       border-radius: 16px;
     }
+
     .compose-picker-title {
       font-size: 22px;
     }
+
     .compose-picker-cards {
       gap: 10px;
     }
+
     .compose-picker-card {
       padding: 18px 10px;
       gap: 8px;
     }
+
     .compose-picker-card-icon {
       width: 42px;
       height: 42px;
     }
+
     .compose-picker-card-icon svg {
       width: 20px;
       height: 20px;
     }
+
     .compose-picker-card-desc {
       display: none;
-    } /* save space */
+    }
+
+    /* save space */
 
     /* Read modal subject */
     .email-read-subject {
       font-size: 18px;
     }
+
     .email-read-body {
       font-size: 13px;
     }
+
     .email-read-meta-row {
       font-size: 12px;
     }
@@ -1532,6 +1708,7 @@
     .email-read-actions {
       flex-direction: column;
     }
+
     .email-read-reply,
     .email-read-delete {
       width: 100%;
@@ -1556,15 +1733,19 @@
     .email-wrap {
       padding: 12px 12px;
     }
+
     .email-title {
       font-size: 22px;
     }
+
     .email-modal-header {
       padding: 16px 16px 12px;
     }
+
     .email-modal-body {
       padding: 14px 16px;
     }
+
     .email-modal-footer {
       padding: 10px 16px 18px;
     }
@@ -1576,31 +1757,40 @@
       padding: 10px 10px;
       gap: 10px;
     }
+
     .email-title {
       font-size: 20px;
     }
+
     .email-compose-btn {
       padding: 9px 12px;
     }
+
     .email-sender {
       font-size: 13px;
     }
+
     .email-subject {
       font-size: 12px;
     }
+
     .email-modal-header {
       padding: 14px 14px 10px;
     }
+
     .email-modal-body {
       padding: 12px 14px;
     }
+
     .email-modal-footer {
       padding: 10px 14px 16px;
     }
+
     .email-send-btn {
       font-size: 14px;
       padding: 12px;
     }
+
     .email-field input,
     .email-field textarea {
       padding: 10px 12px;
@@ -1612,9 +1802,11 @@
   body.bottom-tab-mode .email-wrap {
     height: calc(100vh - 60px - 60px - env(safe-area-inset-bottom, 0px));
   }
+
   body.bottom-tab-mode .email-modal-overlay {
     bottom: calc(60px + env(safe-area-inset-bottom, 0px));
   }
+
   body.bottom-tab-mode .compose-picker-overlay {
     bottom: calc(60px + env(safe-area-inset-bottom, 0px));
   }
@@ -1626,23 +1818,14 @@
     <h1 class="email-title">Mail<span>box</span></h1>
     <button class="email-compose-btn" onclick="openComposePicker()">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 4v16m8-8H4"
-        />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
       <span class="email-compose-btn-text">Compose</span>
     </button>
   </div>
 
   <div class="email-tabs">
-    <button
-      class="email-tab active"
-      id="tab-inbox"
-      onclick="switchTab('inbox')"
-    >
+    <button class="email-tab active" id="tab-inbox" onclick="switchTab('inbox')">
       Inbox <span class="email-badge" id="inbox-badge">0</span>
     </button>
     <button class="email-tab" id="tab-sent" onclick="switchTab('sent')">
@@ -1651,16 +1834,13 @@
   </div>
 
   <div class="email-list" id="email-list">
-    <div class="email-loading"><div class="email-spinner"></div></div>
+    <div class="email-loading">
+      <div class="email-spinner"></div>
+    </div>
   </div>
 
   <div class="email-pagination" id="email-pagination" style="display: none">
-    <button
-      class="email-page-btn"
-      id="email-prev"
-      onclick="changePage(-1)"
-      disabled
-    >
+    <button class="email-page-btn" id="email-prev" onclick="changePage(-1)" disabled>
       ← Prev
     </button>
     <span class="email-page-info" id="email-page-info">Page 1</span>
@@ -1679,12 +1859,8 @@
       <div class="compose-picker-card" onclick="openComposeModal('single')">
         <div class="compose-picker-card-icon">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.8"
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-            />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
         </div>
         <div class="compose-picker-card-label">Single</div>
@@ -1693,12 +1869,8 @@
       <div class="compose-picker-card" onclick="openComposeModal('multi')">
         <div class="compose-picker-card-icon">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.8"
-              d="M17 20h5v-2a4 4 0 00-5.356-3.779M9 20H4v-2a4 4 0 015.356-3.779M15 7a4 4 0 11-8 0 4 4 0 018 0zm6 3a3 3 0 11-6 0 3 3 0 016 0z"
-            />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+              d="M17 20h5v-2a4 4 0 00-5.356-3.779M9 20H4v-2a4 4 0 015.356-3.779M15 7a4 4 0 11-8 0 4 4 0 018 0zm6 3a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </div>
         <div class="compose-picker-card-label">Multiple</div>
@@ -1718,40 +1890,23 @@
       <h2 class="email-modal-title" id="compose-modal-title">New Message</h2>
       <button class="email-modal-close" onclick="closeComposeModal()">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
-          />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
     </div>
     <div class="email-modal-body">
       <!-- SINGLE recipient -->
       <div id="compose-single-to">
-        <div
-          class="email-selected-recipient"
-          id="selected-recipient-tag"
-          style="display: none"
-        >
+        <div class="email-selected-recipient" id="selected-recipient-tag" style="display: none">
           <span id="selected-recipient-label"></span>
           <button onclick="clearRecipient()">×</button>
         </div>
         <div class="email-field" id="recipient-search-field">
           <label>To</label>
           <div class="email-recipient-wrap">
-            <input
-              type="text"
-              id="recipient-search-single"
-              placeholder="Search by name or email…"
-              autocomplete="off"
-              oninput="searchRecipientsSingle(this.value)"
-            />
-            <div
-              class="email-recipient-results"
-              id="recipient-results-single"
-            ></div>
+            <input type="text" id="recipient-search-single" placeholder="Search by name or email…" autocomplete="off"
+              oninput="searchRecipientsSingle(this.value)" />
+            <div class="email-recipient-results" id="recipient-results-single"></div>
           </div>
         </div>
       </div>
@@ -1760,24 +1915,11 @@
       <div id="compose-multi-to" style="display: none">
         <div class="email-recipients-field">
           <label>To <span id="rcpt-count-hint"></span></label>
-          <div
-            class="email-recipient-box"
-            id="recipient-box"
-            onclick="focusRcptInput()"
-          >
-            <input
-              type="text"
-              class="rcpt-search-input"
-              id="recipient-search-multi"
-              placeholder="Search by name or email…"
-              autocomplete="off"
-              oninput="searchRecipientsMulti(this.value)"
-              onkeydown="handleRcptKeydown(event)"
-            />
-            <div
-              class="email-recipient-results"
-              id="recipient-results-multi"
-            ></div>
+          <div class="email-recipient-box" id="recipient-box" onclick="focusRcptInput()">
+            <input type="text" class="rcpt-search-input" id="recipient-search-multi"
+              placeholder="Search by name or email…" autocomplete="off" oninput="searchRecipientsMulti(this.value)"
+              onkeydown="handleRcptKeydown(event)" />
+            <div class="email-recipient-results" id="recipient-results-multi"></div>
           </div>
           <div class="rcpt-hint" id="rcpt-hint">Up to 20 recipients</div>
         </div>
@@ -1789,44 +1931,22 @@
       </div>
       <div class="email-field">
         <label>Message</label>
-        <textarea
-          id="compose-body"
-          placeholder="Write your message here..."
-        ></textarea>
+        <textarea id="compose-body" placeholder="Write your message here..."></textarea>
       </div>
       <div class="email-attach-area">
-        <span class="email-attach-label"
-          >Attachments
-          <span
-            id="attach-count-label"
-            style="
+        <span class="email-attach-label">Attachments
+          <span id="attach-count-label" style="
               color: rgba(200, 220, 255, 0.3);
               font-weight: 400;
               text-transform: none;
               letter-spacing: 0;
-            "
-            >(0 / 3 · max 5 MB each)</span
-          ></span
-        >
-        <input
-          type="file"
-          id="attach-file-input"
-          style="display: none"
-          accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx"
-          onchange="handleFileSelected(this)"
-        />
-        <button
-          class="email-attach-btn"
-          id="attach-btn"
-          onclick="document.getElementById('attach-file-input').click()"
-        >
+            ">(0 / 3 · max 5 MB each)</span></span>
+        <input type="file" id="attach-file-input" style="display: none"
+          accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx" onchange="handleFileSelected(this)" />
+        <button class="email-attach-btn" id="attach-btn" onclick="document.getElementById('attach-file-input').click()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.586-6.586a4 4 0 00-5.656-5.656L5.757 10.757a6 6 0 008.486 8.486L20 13"
-            />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.586-6.586a4 4 0 00-5.656-5.656L5.757 10.757a6 6 0 008.486 8.486L20 13" />
           </svg>
           Attach file
         </button>
@@ -1836,19 +1956,8 @@
     </div>
     <div class="email-modal-footer">
       <button class="email-send-btn" id="send-btn" onclick="sendMessage()">
-        <svg
-          width="16"
-          height="16"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-          />
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
         </svg>
         Send Message
       </button>
@@ -1863,12 +1972,7 @@
       <h2 class="email-modal-title" id="read-tab-label">Message</h2>
       <button class="email-modal-close" onclick="closeReadModal()">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
-          />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
     </div>
@@ -1876,45 +1980,26 @@
       <div class="email-read-subject-wrap">
         <h3 class="email-read-subject" id="read-subject"></h3>
         <div class="email-read-status-bar" id="read-status-bar">
-          <svg
-            id="read-status-svg"
-            width="20"
-            height="12"
-            viewBox="0 0 16 12"
-            fill="none"
-            stroke="rgba(180,200,230,0.65)"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
+          <svg id="read-status-svg" width="20" height="12" viewBox="0 0 16 12" fill="none"
+            stroke="rgba(180,200,230,0.65)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="1,6 4,9 10,3" />
             <polyline points="5,6 8,9 14,3" />
           </svg>
-          <span class="email-read-status-label" id="read-status-label"
-            >Sent</span
-          >
+          <span class="email-read-status-label" id="read-status-label">Sent</span>
         </div>
       </div>
       <div class="email-read-meta">
         <div class="email-read-meta-row">
-          <span class="email-read-meta-label">From</span
-          ><span class="email-read-meta-val" id="read-from"></span>
+          <span class="email-read-meta-label">From</span><span class="email-read-meta-val" id="read-from"></span>
         </div>
         <div class="email-read-meta-row" id="read-email-row">
-          <span class="email-read-meta-label">Email</span
-          ><span class="email-read-meta-val" id="read-email">—</span>
+          <span class="email-read-meta-label">Email</span><span class="email-read-meta-val" id="read-email">—</span>
         </div>
-        <div
-          class="email-read-meta-row"
-          id="read-recipients-row"
-          style="display: none"
-        >
-          <span class="email-read-meta-label">To</span
-          ><span class="email-read-meta-val" id="read-recipients"></span>
+        <div class="email-read-meta-row" id="read-recipients-row" style="display: none">
+          <span class="email-read-meta-label">To</span><span class="email-read-meta-val" id="read-recipients"></span>
         </div>
         <div class="email-read-meta-row">
-          <span class="email-read-meta-label">Date</span
-          ><span class="email-read-meta-val" id="read-date"></span>
+          <span class="email-read-meta-label">Date</span><span class="email-read-meta-val" id="read-date"></span>
         </div>
       </div>
       <div class="email-read-body" id="read-body"></div>
@@ -1922,11 +2007,7 @@
     </div>
     <div class="email-modal-footer">
       <div class="email-read-actions">
-        <button
-          class="email-read-reply"
-          id="read-reply-btn"
-          onclick="replyToMessage()"
-        >
+        <button class="email-read-reply" id="read-reply-btn" onclick="replyToMessage()">
           ↩ Reply
         </button>
         <button class="email-read-delete" onclick="deleteMessage()">
@@ -1944,41 +2025,26 @@
       <h2 class="email-modal-title">Delete Message</h2>
       <button class="email-modal-close" onclick="closeDeleteOptionsModal()">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
-          />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
     </div>
     <div class="email-modal-body">
-      <p
-        style="
+      <p style="
           font-family: &quot;DM Sans&quot;, sans-serif;
           font-size: 14px;
           color: rgba(200, 220, 255, 0.75);
           line-height: 1.6;
-        "
-      >
+        ">
         How would you like to delete this message?
       </p>
     </div>
     <div class="email-modal-footer">
       <div style="display: flex; gap: 12px; flex-wrap: wrap">
-        <button
-          class="email-send-btn"
-          style="background: #f39c12; flex: 1; min-width: 120px"
-          onclick="deleteModeMe()"
-        >
+        <button class="email-send-btn" style="background: #f39c12; flex: 1; min-width: 120px" onclick="deleteModeMe()">
           Delete for me
         </button>
-        <button
-          class="email-send-btn"
-          style="background: #e74c3c; flex: 1; min-width: 120px"
-          onclick="deleteForAll()"
-        >
+        <button class="email-send-btn" style="background: #e74c3c; flex: 1; min-width: 120px" onclick="deleteForAll()">
           Delete for all
         </button>
       </div>
@@ -2140,7 +2206,34 @@
     document.addEventListener("globalNewMail", function () {
       if (currentTab === "inbox") loadMessages();
     });
+    document.addEventListener("globalNewMail", function (e) {
+      if (currentTab !== "inbox") return;
+      var mail = e.detail;
+      if (!mail || currentPage !== 1) {
+        loadMessages(); // not on page 1 or no payload — safe fallback
+        return;
+      }
+      prependInboxMessage(mail);
+    });
 
+    function prependInboxMessage(msg) {
+      var list = document.getElementById("email-list");
+      var rowsWrap = list.querySelector(".email-rows");
+
+      // list was showing the empty state — just do a full reload
+      if (!rowsWrap) {
+        loadMessages();
+        return;
+      }
+
+      var mobile = isMobile();
+      var html = buildRowHTML(msg, "inbox", true, mobile);
+      rowsWrap.insertAdjacentHTML("afterbegin", html);
+
+      // trim to PAGE_LIMIT so the list doesn't grow unbounded on page 1
+      var rows = rowsWrap.querySelectorAll(".email-row");
+      if (rows.length > PAGE_LIMIT) rows[rows.length - 1].remove();
+    }
     function emptyHTML(p, t, s) {
       return (
         '<div class="email-empty"><div class="email-empty-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="' +
@@ -2184,167 +2277,94 @@
       var list = document.getElementById("email-list");
       var mobile = isMobile();
       if (!msgs.length) {
-        var t =
-          currentTab === "inbox" ? "Your inbox is empty" : "No sent messages";
-        var s =
-          currentTab === "inbox"
-            ? "New messages will appear here"
-            : "Messages you send will show up here";
+        var t = currentTab === "inbox" ? "Your inbox is empty" : "No sent messages";
+        var s = currentTab === "inbox" ? "New messages will appear here" : "Messages you send will show up here";
         list.innerHTML = emptyHTML(
           "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
-          t,
-          s,
+          t, s
         );
         return;
       }
       var html = '<div class="email-rows">';
       msgs.forEach(function (msg) {
         var isUnread = currentTab === "inbox" && !msg.is_read;
-        var rcptCount = Number(msg.recipient_count) || 1;
-        var nameRaw =
-          currentTab === "inbox" ? msg.from_name : msg.to_name || "Unknown";
-        var dispName = nameRaw;
-        if (currentTab === "sent" && rcptCount > 1) {
-          dispName = nameRaw.split(",")[0].trim() + " +" + (rcptCount - 1);
-        }
-        var clip = msg.has_attachments
-          ? '<div class="email-row-clip"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.586-6.586a4 4 0 00-5.656-5.656L5.757 10.757a6 6 0 008.486 8.486L20 13"/></svg></div>'
-          : "<div></div>";
-        var metaCol;
-        if (currentTab === "sent") {
-          var status = tickStatusFromMsg(msg);
-          var rcptBadge =
-            rcptCount > 1
-              ? '<span class="email-rcpt-badge" title="' +
-                rcptCount +
-                ' recipients"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-5.356-3.779M9 20H4v-2a4 4 0 015.356-3.779M15 7a4 4 0 11-8 0 4 4 0 018 0zm6 3a3 3 0 11-6 0 3 3 0 016 0z"/></svg>' +
-                rcptCount +
-                "</span>"
-              : "";
-          metaCol =
-            '<div class="email-row-meta"><div class="email-time">' +
-            rcptBadge +
-            formatTime(msg.sent_at) +
-            tickSvg(status) +
-            "</div>" +
-            '<button class="email-dots-btn" onclick="event.stopPropagation();showTickPopover(event,' +
-            msg.id +
-            ')" title="Message info">' +
-            '<svg fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button></div>';
-        } else {
-          metaCol =
-            '<div class="email-row-meta"><div class="email-time">' +
-            formatTime(msg.sent_at) +
-            "</div></div>";
-        }
-        var extraAttrs = "";
-        if (currentTab === "sent" && rcptCount > 1) {
-          var rcc = Number(msg.read_count) || 0;
-          var dcc = Number(msg.delivered_count) || 0;
-          if (rcc > 0 && rcc === rcptCount) extraAttrs += ' data-allread="1"';
-          if (dcc > 0 && dcc === rcptCount)
-            extraAttrs += ' data-alldelivered="1"';
-          extraAttrs +=
-            ' data-readcount="' + rcc + '" data-delivcount="' + dcc + '"';
-        }
-        var preview = msg.body ? msg.body.substring(0, 80) : "";
-
-        if (mobile) {
-          /* ── Mobile card layout ──────────────────────── */
-          var timeTick =
-            currentTab === "sent"
-              ? formatTime(msg.sent_at) + tickSvg(tickStatusFromMsg(msg))
-              : formatTime(msg.sent_at);
-          var dotsBtn =
-            currentTab === "sent"
-              ? '<button class="email-dots-btn" onclick="event.stopPropagation();showTickPopover(event,' +
-                msg.id +
-                ')" title="Info">' +
-                '<svg fill="currentColor" viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>'
-              : "";
-          html +=
-            '<div class="email-row' +
-            (isUnread ? " unread" : "") +
-            '" ' +
-            'data-sent="' +
-            msg.sent_at +
-            '" data-delivered="' +
-            (msg.delivered_at || "") +
-            '" data-read="' +
-            (msg.read_at || "") +
-            '" ' +
-            'data-msgid="' +
-            msg.id +
-            '" data-rcptcount="' +
-            rcptCount +
-            '"' +
-            extraAttrs +
-            " " +
-            'onclick="openMessage(' +
-            msg.id +
-            ", '" +
-            currentTab +
-            "')\">" +
-            '<div class="email-dot"></div>' +
-            '<div class="email-row-top">' +
-            '<div class="email-sender">' +
-            escHtml(dispName) +
-            "</div>" +
-            '<div class="email-time">' +
-            timeTick +
-            "</div>" +
-            "</div>" +
-            '<div class="email-subject">' +
-            escHtml(msg.subject) +
-            "</div>" +
-            '<div class="email-row-meta">' +
-            dotsBtn +
-            "</div>" +
-            "</div>";
-        } else {
-          /* ── Desktop grid layout ─────────────────────── */
-          html +=
-            '<div class="email-row' +
-            (isUnread ? " unread" : "") +
-            '" ' +
-            'data-sent="' +
-            msg.sent_at +
-            '" data-delivered="' +
-            (msg.delivered_at || "") +
-            '" data-read="' +
-            (msg.read_at || "") +
-            '" ' +
-            'data-msgid="' +
-            msg.id +
-            '" data-rcptcount="' +
-            rcptCount +
-            '"' +
-            extraAttrs +
-            " " +
-            'onclick="openMessage(' +
-            msg.id +
-            ", '" +
-            currentTab +
-            "')\">" +
-            '<div class="email-dot"></div>' +
-            '<div class="email-sender">' +
-            escHtml(dispName) +
-            "</div>" +
-            '<div class="email-preview"><div class="email-subject">' +
-            escHtml(msg.subject) +
-            "</div>" +
-            '<div class="email-body-preview">' +
-            escHtml(preview) +
-            "</div></div>" +
-            clip +
-            metaCol +
-            "</div>";
-        }
+        html += buildRowHTML(msg, currentTab, isUnread, mobile);
       });
       html += "</div>";
       list.innerHTML = html;
     }
 
+    // Pulled out of the old renderMessages forEach, unchanged logic.
+    function buildRowHTML(msg, tab, isUnread, mobile) {
+      var rcptCount = Number(msg.recipient_count) || 1;
+      var nameRaw = tab === "inbox" ? msg.from_name : msg.to_name || "Unknown";
+      var dispName = nameRaw;
+      if (tab === "sent" && rcptCount > 1) {
+        dispName = nameRaw.split(",")[0].trim() + " +" + (rcptCount - 1);
+      }
+      var clip = msg.has_attachments
+        ? '<div class="email-row-clip"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.586-6.586a4 4 0 00-5.656-5.656L5.757 10.757a6 6 0 008.486 8.486L20 13"/></svg></div>'
+        : "<div></div>";
+      var metaCol;
+      if (tab === "sent") {
+        var status = tickStatusFromMsg(msg);
+        var rcptBadge =
+          rcptCount > 1
+            ? '<span class="email-rcpt-badge" title="' + rcptCount + ' recipients"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-5.356-3.779M9 20H4v-2a4 4 0 015.356-3.779M15 7a4 4 0 11-8 0 4 4 0 018 0zm6 3a3 3 0 11-6 0 3 3 0 016 0z"/></svg>' + rcptCount + "</span>"
+            : "";
+        metaCol =
+          '<div class="email-row-meta"><div class="email-time">' +
+          rcptBadge + formatTime(msg.sent_at) + tickSvg(status) + "</div>" +
+          '<button class="email-dots-btn" onclick="event.stopPropagation();showTickPopover(event,' + msg.id + ')" title="Message info">' +
+          '<svg fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button></div>';
+      } else {
+        metaCol = '<div class="email-row-meta"><div class="email-time">' + formatTime(msg.sent_at) + "</div></div>";
+      }
+      var extraAttrs = "";
+      if (tab === "sent" && rcptCount > 1) {
+        var rcc = Number(msg.read_count) || 0;
+        var dcc = Number(msg.delivered_count) || 0;
+        if (rcc > 0 && rcc === rcptCount) extraAttrs += ' data-allread="1"';
+        if (dcc > 0 && dcc === rcptCount) extraAttrs += ' data-alldelivered="1"';
+        extraAttrs += ' data-readcount="' + rcc + '" data-delivcount="' + dcc + '"';
+      }
+      var preview = msg.body ? msg.body.substring(0, 80) : "";
+
+      if (mobile) {
+        var timeTick =
+          tab === "sent" ? formatTime(msg.sent_at) + tickSvg(tickStatusFromMsg(msg)) : formatTime(msg.sent_at);
+        var dotsBtn =
+          tab === "sent"
+            ? '<button class="email-dots-btn" onclick="event.stopPropagation();showTickPopover(event,' + msg.id + ')" title="Info">' +
+            '<svg fill="currentColor" viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>'
+            : "";
+        return (
+          '<div class="email-row' + (isUnread ? " unread" : "") + '" ' +
+          'data-sent="' + msg.sent_at + '" data-delivered="' + (msg.delivered_at || "") + '" data-read="' + (msg.read_at || "") + '" ' +
+          'data-msgid="' + msg.id + '" data-rcptcount="' + rcptCount + '"' + extraAttrs + " " +
+          'onclick="openMessage(' + msg.id + ", '" + tab + "')\">" +
+          '<div class="email-dot"></div>' +
+          '<div class="email-row-top"><div class="email-sender">' + escHtml(dispName) + '</div>' +
+          '<div class="email-time">' + timeTick + '</div></div>' +
+          '<div class="email-subject">' + escHtml(msg.subject) + '</div>' +
+          '<div class="email-row-meta">' + dotsBtn + '</div>' +
+          "</div>"
+        );
+      }
+
+      return (
+        '<div class="email-row' + (isUnread ? " unread" : "") + '" ' +
+        'data-sent="' + msg.sent_at + '" data-delivered="' + (msg.delivered_at || "") + '" data-read="' + (msg.read_at || "") + '" ' +
+        'data-msgid="' + msg.id + '" data-rcptcount="' + rcptCount + '"' + extraAttrs + " " +
+        'onclick="openMessage(' + msg.id + ", '" + tab + "')\">" +
+        '<div class="email-dot"></div>' +
+        '<div class="email-sender">' + escHtml(dispName) + '</div>' +
+        '<div class="email-preview"><div class="email-subject">' + escHtml(msg.subject) + '</div>' +
+        '<div class="email-body-preview">' + escHtml(preview) + "</div></div>" +
+        clip + metaCol +
+        "</div>"
+      );
+    }
     /* Re-render on resize (desktop <-> mobile switch) */
     var _resizeTimer;
     window.addEventListener("resize", function () {
@@ -2477,7 +2497,7 @@
               sl.className = "email-read-status-label";
             }
           })
-          .catch(function () {});
+          .catch(function () { });
         return;
       }
       if (msg.read_at) {
@@ -2641,12 +2661,12 @@
               chip.setAttribute(
                 "onclick",
                 "openAttachment(" +
-                  id +
-                  ",'" +
-                  escHtml(filename) +
-                  "','" +
-                  escHtml(mime) +
-                  "',true)",
+                id +
+                ",'" +
+                escHtml(filename) +
+                "','" +
+                escHtml(mime) +
+                "',true)",
               );
             }
           }
@@ -2960,24 +2980,24 @@
               users.length === 0
                 ? '<div class="email-recipient-option"><span class="email-recipient-name" style="color:rgba(200,220,255,0.4)">No users found</span></div>'
                 : users
-                    .map(function (u) {
-                      return (
-                        '<div class="email-recipient-option" onclick="selectRecipient(\'' +
-                        u.user_id +
-                        "','" +
-                        escHtml(u.full_name) +
-                        "','" +
-                        escHtml(u.email || "") +
-                        "')\">" +
-                        '<span class="email-recipient-name">' +
-                        escHtml(u.full_name) +
-                        "</span>" +
-                        '<span class="email-recipient-email">' +
-                        escHtml(u.email || "") +
-                        "</span></div>"
-                      );
-                    })
-                    .join("");
+                  .map(function (u) {
+                    return (
+                      '<div class="email-recipient-option" onclick="selectRecipient(\'' +
+                      u.user_id +
+                      "','" +
+                      escHtml(u.full_name) +
+                      "','" +
+                      escHtml(u.email || "") +
+                      "')\">" +
+                      '<span class="email-recipient-name">' +
+                      escHtml(u.full_name) +
+                      "</span>" +
+                      '<span class="email-recipient-email">' +
+                      escHtml(u.email || "") +
+                      "</span></div>"
+                    );
+                  })
+                  .join("");
             res.classList.add("open");
           });
       }, 300);
@@ -3112,24 +3132,24 @@
               users.length === 0
                 ? '<div class="email-recipient-option"><span class="email-recipient-name" style="color:rgba(200,220,255,0.4)">No users found</span></div>'
                 : users
-                    .map(function (u) {
-                      return (
-                        '<div class="email-recipient-option" onclick="addRecipient(\'' +
-                        u.user_id +
-                        "','" +
-                        escHtml(u.full_name) +
-                        "','" +
-                        escHtml(u.email || "") +
-                        "')\">" +
-                        '<span class="email-recipient-name">' +
-                        escHtml(u.full_name) +
-                        "</span>" +
-                        '<span class="email-recipient-email">' +
-                        escHtml(u.email || "") +
-                        "</span></div>"
-                      );
-                    })
-                    .join("");
+                  .map(function (u) {
+                    return (
+                      '<div class="email-recipient-option" onclick="addRecipient(\'' +
+                      u.user_id +
+                      "','" +
+                      escHtml(u.full_name) +
+                      "','" +
+                      escHtml(u.email || "") +
+                      "')\">" +
+                      '<span class="email-recipient-name">' +
+                      escHtml(u.full_name) +
+                      "</span>" +
+                      '<span class="email-recipient-email">' +
+                      escHtml(u.email || "") +
+                      "</span></div>"
+                    );
+                  })
+                  .join("");
             res.classList.add("open");
           });
       }, 300);
@@ -3245,13 +3265,13 @@
         .map(function (a) {
           var prog = a.uploading
             ? '<div class="email-attach-progress"><div class="email-attach-progress-bar" id="bar-' +
-              a.tempId +
-              '"></div></div>'
+            a.tempId +
+            '"></div></div>'
             : "";
           var rem = !a.uploading
             ? '<button class="email-attach-item-remove" onclick="removeAttachment(\'' +
-              a.tempId +
-              '\')" title="Remove"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>'
+            a.tempId +
+            '\')" title="Remove"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>'
             : '<span style="font-size:11px;color:rgba(200,220,255,0.35);padding-right:4px;">uploading…</span>';
           return (
             '<div class="email-attach-item"><div class="email-attach-item-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="' +
@@ -3467,8 +3487,8 @@
         escHtml(r.name) +
         (r.email
           ? '<span style="font-size:10px;color:rgba(200,220,255,0.4);font-weight:400;margin-left:6px;">' +
-            escHtml(r.email) +
-            "</span>"
+          escHtml(r.email) +
+          "</span>"
           : "") +
         "</div>";
       tt.innerHTML =
@@ -3526,8 +3546,8 @@
           escHtml(r.name) +
           (r.email
             ? ' <span style="color:rgba(200,220,255,0.3);font-size:10px;">(' +
-              escHtml(r.email) +
-              ")</span>"
+            escHtml(r.email) +
+            ")</span>"
             : "") +
           "</div>";
       });
@@ -3573,8 +3593,8 @@
       var rcptBadge =
         rcptCount > 1
           ? '<span class="email-rcpt-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-5.356-3.779M9 20H4v-2a4 4 0 015.356-3.779M15 7a4 4 0 11-8 0 4 4 0 018 0zm6 3a3 3 0 11-6 0 3 3 0 016 0z"/></svg>' +
-            rcptCount +
-            "</span>"
+          rcptCount +
+          "</span>"
           : "";
       timeEl.innerHTML = rcptBadge + formatTime(sentAt) + tickSvg(status);
     }
@@ -3608,8 +3628,8 @@
             var rb =
               rc > 1
                 ? '<span class="email-rcpt-badge"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-5.356-3.779M9 20H4v-2a4 4 0 015.356-3.779M15 7a4 4 0 11-8 0 4 4 0 018 0zm6 3a3 3 0 11-6 0 3 3 0 016 0z"/></svg>' +
-                  rc +
-                  "</span>"
+                rc +
+                "</span>"
                 : "";
             te.innerHTML = rb + formatTime(sa) + tickSvg(st);
           } else {
@@ -3650,7 +3670,7 @@
             }
             updateRowTick(row, d);
           })
-          .catch(function () {});
+          .catch(function () { });
       });
     }
     function startTickPolling() {

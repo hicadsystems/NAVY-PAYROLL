@@ -12,8 +12,18 @@ window.initSocket();
 
 const sck = window.getSocket();
 
+sck.on("connect", () => {
+  var token = localStorage.getItem("token");
+  fetch("/messages/inbox?page=1&limit=1", { headers: { Authorization: "Bearer " + token } })
+    .then((r) => r.json())
+    .then((d) => { if (d.unread !== undefined) updateGlobalBadge(d.unread); })
+    .catch(() => {});
+});
+
 sck.on("mail:new", (mail) => {
-  // prepend new mail
+   if (emailPageLoaded) {
+    document.dispatchEvent(new CustomEvent("globalNewMail", { detail: mail }));
+  }
 });
 
 sck.on("mail:badge", ({ unread }) => {
@@ -653,7 +663,7 @@ function startGlobalEmailPolling() {
   }, 10000);
 }
 
-startGlobalEmailPolling();
+// startGlobalEmailPolling();
 
 // ══════════════════════════════════════════════════════════
 // ALERT MODAL

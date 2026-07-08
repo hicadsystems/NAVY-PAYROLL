@@ -12,10 +12,15 @@ class SocketService {
   static userSockets = new Map(); // userId -> socketId
 
   // =========================
-  // INIT (called once)
+  // INIT (called once per LIVE server)
   // =========================
   static init(server) {
-    if (this.io) return this.io; // prevent double init
+    if (this.io) {
+      console.warn(
+        "⚠️  SocketService.init called again — rebinding to new server",
+      );
+      this.reset();
+    }
 
     console.log("Sockets Initializing");
 
@@ -39,6 +44,20 @@ class SocketService {
   }
 
   // =========================
+  // RESET (used when a server we attached to never actually
+  // starts listening, e.g. a fallback path replaces it)
+  // =========================
+  static reset() {
+    if (this.io) {
+      this.io.removeAllListeners();
+      this.io.close(() => {});
+    }
+    this.io = null;
+    this.userSockets.clear();
+    this.activeRooms.clear();
+  }
+
+  // =========================
   // JWT AUTH
   // =========================
   static setupAuth() {
@@ -49,8 +68,9 @@ class SocketService {
 
       if (!token) {
         console.log("no token");
-        socket.authError = "NO_TOKEN";
-        return next(); // do NOT throw
+        // Reject anonymous connections outright — this feature requires
+        // an identified user so we can address sockets by userId.
+        return next(new Error("Authentication error: No token provided"));
       }
 
       try {
@@ -64,7 +84,7 @@ class SocketService {
         next(new Error("Authentication error: Invalid token"));
       }
     });
-    console.log("autj setup");
+    console.log("auth setup");
   }
 
   // =========================
@@ -72,6 +92,13 @@ class SocketService {
   // =========================
   static handleConnections() {
     this.io.on("connection", (socket) => {
+      // setupAuth now rejects tokenless connections before they reach
+      // here, but guard anyway in case auth logic changes later.
+      if (!socket.userId) {
+        socket.disconnect(true);
+        return;
+      }
+
       this.userSockets.set(socket.userId, socket.id);
 
       socket.emit("connected", {
@@ -92,8 +119,6 @@ class SocketService {
     socket.on("disconnect", (reason) => this.onDisconnect(socket, reason));
 
     socket.on("error", (error) => this.onError(socket, error));
-
-    
   }
 
   // =========================
@@ -124,20 +149,19 @@ class SocketService {
     }
   }
 
-
   static newMail(userId, message) {
     this.emitToUser(userId, "mail:new", message);
-}
+  }
 
-static updateBadge(userId, unread) {
+  static updateBadge(userId, unread) {
     this.emitToUser(userId, "mail:badge", {
-        unread
+      unread,
     });
-}
+  }
 
-static approvalUpdated(userId, approval) {
+  static approvalUpdated(userId, approval) {
     this.emitToUser(userId, "approval:update", approval);
-}
+  }
 }
 
 module.exports = SocketService;

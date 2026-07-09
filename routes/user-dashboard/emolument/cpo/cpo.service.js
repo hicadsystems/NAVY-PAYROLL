@@ -32,11 +32,11 @@ const {
 // LIST FO_APPROVED FORMS — scoped to CPO's command
 // ─────────────────────────────────────────────────────────────
 
-async function listFoApprovedForms(command, limit, offset) {
+async function listFoApprovedForms(command, limit, offset, search) {
   if (!command)
     return { success: false, code: 400, message: "Command is required." };
 
-  const forms = await repo.getFoApprovedForms(command, limit, offset);
+  const forms = await repo.getFoApprovedForms(command, limit, offset, search);
   return { success: true, data: forms };
 }
 
@@ -627,7 +627,7 @@ async function getStatusStats(command, svc) {
 // LIST CONFIRMED FORMS
 // ─────────────────────────────────────────────────────────────
 
-async function listConfirmedForms(command, svc, limit, offset) {
+async function listConfirmedForms(command, svc, limit, offset, search) {
   if (!command)
     return { success: false, code: 400, message: "Command is required." };
   if (!svc)
@@ -643,7 +643,13 @@ async function listConfirmedForms(command, svc, limit, offset) {
     return { success: false, code: 400, message: "Valid offset is required." };
   }
 
-  const forms = await repo.getCPOConfirmedForms(command, svc, limit, offset);
+  const forms = await repo.getCPOConfirmedForms(
+    command,
+    svc,
+    limit,
+    offset,
+    search,
+  );
 
   return { success: true, data: forms };
 }

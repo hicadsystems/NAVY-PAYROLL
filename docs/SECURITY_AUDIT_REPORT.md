@@ -538,7 +538,7 @@ Emolument admin can assign roles with scope_type but validation is insufficient.
 
 #### Exploitation Scenario
 
-1. Attacker has DO (Divisional Officer) role for Ship-A
+1. Attacker has DO (Duty Officer) role for Ship-A
 2. Request to promote someone to DO for Ship-B:
 
    ```json

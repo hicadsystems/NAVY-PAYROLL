@@ -37,11 +37,11 @@ const {
 // LIST DO_REVIEWED FORMS
 // ─────────────────────────────────────────────────────────────
 
-async function listDoReviewedForms(ship, limit, offset) {
+async function listDoReviewedForms(ship, limit, offset, search) {
   if (!ship)
     return { success: false, code: 400, message: "Ship name is required." };
 
-  const forms = await repo.getDoReviewedForms(ship, limit, offset);
+  const forms = await repo.getDoReviewedForms(ship, limit, offset, search);
   return { success: true, data: forms };
 }
 
@@ -491,7 +491,7 @@ async function getStatusStats(ship, svc) {
 // LIST APPROVED FORMS
 // ─────────────────────────────────────────────────────────────
 
-async function listApprovedForms(ship, svc, limit, offset) {
+async function listApprovedForms(ship, svc, limit, offset, search) {
   if (!ship)
     return { success: false, code: 400, message: "Ship name is required." };
   if (!svc)
@@ -507,7 +507,7 @@ async function listApprovedForms(ship, svc, limit, offset) {
     return { success: false, code: 400, message: "Valid offset is required." };
   }
 
-  const forms = await repo.getApprovedForms(ship, svc, limit, offset);
+  const forms = await repo.getApprovedForms(ship, svc, limit, offset, search);
 
   return { success: true, data: forms };
 }

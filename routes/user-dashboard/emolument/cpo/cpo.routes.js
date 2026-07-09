@@ -102,7 +102,7 @@ router.get("/pending/:command", requireEmolRole("CPO"), async (req, res) => {
   const { command } = req.params;
   const cpoCommands = resolveCpoCommands(req);
 
-  const { limit, page = 1 } = req.query;
+  const { limit, page = 1, search = "" } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
 
   // Scope check — scoped CPO can only query their own commands
@@ -117,6 +117,7 @@ router.get("/pending/:command", requireEmolRole("CPO"), async (req, res) => {
       command,
       Number(limit),
       offset,
+      search,
     );
     if (!result.success)
       return res.status(result.code).json({ error: result.message });
@@ -388,7 +389,7 @@ router.get("/confirmed/:command", requireEmolRole("CPO"), async (req, res) => {
 
   const svc = req.user_id; // Use CPO's service number to get their specific stats if needed
 
-  const { limit, page = 1 } = req.query;
+  const { limit, page = 1, search = "" } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
 
   // Scope check — scoped CPO can only query their own commands
@@ -404,6 +405,7 @@ router.get("/confirmed/:command", requireEmolRole("CPO"), async (req, res) => {
       svc,
       Number(limit),
       offset,
+      search,
     );
     if (!result.success)
       return res.status(result.code).json({ error: result.message });

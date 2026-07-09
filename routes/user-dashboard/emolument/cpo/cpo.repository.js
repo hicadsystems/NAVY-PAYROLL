@@ -70,8 +70,17 @@ async function withTransaction(fn) {
 // LIST — FO_APPROVED forms scoped to a command
 // ─────────────────────────────────────────────────────────────
 
-async function getFoApprovedForms(command, limit, offset) {
+async function getFoApprovedForms(command, limit, offset, search) {
   pool.useDatabase(DB());
+
+  let searchClause = "";
+  const searchParams = [];
+  if (search && search.trim()) {
+    searchClause = ` AND (p.Surname LIKE ? OR p.OtherName LIKE ? OR p.serviceNumber LIKE ?)`;
+    const like = `%${search.trim()}%`;
+    searchParams.push(like, like, like);
+  }
+
   const approvedQuery = `SELECT
        p.serviceNumber, p.Surname, p.OtherName, p.Rank,
        p.payrollclass, p.classes, p.ship, p.command,
@@ -89,6 +98,7 @@ async function getFoApprovedForms(command, limit, offset) {
      WHERE p.command = ?
        AND p.Status IN ('CPO', 'FO_APPROVED')
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
+       ${searchClause}
      ORDER BY p.ship ASC, p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`;
 
@@ -97,12 +107,13 @@ async function getFoApprovedForms(command, limit, offset) {
       FROM ef_personalinfos p
       WHERE p.command = ?
        AND p.Status IN ('CPO', 'FO_APPROVED')
-       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes');
+       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
+       ${searchClause};
     `;
 
   const [[rows], [countResults]] = await Promise.all([
-    pool.query(approvedQuery, [command, limit, offset]),
-    pool.query(countQuery, [command]),
+    pool.query(approvedQuery, [command, ...searchParams, limit, offset]),
+    pool.query(countQuery, [command, ...searchParams]),
   ]);
   return { forms: rows, total: countResults[0].total };
 }
@@ -111,8 +122,17 @@ async function getFoApprovedForms(command, limit, offset) {
 // LIST — CPO_CONFIRMED forms scoped to a command
 // ─────────────────────────────────────────────────────────────
 
-async function getCPOConfirmedForms(command, svc, limit, offset) {
+async function getCPOConfirmedForms(command, svc, limit, offset, search) {
   pool.useDatabase(DB());
+
+  let searchClause = "";
+  const searchParams = [];
+  if (search && search.trim()) {
+    searchClause = ` AND (p.Surname LIKE ? OR p.OtherName LIKE ? OR p.serviceNumber LIKE ?)`;
+    const like = `%${search.trim()}%`;
+    searchParams.push(like, like, like);
+  }
+
   const confirmedQuery = `SELECT
        p.serviceNumber, p.Surname, p.OtherName, p.Rank,
        p.payrollclass, p.classes, p.ship, p.command,
@@ -132,6 +152,7 @@ async function getCPOConfirmedForms(command, svc, limit, offset) {
        AND p.Status IN ('Verified', 'CPO_CONFIRMED')
        AND p.emolumentform = 'Yes'
        AND p.hod_svcno = ?
+       ${searchClause}
      ORDER BY p.ship ASC, p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`;
 
@@ -141,11 +162,12 @@ async function getCPOConfirmedForms(command, svc, limit, offset) {
       WHERE p.command = ?
        AND p.Status IN ('Verified', 'CPO_CONFIRMED')
        AND p.emolumentform = 'Yes'
-       AND p.hod_svcno = ?;
-    `;
+       AND p.hod_svcno = ?
+       ${searchClause}
+     `;
   const [[rows], [countResults]] = await Promise.all([
-    pool.query(confirmedQuery, [command, svc, limit, offset]),
-    pool.query(countQuery, [command, svc]),
+    pool.query(confirmedQuery, [command, svc, ...searchParams, limit, offset]),
+    pool.query(countQuery, [command, svc, ...searchParams]),
   ]);
   return { forms: rows, total: countResults[0].total };
 }

@@ -421,7 +421,7 @@ router.post("/", verifyToken, async (req, res) => {
         .status(400)
         .json({
           error:
-            "User ID, Payroll Class, full name, email, and role are required",
+            "Service Number, Payroll Class, full name, email, and role are required",
         });
 
     const validStatuses = ["active", "inactive", "suspended"];
@@ -467,7 +467,7 @@ router.post("/", verifyToken, async (req, res) => {
       if (err.message.includes("PRIMARY") || err.message.includes("user_id"))
         return res
           .status(409)
-          .json({ error: `User ID "${user_id}" already exists.` });
+          .json({ error: `Service Number "${user_id}" already exists.` });
       if (err.message.includes("email"))
         return res
           .status(409)
@@ -664,7 +664,7 @@ router.post("/verify-identity", async (req, res) => {
         .status(400)
         .json({
           error:
-            "User ID, Full Name, and Payroll Class are required for verification",
+            "Service Number, Full Name, and Payroll Class are required for verification",
         });
 
     const { databasesToSearch, dbToClass, classToDb } =
@@ -674,7 +674,7 @@ router.post("/verify-identity", async (req, res) => {
     if (!candidates.length)
       return res
         .status(404)
-        .json({ error: "User not found. Please check your User ID." });
+        .json({ error: "User not found. Please check your Service Number." });
 
     let verifiedUser = null,
       verifiedDatabase = null;

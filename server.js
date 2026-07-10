@@ -18,6 +18,7 @@ const morgan = require("morgan");
 const fs = require("fs");
 const https = require("https");
 const http = require("http");
+const SocketService = require("./config/sockets");
 
 const PORT = parseInt(process.env.PORT);
 const HTTPS_PORT = parseInt(process.env.HTTPS_PORT);
@@ -136,6 +137,14 @@ function getSSLOptions() {
   }
 }
 
+// ── Socket.IO ──────────────────────────────────────────────
+// SocketService.init(server) is idempotent (it no-ops if called
+// twice), so it's safe to call from any of the branches below —
+// whichever server instance actually ends up listening gets it.
+function attachSocketIO(server) {
+  SocketService.init(server);
+}
+
 // ── Start server ───────────────────────────────────────────
 async function startServer() {
   await seamlessWrapper.initialize();
@@ -151,7 +160,9 @@ async function startServer() {
         console.error("❌ network mode requires SSL certs");
         process.exit(1);
       }
-      https.createServer(ssl, app).listen(PORT, "0.0.0.0", () => {
+      const server = https.createServer(ssl, app);
+      server.listen(PORT, "0.0.0.0", () => {
+        attachSocketIO(server);
         console.log(`🔒 HTTPS server → https://${LOCAL_IP}:${PORT}`);
         console.log(`🌐 LAN domain   → https://${LOCAL_DOMAIN}:${PORT}`);
       });
@@ -160,7 +171,9 @@ async function startServer() {
 
     // ── localhost: plain HTTP, no SSL, local only ─────────────
     case "localhost": {
-      http.createServer(app).listen(PORT, "127.0.0.1", () => {
+      const server = http.createServer(app);
+      server.listen(PORT, "127.0.0.1", () => {
+        attachSocketIO(server);
         console.log(`🚀 HTTP server  → http://localhost:${PORT}`);
       });
       break;
@@ -173,6 +186,7 @@ async function startServer() {
         const server = https.createServer(ssl, app);
 
         server.listen(PORT, BIND_ADDRESS, () => {
+          attachSocketIO(server);
           if (BIND_ADDRESS === "0.0.0.0") {
             console.log(`🔒 HTTPS server → https://${LOCAL_IP}:${PORT}`);
             console.log(`🌐 LAN domain   → https://${LOCAL_DOMAIN}:${PORT}`);
@@ -186,7 +200,9 @@ async function startServer() {
             console.warn(
               `⚠️  HTTPS on ${BIND_ADDRESS}:${PORT} failed (${err.code}) — falling back to HTTP localhost`,
             );
-            http.createServer(app).listen(PORT, "127.0.0.1", () => {
+            const fallbackServer = http.createServer(app);
+            fallbackServer.listen(PORT, "127.0.0.1", () => {
+              attachSocketIO(fallbackServer);
               console.log(`🚀 Fallback HTTP → http://localhost:${PORT}`);
             });
           } else {
@@ -197,7 +213,9 @@ async function startServer() {
       } else {
         // No certs — plain HTTP fallback
         console.warn("⚠️  No SSL certs found — starting plain HTTP");
-        http.createServer(app).listen(PORT, "127.0.0.1", () => {
+        const server = http.createServer(app);
+        server.listen(PORT, "127.0.0.1", () => {
+          attachSocketIO(server);
           console.log(`🚀 HTTP server  → http://localhost:${PORT}`);
         });
       }

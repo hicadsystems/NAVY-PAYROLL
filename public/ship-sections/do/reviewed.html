@@ -1,10 +1,23 @@
 <!-- DO Reviewed -->
 <div class="p-4">
-  <div class="mb-6">
-    <p class="text-sm text-blue-900/50 mt-1">
+  <div class="mb-4">
+    <p class="text-sm text-blue-900/50">
       Forms you have already reviewed and authenticated
     </p>
   </div>
+
+  <div class="relative mb-4">
+    <i
+      class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-navy/30 text-sm"
+    ></i>
+    <input
+      type="text"
+      id="doReviewedSearch"
+      placeholder="Search by name or service number..."
+      class="w-full pl-9 pr-3 py-2 border border-amber-100 rounded-lg text-sm text-navy bg-white focus:outline-none focus:border-navy"
+    />
+  </div>
+
   <div id="do-reviewed-list">
     <div class="flex items-center justify-center py-12 text-navy/30">
       <i class="fas fa-spinner fa-spin mr-2"></i>
@@ -15,67 +28,103 @@
 <script>
   (function () {
     const el = document.getElementById("do-reviewed-list");
+    let currentSearch = "";
+
+    function debounce(fn, delay) {
+      let t;
+      return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), delay);
+      };
+    }
 
     /* ── fetch page from BE and render ── */
-    function loadPage(page) {
+    function loadPage(page, search) {
+      search = search !== undefined ? search : currentSearch;
+      currentSearch = search;
+
       el.innerHTML = `<div class="flex items-center justify-center py-12 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>`;
 
+      const qs = new URLSearchParams({
+        page,
+        limit: DO_REVIEWED_PAGE_SIZE,
+        search: search || "",
+      });
+
       fetch(
-        "/do/ship/" +
-          encodeURIComponent(ship) +
-          "/reviewed?page=" +
-          page +
-          "&limit=" +
-          DO_REVIEWED_PAGE_SIZE,
-        { headers: { Authorization: "Bearer " + token } },
+        "/do/ship/" + encodeURIComponent(ship) + "/reviewed?" + qs.toString(),
+        {
+          headers: { Authorization: "Bearer " + token },
+        },
       )
         .then((r) => (r.ok ? r.json() : { forms: [], total: 0 }))
         .then((res) => {
-          /* BE must return: { data: [...], total_pages: N }
-           Fall back gracefully if BE still returns a plain array */
           const rows = Array.isArray(res) ? res : res.forms || [];
           const total = Array.isArray(res) ? 1 : res.total || 1;
 
           if (!rows.length && page === 1) {
-            el.innerHTML = `<div class="text-center py-12 text-blue-900/30">
-            <i class="fas fa-folder-open fa-2x mb-3 block"></i>
-            <p class="font-semibold">No reviewed forms yet</p>
-          </div>`;
+            el.innerHTML = search
+              ? `<div class="text-center py-12 text-blue-900/30">
+                   <i class="fas fa-search fa-2x mb-3 block"></i>
+                   <p class="font-semibold">No matches for "${search}"</p>
+                 </div>`
+              : `<div class="text-center py-12 text-blue-900/30">
+                   <i class="fas fa-folder-open fa-2x mb-3 block"></i>
+                   <p class="font-semibold">No reviewed forms yet</p>
+                 </div>`;
             return;
           }
 
           el.innerHTML = `
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            ${rows
-              .map(
-                (r) => `
-              <div class="flex items-center gap-4 p-4 bg-white/60 rounded-xl border border-amber-100 shadow">
-                <div class="w-9 h-9 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
-                  <i class="fas fa-check text-green-500" style="font-size:14px"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="font-bold text-navy text-sm">${r.Surname || ""} ${r.OtherName || ""}</div>
-                  <div class="text-xs text-blue-900/40 mt-0.5">
-                    ${r.serviceNumber} · Reviewed
-                    ${
-                      r.div_off_date
-                        ? new Date(r.div_off_date).toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })
-                        : "—"
-                    }
-                  </div>
-                </div>
-                <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-600 flex-shrink-0">DO REVIEWED</span>
-              </div>`,
-              )
-              .join("")}
+          <div class="bg-white/60 rounded-xl border border-amber-100 shadow overflow-hidden overflow-x-auto">
+            <table class="w-full text-sm border-collapse">
+              <thead>
+                <tr class="text-left text-xs font-bold text-navy/60 uppercase tracking-wide border-b border-amber-100">
+                  <th class="py-3 px-4">Name</th>
+                  <th class="py-3 px-4">Service No.</th>
+                  <th class="py-3 px-4">Reviewed</th>
+                  <th class="py-3 px-4 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows
+                  .map(
+                    (r) => `
+                  <tr class="border-b border-amber-50 last:border-0 hover:bg-amber-50/40 transition-colors">
+                    <td class="py-3 px-4 font-bold text-navy">
+                      <span class="inline-flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                          <i class="fas fa-check text-green-500" style="font-size:11px"></i>
+                        </span>
+                        ${r.Surname || ""} ${r.OtherName || ""}
+                      </span>
+                    </td>
+                    <td class="py-3 px-4 text-blue-900/50">${r.serviceNumber}</td>
+                    <td class="py-3 px-4 text-blue-900/50">
+                      ${
+                        r.div_off_date
+                          ? new Date(r.div_off_date).toLocaleDateString(
+                              "en-GB",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )
+                          : "—"
+                      }
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                      <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-600">DO REVIEWED</span>
+                    </td>
+                  </tr>`,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
           </div>
           ${paginatorHTML(page, Math.ceil(total / DO_REVIEWED_PAGE_SIZE), "doReviewed")}`;
 
-          /* paginator click handlers — each click triggers a fresh BE fetch */
           el.querySelectorAll('[data-paginator="doReviewed"]').forEach(
             (btn) => {
               btn.addEventListener("click", () => loadPage(+btn.dataset.page));
@@ -88,6 +137,13 @@
         });
     }
 
-    loadPage(1);
+    const debouncedSearch = debounce((val) => loadPage(1, val), 350);
+    document
+      .getElementById("doReviewedSearch")
+      .addEventListener("input", (e) => {
+        debouncedSearch(e.target.value.trim());
+      });
+
+    loadPage(1, "");
   })();
 </script>

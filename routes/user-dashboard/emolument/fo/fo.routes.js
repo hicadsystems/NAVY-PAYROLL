@@ -59,13 +59,14 @@ function resolveForShips(req) {
 
 router.get("/ship/:ship/personnel", requireEmolRole("FO"), async (req, res) => {
   const { ship } = req.params;
-  const { limit, page = 1 } = req.query;
+  const { limit, page = 1, search = "" } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
   try {
     const result = await foService.listDoReviewedForms(
       ship,
       Number(limit),
       offset,
+      search,
     );
     if (!result.success)
       return res.status(result.code).json({ error: result.message });
@@ -287,10 +288,8 @@ router.get("/ship/:ship/stats", requireEmolRole("FO"), async (req, res) => {
 
 router.get("/ship/:ship/approved", requireEmolRole("FO"), async (req, res) => {
   const { ship } = req.params;
-
-  const svc = req.user_id; // Use FO's service number to get their specific stats if needed
-
-  const { limit, page = 1 } = req.query;
+  const svc = req.user_id;
+  const { limit, page = 1, search = "" } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
   try {
     const result = await foService.listApprovedForms(
@@ -298,6 +297,7 @@ router.get("/ship/:ship/approved", requireEmolRole("FO"), async (req, res) => {
       svc,
       Number(limit),
       offset,
+      search,
     );
     if (!result.success)
       return res.status(result.code).json({ error: result.message });

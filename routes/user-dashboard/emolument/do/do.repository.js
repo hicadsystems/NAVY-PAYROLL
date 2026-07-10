@@ -1,7 +1,7 @@
 /**
  * FILE: routes/user-dashboard/emolument/do/do.repository.js
  *
- * All SQL for the Divisional Officer (DO) review workflow.
+ * All SQL for the Duty Officer (DO) review workflow.
  *
  * DO actions:
  *   - List SUBMITTED forms on their ship
@@ -53,8 +53,17 @@ async function withTransaction(fn) {
 // Returns summary rows only — not full form data
 // ─────────────────────────────────────────────────────────────
 
-async function getSubmittedForms(ship, limit, offset) {
+async function getSubmittedForms(ship, limit, offset, search) {
   pool.useDatabase(DB());
+
+  let searchClause = "";
+  const searchParams = [];
+  if (search && search.trim()) {
+    searchClause = ` AND (p.Surname LIKE ? OR p.OtherName LIKE ? OR p.serviceNumber LIKE ?)`;
+    const like = `%${search.trim()}%`;
+    searchParams.push(like, like, like);
+  }
+
   const submittedQuery = `SELECT
        p.serviceNumber, p.Surname, p.OtherName, p.Rank,
        p.payrollclass, p.classes, p.formNumber, p.FormYear,
@@ -69,6 +78,7 @@ async function getSubmittedForms(ship, limit, offset) {
      WHERE p.ship   = ?
        AND p.Status IN ('Filled', 'SUBMITTED')
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
+       ${searchClause}
      ORDER BY p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`;
 
@@ -77,12 +87,13 @@ async function getSubmittedForms(ship, limit, offset) {
       FROM ef_personalinfos p
       WHERE p.ship   = ?
        AND p.Status IN ('Filled', 'SUBMITTED')
-       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes');
+       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
+       ${searchClause};
     `;
 
   const [[rows], [countResults]] = await Promise.all([
-    pool.query(submittedQuery, [ship, limit, offset]),
-    pool.query(countQuery, [ship]),
+    pool.query(submittedQuery, [ship, ...searchParams, limit, offset]),
+    pool.query(countQuery, [ship, ...searchParams]),
   ]);
   return { forms: rows, total: countResults[0].total };
 }
@@ -92,8 +103,17 @@ async function getSubmittedForms(ship, limit, offset) {
 // Returns summary rows only — not full form data
 // ─────────────────────────────────────────────────────────────
 
-async function getReviewedForms(ship, svc, limit, offset) {
+async function getReviewedForms(ship, svc, limit, offset, search) {
   pool.useDatabase(DB());
+
+  let searchClause = "";
+  const searchParams = [];
+  if (search && search.trim()) {
+    searchClause = ` AND (p.Surname LIKE ? OR p.OtherName LIKE ? OR p.serviceNumber LIKE ?)`;
+    const like = `%${search.trim()}%`;
+    searchParams.push(like, like, like);
+  }
+
   const reviewedQuery = `SELECT
        p.serviceNumber, p.Surname, p.OtherName, p.Rank,
        p.payrollclass, p.classes, p.formNumber, p.FormYear, p.div_off_date,
@@ -108,6 +128,7 @@ async function getReviewedForms(ship, svc, limit, offset) {
      WHERE p.ship   = ?
        AND p.Status NOT IN ('Filled','SUBMITTED', 'REJECTED')
        AND p.div_off_svcno = ?
+       ${searchClause}
      ORDER BY p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`;
 
@@ -116,12 +137,13 @@ async function getReviewedForms(ship, svc, limit, offset) {
       FROM ef_personalinfos p
       WHERE p.ship   = ?
        AND p.Status NOT IN ('Filled','SUBMITTED', 'REJECTED')
-       AND p.div_off_svcno = ?;
+       AND p.div_off_svcno = ?
+       ${searchClause};
     `;
 
   const [[rows], [countResults]] = await Promise.all([
-    pool.query(reviewedQuery, [ship, svc, limit, offset]),
-    pool.query(countQuery, [ship, svc]),
+    pool.query(reviewedQuery, [ship, svc, ...searchParams, limit, offset]),
+    pool.query(countQuery, [ship, svc, ...searchParams]),
   ]);
   return { forms: rows, total: countResults[0].total };
 }

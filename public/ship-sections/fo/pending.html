@@ -1,9 +1,22 @@
 <div class="p-4">
-  <div class="mb-6">
+  <div class="mb-4">
     <p class="text-sm text-blue-900/50 mt-1">
       DO-reviewed forms awaiting your approval
     </p>
   </div>
+
+  <div class="relative mb-4">
+    <i
+      class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-navy/30 text-sm"
+    ></i>
+    <input
+      type="text"
+      id="foPendingSearch"
+      placeholder="Search by name or service number..."
+      class="w-full pl-9 pr-3 py-2 border border-amber-100 rounded-lg text-sm text-navy bg-white focus:outline-none focus:border-navy"
+    />
+  </div>
+
   <div id="fo-pending-content">
     <div class="flex items-center justify-center py-12 text-navy/30">
       <i class="fas fa-spinner fa-spin mr-2"></i>
@@ -11,53 +24,88 @@
   </div>
 </div>
 
-<!-- FO Approval Modal -->
-<div id="foApproveModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+<!-- FO Approval Modal (unchanged) -->
+<div
+  id="foApproveModal"
+  class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+>
   <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
     <h3 class="font-black text-navy text-base mb-1 uppercase tracking-wide">
       FO Approval
     </h3>
     <p class="text-sm text-blue-900/40 mb-4" id="foModalMeta"></p>
     <div class="mb-4">
-      <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-2">Remarks (optional)</label>
-      <textarea id="foRemarks" rows="3" placeholder="Add remarks..."
-        class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none resize-none"></textarea>
+      <label
+        class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-2"
+        >Remarks (optional)</label
+      >
+      <textarea
+        id="foRemarks"
+        rows="3"
+        placeholder="Add remarks..."
+        class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none resize-none"
+      ></textarea>
     </div>
     <div class="flex gap-3">
-      <button onclick="foAction('reject')"
-        class="flex-1 py-2.5 bg-red-500 text-white font-bold text-sm rounded-lg hover:bg-red-600 transition-colors cursor-pointer border-none">
+      <button
+        onclick="foAction('reject')"
+        class="flex-1 py-2.5 bg-red-500 text-white font-bold text-sm rounded-lg hover:bg-red-600 transition-colors cursor-pointer border-none"
+      >
         <i class="fas fa-times mr-1"></i>Reject
       </button>
-      <button onclick="foAction('approve')"
-        class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none">
+      <button
+        onclick="foAction('approve')"
+        class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none"
+      >
         <i class="fas fa-check mr-1"></i>Approve
       </button>
     </div>
-    <button onclick="closeFoModal()"
-      class="mt-3 w-full text-sm text-center text-gray-400 py-1 cursor-pointer border-none bg-none">
+    <button
+      onclick="closeFoModal()"
+      class="mt-3 w-full text-sm text-center text-gray-400 py-1 cursor-pointer border-none bg-none"
+    >
       Cancel
     </button>
-    <div id="foApproveMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
+    <div
+      id="foApproveMsg"
+      class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"
+    ></div>
   </div>
 </div>
 
 <script>
   var foActiveFormId = null;
   var foPendingCurrentPage = 1;
+  var foPendingCurrentSearch = "";
 
-  function loadFoPending(page) {
+  function debounce(fn, delay) {
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  function loadFoPending(page, search) {
     page = page || 1;
+    search = search !== undefined ? search : foPendingCurrentSearch;
     foPendingCurrentPage = page;
+    foPendingCurrentSearch = search;
+
     const el = document.getElementById("fo-pending-content");
     el.innerHTML = `<div class="flex items-center justify-center py-12 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>`;
+
+    const qs = new URLSearchParams({
+      page,
+      limit: FO_APPROVED_PAGE_SIZE,
+      search: search || "",
+    });
+
     fetch(
-      "/fo/ship/" +
-      encodeURIComponent(ship) +
-      "/personnel?page=" +
-      page +
-      "&limit=" +
-      FO_APPROVED_PAGE_SIZE,
-      { headers: { Authorization: "Bearer " + token } },
+      "/fo/ship/" + encodeURIComponent(ship) + "/personnel?" + qs.toString(),
+      {
+        headers: { Authorization: "Bearer " + token },
+      },
     )
       .then((r) => (r.ok ? r.json() : { forms: [], total: 0 }))
       .then((res) => {
@@ -65,36 +113,64 @@
         const total = Array.isArray(res) ? 1 : res.total || 1;
 
         if (!rows.length && page === 1) {
-          el.innerHTML =
-            '<div class="text-center py-16 text-blue-900/30"><i class="fas fa-check-circle fa-2x mb-3 block text-green-300"></i><p class="font-semibold">No forms pending FO approval</p></div>';
+          el.innerHTML = search
+            ? `<div class="text-center py-16 text-blue-900/30">
+                 <i class="fas fa-search fa-2x mb-3 block"></i>
+                 <p class="font-semibold">No matches for "${search}"</p>
+               </div>`
+            : `<div class="text-center py-16 text-blue-900/30">
+                 <i class="fas fa-check-circle fa-2x mb-3 block text-green-300"></i>
+                 <p class="font-semibold">No forms pending FO approval</p>
+               </div>`;
           return;
         }
-        el.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          ${rows
-            .map(
-              (r) => `
-        <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 flex items-center gap-4">
-          <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0"><i class="fas fa-file-alt text-blue-500" style="font-size:16px"></i></div>
-          <div class="flex-1 min-w-0">
-            <div class="font-bold text-navy text-sm">${r.Surname || ""} ${r.OtherName || ""}</div>
-            <div class="text-xs text-blue-900/40 mt-0.5">${r.serviceNumber} · DO reviewed ${r.div_off_date ? new Date(r.div_off_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "—"}</div>
-          </div>
-          <div class="flex gap-2 flex-shrink-0">
-            <button onclick="viewForm('${r.serviceNumber}', 'EMOL_FO')" class="px-2 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg cursor-pointer border border-blue-200 hover:bg-blue-100 transition-colors">
-              <i class="fas fa-eye mr-1"></i>View
-            </button>
-            <button onclick="openFoApproval('${r.formId}','${r.Surname || ""} (${r.serviceNumber})')" class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors">
-              Approve
-            </button>
-          </div>
-        </div>`,
-            )
-            .join("")}
-          </div>
 
-           ${paginatorHTML(page, Math.ceil(total / FO_APPROVED_PAGE_SIZE), "foPending")}`;
+        el.innerHTML = `
+        <div class="bg-white/60 rounded-xl border border-amber-100 shadow overflow-hidden overflow-x-auto">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="text-left text-xs font-bold text-navy/60 uppercase tracking-wide border-b border-amber-100">
+                <th class="py-3 px-4">Name</th>
+                <th class="py-3 px-4">Service No.</th>
+                <th class="py-3 px-4">DO Reviewed</th>
+                <th class="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows
+                .map(
+                  (r) => `
+                <tr class="border-b border-amber-50 last:border-0 hover:bg-amber-50/40 transition-colors">
+                  <td class="py-3 px-4 font-bold text-navy">${r.Surname || ""} ${r.OtherName || ""}</td>
+                  <td class="py-3 px-4 text-blue-900/50">${r.serviceNumber}</td>
+                  <td class="py-3 px-4 text-blue-900/50">
+                    ${
+                      r.div_off_date
+                        ? new Date(r.div_off_date).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                          })
+                        : "—"
+                    }
+                  </td>
+                  <td class="py-3 px-4">
+                    <div class="flex gap-2 justify-end">
+                      <button onclick="viewForm('${r.serviceNumber}', 'EMOL_FO')" class="px-2 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg cursor-pointer border border-blue-200 hover:bg-blue-100 transition-colors">
+                        <i class="fas fa-eye mr-1"></i>View
+                      </button>
+                      <button onclick="openFoApproval('${r.form_id}','${r.Surname || ""} (${r.serviceNumber})')" class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors">
+                        Approve
+                      </button>
+                    </div>
+                  </td>
+                </tr>`,
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+        ${paginatorHTML(page, Math.ceil(total / FO_APPROVED_PAGE_SIZE), "foPending")}`;
 
-        /* paginator click handlers — each click triggers a fresh BE fetch */
         el.querySelectorAll('[data-paginator="foPending"]').forEach((btn) => {
           btn.addEventListener("click", () => loadFoPending(+btn.dataset.page));
         });
@@ -104,6 +180,14 @@
           '<div class="text-center py-10 text-red-400 text-sm">Failed to load</div>';
       });
   }
+
+  const debouncedFoPendingSearch = debounce(
+    (val) => loadFoPending(1, val),
+    350,
+  );
+  document.getElementById("foPendingSearch").addEventListener("input", (e) => {
+    debouncedFoPendingSearch(e.target.value.trim());
+  });
 
   function openFoApproval(formId, meta) {
     foActiveFormId = formId;
@@ -136,13 +220,13 @@
           (ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600");
         msg.textContent = ok
           ? d.message ||
-          (action === "approve" ? "Form approved." : "Form rejected.")
+            (action === "approve" ? "Form approved." : "Form rejected.")
           : d.error || "Failed";
         msg.classList.remove("hidden");
         if (ok) {
           setTimeout(() => {
             closeFoModal();
-            loadFoPending();
+            loadFoPending(foPendingCurrentPage, foPendingCurrentSearch);
           }, 1200);
         }
       })
@@ -159,7 +243,8 @@
     sessionStorage.setItem("active_ship_role", role);
     sessionStorage.setItem("emolument_form_svcno", svcno);
     window.location.href =
-      "../../pages/emolument-form.html?svcno=" + encodeURIComponent(svcno) +
+      "../../pages/emolument-form.html?svcno=" +
+      encodeURIComponent(svcno) +
       "&role=" +
       encodeURIComponent(role) +
       "&admin=1" +
@@ -167,5 +252,5 @@
       encodeURIComponent(ship);
   }
 
-  loadFoPending(1);
+  loadFoPending(1, "");
 </script>

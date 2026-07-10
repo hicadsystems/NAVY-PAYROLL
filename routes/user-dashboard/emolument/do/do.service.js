@@ -26,11 +26,11 @@ const { sendMessage } = require("../../email/email.service");
 // LIST SUBMITTED FORMS
 // ─────────────────────────────────────────────────────────────
 
-async function listSubmittedForms(ship, limit, offset) {
+async function listSubmittedForms(ship, limit, offset, search) {
   if (!ship)
     return { success: false, code: 400, message: "Ship name is required." };
 
-  const forms = await repo.getSubmittedForms(ship, limit, offset);
+  const forms = await repo.getSubmittedForms(ship, limit, offset, search);
   return { success: true, data: forms };
 }
 
@@ -247,8 +247,14 @@ async function rejectForm(formId, doShip, body, performedBy, ip) {
     performedBy: do_svcno,
     ipAddress: ip,
   });
-  const message = `Your emolument form (ID: ${formId}) has been rejected by the Divisional Officer (${do_rank} ${do_name}).\n\nRemarks: ${remarks.trim()}\n\nPlease re-fill and resubmit the form.`;
-  await sendMessage({userId: do_svcno, userFullname: do_name,to_user_id: form.serviceNumber, subject: "Form Rejected", body: message});
+  const message = `Your emolument form (ID: ${formId}) has been rejected by the Duty Officer (${do_rank} ${do_name}).\n\nRemarks: ${remarks.trim()}\n\nPlease re-fill and resubmit the form.`;
+  await sendMessage({
+    userId: do_svcno,
+    userFullname: do_name,
+    to_user_id: form.serviceNumber,
+    subject: "Form Rejected",
+    body: message,
+  });
 
   return {
     success: true,
@@ -283,7 +289,7 @@ async function getStatusStats(ship, svc) {
 // LIST REVIEWED FORMS
 // ─────────────────────────────────────────────────────────────
 
-async function listReviewedForms(ship, svc, limit, offset) {
+async function listReviewedForms(ship, svc, limit, offset, search) {
   if (!ship)
     return { success: false, code: 400, message: "Ship name is required." };
   if (!svc)
@@ -299,8 +305,7 @@ async function listReviewedForms(ship, svc, limit, offset) {
     return { success: false, code: 400, message: "Valid offset is required." };
   }
 
-  const forms = await repo.getReviewedForms(ship, svc, limit, offset);
-
+  const forms = await repo.getReviewedForms(ship, svc, limit, offset, search);
   return { success: true, data: forms };
 }
 

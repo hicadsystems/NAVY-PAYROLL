@@ -83,7 +83,7 @@
         <option value="0">Closed</option>
       </select>
       <button onclick="openShipModal(null)"
-        class="flex items-center gap-1.5 h-9 px-4 bg-gold hover:bg-gold-hover text-white text-xs font-bold rounded-lg transition-colors">
+        class="flex items-center gap-1.5 h-9 px-4 bg-gold hover:bg-gold-hover text-white text-xs font-bold rounded-lg transition-colors hidden">
         <i class="fas fa-plus"></i> New Ship
       </button>
       <button onclick="exportShips()"
@@ -93,28 +93,34 @@
       <span id="sCountLabel" class="text-xs text-slate-400 ml-auto whitespace-nowrap">— ships</span>
     </div>
 
-    <!-- Table -->
-    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-      <div class="overflow-x-auto"></div>
-      <!-- Head -->
-      <div
-        class="grid bg-slate-50 border-b border-slate-200 px-4 py-2.5 gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 overflow-x-auto"
-        style="grid-template-columns:minmax(180px,1fr) 150px 100px 90px;">
-        <span>Ship / Command</span><span>Command Code</span><span>Status</span><span>Actions</span>
-      </div>
-      <!-- Rows -->
-      <div id="sShipsList">
-        <div class="py-12 text-center text-slate-400 text-xs">
-          <i class="fas fa-spinner fa-spin text-2xl block mb-2"></i>Loading ships…
-        </div>
-      </div>
-      <!-- Pagination -->
-      <div id="sPagination"
-        class="hidden border-t border-slate-100 bg-slate-50 px-4 py-2.5 flex items-center justify-between">
-        <span id="sPageInfo" class="text-xs text-slate-400"></span>
-        <div id="sPageBtns" class="flex gap-1"></div>
-      </div>
-    </div>
+  <!-- Table -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="bg-slate-50 border-b border-slate-200">
+          <th class="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Ship</th>
+          <th class="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Command</th>
+          <th class="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</th>
+          <th class="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="sShipsList">
+        <tr>
+          <td colspan="4" class="py-12 text-center text-slate-400 text-xs">
+            <i class="fas fa-spinner fa-spin text-2xl block mb-2"></i>Loading ships…
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- Pagination -->
+  <div id="sPagination"
+    class="hidden border-t border-slate-100 bg-slate-50 px-4 py-2.5 flex items-center justify-between">
+    <span id="sPageInfo" class="text-xs text-slate-400"></span>
+    <div id="sPageBtns" class="flex gap-1"></div>
+  </div>
+</div>
   </div>
   </div>
 
@@ -151,148 +157,142 @@
       <span id="uCountLabel" class="text-xs text-slate-400 ml-auto whitespace-nowrap">— users</span>
     </div>
 
-    <!-- Table -->
-    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
-      <div
-        class="grid bg-slate-50 border-b border-slate-200 px-4 py-2.5 gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400"
-        style="
-      grid-template-columns:
-      minmax(180px,1.8fr)
-      80px
-      120px
-      180px
-      100px
-      80px;
-    ">
-        <span>Name</span><span>Rank</span><span>Service
-          No</span><span>Ship/Scope</span><span>Role</span><span>Actions</span>
-      </div>
-      <div id="uUsersList">
-        <div class="py-12 text-center text-slate-400 text-xs">
+   <!-- Table -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+  <table class="w-full text-left border-collapse min-w-[850px]">
+    <thead>
+      <tr class="bg-slate-50 border-b border-slate-200">
+        <th class="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Name</th>
+        <th class="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Rank</th>
+        <th class="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Service No</th>
+        <th class="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Ship/Scope</th>
+        <th class="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Role</th>
+        <th class="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="uUsersList">
+      <tr>
+        <td colspan="6" class="py-12 text-center text-slate-400 text-xs">
           <i class="fas fa-spinner fa-spin text-2xl block mb-2"></i>Loading users…
-        </div>
-      </div>
-      <!-- Pagination -->
-      <div id="uPagination"
-        class="hidden border-t border-slate-100 bg-slate-50 px-4 py-2.5 flex items-center justify-between">
-        <span id="uPageInfo" class="text-xs text-slate-400"></span>
-        <div id="uPageBtns" class="flex gap-1"></div>
-      </div>
-    </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <!-- Pagination -->
+  <div id="uPagination"
+    class="hidden border-t border-slate-100 bg-slate-50 px-4 py-2.5 flex items-center justify-between">
+    <span id="uPageInfo" class="text-xs text-slate-400"></span>
+    <div id="uPageBtns" class="flex gap-1"></div>
+  </div>
+</div>
   </div>
 
   <!-- ══ MODAL: ADD/EDIT SHIP ══ -->
-  <div id="shipModal"
-    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-    onclick="bgClose(event,'shipModal')">
-    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-        <h3 id="shipModalTitle" class="text-sm font-black text-navy uppercase tracking-wide"></h3>
-        <button onclick="closeModal('shipModal')"
-          class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 text-xs transition-colors"><i
-            class="fas fa-times"></i></button>
+<div id="shipModal"
+  class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+  onclick="bgClose(event,'shipModal')">
+  <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+      <h3 id="shipModalTitle" class="text-sm font-black text-navy uppercase tracking-wide"></h3>
+      <button onclick="closeModal('shipModal')"
+        class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 text-xs transition-colors"><i
+          class="fas fa-times"></i></button>
+    </div>
+    <div class="p-5 space-y-4">
+      <input type="hidden" id="shipId" />
+      <input type="hidden" id="shipCommandId" />
+      <div>
+        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Ship Name</label>
+        <input id="shipName" type="text" disabled
+          class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs bg-slate-50 text-slate-400 focus:outline-none" />
       </div>
-      <div class="p-5 space-y-4">
-        <input type="hidden" id="shipId" />
-        <div>
-          <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Ship Name</label>
-          <input id="shipName" type="text" placeholder="e.g. NNS ARADU"
-            class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold" />
-        </div>
-        <div>
-          <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Command</label>
-          <select id="shipCommand"
-            class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
-            <option value="">— Select command —</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Status</label>
-          <select id="shipStatus"
-            class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
-            <option value="0">Closed</option>
-            <option value="1">Open</option>
-          </select>
-        </div>
-      </div>
-      <div class="px-5 pb-5 flex gap-2 justify-end">
-        <button onclick="closeModal('shipModal')"
-          class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors">Cancel</button>
-        <button onclick="submitShip()" id="shipSubmitBtn"
-          class="flex items-center gap-1.5 px-4 py-2 bg-gold hover:bg-gold-hover text-white text-xs font-bold rounded-lg transition-colors"></button>
+      <div>
+        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Status</label>
+        <select id="shipStatus"
+          class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
+          <option value="0">Closed</option>
+          <option value="1">Open</option>
+        </select>
       </div>
     </div>
+    <div class="px-5 pb-5 flex gap-2 justify-end">
+      <button onclick="closeModal('shipModal')"
+        class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors">Cancel</button>
+      <button onclick="submitShip()" id="shipSubmitBtn"
+        class="flex items-center gap-1.5 px-4 py-2 bg-gold hover:bg-gold-hover text-white text-xs font-bold rounded-lg transition-colors"></button>
+    </div>
   </div>
+</div>
 
   <!-- ══ MODAL: ADD/EDIT SHIP USER ══ -->
-  <div id="userModal"
-    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-    onclick="bgClose(event,'userModal')">
-    <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 sticky top-0 bg-white z-10">
-        <h3 id="userModalTitle" class="text-sm font-black text-navy uppercase tracking-wide"></h3>
-        <button onclick="closeModal('userModal')"
-          class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 text-xs transition-colors"><i
-            class="fas fa-times"></i></button>
+<div id="userModal"
+  class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+  onclick="bgClose(event,'userModal')">
+  <div class="modal-enter bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 sticky top-0 bg-white z-10">
+      <h3 id="userModalTitle" class="text-sm font-black text-navy uppercase tracking-wide"></h3>
+      <button onclick="closeModal('userModal')"
+        class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 text-xs transition-colors"><i
+          class="fas fa-times"></i></button>
+    </div>
+    <div class="p-5 space-y-4">
+      <input type="hidden" id="userOrigSvcNo" />
+
+      <!-- Service No -->
+      <div>
+        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
+          Service No <span class="text-red-500">*</span>
+        </label>
+        <input id="userSvcNo" type="text" placeholder="e.g. NN/4940F"
+          class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold" />
+        <p id="userSvcMsg" class="hidden text-[10px] mt-1"></p>
       </div>
-      <div class="p-5 space-y-4">
-        <input type="hidden" id="userOrigSvcNo" />
 
-        <!-- Service No (full width with validate hint) -->
-        <div>
-          <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
-            Service No <span class="text-red-500">*</span>
-          </label>
-          <input id="userSvcNo" type="text" placeholder="e.g. NN/4940F"
-            class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold" />
-          <p id="userSvcMsg" class="hidden text-[10px] mt-1"></p>
-        </div>
-
-        <!-- Command + Ship (cascade) -->
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
-              Command <span class="text-red-500">*</span>
-            </label>
-            <select id="userCommand" onchange="onUserCommandChange()"
-              class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
-              <option value="">— Command —</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
-              Ship <span class="text-red-500">*</span>
-            </label>
-            <select id="userShip"
-              class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
-              <option value="">— Select command first —</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Appointment (required) -->
-        <div>
-          <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
-            Appointment <span class="text-red-500">*</span>
-          </label>
-          <select id="userAppointment"
-            class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
-            <option value="">— Select appointment —</option>
-            <option value="DO">DO — Divisional Officer</option>
-            <option value="FO">FO — Flag Officer</option>
-            <option value="CPO">CPO — Command Payroll Officer</option>
-          </select>
-          <p class="text-[10px] text-slate-400 mt-1">DO/FO scope = Ship &nbsp;·&nbsp; CPO scope = Command</p>
-        </div>
+      <!-- Appointment -->
+      <div>
+        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
+          Appointment <span class="text-red-500">*</span>
+        </label>
+        <select id="userAppointment" onchange="onUserAppointmentChange()"
+          class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
+          <option value="">— Select appointment —</option>
+          <option value="DO">DO — Duty Officer</option>
+          <option value="FO">FO — Financial Officer</option>
+          <option value="CPO">CPO — Central Pay Officer</option>
+        </select>
+        <p class="text-[10px] text-slate-400 mt-1">DO/FO scope = Ship &nbsp;·&nbsp; CPO scope = Command</p>
       </div>
-      <div class="px-5 pb-5 flex gap-2 justify-end">
-        <button onclick="closeModal('userModal')"
-          class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors">Cancel</button>
-        <button onclick="submitUser()" id="userSubmitBtn"
-          class="flex items-center gap-1.5 px-4 py-2 bg-gold hover:bg-gold-hover text-white text-xs font-bold rounded-lg transition-colors"></button>
+
+      <!-- Ship (DO / FO only) -->
+      <div id="userShipWrap" class="hidden">
+        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
+          Ship <span class="text-red-500">*</span>
+        </label>
+        <select id="userShip"
+          class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
+          <option value="">— Select ship —</option>
+        </select>
+      </div>
+
+      <!-- Command (CPO only) -->
+      <div id="userCommandWrap" class="hidden">
+        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
+          Command <span class="text-red-500">*</span>
+        </label>
+        <select id="userCommand"
+          class="w-full h-9 border border-slate-200 rounded-lg px-3 text-xs focus:outline-none focus:border-gold">
+          <option value="">— Select command —</option>
+        </select>
       </div>
     </div>
+    <div class="px-5 pb-5 flex gap-2 justify-end">
+      <button onclick="closeModal('userModal')"
+        class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors">Cancel</button>
+      <button onclick="submitUser()" id="userSubmitBtn"
+        class="flex items-center gap-1.5 px-4 py-2 bg-gold hover:bg-gold-hover text-white text-xs font-bold rounded-lg transition-colors"></button>
+    </div>
   </div>
+</div>
 
   <!-- ══ MODAL: UPLOAD ══ -->
   <div id="uploadModal"
@@ -518,16 +518,16 @@
         .then(raw => {
           _commands = Array.isArray(raw) ? raw : (raw.data || raw.commands || []);
           // Populate command selects (no uCmdFilter anymore — that's now uRoleFilter)
-          ['sCmdFilter', 'shipCommand', 'userCommand'].forEach(id => {
-            const sel = document.getElementById(id); if (!sel) return;
-            while (sel.options.length > 1) sel.remove(1);
-            _commands.forEach(c => {
-              const o = document.createElement('option');
-              o.value = c.Id;
-              o.textContent = c.commandName || c.name || o.value;
-              sel.appendChild(o);
-            });
-          });
+          ['sCmdFilter', 'userCommand'].forEach(id => {
+  const sel = document.getElementById(id); if (!sel) return;
+  while (sel.options.length > 1) sel.remove(1);
+  _commands.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.Id;
+    o.textContent = c.commandName || c.name || o.value;
+    sel.appendChild(o);
+  });
+});
         }).catch(() => { });
     }
 
@@ -552,16 +552,17 @@
     }
 
     function populateShipSelects(ships) {
-      // Only top filter — userShip is cascade-populated from selected command
-      const sel = document.getElementById('uShipFilter');
-      if (!sel) return;
-      while (sel.options.length > 1) sel.remove(1);
-      ships.forEach(s => {
-        const o = document.createElement('option');
-        o.value = s.shipName; o.textContent = s.shipName;
-        sel.appendChild(o);
-      });
-    }
+  ['uShipFilter', 'userShip'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    while (sel.options.length > 1) sel.remove(1);
+    ships.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.shipName; o.textContent = s.shipName;
+      sel.appendChild(o);
+    });
+  });
+}
 
     // Cascade: when command changes, populate ship dropdown with only ships under it
     function onUserCommandChange() {
@@ -599,52 +600,45 @@
       renderShipsPage();
     }
 
-    function renderShipsPage() {
-      const total = _shipsFiltered.length;
-      const pages = Math.ceil(total / S_PER_PAGE);
-      const slice = _shipsFiltered.slice((_sPage - 1) * S_PER_PAGE, _sPage * S_PER_PAGE);
+function renderShipsPage() {
+  const total = _shipsFiltered.length;
+  const pages = Math.ceil(total / S_PER_PAGE);
+  const slice = _shipsFiltered.slice((_sPage - 1) * S_PER_PAGE, _sPage * S_PER_PAGE);
 
-      document.getElementById('sCountLabel').textContent = total + ' ships';
+  document.getElementById('sCountLabel').textContent = total + ' ships';
 
-      const el = document.getElementById('sShipsList');
-      if (!slice.length) {
-        el.innerHTML = '<div class="py-12 text-center text-slate-400 text-xs"><i class="fas fa-ship text-2xl block mb-2 opacity-30"></i>No ships found.</div>';
-        document.getElementById('sPagination').classList.add('hidden');
-        return;
-      }
+  const el = document.getElementById('sShipsList');
+  if (!slice.length) {
+    el.innerHTML = '<tr><td colspan="4" class="py-12 text-center text-slate-400 text-xs"><i class="fas fa-ship text-2xl block mb-2 opacity-30"></i>No ships found.</td></tr>';
+    document.getElementById('sPagination').classList.add('hidden');
+    return;
+  }
 
-      el.innerHTML = slice.map(s => {
-        const open = s.openship === 1;
-        const sd = JSON.stringify(s).replace(/'/g, '&#39;');
-        return `
-      <div class="grid items-center px-4 py-2.5 gap-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors"
-           style="grid-template-columns:1fr 160px 80px 70px;">
-        <div>
-          <div class="text-xs font-semibold text-slate-800">${esc(s.shipName)}</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">${esc(s.commandName || '—')}</div>
-        </div>
-        <div class="text-xs text-slate-500 font-mono">${esc(s.code || '—')}</div>
-        <div>
+  el.innerHTML = slice.map(s => {
+    const open = s.openship === 1;
+    const sd = JSON.stringify(s).replace(/'/g, '&#39;');
+    return `
+      <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+        <td class="px-4 py-2.5 text-xs font-semibold text-slate-800">${esc(s.shipName)}</td>
+        <td class="px-4 py-2.5 text-xs text-slate-500 font-mono">${esc(s.code || '—')}</td>
+        <td class="px-4 py-2.5">
           <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${open
             ? 'bg-green-100 text-green-700'
             : 'bg-red-100 text-red-700'}">${open ? 'OPEN' : 'CLOSED'}</span>
-        </div>
-        <div class="flex gap-1.5">
-          <button onclick='openShipModal(${sd})'
-            class="w-7 h-7 border border-slate-200 bg-white hover:bg-green-50 rounded-lg flex items-center justify-center text-green-600 transition-colors" title="Edit">
-            <i class="fas fa-pen" style="font-size:10px;"></i>
-          </button>
-          <button onclick="deleteShip(${s.Id},'${esc(s.shipName)}')"
-            class="w-7 h-7 border border-slate-200 bg-white hover:bg-red-50 rounded-lg flex items-center justify-center text-red-500 transition-colors" title="Delete">
-            <i class="fas fa-trash" style="font-size:10px;"></i>
-          </button>
-        </div>
-      </div>`;
-      }).join('');
+        </td>
+        <td class="px-4 py-2.5">
+          <div class="flex gap-1.5">
+            <button onclick='openShipModal(${sd})'
+              class="w-7 h-7 border border-slate-200 bg-white hover:bg-green-50 rounded-lg flex items-center justify-center text-green-600 transition-colors" title="Edit">
+              <i class="fas fa-pen" style="font-size:10px;"></i>
+            </button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
 
-      renderPageBtns('sPageBtns', 'sPageInfo', _sPage, pages, total, p => { _sPage = p; renderShipsPage(); });
-    }
-
+  renderPageBtns('sPageBtns', 'sPageInfo', _sPage, pages, total, p => { _sPage = p; renderShipsPage(); });
+}
     /* ── Export ships ── */
     function exportShips() {
       const cols = ['shipName', 'code', 'commandName', 'commandid', 'openship'];
@@ -653,20 +647,38 @@
     }
 
     /* ── Ship modal ── */
-    function openShipModal(ship) {
-      _editingShipId = ship ? ship.Id : null;
-      document.getElementById('shipModalTitle').textContent = ship ? 'Edit Ship' : 'Add New Ship';
-      document.getElementById('shipId').value = ship ? ship.Id : '';
-      document.getElementById('shipName').value = ship ? ship.shipName : '';
-      document.getElementById('shipStatus').value = ship ? String(ship.openship) : '0';
-      document.getElementById('shipCommand').value = ship ? (ship.commandid || '') : '';
-      const btn = document.getElementById('shipSubmitBtn');
-      btn.innerHTML = ship
-        ? '<i class="fas fa-save mr-1"></i>Save Changes'
-        : '<i class="fas fa-plus mr-1"></i>Create Ship';
-      openModal('shipModal');
-    }
+function openShipModal(ship) {
+  _editingShipId = ship ? ship.Id : null;
+  document.getElementById('shipModalTitle').textContent = ship ? 'Edit Ship' : 'Add New Ship';
+  document.getElementById('shipId').value = ship ? ship.Id : '';
+  document.getElementById('shipCommandId').value = ship ? (ship.commandid || '') : '';
+  document.getElementById('shipName').value = ship ? ship.shipName : '';
+  document.getElementById('shipStatus').value = ship ? String(ship.openship) : '0';
+  const btn = document.getElementById('shipSubmitBtn');
+  btn.innerHTML = ship
+    ? '<i class="fas fa-save mr-1"></i>Save Changes'
+    : '<i class="fas fa-plus mr-1"></i>Create Ship';
+  openModal('shipModal');
+}
 
+function submitShip() {
+  const name = document.getElementById('shipName').value.trim();
+  const cmdVal = document.getElementById('shipCommandId').value;
+  const status = document.getElementById('shipStatus').value;
+  const btn = document.getElementById('shipSubmitBtn');
+  btn.disabled = true;
+  const isEdit = !!_editingShipId;
+  const url = isEdit ? `/system/ships/${_editingShipId}` : '/system/ships';
+  const method = isEdit ? 'PUT' : 'POST';
+  fetch(url, { method, headers: H, body: JSON.stringify({ shipName: name, commandid: Number(cmdVal), openship: Number(status) }) })
+    .then(r => r.json().then(d => ({ ok: r.ok, d })))
+    .then(({ ok, d }) => {
+      btn.disabled = false;
+      toast(ok ? (d.message || (isEdit ? 'Ship updated.' : 'Ship created.')) : (d.error || 'Failed.'), ok);
+      if (ok) { closeModal('shipModal'); loadShips(); }
+    })
+    .catch(() => { btn.disabled = false; toast('Server error.', false); });
+}
     function submitShip() {
       const name = document.getElementById('shipName').value.trim();
       const cmdVal = document.getElementById('shipCommand').value;
@@ -744,162 +756,151 @@
 
     function uFilter() { _uPage = 1; applyUFiltersAndRender(); }
 
-    function renderUsers(rows, totalPages) {
-      const tp = totalPages || Math.ceil(_uTotal / U_PER_PAGE) || 1;
-      document.getElementById('uCountLabel').textContent = _uTotal + ' users';
+function renderUsers(rows, totalPages) {
+  const tp = totalPages || Math.ceil(_uTotal / U_PER_PAGE) || 1;
+  document.getElementById('uCountLabel').textContent = _uTotal + ' users';
 
-      const el = document.getElementById('uUsersList');
-      if (!rows.length) {
-        el.innerHTML = '<div class="py-12 text-center text-slate-400 text-xs"><i class="fas fa-users text-2xl block mb-2 opacity-30"></i>No users found.</div>';
-        document.getElementById('uPagination').classList.add('hidden');
-        return;
-      }
+  const el = document.getElementById('uUsersList');
+  if (!rows.length) {
+    el.innerHTML = '<tr><td colspan="6" class="py-12 text-center text-slate-400 text-xs"><i class="fas fa-users text-2xl block mb-2 opacity-30"></i>No users found.</td></tr>';
+    document.getElementById('uPagination').classList.add('hidden');
+    return;
+  }
 
-      const ROLE_CLS = {
-        DO: 'bg-blue-50 text-blue-700',
-        FO: 'bg-purple-50 text-purple-700',
-        CPO: 'bg-amber-50 text-amber-700',
-      };
+  const ROLE_CLS = {
+    DO: 'bg-blue-50 text-blue-700',
+    FO: 'bg-purple-50 text-purple-700',
+    CPO: 'bg-amber-50 text-amber-700',
+  };
 
-      el.innerHTML = rows.map(u => {
-        const ud = JSON.stringify(u).replace(/'/g, '&#39;');
-        return `
-      <div class="grid min-w-[850px] bg-slate-50 border-b border-slate-200 px-4 py-2.5 gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400"
- style="
- grid-template-columns:
- minmax(180px,1.8fr)
- 80px
- 120px
- 180px
- 100px
- 80px;
- ">
-        <div class="text-xs font-semibold text-slate-800 truncate">${esc(u.Surname || '')} ${esc(u.OtherName || '')}</div>
-        <div class="text-xs text-slate-500">${esc(u.Rank || '—')}</div>
-        <div class="text-xs font-mono text-slate-600">${esc(u.user_id || '—')}</div>
-        <div class="text-xs text-slate-500 truncate">${esc(u.scope_value || u.ship || '—')}</div>
-        <div>
+  el.innerHTML = rows.map(u => {
+    const ud = JSON.stringify(u).replace(/'/g, '&#39;');
+    return `
+      <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+        <td class="px-4 py-2.5 text-xs font-semibold text-slate-800 truncate">${esc(u.Surname || '')} ${esc(u.OtherName || '')}</td>
+        <td class="px-4 py-2.5 text-xs text-slate-500">${esc(u.Rank || '—')}</td>
+        <td class="px-4 py-2.5 text-xs font-mono text-slate-600">${esc(u.user_id || '—')}</td>
+        <td class="px-4 py-2.5 text-xs text-slate-500 truncate">${esc(u.scope_value || u.ship || '—')}</td>
+        <td class="px-4 py-2.5">
           <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${ROLE_CLS[u.role] || 'bg-gray-100 text-gray-600'}">
             ${esc(u.role)}
           </span>
-        </div>
-        <div class="flex gap-1.5">
-          <button onclick='openUserModal(${ud})'
-            class="w-7 h-7 border border-slate-200 bg-white hover:bg-green-50 rounded-lg flex items-center justify-center text-green-600 transition-colors" title="Edit">
-            <i class="fas fa-pen" style="font-size:10px;"></i>
-          </button>
-          <button onclick="revokeUser(${u.id},'${esc(u.user_id)}','${esc(u.role)}')"
-            class="w-7 h-7 border border-slate-200 bg-white hover:bg-red-50 rounded-lg flex items-center justify-center text-red-500 transition-colors" title="Revoke">
-            <i class="fas fa-user-minus" style="font-size:10px;"></i>
-          </button>
-        </div>
-      </div>`;
-      }).join('');
+        </td>
+        <td class="px-4 py-2.5">
+          <div class="flex gap-1.5">
+            <button onclick='openUserModal(${ud})'
+              class="w-7 h-7 border border-slate-200 bg-white hover:bg-green-50 rounded-lg flex items-center justify-center text-green-600 transition-colors" title="Edit">
+              <i class="fas fa-pen" style="font-size:10px;"></i>
+            </button>
+            <button onclick="revokeUser(${u.id},'${esc(u.user_id)}','${esc(u.role)}')"
+              class="w-7 h-7 border border-slate-200 bg-white hover:bg-red-50 rounded-lg flex items-center justify-center text-red-500 transition-colors" title="Revoke">
+              <i class="fas fa-user-minus" style="font-size:10px;"></i>
+            </button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
 
-      renderPageBtns('uPageBtns', 'uPageInfo', _uPage, tp, _uTotal, p => { _uPage = p; applyUFiltersAndRender(); });
-    }
-
+  renderPageBtns('uPageBtns', 'uPageInfo', _uPage, tp, _uTotal, p => { _uPage = p; applyUFiltersAndRender(); });
+}
     function exportUsers() {
       const cols = ['user_id', 'Surname', 'OtherName', 'Rank', 'role', 'scope_type', 'scope_value'];
       dlCSV('ship-users.csv', [cols.join(','), ..._uAllRows.map(r => cols.map(c => `"${r[c] ?? ''}"`).join(','))].join('\n'));
     }
 
     /* ── User modal ── */
-    function openUserModal(user) {
-      _editingUserSvcNo = user ? user.user_id : null;
-      document.getElementById('userModalTitle').textContent = user ? 'Edit Ship User' : 'New Ship User';
-      document.getElementById('userOrigSvcNo').value = user ? user.user_id : '';
-      document.getElementById('userSvcNo').value = user ? (user.user_id || '') : '';
-      document.getElementById('userSvcNo').readOnly = !!user;
-      document.getElementById('userSvcNo').className = `w-full h-9 border rounded-lg px-3 text-xs focus:outline-none focus:border-gold ${user ? 'bg-slate-50 border-slate-200 text-slate-400' : 'border-slate-200'}`;
-      document.getElementById('userSvcMsg').classList.add('hidden');
+function onUserAppointmentChange() {
+  const appt = document.getElementById('userAppointment').value;
+  document.getElementById('userShipWrap').classList.toggle('hidden', !(appt === 'DO' || appt === 'FO'));
+  document.getElementById('userCommandWrap').classList.toggle('hidden', appt !== 'CPO');
+}
 
-      // Resolve command for this user:
-      //  - CPO: scope_value IS the command name → look up by name
-      //  - DO/FO: scope_value is a ship name → find ship → use its commandid
-      let cmdId = '';
-      let shipName = '';
-      if (user) {
-        if (user.role === 'CPO') {
-          const cmd = _commands.find(c => c.commandName === user.scope_value);
-          cmdId = cmd ? cmd.Id : '';
-          shipName = '';
-        } else {
-          shipName = user.scope_value || '';
-          const ship = _ships.find(s => s.shipName === shipName);
-          cmdId = ship ? ship.commandid : '';
-        }
-      }
-      document.getElementById('userCommand').value = String(cmdId || '');
-      onUserCommandChange();                                  // populate ship list
-      document.getElementById('userShip').value = shipName;
-      document.getElementById('userAppointment').value = user ? (user.role || '') : '';
+function openUserModal(user) {
+  _editingUserSvcNo = user ? user.user_id : null;
+  document.getElementById('userModalTitle').textContent = user ? 'Edit Ship User' : 'New Ship User';
+  document.getElementById('userOrigSvcNo').value = user ? user.user_id : '';
+  document.getElementById('userSvcNo').value = user ? (user.user_id || '') : '';
+  document.getElementById('userSvcNo').readOnly = !!user;
+  document.getElementById('userSvcNo').className = `w-full h-9 border rounded-lg px-3 text-xs focus:outline-none focus:border-gold ${user ? 'bg-slate-50 border-slate-200 text-slate-400' : 'border-slate-200'}`;
+  document.getElementById('userSvcMsg').classList.add('hidden');
 
-      const btn = document.getElementById('userSubmitBtn');
-      btn.innerHTML = user
-        ? '<i class="fas fa-save mr-1"></i>Save Changes'
-        : '<i class="fas fa-user-plus mr-1"></i>Add User';
-      openModal('userModal');
+  const apptSel = document.getElementById('userAppointment');
+  apptSel.value = user ? (user.role || '') : '';
+  apptSel.disabled = !!user;
+  apptSel.className = `w-full h-9 border rounded-lg px-3 text-xs focus:outline-none focus:border-gold ${user ? 'bg-slate-50 border-slate-200 text-slate-400' : 'border-slate-200'}`;
+
+  document.getElementById('userShip').value = '';
+  document.getElementById('userCommand').value = '';
+  if (user) {
+    if (user.role === 'CPO') {
+      const cmd = _commands.find(c => c.commandName === user.scope_value || c.code === user.scope_value);
+      document.getElementById('userCommand').value = cmd ? cmd.Id : '';
+    } else {
+      document.getElementById('userShip').value = user.scope_value || '';
     }
+  }
+  onUserAppointmentChange();
 
-    async function submitUser() {
-      const svcNo = document.getElementById('userSvcNo').value.trim();
-      const cmdId = document.getElementById('userCommand').value;
-      const ship = document.getElementById('userShip').value;
-      const appt = document.getElementById('userAppointment').value;
-      const svcMsg = document.getElementById('userSvcMsg');
+  const btn = document.getElementById('userSubmitBtn');
+  btn.innerHTML = user
+    ? '<i class="fas fa-save mr-1"></i>Save Changes'
+    : '<i class="fas fa-user-plus mr-1"></i>Add User';
+  openModal('userModal');
+}
 
-      svcMsg.classList.add('hidden');
+async function submitUser() {
+  const svcNo = document.getElementById('userSvcNo').value.trim();
+  const appt = document.getElementById('userAppointment').value;
+  const ship = document.getElementById('userShip').value;
+  const cmdId = document.getElementById('userCommand').value;
+  const svcMsg = document.getElementById('userSvcMsg');
 
-      // ── validation ─────────────────────────────────────
-      if (!svcNo) { toast('Service number is required.', false); return; }
-      if (!cmdId) { toast('Command is required.', false); return; }
-      if (appt !== 'CPO' && !ship) { toast('Ship is required.', false); return; }
-      if (!appt) { toast('Appointment is required.', false); return; }
+  svcMsg.classList.add('hidden');
 
-      const btn = document.getElementById('userSubmitBtn');
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Validating…';
+  if (!svcNo) { toast('Service number is required.', false); return; }
+  if (!appt) { toast('Appointment is required.', false); return; }
+  if ((appt === 'DO' || appt === 'FO') && !ship) { toast('Ship is required.', false); return; }
+  if (appt === 'CPO' && !cmdId) { toast('Command is required.', false); return; }
 
-      try {
-        // ── validate user exists in ef_personalinfos (skip for edit — already validated) ──
-        if (!_editingUserSvcNo) {
-          const vr = await fetch(`/admin/personnel/${encodeURIComponent(svcNo)}`, { headers: H });
-          if (vr.status === 404) {
-            svcMsg.textContent = 'Service number not found in personnel records.';
-            svcMsg.className = 'text-[10px] mt-1 text-red-500 font-semibold';
-            svcMsg.classList.remove('hidden');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-user-plus mr-1"></i>Add User';
-            return;
-          }
-          if (!vr.ok) throw new Error('validation request failed');
-        }
+  const btn = document.getElementById('userSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Validating…';
 
-        // ── assign appointment ─────────────────────────────
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Saving…';
-        const scopeType = appt === 'CPO' ? 'COMMAND' : 'SHIP';
-        // CPO scope is the command NAME (not Id) — look it up
-        const cmdObj = _commands.find(c => String(c.Id) === String(cmdId));
-        const scopeValue = appt === 'CPO' ? (cmdObj?.code || '') : ship;
-
-        const r = await fetch('/admin/roles/assign', {
-          method: 'POST', headers: H,
-          body: JSON.stringify({ user_id: svcNo, role: appt, scope_type: scopeType, scope_value: scopeValue }),
-        });
-        const d = await r.json();
-        if (!r.ok) { toast(d.error || 'Failed to assign role.', false); btn.disabled = false; btn.innerHTML = _editingUserSvcNo ? '<i class="fas fa-save mr-1"></i>Save Changes' : '<i class="fas fa-user-plus mr-1"></i>Add User'; return; }
-
-        toast(_editingUserSvcNo ? `Role updated to ${appt}.` : `User added with ${appt} role.`);
-        closeModal('userModal'); loadUsers();
-      } catch (err) {
-        toast('Server error.', false);
-      } finally {
+  try {
+    if (!_editingUserSvcNo) {
+      const vr = await fetch(`/admin/personnel/${encodeURIComponent(svcNo)}`, { headers: H });
+      if (vr.status === 404) {
+        svcMsg.textContent = 'Service number not found in personnel records.';
+        svcMsg.className = 'text-[10px] mt-1 text-red-500 font-semibold';
+        svcMsg.classList.remove('hidden');
         btn.disabled = false;
-        btn.innerHTML = _editingUserSvcNo ? '<i class="fas fa-save mr-1"></i>Save Changes' : '<i class="fas fa-user-plus mr-1"></i>Add User';
+        btn.innerHTML = '<i class="fas fa-user-plus mr-1"></i>Add User';
+        return;
       }
+      if (!vr.ok) throw new Error('validation request failed');
     }
 
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Saving…';
+    const scopeType = appt === 'CPO' ? 'COMMAND' : 'SHIP';
+    const cmdObj = _commands.find(c => String(c.Id) === String(cmdId));
+    const scopeValue = appt === 'CPO' ? (cmdObj?.code || '') : ship;
+
+    const r = await fetch('/admin/roles/assign', {
+      method: 'POST', headers: H,
+      body: JSON.stringify({ user_id: svcNo, role: appt, scope_type: scopeType, scope_value: scopeValue }),
+    });
+    const d = await r.json();
+    if (!r.ok) { toast(d.error || 'Failed to assign role.', false); btn.disabled = false; btn.innerHTML = _editingUserSvcNo ? '<i class="fas fa-save mr-1"></i>Save Changes' : '<i class="fas fa-user-plus mr-1"></i>Add User'; return; }
+
+    toast(_editingUserSvcNo ? `Role updated to ${appt}.` : `User added with ${appt} role.`);
+    closeModal('userModal'); loadUsers();
+  } catch (err) {
+    toast('Server error.', false);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = _editingUserSvcNo ? '<i class="fas fa-save mr-1"></i>Save Changes' : '<i class="fas fa-user-plus mr-1"></i>Add User';
+  }
+}
     function revokeUser(id, userId, role) {
       confirm_('Revoke Role', `Revoke ${role} role from ${userId}?`, () => {
         fetch(`/admin/roles/${id}/revoke`, { method: 'DELETE', headers: H })

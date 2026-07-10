@@ -51,8 +51,17 @@ async function withTransaction(fn) {
 // LIST — DO_REVIEWED forms on a ship
 // ─────────────────────────────────────────────────────────────
 
-async function getDoReviewedForms(ship, limit, offset) {
+async function getDoReviewedForms(ship, limit, offset, search) {
   pool.useDatabase(DB());
+
+  let searchClause = "";
+  const searchParams = [];
+  if (search && search.trim()) {
+    searchClause = ` AND (p.Surname LIKE ? OR p.OtherName LIKE ? OR p.serviceNumber LIKE ?)`;
+    const like = `%${search.trim()}%`;
+    searchParams.push(like, like, like);
+  }
+
   const reviewedQuery = `SELECT
        p.serviceNumber, p.Surname, p.OtherName, p.Rank,
        p.payrollclass, p.classes, p.formNumber, p.FormYear,
@@ -68,6 +77,7 @@ async function getDoReviewedForms(ship, limit, offset) {
      WHERE p.ship   = ?
        AND p.Status IN ('FO', 'DO_REVIEWED')
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
+       ${searchClause}
      ORDER BY p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ? ;
      `;
@@ -77,12 +87,13 @@ async function getDoReviewedForms(ship, limit, offset) {
       FROM ef_personalinfos p
       WHERE p.ship   = ?
        AND p.Status IN ('FO', 'DO_REVIEWED')
-       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes');
+       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
+       ${searchClause};
     `;
 
   const [[rows], [countResults]] = await Promise.all([
-    pool.query(reviewedQuery, [ship, limit, offset]),
-    pool.query(countQuery, [ship]),
+    pool.query(reviewedQuery, [ship, ...searchParams, limit, offset]),
+    pool.query(countQuery, [ship, ...searchParams]),
   ]);
   return { forms: rows, total: countResults[0].total };
 }
@@ -92,8 +103,18 @@ async function getDoReviewedForms(ship, limit, offset) {
 // Returns summary rows only — not full form data
 // ─────────────────────────────────────────────────────────────
 
-async function getApprovedForms(ship, svc, limit, offset) {
+// getApprovedForms — same search treatment
+async function getApprovedForms(ship, svc, limit, offset, search) {
   pool.useDatabase(DB());
+
+  let searchClause = "";
+  const searchParams = [];
+  if (search && search.trim()) {
+    searchClause = ` AND (p.Surname LIKE ? OR p.OtherName LIKE ? OR p.serviceNumber LIKE ?)`;
+    const like = `%${search.trim()}%`;
+    searchParams.push(like, like, like);
+  }
+
   const approvedQuery = `SELECT
        p.serviceNumber, p.Surname, p.OtherName, p.Rank,
        p.payrollclass, p.classes, p.formNumber, p.FormYear,
@@ -110,6 +131,7 @@ async function getApprovedForms(ship, svc, limit, offset) {
      WHERE p.ship   = ?
        AND p.Status IN ('CPO', 'FO_APPROVED')
        AND p.fo_svcno = ?
+       ${searchClause}
      ORDER BY p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`;
 
@@ -118,12 +140,13 @@ async function getApprovedForms(ship, svc, limit, offset) {
       FROM ef_personalinfos p
       WHERE p.ship   = ?
        AND p.Status IN ('CPO', 'FO_APPROVED')
-       AND p.fo_svcno = ?;
+       AND p.fo_svcno = ?
+       ${searchClause};
     `;
 
   const [[rows], [countResults]] = await Promise.all([
-    pool.query(approvedQuery, [ship, svc, limit, offset]),
-    pool.query(countQuery, [ship, svc]),
+    pool.query(approvedQuery, [ship, svc, ...searchParams, limit, offset]),
+    pool.query(countQuery, [ship, svc, ...searchParams]),
   ]);
   return { forms: rows, total: countResults[0].total };
 }
@@ -352,7 +375,6 @@ async function approveBulk(
     const serviceNumbers = affected.map((r) => r.serviceNumber);
     const svcPlaceholders = serviceNumbers.map(() => "?").join(",");
 
-
     // 2. Bulk update ef_personalinfos
     const [result] = await conn.query(
       `UPDATE ef_personalinfos
@@ -366,11 +388,18 @@ async function approveBulk(
         AND serviceNumber IN (${svcPlaceholders})
         AND Status  = 'FO'
         AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
-      [legacyStatus, foName, foRank, foSvcNo, ship, ...serviceNumbers.map(String)],
+      [
+        legacyStatus,
+        foName,
+        foRank,
+        foSvcNo,
+        ship,
+        ...serviceNumbers.map(String),
+      ],
     );
 
     // 3. Bulk update ef_emolument_forms
-    
+
     await conn.query(
       `UPDATE ef_emolument_forms
        SET status     = 'FO_APPROVED',

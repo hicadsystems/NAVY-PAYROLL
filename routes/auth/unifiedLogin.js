@@ -70,7 +70,7 @@ router.post("/pre-login", async (req, res) => {
   const password = (req.body.password || "").trim();
 
   if (!user_id || !password) {
-    return res.status(400).json({ error: "User ID and password are required" });
+    return res.status(400).json({ error: "Service Number and password are required" });
   }
 
   try {
@@ -89,7 +89,7 @@ router.post("/pre-login", async (req, res) => {
     );
 
     if (!empRows.length) {
-      return res.status(401).json({ error: "Invalid User ID or password" });
+      return res.status(401).json({ error: "Invalid Service Number or password" });
     }
 
     const emp = empRows[0];
@@ -101,7 +101,7 @@ router.post("/pre-login", async (req, res) => {
     }
 
     if (!emp.password || emp.password !== password) {
-      return res.status(401).json({ error: "Invalid User ID or password" });
+      return res.status(401).json({ error: "Invalid Service Number or password" });
     }
 
     // ── 2. Resolve capabilities (3 parallel queries) ─────────
@@ -298,7 +298,7 @@ router.post("/verify-identity", async (req, res) => {
   if (!user_id || !full_name) {
     return res
       .status(400)
-      .json({ error: "User ID and Full Name are required" });
+      .json({ error: "Service Number and Full Name are required" });
   }
 
   try {
@@ -313,7 +313,7 @@ router.post("/verify-identity", async (req, res) => {
     if (!rows.length) {
       return res
         .status(404)
-        .json({ error: "User not found. Please check your User ID." });
+        .json({ error: "User not found. Please check your Service Number." });
     }
 
     const emp = rows[0];

@@ -412,312 +412,259 @@
 
   <section class="flex justify-center p-2 md:p-4">
     <div class="w-full max-w-7xl">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <!-- ROW 1: Officers -->
-        <div class="p-2 border-b-2 border-gray-200">
+        <div
+          class="relative overflow-hidden rounded-lg bg-cyan-600 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]"
+        >
+          <i
+            class="fas fa-user absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"
+          ></i>
           <p
-            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
-          >
-            Officers
-          </p>
-          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span
-              class="ah-cell-lbl text-xs md:text-xs"
-              style="font-size: clamp(9px, 1.5vw, 12px)"
-              >All Officers</span
-            >
-            <i
-              class="fas fa-user text-sky-500"
-              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
-            ></i>
-          </div>
-          <p
-            class="ah-cell-val text-center font-bold text-gray-800"
-            style="font-size: clamp(14px, 2vw, 20px)"
+            class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8"
             id="s-o-total"
           >
             <span
-              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+              class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"
             ></span>
           </p>
-        </div>
-        <div class="p-2 border-l-2 border-b-2 border-gray-200">
           <p
-            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+            class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8"
           >
-            &nbsp;
+            All Officers
           </p>
-          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
-              >Officers Approved</span
-            >
-            <i
-              class="fas fa-check-circle text-green-500"
-              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
-            ></i>
-          </div>
+        </div>
+
+        <div
+          class="relative overflow-hidden rounded-lg bg-green-600 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]"
+        >
+          <i
+            class="fas fa-user-friends absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"
+          ></i>
           <p
-            class="ah-cell-val text-center font-bold text-gray-800"
-            style="font-size: clamp(14px, 2vw, 20px)"
+            class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8"
             id="s-o-conf"
           >
             <span
-              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+              class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"
             ></span>
           </p>
-        </div>
-        <div class="p-2 border-l-2 border-b-2 border-gray-200">
           <p
-            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+            class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8"
           >
-            &nbsp;
+            Officers Approved
           </p>
-          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
-              >Awaiting Approval</span
-            >
-            <i
-              class="fas fa-clock text-amber-500"
-              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
-            ></i>
-          </div>
+        </div>
+
+        <div
+          class="relative overflow-hidden rounded-lg bg-amber-500 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]"
+        >
+          <i
+            class="fas fa-user-clock absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"
+          ></i>
           <p
-            class="ah-cell-val text-center font-bold text-gray-800"
-            style="font-size: clamp(14px, 2vw, 20px)"
+            class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8"
             id="s-o-pend"
           >
             <span
-              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+              class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"
             ></span>
           </p>
-        </div>
-        <div class="p-2 border-l-2 border-b-2 border-gray-200">
           <p
-            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+            class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8"
           >
-            &nbsp;
+            Officers Awaiting Approval
           </p>
-          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
-              >Yet To Fill Form</span
-            >
-            <i
-              class="fas fa-times-circle text-red-400"
-              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
-            ></i>
-          </div>
+        </div>
+
+        <div
+          class="relative overflow-hidden rounded-lg bg-red-500 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]"
+        >
+          <i
+            class="fas fa-user-times absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"
+          ></i>
           <p
-            class="ah-cell-val text-center font-bold text-gray-800"
-            style="font-size: clamp(14px, 2vw, 20px)"
+            class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8"
             id="s-o-nf"
           >
             <span
-              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+              class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"
             ></span>
+          </p>
+          <p
+            class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8"
+          >
+            Officers Yet To Fill Form
           </p>
         </div>
 
         <!-- ROW 2: Ratings -->
-        <div class="p-2 border-b-2 border-gray-200">
+        <div
+          class="relative overflow-hidden rounded-lg bg-cyan-600 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]"
+        >
+          <i
+            class="fas fa-user absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"
+          ></i>
           <p
-            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
-          >
-            Ratings
-          </p>
-          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
-              >All Ratings</span
-            >
-            <i
-              class="fas fa-user text-sky-500"
-              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
-            ></i>
-          </div>
-          <p
-            class="ah-cell-val text-center font-bold text-gray-800"
-            style="font-size: clamp(14px, 2vw, 20px)"
+            class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8"
             id="s-r-total"
           >
             <span
-              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+              class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"
             ></span>
           </p>
-        </div>
-        <div class="p-2 border-l-2 border-b-2 border-gray-200">
           <p
-            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+            class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8"
           >
-            &nbsp;
+            All Ratings
           </p>
-          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
-              >Rating Approved</span
-            >
-            <i
-              class="fas fa-check-circle text-green-500"
-              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
-            ></i>
-          </div>
+        </div>
+
+        <div
+          class="relative overflow-hidden rounded-lg bg-green-600 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]"
+        >
+          <i
+            class="fas fa-user-friends absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"
+          ></i>
           <p
-            class="ah-cell-val text-center font-bold text-gray-800"
-            style="font-size: clamp(14px, 2vw, 20px)"
+            class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8"
             id="s-r-conf"
           >
             <span
-              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+              class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"
             ></span>
           </p>
-        </div>
-        <div class="p-2 border-l-2 border-b-2 border-gray-200">
           <p
-            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+            class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8"
           >
-            &nbsp;
+            Rating Approved
           </p>
-          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
-              >Awaiting Approval</span
-            >
-            <i
-              class="fas fa-clock text-amber-500"
-              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
-            ></i>
-          </div>
+        </div>
+
+        <div
+          class="relative overflow-hidden rounded-lg bg-amber-500 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]"
+        >
+          <i
+            class="fas fa-user-clock absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"
+          ></i>
           <p
-            class="ah-cell-val text-center font-bold text-gray-800"
-            style="font-size: clamp(14px, 2vw, 20px)"
+            class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8"
             id="s-r-pend"
           >
             <span
-              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+              class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"
             ></span>
           </p>
-        </div>
-        <div class="p-2 border-l-2 border-b-2 border-gray-200">
           <p
-            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+            class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8"
           >
-            &nbsp;
+            Ratings Awaiting Approval
           </p>
-          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
-              >Yet To Fill Form</span
-            >
-            <i
-              class="fas fa-times-circle text-red-400"
-              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
-            ></i>
-          </div>
+        </div>
+
+        <div
+          class="relative overflow-hidden rounded-lg bg-red-500 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]"
+        >
+          <i
+            class="fas fa-user-times absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"
+          ></i>
           <p
-            class="ah-cell-val text-center font-bold text-gray-800"
-            style="font-size: clamp(14px, 2vw, 20px)"
+            class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8"
             id="s-r-nf"
           >
             <span
-              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+              class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"
             ></span>
+          </p>
+          <p
+            class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8"
+          >
+            Ratings Yet To Fill Form
           </p>
         </div>
 
         <!-- ROW 3: Training -->
-        <div class="p-2">
+        <div
+          class="relative overflow-hidden rounded-lg bg-cyan-600 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]"
+        >
+          <i
+            class="fas fa-user absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"
+          ></i>
           <p
-            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
-          >
-            Training
-          </p>
-          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
-              >All Trainee Personnel</span
-            >
-            <i
-              class="fas fa-user text-sky-500"
-              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
-            ></i>
-          </div>
-          <p
-            class="ah-cell-val text-center font-bold text-gray-800"
-            style="font-size: clamp(14px, 2vw, 20px)"
+            class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8"
             id="s-t-total"
           >
             <span
-              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+              class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"
             ></span>
           </p>
-        </div>
-        <div class="p-2 border-l-2 border-gray-200">
           <p
-            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+            class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8"
           >
-            &nbsp;
+            All Trainee Personnel
           </p>
-          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
-              >Trainee Approved</span
-            >
-            <i
-              class="fas fa-check-circle text-green-500"
-              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
-            ></i>
-          </div>
+        </div>
+
+        <div
+          class="relative overflow-hidden rounded-lg bg-green-600 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]"
+        >
+          <i
+            class="fas fa-user-friends absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"
+          ></i>
           <p
-            class="ah-cell-val text-center font-bold text-gray-800"
-            style="font-size: clamp(14px, 2vw, 20px)"
+            class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8"
             id="s-t-conf"
           >
             <span
-              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+              class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"
             ></span>
           </p>
-        </div>
-        <div class="p-2 border-l-2 border-gray-200">
           <p
-            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+            class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8"
           >
-            &nbsp;
+            Trainee Approved
           </p>
-          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
-              >Awaiting Approval</span
-            >
-            <i
-              class="fas fa-clock text-amber-500"
-              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
-            ></i>
-          </div>
+        </div>
+
+        <div
+          class="relative overflow-hidden rounded-lg bg-amber-500 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]"
+        >
+          <i
+            class="fas fa-user-clock absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"
+          ></i>
           <p
-            class="ah-cell-val text-center font-bold text-gray-800"
-            style="font-size: clamp(14px, 2vw, 20px)"
+            class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8"
             id="s-t-pend"
           >
             <span
-              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+              class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"
             ></span>
           </p>
-        </div>
-        <div class="p-2 border-l-2 border-gray-200">
           <p
-            class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1"
+            class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8"
           >
-            &nbsp;
+            Trainee Awaiting Approval
           </p>
-          <div class="flex items-center justify-between md:px-6 gap-1 mb-1">
-            <span class="ah-cell-lbl" style="font-size: clamp(9px, 1.5vw, 12px)"
-              >Yet To Fill Form</span
-            >
-            <i
-              class="fas fa-times-circle text-red-400"
-              style="font-size: clamp(9px, 1.5vw, 12px); flex-shrink: 0"
-            ></i>
-          </div>
+        </div>
+
+        <div
+          class="relative overflow-hidden rounded-lg bg-red-500 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]"
+        >
+          <i
+            class="fas fa-user-times absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"
+          ></i>
           <p
-            class="ah-cell-val text-center font-bold text-gray-800"
-            style="font-size: clamp(14px, 2vw, 20px)"
+            class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8"
             id="s-t-nf"
           >
             <span
-              class="inline-block w-8 h-4 md:w-10 md:h-5 bg-gray-200 rounded animate-pulse"
+              class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"
             ></span>
+          </p>
+          <p
+            class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8"
+          >
+            Trainee Yet To Fill Form
           </p>
         </div>
       </div>
@@ -857,13 +804,13 @@
 
     /* ── Greeting ── */
     try {
-      const name = (localStorage.getItem("full_name") || "Admin")
-        .trim()
-        .split(" ")[0];
+      const name = localStorage.getItem("full_name") || "Admin";
+      const first = name.split(" ")[0];
+      const second = name.split(" ")[1];
       const h = new Date().getHours();
       const part = h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening";
       const el = document.getElementById("ah-name");
-      if (el) el.textContent = "Good " + part + ", " + name;
+      if (el) el.textContent = `Good ${part}, ${first} ${second || ""}`;
     } catch (e) {}
 
     /* ── Helpers ── */

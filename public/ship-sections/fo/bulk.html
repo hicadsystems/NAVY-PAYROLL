@@ -6,8 +6,10 @@
   </div>
 
   <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="font-bold text-navy text-sm uppercase tracking-wide">
+    <div class="flex items-center justify-between gap-3 mb-4">
+      <h3
+        class="font-bold text-navy text-sm uppercase tracking-wide whitespace-nowrap"
+      >
         DO-Reviewed Forms
       </h3>
       <div class="flex items-center gap-2">
@@ -22,6 +24,19 @@
         >
       </div>
     </div>
+
+    <div class="relative mb-4">
+      <i
+        class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-navy/30 text-sm"
+      ></i>
+      <input
+        type="text"
+        id="foBulkSearch"
+        placeholder="Search by name or service number..."
+        class="w-full pl-9 pr-3 py-2 border border-amber-100 rounded-lg text-sm text-navy bg-white focus:outline-none focus:border-navy"
+      />
+    </div>
+
     <div id="foBulkList">
       <div class="flex items-center justify-center py-8 text-navy/30">
         <i class="fas fa-spinner fa-spin mr-2"></i>
@@ -43,67 +58,119 @@
 
 <script>
   var foBulkForms = [];
+  var foBulkCurrentPage = 1;
+  var foBulkCurrentSearch = "";
 
-  (function loadFoBulkList(page) {
+  function debounce(fn, delay) {
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  function loadFoBulkList(page, search) {
     page = page || 1;
-    foPendingCurrentPage = page;
+    search = search !== undefined ? search : foBulkCurrentSearch;
+    foBulkCurrentPage = page;
+    foBulkCurrentSearch = search;
+
     const el = document.getElementById("foBulkList");
+    el.innerHTML = `<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>`;
+
+    const qs = new URLSearchParams({
+      page,
+      limit: FO_APPROVED_PAGE_SIZE,
+      search: search || "",
+    });
+
     fetch(
-      "/fo/ship/" +
-        encodeURIComponent(ship) +
-        "/personnel?page=" +
-        page +
-        "&limit=" +
-        FO_APPROVED_PAGE_SIZE,
-      { headers: { Authorization: "Bearer " + token } },
+      "/fo/ship/" + encodeURIComponent(ship) + "/personnel?" + qs.toString(),
+      {
+        headers: { Authorization: "Bearer " + token },
+      },
     )
       .then((r) => (r.ok ? r.json() : { forms: [], total: 0 }))
       .then((res) => {
         const rows = Array.isArray(res) ? res : res.forms || [];
         const total = Array.isArray(res) ? 1 : res.total || 1;
         foBulkForms = rows;
+
+        document.getElementById("foBulkSelectAll").checked = false;
+
         if (!rows.length && page === 1) {
-          el.innerHTML =
-            '<div class="text-center py-8 text-blue-900/30 text-sm"><i class="fas fa-check-circle fa-2x mb-2 block text-green-300"></i>No forms pending FO approval</div>';
+          el.innerHTML = search
+            ? `<div class="text-center py-8 text-blue-900/30 text-sm"><i class="fas fa-search fa-2x mb-2 block"></i>No matches for "${search}"</div>`
+            : '<div class="text-center py-8 text-blue-900/30 text-sm"><i class="fas fa-check-circle fa-2x mb-2 block text-green-300"></i>No forms pending FO approval</div>';
           return;
         }
-        el.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-         ${rows
-           .map(
-             (r, i) => `
-        <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 flex items-center gap-4">
-          <input type="checkbox" class="fo-bulk-chk accent-navy w-4 h-4 flex-shrink-0" data-idx="${i}" checked />
-          <div class="flex-1 min-w-0">
-            <div class="font-bold text-navy text-sm">${r.Surname || ""} ${r.OtherName || ""}</div>
-            <div class="text-xs text-blue-900/40">${r.serviceNumber}</div>
-          </div>
-          <button onclick="viewForm('${r.serviceNumber}', 'EMOL_FO')" class="px-2 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg cursor-pointer border border-blue-200 hover:bg-blue-100 transition-colors flex-shrink-0">
-            <i class="fas fa-eye mr-1"></i>View
-          </button>
-          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-500 flex-shrink-0">DO Reviewed</span>
-        </div>`,
-           )
-           .join("")} </div>
 
-             ${paginatorHTML(page, Math.ceil(total / FO_APPROVED_PAGE_SIZE), "foPending")}`;
+        el.innerHTML = `
+        <div class="rounded-xl border border-amber-100 overflow-hidden overflow-x-auto">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="text-left text-xs font-bold text-navy/60 uppercase tracking-wide border-b border-amber-100 bg-white/40">
+                <th class="py-2.5 px-4 w-10"></th>
+                <th class="py-2.5 px-4">Name</th>
+                <th class="py-2.5 px-4">Service No.</th>
+                <th class="py-2.5 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows
+                .map(
+                  (r, i) => `
+                <tr class="border-b border-amber-50 last:border-0 hover:bg-amber-50/40 transition-colors bg-white/60">
+                  <td class="py-2.5 px-4">
+                    <input type="checkbox" class="fo-bulk-chk accent-navy w-4 h-4" data-idx="${i}" checked />
+                  </td>
+                  <td class="py-2.5 px-4 font-bold text-navy">${r.Surname || ""} ${r.OtherName || ""}</td>
+                  <td class="py-2.5 px-4 text-blue-900/50">${r.serviceNumber}</td>
+                  <td class="py-2.5 px-4">
+                    <div class="flex gap-2 justify-end items-center">
+                      <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-500">DO Reviewed</span>
+                      <button onclick="viewForm('${r.serviceNumber}', 'EMOL_FO')" class="px-2 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg cursor-pointer border border-blue-200 hover:bg-blue-100 transition-colors">
+                        <i class="fas fa-eye mr-1"></i>View
+                      </button>
+                    </div>
+                  </td>
+                </tr>`,
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+        ${paginatorHTML(page, Math.ceil(total / FO_APPROVED_PAGE_SIZE), "foBulk")}`;
 
-        /* paginator click handlers — each click triggers a fresh BE fetch */
-        el.querySelectorAll('[data-paginator="foPending"]').forEach((btn) => {
-          btn.addEventListener("click", () => loadFoPending(+btn.dataset.page));
+        el.querySelectorAll('[data-paginator="foBulk"]').forEach((btn) => {
+          btn.addEventListener("click", () =>
+            loadFoBulkList(+btn.dataset.page),
+          );
         });
       })
       .catch(() => {
         el.innerHTML =
           '<div class="text-center py-6 text-red-400 text-sm">Failed to load</div>';
       });
-  })();
+  }
+
+  const debouncedFoBulkSearch = debounce((val) => loadFoBulkList(1, val), 350);
+  document.getElementById("foBulkSearch").addEventListener("input", (e) => {
+    debouncedFoBulkSearch(e.target.value.trim());
+  });
 
   function viewForm(svcno, role) {
     sessionStorage.setItem("emolument_form_return_page", "ship-dashboard");
     sessionStorage.setItem("active_ship_role", role);
     sessionStorage.setItem("emolument_form_svcno", svcno);
     window.location.href =
-      "../../pages/emolument-form.html?svcno=" + encodeURIComponent(svcno);
+      "../../pages/emolument-form.html?svcno=" +
+      encodeURIComponent(svcno) +
+      "&role=" +
+      encodeURIComponent(role) +
+      "&admin=1" +
+      "&ship=" +
+      encodeURIComponent(ship);
   }
 
   function foToggleAll(cb) {
@@ -114,7 +181,7 @@
 
   function executeFoBulk() {
     const selected = [...document.querySelectorAll(".fo-bulk-chk:checked")]
-      .map((c) => foBulkForms[+c.dataset.idx]?.formId)
+      .map((c) => foBulkForms[+c.dataset.idx]?.form_id)
       .filter(Boolean);
     const msg = document.getElementById("foBulkMsg");
     if (!selected.length) {
@@ -142,10 +209,9 @@
           ? d.message || selected.length + " forms approved."
           : d.error || "Failed";
         msg.classList.remove("hidden");
-        // clear list and refresh after a short delay to show the message
         setTimeout(() => {
           msg.classList.add("hidden");
-          loadFoBulkList(foPendingCurrentPage);
+          loadFoBulkList(foBulkCurrentPage, foBulkCurrentSearch);
         }, 2000);
       })
       .catch(() => {
@@ -155,4 +221,6 @@
         msg.classList.remove("hidden");
       });
   }
+
+  loadFoBulkList(1, "");
 </script>

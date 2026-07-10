@@ -65,6 +65,7 @@ router.get("/verified", async (req, res) => {
     payrollclass: req.query.payrollclass || undefined,
     ship: req.query.ship || undefined,
     command: req.query.command || undefined,
+    search: req.query.search?.trim() || undefined,
   };
   const page = Math.max(Number(req.query.page) || 1, 1);
   const pageSize = Math.min(Number(req.query.pageSize) || 50, 200);

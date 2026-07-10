@@ -1,10 +1,14 @@
-
-
 const path = require("path");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const repo = require("./email.repository");
-const { DEFAULT_QUOTA, RETENTION_DAYS, UPLOADS_ROOT, hashFile, fmtBytes } = require("./email.utils");
+const {
+  DEFAULT_QUOTA,
+  RETENTION_DAYS,
+  UPLOADS_ROOT,
+  hashFile,
+  fmtBytes,
+} = require("./email.utils");
 const SocketService = require("../../../config/sockets");
 
 // Hard-delete a message row + its physical attachment files.
@@ -83,7 +87,9 @@ async function handleUpload({ file, userId }) {
     };
   }
 
-  const relativePath = path.relative(UPLOADS_ROOT, filePath).replace(/\\/g, "/");
+  const relativePath = path
+    .relative(UPLOADS_ROOT, filePath)
+    .replace(/\\/g, "/");
 
   await repo.insertOriginalAttachment({
     tempToken,
@@ -174,6 +180,8 @@ async function sendMessage({
   // Assign a shared batch_id for multi-recipient sends so rows can be grouped
   const batchId = recipientList.length > 1 ? uuidv4() : null;
 
+  const sentAt = new Date().toISOString();
+
   for (let i = 0; i < recipientList.length; i++) {
     const recipient = recipientList[i];
 
@@ -203,20 +211,33 @@ async function sendMessage({
       `${attachmentRows.length} attachment(s) stored once, referenced ${count} time(s)`,
   );
 
-  recipients.forEach((r) => {
-  SocketService.emitToUser(r.user_id, "mail:new", {
-    id: message.id,
-    from_name: senderName,
-    subject: message.subject,
-    preview: message.body.slice(0, 80),
-    sent_at: message.sent_at,
-    has_attachments: attachment_tokens.length > 0,
-  });
-});
+  // ── Real-time notify each recipient ──────────────────────
+  for (let i = 0; i < recipientList.length; i++) {
+    const r = recipientList[i];
+
+    SocketService.emitToUser(r.user_id, "mail:new", {
+      id: mailIds[i],
+      from_name: userFullname,
+      subject,
+      preview: body.slice(0, 80),
+      sent_at: sentAt,
+      has_attachments: tokens.length > 0,
+      recipient_count: count,
+    });
+
+    try {
+      const unread = await repo.getUnreadCount(r.user_id);
+      SocketService.emitToUser(r.user_id, "mail:badge", { unread });
+    } catch (e) {
+      console.error(`Failed to get unread count for ${r.user_id}:`, e.message);
+    }
+  }
 
   return {
     message:
-      count === 1 ? "✅ Message sent" : `✅ Message sent to ${count} recipients`,
+      count === 1
+        ? "✅ Message sent"
+        : `✅ Message sent to ${count} recipients`,
     recipient_count: count,
   };
 }
@@ -322,9 +343,15 @@ async function getTick({ id, userId }) {
     const anyRead = batchRows.some((r) => r.read_at);
 
     const firstDelivered =
-      batchRows.map((r) => r.delivered_at).filter(Boolean).sort()[0] || null;
+      batchRows
+        .map((r) => r.delivered_at)
+        .filter(Boolean)
+        .sort()[0] || null;
     const firstRead =
-      batchRows.map((r) => r.read_at).filter(Boolean).sort()[0] || null;
+      batchRows
+        .map((r) => r.read_at)
+        .filter(Boolean)
+        .sort()[0] || null;
 
     const tick = allRead
       ? "read"

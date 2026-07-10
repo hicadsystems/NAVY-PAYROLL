@@ -70,8 +70,17 @@ async function withTransaction(fn) {
 // LIST — FO_APPROVED forms scoped to a command
 // ─────────────────────────────────────────────────────────────
 
-async function getFoApprovedForms(command, limit, offset) {
+async function getFoApprovedForms(command, limit, offset, search) {
   pool.useDatabase(DB());
+
+  let searchClause = "";
+  const searchParams = [];
+  if (search && search.trim()) {
+    searchClause = ` AND (p.Surname LIKE ? OR p.OtherName LIKE ? OR p.serviceNumber LIKE ?)`;
+    const like = `%${search.trim()}%`;
+    searchParams.push(like, like, like);
+  }
+
   const approvedQuery = `SELECT
        p.serviceNumber, p.Surname, p.OtherName, p.Rank,
        p.payrollclass, p.classes, p.ship, p.command,
@@ -89,6 +98,7 @@ async function getFoApprovedForms(command, limit, offset) {
      WHERE p.command = ?
        AND p.Status IN ('CPO', 'FO_APPROVED')
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
+       ${searchClause}
      ORDER BY p.ship ASC, p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`;
 
@@ -97,12 +107,13 @@ async function getFoApprovedForms(command, limit, offset) {
       FROM ef_personalinfos p
       WHERE p.command = ?
        AND p.Status IN ('CPO', 'FO_APPROVED')
-       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes');
+       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
+       ${searchClause};
     `;
 
   const [[rows], [countResults]] = await Promise.all([
-    pool.query(approvedQuery, [command, limit, offset]),
-    pool.query(countQuery, [command]),
+    pool.query(approvedQuery, [command, ...searchParams, limit, offset]),
+    pool.query(countQuery, [command, ...searchParams]),
   ]);
   return { forms: rows, total: countResults[0].total };
 }
@@ -111,8 +122,17 @@ async function getFoApprovedForms(command, limit, offset) {
 // LIST — CPO_CONFIRMED forms scoped to a command
 // ─────────────────────────────────────────────────────────────
 
-async function getCPOConfirmedForms(command, svc, limit, offset) {
+async function getCPOConfirmedForms(command, svc, limit, offset, search) {
   pool.useDatabase(DB());
+
+  let searchClause = "";
+  const searchParams = [];
+  if (search && search.trim()) {
+    searchClause = ` AND (p.Surname LIKE ? OR p.OtherName LIKE ? OR p.serviceNumber LIKE ?)`;
+    const like = `%${search.trim()}%`;
+    searchParams.push(like, like, like);
+  }
+
   const confirmedQuery = `SELECT
        p.serviceNumber, p.Surname, p.OtherName, p.Rank,
        p.payrollclass, p.classes, p.ship, p.command,
@@ -132,6 +152,7 @@ async function getCPOConfirmedForms(command, svc, limit, offset) {
        AND p.Status IN ('Verified', 'CPO_CONFIRMED')
        AND p.emolumentform = 'Yes'
        AND p.hod_svcno = ?
+       ${searchClause}
      ORDER BY p.ship ASC, p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`;
 
@@ -141,11 +162,12 @@ async function getCPOConfirmedForms(command, svc, limit, offset) {
       WHERE p.command = ?
        AND p.Status IN ('Verified', 'CPO_CONFIRMED')
        AND p.emolumentform = 'Yes'
-       AND p.hod_svcno = ?;
-    `;
+       AND p.hod_svcno = ?
+       ${searchClause}
+     `;
   const [[rows], [countResults]] = await Promise.all([
-    pool.query(confirmedQuery, [command, svc, limit, offset]),
-    pool.query(countQuery, [command, svc]),
+    pool.query(confirmedQuery, [command, svc, ...searchParams, limit, offset]),
+    pool.query(countQuery, [command, svc, ...searchParams]),
   ]);
   return { forms: rows, total: countResults[0].total };
 }
@@ -415,6 +437,33 @@ async function getFormsByFormNumbers(formNumbers, status) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// GET FORMS BY FORM IDS
+// Used by confirmBulk to prefetch candidate forms before the
+// transaction — gives service layer formId, serviceNumber,
+// command, and FormYear in one query.
+//
+// Filters: Status = @status
+//          AND form_ids IN @formIds
+//          AND emolumentform != 'Yes' (not already confirmed)
+// ─────────────────────────────────────────────────────────────
+async function getFormsByFormIDs(formIds, status) {
+  const placeholders = formIds.map(() => "?").join(",");
+
+  const [rows] = await pool.query(
+    `SELECT p.id, p.serviceNumber, p.formNumber, p.command, p.FormYear, ef.id  AS form_id
+     FROM ef_personalinfos p
+     LEFT JOIN ef_emolument_forms ef
+       ON ef.service_no = p.serviceNumber
+     WHERE ef.id IN (${placeholders})
+       AND p.\`Status\`     = ?
+       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')`,
+    [...formIds.map(String), status],
+  );
+
+  return rows;
+}
+
+// ─────────────────────────────────────────────────────────────
 // GET FORMS BY CLASS
 // Used by confirmClass to prefetch candidate forms before the
 // transaction. Command filter is applied here in SQL so the
@@ -640,6 +689,17 @@ async function insertFormApproval({
   );
 }
 
+// When forms are rejected, we remove form approval trail records for that form. This is because the form is no longer approved, and we want to maintain an accurate record of approvals.
+// Deletes all approval records for the given formId. This is called after a form is rejected to maintain data integrity and ensure that the approval trail reflects the current state of the form.
+async function deleteFormApproval(formId) {
+  pool.useDatabase(DB());
+  await pool.query(
+    `DELETE FROM ef_form_approvals
+     WHERE form_id = ?`,
+    [formId],
+  );
+}
+
 async function insertAuditLog({
   tableName,
   action,
@@ -699,10 +759,12 @@ module.exports = {
   getDocuments,
   confirmFormWithHistory, // replaces confirmForm + insertHistoryRecord
   getFormsByFormNumbers,
+  getFormsByFormIDs,
   getFormsByClass,
   confirmBulkWithHistory, // replaces confirmBulk + insertHistoryRecord in bulk
   rejectForm,
   insertFormApproval,
+  deleteFormApproval,
   insertAuditLog,
   getStatusStats,
 };

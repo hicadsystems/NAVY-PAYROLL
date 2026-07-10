@@ -1,7 +1,7 @@
 /**
  * FILE: routes/user-dashboard/emolument/do/do.routes.js
  *
- * Routes for the Divisional Officer (DO) review workflow.
+ * Routes for the Duty Officer (DO) review workflow.
  *
  * All routes: verifyToken + requireFormRole('DO') or requireEmolRole('DO')
  * EMOL_ADMIN passes all guards automatically.
@@ -59,7 +59,7 @@ function resolveDoShips(req) {
 
 router.get("/ship/:ship/personnel", requireEmolRole("DO"), async (req, res) => {
   const { ship } = req.params;
-  const { limit, page = 1 } = req.query;
+  const { limit, page = 1, search = "" } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
 
   try {
@@ -67,6 +67,7 @@ router.get("/ship/:ship/personnel", requireEmolRole("DO"), async (req, res) => {
       ship,
       Number(limit),
       offset,
+      search,
     );
     if (!result.success)
       return res.status(result.code).json({ error: result.message });
@@ -220,10 +221,8 @@ router.get("/ship/:ship/stats", requireEmolRole("DO"), async (req, res) => {
 
 router.get("/ship/:ship/reviewed", requireEmolRole("DO"), async (req, res) => {
   const { ship } = req.params;
-
-  const svc = req.user_id; // Use DO's service number to get their specific stats if needed
-
-  const { limit, page = 1 } = req.query;
+  const svc = req.user_id;
+  const { limit, page = 1, search = "" } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
   try {
     const result = await doService.listReviewedForms(
@@ -231,6 +230,7 @@ router.get("/ship/:ship/reviewed", requireEmolRole("DO"), async (req, res) => {
       svc,
       Number(limit),
       offset,
+      search,
     );
     if (!result.success)
       return res.status(result.code).json({ error: result.message });

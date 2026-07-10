@@ -5,18 +5,30 @@
 // ── Clear payroll class on dashboard load ──────────────────
 localStorage.removeItem("current_class");
 
-// // ══════════════════════════════════════════════════════════
-// // SOCKET.IO CONNECTION
-// // ══════════════════════════════════════════════════════════
-// const socket = initSocket();
+// ══════════════════════════════════════════════════════════
+// SOCKET.IO CONNECTION
+// ══════════════════════════════════════════════════════════
+window.initSocket();
 
-// socket.on("mail:new", (mail) => {
-//     // prepend new mail
-// });
+const sck = window.getSocket();
 
-// socket.on("mail:badge", ({ unread }) => {
-//     updateGlobalBadge(unread);
-// });
+sck.on("connect", () => {
+  var token = localStorage.getItem("token");
+  fetch("/messages/inbox?page=1&limit=1", { headers: { Authorization: "Bearer " + token } })
+    .then((r) => r.json())
+    .then((d) => { if (d.unread !== undefined) updateGlobalBadge(d.unread); })
+    .catch(() => {});
+});
+
+sck.on("mail:new", (mail) => {
+   if (emailPageLoaded) {
+    document.dispatchEvent(new CustomEvent("globalNewMail", { detail: mail }));
+  }
+});
+
+sck.on("mail:badge", ({ unread }) => {
+  updateGlobalBadge(unread);
+});
 
 // ── Read capabilities from localStorage ───────────────────
 // Populated during pre-login by unified-login.js
@@ -651,7 +663,7 @@ function startGlobalEmailPolling() {
   }, 10000);
 }
 
-startGlobalEmailPolling();
+// startGlobalEmailPolling();
 
 // ══════════════════════════════════════════════════════════
 // ALERT MODAL

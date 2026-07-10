@@ -193,7 +193,7 @@ async function approveForm(formId, foShip, performedBy, ip) {
 // BULK APPROVE
 // Body: {  selected }
 // Matches UpdatePersonByShipFO exactly:
-//   WHERE Status = 'Filled' AND ship = @ship AND serviceNumber IN @selected
+//   WHERE Status = 'Filled' AND ship = @ship AND form_id IN @selected
 //
 // FO_BULK_FILTER_STATUS = 'Filled' — imported from constants.
 // ─────────────────────────────────────────────────────────────

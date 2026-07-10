@@ -302,7 +302,7 @@ async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
 // BULK CONFIRM
 // Body: { selected }
 // Confirms forms WHERE Status = 'CPO'
-//   AND formNumber IN @selected AND command = @cpoCommand
+//   AND form_id IN @selected AND command = @cpoCommand
 //
 // Mirrors approveBulk (FO) — same shape, CPO stage.
 // ─────────────────────────────────────────────────────────────
@@ -323,13 +323,13 @@ async function confirmBulk(body, performedBy, cpoCommand, ip) {
     return {
       success: false,
       code: 400,
-      message: "At least one form number must be selected for bulk confirm.",
+      message: "At least one form ID must be selected for bulk confirm.",
     };
   }
 
   // Fetch candidate forms upfront — gives us formId, serviceNumber,
   // command, and FormYear without a second round-trip later.
-  const candidateForms = await repo.getFormsByFormNumbers(
+  const candidateForms = await repo.getFormsByFormIDs(
     selected,
     toLegacyStatus(FORM_STATUS.FO_APPROVED), // 'CPO' (= FO_APPROVED legacy)
   );
@@ -338,7 +338,7 @@ async function confirmBulk(body, performedBy, cpoCommand, ip) {
     return {
       success: false,
       code: 404,
-      message: `No forms found with Status='${toLegacyStatus(FORM_STATUS.FO_APPROVED)}' in ${selected.join(", ")}.`,
+      message: `No forms found with Status='${toLegacyStatus(FORM_STATUS.FO_APPROVED)}'.`,
     };
   }
 
@@ -394,7 +394,7 @@ async function confirmBulk(body, performedBy, cpoCommand, ip) {
         toStatus: FORM_STATUS.CPO_CONFIRMED,
         performedBy: cpo_svcno,
         performerRole: "CPO",
-        remarks: `Bulk confirm — command: ${cpoCommand} for selected form numbers`,
+        remarks: `Bulk confirm — command: ${cpoCommand} for selected forms`,
       }),
     ),
   );
@@ -403,11 +403,11 @@ async function confirmBulk(body, performedBy, cpoCommand, ip) {
   await repo.insertAuditLog({
     tableName: "ef_personalinfos",
     action: "UPDATE",
-    recordKey: `BULK_CONFIRM:${cpoCommand}:formNumbers=${selected.join(",")}`,
+    recordKey: `BULK_CONFIRM:${cpoCommand}:formIds=${confirmedFormIds.join(",")}`,
     oldValues: {
       Status: toLegacyStatus(FORM_STATUS.FO_APPROVED),
       command: cpoCommand,
-      formNumbers: selected,
+      formIds: confirmedFormIds.join(","),
     },
     newValues: {
       Status: legacyStatus,
@@ -430,7 +430,7 @@ async function confirmBulk(body, performedBy, cpoCommand, ip) {
       confirmed: count,
       skipped: skipped.length,
       newStatus: FORM_STATUS.CPO_CONFIRMED,
-      selectedFormNumbers: selected,
+      selectedFormIds: selected,
     },
   };
 }

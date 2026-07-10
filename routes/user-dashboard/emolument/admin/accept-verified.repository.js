@@ -63,6 +63,15 @@ async function getPendingVerified(filters = {}, limit = 50, offset = 0) {
     params.push(filters.command);
   }
 
+  // search filter — matches Surname, OtherName, or service number
+  if (filters.search) {
+    conditions.push(
+      `(p.Surname LIKE ? OR p.OtherName LIKE ? OR p.serviceNumber LIKE ?)`,
+    );
+    const like = `%${filters.search}%`;
+    params.push(like, like, like);
+  }
+
   // accepted filter — presence of ADMIN_ACCEPTED row
   if (filters.accepted === "yes") {
     conditions.push(
@@ -95,7 +104,6 @@ async function getPendingVerified(filters = {}, limit = 50, offset = 0) {
        f.form_number  AS formNumber,
        f.form_year    AS formYear,
        f.submitted_at,
-       -- Derived acceptance state from approval trail
        (SELECT fa2.performed_at FROM ef_form_approvals fa2
         WHERE fa2.form_id = f.id AND fa2.action = 'ADMIN_ACCEPTED'
         ORDER BY fa2.performed_at DESC LIMIT 1)  AS accepted_at,
@@ -112,8 +120,6 @@ async function getPendingVerified(filters = {}, limit = 50, offset = 0) {
     [...params, safeLimit, safeOffset],
   );
 
-  // Count query reuses the same WHERE but without the JOIN subqueries
-  // so we rebuild it without the correlated subselects in SELECT.
   const [[{ total }]] = await pool.query(
     `SELECT COUNT(*) AS total
      FROM ef_personalinfos p

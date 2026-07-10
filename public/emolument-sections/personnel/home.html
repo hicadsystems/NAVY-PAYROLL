@@ -332,10 +332,12 @@
     try {
       const name = localStorage.getItem("full_name") || "Officer";
       const first = name.trim().split(" ")[0];
+      const second = name.trim().split(" ")[1];
       const h = new Date().getHours();
       const part = h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening";
       const el = document.getElementById("pers-greeting");
-      if (el) el.textContent = "Good " + part + ", " + first;
+      if (el)
+        el.textContent = "Good " + part + ", " + first + " " + second + ".";
     } catch (e) {}
 
     // Fetch form status

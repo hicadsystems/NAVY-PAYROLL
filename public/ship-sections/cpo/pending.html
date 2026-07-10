@@ -257,7 +257,7 @@ ${paginatorHTML(page, Math.ceil(total / CPO_CONFIRMED_PAGE_SIZE), "cpoPending")}
         "Content-Type": "application/json",
         Authorization: "Bearer " + token,
       },
-      body: JSON.stringify({ form_id: cpoActiveFormId, ship, remarks }),
+      body: JSON.stringify({ form_id: cpoActiveFormId, command, remarks }),
     })
       .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
       .then(({ ok, d }) => {

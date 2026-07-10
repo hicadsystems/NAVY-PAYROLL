@@ -437,6 +437,33 @@ async function getFormsByFormNumbers(formNumbers, status) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// GET FORMS BY FORM IDS
+// Used by confirmBulk to prefetch candidate forms before the
+// transaction — gives service layer formId, serviceNumber,
+// command, and FormYear in one query.
+//
+// Filters: Status = @status
+//          AND form_ids IN @formIds
+//          AND emolumentform != 'Yes' (not already confirmed)
+// ─────────────────────────────────────────────────────────────
+async function getFormsByFormIDs(formIds, status) {
+  const placeholders = formIds.map(() => "?").join(",");
+
+  const [rows] = await pool.query(
+    `SELECT p.id, p.serviceNumber, p.formNumber, p.command, p.FormYear, ef.id  AS form_id
+     FROM ef_personalinfos p
+     LEFT JOIN ef_emolument_forms ef
+       ON ef.service_no = p.serviceNumber
+     WHERE ef.id IN (${placeholders})
+       AND p.\`Status\`     = ?
+       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')`,
+    [...formIds.map(String), status],
+  );
+
+  return rows;
+}
+
+// ─────────────────────────────────────────────────────────────
 // GET FORMS BY CLASS
 // Used by confirmClass to prefetch candidate forms before the
 // transaction. Command filter is applied here in SQL so the
@@ -662,6 +689,17 @@ async function insertFormApproval({
   );
 }
 
+// When forms are rejected, we remove form approval trail records for that form. This is because the form is no longer approved, and we want to maintain an accurate record of approvals.
+// Deletes all approval records for the given formId. This is called after a form is rejected to maintain data integrity and ensure that the approval trail reflects the current state of the form.
+async function deleteFormApproval(formId) {
+  pool.useDatabase(DB());
+  await pool.query(
+    `DELETE FROM ef_form_approvals
+     WHERE form_id = ?`,
+    [formId],
+  );
+}
+
 async function insertAuditLog({
   tableName,
   action,
@@ -721,10 +759,12 @@ module.exports = {
   getDocuments,
   confirmFormWithHistory, // replaces confirmForm + insertHistoryRecord
   getFormsByFormNumbers,
+  getFormsByFormIDs,
   getFormsByClass,
   confirmBulkWithHistory, // replaces confirmBulk + insertHistoryRecord in bulk
   rejectForm,
   insertFormApproval,
+  deleteFormApproval,
   insertAuditLog,
   getStatusStats,
 };

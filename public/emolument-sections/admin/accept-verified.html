@@ -7,7 +7,21 @@
         CPO-Verified Forms Awaiting Admin Acceptance
       </h3>
 
-      <div class="flex items-center gap-2 flex-wrap">
+      <div
+        class="flex items-center gap-2 flex-wrap flex-1 justify-end min-w-[280px]"
+      >
+        <div class="relative flex-1 min-w-[200px] max-w-sm">
+          <i
+            class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-navy/30 text-xs"
+          ></i>
+          <input
+            type="text"
+            id="filterSearch"
+            oninput="onSearchInput()"
+            placeholder="Search name or service no..."
+            class="w-full text-xs border border-amber-100 rounded-lg pl-9 pr-3 py-2 bg-white text-navy focus:outline-none focus:border-navy"
+          />
+        </div>
         <select
           id="filterShip"
           onchange="applyFilters()"
@@ -43,7 +57,7 @@
     id="batchActionsBar"
   >
     <div class="flex items-center justify-between gap-2 flex-wrap">
-      <label class="flex items-center gap-2 cursor-pointer">
+      <!-- <label class="flex items-center gap-2 cursor-pointer">
         <input
           type="checkbox"
           id="selectAllCheckbox"
@@ -51,7 +65,8 @@
           class="w-4 h-4 rounded accent-navy"
         />
         <span class="text-sm font-semibold text-navy">Select All</span>
-      </label>
+      </label> -->
+
       <span class="text-sm text-navy/50" id="selectedCount">0 selected</span>
       <div class="flex gap-2">
         <button
@@ -64,16 +79,61 @@
     </div>
   </div>
 
-  <!-- Grid -->
+  <!-- Table -->
   <div
-    id="verifiedGrid"
-    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+    class="overflow-x-auto rounded-xl border border-amber-100 shadow-sm bg-white/60"
   >
-    <div
-      class="flex items-center justify-center py-12 text-navy/30 col-span-full"
-    >
-      <i class="fas fa-spinner fa-spin mr-2"></i>Loading…
-    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-amber-100 bg-amber-50/50">
+          <th class="px-3 py-3 text-left w-8">
+            <input
+              type="checkbox"
+              id="selectAllCheckbox"
+              onchange="toggleSelectAll(this.checked)"
+              class="w-4 h-4 rounded accent-navy"
+            />
+          </th>
+          <th
+            class="px-3 py-3 text-left font-bold text-navy text-xs uppercase tracking-wide"
+          >
+            Name
+          </th>
+          <th
+            class="px-3 py-3 text-left font-bold text-navy text-xs uppercase tracking-wide"
+          >
+            Service No
+          </th>
+          <th
+            class="px-3 py-3 text-left font-bold text-navy text-xs uppercase tracking-wide"
+          >
+            Rank
+          </th>
+          <th
+            class="px-3 py-3 text-left font-bold text-navy text-xs uppercase tracking-wide"
+          >
+            Ship
+          </th>
+          <th
+            class="px-3 py-3 text-left font-bold text-navy text-xs uppercase tracking-wide"
+          >
+            Status
+          </th>
+          <th
+            class="px-3 py-3 text-right font-bold text-navy text-xs uppercase tracking-wide"
+          >
+            Actions
+          </th>
+        </tr>
+      </thead>
+      <tbody id="verifiedTableBody">
+        <tr>
+          <td colspan="7" class="text-center py-12 text-navy/30">
+            <i class="fas fa-spinner fa-spin mr-2"></i>Loading…
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <!-- Pagination -->
@@ -237,7 +297,26 @@
       pendingReject: null,
       currentDetail: null,
       currentDetailTab: "form",
+      search: "",
     };
+
+    let searchDebounceTimer = null;
+
+    // ── Debounced search input ──
+    function onSearchInput() {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        verifiedState.search = document
+          .getElementById("filterSearch")
+          .value.trim();
+        loadVerifiedForms(1);
+      }, 350);
+    }
+
+    // ── Apply filters (reset to page 1) ──
+    function applyFilters() {
+      loadVerifiedForms(1);
+    }
 
     // ── Populate ship dropdown ──
     (function () {
@@ -262,11 +341,6 @@
         .catch(() => {});
     })();
 
-    // ── Apply filters (reset to page 1) ──
-    function applyFilters() {
-      loadVerifiedForms(1);
-    }
-
     // ── Load verified forms ──
     function loadVerifiedForms(page = 1) {
       page = Math.max(page, 1);
@@ -274,14 +348,16 @@
 
       const ship = document.getElementById("filterShip")?.value || "";
       const cls = document.getElementById("filterClass")?.value || "";
+      const search = verifiedState.search || "";
 
       const params = new URLSearchParams({ page, pageSize: ITEMS_PER_PAGE });
       if (ship) params.set("ship", ship);
       if (cls) params.set("payrollclass", cls);
-      const grid = document.getElementById("verifiedGrid");
+      if (search) params.set("search", search);
+      const tbody = document.getElementById("verifiedTableBody");
 
-      grid.innerHTML =
-        '<div class="flex items-center justify-center py-12 text-navy/30 col-span-full"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+      tbody.innerHTML =
+        '<tr><td colspan="7" class="text-center py-12 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></td></tr>';
 
       fetch(`/admin/verified?${params}`, {
         headers: { Authorization: "Bearer " + token },
@@ -295,66 +371,71 @@
           document.getElementById("verifiedCount").textContent =
             `${data.pagination.total.toLocaleString()} form${data.pagination.total !== 1 ? "s" : ""}`;
 
-          renderGrid();
+          renderTable();
           updatePagination();
           showBatchActionsIfNeeded();
         })
         .catch((err) => {
           console.error("Error loading verified forms:", err);
-          grid.innerHTML =
-            '<div class="col-span-full text-center py-12 text-navy/40"><p>Failed to load forms. Please try again.</p></div>';
+          tbody.innerHTML =
+            '<tr><td colspan="7" class="text-center py-12 text-navy/40">Failed to load forms. Please try again.</td></tr>';
         });
     }
 
-    // ── Render grid ──
-    function renderGrid() {
-      const grid = document.getElementById("verifiedGrid");
+    // ── Render table ──
+    function renderTable() {
+      const tbody = document.getElementById("verifiedTableBody");
       const { data, selected } = verifiedState;
 
       if (!data.length) {
-        grid.innerHTML =
-          '<div class="col-span-full text-center py-16 text-blue-900/30"><i class="fas fa-check-circle fa-2x mb-3 block text-green-300"></i><p class="font-semibold">No CPO-confirmed forms pending</p></div>';
+        tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center py-16 text-blue-900/30">
+          <i class="fas fa-check-circle fa-2x mb-3 block text-green-300"></i>
+          <p class="font-semibold">No CPO-confirmed forms pending</p>
+        </td>
+      </tr>`;
         return;
       }
 
-      grid.innerHTML = data
+      tbody.innerHTML = data
         .map((row) => {
           const name = `${row.Surname || ""} ${row.OtherName || ""}`.trim();
           const isSelected = selected.has(row.serviceNumber);
 
           return `
-            <div class="bg-white/60 rounded-xl border border-amber-100 shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col gap-3">
-              <div class="flex items-start gap-2">
-                <input type="checkbox" class="w-4 h-4 rounded accent-navy mt-0.5"
-                  ${isSelected ? "checked" : ""}
-                  onchange="toggleSelect('${row.serviceNumber}', this.checked)" />
-                <div class="flex-1 min-w-0">
-                  <div class="font-bold text-navy text-sm">${name}</div>
-                  <div class="text-xs text-blue-900/50 font-mono mt-0.5">${row.serviceNumber} • ${row.Rank}</div>
-                  <div class="text-xs text-blue-900/50 mt-1">${row.ship || "N/A"}</div>
-                </div>
-              </div>
-              <div class="flex flex-wrap gap-1">
-                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-lg">
-                  <i class="fas fa-check-circle mr-1"></i>CPO Verified
-                </span>
-              </div>
-              <div class="flex gap-2 pt-2 border-t border-amber-50">
-                <button onclick="viewForm('${row.formNumber}')"
-                  class="flex-1 px-3 py-2 bg-navy/10 text-navy text-sm font-bold rounded-lg hover:bg-navy/20 transition-colors cursor-pointer border-none flex items-center justify-center gap-1">
-                  <i class="fas fa-eye"></i>View
-                </button>
-                <button onclick="openRejectModal('${row.formNumber}', '${name}')"
-                  class="px-3 py-2 bg-red-100 text-red-600 text-sm font-bold rounded-lg hover:bg-red-200 transition-colors cursor-pointer border-none">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
+        <tr class="border-b border-amber-50 hover:bg-amber-50/40 transition-colors">
+          <td class="px-3 py-3">
+            <input type="checkbox" class="w-4 h-4 rounded accent-navy"
+              ${isSelected ? "checked" : ""}
+              onchange="toggleSelect('${row.serviceNumber}', this.checked)" />
+          </td>
+          <td class="px-3 py-3 font-bold text-navy">${name}</td>
+          <td class="px-3 py-3 font-mono text-xs text-blue-900/60">${row.serviceNumber}</td>
+          <td class="px-3 py-3 text-navy/70">${row.Rank}</td>
+          <td class="px-3 py-3 text-navy/70">${row.ship || "N/A"}</td>
+          <td class="px-3 py-3">
+            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-lg whitespace-nowrap">
+              <i class="fas fa-check-circle mr-1"></i>CPO Verified
+            </span>
+          </td>
+          <td class="px-3 py-3">
+            <div class="flex justify-end gap-2">
+              <button onclick="viewForm('${row.formNumber}')"
+                class="px-3 py-1.5 bg-navy/10 text-navy text-xs font-bold rounded-lg hover:bg-navy/20 transition-colors cursor-pointer border-none flex items-center gap-1">
+                <i class="fas fa-eye"></i>View
+              </button>
+              <button onclick="openRejectModal('${row.formNumber}', '${name}')"
+                class="px-3 py-1.5 bg-red-100 text-red-600 text-xs font-bold rounded-lg hover:bg-red-200 transition-colors cursor-pointer border-none">
+                <i class="fas fa-times"></i>
+              </button>
             </div>
-          `;
+          </td>
+        </tr>
+      `;
         })
         .join("");
     }
-
     // ── Selection ──
     function toggleSelect(svcno, checked) {
       checked
@@ -371,7 +452,7 @@
       } else {
         verifiedState.selected.clear();
       }
-      renderGrid();
+      renderTable();
       updateBatchActionsBar();
     }
 

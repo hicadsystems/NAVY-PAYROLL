@@ -72,9 +72,9 @@ class QuickAccessManager {
       },
       "change-registration-number": {
         id: "change-registration-number",
-        label: "Change Regno.",
+        label: "Change Svc.No.",
         section: "change-registration-number",
-        title: "Change Registration Number",
+        title: "Change Service Number",
       },
 
       //(Adimn submenu - Irregular one-off payments

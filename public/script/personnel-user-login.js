@@ -217,8 +217,8 @@ togglePassword.addEventListener("click", () => {
 });
 
 // Forgot Password Link
-const isLocal = window.location.hostname === "localhost";
-const BASE_URL = isLocal ? "http://localhost:5500" : "https://hicad.ng";
+
+const BASE_URL = window.location.host
 
 // Forgot Password Manager
 const ForgotPasswordManager = {

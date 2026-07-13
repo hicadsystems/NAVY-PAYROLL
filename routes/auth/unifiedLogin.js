@@ -42,6 +42,7 @@
 "use strict";
 
 const express = require("express");
+const argon = require("argon2");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
@@ -66,11 +67,15 @@ if (!SECRET) throw new Error("JWT_SECRET not set");
 // Payroll admins additionally call POST /api/users/login for class.
 // ─────────────────────────────────────────────────────────────
 router.post("/pre-login", async (req, res) => {
+
+  console.log(process.env.BASE_URL, 'base url')
   const user_id = (req.body.user_id || "").trim();
   const password = (req.body.password || "").trim();
 
   if (!user_id || !password) {
-    return res.status(400).json({ error: "Service Number and password are required" });
+    return res
+      .status(400)
+      .json({ error: "Service Number and password are required" });
   }
 
   try {
@@ -89,7 +94,9 @@ router.post("/pre-login", async (req, res) => {
     );
 
     if (!empRows.length) {
-      return res.status(401).json({ error: "Invalid Service Number or password" });
+      return res
+        .status(401)
+        .json({ error: "Invalid Service Number or password" });
     }
 
     const emp = empRows[0];
@@ -100,8 +107,10 @@ router.post("/pre-login", async (req, res) => {
         .json({ error: "Account deactivated. Contact administrator." });
     }
 
-    if (!emp.password || emp.password !== password) {
-      return res.status(401).json({ error: "Invalid Service Number or password" });
+    if (!emp.password || !(await argon.verify(emp.password, password))) {
+      return res
+        .status(401)
+        .json({ error: "Invalid Service Number or password" });
     }
 
     // ── 2. Resolve capabilities (3 parallel queries) ─────────
@@ -269,15 +278,17 @@ router.post("/change-password", async (req, res) => {
       [decoded.user_id],
     );
 
-    if (!rows.length || rows[0].password !== old_password) {
+    if (!rows.length || !(await argon.verify(rows[0].password, old_password))) {
       return res.status(401).json({ error: "Current password is incorrect" });
     }
+
+    const newPwdhash = await argon.hash(new_password);
 
     await pool.query(
       `UPDATE hr_employees
        SET password = ?, force_change = 0, password_changed_at = NOW()
        WHERE Empl_ID = ?`,
-      [new_password, decoded.user_id],
+      [newPwdhash, decoded.user_id],
     );
 
     return res.json({ message: "Password changed successfully" });
@@ -520,8 +531,7 @@ router.post("/reset-password", async (req, res) => {
       return res.status(400).json({ error: "expired" });
     }
 
-    // const bcrypt = require('bcrypt');
-    // const passwordHash = await bcrypt.hash(new_password, 12);
+    const passwordHash = await argon.hash(new_password);
 
     // Update password AND clear the reset token in the same statement —
     // this makes the token single-use; it can't be replayed after success.
@@ -529,7 +539,7 @@ router.post("/reset-password", async (req, res) => {
       `UPDATE hr_employees
        SET password = ?, reset_hash = NULL, reset_expires_at = NULL, force_change = 1, password_changed_at = NOW()
        WHERE Empl_ID = ?`,
-      [/* passwordHash */ new_password, emp.Empl_ID],
+      [passwordHash, emp.Empl_ID],
     );
 
     console.log(`✅ Password reset completed for ${emp.Empl_ID}`);

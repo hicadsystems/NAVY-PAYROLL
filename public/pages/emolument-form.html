@@ -1159,7 +1159,9 @@
               Next Of Kin (Passport Photograph above)
               <span class="text-danger">*</span>
             </p>
-            <div class="space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+
               <!-- Name -->
               <div>
                 <label class="field-label"
@@ -1174,7 +1176,6 @@
               </div>
 
               <!-- Relationship -->
-              <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="field-label"
                     >Relationship <span class="req">*</span></label
@@ -1183,9 +1184,10 @@
                     <option value="">— Select —</option>
                   </select>
                 </div>
+
                 <!-- NIN -->
-                <div>
-                  <label class="field-label hidden">NIN</label>
+                <div class="hidden">
+                  <label class="field-label">NIN</label>
                   <input
                     class="field font-mono"
                     type="text"
@@ -1193,10 +1195,10 @@
                     placeholder="NIN"
                   />
                 </div>
-              </div>
+            
 
               <!-- Address -->
-              <div>
+              <div class="sm:col-span-2 lg:col-span-3">
                 <label class="field-label"
                   >Address <span class="req">*</span></label
                 >
@@ -1204,7 +1206,7 @@
               </div>
 
               <!-- Phone Numbers -->
-              <div class="grid grid-cols-2 gap-3">
+            
                 <div>
                   <label class="field-label"
                     >GSM No. 1 <span class="req">*</span></label
@@ -1215,7 +1217,31 @@
                   <label class="field-label">GSM No. 2</label>
                   <input class="field" type="tel" id="nok_primary_phone2" />
                 </div>
-              </div>
+      
+
+              <!-- Bank Details -->
+              
+                <div>
+                  <label class="field-label"
+                    >Bank </label
+                  >
+                  <select class="field" id="nok_primary_bank">
+                    <option value="">— Select Bank —</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label"
+                    >Account Number </label
+                  >
+                  <input
+                    class="field font-mono"
+                    type="text"
+                    id="nok_primary_account_number"
+                    placeholder="10-digit NUBAN"
+                    maxlength="10"
+                  />
+                </div>
+     
 
               <!-- Email -->
               <div>
@@ -1232,7 +1258,7 @@
             >
               Alternate Next Of Kin (Passport Photograph above)
             </p>
-            <div class="space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <!-- Name -->
               <div>
                 <label class="field-label">Name</label>
@@ -1245,15 +1271,17 @@
               </div>
 
               <!-- Relationship -->
-              <div class="grid grid-cols-2 gap-3">
+          
                 <div>
                   <label class="field-label">Relationship</label>
                   <select class="field" id="nok_alt_relationship">
                     <option value="">— Select —</option>
                   </select>
                 </div>
-                <div>
-                  <label class="field-label hidden">NIN</label>
+
+                <!-- NIN -->
+                <div class="hidden">
+                  <label class="field-label">NIN</label>
                   <input
                     class="field font-mono"
                     type="text"
@@ -1261,16 +1289,16 @@
                     placeholder="NIN"
                   />
                 </div>
-              </div>
+           
 
               <!-- Address -->
-              <div>
+              <div class="sm:col-span-2 lg:col-span-3">
                 <label class="field-label">Address</label>
                 <input class="field" type="text" id="nok_alt_address" />
               </div>
 
               <!-- Phone Numbers -->
-              <div class="grid grid-cols-2 gap-3">
+            
                 <div>
                   <label class="field-label">GSM No. 1</label>
                   <input class="field" type="tel" id="nok_alt_phone1" />
@@ -1279,7 +1307,27 @@
                   <label class="field-label">GSM No. 2</label>
                   <input class="field" type="tel" id="nok_alt_phone2" />
                 </div>
-              </div>
+            
+
+              <!-- Bank Details -->
+             
+                <div>
+                  <label class="field-label">Bank</label>
+                  <select class="field" id="nok_alt_bank">
+                    <option value="">— Select Bank —</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label">Account Number</label>
+                  <input
+                    class="field font-mono"
+                    type="text"
+                    id="nok_alt_account_number"
+                    placeholder="10-digit NUBAN"
+                    maxlength="10"
+                  />
+                </div>
+              
 
               <!-- Email -->
               <div>
@@ -1400,6 +1448,16 @@
             <label class="field-label">Bank <span class="req">*</span></label>
             <select class="field" id="Bankcode" name="Bankcode" disabled>
               <option value="">— Select Bank —</option>
+            </select>
+          </div>
+
+          <!-- Bank Branch -->
+          <div>
+            <label class="field-label"
+              >Bank Branch <span class="req">*</span></label
+            >
+            <select class="field" id="BankBranch" name="BankBranch">
+              <option value="">— Select Branch —</option>
             </select>
           </div>
 
@@ -1768,6 +1826,11 @@
           );
           populateSelect("entry_mode", formOptions.entryModes, true);
 
+          // NOK / ANOK bank dropdowns reuse the same bank list as the
+          // main Bank Account Details section.
+          populateSelect("nok_primary_bank", formOptions.banks);
+          populateSelect("nok_alt_bank", formOptions.banks);
+
           // Fix 4: Rank options now include a `type` field.
           // Populate based on personnel type: "NN/" prefix → CO (officer), else NCO (rating).
           // At options-load time we don't yet know the personnel's service number,
@@ -1776,6 +1839,7 @@
 
           setupStateLGAFiltering();
           setupCommandShipFiltering();
+          setupBankBranchFiltering();
         } catch (err) {
           console.error("Failed to load form options:", err);
           showToast("Failed to load form options. Please refresh.", "error");
@@ -2108,6 +2172,23 @@
           setVal("LocalGovt", String(data.LocalGovt));
         }
 
+        // Bank Branch depends on Bankcode. Populate the branch list as soon
+        // as a bank is on file, even if no branch has been chosen yet —
+        // otherwise the dropdown is left empty (only the placeholder shows).
+        if (data.Bankcode) {
+          populateSelect(
+            "BankBranch",
+            (formOptions.bankBranches || []).filter(
+              (b) =>
+                String(b.code ?? "").trim() ===
+                String(data.Bankcode ?? "").trim(),
+            ),
+          );
+          if (data.bankbranch) {
+            setVal("BankBranch", String(data.bankbranch));
+          }
+        }
+
         // NOK
         if (data.nok?.primary) prefillNok("nok_primary", data.nok.primary);
         if (data.nok?.alternate) prefillNok("nok_alt", data.nok.alternate);
@@ -2158,6 +2239,8 @@
         setVal(`${prefix}_phone2`, nok.phone2);
         setVal(`${prefix}_email`, nok.email);
         setVal(`${prefix}_address`, nok.address);
+        setVal(`${prefix}_bank`, nok.bank);
+        setVal(`${prefix}_account_number`, nok.account_number);
       }
 
       // ── Dynamic sections ─────────────────────────────────────
@@ -2303,6 +2386,7 @@
           LocalGovt: gv("LocalGovt"),
           BankACNumber: gv("BankACNumber"),
           Bankcode: gv("Bankcode"),
+          bankbranch: gv("BankBranch"),
           AccountName: gv("AccountName"),
           AcommodationStatus: gv("AcommodationStatus"),
           AddressofAcommodation: gv("AddressofAcommodation"),
@@ -2317,6 +2401,8 @@
             phone2: gv("nok_primary_phone2"),
             email: gv("nok_primary_email"),
             address: gv("nok_primary_address"),
+            bank: gv("nok_primary_bank"),
+            account_number: gv("nok_primary_account_number"),
           },
           alternate: {
             full_name: gv("nok_alt_full_name"),
@@ -2326,6 +2412,8 @@
             phone2: gv("nok_alt_phone2"),
             email: gv("nok_alt_email"),
             address: gv("nok_alt_address"),
+            bank: gv("nok_alt_bank"),
+            account_number: gv("nok_alt_account_number"),
           },
         };
 
@@ -2390,9 +2478,12 @@
           "home_address",
           "BankACNumber",
           "Bankcode",
+          "BankBranch",
           "nok_primary_full_name",
           "nok_primary_phone1",
           "nok_primary_address",
+          // "nok_primary_bank",
+          // "nok_primary_account_number",
         ];
         const missing = required.filter(
           (id) => !document.getElementById(id)?.value.trim(),
@@ -2573,6 +2664,26 @@
               "LocalGovt",
               formOptions.lgas.filter((lga) => lga.stateId == this.value),
             );
+          });
+      }
+
+      // Bank Branch options are filtered by the selected Bank (Bankcode),
+      // mirroring the State → LGA cascading pattern above.
+      // formOptions.bankBranches: [{ id, code, name }] — `code` on a branch
+      // links to the bank's `id` (i.e. the value selected in #Bankcode).
+      function setupBankBranchFiltering() {
+        document
+          .getElementById("Bankcode")
+          ?.addEventListener("change", function () {
+            populateSelect(
+              "BankBranch",
+              (formOptions.bankBranches || []).filter(
+                (b) =>
+                  String(b.code ?? "").trim() ===
+                  String(this.value ?? "").trim(),
+              ),
+            );
+            setVal("BankBranch", ""); // reset branch when bank changes
           });
       }
 

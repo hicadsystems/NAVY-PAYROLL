@@ -1,5 +1,5 @@
 /**
- * FILE: migrations/scripts/py_ef_banks_migration.js
+ * FILE: scripts/py_ef_banks_migration.js
  *
  * PURPOSE:
  * Mirgates py_bank (payroll banking info, which is banks and their branches accepted by payroll) to ef_banks and ef_bank_branches.
@@ -28,9 +28,11 @@
  *  - Same logic applies per (bankcode, branchcode) for branchname.
  *  - Every conflict is logged to stderr via console.warn so it can be
  *    reviewed, but the migration does not halt on conflicts.
- *  - ef_banks/ef_bank_branches rows are upserted (INSERT ... ON DUPLICATE
- *    KEY UPDATE), so payroll's current data always overwrites the stored
- *    name on each run — payroll is the source of truth.
+ *  - ef_banks/ef_bank_branches rows are inserted with INSERT IGNORE: if a
+ *    bankcode (or bankcode/branchcode pair) already exists in the target
+ *    table, that row is left untouched and the incoming name is skipped.
+ *    Only brand-new codes get inserted on subsequent runs — existing
+ *    names are never overwritten.
  *
  *
  * SAFETY:
@@ -224,20 +226,22 @@ async function fetchCanonicalBranches(conn) {
 }
 
 /**
- * Upserts canonical bank rows into ef_banks, BATCH_SIZE rows at a time.
+ * Inserts canonical bank rows into ef_banks, BATCH_SIZE rows at a time.
+ * Uses INSERT IGNORE: if a bankcode already exists, that row is left
+ * as-is and the incoming bankname is skipped (not updated).
  * Must run before upsertBankBranches, since ef_bank_branches.bankcode
  * has a FK reference to ef_banks.bankcode.
  */
 async function upsertBanks(conn, banks) {
   if (!banks.length) {
-    console.log("No banks to upsert.");
+    console.log("No banks to insert.");
     return;
   }
 
   for (const batch of chunk(banks, BATCH_SIZE)) {
     if (DRY_RUN) {
       console.log(
-        `[DRY RUN] Would upsert ${batch.length} bank(s): ` +
+        `[DRY RUN] Would insert (skipping existing) ${batch.length} bank(s): ` +
           batch.map((b) => b.bankcode).join(", "),
       );
       continue;
@@ -246,34 +250,44 @@ async function upsertBanks(conn, banks) {
     const placeholders = batch.map(() => "(?, ?)").join(", ");
     const params = batch.flatMap((b) => [b.bankcode, b.bankname]);
 
-    await q(
+    const [result] = await q(
       conn,
-      `INSERT INTO ef_banks (bankcode, bankname)
-       VALUES ${placeholders}
-       ON DUPLICATE KEY UPDATE bankname = VALUES(bankname)`,
+      `INSERT IGNORE INTO ef_banks (bankcode, bankname)
+       VALUES ${placeholders}`,
       params,
     );
+
+    const inserted = result.affectedRows || 0;
+    const skipped = batch.length - inserted;
+    if (skipped > 0) {
+      console.log(
+        `ℹ️  Skipped ${skipped} bank(s) already present in ef_banks (existing name kept).`,
+      );
+    }
   }
 
   console.log(
-    `${DRY_RUN ? "[DRY RUN] Would have upserted" : "✅ Upserted"} ${banks.length} bank(s) into ef_banks.`,
+    `${DRY_RUN ? "[DRY RUN] Would have processed" : "✅ Processed"} ${banks.length} bank(s) for ef_banks (existing codes skipped, new codes inserted).`,
   );
 }
 
 /**
- * Upserts canonical bank-branch rows into ef_bank_branches, BATCH_SIZE
- * rows at a time. Must run after upsertBanks (see FK note above).
+ * Inserts canonical bank-branch rows into ef_bank_branches, BATCH_SIZE
+ * rows at a time. Uses INSERT IGNORE: if a (bankcode, branchcode) pair
+ * already exists, that row is left as-is and the incoming branchname is
+ * skipped (not updated).
+ * Must run after upsertBanks (see FK note above).
  */
 async function upsertBankBranches(conn, branches) {
   if (!branches.length) {
-    console.log("No bank branches to upsert.");
+    console.log("No bank branches to insert.");
     return;
   }
 
   for (const batch of chunk(branches, BATCH_SIZE)) {
     if (DRY_RUN) {
       console.log(
-        `[DRY RUN] Would upsert ${batch.length} branch(es): ` +
+        `[DRY RUN] Would insert (skipping existing) ${batch.length} branch(es): ` +
           batch.map((b) => `${b.bankcode}/${b.branchcode}`).join(", "),
       );
       continue;
@@ -286,17 +300,24 @@ async function upsertBankBranches(conn, branches) {
       b.branchname,
     ]);
 
-    await q(
+    const [result] = await q(
       conn,
-      `INSERT INTO ef_bank_branches (bankcode, branchcode, branchname)
-       VALUES ${placeholders}
-       ON DUPLICATE KEY UPDATE branchname = VALUES(branchname)`,
+      `INSERT IGNORE INTO ef_bank_branches (bankcode, branchcode, branchname)
+       VALUES ${placeholders}`,
       params,
     );
+
+    const inserted = result.affectedRows || 0;
+    const skipped = batch.length - inserted;
+    if (skipped > 0) {
+      console.log(
+        `ℹ️  Skipped ${skipped} branch(es) already present in ef_bank_branches (existing name kept).`,
+      );
+    }
   }
 
   console.log(
-    `${DRY_RUN ? "[DRY RUN] Would have upserted" : "✅ Upserted"} ${branches.length} branch(es) into ef_bank_branches.`,
+    `${DRY_RUN ? "[DRY RUN] Would have processed" : "✅ Processed"} ${branches.length} branch(es) for ef_bank_branches (existing codes skipped, new codes inserted).`,
   );
 }
 

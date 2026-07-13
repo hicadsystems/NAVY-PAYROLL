@@ -216,9 +216,6 @@ togglePassword.addEventListener("click", () => {
   });
 });
 
-// Forgot Password Link
-
-const BASE_URL = window.location.host
 
 // Forgot Password Manager
 const ForgotPasswordManager = {
@@ -279,7 +276,7 @@ const ForgotPasswordManager = {
     };
 
     try {
-      const res = await fetch(`${BASE_URL}/auth/users/forgot-password`, {
+      const res = await fetch(`/auth/users/forgot-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

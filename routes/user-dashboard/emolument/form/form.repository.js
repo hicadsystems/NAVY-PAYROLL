@@ -1077,6 +1077,7 @@ async function getFormOptions() {
     // Fetch all options in parallel for better performance
     const [
       banksResult,
+      bankBranchesResult,
       commandsResult,
       branchesResult,
       shipsResult,
@@ -1089,6 +1090,9 @@ async function getFormOptions() {
     ] = await Promise.all([
       // Banks
       connection.query("SELECT bankcode AS id, bankname AS name FROM ef_banks"),
+
+      // Bank Branches
+      connection.query("SELECT branchcode AS id, bankcode AS code, branchname AS name FROM ef_bank_branches"),
 
       // Commands
       connection.query(
@@ -1134,6 +1138,7 @@ async function getFormOptions() {
 
     return {
       banks: banksResult[0],
+      bankBranches: bankBranchesResult[0],
       commands: commandsResult[0],
       branches: branchesResult[0],
       ships: shipsResult[0],

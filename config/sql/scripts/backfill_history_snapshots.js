@@ -1,5 +1,5 @@
 /**
- * FILE: migrations/backfill_history_snapshots.js
+ * FILE: scripts/backfill_history_snapshots.js
  *
  * PURPOSE:
  *   Convert existing flat rows in ef_personalinfoshist into JSON snapshots

@@ -1,16 +1,36 @@
 <!-- IPPIS PAYROLL IMPORT SECTION -->
 <style>
   @keyframes grow-up {
-    0% { height: 0; bottom: 0; }
-    100% { height: 100%; bottom: 0; }
+    0% {
+      height: 0;
+      bottom: 0;
+    }
+    100% {
+      height: 100%;
+      bottom: 0;
+    }
   }
   @keyframes grow-down {
-    0% { height: 0; top: 0; }
-    100% { height: 100%; top: 0; }
+    0% {
+      height: 0;
+      top: 0;
+    }
+    100% {
+      height: 100%;
+      top: 0;
+    }
   }
   @keyframes expand {
-    0% { width: 0; left: 50%; transform: translate(-50%, -50%); }
-    100% { width: 100%; left: 0; transform: translateY(-50%); }
+    0% {
+      width: 0;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    100% {
+      width: 100%;
+      left: 0;
+      transform: translateY(-50%);
+    }
   }
   .animate-grow-up {
     animation: grow-up 0.6s ease-in-out infinite alternate;
@@ -27,43 +47,81 @@
   }
 </style>
 
-
 <div id="section-ippis-import" class="p-6">
   <!-- Action Buttons -->
   <div class="flex flex-wrap gap-2 justify-end mb-4">
     <!-- Search Bar -->
     <div class="relative">
-      <input type="text" id="ippisSearchInput"
+      <input
+        type="text"
+        id="ippisSearchInput"
         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 pl-10"
-        placeholder="Search by Period, Scv No..." autocomplete="off">
-      <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        placeholder="Search by Period, Scv No..."
+        autocomplete="off"
+      />
+      <span
+        class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+      >
+        <svg
+          class="w-5 h-5 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
         </svg>
       </span>
-      <button id="clearIppisSearchBtn"
-        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 hidden">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      <button
+        id="clearIppisSearchBtn"
+        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 hidden"
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
         </svg>
       </button>
     </div>
-    <button id="viewPeriodsBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+    <button
+      id="viewPeriodsBtn"
+      class="hidden bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+    >
       <i class="fas fa-calendar-alt mr-2"></i>View Periods
     </button>
-    <button id="newIppisImportBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ New
-      Import</button>
+    <button
+      id="newIppisImportBtn"
+      class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+    >
+      + New Import
+    </button>
   </div>
 
   <!-- Import Form Section -->
-  <div id="ippisImportDiv" class="hidden w-full max-w-2xl mx-auto rounded-2xl mb-6">
+  <div
+    id="ippisImportDiv"
+    class="hidden w-full max-w-2xl mx-auto rounded-2xl mb-6"
+  >
     <!-- Notes -->
     <div class="mb-6 bg-blue-50 p-4 rounded-lg">
       <h4 class="font-semibold text-blue-700 mb-2">Import Instructions:</h4>
       <ul class="list-disc list-inside text-gray-700 text-sm space-y-1">
         <li>CSV file must have Service Number as first column</li>
-        <li>Subsequent columns should be payment type codes (BP001, PR001, etc.)</li>
+        <li>
+          Subsequent columns should be payment type codes (BP001, PR001, etc.)
+        </li>
         <li>Only employees in the selected payroll class will be imported</li>
         <li>Existing data for the period will be replaced</li>
         <li>File size limit: 10MB</li>
@@ -74,17 +132,33 @@
     <form id="ippisImportForm" class="space-y-6 p-6 rounded-lg shadow">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label for="importYear" class="block text-sm font-medium text-gray-700 mb-2">Year</label>
-          <input type="number" id="importYear" min="2024" max="2050"
+          <label
+            for="importYear"
+            class="block text-sm font-medium text-gray-700 mb-2"
+            >Year</label
+          >
+          <input
+            type="number"
+            id="importYear"
+            min="2024"
+            max="2050"
             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-            placeholder="2024" required />
+            placeholder="2024"
+            required
+          />
         </div>
 
         <div>
-          <label for="importMonth" class="block text-sm font-medium text-gray-700 mb-2">Month</label>
-          <select id="importMonth"
+          <label
+            for="importMonth"
+            class="block text-sm font-medium text-gray-700 mb-2"
+            >Month</label
+          >
+          <select
+            id="importMonth"
             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-            required>
+            required
+          >
             <option value="">Select Month...</option>
           </select>
         </div>
@@ -98,21 +172,45 @@
       </div>
 
       <div>
-        <label for="ippisFile" class="block text-sm font-medium text-gray-700 mb-2">Upload CSV File</label>
-        <input type="file" id="ippisFile" accept=".csv"
-          class="block w-full border border-blue-300 bg-white rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+        <label
+          for="ippisFile"
+          class="block text-sm font-medium text-gray-700 mb-2"
+          >Upload CSV File</label
+        >
+        <input
+          type="file"
+          id="ippisFile"
+          accept=".csv"
+          class="block w-full border border-blue-300 bg-white rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
         <p class="text-xs text-gray-500 mt-2">
           Only <span class="font-semibold">.csv</span> files are allowed.
         </p>
       </div>
 
       <div class="flex justify-end gap-3">
-        <button type="button" id="cancelIppisBtn"
-          class="px-5 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg text-gray-800 font-medium">Cancel</button>
-        <button type="button" id="validateIppisBtn"
-          class="px-5 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white font-medium">Validate</button>
-        <button type="button" id="importIppisBtn" disabled
-          class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed">Import</button>
+        <button
+          type="button"
+          id="cancelIppisBtn"
+          class="px-5 py-2 bg-gray-300 hover:bg-gray-400 rounded-lg text-gray-800 font-medium"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          id="validateIppisBtn"
+          class="px-5 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white font-medium"
+        >
+          Validate
+        </button>
+        <button
+          type="button"
+          id="importIppisBtn"
+          disabled
+          class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Import
+        </button>
       </div>
     </form>
   </div>
@@ -120,24 +218,37 @@
   <!-- Validation Results Section -->
   <div id="validationResults" class="hidden w-full max-w-2xl mx-auto mb-6">
     <div class="p-6 rounded-lg shadow">
-      <h3 class="text-lg font-bold text-green-600 mb-4">✅ Validation Successful</h3>
+      <h3 class="text-lg font-bold text-green-600 mb-4">
+        ✅ Validation Successful
+      </h3>
 
       <!-- Summary Cards -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         <div class="bg-blue-50 p-3 rounded text-center">
-          <div class="text-2xl font-bold text-blue-600" id="val-totalRecords">0</div>
+          <div class="text-2xl font-bold text-blue-600" id="val-totalRecords">
+            0
+          </div>
           <div class="text-xs text-gray-600">Total Records</div>
         </div>
         <div class="bg-green-50 p-3 rounded text-center">
-          <div class="text-2xl font-bold text-green-600" id="val-validHeaders">0</div>
+          <div class="text-2xl font-bold text-green-600" id="val-validHeaders">
+            0
+          </div>
           <div class="text-xs text-gray-600">Valid Headers</div>
         </div>
         <div class="bg-yellow-50 p-3 rounded text-center">
-          <div class="text-2xl font-bold text-yellow-600" id="val-invalidHeaders">0</div>
+          <div
+            class="text-2xl font-bold text-yellow-600"
+            id="val-invalidHeaders"
+          >
+            0
+          </div>
           <div class="text-xs text-gray-600">Invalid Headers</div>
         </div>
         <div class="bg-purple-50 p-3 rounded text-center">
-          <div class="text-2xl font-bold text-purple-600" id="val-period">-</div>
+          <div class="text-2xl font-bold text-purple-600" id="val-period">
+            -
+          </div>
           <div class="text-xs text-gray-600">Period</div>
         </div>
       </div>
@@ -147,7 +258,9 @@
 
       <!-- Sample Validation -->
       <div id="sampleValidation" class="mb-4">
-        <h4 class="font-semibold text-gray-700 mb-2">Sample Employee Validation:</h4>
+        <h4 class="font-semibold text-gray-700 mb-2">
+          Sample Employee Validation:
+        </h4>
         <div class="overflow-x-auto">
           <table class="min-w-full text-sm">
             <thead class="bg-gray-100">
@@ -157,8 +270,7 @@
                 <th class="px-4 py-2 text-left">Status</th>
               </tr>
             </thead>
-            <tbody id="sampleValidationBody">
-            </tbody>
+            <tbody id="sampleValidationBody"></tbody>
           </table>
         </div>
       </div>
@@ -170,13 +282,28 @@
   </div>
 
   <!-- Periods List Modal -->
-  <div id="periodsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+  <div
+    id="periodsModal"
+    class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+  >
+    <div
+      class="bg-white rounded-xl shadow-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+    >
       <div class="flex items-center justify-between mb-4 border-b pb-3">
         <h2 class="text-xl font-bold text-blue-600">Imported Periods</h2>
         <button id="closePeriodsBtn" class="text-gray-400 hover:text-gray-600">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
@@ -187,71 +314,160 @@
   </div>
 
   <!-- Success Modal -->
-  <div id="ippisSuccessModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div
+    id="ippisSuccessModal"
+    class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+  >
     <div class="bg-white rounded-xl shadow-lg p-6 max-w-md w-full text-center">
       <div id="ippisSuccessIcon" class="mb-3 flex items-center justify-center">
-        <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        <svg
+          class="h-8 w-8 text-green-600"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M5 13l4 4L19 7"
+          />
         </svg>
       </div>
-      <h2 id="ippisSuccessTitle" class="text-xl font-bold text-green-600 mb-2">Success</h2>
-      <p id="ippisSuccessMessage" class="text-gray-600 mb-4">Action completed successfully.</p>
-      <div id="ippisImportSummary" class="hidden text-left bg-gray-50 rounded-lg p-4 mb-4 text-sm">
+      <h2 id="ippisSuccessTitle" class="text-xl font-bold text-green-600 mb-2">
+        Success
+      </h2>
+      <p id="ippisSuccessMessage" class="text-gray-600 mb-4">
+        Action completed successfully.
+      </p>
+      <div
+        id="ippisImportSummary"
+        class="hidden text-left bg-gray-50 rounded-lg p-4 mb-4 text-sm"
+      >
         <p class="font-semibold mb-2">Import Summary:</p>
         <p>Period: <span id="sum-period" class="font-medium">-</span></p>
-        <p>Total Records: <span id="sum-totalRecords" class="font-medium">0</span></p>
-        <p>Processed Employees: <span id="sum-processedEmployees" class="font-medium">0</span></p>
-        <p>Inserted Records: <span id="sum-insertedRecords" class="font-medium text-green-600">0</span></p>
-        <p>Updated Records: <span id="sum-updatedRecords" class="font-medium text-blue-600">0</span></p>
-        <p>Skipped Employees: <span id="sum-skippedEmployees" class="font-medium text-yellow-600">0</span></p>
-        <p>Errors: <span id="sum-totalErrors" class="font-medium text-red-600">0</span></p>
+        <p>
+          Total Records:
+          <span id="sum-totalRecords" class="font-medium">0</span>
+        </p>
+        <p>
+          Processed Employees:
+          <span id="sum-processedEmployees" class="font-medium">0</span>
+        </p>
+        <p>
+          Inserted Records:
+          <span id="sum-insertedRecords" class="font-medium text-green-600"
+            >0</span
+          >
+        </p>
+        <p>
+          Updated Records:
+          <span id="sum-updatedRecords" class="font-medium text-blue-600"
+            >0</span
+          >
+        </p>
+        <p>
+          Skipped Employees:
+          <span id="sum-skippedEmployees" class="font-medium text-yellow-600"
+            >0</span
+          >
+        </p>
+        <p>
+          Errors:
+          <span id="sum-totalErrors" class="font-medium text-red-600">0</span>
+        </p>
       </div>
-      <button id="closeIppisModalBtn"
-        class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">OK</button>
+      <button
+        id="closeIppisModalBtn"
+        class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+      >
+        OK
+      </button>
     </div>
   </div>
 
   <!-- Error Modal -->
-  <div id="ippisErrorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div
+    id="ippisErrorModal"
+    class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+  >
     <div class="bg-white rounded-xl shadow-lg p-6 max-w-2xl w-full">
       <h2 class="text-xl font-bold text-red-600 mb-4">Import Errors</h2>
-      <div id="ippisErrorContent" class="text-gray-700 text-sm max-h-96 overflow-y-auto"></div>
+      <div
+        id="ippisErrorContent"
+        class="text-gray-700 text-sm max-h-96 overflow-y-auto"
+      ></div>
       <div class="flex justify-end mt-4">
-        <button id="closeIppisErrorBtn"
-          class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium">Close</button>
+        <button
+          id="closeIppisErrorBtn"
+          class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
+        >
+          Close
+        </button>
       </div>
     </div>
   </div>
 
   <!-- View Details Modal -->
-  <div id="ippisViewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-lg max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+  <div
+    id="ippisViewModal"
+    class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+  >
+    <div
+      class="bg-white rounded-xl shadow-lg max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+    >
       <div class="flex items-center justify-between p-6 border-b">
         <h2 class="text-xl font-bold text-blue-600">Period Details</h2>
-        <button id="closeIppisViewBtn" class="text-gray-400 hover:text-gray-600">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        <button
+          id="closeIppisViewBtn"
+          class="text-gray-400 hover:text-gray-600"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
 
-      <div id="ippisViewContent" class="flex-1 overflow-y-auto p-6 text-gray-700 text-sm">
+      <div
+        id="ippisViewContent"
+        class="flex-1 overflow-y-auto p-6 text-gray-700 text-sm"
+      >
         <div class="h-[1000px] bg-gray-50 p-4">
           Scrolling content starts here...
         </div>
       </div>
 
       <div class="flex justify-end gap-3 p-6 border-t bg-white">
-        <button id="exportPeriodBtn" data-period=""
-          class="hidden px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium">
+        <button
+          id="exportPeriodBtn"
+          data-period=""
+          class="hidden px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium"
+        >
           <i class="fas fa-download mr-2"></i>Export CSV
         </button>
-        <button id="deletePeriodBtn" data-period=""
-          class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium">
+        <button
+          id="deletePeriodBtn"
+          data-period=""
+          class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
+        >
           <i class="fas fa-trash mr-2"></i>Delete Period
         </button>
-        <button id="closeIppisViewBtnBottom"
-          class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">Close</button>
+        <button
+          id="closeIppisViewBtnBottom"
+          class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+        >
+          Close
+        </button>
       </div>
     </div>
   </div>
@@ -278,25 +494,34 @@
   <!-- Pagination Controls -->
   <div class="m-6 flex items-center justify-between">
     <div class="text-sm text-gray-600">
-      Showing <span id="ippisStartRecord">0</span> to <span id="ippisEndRecord">0</span> of <span
-        id="ippis TotalRecords">0</span> records
+      Showing <span id="ippisStartRecord">0</span> to
+      <span id="ippisEndRecord">0</span> of
+      <span id="ippis TotalRecords">0</span> records
     </div>
     <div class="flex items-center space-x-2">
-      <select id="ippisRecordsPerPage" class="border border-gray-300 rounded px-2 py-1 text-sm">
+      <select
+        id="ippisRecordsPerPage"
+        class="border border-gray-300 rounded px-2 py-1 text-sm"
+      >
         <option value="10">10 per page</option>
         <option value="25">25 per page</option>
         <option value="50">50 per page</option>
         <option value="100">100 per page</option>
       </select>
-      <button id="ippis PrevPage"
-        class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+      <button
+        id="ippis PrevPage"
+        class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50"
+      >
         Previous
       </button>
       <span class="text-sm">
-        Page <span id="ippisCurrentPage">1</span> of <span id="ippis TotalPages">1</span>
+        Page <span id="ippisCurrentPage">1</span> of
+        <span id="ippis TotalPages">1</span>
       </span>
-      <button id="ippisNextPage"
-        class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+      <button
+        id="ippisNextPage"
+        class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50"
+      >
         Next
       </button>
     </div>
@@ -307,8 +532,8 @@
   const auth = window.authService;
   (function () {
     // Configuration
-    const API_BASE_URL = '/ippis'; // Adjust to match your route
-    const authToken = localStorage.getItem('token');
+    const API_BASE_URL = "/ippis"; // Adjust to match your route
+    const authToken = localStorage.getItem("token");
 
     // State
     let validationData = null;
@@ -317,29 +542,29 @@
     let filteredPeriodsData = [];
 
     // DOM Elements
-    const newImportBtn = document.getElementById('newIppisImportBtn');
-    const viewPeriodsBtn = document.getElementById('viewPeriodsBtn');
-    const importDiv = document.getElementById('ippisImportDiv');
-    const importForm = document.getElementById('ippisImportForm');
-    const cancelBtn = document.getElementById('cancelIppisBtn');
-    const validateBtn = document.getElementById('validateIppisBtn');
-    const importBtn = document.getElementById('importIppisBtn');
-    const fileInput = document.getElementById('ippisFile');
-    const yearInput = document.getElementById('importYear');
-    const monthSelect = document.getElementById('importMonth');
-    const payrollClassInput = document.getElementById('payrollClass');
+    const newImportBtn = document.getElementById("newIppisImportBtn");
+    const viewPeriodsBtn = document.getElementById("viewPeriodsBtn");
+    const importDiv = document.getElementById("ippisImportDiv");
+    const importForm = document.getElementById("ippisImportForm");
+    const cancelBtn = document.getElementById("cancelIppisBtn");
+    const validateBtn = document.getElementById("validateIppisBtn");
+    const importBtn = document.getElementById("importIppisBtn");
+    const fileInput = document.getElementById("ippisFile");
+    const yearInput = document.getElementById("importYear");
+    const monthSelect = document.getElementById("importMonth");
+    const payrollClassInput = document.getElementById("payrollClass");
 
     // Validation Results
-    const validationResults = document.getElementById('validationResults');
+    const validationResults = document.getElementById("validationResults");
 
     // Modals
-    const successModal = document.getElementById('ippisSuccessModal');
-    const errorModal = document.getElementById('ippisErrorModal');
-    const viewModal = document.getElementById('ippisViewModal');
-    const periodsModal = document.getElementById('periodsModal');
+    const successModal = document.getElementById("ippisSuccessModal");
+    const errorModal = document.getElementById("ippisErrorModal");
+    const viewModal = document.getElementById("ippisViewModal");
+    const periodsModal = document.getElementById("periodsModal");
 
     // Table
-    const tableBody = document.getElementById('ippisTableBody');
+    const tableBody = document.getElementById("ippisTableBody");
 
     // Pagination
     let currentPage = 1;
@@ -357,23 +582,23 @@
       try {
         const response = await auth.fetchWithAuth(`${API_BASE_URL}/months`, {
           headers: {
-            'Authorization': `Bearer ${authToken}`
-          }
+            Authorization: `Bearer ${authToken}`,
+          },
         });
 
         const result = await response.json();
 
         if (result.success) {
           monthSelect.innerHTML = '<option value="">Select Month...</option>';
-          result.data.forEach(month => {
-            const option = document.createElement('option');
+          result.data.forEach((month) => {
+            const option = document.createElement("option");
             option.value = month.mthdesc;
             option.textContent = month.mthdesc;
             monthSelect.appendChild(option);
           });
         }
       } catch (error) {
-        console.error('Error loading months:', error);
+        console.error("Error loading months:", error);
       }
     }
 
@@ -384,8 +609,8 @@
       try {
         const response = await auth.fetchWithAuth(`${API_BASE_URL}/periods`, {
           headers: {
-            'Authorization': `Bearer ${authToken}`
-          }
+            Authorization: `Bearer ${authToken}`,
+          },
         });
 
         const result = await response.json();
@@ -396,8 +621,8 @@
           applyPaginationAndSearch();
         }
       } catch (error) {
-        console.error('Error loading periods:', error);
-        showError('Failed to load periods');
+        console.error("Error loading periods:", error);
+        showError("Failed to load periods");
       }
     }
 
@@ -405,7 +630,7 @@
     // RENDER PERIODS TABLE
     // ============================================
     function renderPeriodsTable(data) {
-      tableBody.innerHTML = '';
+      tableBody.innerHTML = "";
 
       if (!data || data.length === 0) {
         tableBody.innerHTML = `
@@ -416,9 +641,9 @@
         return;
       }
 
-      data.forEach(period => {
-        const row = document.createElement('tr');
-        row.className = 'hover:bg-yellow-50';
+      data.forEach((period) => {
+        const row = document.createElement("tr");
+        row.className = "hover:bg-yellow-50";
         row.innerHTML = `
         <td class="py-2 px-4 border font-semibold">${formatPeriod(period.period)}</td>
         <td class="py-2 px-4 border">${period.employee_count || 0}</td>
@@ -438,36 +663,38 @@
       });
 
       // Add event listeners
-      document.querySelectorAll('.view-period-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const period = e.target.getAttribute('data-period');
+      document.querySelectorAll(".view-period-btn").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          const period = e.target.getAttribute("data-period");
           viewPeriodDetails(period);
         });
       });
 
-      document.querySelectorAll('.summary-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const period = e.target.getAttribute('data-period');
+      document.querySelectorAll(".summary-btn").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          const period = e.target.getAttribute("data-period");
           viewPeriodSummary(period);
         });
       });
     }
 
     function applyPaginationAndSearch() {
-      const searchTerm = document.getElementById('ippisSearchInput').value.toLowerCase();
-      const clearBtn = document.getElementById('clearIppisSearchBtn');
+      const searchTerm = document
+        .getElementById("ippisSearchInput")
+        .value.toLowerCase();
+      const clearBtn = document.getElementById("clearIppisSearchBtn");
 
       // Show/hide clear button
       if (searchTerm) {
-        clearBtn.classList.remove('hidden');
+        clearBtn.classList.remove("hidden");
       } else {
-        clearBtn.classList.add('hidden');
+        clearBtn.classList.add("hidden");
       }
 
       // Filter data
-      filteredPeriodsData = allPeriodsData.filter(period => {
+      filteredPeriodsData = allPeriodsData.filter((period) => {
         const periodText = formatPeriod(period.period).toLowerCase();
-        const amount = period.total_amount?.toString() || '';
+        const amount = period.total_amount?.toString() || "";
         return periodText.includes(searchTerm) || amount.includes(searchTerm);
       });
 
@@ -486,18 +713,20 @@
     }
 
     function updatePaginationUI() {
-      const startRecord = totalRecords === 0 ? 0 : (currentPage - 1) * recordsPerPage + 1;
+      const startRecord =
+        totalRecords === 0 ? 0 : (currentPage - 1) * recordsPerPage + 1;
       const endRecord = Math.min(currentPage * recordsPerPage, totalRecords);
 
-      document.getElementById('ippisStartRecord').textContent = startRecord;
-      document.getElementById('ippisEndRecord').textContent = endRecord;
-      document.getElementById('ippis TotalRecords').textContent = totalRecords;
-      document.getElementById('ippisCurrentPage').textContent = currentPage;
-      document.getElementById('ippis TotalPages').textContent = totalPages;
+      document.getElementById("ippisStartRecord").textContent = startRecord;
+      document.getElementById("ippisEndRecord").textContent = endRecord;
+      document.getElementById("ippis TotalRecords").textContent = totalRecords;
+      document.getElementById("ippisCurrentPage").textContent = currentPage;
+      document.getElementById("ippis TotalPages").textContent = totalPages;
 
       // Enable/disable pagination buttons
-      document.getElementById('ippis PrevPage').disabled = currentPage === 1;
-      document.getElementById('ippisNextPage').disabled = currentPage === totalPages;
+      document.getElementById("ippis PrevPage").disabled = currentPage === 1;
+      document.getElementById("ippisNextPage").disabled =
+        currentPage === totalPages;
     }
     // ============================================
     // VALIDATE FILE
@@ -508,24 +737,24 @@
       const month = monthSelect.value;
 
       if (!file || !year || !month) {
-        showError('Please fill all fields and select a file');
+        showError("Please fill all fields and select a file");
         return;
       }
 
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('year', year);
-      formData.append('month', month);
+      formData.append("file", file);
+      formData.append("year", year);
+      formData.append("month", month);
 
-      showLoading('Validating file...');
+      showLoading("Validating file...");
 
       try {
         const response = await auth.fetchWithAuth(`${API_BASE_URL}/validate`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${authToken}`
+            Authorization: `Bearer ${authToken}`,
           },
-          body: formData
+          body: formData,
         });
 
         const result = await response.json();
@@ -537,23 +766,28 @@
           importBtn.disabled = false;
         } else {
           // FIX: Show detailed error information
-          const errorMessage = result.error || result.message || 'Validation failed';
+          const errorMessage =
+            result.error || result.message || "Validation failed";
 
           // If there are detailed errors, show them
           if (result.details) {
-            showError([
-              errorMessage,
-              result.details.message || '',
-              result.details.invalidHeaders ? `Invalid headers: ${result.details.invalidHeaders.join(', ')}` : ''
-            ].filter(Boolean));
+            showError(
+              [
+                errorMessage,
+                result.details.message || "",
+                result.details.invalidHeaders
+                  ? `Invalid headers: ${result.details.invalidHeaders.join(", ")}`
+                  : "",
+              ].filter(Boolean),
+            );
           } else {
             showError(errorMessage);
           }
         }
       } catch (error) {
         hideLoading();
-        console.error('Validation error:', error);
-        showError('Validation failed: ' + error.message);
+        console.error("Validation error:", error);
+        showError("Validation failed: " + error.message);
       }
     }
     // ============================================
@@ -561,48 +795,55 @@
     // ============================================
     function showValidationResults(data) {
       if (data.headers.valid.length === 0) {
-        showError('No valid payment type headers found in the CSV file. Please check your file format.');
+        showError(
+          "No valid payment type headers found in the CSV file. Please check your file format.",
+        );
         importBtn.disabled = true;
-        validationResults.classList.add('hidden');
+        validationResults.classList.add("hidden");
         return;
       }
 
-      document.getElementById('val-totalRecords').textContent = data.totalRecords;
-      document.getElementById('val-validHeaders').textContent = data.headers.valid.length;
-      document.getElementById('val-invalidHeaders').textContent = data.headers.invalid.length;
-      document.getElementById('val-period').textContent = formatPeriod(data.period);
+      document.getElementById("val-totalRecords").textContent =
+        data.totalRecords;
+      document.getElementById("val-validHeaders").textContent =
+        data.headers.valid.length;
+      document.getElementById("val-invalidHeaders").textContent =
+        data.headers.invalid.length;
+      document.getElementById("val-period").textContent = formatPeriod(
+        data.period,
+      );
 
       // Show warnings
-      const warningsDiv = document.getElementById('validationWarnings');
+      const warningsDiv = document.getElementById("validationWarnings");
       if (data.warnings && data.warnings.length > 0) {
-        warningsDiv.classList.remove('hidden');
+        warningsDiv.classList.remove("hidden");
         warningsDiv.innerHTML = `
         <div class="bg-yellow-50 border border-yellow-200 rounded p-3">
           <p class="font-semibold text-yellow-700 mb-2">Warnings:</p>
-          ${data.warnings.map(w => `<p class="text-sm text-yellow-600">⚠️ ${w}</p>`).join('')}
+          ${data.warnings.map((w) => `<p class="text-sm text-yellow-600">⚠️ ${w}</p>`).join("")}
         </div>
       `;
       } else {
-        warningsDiv.classList.add('hidden');
+        warningsDiv.classList.add("hidden");
       }
 
       // Show sample validation
-      const sampleBody = document.getElementById('sampleValidationBody');
-      sampleBody.innerHTML = '';
+      const sampleBody = document.getElementById("sampleValidationBody");
+      sampleBody.innerHTML = "";
 
-      data.sampleValidation.forEach(sample => {
-        const row = document.createElement('tr');
-        row.className = sample.exists ? 'bg-green-50' : 'bg-red-50';
+      data.sampleValidation.forEach((sample) => {
+        const row = document.createElement("tr");
+        row.className = sample.exists ? "bg-green-50" : "bg-red-50";
         row.innerHTML = `
         <td class="px-4 py-2">${sample.rowNumber}</td>
         <td class="px-4 py-2">${sample.employeeId}</td>
-        <td class="px-4 py-2">${sample.exists ? '✅ Found' : '❌ Not Found'}</td>
+        <td class="px-4 py-2">${sample.exists ? "✅ Found" : "❌ Not Found"}</td>
       `;
         sampleBody.appendChild(row);
       });
 
-      validationResults.classList.remove('hidden');
-      importDiv.scrollIntoView({ behavior: 'smooth' });
+      validationResults.classList.remove("hidden");
+      importDiv.scrollIntoView({ behavior: "smooth" });
     }
 
     // ============================================
@@ -610,7 +851,7 @@
     // ============================================
     async function importFile() {
       if (!validationData) {
-        showError('Please validate file first');
+        showError("Please validate file first");
         return;
       }
 
@@ -620,21 +861,21 @@
       const payrollClass = payrollClassInput.value;
 
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('year', year);
-      formData.append('month', month);
-      formData.append('payrollClass', payrollClass);
-      formData.append('deleteExisting', 'true');
+      formData.append("file", file);
+      formData.append("year", year);
+      formData.append("month", month);
+      formData.append("payrollClass", payrollClass);
+      formData.append("deleteExisting", "true");
 
-      showLoading('Importing data...');
+      showLoading("Importing data...");
 
       try {
         const response = await auth.fetchWithAuth(`${API_BASE_URL}/import`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${authToken}`
+            Authorization: `Bearer ${authToken}`,
           },
-          body: formData
+          body: formData,
         });
 
         const result = await response.json();
@@ -645,12 +886,12 @@
           resetForm();
           await loadPeriods();
         } else {
-          showError(result.message || 'Import failed');
+          showError(result.message || "Import failed");
         }
       } catch (error) {
         hideLoading();
-        console.error('Import error:', error);
-        showError('Import failed: ' + error.message);
+        console.error("Import error:", error);
+        showError("Import failed: " + error.message);
       }
     }
 
@@ -658,14 +899,17 @@
     // VIEW PERIOD DETAILS
     // ============================================
     async function viewPeriodDetails(period) {
-      showLoading('Loading period details...');
+      showLoading("Loading period details...");
 
       try {
-        const response = await auth.fetchWithAuth(`${API_BASE_URL}/history/${period}?limit=100`, {
-          headers: {
-            'Authorization': `Bearer ${authToken}`
-          }
-        });
+        const response = await auth.fetchWithAuth(
+          `${API_BASE_URL}/history/${period}?limit=100`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          },
+        );
 
         const result = await response.json();
         hideLoading();
@@ -673,12 +917,12 @@
         if (result.success) {
           showPeriodDetailsModal(period, result.data);
         } else {
-          showError('Failed to load period details');
+          showError("Failed to load period details");
         }
       } catch (error) {
         hideLoading();
-        console.error('Error loading period details:', error);
-        showError('Error loading period details');
+        console.error("Error loading period details:", error);
+        showError("Error loading period details");
       }
     }
 
@@ -686,14 +930,17 @@
     // VIEW PERIOD SUMMARY
     // ============================================
     async function viewPeriodSummary(period) {
-      showLoading('Loading period summary...');
+      showLoading("Loading period summary...");
 
       try {
-        const response = await auth.fetchWithAuth(`${API_BASE_URL}/summary/${period}`, {
-          headers: {
-            'Authorization': `Bearer ${authToken}`
-          }
-        });
+        const response = await auth.fetchWithAuth(
+          `${API_BASE_URL}/summary/${period}`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          },
+        );
 
         const result = await response.json();
         hideLoading();
@@ -701,12 +948,12 @@
         if (result.success) {
           showPeriodSummaryModal(result.data);
         } else {
-          showError('Failed to load period summary');
+          showError("Failed to load period summary");
         }
       } catch (error) {
         hideLoading();
-        console.error('Error loading period summary:', error);
-        showError('Error loading period summary');
+        console.error("Error loading period summary:", error);
+        showError("Error loading period summary");
       }
     }
 
@@ -714,7 +961,7 @@
     // SHOW PERIOD DETAILS MODAL
     // ============================================
     function showPeriodDetailsModal(period, data) {
-      const viewContent = document.getElementById('ippisViewContent');
+      const viewContent = document.getElementById("ippisViewContent");
 
       let html = `
       <div class="mb-4 flex gap-4 items-center justify-between">
@@ -736,17 +983,17 @@
           <tbody>
     `;
 
-      data.records.forEach(record => {
+      data.records.forEach((record) => {
         html += `
         <tr class="border-b hover:bg-gray-50">
           <td class="px-3 py-2">${record.numb}</td>
-          <td class="px-3 py-2 text-[9px] font-bold">${record.Surname || ''} ${record.OtherName || ''}</td>
+          <td class="px-3 py-2 text-[9px] font-bold">${record.Surname || ""} ${record.OtherName || ""}</td>
           <td class="px-3 py-2">${record.Type}</td>
-          <td class="px-3 py-2">${record.bp || '-'}</td>
+          <td class="px-3 py-2">${record.bp || "-"}</td>
           <td class="px-3 py-2 text-right">₦${Number(record.bpm || 0).toLocaleString()}</td>
           <td class="px-3 py-2">
             <span class="px-1 py-1 rounded font-semibold text-[9px] ${getCategoryClass(record.bpa)}">
-              ${record.bpa || '-'}
+              ${record.bpa || "-"}
             </span>
           </td>
         </tr>
@@ -760,16 +1007,20 @@
     `;
 
       viewContent.innerHTML = html;
-      document.getElementById('exportPeriodBtn').setAttribute('data-period', period);
-      document.getElementById('deletePeriodBtn').setAttribute('data-period', period);
-      viewModal.classList.remove('hidden');
+      document
+        .getElementById("exportPeriodBtn")
+        .setAttribute("data-period", period);
+      document
+        .getElementById("deletePeriodBtn")
+        .setAttribute("data-period", period);
+      viewModal.classList.remove("hidden");
     }
 
     // ============================================
     // SHOW PERIOD SUMMARY MODAL
     // ============================================
     function showPeriodSummaryModal(data) {
-      const viewContent = document.getElementById('ippisViewContent');
+      const viewContent = document.getElementById("ippisViewContent");
 
       let html = `
       <div class="mb-6">
@@ -784,10 +1035,10 @@
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     `;
 
-      data.categoryTotals.forEach(cat => {
+      data.categoryTotals.forEach((cat) => {
         html += `
         <div class="bg-gray-50 p-4 rounded border">
-          <div class="text-sm font-semibold text-gray-700">${cat.category || 'LOANS'}</div>
+          <div class="text-sm font-semibold text-gray-700">${cat.category || "LOANS"}</div>
           <div class="text-lg font-bold text-blue-600">₦${Number(cat.total_amount || 0).toLocaleString()}</div>
           <div class="text-xs text-gray-500">${cat.record_count} records</div>
         </div>
@@ -812,7 +1063,7 @@
             <tbody>
     `;
 
-      data.topPayments.forEach(payment => {
+      data.topPayments.forEach((payment) => {
         html += `
         <tr class="border-b">
           <td class="px-3 py-2">${payment.type}</td>
@@ -832,9 +1083,9 @@
     `;
 
       viewContent.innerHTML = html;
-      document.getElementById('exportPeriodBtn').style.display = 'none';
-      document.getElementById('deletePeriodBtn').style.display = 'none';
-      viewModal.classList.remove('hidden');
+      document.getElementById("exportPeriodBtn").style.display = "none";
+      document.getElementById("deletePeriodBtn").style.display = "none";
+      viewModal.classList.remove("hidden");
     }
 
     // ============================================
@@ -842,20 +1093,23 @@
     // ============================================
     async function exportPeriod(period) {
       try {
-        const response = await auth.fetchWithAuth(`${API_BASE_URL}/export/${period}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json'
+        const response = await auth.fetchWithAuth(
+          `${API_BASE_URL}/export/${period}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ format: "csv" }),
           },
-          body: JSON.stringify({ format: 'csv' })
-        });
+        );
 
-        if (!response.ok) throw new Error('Export failed');
+        if (!response.ok) throw new Error("Export failed");
 
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
         a.download = `payroll_${period}.csv`;
         document.body.appendChild(a);
@@ -863,8 +1117,8 @@
         a.remove();
         window.URL.revokeObjectURL(url);
       } catch (error) {
-        console.error('Export error:', error);
-        showError('Failed to export period');
+        console.error("Export error:", error);
+        showError("Failed to export period");
       }
     }
 
@@ -872,34 +1126,41 @@
     // DELETE PERIOD
     // ============================================
     async function deletePeriod(period) {
-      if (!confirm(`Are you sure you want to delete all data for period ${formatPeriod(period)}? This action cannot be undone.`)) {
+      if (
+        !confirm(
+          `Are you sure you want to delete all data for period ${formatPeriod(period)}? This action cannot be undone.`,
+        )
+      ) {
         return;
       }
 
-      showLoading('Deleting period...');
+      showLoading("Deleting period...");
 
       try {
-        const response = await auth.fetchWithAuth(`${API_BASE_URL}/period/${period}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${authToken}`
-          }
-        });
+        const response = await auth.fetchWithAuth(
+          `${API_BASE_URL}/period/${period}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          },
+        );
 
         const result = await response.json();
         hideLoading();
 
         if (result.success) {
-          viewModal.classList.add('hidden');
-          showSuccess('Period Deleted', result.message);
+          viewModal.classList.add("hidden");
+          showSuccess("Period Deleted", result.message);
           await loadPeriods();
         } else {
-          showError(result.message || 'Delete failed');
+          showError(result.message || "Delete failed");
         }
       } catch (error) {
         hideLoading();
-        console.error('Delete error:', error);
-        showError('Failed to delete period');
+        console.error("Delete error:", error);
+        showError("Failed to delete period");
       }
     }
 
@@ -910,38 +1171,51 @@
       if (!period || period.length !== 6) return period;
       const year = period.substring(0, 4);
       const month = period.substring(4, 6);
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
       return `${months[parseInt(month) - 1]} ${year}`;
     }
 
     function formatDate(dateString) {
-      if (!dateString) return 'N/A';
+      if (!dateString) return "N/A";
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-NG', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+      return date.toLocaleDateString("en-NG", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       });
     }
 
     function getCategoryClass(category) {
       switch (category) {
-        case 'TAXABLE PAYMENT':
-          return 'bg-blue-100 text-blue-800';
-        case 'NON-TAXABLE PAY':
-          return 'bg-green-100 text-green-800';
-        case 'DEDUCTIONS':
-          return 'bg-red-100 text-red-800';
+        case "TAXABLE PAYMENT":
+          return "bg-blue-100 text-blue-800";
+        case "NON-TAXABLE PAY":
+          return "bg-green-100 text-green-800";
+        case "DEDUCTIONS":
+          return "bg-red-100 text-red-800";
         default:
-          return 'bg-gray-100 text-gray-800';
+          return "bg-gray-100 text-gray-800";
       }
     }
 
-    function showLoading(message = 'Processing...') {
-      const icon = document.getElementById('ippisSuccessIcon');
-      const title = document.getElementById('ippisSuccessTitle');
-      const msg = document.getElementById('ippisSuccessMessage');
-      const summary = document.getElementById('ippisImportSummary');
+    function showLoading(message = "Processing...") {
+      const icon = document.getElementById("ippisSuccessIcon");
+      const title = document.getElementById("ippisSuccessTitle");
+      const msg = document.getElementById("ippisSuccessMessage");
+      const summary = document.getElementById("ippisImportSummary");
 
       icon.innerHTML = `
         <div class="relative w-10 h-10 mx-auto mb-4">
@@ -950,57 +1224,66 @@
           <div class="absolute top-1/2 left-1 h-[6px] bg-blue-600 rounded animate-expand [animation-delay:0.6s] -translate-y-1/2"></div>
         </div>
       `;
-      title.textContent = 'Please Wait';
+      title.textContent = "Please Wait";
       msg.textContent = message;
-      summary.classList.add('hidden');
-      successModal.classList.remove('hidden');
+      summary.classList.add("hidden");
+      successModal.classList.remove("hidden");
     }
 
     function hideLoading() {
-      successModal.classList.add('hidden');
+      successModal.classList.add("hidden");
     }
 
     function showSuccess(title, message) {
-      const icon = document.getElementById('ippisSuccessIcon');
-      const titleEl = document.getElementById('ippisSuccessTitle');
-      const msgEl = document.getElementById('ippisSuccessMessage');
-      const summary = document.getElementById('ippisImportSummary');
+      const icon = document.getElementById("ippisSuccessIcon");
+      const titleEl = document.getElementById("ippisSuccessTitle");
+      const msgEl = document.getElementById("ippisSuccessMessage");
+      const summary = document.getElementById("ippisImportSummary");
 
-      icon.innerHTML = '<svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>';
+      icon.innerHTML =
+        '<svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>';
       titleEl.textContent = title;
       msgEl.textContent = message;
-      summary.classList.add('hidden');
-      successModal.classList.remove('hidden');
+      summary.classList.add("hidden");
+      successModal.classList.remove("hidden");
     }
 
     function showImportSuccess(data, message) {
-      const icon = document.getElementById('ippisSuccessIcon');
-      const title = document.getElementById('ippisSuccessTitle');
-      const msg = document.getElementById('ippisSuccessMessage');
-      const summary = document.getElementById('ippisImportSummary');
+      const icon = document.getElementById("ippisSuccessIcon");
+      const title = document.getElementById("ippisSuccessTitle");
+      const msg = document.getElementById("ippisSuccessMessage");
+      const summary = document.getElementById("ippisImportSummary");
 
-      icon.innerHTML = '<svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>';
-      title.textContent = 'Import Complete';
+      icon.innerHTML =
+        '<svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>';
+      title.textContent = "Import Complete";
       msg.textContent = message;
 
-      document.getElementById('sum-period').textContent = formatPeriod(data.period);
-      document.getElementById('sum-totalRecords').textContent = data.totalRecords;
-      document.getElementById('sum-processedEmployees').textContent = data.processedEmployees;
-      document.getElementById('sum-insertedRecords').textContent = data.insertedRecords;
-      document.getElementById('sum-updatedRecords').textContent = data.updatedRecords;
-      document.getElementById('sum-skippedEmployees').textContent = data.skippedEmployees;
-      document.getElementById('sum-totalErrors').textContent = data.totalErrors;
+      document.getElementById("sum-period").textContent = formatPeriod(
+        data.period,
+      );
+      document.getElementById("sum-totalRecords").textContent =
+        data.totalRecords;
+      document.getElementById("sum-processedEmployees").textContent =
+        data.processedEmployees;
+      document.getElementById("sum-insertedRecords").textContent =
+        data.insertedRecords;
+      document.getElementById("sum-updatedRecords").textContent =
+        data.updatedRecords;
+      document.getElementById("sum-skippedEmployees").textContent =
+        data.skippedEmployees;
+      document.getElementById("sum-totalErrors").textContent = data.totalErrors;
 
-      summary.classList.remove('hidden');
-      successModal.classList.remove('hidden');
+      summary.classList.remove("hidden");
+      successModal.classList.remove("hidden");
     }
 
     function showError(message) {
-      const errorContent = document.getElementById('ippisErrorContent');
+      const errorContent = document.getElementById("ippisErrorContent");
 
       let html = '<div class="space-y-2">';
 
-      if (typeof message === 'string') {
+      if (typeof message === "string") {
         html += `
         <div class="bg-red-50 border border-red-200 rounded p-3">
           <p class="text-sm text-red-600">${message}</p>
@@ -1011,74 +1294,86 @@
           html += `
           <div class="bg-red-50 border border-red-200 rounded p-3">
             <p class="font-semibold text-red-700">Error ${index + 1}:</p>
-            ${err.row ? `<p class="text-sm">Row: ${err.row}</p>` : ''}
-            ${err.employeeId ? `<p class="text-sm">Svc No.: ${err.employeeId}</p>` : ''}
+            ${err.row ? `<p class="text-sm">Row: ${err.row}</p>` : ""}
+            ${err.employeeId ? `<p class="text-sm">Svc No.: ${err.employeeId}</p>` : ""}
             <p class="text-sm text-red-600">${err.error || err}</p>
           </div>
         `;
         });
       }
-      html += '</div>';
+      html += "</div>";
 
       errorContent.innerHTML = html;
-      errorModal.classList.remove('hidden');
+      errorModal.classList.remove("hidden");
     }
 
     function resetForm() {
       importForm.reset();
-      fileInput.value = '';
+      fileInput.value = "";
       yearInput.value = new Date().getFullYear();
       validationData = null;
-      validationResults.classList.add('hidden');
-      importDiv.classList.add('hidden');
+      validationResults.classList.add("hidden");
+      importDiv.classList.add("hidden");
       importBtn.disabled = true;
     }
 
     // ============================================
     // EVENT LISTENERS
     // ============================================
-    newImportBtn.addEventListener('click', () => {
-      importDiv.classList.remove('hidden');
-      importForm.scrollIntoView({ behavior: 'smooth' });
+    newImportBtn.addEventListener("click", () => {
+      importDiv.classList.remove("hidden");
+      importForm.scrollIntoView({ behavior: "smooth" });
     });
 
-    cancelBtn.addEventListener('click', resetForm);
-    validateBtn.addEventListener('click', validateFile);
-    importBtn.addEventListener('click', importFile);
+    cancelBtn.addEventListener("click", resetForm);
+    validateBtn.addEventListener("click", validateFile);
+    importBtn.addEventListener("click", importFile);
 
-    document.getElementById('closeIppisModalBtn').addEventListener('click', () => {
-      successModal.classList.add('hidden');
-    });
+    document
+      .getElementById("closeIppisModalBtn")
+      .addEventListener("click", () => {
+        successModal.classList.add("hidden");
+      });
 
-    document.getElementById('closeIppisErrorBtn').addEventListener('click', () => {
-      errorModal.classList.add('hidden');
-    });
+    document
+      .getElementById("closeIppisErrorBtn")
+      .addEventListener("click", () => {
+        errorModal.classList.add("hidden");
+      });
 
-    document.getElementById('closeIppisViewBtn').addEventListener('click', () => {
-      viewModal.classList.add('hidden');
-    });
+    document
+      .getElementById("closeIppisViewBtn")
+      .addEventListener("click", () => {
+        viewModal.classList.add("hidden");
+      });
 
-    document.getElementById('closeIppisViewBtnBottom').addEventListener('click', () => {
-      viewModal.classList.add('hidden');
-    });
+    document
+      .getElementById("closeIppisViewBtnBottom")
+      .addEventListener("click", () => {
+        viewModal.classList.add("hidden");
+      });
 
-    document.getElementById('exportPeriodBtn').addEventListener('click', (e) => {
-      const period = e.target.getAttribute('data-period');
-      exportPeriod(period);
-    });
+    document
+      .getElementById("exportPeriodBtn")
+      .addEventListener("click", (e) => {
+        const period = e.target.getAttribute("data-period");
+        exportPeriod(period);
+      });
 
-    document.getElementById('deletePeriodBtn').addEventListener('click', (e) => {
-      const period = e.target.getAttribute('data-period');
-      deletePeriod(period);
-    });
+    document
+      .getElementById("deletePeriodBtn")
+      .addEventListener("click", (e) => {
+        const period = e.target.getAttribute("data-period");
+        deletePeriod(period);
+      });
 
-    viewPeriodsBtn.addEventListener('click', async () => {
-      showLoading('Loading periods...');
+    viewPeriodsBtn.addEventListener("click", async () => {
+      showLoading("Loading periods...");
       try {
         const response = await auth.fetchWithAuth(`${API_BASE_URL}/periods`, {
           headers: {
-            'Authorization': `Bearer ${authToken}`
-          }
+            Authorization: `Bearer ${authToken}`,
+          },
         });
 
         const result = await response.json();
@@ -1089,19 +1384,20 @@
         }
       } catch (error) {
         hideLoading();
-        showError('Failed to load periods');
+        showError("Failed to load periods");
       }
     });
 
     function showPeriodsModal(periods) {
-      const content = document.getElementById('periodsContent');
+      const content = document.getElementById("periodsContent");
 
       if (!periods || periods.length === 0) {
-        content.innerHTML = '<p class="text-gray-500 text-center">No periods found</p>';
+        content.innerHTML =
+          '<p class="text-gray-500 text-center">No periods found</p>';
       } else {
         let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
 
-        periods.forEach(period => {
+        periods.forEach((period) => {
           html += `
           <div class="bg-gray-50 p-4 rounded-lg border hover:border-blue-500 transition">
             <div class="flex justify-between items-start mb-2">
@@ -1123,61 +1419,67 @@
         `;
         });
 
-        html += '</div>';
+        html += "</div>";
         content.innerHTML = html;
 
         // Add event listeners
-        document.querySelectorAll('.view-period-modal-btn').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            const period = e.target.getAttribute('data-period');
-            periodsModal.classList.add('hidden');
+        document.querySelectorAll(".view-period-modal-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            const period = e.target.getAttribute("data-period");
+            periodsModal.classList.add("hidden");
             viewPeriodDetails(period);
           });
         });
 
-        document.querySelectorAll('.summary-modal-btn').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            const period = e.target.getAttribute('data-period');
-            periodsModal.classList.add('hidden');
+        document.querySelectorAll(".summary-modal-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            const period = e.target.getAttribute("data-period");
+            periodsModal.classList.add("hidden");
             viewPeriodSummary(period);
           });
         });
       }
 
-      periodsModal.classList.remove('hidden');
+      periodsModal.classList.remove("hidden");
     }
 
-    document.getElementById('closePeriodsBtn').addEventListener('click', () => {
-      periodsModal.classList.add('hidden');
+    document.getElementById("closePeriodsBtn").addEventListener("click", () => {
+      periodsModal.classList.add("hidden");
     });
 
     // Search functionality
-    document.getElementById('ippisSearchInput').addEventListener('input', () => {
-      currentPage = 1;
-      applyPaginationAndSearch();
-    });
+    document
+      .getElementById("ippisSearchInput")
+      .addEventListener("input", () => {
+        currentPage = 1;
+        applyPaginationAndSearch();
+      });
 
-    document.getElementById('clearIppisSearchBtn').addEventListener('click', () => {
-      document.getElementById('ippisSearchInput').value = '';
-      currentPage = 1;
-      applyPaginationAndSearch();
-    });
+    document
+      .getElementById("clearIppisSearchBtn")
+      .addEventListener("click", () => {
+        document.getElementById("ippisSearchInput").value = "";
+        currentPage = 1;
+        applyPaginationAndSearch();
+      });
 
     // Pagination controls
-    document.getElementById('ippisRecordsPerPage').addEventListener('change', (e) => {
-      recordsPerPage = parseInt(e.target.value);
-      currentPage = 1;
-      applyPaginationAndSearch();
-    });
+    document
+      .getElementById("ippisRecordsPerPage")
+      .addEventListener("change", (e) => {
+        recordsPerPage = parseInt(e.target.value);
+        currentPage = 1;
+        applyPaginationAndSearch();
+      });
 
-    document.getElementById('ippis PrevPage').addEventListener('click', () => {
+    document.getElementById("ippis PrevPage").addEventListener("click", () => {
       if (currentPage > 1) {
         currentPage--;
         applyPaginationAndSearch();
       }
     });
 
-    document.getElementById('ippisNextPage').addEventListener('click', () => {
+    document.getElementById("ippisNextPage").addEventListener("click", () => {
       if (currentPage < totalPages) {
         currentPage++;
         applyPaginationAndSearch();
@@ -1192,7 +1494,7 @@
         await loadMonths();
         await loadPeriods();
       } catch (error) {
-        console.error('Initialization error:', error);
+        console.error("Initialization error:", error);
       }
     })();
   })();

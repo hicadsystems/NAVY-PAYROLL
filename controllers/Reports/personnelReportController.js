@@ -321,6 +321,113 @@ class PersonnelReportController extends BaseReportController {
   }
 
   // ==========================================================================
+  // RETIRED SERVICE CHIEFS REPORT
+  // ==========================================================================
+  async generateRetiredChiefsReport(req, res) {
+    try {
+      const { format } = req.query;
+      const currentDb = pool.getCurrentDatabase(req.user_id.toString());
+      console.log("🔍 Retired chiefs report — DB:", currentDb);
+
+      const data =
+        await personnelReportService.getRetiredChiefsReport(currentDb);
+
+      if (!data || data.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "No retired service chiefs found for this payroll class.",
+        });
+      }
+
+      const className = await this.getDatabaseNameFromRequest(req);
+
+      if (format === "excel") {
+        const exporter = new GenericExcelExporter();
+        const columns = [
+          { header: "S/N", key: "sn", width: 6, align: "center" },
+          { header: "Svc No.", key: "employee_id", width: 15 },
+          { header: "Rank", key: "title_code", width: 10 },
+          { header: "Full Name", key: "full_name", width: 35 },
+          {
+            header: "Grade Level",
+            key: "gradelevel",
+            width: 10,
+            align: "center",
+          },
+          { header: "Grade Type", key: "gradetype_code", width: 20 },
+          { header: "PFA", key: "pfa", width: 15 },
+          { header: "State", key: "state_of_origin", width: 10 },
+          { header: "Date Left", key: "DateLeft", width: 15 },
+          { header: "Exit Type", key: "exittype", width: 15 },
+        ];
+        const dataWithSN = data.map((item, idx) => ({ ...item, sn: idx + 1 }));
+        const workbook = await exporter.createWorkbook({
+          title: `NIGERIAN NAVY — RETIRED SERVICE CHIEFS`,
+          subtitle: `${className} | Total: ${data.length} | Generated: ${new Date().toLocaleDateString()}`,
+          className,
+          columns,
+          data: dataWithSN,
+          summary: {},
+          sheetName: "Retired Chiefs",
+        });
+        return exporter.exportToResponse(
+          workbook,
+          res,
+          `retired_chiefs_${new Date().toISOString().split("T")[0]}.xlsx`,
+        );
+      }
+
+      // PDF
+      const templatePath = path.join(
+        __dirname,
+        "../../templates/personnel-report.html",
+      );
+      if (!fs.existsSync(templatePath))
+        throw new Error("PDF template file not found");
+
+      const image = await companySettings.getSettingsFromFile(
+        "./public/photos/logo.png",
+      );
+      const templateData = {
+        data,
+        statistics: { total_employees: data.length },
+        reportDate: new Date(),
+        filters: "Retired Service Chiefs",
+        className,
+        ...image,
+      };
+
+      const pdfBuffer = await this.generatePDFWithFallback(
+        templatePath,
+        templateData,
+        {
+          format: "A4",
+          landscape: true,
+          marginTop: "5mm",
+          marginBottom: "5mm",
+          marginLeft: "5mm",
+          marginRight: "5mm",
+        },
+      );
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=retired_chiefs_${new Date().toISOString().split("T")[0]}.pdf`,
+      );
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error(
+        "❌ ERROR generating Retired Chiefs report:",
+        error.message,
+      );
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    }
+  }
+
+  // ==========================================================================
   // GET FILTER OPTIONS (CURRENT EMPLOYEES)
   // ==========================================================================
   async getPersonnelFilterOptions(req, res) {

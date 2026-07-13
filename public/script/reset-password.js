@@ -3,8 +3,6 @@
 // the backend, then handles the new-password submission.
 
 (() => {
-  const isLocal = window.location.hostname === "localhost";
-  const API_BASE = isLocal ? "http://localhost:5500" : "https://hicad.ng";
 
   const checkingState = document.getElementById("checking-state");
   const invalidState = document.getElementById("invalid-state");
@@ -120,7 +118,7 @@
   async function verifyToken() {
     try {
       const res = await fetch(
-        `${API_BASE}/auth/users/verify-reset-token?token=${encodeURIComponent(token)}`,
+        `/auth/users/verify-reset-token?token=${encodeURIComponent(token)}`,
       );
       const data = await res.json();
 
@@ -178,7 +176,7 @@
     submitBtn.textContent = "Resetting...";
 
     try {
-      const res = await fetch(`${API_BASE}/auth/users/reset-password`, {
+      const res = await fetch(`/auth/users/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, new_password: newPassword }),

@@ -209,9 +209,6 @@ togglePassword.addEventListener("click", () => {
   eyeClosed.style.display = isPassword ? "inline" : "none";
 });
 
-// Forgot Password Link
-const isLocal = window.location.hostname === "localhost";
-const BASE_URL = isLocal ? "http://localhost:5500" : "https://hicad.ng";
 
 // Forgot Password Manager
 const ForgotPasswordManager = {
@@ -369,7 +366,7 @@ const ForgotPasswordManager = {
     };
 
     try {
-      const res = await fetch(`${BASE_URL}/api/users/verify-identity`, {
+      const res = await fetch(`/api/users/verify-identity`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -450,7 +447,7 @@ const ForgotPasswordManager = {
     };
 
     try {
-      const res = await fetch(`${BASE_URL}/api/users/reset-password`, {
+      const res = await fetch(`/api/users/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

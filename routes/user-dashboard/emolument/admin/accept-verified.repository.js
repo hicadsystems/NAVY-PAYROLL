@@ -99,7 +99,7 @@ async function getPendingVerified(filters = {}, limit = 50, offset = 0) {
        p.payrollclass, p.classes, p.ship, p.command,
        p.email, p.gsm_number, p.Status, p.emolumentform,
        p.formNumber, p.FormYear,
-       f.id           AS formId,
+       f.id           AS form_id,
        f.status       AS formStatus,
        f.form_number  AS formNumber,
        f.form_year    AS formYear,
@@ -138,7 +138,7 @@ async function getPendingVerified(filters = {}, limit = 50, offset = 0) {
 // Returns form row + snapshot for a single personnel.
 // ─────────────────────────────────────────────────────────────
 
-async function getConfirmedFormDetail(serviceNo) {
+async function getConfirmedFormDetail(formId) {
   pool.useDatabase(DB());
 
   const [rows] = await pool.query(
@@ -165,9 +165,9 @@ async function getConfirmedFormDetail(serviceNo) {
      INNER JOIN ef_emolument_forms f
        ON f.service_no = p.serviceNumber
       AND f.status     = 'CPO_CONFIRMED'
-     WHERE p.formNumber = ?
+     WHERE f.id = ?
      LIMIT 1`,
-    [serviceNo],
+    [formId],
   );
 
   if (!rows.length) return null;
@@ -240,6 +240,16 @@ async function markAccepted(serviceNumbers, acceptedBy) {
        (form_id, action, from_status, to_status, performed_by, performer_role, remarks, performed_at)
      VALUES ?`,
     [values],
+  );
+
+  const insertMap = toInsert.map(t=> t.serviceNo)
+  const toInsertPlaceholders = insertMap.map(() => "?").join(",");
+
+  await pool.query(
+    `UPDATE ef_personalinfos
+     SET Status = 'Updated'
+     WHERE serviceNumber IN (${toInsertPlaceholders})`,
+    insertMap,
   );
 
   return toInsert.length;

@@ -92,15 +92,15 @@ router.get("/verified", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /admin/verified/:formNumber
+// GET /admin/verified/:formId
 // Full form detail + approval trail for a single confirmed person.
 // ─────────────────────────────────────────────────────────────
 
-router.get("/verified/:formNumber", async (req, res) => {
-  const { formNumber } = req.params;
+router.get("/verified/:formId", async (req, res) => {
+  const { formId } = req.params;
 
   try {
-    const form = await repo.getConfirmedFormDetail(formNumber);
+    const form = await repo.getConfirmedFormDetail(formId);
     if (!form)
       return res
         .status(404)

@@ -425,15 +425,15 @@ async function rejectForm(formId, foShip, body, performedBy, ip) {
     };
   }
 
-  await repo.insertFormApproval({
+ await repo.deleteFormApproval(form.form_id);
+
+   await repo.insertFormRejection({
     formId: form.form_id,
-    action: "REJECTED",
-    fromStatus: FORM_STATUS.DO_REVIEWED,
-    toStatus: FORM_STATUS.REJECTED,
-    performedBy: fo_svcno,
-    performerRole: "FO",
+    svc_no: form.serviceNumber,
+    rejected_by: fo_svcno,
     remarks: remarks.trim(),
-  });
+  })
+
 
   await repo.insertAuditLog({
     tableName: "ef_personalinfos",

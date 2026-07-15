@@ -4,19 +4,24 @@
       FO-approved forms awaiting your final confirmation
     </p>
   </div>
-  <div class="mb-4">
-    <div class="relative">
+  <div class="mb-4 flex flex-col sm:flex-row gap-2">
+    <div class="relative flex-1">
       <i
-        class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-blue-900/30"
-      ></i>
-
-      <input
-        id="cpoPendingSearch"
-        type="text"
-        placeholder="Search by name or service number..."
-        class="w-full rounded-xl border border-amber-100 bg-white px-10 py-2.5 text-sm focus:outline-none"
-      />
+        class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-blue-900/30 text-sm pointer-events-none"></i>
+      <input id="cpoPendingSearch" type="text" placeholder="Search by name or service number..."
+        class="w-full rounded-xl border border-amber-100 bg-white pl-9 pr-4 py-2.5 text-sm text-navy placeholder-blue-900/30 focus:outline-none" />
     </div>
+    <select id="cpoPendingShipFilter"
+      class="rounded-xl border border-amber-100 bg-white px-3 py-2.5 text-sm text-navy focus:outline-none">
+      <option value="">All Ships</option>
+    </select>
+    <select id="cpoPendingClassFilter"
+      class="rounded-xl border border-amber-100 bg-white px-3 py-2.5 text-sm text-navy focus:outline-none">
+      <option value="">All Classes</option>
+      <option value="1">Officers</option>
+      <option value="2">Ratings</option>
+      <option value="3">Training</option>
+    </select>
   </div>
 
   <div id="cpo-pending-content">
@@ -27,51 +32,32 @@
 </div>
 
 <!-- CPO Confirm Modal -->
-<div
-  id="cpoConfirmModal"
-  class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
->
+<div id="cpoConfirmModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
     <h3 class="font-black text-navy text-base mb-1 uppercase tracking-wide">
       CPO Confirmation
     </h3>
     <p class="text-sm text-blue-900/40 mb-4" id="cpoModalMeta"></p>
     <div class="mb-4">
-      <label
-        class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-2"
-        >Remarks (optional)</label
-      >
-      <textarea
-        id="cpoRemarks"
-        rows="3"
-        placeholder="Add remarks..."
-        class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none resize-none"
-      ></textarea>
+      <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-2">Remarks (optional)</label>
+      <textarea id="cpoRemarks" rows="3" placeholder="Add remarks..."
+        class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none resize-none"></textarea>
     </div>
     <div class="flex gap-3">
-      <button
-        onclick="cpoAction('reject')"
-        class="flex-1 py-2.5 bg-red-500 text-white font-bold text-sm rounded-lg hover:bg-red-600 transition-colors cursor-pointer border-none"
-      >
+      <button onclick="cpoAction('reject')"
+        class="flex-1 py-2.5 bg-red-500 text-white font-bold text-sm rounded-lg hover:bg-red-600 transition-colors cursor-pointer border-none">
         <i class="fas fa-times mr-1"></i>Reject
       </button>
-      <button
-        onclick="cpoAction('confirm')"
-        class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none"
-      >
+      <button onclick="cpoAction('confirm')"
+        class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none">
         <i class="fas fa-stamp mr-1"></i>Confirm
       </button>
     </div>
-    <button
-      onclick="closeCpoModal()"
-      class="mt-3 w-full text-sm text-center text-gray-400 py-1 cursor-pointer border-none bg-none"
-    >
+    <button onclick="closeCpoModal()"
+      class="mt-3 w-full text-sm text-center text-gray-400 py-1 cursor-pointer border-none bg-none">
       Cancel
     </button>
-    <div
-      id="cpoConfirmMsg"
-      class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"
-    ></div>
+    <div id="cpoConfirmMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
   </div>
 </div>
 
@@ -80,6 +66,29 @@
   var cpoPendingCurrentPage = 1;
   var cpoPendingSearch = "";
   var cpoPendingSearchTimer = null;
+  var cpoPendingShip = "";
+  var cpoPendingClasses = "";
+
+
+  // NEW: populate the ship dropdown from the same stats endpoint the
+  // home dashboard uses — avoids a dedicated ships-list endpoint.
+  function loadCpoShipFilterOptions() {
+    fetch("/cpo/command/" + encodeURIComponent(command) + "/stats", {
+      headers: { Authorization: "Bearer " + token },
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows) => {
+        const select = document.getElementById("cpoPendingShipFilter");
+        (Array.isArray(rows) ? rows : []).forEach((r) => {
+          if (!r.ship) return;
+          const o = document.createElement("option");
+          o.value = r.ship;
+          o.textContent = r.ship;
+          select.appendChild(o);
+        });
+      })
+      .catch(() => { });
+  }
 
   function loadCpoPending(page) {
     page = page || 1;
@@ -87,141 +96,80 @@
     const el = document.getElementById("cpo-pending-content");
     fetch(
       "/cpo/pending/" +
-        encodeURIComponent(command) +
-        "?page=" +
-        page +
-        "&limit=" +
-        CPO_CONFIRMED_PAGE_SIZE +
-        "&search=" +
-        encodeURIComponent(cpoPendingSearch),
-      {
-        headers: { Authorization: "Bearer " + token },
-      },
+      encodeURIComponent(command) +
+      "?page=" + page +
+      "&limit=" + CPO_CONFIRMED_PAGE_SIZE +
+      "&search=" + encodeURIComponent(cpoPendingSearch) +
+      "&ship=" + encodeURIComponent(cpoPendingShip) +
+      "&classes=" + encodeURIComponent(cpoPendingClasses),
+      { headers: { Authorization: "Bearer " + token } },
     )
       .then((r) => (r.ok ? r.json() : { forms: [], total: 0 }))
       .then((res) => {
         const rows = Array.isArray(res) ? res : res.forms || [];
         const total = Array.isArray(res) ? 1 : res.total || 1;
         if (!rows.length) {
-          el.innerHTML = `<div class="text-center py-16 text-blue-900/30"><i class="fas fa-check-circle fa-2x mb-3 block text-green-300"></i><p class="font-semibold">${
-            cpoPendingSearch
-              ? "No matching records found."
-              : "No forms pending CPO confirmation"
-          }</p></div>`;
+          el.innerHTML = `<div class="text-center py-16 text-blue-900/30"><i class="fas fa-check-circle fa-2x mb-3 block text-green-300"></i><p class="font-semibold">${cpoPendingSearch
+            ? "No matching records found."
+            : "No forms pending CPO confirmation"
+            }</p></div>`;
           return;
         }
         el.innerHTML = `
 <div class="overflow-x-auto rounded-xl border border-amber-100 bg-white shadow">
-
 <table class="min-w-full text-sm">
-
 <thead class="bg-slate-100 sticky top-0">
-
 <tr>
-
-<th class="px-4 py-3 text-left">Service No</th>
-
-<th class="px-4 py-3 text-left">Name</th>
-
-<th class="px-4 py-3 text-left">Rank</th>
-
-<th class="px-4 py-3 text-left">Ship</th>
-
-<th class="px-4 py-3 text-left">FO Approved</th>
-
-<th class="px-4 py-3 text-center">Actions</th>
-
+<th class="px-4 py-3 text-left text-navy/70 font-bold">Service No</th>
+<th class="px-4 py-3 text-left text-navy/70 font-bold">Name</th>
+<th class="px-4 py-3 text-left text-navy/70 font-bold">Rank</th>
+<th class="px-4 py-3 text-left text-navy/70 font-bold">Ship</th>
+<th class="px-4 py-3 text-left text-navy/70 font-bold">FO Approved</th>
+<th class="px-4 py-3 text-center text-navy/70 font-bold">Actions</th>
 </tr>
-
 </thead>
-
 <tbody>
-
 ${rows
-  .map(
-    (r) => `
-
+            .map(
+              (r) => `
 <tr class="border-t hover:bg-slate-50">
-
-<td class="px-4 py-3 whitespace-nowrap">
-
-${r.serviceNumber}
-
+<td class="px-4 py-3 whitespace-nowrap text-navy">${r.serviceNumber}</td>
+<td class="px-4 py-3 text-navy">${r.Surname || ""} ${r.OtherName || ""}</td>
+<td class="px-4 py-3 text-navy">${r.Rank || "-"}</td>
+<td class="px-4 py-3 text-navy">${r.ship || "-"}</td>
+<td class="px-4 py-3 text-blue-900/50">
+${r.fo_date
+                  ? new Date(r.fo_date).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })
+                  : "-"
+                }
 </td>
-
 <td class="px-4 py-3">
-
-${r.Surname || ""} ${r.OtherName || ""}
-
-</td>
-
-<td class="px-4 py-3">
-
-${r.Rank || "-"}
-
-</td>
-
-<td class="px-4 py-3">
-
-${r.ship || "-"}
-
-</td>
-
-<td class="px-4 py-3">
-
-${
-  r.fo_date
-    ? new Date(r.fo_date).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
-    : "-"
-}
-
-</td>
-
-<td class="px-4 py-3">
-
 <div class="flex justify-center gap-2">
-
 <button
 onclick="viewForm('${r.serviceNumber}','EMOL_CPO')"
 class="px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold border border-blue-200 hover:bg-blue-100">
-
-<i class="fas fa-eye mr-1"></i>
-
-View
-
+<i class="fas fa-eye mr-1"></i>View
 </button>
-
 <button
 onclick="openCpoConfirm('${r.form_id}','${r.Surname} (${r.serviceNumber})')"
 class="px-3 py-1 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700">
-
 Confirm
-
 </button>
-
 </div>
-
 </td>
-
 </tr>
-
 `,
-  )
-  .join("")}
-
+            )
+            .join("")}
 </tbody>
-
 </table>
-
 </div>
-
 ${paginatorHTML(page, Math.ceil(total / CPO_CONFIRMED_PAGE_SIZE), "cpoPending")}
 `;
-
         /* paginator click handlers — each click triggers a fresh BE fetch */
         el.querySelectorAll('[data-paginator="cpoPending"]').forEach((btn) => {
           btn.addEventListener("click", () =>
@@ -266,7 +214,7 @@ ${paginatorHTML(page, Math.ceil(total / CPO_CONFIRMED_PAGE_SIZE), "cpoPending")}
           (ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600");
         msg.textContent = ok
           ? d.message ||
-            (action === "confirm" ? "Form confirmed." : "Form rejected.")
+          (action === "confirm" ? "Form confirmed." : "Form rejected.")
           : d.error || "Failed";
         msg.classList.remove("hidden");
         if (ok) {
@@ -298,15 +246,25 @@ ${paginatorHTML(page, Math.ceil(total / CPO_CONFIRMED_PAGE_SIZE), "cpoPending")}
       encodeURIComponent(command);
   }
 
+  loadCpoShipFilterOptions();
   loadCpoPending(1);
-  document
-    .getElementById("cpoPendingSearch")
-    .addEventListener("input", function () {
-      clearTimeout(cpoPendingSearchTimer);
 
-      cpoPendingSearchTimer = setTimeout(() => {
-        cpoPendingSearch = this.value.trim();
-        loadCpoPending(1);
-      }, 350);
-    });
+  document.getElementById("cpoPendingSearch").addEventListener("input", function () {
+    clearTimeout(cpoPendingSearchTimer);
+    cpoPendingSearchTimer = setTimeout(() => {
+      cpoPendingSearch = this.value.trim();
+      loadCpoPending(1);
+    }, 350);
+  });
+
+  // NEW
+  document.getElementById("cpoPendingShipFilter").addEventListener("change", function () {
+    cpoPendingShip = this.value;
+    loadCpoPending(1);
+  });
+  document.getElementById("cpoPendingClassFilter").addEventListener("change", function () {
+    cpoPendingClasses = this.value;
+    loadCpoPending(1);
+
+  });
 </script>

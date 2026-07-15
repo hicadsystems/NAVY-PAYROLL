@@ -7,34 +7,32 @@
 
   <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
     <div class="flex items-center justify-between gap-3 mb-4">
-      <h3
-        class="font-bold text-navy text-sm uppercase tracking-wide whitespace-nowrap"
-      >
+      <h3 class="font-bold text-navy text-sm uppercase tracking-wide whitespace-nowrap">
         FO-approved Forms
       </h3>
       <div class="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="cpoBulkSelectAll"
-          onchange="cpoToggleAll(this)"
-          class="accent-navy w-4 h-4"
-        />
-        <label for="cpoBulkSelectAll" class="text-xs font-bold text-navy/60"
-          >Select All</label
-        >
+        <input type="checkbox" id="cpoBulkSelectAll" onchange="cpoToggleAll(this)" class="accent-navy w-4 h-4" />
+        <label for="cpoBulkSelectAll" class="text-xs font-bold text-navy/60">Select All</label>
       </div>
     </div>
 
-    <div class="relative mb-4">
-      <i
-        class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-navy/30 text-sm"
-      ></i>
-      <input
-        type="text"
-        id="cpoBulkSearch"
-        placeholder="Search by name or service number..."
-        class="w-full pl-9 pr-3 py-2 border border-amber-100 rounded-lg text-sm text-navy bg-white focus:outline-none focus:border-navy"
-      />
+    <div class="relative mb-4 flex flex-col sm:flex-row gap-2">
+      <div class="relative flex-1">
+        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-navy/30 text-sm"></i>
+        <input type="text" id="cpoBulkSearch" placeholder="Search by name or service number..."
+          class="w-full pl-9 pr-3 py-2 border border-amber-100 rounded-lg text-sm text-navy bg-white focus:outline-none focus:border-navy" />
+      </div>
+      <select id="cpoBulkShipFilter"
+        class="rounded-lg border border-amber-100 bg-white px-3 py-2 text-sm text-navy focus:outline-none">
+        <option value="">All Ships</option>
+      </select>
+      <select id="cpoBulkClassFilter"
+        class="rounded-lg border border-amber-100 bg-white px-3 py-2 text-sm text-navy focus:outline-none">
+        <option value="">All Classes</option>
+        <option value="1">Officers</option>
+        <option value="2">Ratings</option>
+        <option value="3">Training</option>
+      </select>
     </div>
 
     <div id="cpoBulkList">
@@ -44,22 +42,38 @@
     </div>
   </div>
 
-  <button
-    onclick="executeCpoBulk()"
-    class="w-full py-3 bg-green-600 text-white font-bold text-sm rounded-xl hover:bg-green-700 transition-colors cursor-pointer border-none"
-  >
+  <button onclick="executeCpoBulk()"
+    class="w-full py-3 bg-green-600 text-white font-bold text-sm rounded-xl hover:bg-green-700 transition-colors cursor-pointer border-none">
     <i class="fas fa-check-double mr-2"></i>Confirm Selected
   </button>
-  <div
-    id="cpoBulkMsg"
-    class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"
-  ></div>
+  <div id="cpoBulkMsg" class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"></div>
 </div>
 
 <script>
   var cpoBulkForms = [];
   var cpoBulkCurrentPage = 1;
   var cpoBulkCurrentSearch = "";
+  var cpoBulkShip = "";
+  var cpoBulkClasses = "";
+
+  function loadCpoBulkShipFilterOptions() {
+    fetch("/cpo/command/" + encodeURIComponent(command) + "/stats", {
+      headers: { Authorization: "Bearer " + token },
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows) => {
+        const select = document.getElementById("cpoBulkShipFilter");
+        (Array.isArray(rows) ? rows : []).forEach((r) => {
+          if (!r.ship) return;
+          const o = document.createElement("option");
+          o.value = r.ship;
+          o.textContent = r.ship;
+          select.appendChild(o);
+        });
+      })
+      .catch(() => { });
+  }
+
 
   function debounce(fn, delay) {
     let t;
@@ -82,6 +96,8 @@
       page,
       limit: CPO_CONFIRMED_PAGE_SIZE,
       search: search || "",
+      ship: cpoBulkShip,
+      classes: cpoBulkClasses,
     });
 
     fetch("/cpo/pending/" + encodeURIComponent(command) + "?" + qs.toString(), {
@@ -115,8 +131,8 @@
             </thead>
             <tbody>
               ${rows
-                .map(
-                  (r, i) => `
+            .map(
+              (r, i) => `
                 <tr class="border-b border-amber-50 last:border-0 hover:bg-amber-50/40 transition-colors bg-white/60">
                   <td class="py-2.5 px-4">
                     <input type="checkbox" class="cpo-bulk-chk accent-navy w-4 h-4" data-idx="${i}" />
@@ -132,8 +148,8 @@
                     </div>
                   </td>
                 </tr>`,
-                )
-                .join("")}
+            )
+            .join("")}
             </tbody>
           </table>
         </div>
@@ -222,5 +238,16 @@
       });
   }
 
+  loadCpoBulkShipFilterOptions();
   loadCpoBulkList(1, "");
+
+  // NEW
+  document.getElementById("cpoBulkShipFilter").addEventListener("change", function () {
+    cpoBulkShip = this.value;
+    loadCpoBulkList(1);
+  });
+  document.getElementById("cpoBulkClassFilter").addEventListener("change", function () {
+    cpoBulkClasses = this.value;
+    loadCpoBulkList(1);
+  });
 </script>

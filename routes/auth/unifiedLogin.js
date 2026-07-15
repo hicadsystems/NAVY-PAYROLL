@@ -67,8 +67,7 @@ if (!SECRET) throw new Error("JWT_SECRET not set");
 // Payroll admins additionally call POST /api/users/login for class.
 // ─────────────────────────────────────────────────────────────
 router.post("/pre-login", async (req, res) => {
-
-  console.log(process.env.BASE_URL, 'base url')
+  console.log(process.env.BASE_URL, "base url");
   const user_id = (req.body.user_id || "").trim();
   const password = (req.body.password || "").trim();
 
@@ -107,7 +106,37 @@ router.post("/pre-login", async (req, res) => {
         .json({ error: "Account deactivated. Contact administrator." });
     }
 
-    if (!emp.password || !(await argon.verify(emp.password, password))) {
+     if (emp.force_change || emp.force_change === 1) {
+      return res
+        .status(401)
+        .json({ error: "Use the 'First Time?' option to change your password." });
+    }
+
+    if (!emp.password) {
+      return res
+        .status(401)
+        .json({ error: "Invalid Service Number or password" });
+    }
+
+    let passwordValid = false;
+    try {
+      passwordValid = await argon.verify(emp.password, password);
+      console.log('password valid')
+    } catch (err) {
+      console.error("Argon verify error:", err);
+      return res
+        .status(401)
+        .json({ error: "Invalid Service Number or Password" });
+    }
+
+    if (!passwordValid) {
+      return res
+        .status(401)
+        .json({ error: "Invalid Service Number or Password" });
+    }
+
+
+    if (!passwordValid) {
       return res
         .status(401)
         .json({ error: "Invalid Service Number or password" });
@@ -537,7 +566,7 @@ router.post("/reset-password", async (req, res) => {
     // this makes the token single-use; it can't be replayed after success.
     await pool.query(
       `UPDATE hr_employees
-       SET password = ?, reset_hash = NULL, reset_expires_at = NULL, force_change = 1, password_changed_at = NOW()
+       SET password = ?, reset_hash = NULL, reset_expires_at = NULL, force_change = 0, password_changed_at = NOW()
        WHERE Empl_ID = ?`,
       [passwordHash, emp.Empl_ID],
     );

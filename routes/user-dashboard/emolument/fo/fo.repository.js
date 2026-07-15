@@ -572,6 +572,33 @@ async function insertFormApproval({
   );
 }
 
+// When forms are rejected, we remove form approval trail records for that form. This is because the form is no longer approved, and we want to maintain an accurate record of approvals.
+// Deletes all approval records for the given formId. This is called after a form is rejected to maintain data integrity and ensure that the approval trail reflects the current state of the form.
+async function deleteFormApproval(formId) {
+  pool.useDatabase(DB());
+  await pool.query(
+    `DELETE FROM ef_form_approvals
+     WHERE form_id = ?`,
+    [formId],
+  );
+}
+
+async function insertFormRejection({formId, rejected_by, remarks, svc_no}) {
+  pool.useDatabase(DB());
+  await pool.query(
+    `INSERT INTO ef_form_rejections
+       (form_id, service_number, rejected_by, remarks)
+     VALUES (?, ?, ?, ?)`,
+    [
+      formId,
+      svc_no,
+      rejected_by,
+      remarks || null,
+    ],
+  );
+}
+
+
 async function bulkInsertFormApprovals(
   formIds,
   action,
@@ -637,17 +664,27 @@ async function getStatusStats(ship, svc) {
 
   const [stats] = await pool.query(
     `SELECT
-        COUNT(CASE WHEN status IN ('FO', 'DO_REVIEWED') THEN 1 END) AS pending,
-        COUNT(CASE WHEN status IN ('FO_APPROVED', 'CPO_APPROVED', 'CPO', 'Verified') AND fo_svcno = ? THEN 1 END) AS approved,
-        COUNT(CASE WHEN status = 'REJECTED' AND fo_svcno = ? THEN 1 END) AS rejected
-      FROM ef_personalinfos
-      WHERE ship = ? 
-   `,
-    [svc, svc, ship],
+        (SELECT COUNT(*)
+           FROM ef_personalinfos
+          WHERE ship = ?
+            AND status IN ('FO', 'DO_REVIEWED')
+        ) AS pending,
+
+        (SELECT COUNT(*)
+           FROM ef_form_approvals
+          WHERE action = 'FO_APPROVED'
+            AND performed_by = ?
+        ) AS approved,
+
+        (SELECT COUNT(*)
+           FROM ef_form_rejections
+          WHERE rejected_by = ?
+        ) AS rejected
+    `,
+    [ship, svc, svc],
   );
   return stats[0];
 }
-
 module.exports = {
   getDoReviewedForms,
   getApprovedForms,
@@ -664,6 +701,8 @@ module.exports = {
   getFormIdsByServiceNos,
   rejectForm,
   insertFormApproval,
+  deleteFormApproval,
+  insertFormRejection,
   bulkInsertFormApprovals,
   insertAuditLog,
   getStatusStats,

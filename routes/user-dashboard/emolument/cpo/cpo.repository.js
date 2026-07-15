@@ -67,10 +67,10 @@ async function withTransaction(fn) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// LIST — FO_APPROVED forms scoped to a command
+// LIST — FO_APPROVED forms scoped to a command (+ ship/classes filters)
 // ─────────────────────────────────────────────────────────────
 
-async function getFoApprovedForms(command, limit, offset, search) {
+async function getFoApprovedForms(command, limit, offset, search, ship, classes) {
   pool.useDatabase(DB());
 
   let searchClause = "";
@@ -79,6 +79,22 @@ async function getFoApprovedForms(command, limit, offset, search) {
     searchClause = ` AND (p.Surname LIKE ? OR p.OtherName LIKE ? OR p.serviceNumber LIKE ?)`;
     const like = `%${search.trim()}%`;
     searchParams.push(like, like, like);
+  }
+
+  // NEW: optional ship filter
+  let shipClause = "";
+  const shipParams = [];
+  if (ship && ship.trim()) {
+    shipClause = ` AND p.ship = ?`;
+    shipParams.push(ship.trim());
+  }
+
+  // NEW: optional classes filter (1=Officers, 2=Ratings, 3=Training)
+  let classesClause = "";
+  const classesParams = [];
+  if (classes !== undefined && classes !== null && classes !== "") {
+    classesClause = ` AND p.classes = ?`;
+    classesParams.push(Number(classes));
   }
 
   const approvedQuery = `SELECT
@@ -99,6 +115,8 @@ async function getFoApprovedForms(command, limit, offset, search) {
        AND p.Status IN ('CPO', 'FO_APPROVED')
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
        ${searchClause}
+       ${shipClause}
+       ${classesClause}
      ORDER BY p.ship ASC, p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`;
 
@@ -108,21 +126,25 @@ async function getFoApprovedForms(command, limit, offset, search) {
       WHERE p.command = ?
        AND p.Status IN ('CPO', 'FO_APPROVED')
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
-       ${searchClause};
+       ${searchClause}
+       ${shipClause}
+       ${classesClause};
     `;
 
   const [[rows], [countResults]] = await Promise.all([
-    pool.query(approvedQuery, [command, ...searchParams, limit, offset]),
-    pool.query(countQuery, [command, ...searchParams]),
+    pool.query(approvedQuery, [
+      command, ...searchParams, ...shipParams, ...classesParams, limit, offset,
+    ]),
+    pool.query(countQuery, [command, ...searchParams, ...shipParams, ...classesParams]),
   ]);
   return { forms: rows, total: countResults[0].total };
 }
 
 // ─────────────────────────────────────────────────────────────
-// LIST — CPO_CONFIRMED forms scoped to a command
+// LIST — CPO_CONFIRMED forms scoped to a command (+ ship/classes filters)
 // ─────────────────────────────────────────────────────────────
 
-async function getCPOConfirmedForms(command, svc, limit, offset, search) {
+async function getCPOConfirmedForms(command, svc, limit, offset, search, ship, classes) {
   pool.useDatabase(DB());
 
   let searchClause = "";
@@ -131,6 +153,20 @@ async function getCPOConfirmedForms(command, svc, limit, offset, search) {
     searchClause = ` AND (p.Surname LIKE ? OR p.OtherName LIKE ? OR p.serviceNumber LIKE ?)`;
     const like = `%${search.trim()}%`;
     searchParams.push(like, like, like);
+  }
+
+  let shipClause = "";
+  const shipParams = [];
+  if (ship && ship.trim()) {
+    shipClause = ` AND p.ship = ?`;
+    shipParams.push(ship.trim());
+  }
+
+  let classesClause = "";
+  const classesParams = [];
+  if (classes !== undefined && classes !== null && classes !== "") {
+    classesClause = ` AND p.classes = ?`;
+    classesParams.push(Number(classes));
   }
 
   const confirmedQuery = `SELECT
@@ -153,6 +189,8 @@ async function getCPOConfirmedForms(command, svc, limit, offset, search) {
        AND p.emolumentform = 'Yes'
        AND p.hod_svcno = ?
        ${searchClause}
+       ${shipClause}
+       ${classesClause}
      ORDER BY p.ship ASC, p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`;
 
@@ -164,10 +202,14 @@ async function getCPOConfirmedForms(command, svc, limit, offset, search) {
        AND p.emolumentform = 'Yes'
        AND p.hod_svcno = ?
        ${searchClause}
+       ${shipClause}
+       ${classesClause}
      `;
   const [[rows], [countResults]] = await Promise.all([
-    pool.query(confirmedQuery, [command, svc, ...searchParams, limit, offset]),
-    pool.query(countQuery, [command, svc, ...searchParams]),
+    pool.query(confirmedQuery, [
+      command, svc, ...searchParams, ...shipParams, ...classesParams, limit, offset,
+    ]),
+    pool.query(countQuery, [command, svc, ...searchParams, ...shipParams, ...classesParams]),
   ]);
   return { forms: rows, total: countResults[0].total };
 }
@@ -700,6 +742,22 @@ async function deleteFormApproval(formId) {
   );
 }
 
+async function insertFormRejection({formId, rejected_by, remarks, svc_no}) {
+  pool.useDatabase(DB());
+  await pool.query(
+    `INSERT INTO ef_form_rejections
+       (form_id, service_number, rejected_by, remarks)
+     VALUES (?, ?, ?, ?)`,
+    [
+      formId,
+      svc_no,
+      rejected_by,
+      remarks || null,
+    ],
+  );
+}
+
+
 async function insertAuditLog({
   tableName,
   action,
@@ -730,21 +788,90 @@ async function insertAuditLog({
 // STATUS STATS
 // ─────────────────────────────────────────────────────────────
 
-async function getStatusStats(command, svc) {
+
+
+async function getStatusStats(ship, svc) {
   pool.useDatabase(DB());
 
   const [stats] = await pool.query(
     `SELECT
-        COUNT(CASE WHEN status IN ('CPO', 'FO_APPROVED') THEN 1 END) AS pending,
-        COUNT(CASE WHEN command = ? THEN 1 END) AS total,
-        COUNT(CASE WHEN status IN ('CPO_APPROVED', 'Verified') AND hod_svcno = ? THEN 1 END) AS confirmed,
-        COUNT(CASE WHEN status = 'REJECTED' AND hod_svcno = ? THEN 1 END) AS rejected
-      FROM ef_personalinfos
-      WHERE command = ? 
-   `,
-    [command, svc, svc, command],
+        (SELECT COUNT(*)
+           FROM ef_personalinfos
+          WHERE command = ?
+            AND status IN ('CPO', 'FO_APPROVED')
+        ) AS pending,
+
+        (SELECT COUNT(*)
+           FROM ef_personalinfos
+          WHERE command = ?
+        ) AS total,
+
+        (SELECT COUNT(*)
+           FROM ef_form_approvals
+          WHERE action = 'CPO_CONFIRMED'
+            AND performed_by = ?
+        ) AS confirmed,
+
+        (SELECT COUNT(*)
+           FROM ef_form_rejections
+          WHERE rejected_by = ?
+        ) AS rejected
+    `,
+    [ship, ship, svc, svc],
   );
   return stats[0];
+}
+
+
+async function getStatusStatsByShip(command, svc) {
+  pool.useDatabase(DB());
+
+  const [totalsRows] = await pool.query(
+    `SELECT
+        ship,
+        COUNT(*) AS total,
+        COUNT(CASE WHEN \`Status\` IN ('CPO', 'FO_APPROVED') THEN 1 END) AS pending
+      FROM ef_personalinfos
+      WHERE command = ?
+      GROUP BY ship
+      ORDER BY ship ASC`,
+    [command],
+  );
+
+  const [confirmedRows] = await pool.query(
+    `SELECT p.ship, COUNT(*) AS confirmed
+       FROM ef_form_approvals fa
+       JOIN ef_emolument_forms ef ON ef.id = fa.form_id
+       JOIN ef_personalinfos p    ON p.serviceNumber = ef.service_no
+      WHERE fa.action       = 'CPO_CONFIRMED'
+        AND fa.performed_by = ?
+        AND p.command       = ?
+      GROUP BY p.ship`,
+    [svc, command],
+  );
+
+  const [rejectedRows] = await pool.query(
+    `SELECT p.ship, COUNT(*) AS rejected
+       FROM ef_form_rejections r
+       JOIN ef_personalinfos p ON p.serviceNumber = r.service_number
+      WHERE r.rejected_by = ?
+        AND p.command     = ?
+      GROUP BY p.ship`,
+    [svc, command],
+  );
+
+  // Merge all three result sets into one row per ship, defaulting
+  // missing metrics to 0 so the frontend never has to handle undefined.
+  const confirmedMap = new Map(confirmedRows.map((r) => [r.ship, r.confirmed]));
+  const rejectedMap = new Map(rejectedRows.map((r) => [r.ship, r.rejected]));
+
+  return totalsRows.map((row) => ({
+    ship: row.ship,
+    total: row.total,
+    pending: row.pending,
+    confirmed: confirmedMap.get(row.ship) || 0,
+    rejected: rejectedMap.get(row.ship) || 0,
+  }));
 }
 
 module.exports = {
@@ -765,6 +892,8 @@ module.exports = {
   rejectForm,
   insertFormApproval,
   deleteFormApproval,
+  insertFormRejection,
   insertAuditLog,
   getStatusStats,
+  getStatusStatsByShip
 };

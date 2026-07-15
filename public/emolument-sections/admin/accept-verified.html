@@ -421,7 +421,7 @@
           </td>
           <td class="px-3 py-3">
             <div class="flex justify-end gap-2">
-              <button onclick="viewForm('${row.formNumber}')"
+              <button onclick="viewForm('${row.form_id}', '${row.serviceNumber}')"
                 class="px-3 py-1.5 bg-navy/10 text-navy text-xs font-bold rounded-lg hover:bg-navy/20 transition-colors cursor-pointer border-none flex items-center gap-1">
                 <i class="fas fa-eye"></i>View
               </button>
@@ -563,7 +563,7 @@
 
     // ── Detail modal ──
     // ── Detail modal ──
-    function viewForm(svcno) {
+    function viewForm(formId, svcno) {
       verifiedState.currentDetail = svcno;
       verifiedState.currentDetailTab = "form";
 
@@ -576,7 +576,7 @@
       document.getElementById("detailMeta").textContent = "Loading details...";
 
       switchDetailTab("form");
-      loadFormDetail(svcno);
+      loadFormDetail(formId);
     }
 
     function closeDetailModal() {
@@ -667,35 +667,35 @@
         </div>
       `;
 
-      if (Object.keys(snapshot).length > 0) {
-        const entries = Object.entries(snapshot).slice(0, 30);
-        const overflow = Object.keys(snapshot).length - 30;
+      // if (Object.keys(snapshot).length > 0) {
+      //   const entries = Object.entries(snapshot).slice(0, 30);
+      //   const overflow = Object.keys(snapshot).length - 30;
 
-        html += `
-          <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <h4 class="font-bold text-navy text-sm mb-3 flex items-center gap-2">
-              <i class="fas fa-clipboard text-gray-600"></i> Form Data Snapshot
-            </h4>
-            <div class="space-y-2 text-sm max-h-96 overflow-y-auto">
-              ${entries
-                .map(([key, value]) => {
-                  const displayValue =
-                    typeof value === "object"
-                      ? JSON.stringify(value).substring(0, 50) + "..."
-                      : String(value).substring(0, 100);
-                  return `
-                  <div class="flex justify-between items-start gap-2 pb-2 border-b border-gray-200">
-                    <span class="text-navy/60 font-mono text-xs flex-shrink-0">${key}:</span>
-                    <span class="font-semibold text-right max-w-xs text-xs break-words">${displayValue}</span>
-                  </div>
-                `;
-                })
-                .join("")}
-              ${overflow > 0 ? `<div class="text-center py-2 text-navy/40 text-xs">+ ${overflow} more fields</div>` : ""}
-            </div>
-          </div>
-        `;
-      }
+      //   html += `
+      //     <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+      //       <h4 class="font-bold text-navy text-sm mb-3 flex items-center gap-2">
+      //         <i class="fas fa-clipboard text-gray-600"></i> Form Data Snapshot
+      //       </h4>
+      //       <div class="space-y-2 text-sm max-h-96 overflow-y-auto">
+      //         ${entries
+      //           .map(([key, value]) => {
+      //             const displayValue =
+      //               typeof value === "object"
+      //                 ? JSON.stringify(value).substring(0, 50) + "..."
+      //                 : String(value).substring(0, 100);
+      //             return `
+      //             <div class="flex justify-between items-start gap-2 pb-2 border-b border-gray-200">
+      //               <span class="text-navy/60 font-mono text-xs flex-shrink-0">${key}:</span>
+      //               <span class="font-semibold text-right max-w-xs text-xs break-words">${displayValue}</span>
+      //             </div>
+      //           `;
+      //           })
+      //           .join("")}
+      //         ${overflow > 0 ? `<div class="text-center py-2 text-navy/40 text-xs">+ ${overflow} more fields</div>` : ""}
+      //       </div>
+      //     </div>
+      //   `;
+      // }
 
       document.getElementById("detailContent").innerHTML = html;
     }

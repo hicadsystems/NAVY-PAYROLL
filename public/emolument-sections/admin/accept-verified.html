@@ -1,15 +1,19 @@
 <div class="p-4 md:p-6">
   <div class="mb-6">
-    <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
-      <h3
-        class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
-      >
-        CPO-Verified Forms Awaiting Admin Acceptance
-      </h3>
+    <div class="flex flex-col gap-3 mb-3">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <h3
+          class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
+        >
+          CPO-Verified Forms Awaiting Admin Acceptance
+        </h3>
+        <span
+          class="text-xl text-blue-900/40 font-bold"
+          id="verifiedCount"
+        ></span>
+      </div>
 
-      <div
-        class="flex items-center gap-2 flex-wrap flex-1 justify-end min-w-[280px]"
-      >
+      <div class="flex items-center gap-2 flex-wrap flex-1 min-w-[280px]">
         <div class="relative flex-1 min-w-[200px] max-w-sm">
           <i
             class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-navy/30 text-xs"
@@ -43,8 +47,6 @@
           <option value="6">Trainees</option>
         </select>
       </div>
-
-      <span class="text-xs text-blue-900/40" id="verifiedCount"></span>
     </div>
     <p class="text-sm text-blue-900/50">
       Review and accept CPO-confirmed forms before syncing to payroll

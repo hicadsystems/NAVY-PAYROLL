@@ -10,58 +10,37 @@
 
 <div class="p-2 md:p-4 lg:p-6">
   <div class="mb-2 md:mb-4 lg:mb-6">
-    <h3
-      class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
-    >
+    <h3 class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center">
       Manage open / close windows for emolument form submissions
     </h3>
   </div>
 
-  <!-- Stat chips -->
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-3">
-      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">
-        Total
+  <!-- Stat cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4">
+      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-2">
+        Global Cycle
       </p>
-      <p class="text-xl font-black text-navy font-mono" id="sys-stat-total">
-        —
-      </p>
+      <div class="flex items-center gap-2">
+        <span id="sys-stat-global-badge" class="text-sm font-black px-3 py-1 rounded-full bg-gray-100 text-gray-400">
+          —
+        </span>
+        <span id="sys-stat-global-meta" class="text-xs text-navy/40"></span>
+      </div>
     </div>
-    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-3">
-      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">
-        Open
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4">
+      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-2">
+        Ships Open
       </p>
-      <p class="text-xl font-black text-green-600 font-mono" id="sys-stat-open">
-        —
-      </p>
-    </div>
-    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-3">
-      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">
-        Reopen
-      </p>
-      <p
-        class="text-xl font-black text-blue-600 font-mono"
-        id="sys-stat-reopen"
-      >
-        —
-      </p>
-    </div>
-    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-3">
-      <p class="text-xs font-bold text-navy/40 uppercase tracking-wide mb-1">
-        Closed
-      </p>
-      <p class="text-xl font-black text-red-600 font-mono" id="sys-stat-close">
+      <p class="text-xl font-black text-green-600 font-mono" id="sys-stat-ships-open">
         —
       </p>
     </div>
   </div>
-
   <!-- Main card -->
   <div class="bg-white/60 rounded-xl border border-amber-100 shadow mb-4">
     <!-- Card header -->
-    <div
-      class="flex items-center justify-between p-4 border-b border-amber-100 flex-wrap gap-2"
-    >
+    <div class="flex items-center justify-between p-4 border-b border-amber-100 flex-wrap gap-2">
       <div>
         <h3 class="font-bold text-navy text-sm uppercase tracking-wide">
           Cycle Rows
@@ -71,16 +50,12 @@
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <button
-          onclick="sysLoadData()"
-          class="px-3 py-1.5 bg-white border border-amber-100 text-navy text-xs font-bold rounded-lg hover:bg-amber-50 cursor-pointer transition-colors"
-        >
+        <button onclick="sysLoadData()"
+          class="px-3 py-1.5 bg-white border border-amber-100 text-navy text-xs font-bold rounded-lg hover:bg-amber-50 cursor-pointer transition-colors">
           <i class="fas fa-sync-alt mr-1"></i>Refresh
         </button>
-        <button
-          onclick="sysOpenModal(null)"
-          class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg hover:bg-blue-800 cursor-pointer border-none transition-colors"
-        >
+        <button onclick="sysOpenModal(null)"
+          class="px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg hover:bg-blue-800 cursor-pointer border-none transition-colors">
           <i class="fas fa-plus mr-1"></i>Add Cycle
         </button>
       </div>
@@ -88,28 +63,18 @@
 
     <!-- Filters -->
     <div class="flex flex-wrap gap-2 p-3 border-b border-amber-50 bg-white/30">
-      <input
-        id="sys-search"
-        type="text"
-        placeholder="Search year, ship, notes…"
+      <input id="sys-search" type="text" placeholder="Search year, ship, notes…"
         class="flex-1 min-w-[160px] border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none"
-        oninput="sysApplyFilters()"
-      />
-      <select
-        id="sys-filter-status"
-        onchange="sysApplyFilters()"
-        class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none cursor-pointer"
-      >
+        oninput="sysApplyFilters()" />
+      <select id="sys-filter-status" onchange="sysApplyFilters()"
+        class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none cursor-pointer">
         <option value="">All Statuses</option>
         <option value="Open">Open</option>
         <option value="Reopen">Reopen</option>
         <option value="Close">Close</option>
       </select>
-      <select
-        id="sys-filter-type"
-        onchange="sysApplyFilters()"
-        class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none cursor-pointer"
-      >
+      <select id="sys-filter-type" onchange="sysApplyFilters()"
+        class="border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white/80 focus:outline-none cursor-pointer">
         <option value="">All Types</option>
         <option value="ALL">ALL</option>
         <option value="OFFICERS">OFFICERS</option>
@@ -125,52 +90,32 @@
           <tr class="border-b border-amber-100">
             <th
               class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide cursor-pointer select-none"
-              onclick="sysSortBy('processingyear')"
-            >
+              onclick="sysSortBy('processingyear')">
               Year
-              <i
-                class="fas fa-sort ml-1 text-navy/30"
-                id="sys-sort-processingyear"
-              ></i>
+              <i class="fas fa-sort ml-1 text-navy/30" id="sys-sort-processingyear"></i>
             </th>
-            <th
-              class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide hidden sm:table-cell"
-            >
+            <th class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide hidden sm:table-cell">
               Ship
             </th>
-            <th
-              class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide"
-            >
+            <th class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide">
               Type
             </th>
             <th
               class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide cursor-pointer select-none hidden md:table-cell"
-              onclick="sysSortBy('startdate')"
-            >
+              onclick="sysSortBy('startdate')">
               Start
-              <i
-                class="fas fa-sort ml-1 text-navy/30"
-                id="sys-sort-startdate"
-              ></i>
+              <i class="fas fa-sort ml-1 text-navy/30" id="sys-sort-startdate"></i>
             </th>
             <th
               class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide cursor-pointer select-none hidden md:table-cell"
-              onclick="sysSortBy('enddate')"
-            >
+              onclick="sysSortBy('enddate')">
               End
-              <i
-                class="fas fa-sort ml-1 text-navy/30"
-                id="sys-sort-enddate"
-              ></i>
+              <i class="fas fa-sort ml-1 text-navy/30" id="sys-sort-enddate"></i>
             </th>
-            <th
-              class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide"
-            >
+            <th class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide">
               Status
             </th>
-            <th
-              class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide hidden lg:table-cell"
-            >
+            <th class="text-left py-2 px-3 text-xs font-bold text-navy/50 uppercase tracking-wide hidden lg:table-cell">
               Notes
             </th>
             <th class="py-2 px-3 w-28"></th>
@@ -187,23 +132,15 @@
     </div>
 
     <!-- Pagination -->
-    <div
-      id="sys-pagination"
-      class="hidden flex items-center justify-between px-4 py-2.5 border-t border-amber-50 bg-white/30"
-    >
-      <button
-        id="sys-pg-prev"
-        onclick="sysChangePage(-1)"
-        class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-      >
+    <div id="sys-pagination"
+      class="hidden flex items-center justify-between px-4 py-2.5 border-t border-amber-50 bg-white/30">
+      <button id="sys-pg-prev" onclick="sysChangePage(-1)"
+        class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
         <i class="fas fa-chevron-left mr-1"></i>Prev
       </button>
       <span id="sys-pg-info" class="text-xs text-navy/40 font-semibold"></span>
-      <button
-        id="sys-pg-next"
-        onclick="sysChangePage(1)"
-        class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-      >
+      <button id="sys-pg-next" onclick="sysChangePage(1)"
+        class="px-3 py-1 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
         Next<i class="fas fa-chevron-right ml-1"></i>
       </button>
     </div>
@@ -213,13 +150,8 @@
   <!-- Danger zone — extend cycle -->
   <div class="bg-red-50 border border-red-200 rounded-xl p-4">
     <div class="flex items-center gap-2 mb-3">
-      <div
-        class="w-6 h-6 rounded bg-red-100 flex items-center justify-center flex-shrink-0"
-      >
-        <i
-          class="fas fa-exclamation-triangle text-red-500"
-          style="font-size: 10px"
-        ></i>
+      <div class="w-6 h-6 rounded bg-red-100 flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-exclamation-triangle text-red-500" style="font-size: 10px"></i>
       </div>
       <p class="text-xs font-black text-red-600 uppercase tracking-wider">
         Danger Zone
@@ -227,9 +159,7 @@
     </div>
 
     <!-- Extend Closing Date -->
-    <div
-      class="bg-white border border-red-100 rounded-xl p-3 flex items-center justify-between gap-3 flex-wrap"
-    >
+    <div class="bg-white border border-red-100 rounded-xl p-3 flex items-center justify-between gap-3 flex-wrap">
       <div>
         <p class="text-xs font-bold text-red-700">Extend Closing Date</p>
         <p class="text-xs text-red-400 mt-0.5">
@@ -237,10 +167,8 @@
           <strong>Reopen</strong>.
         </p>
       </div>
-      <button
-        onclick="sysToggleExtend()"
-        class="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 cursor-pointer border-none transition-colors flex-shrink-0"
-      >
+      <button onclick="sysToggleExtend()"
+        class="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 cursor-pointer border-none transition-colors flex-shrink-0">
         <i class="fas fa-calendar-plus mr-1"></i>Extend Cycle
       </button>
     </div>
@@ -248,56 +176,35 @@
     <div id="sys-extend-form" class="hidden mt-3 space-y-3">
       <div class="flex flex-col sm:flex-row gap-3">
         <div class="flex-1">
-          <label
-            class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
-            >New End Date &amp; Time <span class="text-red-500">*</span></label
-          >
-          <input
-            type="datetime-local"
-            id="sys-extend-date"
-            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none"
-          />
+          <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">New End Date &amp; Time <span
+              class="text-red-500">*</span></label>
+          <input type="datetime-local" id="sys-extend-date"
+            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none" />
         </div>
         <div class="flex-1">
-          <label
-            class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
-            >Notes (optional)</label
-          >
-          <input
-            type="text"
-            id="sys-extend-notes"
-            placeholder="Reason for extension…"
-            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none"
-          />
+          <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Notes (optional)</label>
+          <input type="text" id="sys-extend-notes" placeholder="Reason for extension…"
+            class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none" />
         </div>
       </div>
       <div class="flex gap-2 justify-end">
-        <button
-          onclick="sysToggleExtend()"
-          class="px-4 py-2 border border-amber-100 text-navy/60 text-xs font-bold rounded-lg bg-white hover:bg-amber-50 cursor-pointer transition-colors"
-        >
+        <button onclick="sysToggleExtend()"
+          class="px-4 py-2 border border-amber-100 text-navy/60 text-xs font-bold rounded-lg bg-white hover:bg-amber-50 cursor-pointer transition-colors">
           Cancel
         </button>
-        <button
-          onclick="sysDoExtend()"
-          class="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 cursor-pointer border-none transition-colors"
-        >
+        <button onclick="sysDoExtend()"
+          class="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 cursor-pointer border-none transition-colors">
           <i class="fas fa-save mr-1"></i>Apply Extension
         </button>
       </div>
-      <div
-        id="sys-extend-msg"
-        class="hidden text-xs font-semibold rounded-lg px-3 py-2"
-      ></div>
+      <div id="sys-extend-msg" class="hidden text-xs font-semibold rounded-lg px-3 py-2"></div>
     </div>
   </div>
 </div>
 <!-- /p-2 -->
 
 <!-- ═══ FULL-SCREEN MODAL — Add / Edit ═══════════════════════ -->
-<div
-  id="sys-modal"
-  style="
+<div id="sys-modal" style="
     display: none;
     position: fixed;
     inset: 0;
@@ -307,11 +214,8 @@
     align-items: center;
     justify-content: center;
     padding: 1rem;
-  "
-  onclick="if (event.target === this) sysCloseModal();"
->
-  <div
-    style="
+  " onclick="if (event.target === this) sysCloseModal();">
+  <div style="
       background: #fff;
       border-radius: 1rem;
       width: 100%;
@@ -320,8 +224,7 @@
       overflow-y: auto;
       box-shadow: 0 24px 64px rgba(15, 23, 42, 0.22);
       animation: sys-pop 0.17s ease;
-    "
-  >
+    ">
     <style>
       @keyframes sys-pop {
         from {
@@ -337,30 +240,17 @@
     </style>
 
     <!-- Modal header -->
-    <div
-      class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100"
-    >
+    <div class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
       <div class="flex items-center gap-2">
-        <div
-          class="w-7 h-7 rounded-lg bg-navy flex items-center justify-center flex-shrink-0"
-        >
-          <i
-            id="sys-modal-icon"
-            class="fas fa-calendar-plus text-white"
-            style="font-size: 11px"
-          ></i>
+        <div class="w-7 h-7 rounded-lg bg-navy flex items-center justify-center flex-shrink-0">
+          <i id="sys-modal-icon" class="fas fa-calendar-plus text-white" style="font-size: 11px"></i>
         </div>
-        <h2
-          id="sys-modal-title"
-          class="text-sm font-black text-navy uppercase tracking-wide"
-        >
+        <h2 id="sys-modal-title" class="text-sm font-black text-navy uppercase tracking-wide">
           Add Cycle
         </h2>
       </div>
-      <button
-        onclick="sysCloseModal()"
-        class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 cursor-pointer border-none bg-transparent text-lg leading-none"
-      >
+      <button onclick="sysCloseModal()"
+        class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 cursor-pointer border-none bg-transparent text-lg leading-none">
         ✕
       </button>
     </div>
@@ -368,50 +258,30 @@
     <!-- Modal body -->
     <div class="px-5 py-4 space-y-4">
       <div>
-        <p
-          class="text-xs font-black text-navy/40 uppercase tracking-widest mb-3"
-        >
+        <p class="text-xs font-black text-navy/40 uppercase tracking-widest mb-3">
           Cycle Identity
         </p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label
-              class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
-              >Year <span class="text-red-500">*</span></label
-            >
-            <input
-              type="number"
-              id="sys-f-year"
-              placeholder="e.g. 2026"
-              min="2000"
-              max="2099"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy"
-            />
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Year <span
+                class="text-red-500">*</span></label>
+            <input type="number" id="sys-f-year" placeholder="e.g. 2026" min="2000" max="2099"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
             <p id="sys-err-year" class="hidden text-xs text-red-500 mt-1">
               Enter a valid 4-digit year.
             </p>
           </div>
           <div>
-            <label
-              class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
-              >Ship</label
-            >
-            <select
-              id="sys-f-ship"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
-            >
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Ship</label>
+            <select id="sys-f-ship"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
               <option value="All">ALL (Global)</option>
             </select>
           </div>
           <div>
-            <label
-              class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
-              >Form Type</label
-            >
-            <select
-              id="sys-f-type"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
-            >
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Form Type</label>
+            <select id="sys-f-type"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
               <option value="ALL">ALL</option>
               <option value="OFFICERS">OFFICERS</option>
               <option value="RATINGS">RATINGS</option>
@@ -419,30 +289,19 @@
             </select>
           </div>
           <div>
-            <label
-              class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
-              >Status</label
-            >
-            <select
-              id="sys-f-status"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
-            >
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Status</label>
+            <select id="sys-f-status"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none">
               <option value="Open">Open</option>
               <option value="Reopen">Reopen</option>
               <option value="Close">Close</option>
             </select>
             <div class="flex gap-3 mt-1.5">
               <span class="flex items-center gap-1 text-xs text-navy/40">
-                <span
-                  class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"
-                ></span
-                >Open / Reopen = accessible
+                <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>Open / Reopen = accessible
               </span>
               <span class="flex items-center gap-1 text-xs text-navy/40">
-                <span
-                  class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"
-                ></span
-                >Close = blocked
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span>Close = blocked
               </span>
             </div>
           </div>
@@ -450,36 +309,24 @@
       </div>
 
       <div>
-        <p
-          class="text-xs font-black text-navy/40 uppercase tracking-widest mb-3"
-        >
+        <p class="text-xs font-black text-navy/40 uppercase tracking-widest mb-3">
           Access Window
         </p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label
-              class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
-              >Start Date &amp; Time <span class="text-red-500">*</span></label
-            >
-            <input
-              type="datetime-local"
-              id="sys-f-start"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy"
-            />
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Start Date &amp; Time <span
+                class="text-red-500">*</span></label>
+            <input type="datetime-local" id="sys-f-start"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
             <p id="sys-err-start" class="hidden text-xs text-red-500 mt-1">
               Start date is required.
             </p>
           </div>
           <div>
-            <label
-              class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
-              >End Date &amp; Time <span class="text-red-500">*</span></label
-            >
-            <input
-              type="datetime-local"
-              id="sys-f-end"
-              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy"
-            />
+            <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">End Date &amp; Time <span
+                class="text-red-500">*</span></label>
+            <input type="datetime-local" id="sys-f-end"
+              class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none focus:border-navy" />
             <p id="sys-err-end" class="hidden text-xs text-red-500 mt-1">
               End date must be after start.
             </p>
@@ -488,42 +335,23 @@
       </div>
 
       <div>
-        <label
-          class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
-          >Notes
-          <span class="text-navy/30 font-normal normal-case"
-            >(optional)</span
-          ></label
-        >
-        <textarea
-          id="sys-f-notes"
-          rows="2"
-          placeholder="Any notes about this cycle window…"
-          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none resize-none"
-        ></textarea>
+        <label class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1">Notes
+          <span class="text-navy/30 font-normal normal-case">(optional)</span></label>
+        <textarea id="sys-f-notes" rows="2" placeholder="Any notes about this cycle window…"
+          class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none resize-none"></textarea>
       </div>
 
-      <div
-        id="sys-modal-meta"
-        class="hidden text-xs text-navy/40 pt-1 border-t border-amber-50"
-      ></div>
+      <div id="sys-modal-meta" class="hidden text-xs text-navy/40 pt-1 border-t border-amber-50"></div>
     </div>
 
     <!-- Modal footer -->
-    <div
-      class="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-100 bg-slate-50/60 rounded-b-2xl"
-    >
-      <button
-        onclick="sysCloseModal()"
-        class="px-4 py-2 border border-amber-100 text-navy/60 text-sm font-bold rounded-lg bg-white hover:bg-amber-50 cursor-pointer transition-colors"
-      >
+    <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-100 bg-slate-50/60 rounded-b-2xl">
+      <button onclick="sysCloseModal()"
+        class="px-4 py-2 border border-amber-100 text-navy/60 text-sm font-bold rounded-lg bg-white hover:bg-amber-50 cursor-pointer transition-colors">
         Cancel
       </button>
-      <button
-        id="sys-save-btn"
-        onclick="sysSaveCycle()"
-        class="px-5 py-2 bg-navy text-white text-sm font-bold rounded-lg hover:bg-blue-800 cursor-pointer border-none transition-colors"
-      >
+      <button id="sys-save-btn" onclick="sysSaveCycle()"
+        class="px-5 py-2 bg-navy text-white text-sm font-bold rounded-lg hover:bg-blue-800 cursor-pointer border-none transition-colors">
         <i class="fas fa-save mr-1.5"></i>Save Cycle
       </button>
     </div>
@@ -531,9 +359,7 @@
 </div>
 
 <!-- ═══ CONFIRM DELETE MODAL ═══════════════════════════════ -->
-<div
-  id="sys-confirm"
-  style="
+<div id="sys-confirm" style="
     display: none;
     position: fixed;
     inset: 0;
@@ -543,23 +369,17 @@
     align-items: center;
     justify-content: center;
     padding: 1rem;
-  "
-  onclick="if (event.target === this) sysCloseConfirm();"
->
-  <div
-    style="
+  " onclick="if (event.target === this) sysCloseConfirm();">
+  <div style="
       background: #fff;
       border-radius: 1rem;
       width: 100%;
       max-width: 380px;
       box-shadow: 0 24px 64px rgba(15, 23, 42, 0.22);
       animation: sys-pop 0.16s ease;
-    "
-  >
+    ">
     <div class="px-6 py-6 text-center">
-      <div
-        class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4"
-      >
+      <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
         <i class="fas fa-trash-alt text-red-500 text-lg"></i>
       </div>
       <h3 class="text-base font-black text-navy mb-2">Delete this cycle?</h3>
@@ -567,21 +387,15 @@
         This will permanently remove the row from <strong>ef_control</strong>.
         Cannot be undone.
       </p>
-      <div
-        id="sys-confirm-meta"
-        class="bg-red-50 border border-red-100 rounded-lg p-3 text-left mb-5 text-xs text-red-700 space-y-1"
-      ></div>
+      <div id="sys-confirm-meta"
+        class="bg-red-50 border border-red-100 rounded-lg p-3 text-left mb-5 text-xs text-red-700 space-y-1"></div>
       <div class="flex gap-2">
-        <button
-          onclick="sysCloseConfirm()"
-          class="flex-1 py-2.5 border border-slate-200 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50 cursor-pointer bg-white"
-        >
+        <button onclick="sysCloseConfirm()"
+          class="flex-1 py-2.5 border border-slate-200 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50 cursor-pointer bg-white">
           Cancel
         </button>
-        <button
-          onclick="sysDoDelete()"
-          class="flex-1 py-2.5 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 cursor-pointer border-none"
-        >
+        <button onclick="sysDoDelete()"
+          class="flex-1 py-2.5 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 cursor-pointer border-none">
           <i class="fas fa-trash-alt mr-1.5"></i>Delete
         </button>
       </div>
@@ -590,9 +404,7 @@
 </div>
 
 <!-- Toast -->
-<div
-  id="sys-toast"
-  style="
+<div id="sys-toast" style="
     position: fixed;
     bottom: 1.4rem;
     left: 50%;
@@ -608,8 +420,7 @@
     pointer-events: none;
     opacity: 0;
     transition: all 0.22s ease;
-  "
-></div>
+  "></div>
 
 <script>
   (function () {
@@ -734,16 +545,42 @@
     }
 
     function updateStats() {
-      document.getElementById("sys-stat-total").textContent = allCycles.length;
-      document.getElementById("sys-stat-open").textContent = allCycles.filter(
-        (c) => c.status === "Open",
-      ).length;
-      document.getElementById("sys-stat-reopen").textContent = allCycles.filter(
-        (c) => c.status === "Reopen",
-      ).length;
-      document.getElementById("sys-stat-close").textContent = allCycles.filter(
-        (c) => c.status === "Close",
-      ).length;
+      // ── Global card ──────────────────────────────────────
+      // Most recent by processingyear among ship='All' rows.
+      // Tie-break on Id (higher = more recently created) since
+      // multiple form types can share the same processingyear.
+      const globalRows = allCycles.filter((c) => c.ship === "All");
+      const badge = document.getElementById("sys-stat-global-badge");
+      const meta = document.getElementById("sys-stat-global-meta");
+
+      if (!globalRows.length) {
+        badge.textContent = "—";
+        badge.className = "text-sm font-black px-3 py-1 rounded-full bg-gray-100 text-gray-400";
+        meta.textContent = "No global cycle set";
+      } else {
+        const latest = [...globalRows].sort((a, b) => {
+          const yearDiff = Number(b.processingyear) - Number(a.processingyear);
+          if (yearDiff !== 0) return yearDiff;
+          return (b.Id ?? 0) - (a.Id ?? 0);
+        })[0];
+
+        // Reopen counts as Open everywhere
+        const isOpen = latest.status === "Open" || latest.status === "Reopen";
+        badge.textContent = isOpen ? "OPEN" : "CLOSED";
+        badge.className = `text-sm font-black px-3 py-1 rounded-full ${isOpen ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"
+          }`;
+        meta.textContent = `${latest.processingyear} · ${latest.formtype || "ALL"}`;
+      }
+
+      // ── Ships card ───────────────────────────────────────
+      // Count distinct ships (excluding 'All') with at least one
+      // Open or Reopen cycle row. Reopen counts as open.
+      const openShips = new Set(
+        allCycles
+          .filter((c) => c.ship !== "All" && (c.status === "Open" || c.status === "Reopen"))
+          .map((c) => c.ship),
+      );
+      document.getElementById("sys-stat-ships-open").textContent = openShips.size;
     }
 
     /* ── filter + sort ────────────────────────────────── */

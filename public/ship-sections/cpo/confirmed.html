@@ -1,20 +1,21 @@
 <div class="p-4">
-  <div class="mb-4">
-    <p class="text-sm text-blue-900/50 mt-1">
-      Forms confirmed by you — pending payroll sync by admin
-    </p>
-  </div>
-
-  <div class="relative mb-4">
-    <i
-      class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-navy/30 text-sm"
-    ></i>
-    <input
-      type="text"
-      id="cpoConfirmedSearch"
-      placeholder="Search by name or service number..."
-      class="w-full pl-9 pr-3 py-2 border border-amber-100 rounded-lg text-sm text-navy bg-white focus:outline-none focus:border-navy"
-    />
+  <div class="mb-4 flex flex-col sm:flex-row gap-2">
+    <div class="relative flex-1">
+      <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-navy/30 text-sm"></i>
+      <input type="text" id="cpoConfirmedSearch" placeholder="Search by name or service number..."
+        class="w-full pl-9 pr-3 py-2 border border-amber-100 rounded-lg text-sm text-navy bg-white focus:outline-none focus:border-navy" />
+    </div>
+    <select id="cpoConfirmedShipFilter"
+      class="rounded-lg border border-amber-100 bg-white px-3 py-2 text-sm text-navy focus:outline-none">
+      <option value="">All Ships</option>
+    </select>
+    <select id="cpoConfirmedClassFilter"
+      class="rounded-lg border border-amber-100 bg-white px-3 py-2 text-sm text-navy focus:outline-none">
+      <option value="">All Classes</option>
+      <option value="1">Officers</option>
+      <option value="2">Ratings</option>
+      <option value="3">Training</option>
+    </select>
   </div>
 
   <div id="cpo-confirmed-list">
@@ -28,6 +29,26 @@
   (function () {
     const el = document.getElementById("cpo-confirmed-list");
     let currentSearch = "";
+    let currentShip = "";
+    let currentClasses = "";
+
+    function loadShipFilterOptions() {
+      fetch("/cpo/command/" + encodeURIComponent(command) + "/stats", {
+        headers: { Authorization: "Bearer " + token },
+      })
+        .then((r) => (r.ok ? r.json() : []))
+        .then((rows) => {
+          const select = document.getElementById("cpoConfirmedShipFilter");
+          (Array.isArray(rows) ? rows : []).forEach((r) => {
+            if (!r.ship) return;
+            const o = document.createElement("option");
+            o.value = r.ship;
+            o.textContent = r.ship;
+            select.appendChild(o);
+          });
+        })
+        .catch(() => { });
+    }
 
     function debounce(fn, delay) {
       let t;
@@ -48,14 +69,13 @@
         page,
         limit: CPO_CONFIRMED_PAGE_SIZE,
         search: search || "",
+        ship: currentShip,
+        classes: currentClasses,
       });
 
-      fetch(
-        "/cpo/confirmed/" + encodeURIComponent(command) + "?" + qs.toString(),
-        {
-          headers: { Authorization: "Bearer " + token },
-        },
-      )
+      fetch("/cpo/confirmed/" + encodeURIComponent(command) + "?" + qs.toString(), {
+        headers: { Authorization: "Bearer " + token },
+      })
         .then((r) => (r.ok ? r.json() : { forms: [], total: 0 }))
         .then((res) => {
           const rows = Array.isArray(res) ? res : res.forms || [];
@@ -81,35 +101,34 @@
               </thead>
               <tbody>
                 ${rows
-                  .map(
-                    (r) => `
+              .map(
+                (r) => `
                   <tr class="border-b border-amber-50 last:border-0 hover:bg-amber-50/40 transition-colors">
                     <td class="py-3 px-4 font-bold text-navy">
                       <span class="inline-flex items-center gap-2">
                         <span class="w-6 h-6 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
                           <i class="fas fa-stamp text-green-500" style="font-size:11px"></i>
                         </span>
-                        ${r?.Surname?.trim() || ""} ${r?.Othername?.trim() || ""}
+                        ${r?.Surname?.trim() || ""} ${r?.OtherName?.trim() || ""}
                       </span>
                     </td>
                     <td class="py-3 px-4 text-blue-900/50">${r.serviceNumber}</td>
                     <td class="py-3 px-4 text-blue-900/50">
-                      ${
-                        r.hod_date
-                          ? new Date(r.hod_date).toLocaleDateString("en-GB", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })
-                          : "—"
-                      }
+                      ${r.hod_date
+                    ? new Date(r.hod_date).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })
+                    : "—"
+                  }
                     </td>
                     <td class="py-3 px-4 text-right">
                       <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">CONFIRMED</span>
                     </td>
                   </tr>`,
-                  )
-                  .join("")}
+              )
+              .join("")}
               </tbody>
             </table>
           </div>
@@ -128,12 +147,21 @@
     }
 
     const debouncedSearch = debounce((val) => loadPage(1, val), 350);
-    document
-      .getElementById("cpoConfirmedSearch")
-      .addEventListener("input", (e) => {
-        debouncedSearch(e.target.value.trim());
-      });
+    document.getElementById("cpoConfirmedSearch").addEventListener("input", (e) => {
+      debouncedSearch(e.target.value.trim());
+    });
 
+    // NEW
+    document.getElementById("cpoConfirmedShipFilter").addEventListener("change", function () {
+      currentShip = this.value;
+      loadPage(1);
+    });
+    document.getElementById("cpoConfirmedClassFilter").addEventListener("change", function () {
+      currentClasses = this.value;
+      loadPage(1);
+    });
+
+    loadShipFilterOptions();
     loadPage(1, "");
   })();
 </script>

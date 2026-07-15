@@ -32,11 +32,11 @@ const {
 // LIST FO_APPROVED FORMS — scoped to CPO's command
 // ─────────────────────────────────────────────────────────────
 
-async function listFoApprovedForms(command, limit, offset, search) {
+async function listFoApprovedForms(command, limit, offset, search, ship, classes) {
   if (!command)
     return { success: false, code: 400, message: "Command is required." };
 
-  const forms = await repo.getFoApprovedForms(command, limit, offset, search);
+  const forms = await repo.getFoApprovedForms(command, limit, offset, search, ship, classes);
   return { success: true, data: forms };
 }
 
@@ -254,15 +254,15 @@ async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
     };
   }
 
-  await repo.insertFormApproval({
+  await repo.deleteFormApproval(form.form_id);
+
+   await repo.insertFormRejection({
     formId: form.form_id,
-    action: "REJECTED",
-    fromStatus: FORM_STATUS.FO_APPROVED,
-    toStatus: FORM_STATUS.REJECTED,
-    performedBy: cpo_svcno,
-    performerRole: "CPO",
+    svc_no: form.serviceNumber,
+    rejected_by: cpo_svcno,
     remarks: remarks.trim(),
-  });
+  })
+
 
   await repo.insertAuditLog({
     tableName: "ef_personalinfos",
@@ -604,8 +604,9 @@ async function buildSnapshotsInBatches(forms, cpo_svcno, batchSize) {
   return snapshotMap;
 }
 
+
 // ─────────────────────────────────────────────────────────────
-// STATUS STATS — for CPO dashboard summary
+// STATUS STATS — per-ship breakdown for CPO dashboard
 // ─────────────────────────────────────────────────────────────
 
 async function getStatusStats(command, svc) {
@@ -613,29 +614,21 @@ async function getStatusStats(command, svc) {
     return { success: false, code: 400, message: "Command is required." };
 
   if (!svc)
-    return {
-      success: false,
-      code: 400,
-      message: "Service number is required.",
-    };
+    return { success: false, code: 400, message: "Service number is required." };
 
-  const stats = await repo.getStatusStats(command, svc);
-  return { success: true, data: stats };
+  const stats = await repo.getStatusStatsByShip(command, svc);
+  return { success: true, data: stats }; // now an array, one entry per ship
 }
 
 // ─────────────────────────────────────────────────────────────
 // LIST CONFIRMED FORMS
 // ─────────────────────────────────────────────────────────────
 
-async function listConfirmedForms(command, svc, limit, offset, search) {
+async function listConfirmedForms(command, svc, limit, offset, search, ship, classes) {
   if (!command)
     return { success: false, code: 400, message: "Command is required." };
   if (!svc)
-    return {
-      success: false,
-      code: 400,
-      message: "Service number is required.",
-    };
+    return { success: false, code: 400, message: "Service number is required." };
   if (!limit || !Number.isInteger(limit) || limit < 1) {
     return { success: false, code: 400, message: "Valid limit is required." };
   }
@@ -643,14 +636,7 @@ async function listConfirmedForms(command, svc, limit, offset, search) {
     return { success: false, code: 400, message: "Valid offset is required." };
   }
 
-  const forms = await repo.getCPOConfirmedForms(
-    command,
-    svc,
-    limit,
-    offset,
-    search,
-  );
-
+  const forms = await repo.getCPOConfirmedForms(command, svc, limit, offset, search, ship, classes);
   return { success: true, data: forms };
 }
 

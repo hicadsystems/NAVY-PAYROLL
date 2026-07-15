@@ -102,10 +102,9 @@ router.get("/pending/:command", requireEmolRole("CPO"), async (req, res) => {
   const { command } = req.params;
   const cpoCommands = resolveCpoCommands(req);
 
-  const { limit, page = 1, search = "" } = req.query;
+  const { limit, page = 1, search = "", ship = "", classes = "" } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
 
-  // Scope check — scoped CPO can only query their own commands
   if (cpoCommands !== "ALL" && !cpoCommands.includes(command)) {
     return res.status(403).json({
       error: `Access denied. Command '${command}' is not under your scope.`,
@@ -118,6 +117,8 @@ router.get("/pending/:command", requireEmolRole("CPO"), async (req, res) => {
       Number(limit),
       offset,
       search,
+      ship,
+      classes,
     );
     if (!result.success)
       return res.status(result.code).json({ error: result.message });
@@ -386,13 +387,11 @@ router.get("/confirmed", requireEmolRole("CPO"), async (req, res) => {
 router.get("/confirmed/:command", requireEmolRole("CPO"), async (req, res) => {
   const { command } = req.params;
   const cpoCommands = resolveCpoCommands(req);
+  const svc = req.user_id;
 
-  const svc = req.user_id; // Use CPO's service number to get their specific stats if needed
-
-  const { limit, page = 1, search = "" } = req.query;
+  const { limit, page = 1, search = "", ship = "", classes = "" } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
 
-  // Scope check — scoped CPO can only query their own commands
   if (cpoCommands !== "ALL" && !cpoCommands.includes(command)) {
     return res.status(403).json({
       error: `Access denied. Command '${command}' is not under your scope.`,
@@ -406,6 +405,8 @@ router.get("/confirmed/:command", requireEmolRole("CPO"), async (req, res) => {
       Number(limit),
       offset,
       search,
+      ship,
+      classes,
     );
     if (!result.success)
       return res.status(result.code).json({ error: result.message });

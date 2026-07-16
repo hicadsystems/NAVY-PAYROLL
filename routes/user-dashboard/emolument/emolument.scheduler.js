@@ -24,6 +24,7 @@
 "use strict";
 
 const cron = require("node-cron");
+const { run } = require("../../../config/sql/scripts/py_ef_banks_migration");
 
 // Pool initialises asynchronously — we must not call pool.useDatabase()
 // until the async IIFE in db.js has completed and dbConfig is set.
@@ -94,6 +95,45 @@ function isDateLeftExpired(dateLeft) {
   return dateLeft <= today;
 }
 
+// Archive the CURRENT-cycle emolument form(s) belonging to the given
+// serviceNumbers before we delete their ef_personalinfos rows.
+//
+// This is distinct from archivePreviousCycleIfNeeded(): that function only
+// snapshots rows once a *new* cycle has started (form_year != currentYear).
+// A person can leave mid-cycle — before the cycle ever rolls over — and in
+// that case their current-year ef_emolument_forms row would never get a
+// snapshot and would be lost once ef_personalinfos is deleted. This function
+// snapshots it unconditionally (any form_year, as long as it isn't already
+// archived) so their final cycle's data survives the personnel removal.
+async function archiveExpiredPersonnelForms(pool, ids) {
+  if (!ids.length) return;
+
+  const placeholders = ids.map(() => "?").join(",");
+
+  const [result] = await pool.query(
+    `UPDATE ef_emolument_forms f
+     INNER JOIN ef_personalinfos p ON p.serviceNumber = f.service_no
+     SET f.snapshot   = COALESCE(f.snapshot, JSON_OBJECT(
+                          'archived', true,
+                          'archivedAt', NOW(),
+                          'previousYear', f.form_year,
+                          'previousStatus', p.Status,
+                          'wasConfirmed', IF(p.emolumentform = 'Yes', true, false),
+                          'reason', 'personnel_exit'
+                        )),
+         f.updated_at = NOW()
+     WHERE f.service_no IN (${placeholders})
+       AND f.snapshot   IS NULL`,
+    [...ids.map(String)],
+  );
+
+  if (result.affectedRows > 0) {
+    console.log(
+      `📦 Archived ${result.affectedRows} current-cycle emolument form(s) for exiting personnel.`,
+    );
+  }
+}
+
 // Close any ef_control windows that have expired (enddate < NOW()) but are still marked Open/Reopen.
 async function removeExpiredPersonnel() {
   const pool = require("../../../config/db");
@@ -134,6 +174,11 @@ async function removeExpiredPersonnel() {
   const ids = expired.map((r) => r.Empl_ID);
 
   const placeholders = ids.map(() => "?").join(",");
+
+  // Archive their current-cycle emolument form BEFORE deleting
+  // ef_personalinfos, so this cycle's data isn't lost even though
+  // the cycle itself hasn't turned over yet.
+  await archiveExpiredPersonnelForms(pool, ids);
 
   //Delete statement
 
@@ -339,6 +384,7 @@ cron.schedule("* * * * *", async () => {
 cron.schedule("0 0 * * *", async () => {
   await archivePreviousCycleIfNeeded();
   await removeExpiredPersonnel();
+  await run();
 });
 
 // On startup: wait for pool to be ready, then sync + archive

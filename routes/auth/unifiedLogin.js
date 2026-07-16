@@ -106,10 +106,10 @@ router.post("/pre-login", async (req, res) => {
         .json({ error: "Account deactivated. Contact administrator." });
     }
 
-     if (emp.force_change || emp.force_change === 1) {
-      return res
-        .status(401)
-        .json({ error: "Use the 'First Time?' option to change your password." });
+    if (emp.force_change || emp.force_change === 1) {
+      return res.status(401).json({
+        error: "Use the 'First Time?' option to change your password.",
+      });
     }
 
     if (!emp.password) {
@@ -121,7 +121,7 @@ router.post("/pre-login", async (req, res) => {
     let passwordValid = false;
     try {
       passwordValid = await argon.verify(emp.password, password);
-      console.log('password valid')
+      console.log("password valid");
     } catch (err) {
       console.error("Argon verify error:", err);
       return res
@@ -134,7 +134,6 @@ router.post("/pre-login", async (req, res) => {
         .status(401)
         .json({ error: "Invalid Service Number or Password" });
     }
-
 
     if (!passwordValid) {
       return res
@@ -408,7 +407,7 @@ router.post("/forgot-password", async (req, res) => {
 
   const genericRes = {
     message:
-      "If an account matching that information exists, a reset link has been sent to the associated email.",
+      "If an account matching that information exists, a link will be sent to the associated email to set your password.",
     user_id,
   };
 

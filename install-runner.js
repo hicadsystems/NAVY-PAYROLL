@@ -177,6 +177,8 @@ function configureRunner(token) {
       token,
       "--name",
       `${require("os").hostname()}-runner`,
+      "--labels",
+      process.env.RUNNER_LABEL,
       "--work",
       "_work",
       "--unattended",

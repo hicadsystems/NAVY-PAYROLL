@@ -216,7 +216,6 @@ togglePassword.addEventListener("click", () => {
   });
 });
 
-
 // Forgot Password Manager
 const ForgotPasswordManager = {
   modal: null,
@@ -290,7 +289,6 @@ const ForgotPasswordManager = {
         this.close();
 
         document.getElementById("resetSentMessage").textContent =
-          result.message ||
           "If an account matching that information exists, a reset link has been sent to the associated email.";
 
         this.sentModal.classList.remove("hidden");
@@ -317,14 +315,117 @@ const ForgotPasswordManager = {
   },
 };
 
+// Set Password Manager
+const SetPasswordManager = {
+  modal: null,
+  sentModal: null,
+
+  init() {
+    this.modal = document.getElementById("setPasswordModal");
+    this.sentModal = document.getElementById("resetSentModal");
+
+    document
+      .getElementById("set-password-form")
+      ?.addEventListener("submit", (e) => this.sendResetLink(e));
+
+    document
+      .getElementById("close-set-modal")
+      ?.addEventListener("click", () => this.close());
+
+    document
+      .getElementById("cancel-set-btn")
+      ?.addEventListener("click", () => this.close());
+
+    document
+      .getElementById("close-sent-modal")
+      ?.addEventListener("click", () => this.closeSent());
+  },
+
+  open() {
+    this.modal.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+
+    document.getElementById("set-password-form").reset();
+  },
+
+  close() {
+    this.modal.classList.add("hidden");
+    document.body.style.overflow = "";
+  },
+
+  closeSent() {
+    this.sentModal.classList.add("hidden");
+    document.body.style.overflow = "";
+  },
+
+  async sendResetLink(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById("set-submit-btn");
+
+    btn.disabled = true;
+    btn.textContent = "Sending...";
+
+    const form = new FormData(e.target);
+
+    const payload = {
+      user_id: form.get("user_id"),
+      email: form.get("email"),
+    };
+
+    try {
+      const res = await fetch(`/auth/users/forgot-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        this.close();
+
+        document.getElementById("resetSentMessage").textContent =
+          "If an account matching that information exists, a link will be sent to the associated email to set your password.";
+
+        this.sentModal.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+      } else {
+        await AlertModal.show({
+          type: "error",
+          title: "Request Failed",
+          message: result.error || "Unable to send link.",
+        });
+      }
+    } catch (err) {
+      console.error(err);
+
+      await AlertModal.show({
+        type: "error",
+        title: "Connection Error",
+        message: "Unable to connect to the server. Please try again.",
+      });
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Send Reset Link";
+    }
+  },
+};
+
 // Initialize when page loads
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () =>
-    ForgotPasswordManager.init(),
+  document.addEventListener(
+    "DOMContentLoaded",
+    () => ForgotPasswordManager.init(),
+    SetPasswordManager.init(),
   );
 } else {
   ForgotPasswordManager.init();
+  SetPasswordManager.init();
 }
 
 // Expose to global scope so you can call it from login page
 window.openForgotPassword = () => ForgotPasswordManager.open();
+window.openSetPassword = () => SetPasswordManager.open();

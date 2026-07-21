@@ -27,6 +27,9 @@ echo.
 echo     - CHANGE your network adapter IPv4 to a static IP
 echo     - This can disconnect you from your router/hotspot
 echo       if run on the wrong machine or wrong network
+echo     - In Public/Internet mode, it will also open port 80/443
+echo       to ANY profile and request a real certificate from
+echo       Let's Encrypt
 echo.
 echo   DO NOT run this on:
 echo     - Your personal laptop or daily-use machine
@@ -51,7 +54,7 @@ echo.
 :: ============================================================
 :: STEP 0 — Stop existing Navy Payroll services and free ports
 :: ============================================================
-echo [0/8] Stopping existing Navy Payroll services...
+echo [0/9] Stopping existing Navy Payroll services...
 
 schtasks /end /tn "NavyPayroll-App"   >nul 2>&1
 schtasks /end /tn "NavyPayroll-Proxy" >nul 2>&1
@@ -135,7 +138,7 @@ timeout /t 2 /nobreak >nul
 :: STEP 1 — Verify .env.local exists
 :: ============================================================
 echo.
-echo [1/8] Checking .env.local...
+echo [1/9] Checking .env.local...
 
 set "ENV_FILE=%~dp0.env.local"
 if not exist "%ENV_FILE%" (
@@ -152,7 +155,7 @@ echo [OK] .env.local found
 :: STEP 2 — Auto-detect active adapter + current IP + gateway
 :: ============================================================
 echo.
-echo [2/8] Detecting active network adapter and IP...
+echo [2/9] Detecting active network adapter and IP...
 
 set "ADAPTER="
 for /f "skip=2 tokens=1,2,3,*" %%A in ('netsh interface show interface') do (
@@ -168,6 +171,10 @@ if not defined ADAPTER (
 )
 
 echo [OK] Adapter = %ADAPTER%
+echo [WARN] If multiple adapters are connected ^(e.g. Ethernet + Wi-Fi^),
+echo        this picks whichever netsh lists first — NOT necessarily
+echo        Ethernet. For LAN/internal setups, disconnect Wi-Fi before
+echo        running this script to avoid capturing the wrong IP.
 
 set "LOCAL_IP="
 for /f "tokens=2 delims=:" %%A in ('netsh interface ip show address name^="%ADAPTER%" ^| findstr /i "IP Address"') do (
@@ -203,27 +210,44 @@ if not defined GATEWAY (
 :: STEP 3 — Network binding mode
 :: ============================================================
 echo.
-echo [3/8] Network binding mode...
+echo [3/9] Network binding mode...
 echo.
-echo   [1] localhost only  ^(MTN hotspot / testing — access from this machine only^)
-echo   [2] LAN ^(0.0.0.0^)  ^(proper router — access from all machines on network^)
+echo   [1] localhost only   ^(MTN hotspot / testing — access from this machine only^)
+echo   [2] LAN ^(0.0.0.0^)    ^(internal network — access from all machines on office LAN^)
+echo   [3] Public/Internet ^(0.0.0.0^)  ^(real domain, static public IP, Let's Encrypt cert^)
 echo.
-set /p "BIND_CHOICE=Choose [1/2]: "
+set /p "BIND_CHOICE=Choose [1/2/3]: "
 if "!BIND_CHOICE!"=="2" (
     set "BIND_ADDRESS=0.0.0.0"
+    set "SERVER_MODE=network"
+    set "CERT_DIR=%~dp0"
     echo [OK] Binding to all interfaces ^(LAN mode^)
+) else if "!BIND_CHOICE!"=="3" (
+    set "BIND_ADDRESS=0.0.0.0"
+    set "SERVER_MODE=public"
+    set "CERT_DIR=%~dp0certs"
+    set "PUBLIC_MODE=1"
+    echo [OK] Binding to all interfaces ^(Public/Internet mode^)
 ) else (
     set "BIND_ADDRESS=127.0.0.1"
+    set "SERVER_MODE=localhost"
+    set "CERT_DIR=%~dp0"
     echo [OK] Binding to localhost only
 )
 
 
 :: ============================================================
-:: STEP 4 — Friendly .local domain name
+:: STEP 4 — Friendly domain name
 :: ============================================================
 echo.
-echo [4/8] Friendly LAN domain name setup...
-echo       Must end in .local ^(e.g. navypayroll.local^)
+echo [4/9] Friendly domain name setup...
+if defined PUBLIC_MODE (
+    echo       Enter your real public domain name, DNS A record must
+    echo       already point at this server's static public IP
+    echo       ^(e.g. payroll.yourcompany.com^)
+) else (
+    echo       Must end in .local ^(e.g. navypayroll.local^)
+)
 echo.
 
 set "EXISTING_DOMAIN="
@@ -244,12 +268,35 @@ if defined EXISTING_DOMAIN (
 
 :ask_domain
 set /p "DOMAIN=Enter your preferred domain name: "
+if defined PUBLIC_MODE goto validate_public_domain
 if /i "!DOMAIN:~-6!"==".local" goto domain_ok
 echo [ERROR] Domain must end in .local - try again.
 goto ask_domain
+
+:validate_public_domain
+echo !DOMAIN! | findstr /r "\." >nul
+if errorlevel 1 (
+    echo [ERROR] Enter a valid domain, e.g. payroll.yourcompany.com - try again.
+    goto ask_domain
+)
+goto domain_ok
+
 :domain_ok
 
 echo [OK] Domain = %DOMAIN%
+
+if not defined PUBLIC_MODE goto domain_done
+
+:ask_email
+set /p "ADMIN_EMAIL=Enter an admin email for Let's Encrypt renewal notices: "
+echo !ADMIN_EMAIL! | findstr /r "^[^@][^@]*@[^@][^@]*\.[^@][^@]*$" >nul
+if errorlevel 1 (
+    echo [ERROR] Enter a valid email address - try again.
+    goto ask_email
+)
+echo [OK] Admin email = %ADMIN_EMAIL%
+
+:domain_done
 
 
 :: ============================================================
@@ -260,55 +307,51 @@ echo [INFO] Writing env vars to .env.local and .env.production...
 
 set "TEMP_PS=%TEMP%\write_env.ps1"
 
-> "%TEMP_PS%" echo function Write-EnvVars($filePath, $ip, $domain, $bindAddress, $httpsPort, $httpPort) {
+> "%TEMP_PS%" echo function Write-EnvVars($filePath, $ip, $domain, $bindAddress, $httpsPort, $httpPort, $serverMode, $certDir) {
 >> "%TEMP_PS%" echo     if (-not (Test-Path $filePath)) { return }
 >> "%TEMP_PS%" echo     $lines = Get-Content $filePath ^| Where-Object {
 >> "%TEMP_PS%" echo         $_ -notmatch '^LOCAL_IP=' -and
 >> "%TEMP_PS%" echo         $_ -notmatch '^LOCAL_DOMAIN=' -and
 >> "%TEMP_PS%" echo         $_ -notmatch '^BIND_ADDRESS=' -and
 >> "%TEMP_PS%" echo         $_ -notmatch '^HTTPS_PORT=' -and
->> "%TEMP_PS%" echo         $_ -notmatch '^HTTP_PORT='
+>> "%TEMP_PS%" echo         $_ -notmatch '^HTTP_PORT=' -and
+>> "%TEMP_PS%" echo         $_ -notmatch '^SERVER_MODE=' -and
+>> "%TEMP_PS%" echo         $_ -notmatch '^CERT_DIR='
 >> "%TEMP_PS%" echo     }
->> "%TEMP_PS%" echo     $out = @(); $written = $false
->> "%TEMP_PS%" echo     foreach ($line in $lines) {
->> "%TEMP_PS%" echo         $out += $line
->> "%TEMP_PS%" echo         if (-not $written -and $line -match '^SERVER_MODE=') {
->> "%TEMP_PS%" echo             $out += "LOCAL_IP=$ip"
->> "%TEMP_PS%" echo             $out += "LOCAL_DOMAIN=$domain"
->> "%TEMP_PS%" echo             $out += "BIND_ADDRESS=$bindAddress"
->> "%TEMP_PS%" echo             $out += "HTTPS_PORT=$httpsPort"
->> "%TEMP_PS%" echo             $out += "HTTP_PORT=$httpPort"
->> "%TEMP_PS%" echo             $written = $true
->> "%TEMP_PS%" echo         }
->> "%TEMP_PS%" echo     }
->> "%TEMP_PS%" echo     if (-not $written) {
->> "%TEMP_PS%" echo         $out += "LOCAL_IP=$ip"
->> "%TEMP_PS%" echo         $out += "LOCAL_DOMAIN=$domain"
->> "%TEMP_PS%" echo         $out += "BIND_ADDRESS=$bindAddress"
->> "%TEMP_PS%" echo         $out += "HTTPS_PORT=$httpsPort"
->> "%TEMP_PS%" echo         $out += "HTTP_PORT=$httpPort"
->> "%TEMP_PS%" echo     }
+>> "%TEMP_PS%" echo     $out = @($lines)
+>> "%TEMP_PS%" echo     $out += "SERVER_MODE=$serverMode"
+>> "%TEMP_PS%" echo     $out += "LOCAL_IP=$ip"
+>> "%TEMP_PS%" echo     $out += "LOCAL_DOMAIN=$domain"
+>> "%TEMP_PS%" echo     $out += "BIND_ADDRESS=$bindAddress"
+>> "%TEMP_PS%" echo     $out += "HTTPS_PORT=$httpsPort"
+>> "%TEMP_PS%" echo     $out += "HTTP_PORT=$httpPort"
+>> "%TEMP_PS%" echo     $out += "CERT_DIR=$certDir"
 >> "%TEMP_PS%" echo     $out ^| Set-Content $filePath -Encoding UTF8
 >> "%TEMP_PS%" echo }
->> "%TEMP_PS%" echo Write-EnvVars '%~dp0.env.local'      '%LOCAL_IP%' '%DOMAIN%' '%BIND_ADDRESS%' '%HTTPS_PORT%' '%HTTP_PORT%'
->> "%TEMP_PS%" echo Write-EnvVars '%~dp0.env.production' '%LOCAL_IP%' '%DOMAIN%' '%BIND_ADDRESS%' '%HTTPS_PORT%' '%HTTP_PORT%'
+>> "%TEMP_PS%" echo Write-EnvVars '%~dp0.env.local'      '%LOCAL_IP%' '%DOMAIN%' '%BIND_ADDRESS%' '%HTTPS_PORT%' '%HTTP_PORT%' '%SERVER_MODE%' '%CERT_DIR%'
+>> "%TEMP_PS%" echo Write-EnvVars '%~dp0.env.production' '%LOCAL_IP%' '%DOMAIN%' '%BIND_ADDRESS%' '%HTTPS_PORT%' '%HTTP_PORT%' '%SERVER_MODE%' '%CERT_DIR%'
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%TEMP_PS%"
 del "%TEMP_PS%" >nul 2>&1
 
+echo [OK] SERVER_MODE=%SERVER_MODE%
 echo [OK] LOCAL_IP=%LOCAL_IP%
 echo [OK] LOCAL_DOMAIN=%DOMAIN%
 echo [OK] BIND_ADDRESS=%BIND_ADDRESS%
 echo [OK] HTTPS_PORT=%HTTPS_PORT%
 echo [OK] HTTP_PORT=%HTTP_PORT%
+echo [OK] CERT_DIR=%CERT_DIR%
 echo [OK] Written to .env.local and .env.production
 
 
 :: ============================================================
-:: STEP 5 — Generate SSL cert and key
+:: STEP 5 — Generate SSL cert and key (self-signed, used by the
+:: app itself on its internal loopback hop — this stays the
+:: same regardless of mode, since the app is never reached
+:: directly from outside 127.0.0.1)
 :: ============================================================
 echo.
-echo [5/8] Generating SSL certificate and key...
+echo [5/9] Generating SSL certificate and key...
 
 set "KEY_FILE=%~dp0key.pem"
 set "CERT_FILE=%~dp0cert.pem"
@@ -421,10 +464,10 @@ echo [OK] cert.pem and key.pem generated ^(valid 10 years^)
 
 
 :: ============================================================
-:: STEP 7 — Firewall rules
+:: STEP 6 — Firewall rules
 :: ============================================================
 echo.
-echo [6/8] Configuring firewall rules...
+echo [6/9] Configuring firewall rules...
 
 netsh advfirewall firewall delete rule name="NAVY_PAYROLL_SSL"   >nul 2>&1
 netsh advfirewall firewall delete rule name="NAVY_PAYROLL_PROXY" >nul 2>&1
@@ -439,11 +482,17 @@ netsh advfirewall firewall add rule name="NAVY_PAYROLL_PROXY" dir=in action=allo
 echo [OK] Firewall — port %HTTPS_PORT% ^(HTTPS proxy^)
 
 netsh advfirewall firewall add rule name="NAVY_PAYROLL_HTTP"  dir=in action=allow protocol=TCP localport=%HTTP_PORT%  profile=any >nul 2>&1
-echo [OK] Firewall — port %HTTP_PORT% ^(HTTP redirect^)
+echo [OK] Firewall — port %HTTP_PORT% ^(HTTP redirect / ACME challenge^)
 
 :: Allow mDNS multicast (UDP 5353) so .local resolves on the LAN
 netsh advfirewall firewall add rule name="NAVY_PAYROLL_MDNS"  dir=in action=allow protocol=UDP localport=5353        profile=any >nul 2>&1
 echo [OK] Firewall — port 5353 UDP ^(mDNS^)
+
+if defined PUBLIC_MODE (
+    echo [WARN] Public/Internet mode — ports %HTTP_PORT%/%HTTPS_PORT% are now
+    echo        open to ANY profile ^(the internet^). Make sure only 80/443
+    echo        are actually port-forwarded on your router — nothing else.
+)
 
 echo [INFO] Reserving ports for NETWORK SERVICE...
 netsh http add urlacl url=http://+:%HTTP_PORT%/   user="NT AUTHORITY\NETWORK SERVICE" >nul 2>&1
@@ -452,10 +501,92 @@ echo [OK] Port reservations set
 
 
 :: ============================================================
-:: STEP 8 — Add friendly domain to Windows hosts file
+:: STEP 7 — Let's Encrypt certificate via win-acme (Public mode only)
 :: ============================================================
 echo.
-echo [7/8] Updating Windows hosts file...
+echo [7/9] Let's Encrypt certificate ^(win-acme^)...
+
+if not defined PUBLIC_MODE (
+    echo [INFO] Skipped - not in Public/Internet mode. The proxy will keep
+    echo        using the self-signed cert.pem/key.pem generated in step 5.
+    goto skip_winacme
+)
+
+if not exist "%~dp0acme-challenge" mkdir "%~dp0acme-challenge"
+if not exist "%CERT_DIR%" mkdir "%CERT_DIR%"
+
+set "WACS_DIR=%~dp0win-acme"
+set "WACS_EXE=%WACS_DIR%\wacs.exe"
+
+if exist "%WACS_EXE%" (
+    echo [OK] win-acme already installed at %WACS_EXE%
+) else (
+    echo [INFO] Downloading win-acme ^(Let's Encrypt client^)...
+    if not exist "%WACS_DIR%" mkdir "%WACS_DIR%"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+      "$ErrorActionPreference='Stop'; try { $rel = Invoke-RestMethod -Uri 'https://api.github.com/repos/win-acme/win-acme/releases/latest'; $asset = $rel.assets | Where-Object { $_.name -like '*win-acme*x64.pluggable*.zip' } | Select-Object -First 1; if (-not $asset) { $asset = $rel.assets | Where-Object { $_.name -like '*.zip' } | Select-Object -First 1 }; Invoke-WebRequest -Uri $asset.browser_download_url -OutFile '%TEMP%\wacs.zip'; Expand-Archive -Path '%TEMP%\wacs.zip' -DestinationPath '%WACS_DIR%' -Force; Write-Host '[OK] Downloaded' $asset.name } catch { Write-Host '[ERROR]' $_.Exception.Message; exit 1 }"
+    if not exist "%WACS_EXE%" (
+        echo [ERROR] win-acme download/extract failed.
+        echo         Install manually from https://www.win-acme.com and re-run,
+        echo         or place wacs.exe in %WACS_DIR%
+        goto skip_winacme
+    )
+)
+
+echo [INFO] Writing renewal hook ^(restarts proxy + normalizes cert filenames^)...
+(
+    echo @echo off
+    echo for %%%%F in ^("%CERT_DIR%\*-crt.pem"^) do copy /y "%%%%F" "%CERT_DIR%\cert.pem" ^>nul 2^>^&1
+    echo for %%%%F in ^("%CERT_DIR%\*-chain.pem"^) do copy /y "%%%%F" "%CERT_DIR%\cert.pem" ^>nul 2^>^&1
+    echo for %%%%F in ^("%CERT_DIR%\*-key.pem"^) do copy /y "%%%%F" "%CERT_DIR%\key.pem" ^>nul 2^>^&1
+    echo cmd /c "%~dp0NavyPayroll-Proxy.exe" restart ^>nul 2^>^&1
+) > "%WACS_DIR%\renew-hook.bat"
+echo [OK] Renewal hook written to %WACS_DIR%\renew-hook.bat
+echo [WARN] win-acme's exact PEM output filenames vary by version — after
+echo        the first run below, check %CERT_DIR% and confirm renew-hook.bat's
+echo        wildcard patterns actually match the files it produced.
+
+echo.
+echo [INFO] Requesting certificate for %DOMAIN% ...
+echo        This requires port 80 to already be reachable from the
+echo        internet ^(port-forwarded on your router^) - the ACME
+echo        challenge is served via the proxy's HTTP server.
+echo.
+
+"%WACS_EXE%" --target manual --host %DOMAIN% ^
+  --validation filesystem --webroot "%~dp0acme-challenge" ^
+  --store pemfiles --pemfilespath "%CERT_DIR%" ^
+  --installation script --script "%WACS_DIR%\renew-hook.bat" ^
+  --emailaddress %ADMIN_EMAIL% --accepttos --usedefaulttaskscheduler
+
+if errorlevel 1 (
+    echo [WARN] win-acme did not complete successfully - see output above.
+    echo        Common cause: port 80 not yet reachable from the internet.
+    echo        Falls back to the self-signed cert for now. Once DNS/port
+    echo        forwarding is confirmed, re-run this step with:
+    echo          "%WACS_EXE%" --renew --host %DOMAIN%
+) else (
+    echo [OK] Certificate issued. Auto-renewal is scheduled via win-acme's
+    echo      own Windows Scheduled Task ^(no further action needed^).
+)
+
+:skip_winacme
+
+
+:: ============================================================
+:: STEP 8 — Add friendly domain to Windows hosts file
+:: (Public mode: skipped - real DNS handles resolution, and adding
+:: a hosts entry here would make PC A itself bypass real DNS/your
+:: public IP path, which is not what you want to test against.)
+:: ============================================================
+echo.
+echo [8/9] Updating Windows hosts file...
+
+if defined PUBLIC_MODE (
+    echo [INFO] Skipped - Public/Internet mode uses real DNS for %DOMAIN%.
+    echo        Make sure your domain's A record points at your static IP.
+    goto skip_hosts
+)
 
 set "HOSTS_FILE=%SystemRoot%\System32\drivers\etc\hosts"
 set "HOSTS_ENTRY=%LOCAL_IP%    %DOMAIN%"
@@ -467,12 +598,14 @@ echo %HOSTS_ENTRY%>> "%HOSTS_FILE%"
 del "%TEMP_HOSTS%" >nul 2>&1
 echo [OK] Hosts file updated: %HOSTS_ENTRY%
 
+:skip_hosts
+
 
 :: ============================================================
 :: STEP 9 — Install services
 :: ============================================================
 echo.
-echo [8/8] Installing services...
+echo [9/9] Installing services...
 
 :: Install OpenSSH Server if not present
 echo [INFO] Checking OpenSSH Server...
@@ -494,6 +627,13 @@ echo [OK] SSH service enabled and set to auto-start
 netsh advfirewall firewall delete rule name="NAVY_PAYROLL_SSH" >nul 2>&1
 netsh advfirewall firewall add rule name="NAVY_PAYROLL_SSH" dir=in action=allow protocol=TCP localport=22 profile=any >nul 2>&1
 echo [OK] Firewall — port 22 ^(SSH^)
+
+if defined PUBLIC_MODE (
+    netsh advfirewall firewall set rule name="NAVY_PAYROLL_SSH" new profile=private >nul 2>&1
+    echo [OK] Public/Internet mode — SSH restricted to Private profile only
+    echo      ^(not reachable from the internet unless you explicitly
+    echo      forward port 22, which is NOT recommended^)
+)
 
 echo.
 echo   SSH Connection Details:
@@ -613,10 +753,12 @@ echo ============================================================
 echo   Setup Complete!
 echo ============================================================
 echo.
+echo   Mode         : %SERVER_MODE%
 echo   Adapter      : %ADAPTER%
-echo   IP           : %LOCAL_IP% ^(DHCP — may change on reconnect^)
+echo   IP           : %LOCAL_IP% ^(DHCP — may change on reconnect unless static^)
 echo   Gateway      : %GATEWAY%
 echo   Bind Address : %BIND_ADDRESS%
+echo   Cert dir     : %CERT_DIR%
 echo.
 echo   Ports:
 echo     App ^(Node^)    : %APP_PORT%
@@ -626,7 +768,7 @@ echo     mDNS          : 5353 UDP
 echo.
 if "%BIND_ADDRESS%"=="0.0.0.0" (
     echo   Access your app at:
-    echo     https://%DOMAIN%         ^(LAN domain — no client config needed^)
+    echo     https://%DOMAIN%         ^(no client config needed^)
     echo     http://%DOMAIN%          ^(redirects to HTTPS^)
     echo     https://%LOCAL_IP%:%HTTPS_PORT% ^(by IP^)
     echo     https://localhost:%HTTPS_PORT%  ^(this machine^)
@@ -638,6 +780,15 @@ if "%BIND_ADDRESS%"=="0.0.0.0" (
     echo   To enable LAN access later:
     echo     Set BIND_ADDRESS=0.0.0.0 in .env.local
     echo     Then restart NavyPayroll-Proxy service
+)
+if defined PUBLIC_MODE (
+    echo.
+    echo   Public/Internet mode notes:
+    echo     - Cert renewal is automatic via win-acme's Scheduled Task
+    echo     - Check it: Get-ScheduledTask -TaskName "win-acme*"
+    echo     - SSH is Private-profile only — not internet reachable
+    echo     - Only ports 80/443 should be forwarded on your router
+    echo     - Verify %CERT_DIR%\cert.pem and key.pem exist and are current
 )
 echo.
 echo   Windows Services ^(WinSW^):
@@ -660,6 +811,8 @@ echo.
 echo   .gitignore reminder:
 echo     key.pem
 echo     cert.pem
+echo     certs\
+echo     win-acme\
 echo.
 echo ============================================================
 pause

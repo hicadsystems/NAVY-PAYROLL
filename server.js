@@ -169,6 +169,32 @@ async function startServer() {
       break;
     }
 
+    // ── public: bind to all interfaces, internet-facing ──────
+    // Same shape as "network" deliberately: no silent HTTP fallback.
+    // If this app is reachable from the public internet, a broken
+    // HTTPS bind should crash loudly (and let WinSW restart it)
+    // rather than quietly serving plaintext HTTP on loopback only,
+    // which is what "auto" mode's fallback does.
+    case "public": {
+      if (!ssl) {
+        console.error("❌ public mode requires SSL certs");
+        process.exit(1);
+      }
+      const server = https.createServer(ssl, app);
+      server.listen(PORT, "0.0.0.0", () => {
+        attachSocketIO(server);
+        console.log(`🔒 HTTPS server  → https://${LOCAL_IP}:${PORT}`);
+        console.log(`🌐 Public domain → https://${LOCAL_DOMAIN}`);
+      });
+      server.on("error", (err) => {
+        console.error(`❌ public mode HTTPS bind failed (${err.code}):`, err.message);
+        console.error("   Exiting so the process manager can restart cleanly —");
+        console.error("   no silent fallback in public mode.");
+        process.exit(1);
+      });
+      break;
+    }
+
     // ── localhost: plain HTTP, no SSL, local only ─────────────
     case "localhost": {
       const server = http.createServer(app);

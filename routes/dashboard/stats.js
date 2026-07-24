@@ -12,22 +12,20 @@ const verifyToken = require('../../middware/authentication');
  * @returns {string} Payroll class code
  */
 async function getPayrollClassFromDb(dbName) {
-  const masterDb = pool.getMasterDb();
-  const connection = await pool.getConnection();
-  
-  try {
-    await connection.query(`USE \`${masterDb}\``);
-    const [rows] = await connection.query(
-      'SELECT classcode FROM py_payrollclass WHERE db_name = ?',
-      [dbName]
-    );
-    
-    const result = rows.length > 0 ? rows[0].classcode : null;
-    console.log('🔍 Database:', dbName, '→ Payroll Class:', result);
-    return result;
-  } finally {
-    connection.release();
-  }
+  // py_payrollclass is a MASTER_TABLE, so pool.query() auto-qualifies it to
+  // the master DB and runs on the caller's own already-correct pooled
+  // connection. Previously this borrowed a connection and ran a raw
+  // `USE <masterDb>`, then released it without switching back — poisoning
+  // whatever pool the connection came from (e.g. hicaddata5) by leaving it
+  // pointed at hicaddata. See the hicaddata5 pool-poisoning bug.
+  const [rows] = await pool.query(
+    'SELECT classcode FROM py_payrollclass WHERE db_name = ?',
+    [dbName]
+  );
+
+  const result = rows.length > 0 ? rows[0].classcode : null;
+  console.log('🔍 Database:', dbName, '→ Payroll Class:', result);
+  return result;
 }
 
 

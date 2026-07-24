@@ -7,25 +7,28 @@ const { assertHierarchyAccess } = require("../../middware/hierarchyGuard");
 
 const SECRET = process.env.JWT_SECRET;
 
+// py_payrollclass is in MASTER_TABLES, so pool.query() auto-qualifies it to
+// the master database (e.g. `hicaddata.py_payrollclass`) and runs it on the
+// CALLER's own already-correct pooled connection — no need to borrow a
+// connection and manually USE a different database.
+//
+// Previously this used pool.getConnection() + a raw `USE <masterDb>`, then
+// released the connection back into whatever pool it came from (e.g. the
+// hicaddata5 pool) without switching it back — leaving a connection in that
+// pool permanently pointed at hicaddata. Any later query that happened to
+// get handed that connection would silently run against the wrong database.
+// See project memory on the hicaddata5 pool-poisoning bug (2026-07-24).
 const getDISPLAY_MAPPING = async () => {
-  const masterDb = pool.getMasterDb();
-  const connection = await pool.getConnection();
+  const [rows] = await pool.query(
+    "SELECT db_name, classname FROM py_payrollclass",
+  );
 
-  try {
-    await connection.query(`USE \`${masterDb}\``);
-    const [rows] = await connection.query(
-      "SELECT db_name, classname FROM py_payrollclass",
-    );
+  const DISPLAY_MAPPING = {};
+  rows.forEach(({ db_name, classname }) => {
+    DISPLAY_MAPPING[db_name] = classname;
+  });
 
-    const DISPLAY_MAPPING = {};
-    rows.forEach(({ db_name, classname }) => {
-      DISPLAY_MAPPING[db_name] = classname;
-    });
-
-    return DISPLAY_MAPPING;
-  } finally {
-    connection.release();
-  }
+  return DISPLAY_MAPPING;
 };
 
 // Get available database classes filtered by hierarchy.

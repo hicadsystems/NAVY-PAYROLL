@@ -59,6 +59,23 @@ const MASTER_TABLES = new Set([
   "menu_items",
   "role_menu_permissions",
   "users",
+
+  // Emolument form shared reference data (Banks, Ships, Commands, etc.)
+  // Previously read via a raw `USE <masterDb>` on a connection borrowed
+  // from the caller's own pool (form.repository.js getFormOptions()) and
+  // released back uncleaned — poisoning that pool. See project memory on
+  // the hicaddata5 pool-poisoning bug (2026-07-24).
+  "ef_banks",
+  "ef_bank_branches",
+  "ef_commands",
+  "ef_branches",
+  "ef_ships",
+  "ef_specialisationareas",
+  "ef_states",
+  "ef_localgovts",
+  "ef_relationships",
+  "ef_entrymodes",
+  "ef_ranks",
 ]);
 
 // ==========================================
@@ -187,6 +204,39 @@ const pool = {
       throw new Error(`❌ No database selected for session ${sessionId}`);
     }
 
+    if (process.env.DB_TRACE_QUERIES === "1") {
+      const sqlPreview =
+        (typeof sql === "string" ? sql : sql?.sql || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 80);
+      console.log(
+        `🎯 [${new Date().toISOString()}] EXEC db=${currentDatabase} session=${sessionId} sql="${sqlPreview}"`,
+      );
+      // Sanity check: ask MySQL what schema this pooled connection is
+      // ACTUALLY bound to, independent of our own bookkeeping. If this
+      // ever disagrees with currentDatabase above, the pool cached for
+      // that name is mislabeled at the connection level, not a session
+      // context bug.
+      try {
+        const [dbCheck] = await adapter.query(
+          currentDatabase,
+          "SELECT DATABASE() AS active_db",
+          [],
+        );
+        const actualDb = dbCheck?.[0]?.active_db;
+        if (actualDb && actualDb !== currentDatabase) {
+          console.error(
+            `🚨 POOL MISMATCH: session ${sessionId} expected db=${currentDatabase} but MySQL connection reports active_db=${actualDb}`,
+          );
+        } else {
+          console.log(`   ✅ [SANITY] MySQL confirms active_db=${actualDb}`);
+        }
+      } catch (checkErr) {
+        console.error(`   ⚠️ [SANITY] DATABASE() check failed: ${checkErr.message}`);
+      }
+    }
+
     try {
       const processedSql = qualifyMasterTables(sql, currentDatabase);
       const [rows, fields] = await adapter.query(
@@ -212,6 +262,17 @@ const pool = {
       throw new Error(`❌ No database selected for session ${sessionId}`);
     }
 
+    if (process.env.DB_TRACE_QUERIES === "1") {
+      const sqlPreview =
+        (typeof sql === "string" ? sql : sql?.sql || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 80);
+      console.log(
+        `🎯 [${new Date().toISOString()}] EXEC db=${currentDatabase} session=${sessionId} sql="${sqlPreview}"`,
+      );
+    }
+
     try {
       const processedSql = qualifyMasterTables(sql, currentDatabase);
       const [rows, fields] = await adapter.execute(
@@ -229,7 +290,57 @@ const pool = {
   async getConnection() {
     const sessionId = sessionContext.getStore() || "default";
     const currentDatabase = sessionDatabases.get(sessionId);
-    return await adapter.getConnection(currentDatabase);
+    const conn = await adapter.getConnection(currentDatabase);
+
+    // Self-cleaning release. Many route helpers (the ~15 copy-pasted
+    // getPayrollClassFromDb functions, and others) borrow a pooled connection
+    // and run a raw `USE <masterDb>` on it, then release it WITHOUT switching
+    // back — leaving a connection in this pool pointed at the wrong schema and
+    // poisoning every later borrower. That is the POOL MISMATCH bug: a
+    // hicaddata5-pool connection reporting active_db=hicaddata. Restoring the
+    // pool's own database right before the connection returns makes that
+    // impossible no matter what any caller ran on it. Central fix so we don't
+    // have to touch every borrow+USE site individually.
+    if (currentDatabase) {
+      const origRelease = conn.release.bind(conn);
+      conn.release = function () {
+        conn
+          .query(`USE \`${currentDatabase}\``)
+          .catch(() => {})
+          .finally(origRelease);
+      };
+    }
+
+    return conn;
+  },
+
+  // Get a connection from a SPECIFIC database's own pool, bypassing session
+  // context entirely. Use this whenever code needs to touch a database that
+  // is NOT the caller's current session database (e.g. iterating multiple
+  // payroll classes in one batch operation).
+  //
+  // Do NOT use pool.getConnection() + a raw `USE <db>` for this — that
+  // borrows a connection from whatever pool the CALLER's session currently
+  // points to, repoints it with USE, and if it's ever released back without
+  // switching back, poisons that pool for every future caller. Every
+  // database already has its own dedicated pool (see mysql-adapter.js
+  // _getPool) — this method just goes straight to the pool for `dbName`, so
+  // no USE statement, and no risk of leaking a mismatched connection back
+  // into the wrong pool. See project memory on the hicaddata5
+  // pool-poisoning bug (2026-07-24).
+  async getConnectionFor(dbName) {
+    if (!dbName) {
+      throw new Error("❌ getConnectionFor requires a database name");
+    }
+    initializeDatabaseCache();
+    const validDatabases = Array.from(validDatabasesCache);
+    const dbToUse = validDatabases.includes(dbName)
+      ? dbName
+      : dbConfig.databases[dbName];
+    if (!dbToUse) {
+      throw new Error(`❌ Invalid database: ${dbName}`);
+    }
+    return await adapter.getConnection(dbToUse);
   },
 
   async smartTransaction(callback) {

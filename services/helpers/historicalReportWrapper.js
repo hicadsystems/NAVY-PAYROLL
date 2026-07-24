@@ -35,7 +35,22 @@ class SeamlessHistoricalWrapper {
 
     // Skip if wrapper not active
     if (!this.isActive) {
+      if (process.env.DB_TRACE_QUERIES === "1") {
+        const sqlPreview = String(sql?.sql || sql || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 60);
+        console.log(
+          `   ⚪ [WRAPPER] inactive — passthrough sql="${sqlPreview}"`,
+        );
+      }
       return await this.originalQuery(sql, params, sessionId);
+    }
+
+    if (process.env.DB_TRACE_QUERIES === "1") {
+      console.log(
+        `   🟢 [WRAPPER] ACTIVE (month=${this.currentMonth}, year=${this.currentYear}) intercepting query`,
+      );
     }
 
     console.log(`\n   🔍 [QUERY ${this.queryCount}] Intercepted`);

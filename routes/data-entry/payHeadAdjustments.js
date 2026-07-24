@@ -306,21 +306,32 @@ router.post("/", verifyToken, upload.single("file"), async (req, res) => {
         continue;
       }
 
-      const connection = await pool.getConnection();
-      await connection.query(`USE ??`, [db]);
+      // Connection is drawn directly from this payclass's own pool — never
+      // borrow a connection from a different pool and USE it over to
+      // another database, and always release it back. This previously
+      // never called .release() at all (a straight connection leak, one
+      // per distinct payclass per upload) on top of leaving a mismatched
+      // USE in place. See project memory on the hicaddata5 pool-poisoning
+      // bug (2026-07-24).
+      const connection = await pool.getConnectionFor(db);
 
       const payHeadCode = [...new Set(rows.map((r) => r.bp))];
 
       const query = `
         SELECT *
-          FROM py_payperrank     
+          FROM py_payperrank
           WHERE one_type IN (${payHeadCode.map(() => "?").join(",")})
           `;
 
-      const [payperrankRows] = await connection.query(
-        query,
-        payHeadCode.map((bp) => bp.trim()),
-      );
+      let payperrankRows;
+      try {
+        [payperrankRows] = await connection.query(
+          query,
+          payHeadCode.map((bp) => bp.trim()),
+        );
+      } finally {
+        connection.release();
+      }
 
       const payperrankMap = new Map();
 

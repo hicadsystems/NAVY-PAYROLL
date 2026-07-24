@@ -24,7 +24,40 @@
 "use strict";
 
 const cron = require("node-cron");
+const crypto = require("crypto");
 const { run } = require("../../../config/sql/scripts/py_ef_banks_migration");
+
+// ─────────────────────────────────────────────────────────────
+// SESSION ISOLATION FOR BACKGROUND JOBS
+//
+// config/db.js keeps a global sessionDatabases Map keyed by session id,
+// with useDatabase() writing to it and a later query()/execute() call
+// reading it back via AsyncLocalStorage. Any code path that never runs
+// inside sessionContext.run() falls back to the shared "default" key —
+// which middware/authentication.js's pre-login token check also uses.
+//
+// This scheduler used to call pool.useDatabase()/pool.query() straight
+// from cron callbacks with no session context at all, so every tick
+// wrote into that same "default" bucket. A concurrent request hitting
+// "default" (or the next tick firing) could flip the target database
+// out from under an in-flight query on this or the other side.
+//
+// Fix: give every tick/startup run its own unique AsyncLocalStorage
+// scope, so scheduler DB-context writes can never collide with request
+// traffic or with each other. Do NOT remove this — see project memory
+// on the ships-sync DB race (2026-07-23).
+// ─────────────────────────────────────────────────────────────
+async function runInSchedulerContext(pool, fn) {
+  const sessionContext = pool._getSessionContext
+    ? pool._getSessionContext()
+    : null;
+  const jobSessionId = `scheduler:${crypto.randomUUID()}`;
+
+  if (sessionContext) {
+    return sessionContext.run(jobSessionId, fn);
+  }
+  return fn();
+}
 
 // Pool initialises asynchronously — we must not call pool.useDatabase()
 // until the async IIFE in db.js has completed and dbConfig is set.
@@ -375,16 +408,22 @@ async function archivePreviousCycleIfNeeded() {
 
 // Run every minute
 cron.schedule("* * * * *", async () => {
-  await closeExpiredWindows();
-  await syncOpenship();
-  await archivePreviousCycleIfNeeded();
+  const pool = require("../../../config/db");
+  await runInSchedulerContext(pool, async () => {
+    await closeExpiredWindows();
+    await syncOpenship();
+    await archivePreviousCycleIfNeeded();
+  });
 });
 
 // Run everyday
 cron.schedule("0 0 * * *", async () => {
-  await archivePreviousCycleIfNeeded();
-  await removeExpiredPersonnel();
-  await run();
+  const pool = require("../../../config/db");
+  await runInSchedulerContext(pool, async () => {
+    await archivePreviousCycleIfNeeded();
+    await removeExpiredPersonnel();
+    await run();
+  });
 });
 
 // On startup: wait for pool to be ready, then sync + archive
@@ -392,10 +431,12 @@ cron.schedule("0 0 * * *", async () => {
   try {
     const pool = require("../../../config/db");
     await waitForPool(pool);
-    await closeExpiredWindows();
-    await syncOpenship();
-    await archivePreviousCycleIfNeeded();
-    await removeExpiredPersonnel();
+    await runInSchedulerContext(pool, async () => {
+      await closeExpiredWindows();
+      await syncOpenship();
+      await archivePreviousCycleIfNeeded();
+      await removeExpiredPersonnel();
+    });
   } catch (err) {
     console.error("❌ emolument.scheduler startup error:", err.message);
   }

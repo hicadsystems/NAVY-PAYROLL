@@ -362,8 +362,11 @@ router.post(
         }
 
         try {
-          connection = await pool.getConnection();
-          await connection.query(`USE ??`, [db]);
+          // Connection is drawn directly from this payclass's own pool —
+          // never borrow a connection from a different pool and USE it
+          // over to another database. See project memory on the
+          // hicaddata5 pool-poisoning bug (2026-07-24).
+          connection = await pool.getConnectionFor(db);
 
           // Check for DB duplicates (Empl_id + type combination)
 

@@ -641,9 +641,17 @@
         emailInput.value = '';
         phoneInput.value = '';
 
-        if (window.personnelManager) {
+        // Refresh the users list, but never let a refresh failure bubble to
+        // the outer catch — the user was already created and the success popup
+        // is showing. Call with `.call(mgr)` so the method keeps its `this`.
+        try {
           const mgr = window.personnelManager;
-          await (mgr.load ?? mgr.loadPersonnelData ?? mgr.refresh ?? (() => { }))();
+          if (mgr) {
+            const refresh = mgr.load ?? mgr.loadPersonnelData ?? mgr.refresh;
+            if (typeof refresh === 'function') await refresh.call(mgr);
+          }
+        } catch (refreshErr) {
+          console.error('Post-create list refresh failed (user was still created):', refreshErr);
         }
       } else {
         await AlertModal.show({ type: 'error', title: 'User Creation Failed', message: result.error || result.message || 'An unknown error occurred.' });

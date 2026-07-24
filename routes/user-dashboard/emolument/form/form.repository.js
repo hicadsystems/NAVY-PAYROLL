@@ -1068,12 +1068,21 @@ async function getEmolumentFormId(serviceNo, formYear) {
 // ─────────────────────────────────────────────────────────────
 
 // Gets Banks, Ships, Specializations and all other select options in the frontend
+//
+// All of these tables are now in MASTER_TABLES (config/db.js), so pool.query()
+// auto-qualifies them to the master database and runs on the CALLER's own
+// already-correct pooled connection — no need to borrow a connection and
+// manually USE a different database.
+//
+// Previously this used pool.getConnection() + a raw `USE ??` [DB()], then
+// released the connection back into whatever pool it came from (e.g. the
+// hicaddata5 pool) without switching it back — leaving a connection in that
+// pool permanently pointed at the officers database. Any later query that
+// happened to get handed that connection would silently run against the
+// wrong database. See project memory on the hicaddata5 pool-poisoning bug
+// (2026-07-24).
 async function getFormOptions() {
-  const connection = await pool.getConnection();
-
   try {
-    await connection.query(`USE ??`, [DB()]);
-
     // Fetch all options in parallel for better performance
     const [
       banksResult,
@@ -1089,49 +1098,49 @@ async function getFormOptions() {
       rankResult,
     ] = await Promise.all([
       // Banks
-      connection.query("SELECT bankcode AS id, bankname AS name FROM ef_banks"),
+      pool.query("SELECT bankcode AS id, bankname AS name FROM ef_banks"),
 
       // Bank Branches
-      connection.query("SELECT branchcode AS id, bankcode AS code, branchname AS name FROM ef_bank_branches"),
+      pool.query("SELECT branchcode AS id, bankcode AS code, branchname AS name FROM ef_bank_branches"),
 
       // Commands
-      connection.query(
+      pool.query(
         "SELECT code as id, commandName AS name FROM ef_commands",
       ),
 
       // Branches
-      connection.query(
+      pool.query(
         "SELECT code AS id, branchName AS name FROM ef_branches",
       ),
 
       // Ships (with command association)
-      connection.query(
+      pool.query(
         "SELECT Id AS id, shipName AS name, code FROM ef_ships",
       ),
 
       // Specializations
-      connection.query(
+      pool.query(
         "SELECT Id AS id, specname AS name FROM ef_specialisationareas",
       ),
 
       // States
-      connection.query("SELECT StateId AS id, Name AS name FROM ef_states"),
+      pool.query("SELECT StateId AS id, Name AS name FROM ef_states"),
 
       // Local Governments (with state association)
-      connection.query(
+      pool.query(
         "SELECT Id AS id, lgaName AS name, stateId FROM ef_localgovts",
       ),
 
       // Relationships (for NOK)
-      connection.query(
+      pool.query(
         "SELECT Id AS id, description AS name FROM ef_relationships",
       ),
 
       // Entry Modes (Type of Commissioning)
-      connection.query("SELECT Id AS id, Name AS name FROM ef_entrymodes"),
+      pool.query("SELECT Id AS id, Name AS name FROM ef_entrymodes"),
 
       // Ranks
-      connection.query(
+      pool.query(
         "SELECT Id AS id, rankName AS name, rankType AS type FROM ef_ranks",
       ),
     ]);
@@ -1152,8 +1161,6 @@ async function getFormOptions() {
   } catch (error) {
     console.error("Error fetching form options:", error);
     throw error;
-  } finally {
-    connection.release();
   }
 }
 

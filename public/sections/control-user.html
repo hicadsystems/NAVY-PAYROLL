@@ -589,14 +589,19 @@ class PersonnelManager {
   fillForm(user) {
     if (!this.editForm) return;
     const f = this.editForm;
-    f.elements['user_id'].value = user.user_id || '';
-    f.elements['full_name'].value = user.full_name || '';
-    f.elements['payroll_class'].value = user.primary_class || '';
-    f.elements['user_role'].value = user.user_role || '';
-    f.elements['status'].value = user.status || '';
-    f.elements['email'].value = user.email || '';
-    f.elements['phone_number'].value = user.phone_number || '';
-    f.elements['expiry_date'].value = user.expiry_date ? new Date(user.expiry_date).toISOString().slice(0,10) : '';
+    // Null-safe assign: the form field for the id is named `service_number`,
+    // not `user_id`, and skipping any field that isn't in the DOM prevents a
+    // single missing input from throwing and aborting the whole fill.
+    const set = (name, value) => { if (f.elements[name]) f.elements[name].value = value; };
+    set('service_number', user.user_id || '');
+    set('user_id', user.user_id || '');
+    set('full_name', user.full_name || '');
+    set('payroll_class', user.primary_class || '');
+    set('user_role', user.user_role || '');
+    set('status', user.status || '');
+    set('email', user.email || '');
+    set('phone_number', user.phone_number || '');
+    set('expiry_date', user.expiry_date ? new Date(user.expiry_date).toISOString().slice(0,10) : '');
     this.submitBtn?.removeAttribute('disabled');
   }
 

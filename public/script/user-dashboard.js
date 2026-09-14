@@ -426,6 +426,15 @@ window.addEventListener("closeShipDashboard", function () {
   // Re-entry always goes through window.loadShipDashboard which re-inits cleanly.
 });
 
+// A form opened from the ship dashboard navigates away from this page.
+// Consume the return marker after history.back() and reload the dashboard so
+// the active DO/FO/CPO list reflects the completed action or form exit.
+window.addEventListener("pageshow", function () {
+  if (sessionStorage.getItem("ship_dashboard_refresh") !== "1") return;
+  sessionStorage.removeItem("ship_dashboard_refresh");
+  window.location.reload();
+});
+
 // Listen for openShipDashboard event (fired from within emolument pages)
 window.addEventListener("openShipDashboard", function (e) {
   var d = e.detail || {};

@@ -1,9 +1,17 @@
 const path = require("path");
+const fs = require("fs");
 const dotenv = require("dotenv");
 
 const envFile =
   process.env.NODE_ENV === "production" ? ".env.production" : ".env.local";
-dotenv.config({ path: path.resolve(__dirname, envFile) });
+const configuredEnvPath = path.resolve(__dirname, envFile);
+const fallbackEnvPath = path.resolve(__dirname, ".env");
+dotenv.config({
+  path: fs.existsSync(configuredEnvPath) ? configuredEnvPath : fallbackEnvPath,
+});
+if (configuredEnvPath !== fallbackEnvPath) {
+  dotenv.config({ path: fallbackEnvPath });
+}
 
 const config = {
   app: {

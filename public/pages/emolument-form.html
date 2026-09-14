@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="../more-assets/css/boxicons.min.css" />
   <link rel="stylesheet" href="../more-assets/css/fontawesome.all.min.css" />
   <link rel="stylesheet" href="../styles/output.css" />
+  <!-- <script src="../script/choices.js"></script> -->
 
   <style>
     * {
@@ -405,6 +406,99 @@
       display: none !important;
     }
 
+    .header-main {
+      display: grid;
+      grid-template-columns: minmax(150px, 25%) minmax(0, 75%);
+      align-items: stretch;
+      min-height: 190px;
+    }
+
+    .header-logo-wrap {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.25rem 1.25rem 0.25rem 0.25rem;
+      border-right: 1px solid rgba(11, 30, 61, 0.12);
+    }
+
+    .header-logo {
+      display: block;
+      width: 100%;
+      max-width: 135px;
+      height: 175px;
+      object-fit: contain;
+    }
+
+    .header-content {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem 1rem 0.5rem 1.5rem;
+    }
+
+    .header-title-block {
+      width: 100%;
+      text-align: center;
+    }
+
+    .header-meta {
+      margin-top: 1.35rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.75rem;
+      flex-wrap: wrap;
+    }
+
+    .passport-section-heading {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .passport-help {
+      max-width: 65%;
+    }
+
+    @media (max-width: 640px) {
+      .header-main {
+        grid-template-columns: minmax(82px, 28%) minmax(0, 72%);
+        min-height: 150px;
+      }
+
+      .header-logo-wrap {
+        padding-right: 0.65rem;
+      }
+
+      .header-logo {
+        max-width: 92px;
+        height: 135px;
+      }
+
+      .header-content {
+        padding: 0.4rem 0.35rem 0.4rem 0.7rem;
+      }
+
+      .header-meta {
+        margin-top: 0.8rem;
+        gap: 0.9rem;
+      }
+
+      .passport-section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+
+      .passport-help {
+        max-width: none;
+        text-align: left;
+      }
+    }
+
     @media print {
       body::before {
         display: none;
@@ -464,45 +558,53 @@
         <div class="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-gold/20 rounded-tr"></div>
         <div class="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-gold/20 rounded-bl"></div>
         <div class="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-gold/20 rounded-br"></div>
-
-        <img src="../photos/logo.png" alt="Nigerian Navy Logo"
-          class="absolute left-6 top-6 w-8 h-8 object-contain flex-shrink-0" />
-
-        <div class="text-center">
-          <p class="text-black font-display text-sm leading-tight">
-            Nigerian Navy
-            <span class="text-gold text-[10px] tracking-widest uppercase font-body ml-1">
-              Central Pay Office
-            </span>
-          </p>
-          <h1 class="font-display text-2xl sm:text-3xl text-black mb-1">
-            Emolument Form
-          </h1>
-          <p class="text-xs tracking-widest uppercase font-body" id="header-form-type">
-            Annual Personnel Data Collection
-          </p>
-        </div>
-
-        <div class="mt-5 flex items-center justify-center gap-6 flex-wrap">
-          <!-- <div class="text-center hidden">
-              <p class="text-gold/60 text-[10px] uppercase tracking-widest">
-                Form No.
-              </p>
-              <p id="header-form-no" class="font-mono text-gold text-lg">—</p>
-            </div>
-            <div class="w-px h-8 bg-white/10"></div> -->
-          <div class="text-center">
-            <p class="text-gold/40 text-[10px] uppercase tracking-widest">
-              Service No.
-            </p>
-            <p id="header-svc-no" class="font-mono text-lg">—</p>
+<!-- 
+          <img src="../photos/logo.png" alt="Nigerian Navy Logo"
+          class="absolute left-6 top-6 w-8 h-8 object-contain flex-shrink-0" /> -->
+        <div class="header-main">
+          <div class="header-logo-wrap">
+            <img src="../photos/logo.png" alt="Nigerian Navy Logo" class="header-logo" />
           </div>
-          <div class="w-px h-8 bg-black/10"></div>
-          <div class="text-center">
-            <p class="text-gold/40 text-[10px] uppercase tracking-widest">
-              Year
-            </p>
-            <p id="header-year" class="font-mono text-black text-lg">—</p>
+
+          <div class="header-content">
+            <div class="header-title-block">
+              <p class="text-blue-800  leading-tight text-2xl sm:text-3xl">
+                Nigerian Navy Central Pay Office
+  
+              </p>
+              <p class="text-blue-800 text-2xl mb-1">
+                E-Emolument Form
+              </p>
+              <p class="text-2xl tracking-widest uppercase font-body" id="header-form-type">
+                Annual Personnel Data Collection
+              </p>
+            </div>
+
+            <div class="header-meta">
+              <!-- <div class="text-center hidden">
+                <p class="text-gold/60 text-[10px] uppercase tracking-widest">
+                  Form No.
+                </p>
+                <p id="header-form-no" class="font-mono text-gold text-lg">—</p>
+              </div>
+              <div class="w-px h-8 bg-white/10"></div> -->
+
+              <div class="text-center">
+                <p class="text-gold text-[10px] uppercase tracking-widest">
+                  Service No.
+                </p>
+                <p id="header-svc-no" class="font-mono text-lg">—</p>
+              </div>
+
+              <div class="w-px h-8 bg-black/10"></div>
+
+              <div class="text-center">
+                <p class="text-gold text-[10px] uppercase tracking-widest">
+                  Year
+                </p>
+                <p id="header-year" class="font-mono text-black text-lg">—</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -511,9 +613,16 @@
     <!-- ── Section 1: Passport Photographs ── -->
     <div class="section-card bg-white/60 rounded-xl shadow-sm border border-smoke-dark p-5 sm:p-6" data-section="1"
       id="section-1">
-      <p class="text-xs font-semibold text-navy uppercase tracking-widest mb-3 pb-1 border-b border-smoke-dark">
-        Passport Photographs
-      </p>
+      <div class="passport-section-heading mb-3 pb-1 border-b border-smoke-dark">
+        <span class="text-xs font-semibold text-navy uppercase tracking-widest">
+          Passport Photographs
+        </span>
+        <span class="passport-help text-[10px] sm:text-xs text-muted leading-relaxed text-right">
+          Each passport photograph must not exceed 5 MB. To check and resize your photograph, visit
+          <a href="https://www.iloveimg.com/resize-image" target="_blank" rel="noopener noreferrer"
+            class="text-navy font-semibold underline underline-offset-2 hover:text-gold">iLoveIMG</a>.
+        </span>
+      </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
@@ -2346,11 +2455,12 @@
       document.getElementById(id)?.click();
     }
 
-    function handlePhotoSelect(event, previewId, zoneId) {
+    async function handlePhotoSelect(event, previewId, zoneId) {
       const file = event.target.files[0];
       if (!file) return;
       if (file.size > 5 * 1024 * 1024) {
         showToast("File too large. Maximum size is 5MB.", "error");
+        event.target.value = "";
         return;
       }
       const reader = new FileReader();
@@ -2362,6 +2472,36 @@
           e.target.result,
         );
       reader.readAsDataURL(file);
+
+      const documentTypeByPreview = {
+        "preview-passport": "PASSPORT",
+        "preview-nok": "NOK_PASSPORT",
+        "preview-altnok": "ALT_NOK_PASSPORT",
+      };
+      const docType = documentTypeByPreview[previewId];
+      if (!docType) return;
+
+      const form = new FormData();
+      form.append("document", file);
+
+      try {
+        const response = await fetch(`/documents/upload/${docType}`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${getToken()}` },
+          body: form,
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result?.error || "Image upload failed.");
+        }
+
+        if (result.data?.url) {
+          document.getElementById(previewId).src = result.data.url;
+        }
+        showToast("Photo uploaded.", "success");
+      } catch (err) {
+        showToast(err.message || "Photo upload failed. Please try again.", "error");
+      }
     }
 
     function showPhotoPreview(previewId, placeholderId, zoneId, src) {
@@ -2406,6 +2546,9 @@
       if (returnPage === "accept-verified") {
         location.href = "../emolument-sections/admin/accept-verified.html";
       } else {
+        if (returnPage === "ship-dashboard") {
+          sessionStorage.setItem("ship_dashboard_refresh", "1");
+        }
         history.back();
       }
     }
@@ -2488,6 +2631,12 @@
           );
           closeRoleActionModal();
           setTimeout(() => {
+            if (
+              sessionStorage.getItem("emolument_form_return_page") ===
+              "ship-dashboard"
+            ) {
+              sessionStorage.setItem("ship_dashboard_refresh", "1");
+            }
             sessionStorage.removeItem("emolument_form_return_page");
             sessionStorage.removeItem("active_form_id");
             sessionStorage.removeItem("active_form_role");

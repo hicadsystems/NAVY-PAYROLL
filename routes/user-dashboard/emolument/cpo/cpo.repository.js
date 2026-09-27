@@ -70,8 +70,22 @@ async function withTransaction(fn) {
 // LIST — FO_APPROVED forms scoped to a command (+ ship/classes filters)
 // ─────────────────────────────────────────────────────────────
 
-async function getFoApprovedForms(command, limit, offset, search, ship, classes) {
+async function getFoApprovedForms(
+  command,
+  limit,
+  offset,
+  search,
+  ship,
+  classes,
+) {
   pool.useDatabase(DB());
+
+  let commandClause = "";
+  const commandParams = [];
+  if (command && command.trim()) {
+    commandClause = ` AND p.command = ?`;
+    commandParams.push(command.trim());
+  }
 
   let searchClause = "";
   const searchParams = [];
@@ -103,39 +117,39 @@ async function getFoApprovedForms(command, limit, offset, search, ship, classes)
        p.formNumber, p.FormYear, p.Status,
        p.div_off_name, p.div_off_rank, p.div_off_svcno, p.div_off_date,
        p.fo_name,     p.fo_rank,     p.fo_svcno,     p.fo_date,
-       ef.id          AS form_id,
-       ef.status      AS form_status,
-       ef.submitted_at,
-       ef.updated_at  AS last_updated
+       ef.id AS form_id, ef.status AS form_status, ef.submitted_at, ef.updated_at AS last_updated
      FROM ef_personalinfos p
      LEFT JOIN ef_emolument_forms ef
-           ON ef.service_no = p.serviceNumber
-          AND ef.command    = p.command
-     WHERE p.command = ?
-       AND p.Status IN ('CPO', 'FO_APPROVED')
+           ON ef.service_no = p.serviceNumber AND ef.command = p.command
+     WHERE p.Status IN ('CPO', 'FO_APPROVED')
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
-       ${searchClause}
-       ${shipClause}
-       ${classesClause}
-     ORDER BY p.ship ASC, p.Surname ASC, p.OtherName ASC
+       ${commandClause} ${searchClause} ${shipClause} ${classesClause}
+     ORDER BY p.command ASC, p.ship ASC, p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`;
 
   const countQuery = `
       SELECT COUNT(*) AS total
       FROM ef_personalinfos p
-      WHERE p.command = ?
-       AND p.Status IN ('CPO', 'FO_APPROVED')
+      WHERE p.Status IN ('CPO', 'FO_APPROVED')
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
-       ${searchClause}
-       ${shipClause}
-       ${classesClause};
+       ${commandClause} ${searchClause} ${shipClause} ${classesClause}
     `;
 
   const [[rows], [countResults]] = await Promise.all([
     pool.query(approvedQuery, [
-      command, ...searchParams, ...shipParams, ...classesParams, limit, offset,
+      ...commandParams,
+      ...searchParams,
+      ...shipParams,
+      ...classesParams,
+      limit,
+      offset,
     ]),
-    pool.query(countQuery, [command, ...searchParams, ...shipParams, ...classesParams]),
+    pool.query(countQuery, [
+      ...commandParams,
+      ...searchParams,
+      ...shipParams,
+      ...classesParams,
+    ]),
   ]);
   return { forms: rows, total: countResults[0].total };
 }
@@ -144,8 +158,23 @@ async function getFoApprovedForms(command, limit, offset, search, ship, classes)
 // LIST — CPO_CONFIRMED forms scoped to a command (+ ship/classes filters)
 // ─────────────────────────────────────────────────────────────
 
-async function getCPOConfirmedForms(command, svc, limit, offset, search, ship, classes) {
+async function getCPOConfirmedForms(
+  command,
+  svc,
+  limit,
+  offset,
+  search,
+  ship,
+  classes,
+) {
   pool.useDatabase(DB());
+
+  let commandClause = "";
+  const commandParams = [];
+  if (command && command.trim()) {
+    commandClause = ` AND p.command = ?`;
+    commandParams.push(command.trim());
+  }
 
   let searchClause = "";
   const searchParams = [];
@@ -175,41 +204,43 @@ async function getCPOConfirmedForms(command, svc, limit, offset, search, ship, c
        p.formNumber, p.FormYear, p.Status,
        p.div_off_name, p.div_off_rank, p.div_off_svcno, p.div_off_date,
        p.fo_name,     p.fo_rank,     p.fo_svcno,     p.fo_date,
-       p.hod_date,
-       ef.id          AS form_id,
-       ef.status      AS form_status,
-       ef.submitted_at,
-       ef.updated_at  AS last_updated
+       p.hod_date, p.hod_svcno, p.hod_name,
+       ef.id AS form_id, ef.status AS form_status, ef.submitted_at, ef.updated_at AS last_updated
      FROM ef_personalinfos p
      LEFT JOIN ef_emolument_forms ef
-           ON ef.service_no = p.serviceNumber
-          AND ef.command    = p.command
-     WHERE p.command = ?
-       AND p.Status IN ('Verified', 'CPO_CONFIRMED')
+           ON ef.service_no = p.serviceNumber AND ef.command = p.command
+     WHERE p.Status IN ('Verified', 'CPO_CONFIRMED')
        AND p.emolumentform = 'Yes'
        AND p.hod_svcno = ?
-       ${searchClause}
-       ${shipClause}
-       ${classesClause}
-     ORDER BY p.ship ASC, p.Surname ASC, p.OtherName ASC
+       ${commandClause} ${searchClause} ${shipClause} ${classesClause}
+     ORDER BY p.command ASC, p.ship ASC, p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`;
 
   const countQuery = `
       SELECT COUNT(*) AS total
       FROM ef_personalinfos p
-      WHERE p.command = ?
-       AND p.Status IN ('Verified', 'CPO_CONFIRMED')
+      WHERE p.Status IN ('Verified', 'CPO_CONFIRMED')
        AND p.emolumentform = 'Yes'
        AND p.hod_svcno = ?
-       ${searchClause}
-       ${shipClause}
-       ${classesClause}
-     `;
+       ${commandClause} ${searchClause} ${shipClause} ${classesClause}
+    `;
   const [[rows], [countResults]] = await Promise.all([
     pool.query(confirmedQuery, [
-      command, svc, ...searchParams, ...shipParams, ...classesParams, limit, offset,
+      svc,
+      ...commandParams,
+      ...searchParams,
+      ...shipParams,
+      ...classesParams,
+      limit,
+      offset,
     ]),
-    pool.query(countQuery, [command, svc, ...searchParams, ...shipParams, ...classesParams]),
+    pool.query(countQuery, [
+      svc,
+      ...commandParams,
+      ...searchParams,
+      ...shipParams,
+      ...classesParams,
+    ]),
   ]);
   return { forms: rows, total: countResults[0].total };
 }
@@ -518,24 +549,21 @@ async function getFormsByFormIDs(formIds, status) {
 //          AND emolumentform != 'Yes'
 // ─────────────────────────────────────────────────────────────
 
-async function getFormsByClass(classes, status, cpoCommand) {
+async function getFormsByClass(classes, status, command) {
   const params = [classes, status];
-  const commandClause = cpoCommand !== "ALL" ? "AND p.command = ?" : "";
-
-  if (cpoCommand !== "ALL") params.push(cpoCommand);
+  const commandClause = command ? "AND p.command = ?" : "";
+  if (command) params.push(command);
 
   const [rows] = await pool.query(
-    `SELECT p.id, p.serviceNumber, p.formNumber, p.command, p.FormYear, ef.id  AS form_id
+    `SELECT p.id, p.serviceNumber, p.formNumber, p.command, p.FormYear, ef.id AS form_id
      FROM ef_personalinfos p
-     JOIN ef_emolument_forms ef
-       ON ef.service_no = p.serviceNumber
+     JOIN ef_emolument_forms ef ON ef.service_no = p.serviceNumber
      WHERE p.classes = ?
-       AND p.\`Status\`  = ?
+       AND p.\`Status\` = ?
        ${commandClause}
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')`,
     params,
   );
-
   return rows;
 }
 
@@ -742,21 +770,15 @@ async function deleteFormApproval(formId) {
   );
 }
 
-async function insertFormRejection({formId, rejected_by, remarks, svc_no}) {
+async function insertFormRejection({ formId, rejected_by, remarks, svc_no }) {
   pool.useDatabase(DB());
   await pool.query(
     `INSERT INTO ef_form_rejections
        (form_id, service_number, rejected_by, remarks)
      VALUES (?, ?, ?, ?)`,
-    [
-      formId,
-      svc_no,
-      rejected_by,
-      remarks || null,
-    ],
+    [formId, svc_no, rejected_by, remarks || null],
   );
 }
-
 
 async function insertAuditLog({
   tableName,
@@ -787,8 +809,6 @@ async function insertAuditLog({
 // ─────────────────────────────────────────────────────────────
 // STATUS STATS
 // ─────────────────────────────────────────────────────────────
-
-
 
 async function getStatusStats(ship, svc) {
   pool.useDatabase(DB());
@@ -822,55 +842,89 @@ async function getStatusStats(ship, svc) {
   return stats[0];
 }
 
-
-async function getStatusStatsByShip(command, svc) {
+async function getStatusStatsByShip(command) {
   pool.useDatabase(DB());
+  const cmdClause = command ? "AND command = ?" : "";
+  const cmdParams = command ? [command] : [];
 
   const [totalsRows] = await pool.query(
-    `SELECT
-        ship,
+    `SELECT command, ship,
         COUNT(*) AS total,
         COUNT(CASE WHEN \`Status\` IN ('CPO', 'FO_APPROVED') THEN 1 END) AS pending
       FROM ef_personalinfos
-      WHERE command = ?
-      GROUP BY ship
-      ORDER BY ship ASC`,
-    [command],
+      WHERE 1=1 ${cmdClause}
+      GROUP BY command, ship
+      ORDER BY command ASC, ship ASC`,
+    cmdParams,
   );
 
   const [confirmedRows] = await pool.query(
-    `SELECT p.ship, COUNT(*) AS confirmed
+    `SELECT p.command, p.ship, COUNT(*) AS confirmed
        FROM ef_form_approvals fa
        JOIN ef_emolument_forms ef ON ef.id = fa.form_id
-       JOIN ef_personalinfos p    ON p.serviceNumber = ef.service_no
-      WHERE fa.action       = 'CPO_CONFIRMED'
-        AND fa.performed_by = ?
-        AND p.command       = ?
-      GROUP BY p.ship`,
-    [svc, command],
+       JOIN ef_personalinfos p ON p.serviceNumber = ef.service_no
+      WHERE fa.action = 'CPO_CONFIRMED' AND fa.performed_by = ? ${command ? "AND p.command = ?" : ""}
+      GROUP BY p.command, p.ship`,
+    cmdParams,
   );
 
   const [rejectedRows] = await pool.query(
-    `SELECT p.ship, COUNT(*) AS rejected
+    `SELECT p.command, p.ship, COUNT(*) AS rejected
        FROM ef_form_rejections r
        JOIN ef_personalinfos p ON p.serviceNumber = r.service_number
-      WHERE r.rejected_by = ?
-        AND p.command     = ?
-      GROUP BY p.ship`,
-    [svc, command],
+      WHERE 1=1 WHERE r.rejected_by = ? ${command ? "AND p.command = ?" : ""}
+      GROUP BY p.command, p.ship`,
+    cmdParams,
   );
 
-  // Merge all three result sets into one row per ship, defaulting
-  // missing metrics to 0 so the frontend never has to handle undefined.
-  const confirmedMap = new Map(confirmedRows.map((r) => [r.ship, r.confirmed]));
-  const rejectedMap = new Map(rejectedRows.map((r) => [r.ship, r.rejected]));
+  const key = (r) => `${r.command}::${r.ship}`;
+  const confirmedMap = new Map(confirmedRows.map((r) => [key(r), r.confirmed]));
+  const rejectedMap = new Map(rejectedRows.map((r) => [key(r), r.rejected]));
 
   return totalsRows.map((row) => ({
+    command: row.command,
     ship: row.ship,
     total: row.total,
     pending: row.pending,
-    confirmed: confirmedMap.get(row.ship) || 0,
-    rejected: rejectedMap.get(row.ship) || 0,
+    confirmed: confirmedMap.get(key(row)) || 0,
+    rejected: rejectedMap.get(key(row)) || 0,
+  }));
+}
+
+async function getCpoGlobalTotals() {
+  pool.useDatabase(DB());
+  const [[row]] = await pool.query(
+    `SELECT
+        COUNT(*) AS total_personnel,
+        SUM(CASE WHEN \`Status\` IN ('Verified','CPO_CONFIRMED') AND emolumentform='Yes' THEN 1 ELSE 0 END) AS total_confirmed,
+        SUM(CASE WHEN \`Status\` IN ('CPO','FO_APPROVED') THEN 1 ELSE 0 END) AS total_pending,
+        SUM(CASE WHEN \`Status\` IS NULL THEN 1 ELSE 0 END) AS total_not_filed
+      FROM ef_personalinfos`,
+  );
+  const [[rejectedRow]] = await pool.query(
+    `SELECT COUNT(*) AS total_rejected FROM ef_form_rejections`,
+  );
+  return { ...row, total_rejected: rejectedRow.total_rejected };
+}
+
+async function getTopShipsByCompletion(limit) {
+  pool.useDatabase(DB());
+  const [rows] = await pool.query(
+    `SELECT
+        ship, command,
+        COUNT(*) AS total,
+        SUM(CASE WHEN \`Status\` IN ('Verified','CPO_CONFIRMED') AND emolumentform='Yes' THEN 1 ELSE 0 END) AS confirmed,
+        SUM(CASE WHEN \`Status\` IS NULL THEN 1 ELSE 0 END) AS not_filed
+      FROM ef_personalinfos
+      GROUP BY ship, command
+      HAVING total > 0
+      ORDER BY (confirmed / total) DESC
+      LIMIT ?`,
+    [limit],
+  );
+  return rows.map((r) => ({
+    ...r,
+    completion_pct: Math.round((r.confirmed / r.total) * 100),
   }));
 }
 
@@ -895,5 +949,7 @@ module.exports = {
   insertFormRejection,
   insertAuditLog,
   getStatusStats,
-  getStatusStatsByShip
+  getStatusStatsByShip,
+  getCpoGlobalTotals,
+  getTopShipsByCompletion,
 };

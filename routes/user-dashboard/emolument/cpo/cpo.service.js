@@ -21,7 +21,11 @@
 "use strict";
 
 const repo = require("./cpo.repository");
-const { invalidateCommandCache } = require("../reports/reports.service");
+const {
+  invalidateCommandCache,
+  invalidateCpoDashboardCache,
+  getCachedOrCompute,
+} = require("../reports/reports.service");
 const {
   FORM_STATUS,
   LEGACY_STATUS,
@@ -32,11 +36,22 @@ const {
 // LIST FO_APPROVED FORMS — scoped to CPO's command
 // ─────────────────────────────────────────────────────────────
 
-async function listFoApprovedForms(command, limit, offset, search, ship, classes) {
-  if (!command)
-    return { success: false, code: 400, message: "Command is required." };
-
-  const forms = await repo.getFoApprovedForms(command, limit, offset, search, ship, classes);
+async function listFoApprovedForms(
+  command,
+  limit,
+  offset,
+  search,
+  ship,
+  classes,
+) {
+  const forms = await repo.getFoApprovedForms(
+    command,
+    limit,
+    offset,
+    search,
+    ship,
+    classes,
+  );
   return { success: true, data: forms };
 }
 
@@ -256,13 +271,12 @@ async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
 
   await repo.deleteFormApproval(form.form_id);
 
-   await repo.insertFormRejection({
+  await repo.insertFormRejection({
     formId: form.form_id,
     svc_no: form.serviceNumber,
     rejected_by: cpo_svcno,
     remarks: remarks.trim(),
-  })
-
+  });
 
   await repo.insertAuditLog({
     tableName: "ef_personalinfos",
@@ -383,8 +397,12 @@ async function confirmBulk(body, performedBy, cpoCommand, ip) {
   }
 
   invalidateCommandCache(cpoCommand);
+  invalidateCpoDashboardCache();
 
-  // Approval trail — one entry per confirmed form
+  const touchedCommands = [...new Set(scopedForms.map((f) => f.command))].join(
+    ",",
+  );
+
   await Promise.all(
     confirmedFormIds.map((fId) =>
       repo.insertFormApproval({
@@ -394,23 +412,23 @@ async function confirmBulk(body, performedBy, cpoCommand, ip) {
         toStatus: FORM_STATUS.CPO_CONFIRMED,
         performedBy: cpo_svcno,
         performerRole: "CPO",
-        remarks: `Bulk confirm — command: ${cpoCommand} for selected forms`,
+        remarks: `Bulk confirm — commands: ${touchedCommands}`,
       }),
     ),
   );
 
-  // Single audit log for the bulk operation
   await repo.insertAuditLog({
     tableName: "ef_personalinfos",
     action: "UPDATE",
-    recordKey: `BULK_CONFIRM:${cpoCommand}:formIds=${confirmedFormIds.join(",")}`,
+    recordKey: `BULK_CONFIRM:${touchedCommands}:formIds=${confirmedFormIds.join(",")}`,
     oldValues: {
       Status: toLegacyStatus(FORM_STATUS.FO_APPROVED),
-      command: cpoCommand,
+      commands: touchedCommands,
       formIds: confirmedFormIds.join(","),
     },
     newValues: {
       Status: legacyStatus,
+      commands: touchedCommands,
       cpo_name,
       cpo_rank,
       cpo_svcno,
@@ -467,17 +485,17 @@ async function confirmClass(body, performedBy, cpoCommand, ip) {
 
   // Fetch candidate forms upfront — command filter applied in SQL
   // when cpoCommand !== 'ALL', otherwise no command filter.
+
   const candidateForms = await repo.getFormsByClass(
     Number(classes),
-    toLegacyStatus(FORM_STATUS.FO_APPROVED), // 'CPO' (= FO_APPROVED legacy)
-    cpoCommand, // repo handles 'ALL' → no command clause
+    toLegacyStatus(FORM_STATUS.FO_APPROVED),
   );
 
   if (candidateForms.length === 0) {
     return {
       success: false,
       code: 404,
-      message: `No forms found with Status='${toLegacyStatus(FORM_STATUS.FO_APPROVED)}' for command '${cpoCommand}' and classes=${classes}.`,
+      message: `No forms found with Status='${toLegacyStatus(FORM_STATUS.FO_APPROVED)}' for classes=${classes}.`,
     };
   }
 
@@ -510,8 +528,12 @@ async function confirmClass(body, performedBy, cpoCommand, ip) {
   }
 
   invalidateCommandCache(cpoCommand);
+  invalidateCpoDashboardCache();
 
-  // Approval trail — one entry per confirmed form
+  const touchedCommands = [...new Set(scopedForms.map((f) => f.command))].join(
+    ",",
+  );
+
   await Promise.all(
     confirmedFormIds.map((fId) =>
       repo.insertFormApproval({
@@ -521,23 +543,23 @@ async function confirmClass(body, performedBy, cpoCommand, ip) {
         toStatus: FORM_STATUS.CPO_CONFIRMED,
         performedBy: cpo_svcno,
         performerRole: "CPO",
-        remarks: `Bulk confirm — command: ${cpoCommand}, classes: ${classes}`,
+        remarks: `Bulk confirm — commands: ${touchedCommands}`,
       }),
     ),
   );
 
-  // Single audit log for the bulk operation
   await repo.insertAuditLog({
     tableName: "ef_personalinfos",
     action: "UPDATE",
-    recordKey: `CLASS_CONFIRM:${cpoCommand}:classes=${classes}`,
+    recordKey: `BULK_CONFIRM:${touchedCommands}:formIds=${confirmedFormIds.join(",")}`,
     oldValues: {
-      Status: FORM_STATUS.CPO_APPROVED,
-      command: cpoCommand,
-      classes,
+      Status: toLegacyStatus(FORM_STATUS.FO_APPROVED),
+      commands: touchedCommands,
+      formIds: confirmedFormIds.join(","),
     },
     newValues: {
       Status: legacyStatus,
+      commands: touchedCommands,
       cpo_name,
       cpo_rank,
       cpo_svcno,
@@ -604,40 +626,57 @@ async function buildSnapshotsInBatches(forms, cpo_svcno, batchSize) {
   return snapshotMap;
 }
 
-
 // ─────────────────────────────────────────────────────────────
 // STATUS STATS — per-ship breakdown for CPO dashboard
 // ─────────────────────────────────────────────────────────────
 
-async function getStatusStats(command, svc) {
-  if (!command)
-    return { success: false, code: 400, message: "Command is required." };
-
-  if (!svc)
-    return { success: false, code: 400, message: "Service number is required." };
-
-  const stats = await repo.getStatusStatsByShip(command, svc);
-  return { success: true, data: stats }; // now an array, one entry per ship
+async function getStatusStats(svc) {
+  const stats = await repo.getStatusStatsByShip(svc);
+  return { success: true, data: stats };
 }
 
 // ─────────────────────────────────────────────────────────────
 // LIST CONFIRMED FORMS
 // ─────────────────────────────────────────────────────────────
 
-async function listConfirmedForms(command, svc, limit, offset, search, ship, classes) {
-  if (!command)
-    return { success: false, code: 400, message: "Command is required." };
-  if (!svc)
-    return { success: false, code: 400, message: "Service number is required." };
+async function listConfirmedForms(
+  command,
+  limit,
+  offset,
+  search,
+  ship,
+  classes,
+) {
   if (!limit || !Number.isInteger(limit) || limit < 1) {
     return { success: false, code: 400, message: "Valid limit is required." };
   }
   if (offset === undefined || offset < 0) {
     return { success: false, code: 400, message: "Valid offset is required." };
   }
-
-  const forms = await repo.getCPOConfirmedForms(command, svc, limit, offset, search, ship, classes);
+  const forms = await repo.getCPOConfirmedForms(
+    command,
+    limit,
+    offset,
+    search,
+    ship,
+    classes,
+  );
   return { success: true, data: forms };
+}
+
+// ─────────────────────────────────────────────────────────────
+// GET DASHBOARD STATS
+// ─────────────────────────────────────────────────────────────
+
+async function getDashboard() {
+  const data = await getCachedOrCompute("cpo:dashboard", async () => {
+    const [global, topShips] = await Promise.all([
+      repo.getCpoGlobalTotals(),
+      repo.getTopShipsByCompletion(10),
+    ]);
+    return { global, topShips };
+  });
+  return { success: true, data };
 }
 
 module.exports = {

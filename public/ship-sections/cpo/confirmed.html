@@ -1,32 +1,20 @@
 <div class="p-4">
   <div class="mb-4 flex flex-col sm:flex-row gap-2">
     <div class="relative flex-1">
-      <i
-        class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-navy/30 text-sm"
-      ></i>
-      <input
-        type="text"
-        id="cpoConfirmedSearch"
-        placeholder="Search by name or service number..."
-        class="w-full pl-9 pr-3 py-2 border border-amber-100 rounded-lg text-sm text-navy bg-white focus:outline-none focus:border-navy"
-      />
+      <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-navy/30 text-sm"></i>
+      <input type="text" id="cpoConfirmedSearch" placeholder="Search by name or service number..."
+        class="w-full pl-9 pr-3 py-2 border border-amber-100 rounded-lg text-sm text-navy bg-white focus:outline-none focus:border-navy" />
     </div>
-    <select
-      id="cpoCommandFilter"
-      class="rounded-lg border border-amber-100 bg-white px-3 py-2 text-sm text-navy focus:outline-none"
-    >
+    <select id="cpoCommandFilter"
+      class="rounded-lg border border-amber-100 bg-white px-3 py-2 text-sm text-navy focus:outline-none">
       <option value="">All Commands</option>
     </select>
-    <select
-      id="cpoConfirmedShipFilter"
-      class="rounded-lg border border-amber-100 bg-white px-3 py-2 text-sm text-navy focus:outline-none"
-    >
+    <select id="cpoConfirmedShipFilter"
+      class="rounded-lg border border-amber-100 bg-white px-3 py-2 text-sm text-navy focus:outline-none">
       <option value="">All Ships</option>
     </select>
-    <select
-      id="cpoConfirmedClassFilter"
-      class="rounded-lg border border-amber-100 bg-white px-3 py-2 text-sm text-navy focus:outline-none"
-    >
+    <select id="cpoConfirmedClassFilter"
+      class="rounded-lg border border-amber-100 bg-white px-3 py-2 text-sm text-navy focus:outline-none">
       <option value="">All Classes</option>
       <option value="1">Officers</option>
       <option value="2">Ratings</option>
@@ -45,25 +33,15 @@
   (function () {
     const el = document.getElementById("cpo-confirmed-list");
     let currentSearch = "";
+    let currentCommand = "";
     let currentShip = "";
     let currentClasses = "";
+    let allStatsRows = [];
 
-    function loadShipFilterOptions() {
-      fetch("/cpo/command/" + encodeURIComponent(command) + "/stats", {
-        headers: { Authorization: "Bearer " + token },
-      })
-        .then((r) => (r.ok ? r.json() : []))
-        .then((rows) => {
-          const select = document.getElementById("cpoConfirmedShipFilter");
-          (Array.isArray(rows) ? rows : []).forEach((r) => {
-            if (!r.ship) return;
-            const o = document.createElement("option");
-            o.value = r.ship;
-            o.textContent = r.ship;
-            select.appendChild(o);
-          });
-        })
-        .catch(() => {});
+    function esc(v) {
+      return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+      });
     }
 
     function debounce(fn, delay) {
@@ -74,7 +52,49 @@
       };
     }
 
+    /* ── Filter options: commands + ships (ship depends on command) ── */
+    function loadFilterOptions() {
+      fetch("/cpo/stats", { headers: { Authorization: "Bearer " + token } })
+        .then((r) => (r.ok ? r.json() : []))
+        .then((rows) => {
+          allStatsRows = Array.isArray(rows) ? rows : [];
+          const cmdSelect = document.getElementById("cpoCommandFilter");
+          cmdSelect.innerHTML = '<option value="">All Commands</option>';
+          [...new Set(allStatsRows.map((r) => r.command))]
+            .filter(Boolean)
+            .sort()
+            .forEach((c) => {
+              const o = document.createElement("option");
+              o.value = c;
+              o.textContent = c;
+              cmdSelect.appendChild(o);
+            });
+          populateShipOptions("");
+        })
+        .catch(() => {});
+    }
+
+    function populateShipOptions(command) {
+      const shipSelect = document.getElementById("cpoConfirmedShipFilter");
+      shipSelect.innerHTML = '<option value="">All Ships</option>';
+      [...new Set(
+        allStatsRows
+          .filter((r) => !command || r.command === command)
+          .map((r) => r.ship),
+      )]
+        .filter(Boolean)
+        .sort()
+        .forEach((s) => {
+          const o = document.createElement("option");
+          o.value = s;
+          o.textContent = s;
+          shipSelect.appendChild(o);
+        });
+    }
+
+    /* ── List ── */
     function loadPage(page, search) {
+      page = page || 1;
       search = search !== undefined ? search : currentSearch;
       currentSearch = search;
 
@@ -82,19 +102,17 @@
         '<div class="flex items-center justify-center py-12 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
 
       const qs = new URLSearchParams({
-        page,
+        page: page,
         limit: CPO_CONFIRMED_PAGE_SIZE,
         search: search || "",
+        command: currentCommand,
         ship: currentShip,
         classes: currentClasses,
       });
 
-      fetch(
-        "/cpo/confirmed/" + encodeURIComponent(command) + "?" + qs.toString(),
-        {
-          headers: { Authorization: "Bearer " + token },
-        },
-      )
+      fetch("/cpo/confirmed?" + qs.toString(), {
+        headers: { Authorization: "Bearer " + token },
+      })
         .then((r) => (r.ok ? r.json() : { forms: [], total: 0 }))
         .then((res) => {
           const rows = Array.isArray(res) ? res : res.forms || [];
@@ -102,7 +120,7 @@
 
           if (!rows.length) {
             el.innerHTML = search
-              ? `<div class="text-center py-12 text-blue-900/30"><i class="fas fa-search fa-2x mb-3 block"></i><p class="font-semibold">No matches for "${search}"</p></div>`
+              ? `<div class="text-center py-12 text-blue-900/30"><i class="fas fa-search fa-2x mb-3 block"></i><p class="font-semibold">No matches for "${esc(search)}"</p></div>`
               : '<div class="text-center py-12 text-blue-900/30"><i class="fas fa-stamp fa-2x mb-3 block"></i><p class="font-semibold">No confirmed forms yet</p></div>';
             return;
           }
@@ -114,6 +132,9 @@
                 <tr class="text-left text-xs font-bold text-navy/60 uppercase tracking-wide border-b border-amber-100">
                   <th class="py-3 px-4">Name</th>
                   <th class="py-3 px-4">Service No.</th>
+                  <th class="py-3 px-4">Command</th>
+                  <th class="py-3 px-4">Ship</th>
+                  <th class="py-3 px-4">Confirmed By</th>
                   <th class="py-3 px-4">Confirmed</th>
                   <th class="py-3 px-4 text-right">Status</th>
                 </tr>
@@ -128,10 +149,15 @@
                         <span class="w-6 h-6 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
                           <i class="fas fa-stamp text-green-500" style="font-size:11px"></i>
                         </span>
-                        ${r?.Surname?.trim() || ""} ${r?.OtherName?.trim() || ""}
+                        ${esc((r.Surname || "").trim())} ${esc((r.OtherName || "").trim())}
                       </span>
                     </td>
-                    <td class="py-3 px-4 text-blue-900/50">${r.serviceNumber}</td>
+                    <td class="py-3 px-4 text-blue-900/50">${esc(r.serviceNumber)}</td>
+                    <td class="py-3 px-4 text-blue-900/60">${esc(r.command || "-")}</td>
+                    <td class="py-3 px-4 text-blue-900/60">${esc(r.ship || "-")}</td>
+                    <td class="py-3 px-4 text-blue-900/60">
+                      ${esc(r.hod_name || r.hod_svcno || "—")}
+                    </td>
                     <td class="py-3 px-4 text-blue-900/50">
                       ${
                         r.hod_date
@@ -154,40 +180,39 @@
           </div>
           ${paginatorHTML(page, Math.ceil(total / CPO_CONFIRMED_PAGE_SIZE), "cpo-confirmed")}`;
 
-          el.querySelectorAll('[data-paginator="cpo-confirmed"]').forEach(
-            (btn) => {
-              btn.addEventListener("click", () => loadPage(+btn.dataset.page));
-            },
-          );
+          el.querySelectorAll('[data-paginator="cpo-confirmed"]').forEach((btn) => {
+            btn.addEventListener("click", () => loadPage(+btn.dataset.page));
+          });
         })
         .catch(() => {
-          el.innerHTML =
-            '<div class="text-center py-8 text-red-400 text-sm">Failed to load</div>';
+          el.innerHTML = '<div class="text-center py-8 text-red-400 text-sm">Failed to load</div>';
         });
     }
 
+    /* ── Wire up ── */
     const debouncedSearch = debounce((val) => loadPage(1, val), 350);
-    document
-      .getElementById("cpoConfirmedSearch")
-      .addEventListener("input", (e) => {
-        debouncedSearch(e.target.value.trim());
-      });
+    document.getElementById("cpoConfirmedSearch").addEventListener("input", (e) => {
+      debouncedSearch(e.target.value.trim());
+    });
 
-    // NEW
-    document
-      .getElementById("cpoConfirmedShipFilter")
-      .addEventListener("change", function () {
-        currentShip = this.value;
-        loadPage(1);
-      });
-    document
-      .getElementById("cpoConfirmedClassFilter")
-      .addEventListener("change", function () {
-        currentClasses = this.value;
-        loadPage(1);
-      });
+    document.getElementById("cpoCommandFilter").addEventListener("change", function () {
+      currentCommand = this.value;
+      currentShip = "";
+      populateShipOptions(currentCommand);
+      loadPage(1);
+    });
 
-    loadShipFilterOptions();
+    document.getElementById("cpoConfirmedShipFilter").addEventListener("change", function () {
+      currentShip = this.value;
+      loadPage(1);
+    });
+
+    document.getElementById("cpoConfirmedClassFilter").addEventListener("change", function () {
+      currentClasses = this.value;
+      loadPage(1);
+    });
+
+    loadFilterOptions();
     loadPage(1, "");
   })();
 </script>

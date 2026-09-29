@@ -512,6 +512,70 @@ async function listApprovedForms(ship, svc, limit, offset, search) {
   return { success: true, data: forms };
 }
 
+// ─────────────────────────────────────────────────────────────
+// FO REPORTS
+// ─────────────────────────────────────────────────────────────
+
+const FO_REPORT_TYPES = Object.freeze({
+  PENDING: "pending",
+  APPROVED: "approved",
+  REJECTED: "rejected",
+});
+
+async function getReport(ship, svc, reportType) {
+  if (!ship) {
+    return {
+      success: false,
+      code: 400,
+      message: "Ship name is required.",
+    };
+  }
+
+  if (!svc) {
+    return {
+      success: false,
+      code: 400,
+      message: "Service number is required.",
+    };
+  }
+
+  if (!Object.values(FO_REPORT_TYPES).includes(reportType)) {
+    return {
+      success: false,
+      code: 400,
+      message: "Invalid report type.",
+    };
+  }
+
+  let rows;
+
+  switch (reportType) {
+    case FO_REPORT_TYPES.PENDING:
+      rows = await repo.getPendingReport(ship);
+      break;
+
+    case FO_REPORT_TYPES.APPROVED:
+      rows = await repo.getApprovedReport(ship, svc);
+      break;
+
+    case FO_REPORT_TYPES.REJECTED:
+      rows = await repo.getRejectedReport(ship, svc);
+      break;
+  }
+
+  return {
+    success: true,
+    data: {
+      reportType,
+      ship,
+      generatedBy: svc,
+      generatedAt: new Date().toISOString(),
+      count: rows.length,
+      forms: rows,
+    },
+  };
+}
+
 module.exports = {
   listDoReviewedForms,
   listApprovedForms,
@@ -521,4 +585,5 @@ module.exports = {
   approveClass,
   rejectForm,
   getStatusStats,
+  getReport
 };

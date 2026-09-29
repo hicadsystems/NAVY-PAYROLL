@@ -21,16 +21,19 @@
 "use strict";
 
 const repo = require("./cpo.repository");
-const {
-  invalidateCommandCache,
-  invalidateCpoDashboardCache,
-  getCachedOrCompute,
-} = require("../reports/reports.service");
+const { invalidateCommandCache } = require("../reports/reports.service");
+const cpoCache = require("./cpo.cache");
+
 const {
   FORM_STATUS,
   LEGACY_STATUS,
   toLegacyStatus,
 } = require("../emolument.constants");
+
+const DASH_PREFIX = "cpo:dashboard:";
+// any confirm/reject changes the shared "pending" number for every officer
+const invalidateCpoDashboardCache = () =>
+  cpoCache.invalidatePrefix(DASH_PREFIX);
 
 // ─────────────────────────────────────────────────────────────
 // LIST FO_APPROVED FORMS — scoped to CPO's command
@@ -180,6 +183,7 @@ async function confirmForm(formId, cpoCommand, performedBy, ip) {
   }
 
   invalidateCommandCache(form.command);
+  invalidateCpoDashboardCache();
 
   // Write to history archive (ef_personalinfoshist)
   // await repo.insertHistoryRecord(form.serviceNumber, form.FormYear);
@@ -270,6 +274,9 @@ async function rejectForm(formId, cpoCommand, body, performedBy, ip) {
   }
 
   await repo.deleteFormApproval(form.form_id);
+
+  invalidateCommandCache(form.command);
+  invalidateCpoDashboardCache();
 
   await repo.insertFormRejection({
     formId: form.form_id,
@@ -396,12 +403,11 @@ async function confirmBulk(body, performedBy, cpoCommand, ip) {
     };
   }
 
-  invalidateCommandCache(cpoCommand);
+  // cpoCommand is always "ALL" now, so invalidate each command actually touched
+  const touched = [...new Set(scopedForms.map((f) => f.command))];
+  touched.forEach((c) => invalidateCommandCache(c));
   invalidateCpoDashboardCache();
-
-  const touchedCommands = [...new Set(scopedForms.map((f) => f.command))].join(
-    ",",
-  );
+  const touchedCommands = touched.join(",");
 
   await Promise.all(
     confirmedFormIds.map((fId) =>
@@ -464,7 +470,7 @@ async function confirmBulk(body, performedBy, cpoCommand, ip) {
 // ─────────────────────────────────────────────────────────────
 
 async function confirmClass(body, performedBy, cpoCommand, ip) {
-  const { classes } = body;
+  const { classes, command = "" } = body; // command = optional narrowing filter
   const { cpo_svcno, cpo_name, cpo_rank } = performedBy;
 
   if (!cpo_name || !cpo_rank) {
@@ -483,30 +489,26 @@ async function confirmClass(body, performedBy, cpoCommand, ip) {
     };
   }
 
-  // Fetch candidate forms upfront — command filter applied in SQL
-  // when cpoCommand !== 'ALL', otherwise no command filter.
-
   const candidateForms = await repo.getFormsByClass(
     Number(classes),
     toLegacyStatus(FORM_STATUS.FO_APPROVED),
+    command, // "" → all commands
   );
 
   if (candidateForms.length === 0) {
     return {
       success: false,
       code: 404,
-      message: `No forms found with Status='${toLegacyStatus(FORM_STATUS.FO_APPROVED)}' for classes=${classes}.`,
+      message: `No forms found with Status='${toLegacyStatus(FORM_STATUS.FO_APPROVED)}' for classes=${classes}${command ? ` in command '${command}'` : ""}.`,
     };
   }
 
-  // Build snapshots in batches of 10 before the transaction
   const snapshots = await buildSnapshotsInBatches(
     candidateForms,
     cpo_svcno,
     10,
   );
-
-  const legacyStatus = toLegacyStatus(FORM_STATUS.CPO_CONFIRMED); // → 'Verified'
+  const legacyStatus = toLegacyStatus(FORM_STATUS.CPO_CONFIRMED);
 
   const { count, confirmedFormIds, skipped } =
     await repo.confirmBulkWithHistory(
@@ -527,12 +529,10 @@ async function confirmClass(body, performedBy, cpoCommand, ip) {
     };
   }
 
-  invalidateCommandCache(cpoCommand);
+  const touched = [...new Set(candidateForms.map((f) => f.command))];
+  touched.forEach((c) => invalidateCommandCache(c));
   invalidateCpoDashboardCache();
-
-  const touchedCommands = [...new Set(scopedForms.map((f) => f.command))].join(
-    ",",
-  );
+  const touchedCommands = touched.join(",");
 
   await Promise.all(
     confirmedFormIds.map((fId) =>
@@ -543,7 +543,7 @@ async function confirmClass(body, performedBy, cpoCommand, ip) {
         toStatus: FORM_STATUS.CPO_CONFIRMED,
         performedBy: cpo_svcno,
         performerRole: "CPO",
-        remarks: `Bulk confirm — commands: ${touchedCommands}`,
+        remarks: `Class confirm — commands: ${touchedCommands}, classes: ${classes}`,
       }),
     ),
   );
@@ -551,11 +551,11 @@ async function confirmClass(body, performedBy, cpoCommand, ip) {
   await repo.insertAuditLog({
     tableName: "ef_personalinfos",
     action: "UPDATE",
-    recordKey: `BULK_CONFIRM:${touchedCommands}:formIds=${confirmedFormIds.join(",")}`,
+    recordKey: `CLASS_CONFIRM:${touchedCommands}:classes=${classes}`,
     oldValues: {
       Status: toLegacyStatus(FORM_STATUS.FO_APPROVED),
       commands: touchedCommands,
-      formIds: confirmedFormIds.join(","),
+      classes,
     },
     newValues: {
       Status: legacyStatus,
@@ -575,7 +575,7 @@ async function confirmClass(body, performedBy, cpoCommand, ip) {
     success: true,
     message: `Class confirm complete. ${count} form(s) confirmed.${skipped.length ? ` ${skipped.length} skipped (stale/already confirmed).` : ""}`,
     data: {
-      command: cpoCommand,
+      commands: touchedCommands,
       classes: Number(classes),
       confirmed: count,
       skipped: skipped.length,
@@ -630,8 +630,14 @@ async function buildSnapshotsInBatches(forms, cpo_svcno, batchSize) {
 // STATUS STATS — per-ship breakdown for CPO dashboard
 // ─────────────────────────────────────────────────────────────
 
-async function getStatusStats(svc) {
-  const stats = await repo.getStatusStatsByShip(svc);
+async function getStatusStats(command, svc) {
+  if (!svc)
+    return {
+      success: false,
+      code: 400,
+      message: "Service number is required.",
+    };
+  const stats = await repo.getStatusStatsByShip(command, svc);
   return { success: true, data: stats };
 }
 
@@ -641,22 +647,32 @@ async function getStatusStats(svc) {
 
 async function listConfirmedForms(
   command,
+  svc,
   limit,
   offset,
   search,
   ship,
   classes,
 ) {
-  if (!limit || !Number.isInteger(limit) || limit < 1) {
+  if (!svc) {
+    return {
+      success: false,
+      code: 400,
+      message: "Service number is required.",
+    };
+  }
+
+  if (!limit || !Number.isInteger(limit) || Number(limit) < 1) {
     return { success: false, code: 400, message: "Valid limit is required." };
   }
-  if (offset === undefined || offset < 0) {
+  if (offset === undefined || !Number.isInteger(offset) || Number(offset) < 0) {
     return { success: false, code: 400, message: "Valid offset is required." };
   }
   const forms = await repo.getCPOConfirmedForms(
     command,
-    limit,
-    offset,
+    svc,
+    Number(limit),
+    Number(offset),
     search,
     ship,
     classes,
@@ -668,14 +684,50 @@ async function listConfirmedForms(
 // GET DASHBOARD STATS
 // ─────────────────────────────────────────────────────────────
 
-async function getDashboard() {
-  const data = await getCachedOrCompute("cpo:dashboard", async () => {
-    const [global, topShips] = await Promise.all([
-      repo.getCpoGlobalTotals(),
-      repo.getTopShipsByCompletion(10),
-    ]);
-    return { global, topShips };
-  });
+async function getDashboard(svc, force = false) {
+  if (!svc)
+    return {
+      success: false,
+      code: 400,
+      message: "Service number is required.",
+    };
+
+  const data = await cpoCache.getCachedOrCompute(
+    DASH_PREFIX + svc,
+    async () => {
+      // one query feeds both the cards and the ticker,
+      // so this page and the breakdown page can never disagree
+      const rows = await repo.getStatusStatsByShip("", svc);
+
+      const summary = rows.reduce(
+        (a, r) => ({
+          total_personnel: a.total_personnel + (r.total || 0),
+          total_pending: a.total_pending + (r.pending || 0),
+          total_confirmed: a.total_confirmed + (r.confirmed || 0),
+          total_rejected: a.total_rejected + (r.rejected || 0),
+        }),
+        {
+          total_personnel: 0,
+          total_pending: 0,
+          total_confirmed: 0,
+          total_rejected: 0,
+        },
+      );
+
+      // ticker: ships this officer has confirmed the most forms for
+      const topShips = rows
+        .filter((r) => r.confirmed > 0)
+        .sort((a, b) => b.confirmed - a.confirmed || b.total - a.total)
+        .slice(0, 10)
+        .map((r) => ({
+          ...r,
+          completion_pct: Math.round((r.confirmed / r.total) * 100), // my share of the ship
+        }));
+
+      return { summary, topShips };
+    },
+    { force },
+  );
   return { success: true, data };
 }
 
@@ -688,4 +740,5 @@ module.exports = {
   confirmBulk,
   confirmClass,
   getStatusStats,
+  getDashboard,
 };

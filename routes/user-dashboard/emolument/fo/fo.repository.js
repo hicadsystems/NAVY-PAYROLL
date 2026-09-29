@@ -124,12 +124,14 @@ async function getApprovedForms(ship, svc, limit, offset, search) {
        ef.id         AS form_id,
        ef.status     AS form_status,
        ef.submitted_at
-     FROM ef_personalinfos p
-     LEFT JOIN ef_emolument_forms ef
-            ON ef.service_no = p.serviceNumber
-           AND ef.ship       = p.ship
-     WHERE p.ship   = ?
-       AND p.Status IN ('CPO', 'FO_APPROVED')
+      FROM ef_personalinfos p
+      LEFT JOIN ef_emolument_forms ef
+       ON ef.service_no = p.serviceNumber
+      AND ef.ship       = p.ship
+      LEFT JOIN ef_form_approvals fa
+       ON fa.form_id = ef.id
+      WHERE p.ship   = ?
+       AND fa.action = 'FO_APPROVED'
        AND p.fo_svcno = ?
        ${searchClause}
      ORDER BY p.Surname ASC, p.OtherName ASC
@@ -138,8 +140,10 @@ async function getApprovedForms(ship, svc, limit, offset, search) {
   const countQuery = `
       SELECT COUNT(*) AS total
       FROM ef_personalinfos p
+      LEFT JOIN ef_form_approvals fa
+        ON p.fo_svcno = fa.performed_by  
       WHERE p.ship   = ?
-       AND p.Status IN ('CPO', 'FO_APPROVED')
+       AND fa.action = 'FO_APPROVED'
        AND p.fo_svcno = ?
        ${searchClause};
     `;
@@ -685,6 +689,134 @@ async function getStatusStats(ship, svc) {
   );
   return stats[0];
 }
+
+// ─────────────────────────────────────────────────────────────
+// FO REPORTS
+//
+// reportType:
+//   pending  → forms awaiting FO approval
+//   approved → forms approved by this FO
+//   rejected → forms rejected by this FO
+//
+// We intentionally select p.* because the supplied report template
+// contains fields whose exact DB column names were not shown
+// (particularly RSA/PEN code). The service normalises them.
+// ─────────────────────────────────────────────────────────────
+
+async function getPendingReport(ship) {
+  pool.useDatabase(DB());
+
+  const [rows] = await pool.query(
+    `
+    SELECT
+      p.*,
+      ef.id            AS form_id,
+      ef.status        AS form_status,
+      ef.submitted_at  AS form_submitted_at,
+      ef.updated_at    AS form_updated_at
+    FROM ef_personalinfos p
+    INNER JOIN ef_emolument_forms ef
+      ON ef.service_no = p.serviceNumber
+     AND ef.ship       = p.ship
+    WHERE p.ship = ?
+      AND p.Status IN ('FO', 'DO_REVIEWED')
+      AND ef.status = 'DO_REVIEWED'
+      AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
+    ORDER BY
+      p.Surname ASC,
+      p.OtherName ASC
+    `,
+    [ship],
+  );
+
+  return rows;
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// APPROVED BY THIS FO
+//
+// Important: EXISTS ties FO_APPROVED to the exact form_id.
+// This avoids duplicate rows when a form has multiple trail records.
+// ─────────────────────────────────────────────────────────────
+
+async function getApprovedReport(ship, svc) {
+  pool.useDatabase(DB());
+
+  const [rows] = await pool.query(
+    `
+    SELECT
+      p.*,
+      ef.id            AS form_id,
+      ef.status        AS form_status,
+      ef.submitted_at  AS form_submitted_at,
+      ef.updated_at    AS form_updated_at
+    FROM ef_personalinfos p
+    INNER JOIN ef_emolument_forms ef
+      ON ef.service_no = p.serviceNumber
+     AND ef.ship       = p.ship
+    WHERE p.ship = ?
+      AND p.fo_svcno = ?
+      AND EXISTS (
+        SELECT 1
+        FROM ef_form_approvals fa
+        WHERE fa.form_id = ef.id
+          AND fa.action = 'FO_APPROVED'
+          AND fa.performed_by = ?
+      )
+    ORDER BY
+      p.Surname ASC,
+      p.OtherName ASC
+    `,
+    [ship, svc, svc],
+  );
+
+  return rows;
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// REJECTED BY THIS FO
+//
+// This is based on the rejection history table because the
+// dashboard's "Rejected" count is also based on this table.
+// ─────────────────────────────────────────────────────────────
+
+async function getRejectedReport(ship, svc) {
+  pool.useDatabase(DB());
+
+  const [rows] = await pool.query(
+    `
+    SELECT
+      p.*,
+      ef.id            AS form_id,
+      ef.status        AS form_status,
+      ef.submitted_at  AS form_submitted_at,
+      ef.updated_at    AS form_updated_at,
+
+      fr.id            AS rejection_id,
+      fr.rejected_by   AS rejection_by,
+      fr.remarks       AS rejection_remarks,
+      fr.created_at    AS rejection_date
+    FROM ef_form_rejections fr
+    INNER JOIN ef_emolument_forms ef
+      ON ef.id = fr.form_id
+    INNER JOIN ef_personalinfos p
+      ON p.serviceNumber = ef.service_no
+     AND p.ship          = ef.ship
+    WHERE ef.ship = ?
+      AND fr.rejected_by = ?
+    ORDER BY
+      fr.created_at DESC,
+      p.Surname ASC,
+      p.OtherName ASC
+    `,
+    [ship, svc],
+  );
+
+  return rows;
+}
+
 module.exports = {
   getDoReviewedForms,
   getApprovedForms,
@@ -706,4 +838,7 @@ module.exports = {
   bulkInsertFormApprovals,
   insertAuditLog,
   getStatusStats,
+  getPendingReport,
+  getApprovedReport,
+  getRejectedReport,
 };

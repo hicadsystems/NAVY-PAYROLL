@@ -98,9 +98,10 @@ function resolveCpoCommands(req) {
 // });
 
 router.get("/pending", requireEmolRole("CPO"), async (req, res) => {
-  if (resolveCpoCommands(req).length === 0) {
-    return res.status(403).json({ error: "No CPO role assigned." });
-  }
+ if (resolveCpoCommands(req) !== "ALL") {
+  return res.status(403).json({ error: "No CPO role assigned." });
+}
+
 
   const {
     command = "",
@@ -420,80 +421,11 @@ router.post("/confirm/class", requireEmolRole("CPO"), async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────────────────────
-// GET /cpo/confirmed
-// List all FO_APPROVED forms across all CPO's commands.
-// requireEmolRole('CPO') — scope comes from the CPO's roles.
-// ─────────────────────────────────────────────────────────────
-
-// router.get("/confirmed", requireEmolRole("CPO"), async (req, res) => {
-//   const commands = resolveCpoCommands(req);
-
-//   const { limit, page = 1 } = req.query;
-//   const offset = (Number(page) - 1) * Number(limit);
-
-//   // For scoped CPOs — collect all their commands and merge results
-//   // For EMOL_ADMIN — query needs a command; return 400 if none scoped
-//   if (commands !== "ALL" && commands.length === 0) {
-//     return res.status(403).json({ error: "No command scope assigned." });
-//   }
-
-//   try {
-//     // If EMOL_ADMIN, they should use /confirmed/:command to scope the query
-//     if (commands === "ALL") {
-//       return res.status(400).json({
-//         error: "Please specify a command: GET /cpo/confirmed/:command",
-//       });
-//     }
-
-//     // Fetch for all assigned commands in parallel
-//     const results = await Promise.all(
-//       commands.map((cmd) =>
-//         cpoService.listFoApprovedForms(cmd, Number(limit), offset),
-//       ),
-//     );
-
-//     const merged = results.flatMap((r) => (r.success ? r.data : []));
-//     return res.json(merged);
-//   } catch (err) {
-//     console.error("❌ GET /cpo/confirmed:", err);
-//     return res.status(500).json({ error: "Server error" });
-//   }
-// });
-
-router.get("/confirmed", requireEmolRole("CPO"), async (req, res) => {
-  const {
-    command = "",
-    ship = "",
-    classes = "",
-    search = "",
-    page = 1,
-    limit,
-  } = req.query;
-  const offset = (Number(page) - 1) * Number(limit);
-
-  try {
-    const result = await cpoService.listConfirmedForms(
-      command,
-      Number(limit),
-      offset,
-      search,
-      ship,
-      classes,
-    );
-    if (!result.success)
-      return res.status(result.code).json({ error: result.message });
-    return res.json(result.data);
-  } catch (err) {
-    console.error("❌ GET /cpo/confirmed:", err);
-    return res.status(500).json({ error: "Server error" });
-  }
-});
 
 // ─────────────────────────────────────────────────────────────
 // GET /cpo/confirmed/:command[OLD]
 // GET /cpo/confirmed
-// List FO_APPROVED forms for a specific command.
+// List CPO_CONFIRMED forms for a specific command.
 // Used by EMOL_ADMIN and CPOs who want to filter by command.
 // requireEmolRole('CPO') with command in params.
 // INACTIVE
@@ -533,35 +465,21 @@ router.get("/confirmed", requireEmolRole("CPO"), async (req, res) => {
 // });
 
 router.get("/confirmed", requireEmolRole("CPO"), async (req, res) => {
-  const {
-    command = "",
-    ship = "",
-    classes = "",
-    search = "",
-    page = 1,
-    limit,
-  } = req.query;
+  const { command = "", ship = "", classes = "", search = "", page = 1, limit } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
-  const svc = req.user_id;
 
   try {
     const result = await cpoService.listConfirmedForms(
-      command,
-      svc,
-      Number(limit),
-      offset,
-      search,
-      ship,
-      classes,
+      command, req.user_id, Number(limit), offset, search, ship, classes,
     );
-    if (!result.success)
-      return res.status(result.code).json({ error: result.message });
+    if (!result.success) return res.status(result.code).json({ error: result.message });
     return res.json(result.data);
   } catch (err) {
     console.error("❌ GET /cpo/confirmed:", err);
     return res.status(500).json({ error: "Server error" });
   }
 });
+
 
 // ─────────────────────────────────────────────────────────────
 // GET /cpo/command/:command/stats  [OLD]
@@ -588,19 +506,20 @@ router.get("/confirmed", requireEmolRole("CPO"), async (req, res) => {
 //   },
 // );
 
+
 router.get("/stats", requireEmolRole("CPO"), async (req, res) => {
-  // const { command = "" } = req.query;
-  const svc = req.user_id;
+  const { command = "" } = req.query;
   try {
-    const result = await cpoService.getStatusStats(svc);
-    if (!result.success)
-      return res.status(result.code).json({ error: result.message });
+    const result = await cpoService.getStatusStats(command, req.user_id);
+    if (!result.success) return res.status(result.code).json({ error: result.message });
     return res.json(result.data);
   } catch (err) {
     console.error("❌ GET /cpo/stats:", err);
     return res.status(500).json({ error: "Server error" });
   }
 });
+
+
 
 // ─────────────────────────────────────────────────────────────
 // GET /cpo/dashboard
@@ -610,14 +529,20 @@ router.get("/stats", requireEmolRole("CPO"), async (req, res) => {
 
 router.get("/dashboard", requireEmolRole("CPO"), async (req, res) => {
   try {
-    const result = await cpoService.getDashboard();
-    if (!result.success)
-      return res.status(result.code).json({ error: result.message });
+    const result = await cpoService.getDashboard(req.user_id, req.query.refresh === "1");
+    if (!result.success) return res.status(result.code).json({ error: result.message });
     return res.json(result.data);
   } catch (err) {
     console.error("❌ GET /cpo/dashboard:", err);
     return res.status(500).json({ error: "Server error" });
   }
 });
+
+// ─────────────────────────────────────────────────────────────
+// REPORTS — pending / approved / rejected, PDF & Excel
+// ─────────────────────────────────────────────────────────────
+router.use(require("./cpo.reports.routes"));
+
+module.exports = router;
 
 module.exports = router;

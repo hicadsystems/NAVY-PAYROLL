@@ -842,40 +842,48 @@ async function getStatusStats(ship, svc) {
   return stats[0];
 }
 
-async function getStatusStatsByShip(command) {
+async function getStatusStatsByShip(command, svc) {
   pool.useDatabase(DB());
-  const cmdClause = command ? "AND command = ?" : "";
   const cmdParams = command ? [command] : [];
 
-  const [totalsRows] = await pool.query(
-    `SELECT command, ship,
-        COUNT(*) AS total,
-        COUNT(CASE WHEN \`Status\` IN ('CPO', 'FO_APPROVED') THEN 1 END) AS pending
-      FROM ef_personalinfos
-      WHERE 1=1 ${cmdClause}
-      GROUP BY command, ship
-      ORDER BY command ASC, ship ASC`,
-    cmdParams,
-  );
+  const [[totalsRows], [confirmedRows], [rejectedRows]] = await Promise.all([
+    // SHARED: everyone sees total + pending
+    pool.query(
+      `SELECT command, ship,
+          COUNT(*) AS total,
+          COUNT(CASE WHEN \`Status\` IN ('CPO', 'FO_APPROVED') THEN 1 END) AS pending
+        FROM ef_personalinfos
+        WHERE 1=1 ${command ? "AND command = ?" : ""}
+        AND classes IN (1, 2)
+        GROUP BY command, ship
+        ORDER BY command ASC, ship ASC`,
+      cmdParams,
+    ),
 
-  const [confirmedRows] = await pool.query(
-    `SELECT p.command, p.ship, COUNT(*) AS confirmed
-       FROM ef_form_approvals fa
-       JOIN ef_emolument_forms ef ON ef.id = fa.form_id
-       JOIN ef_personalinfos p ON p.serviceNumber = ef.service_no
-      WHERE fa.action = 'CPO_CONFIRMED' AND fa.performed_by = ? ${command ? "AND p.command = ?" : ""}
-      GROUP BY p.command, p.ship`,
-    cmdParams,
-  );
+    // PERSONAL: forms this CPO confirmed
+    pool.query(
+      `SELECT p.command, p.ship, COUNT(*) AS confirmed
+         FROM ef_form_approvals fa
+         JOIN ef_emolument_forms ef ON ef.id = fa.form_id
+         JOIN ef_personalinfos p    ON p.serviceNumber = ef.service_no
+        WHERE fa.action = 'CPO_CONFIRMED'
+          AND fa.performed_by = ?
+          ${command ? "AND p.command = ?" : ""}
+        GROUP BY p.command, p.ship`,
+      [svc, ...cmdParams],
+    ),
 
-  const [rejectedRows] = await pool.query(
-    `SELECT p.command, p.ship, COUNT(*) AS rejected
-       FROM ef_form_rejections r
-       JOIN ef_personalinfos p ON p.serviceNumber = r.service_number
-      WHERE 1=1 WHERE r.rejected_by = ? ${command ? "AND p.command = ?" : ""}
-      GROUP BY p.command, p.ship`,
-    cmdParams,
-  );
+    // PERSONAL: forms this CPO rejected
+    pool.query(
+      `SELECT p.command, p.ship, COUNT(*) AS rejected
+         FROM ef_form_rejections r
+         JOIN ef_personalinfos p ON p.serviceNumber = r.service_number
+        WHERE r.rejected_by = ?
+          ${command ? "AND p.command = ?" : ""}
+        GROUP BY p.command, p.ship`,
+      [svc, ...cmdParams],
+    ),
+  ]);
 
   const key = (r) => `${r.command}::${r.ship}`;
   const confirmedMap = new Map(confirmedRows.map((r) => [key(r), r.confirmed]));

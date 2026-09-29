@@ -47,15 +47,15 @@ async function attachRelationshipCounts(employees) {
   const ids = employees.map((e) => e.Empl_ID);
 
   const [childrenRows] = await pool.query(
-    "SELECT Empl_ID, COUNT(*) as count FROM Children WHERE Empl_ID IN (?) AND chactive = 1 GROUP BY Empl_ID",
+    "SELECT Empl_ID, COUNT(*) as count FROM children WHERE Empl_ID IN (?) AND chactive = 1 GROUP BY Empl_ID",
     [ids],
   );
   const [nokRows] = await pool.query(
-    "SELECT Empl_ID, COUNT(*) as count FROM NextOfKin WHERE Empl_ID IN (?) AND IsActive = 1 GROUP BY Empl_ID",
+    "SELECT Empl_ID, COUNT(*) as count FROM nextofkin WHERE Empl_ID IN (?) AND IsActive = 1 GROUP BY Empl_ID",
     [ids],
   );
   const [spouseRows] = await pool.query(
-    "SELECT Empl_ID, COUNT(*) as count FROM Spouse WHERE Empl_ID IN (?) AND spactive = 1 GROUP BY Empl_ID",
+    "SELECT Empl_ID, COUNT(*) as count FROM spouse WHERE Empl_ID IN (?) AND spactive = 1 GROUP BY Empl_ID",
     [ids],
   );
 
@@ -817,17 +817,17 @@ router.get("/employees/:id", verifyToken, async (req, res) => {
 
     // Get related data (children, NOK, spouse)...
     const [children] = await pool.query(
-      "SELECT * FROM Children WHERE Empl_ID = ? AND chactive = 1",
+      "SELECT * FROM children WHERE Empl_ID = ? AND chactive = 1",
       [employeeId],
     );
 
     const [nextOfKin] = await pool.query(
-      "SELECT * FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1",
+      "SELECT * FROM nextofkin WHERE Empl_ID = ? AND IsActive = 1",
       [employeeId],
     );
 
     const [spouse] = await pool.query(
-      "SELECT * FROM Spouse WHERE Empl_ID = ? AND spactive = 1",
+      "SELECT * FROM spouse WHERE Empl_ID = ? AND spactive = 1",
       [employeeId],
     );
 
@@ -1039,7 +1039,7 @@ router.get("/employees/:id/children", verifyToken, async (req, res) => {
   try {
     const id = req.params.id.replace(/_SLASH_/g, "/");
     const [rows] = await pool.query(
-      "SELECT * FROM Children WHERE Empl_ID = ? AND chactive = 1 ORDER BY dateofbirth",
+      "SELECT * FROM children WHERE Empl_ID = ? AND chactive = 1 ORDER BY dateofbirth",
       [id],
     );
     res.json({ success: true, data: rows });
@@ -1079,7 +1079,7 @@ router.post("/employees/:id/children", verifyToken, async (req, res) => {
     const values = Object.values(childData);
     const placeholders = fields.map(() => "?").join(", ");
 
-    const query = `INSERT INTO Children (${fields.join(", ")}) VALUES (${placeholders})`;
+    const query = `INSERT INTO children (${fields.join(", ")}) VALUES (${placeholders})`;
     const [result] = await pool.query(query, values);
 
     console.log("✅ Child created successfully, ID:", result.insertId);
@@ -1115,7 +1115,7 @@ router.put("/children/:childId", verifyToken, async (req, res) => {
     const values = Object.values(req.body);
     const setClause = fields.map((field) => `${field} = ?`).join(", ");
 
-    const query = `UPDATE Children SET ${setClause} WHERE child_id = ?`;
+    const query = `UPDATE children SET ${setClause} WHERE child_id = ?`;
     const [result] = await pool.query(query, [...values, req.params.childId]);
 
     if (result.affectedRows === 0) {
@@ -1134,7 +1134,7 @@ router.put("/children/:childId", verifyToken, async (req, res) => {
 router.delete("/children/:childId", verifyToken, async (req, res) => {
   try {
     const [result] = await pool.query(
-      "UPDATE Children SET chactive = 0 WHERE child_id = ?",
+      "UPDATE children SET chactive = 0 WHERE child_id = ?",
       [req.params.childId],
     );
 
@@ -1159,7 +1159,7 @@ router.get("/employees/:id/nextofkin", verifyToken, async (req, res) => {
   try {
     const id = req.params.id.replace(/_SLASH_/g, "/");
     const [rows] = await pool.query(
-      "SELECT * FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1 ORDER BY NextofkinType DESC, FirstName",
+      "SELECT * FROM nextofkin WHERE Empl_ID = ? AND IsActive = 1 ORDER BY NextofkinType DESC, FirstName",
       [id],
     );
     res.json({ success: true, data: rows });
@@ -1221,7 +1221,7 @@ router.post("/employees/:id/nextofkin", verifyToken, async (req, res) => {
     const values = Object.values(nokData);
     const placeholders = fields.map(() => "?").join(", ");
 
-    const query = `INSERT INTO NextOfKin (${fields.join(", ")}) VALUES (${placeholders})`;
+    const query = `INSERT INTO nextofkin (${fields.join(", ")}) VALUES (${placeholders})`;
 
     console.log("🔄 Executing query with Empl_ID:", id);
 
@@ -1270,7 +1270,7 @@ router.put("/nextofkin/:nokId", verifyToken, async (req, res) => {
     const values = Object.values(req.body);
     const setClause = fields.map((field) => `${field} = ?`).join(", ");
 
-    const query = `UPDATE NextOfKin SET ${setClause} WHERE nok_id = ?`;
+    const query = `UPDATE nextofkin SET ${setClause} WHERE nok_id = ?`;
     const [result] = await pool.query(query, [...values, req.params.nokId]);
 
     if (result.affectedRows === 0) {
@@ -1292,7 +1292,7 @@ router.put("/nextofkin/:nokId", verifyToken, async (req, res) => {
 router.delete("/nextofkin/:nokId", verifyToken, async (req, res) => {
   try {
     const [result] = await pool.query(
-      "UPDATE NextOfKin SET IsActive = 0 WHERE nok_id = ?",
+      "UPDATE nextofkin SET IsActive = 0 WHERE nok_id = ?",
       [req.params.nokId],
     );
 
@@ -1320,7 +1320,7 @@ router.get("/employees/:id/spouse", verifyToken, async (req, res) => {
   try {
     const id = req.params.id.replace(/_SLASH_/g, "/");
     const [rows] = await pool.query(
-      "SELECT * FROM Spouse WHERE Empl_ID = ? AND spactive = 1 ORDER BY marrieddate DESC",
+      "SELECT * FROM spouse WHERE Empl_ID = ? AND spactive = 1 ORDER BY marrieddate DESC",
       [id],
     );
     res.json({ success: true, data: rows });
@@ -1360,19 +1360,19 @@ router.post("/employees/:id/spouse", verifyToken, async (req, res) => {
     const values = Object.values(spouseData);
     const placeholders = fields.map(() => "?").join(", ");
 
-    const query = `INSERT INTO Spouse (${fields.join(", ")}) VALUES (${placeholders})`;
+    const query = `INSERT INTO spouse (${fields.join(", ")}) VALUES (${placeholders})`;
     const [result] = await pool.query(query, values);
 
-    console.log("✅ Spouse created successfully, ID:", result.insertId);
+    console.log("✅ spouse created successfully, ID:", result.insertId);
 
     res.status(201).json({
       success: true,
-      message: "Spouse record created successfully",
+      message: "spouse record created successfully",
       spouseId: result.insertId,
       employeeId: id,
     });
   } catch (error) {
-    console.error("❌ Spouse creation failed:", error.message);
+    console.error("❌ spouse creation failed:", error.message);
 
     if (error.code === "ER_NO_REFERENCED_ROW_2") {
       return res.status(400).json({
@@ -1396,16 +1396,16 @@ router.put("/spouse/:spouseId", verifyToken, async (req, res) => {
     const values = Object.values(req.body);
     const setClause = fields.map((field) => `${field} = ?`).join(", ");
 
-    const query = `UPDATE Spouse SET ${setClause} WHERE spouse_id = ?`;
+    const query = `UPDATE spouse SET ${setClause} WHERE spouse_id = ?`;
     const [result] = await pool.query(query, [...values, req.params.spouseId]);
 
     if (result.affectedRows === 0) {
       return res
         .status(404)
-        .json({ success: false, message: "Spouse record not found" });
+        .json({ success: false, message: "spouse record not found" });
     }
 
-    res.json({ success: true, message: "Spouse record updated successfully" });
+    res.json({ success: true, message: "spouse record updated successfully" });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -1415,17 +1415,17 @@ router.put("/spouse/:spouseId", verifyToken, async (req, res) => {
 router.delete("/spouse/:spouseId", verifyToken, async (req, res) => {
   try {
     const [result] = await pool.query(
-      "UPDATE Spouse SET spactive = 0 WHERE spouse_id = ?",
+      "UPDATE spouse SET spactive = 0 WHERE spouse_id = ?",
       [req.params.spouseId],
     );
 
     if (result.affectedRows === 0) {
       return res
         .status(404)
-        .json({ success: false, message: "Spouse record not found" });
+        .json({ success: false, message: "spouse record not found" });
     }
 
-    res.json({ success: true, message: "Spouse record deleted successfully" });
+    res.json({ success: true, message: "spouse record deleted successfully" });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -1451,19 +1451,19 @@ router.get("/employees/:id/profile", verifyToken, async (req, res) => {
 
     const [children] = await pool.query(
       `SELECT *, YEAR(CURDATE()) - YEAR(dateofbirth) as age 
-       FROM Children WHERE Empl_ID = ? AND chactive = 1 
+       FROM children WHERE Empl_ID = ? AND chactive = 1 
        ORDER BY dateofbirth`,
       [req.params.id],
     );
 
     const [nextOfKin] = await pool.query(
-      `SELECT * FROM NextOfKin WHERE Empl_ID = ? AND IsActive = 1 
+      `SELECT * FROM nextofkin WHERE Empl_ID = ? AND IsActive = 1 
        ORDER BY NextofkinType DESC, FirstName`,
       [req.params.id],
     );
 
     const [spouse] = await pool.query(
-      `SELECT * FROM Spouse WHERE Empl_ID = ? AND spactive = 1 
+      `SELECT * FROM spouse WHERE Empl_ID = ? AND spactive = 1 
        ORDER BY marrieddate DESC`,
       [req.params.id],
     );
@@ -1477,9 +1477,9 @@ router.get("/employees/:id/profile", verifyToken, async (req, res) => {
           nextOfKin: nextOfKin,
           spouse: spouse,
           summary: {
-            totalChildren: children.length,
+            totalchildren: children.length,
             totalNOK: nextOfKin.length,
-            totalSpouse: spouse.length,
+            totalspouse: spouse.length,
           },
         },
       },
@@ -1492,13 +1492,13 @@ router.get("/employees/:id/profile", verifyToken, async (req, res) => {
 // DELETE all family records for an employee (soft delete)
 router.delete("/employees/:id/family", verifyToken, async (req, res) => {
   try {
-    await pool.query("UPDATE Children SET chactive = 0 WHERE Empl_ID = ?", [
+    await pool.query("UPDATE children SET chactive = 0 WHERE Empl_ID = ?", [
       req.params.id,
     ]);
-    await pool.query("UPDATE NextOfKin SET IsActive = 0 WHERE Empl_ID = ?", [
+    await pool.query("UPDATE nextofkin SET IsActive = 0 WHERE Empl_ID = ?", [
       req.params.id,
     ]);
-    await pool.query("UPDATE Spouse SET spactive = 0 WHERE Empl_ID = ?", [
+    await pool.query("UPDATE spouse SET spactive = 0 WHERE Empl_ID = ?", [
       req.params.id,
     ]);
 

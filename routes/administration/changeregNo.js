@@ -55,11 +55,11 @@ function getDefaultPayrollTables() {
   ];
 }
 
-// HR child tables — Spouse, Children, NextOfKin are all in MASTER_TABLES
+// HR child tables — spouse, children, nextofkin are all in MASTER_TABLES
 // so pool.query qualifies them to MASTER_DB automatically.
 // NOTE: pass the bare table name (no backticks) in queries so qualifyMasterTables
 // regex can match and rewrite it correctly.
-const HR_CHILD_TABLES = ["Children", "NextOfKin", "Spouse"];
+const HR_CHILD_TABLES = ["children", "nextofkin", "spouse"];
 
 // ──────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -191,7 +191,7 @@ router.get("/employees", verifyToken, async (req, res) => {
  *
  * Updates Empl_ID across all tables in the pool's current database.
  *
- * - hr_employees, Children, NextOfKin, Spouse are in MASTER_TABLES so pool.query
+ * - hr_employees, children, nextofkin, spouse are in MASTER_TABLES so pool.query
  *   auto-qualifies them to MASTER_DB via qualifyMasterTables.
  *   IMPORTANT: pass bare table names (no backticks) in query strings so the
  *   regex in qualifyMasterTables can match and rewrite them correctly.
@@ -280,7 +280,7 @@ router.put("/update-regno", verifyToken, async (req, res) => {
         const log = [];
 
         // ── hr_employees (PK) ─────────────────────────────────────────────────
-        // Bare table name — qualifyMasterTables rewrites to MASTER_DB.Children etc.
+        // Bare table name — qualifyMasterTables rewrites to MASTER_DB.children etc.
         const [hrResult] = await pool.query(
           "UPDATE hr_employees SET Empl_ID = ? WHERE Empl_ID = ?",
           [newId, oldId],
@@ -293,7 +293,7 @@ router.put("/update-regno", verifyToken, async (req, res) => {
         console.log(`  ✓ hr_employees (PK) → ${hrResult.affectedRows} row(s)`);
 
         // ── HR child tables (FK) ──────────────────────────────────────────────
-        // Children, NextOfKin, Spouse are all in MASTER_TABLES.
+        // children, nextofkin, spouse are all in MASTER_TABLES.
         // Use bare table name in the query string so qualifyMasterTables matches it.
         for (const childTable of HR_CHILD_TABLES) {
           try {

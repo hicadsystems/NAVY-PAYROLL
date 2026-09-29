@@ -1,0 +1,198 @@
+<!-- FILE: emolument-sections/cpo/cpo-breakdown.html
+     Data: GET /cpo/stats → [{ command, ship, total, pending, confirmed, rejected }] -->
+
+<div class="p-4">
+  <div class="mb-4 flex items-start justify-between gap-3">
+    <p class="text-sm text-blue-900/50 mt-1">
+      Pending, confirmed, rejected and total staff per ship, across all commands
+    </p>
+    <button id="cbRefresh"
+      class="px-3 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg cursor-pointer border border-blue-200 hover:bg-blue-100 transition-colors flex-shrink-0">
+      <i class="fas fa-sync-alt mr-1"></i>Refresh
+    </button>
+  </div>
+
+  <!-- Filter bar: Command → Ship (ship options depend on command) -->
+  <div class="mb-4 flex flex-col sm:flex-row gap-2">
+    <select id="cbCommandFilter"
+      class="rounded-lg border border-amber-100 bg-white px-3 py-2 text-sm text-navy focus:outline-none">
+      <option value="">All Commands</option>
+    </select>
+    <select id="cbShipFilter"
+      class="rounded-lg border border-amber-100 bg-white px-3 py-2 text-sm text-navy focus:outline-none">
+      <option value="">All Ships</option>
+    </select>
+    <button id="cbReset"
+      class="px-3 py-2 text-xs font-bold text-navy/60 rounded-lg cursor-pointer border border-amber-100 bg-white hover:bg-amber-50 transition-colors">
+      Reset
+    </button>
+  </div>
+
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow overflow-hidden overflow-x-auto">
+    <table class="w-full text-sm border-collapse">
+      <thead>
+        <tr
+          class="text-left text-xs font-bold text-navy/60 uppercase tracking-wide border-b border-amber-100 bg-white/40">
+          <th class="py-2.5 px-4">Command</th>
+          <th class="py-2.5 px-4">Ship</th>
+          <th class="py-2.5 px-4 text-center">Total</th>
+          <th class="py-2.5 px-4 text-center">Awaiting (all)</th>
+          <th class="py-2.5 px-4 text-center">Confirmed by Me</th>
+          <th class="py-2.5 px-4 text-center">Rejected by Me</th>
+        </tr>
+      </thead>
+      <tbody id="cb-body">
+        <tr>
+          <td colspan="6" class="text-center py-6 text-navy/30"><i class="fas fa-spinner fa-spin"></i></td>
+        </tr>
+      </tbody>
+      <tfoot id="cb-foot"></tfoot>
+    </table>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const TOKEN = localStorage.getItem("token");
+
+    let allRows = [];   // full unfiltered result, fetched once per load
+    let fCommand = "";
+    let fShip = "";
+
+    const cmdSel = document.getElementById("cbCommandFilter");
+    const shipSel = document.getElementById("cbShipFilter");
+    const body = document.getElementById("cb-body");
+    const foot = document.getElementById("cb-foot");
+
+    function esc(v) {
+      return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+      });
+    }
+    function N(v) { return Number(v || 0).toLocaleString(); }
+    function pct(a, b) { return !b ? 0 : Math.round((a / b) * 100); }
+
+    /* ── Filter dropdowns ── */
+    function populateCommands() {
+      const current = fCommand;
+      cmdSel.innerHTML = '<option value="">All Commands</option>';
+      [...new Set(allRows.map(function (r) { return r.command; }))]
+        .filter(Boolean)
+        .sort()
+        .forEach(function (c) {
+          const o = document.createElement("option");
+          o.value = c;
+          o.textContent = c;
+          cmdSel.appendChild(o);
+        });
+      cmdSel.value = current;
+    }
+
+    function populateShips() {
+      shipSel.innerHTML = '<option value="">All Ships</option>';
+      allRows
+        .filter(function (r) { return !fCommand || r.command === fCommand; })
+        .map(function (r) { return r.ship; })
+        .filter(Boolean)
+        .sort()
+        .forEach(function (s) {
+          const o = document.createElement("option");
+          o.value = s;
+          o.textContent = s;
+          shipSel.appendChild(o);
+        });
+      shipSel.value = fShip;
+      if (shipSel.value !== fShip) fShip = ""; // previously chosen ship isn't in this command
+    }
+
+    /* ── Render ── */
+    function render() {
+      const rows = allRows.filter(function (r) {
+        return (!fCommand || r.command === fCommand) && (!fShip || r.ship === fShip);
+      });
+
+      if (!rows.length) {
+        body.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-navy/30">No data</td></tr>';
+        foot.innerHTML = "";
+        return;
+      }
+
+      body.innerHTML = rows
+        .map(function (r) {
+          return (
+            '<tr class="border-b border-amber-50 last:border-0 hover:bg-amber-50/40">' +
+            '<td class="py-2.5 px-4 text-blue-900/60 font-semibold">' + esc(r.command || "—") + "</td>" +
+            '<td class="py-2.5 px-4 font-bold text-navy">' + esc(r.ship || "—") + "</td>" +
+            '<td class="py-2.5 px-4 text-center text-blue-600 font-bold">' + N(r.total) + "</td>" +
+            '<td class="py-2.5 px-4 text-center text-amber-600 font-bold">' + N(r.pending) + "</td>" +
+            '<td class="py-2.5 px-4 text-center text-green-600 font-bold">' + N(r.confirmed) + "</td>" +
+            '<td class="py-2.5 px-4 text-center text-red-400 font-bold">' + N(r.rejected) + "</td>" +
+            "</tr>"
+          );
+        })
+        .join("");
+
+      const t = rows.reduce(
+        function (a, r) {
+          return {
+            total: a.total + (r.total || 0),
+            pending: a.pending + (r.pending || 0),
+            confirmed: a.confirmed + (r.confirmed || 0),
+            rejected: a.rejected + (r.rejected || 0),
+          };
+        },
+        { total: 0, pending: 0, confirmed: 0, rejected: 0 },
+      );
+
+      foot.innerHTML =
+        '<tr class="border-t-2 border-amber-100 bg-white/60 font-black">' +
+        '<td class="py-2.5 px-4 text-navy" colspan="2">Total (' + rows.length + " ship" + (rows.length === 1 ? "" : "s") + ")</td>" +
+        '<td class="py-2.5 px-4 text-center text-blue-600">' + N(t.total) + "</td>" +
+        '<td class="py-2.5 px-4 text-center text-amber-600">' + N(t.pending) + "</td>" +
+        '<td class="py-2.5 px-4 text-center text-green-600">' + N(t.confirmed) + "</td>" +
+        '<td class="py-2.5 px-4 text-center text-red-400">' + N(t.rejected) + "</td>" +
+        "</tr>";
+    }
+    /* ── Load ── */
+    function load() {
+      if (!TOKEN) return;
+      body.innerHTML =
+        '<tr><td colspan="6" class="text-center py-6 text-navy/30"><i class="fas fa-spinner fa-spin"></i></td></tr>';
+      foot.innerHTML = "";
+
+      fetch("/cpo/stats", { headers: { Authorization: "Bearer " + TOKEN } })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (rows) {
+          allRows = Array.isArray(rows) ? rows : [];
+          populateCommands();
+          populateShips();
+          render();
+        })
+        .catch(function () {
+          body.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-red-400">Failed to load</td></tr>';
+        });
+    }
+
+    /* ── Events ── */
+    cmdSel.addEventListener("change", function () {
+      fCommand = this.value;
+      fShip = "";            // ship depends on command
+      populateShips();
+      render();
+    });
+    shipSel.addEventListener("change", function () {
+      fShip = this.value;
+      render();
+    });
+    document.getElementById("cbReset").addEventListener("click", function () {
+      fCommand = "";
+      fShip = "";
+      cmdSel.value = "";
+      populateShips();
+      render();
+    });
+    document.getElementById("cbRefresh").addEventListener("click", load);
+
+    load();
+  })();
+</script>

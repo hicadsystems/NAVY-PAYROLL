@@ -852,7 +852,7 @@
             <label class="field-label"
               >Rank / Title <span class="req">*</span></label
             >
-            <select class="field" id="Rank" name="Rank" disabled>
+            <select class="field" id="Rank" name="Rank">
               <option value="">— Select —</option>
             </select>
           </div>
@@ -1546,12 +1546,12 @@
           </div>
 
           <!-- Bank Branch -->
-          <div>
-            <label class="field-label">Bank Branch</label>
-            <select class="field" id="BankBranch" name="BankBranch" disabled>
-              <option value="">— Select Branch —</option>
-            </select>
-          </div>
+          <!-- <div>
+          <label class="field-label">Bank Branch</label>
+          <select class="field" id="BankBranch" name="BankBranch" disabled>
+            <option value="">— Select Branch —</option>
+          </select>
+        </div> -->
 
           <!-- Account Number -->
           <div>
@@ -1929,7 +1929,7 @@
 
           setupStateLGAFiltering();
           setupCommandShipFiltering();
-          setupBankBranchFiltering();
+          // setupBankBranchFiltering();
         } catch (err) {
           console.error("Failed to load form options:", err);
           showToast("Failed to load form options. Please refresh.", "error");
@@ -2265,19 +2265,19 @@
         // Bank Branch depends on Bankcode. Populate the branch list as soon
         // as a bank is on file, even if no branch has been chosen yet —
         // otherwise the dropdown is left empty (only the placeholder shows).
-        if (data.Bankcode) {
-          populateSelect(
-            "BankBranch",
-            (formOptions.bankBranches || []).filter(
-              (b) =>
-                String(b.code ?? "").trim() ===
-                String(data.Bankcode ?? "").trim(),
-            ),
-          );
-          if (data.bankbranch) {
-            setVal("BankBranch", String(data.bankbranch));
-          }
-        }
+        // if (data.Bankcode) {
+        //   populateSelect(
+        //     "BankBranch",
+        //     (formOptions.bankBranches || []).filter(
+        //       (b) =>
+        //         String(b.code ?? "").trim() ===
+        //         String(data.Bankcode ?? "").trim(),
+        //     ),
+        //   );
+        //   if (data.bankbranch) {
+        //     setVal("BankBranch", String(data.bankbranch));
+        //   }
+        // }
 
         // NOK
         if (data.nok?.primary) prefillNok("nok_primary", data.nok.primary);
@@ -2496,7 +2496,7 @@
           LocalGovt: gv("LocalGovt"),
           BankACNumber: gv("BankACNumber"),
           Bankcode: gv("Bankcode"),
-          bankbranch: gv("BankBranch"),
+          // bankbranch: gv("BankBranch"),
           AccountName: gv("AccountName"),
           AcommodationStatus: gv("AcommodationStatus"),
           AddressofAcommodation: gv("AddressofAcommodation"),
@@ -2592,6 +2592,7 @@
           "Birthdate",
           "gsm_number",
           "home_address",
+          "Rank",
           // "BankACNumber",
           // "Bankcode",
           // "BankBranch",

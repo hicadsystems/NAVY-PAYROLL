@@ -308,4 +308,57 @@ router.get("/ship/:ship/approved", requireEmolRole("FO"), async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────
+// GET /fo/ship/:ship/report/:reportType
+//
+// reportType:
+//   pending
+//   approved
+//   rejected
+//
+// The FO's service number comes from req.user_id.
+// The FO cannot request another FO's approved/rejected report.
+// ─────────────────────────────────────────────────────────────
+
+router.get(
+  "/ship/:ship/report/:reportType",
+  requireEmolRole("FO"),
+  async (req, res) => {
+    const { ship, reportType } = req.params;
+    const svc = req.user_id;
+
+    try {
+      const result = await foService.getReport(
+        ship,
+        svc,
+        reportType,
+      );
+
+      if (!result.success) {
+        return res
+          .status(result.code)
+          .json({ error: result.message });
+      }
+
+      return res.json(result.data);
+    } catch (err) {
+      console.error(
+        "❌ GET /fo/ship/:ship/report/:reportType:",
+        err,
+      );
+
+      return res.status(500).json({
+        error: "Failed to generate FO report.",
+      });
+    }
+  },
+);
+
+
+// ─────────────────────────────────────────────────────────────
+// REPORTS — pending / approved / rejected, PDF & Excel
+// ─────────────────────────────────────────────────────────────
+router.use(require("./fo.reports.routes"));
+
+module.exports = router;
 module.exports = router;

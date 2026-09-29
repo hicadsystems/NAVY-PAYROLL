@@ -140,35 +140,33 @@
   <table>
     <thead>
       <tr>
-        <th style="width: 3%;">S/N</th>
-        <th style="width: 8%;">Svc No.</th>
-        <th style="width: 5%;">Rank</th>
-        <th>Full Name</th>
-        <th style="width: 7%;">Class</th>
-        <th style="width: 9%;">Ship</th>
-        <th style="width: 9%;">Command</th>
-        <th style="width: 6%;">Form No.</th>
-        <th style="width: 5%;">Year</th>
-        <th style="width: 14%;">Officer</th>
-        <th style="width: 8%;">{{dateLabel}}</th>
-        {{#if showRemarks}}<th style="width: 16%;">Remarks</th>{{/if}}
+        <th class="text-center" style="width: 3%;">S/N</th>
+        <th class="text-center" style="width: 8%;">Svc No.</th>
+        <th class="text-center" style="width: 5%;">Rank</th>
+        <th class="text-center">Full Name</th>
+        <th class="text-center" style="width: 7%;">Class</th>
+        <th class="text-center" style="width: 9%;">Ship</th>
+        <th class="text-center" style="width: 9%;">Command</th>
+        <th class="text-center"style="width: 5%;">Year</th>
+        <th class="text-center" style="width: 14%;">Officer</th>
+        <th class="text-center" style="width: 8%;">{{dateLabel}}</th>
+        {{#if showRemarks}}<th style="width: 16%;" class="text-center">Remarks</th>{{/if}}
       </tr>
     </thead>
     <tbody>
       {{#each data}}
       <tr>
         <td class="text-center">{{this.sn}}</td>
-        <td>{{this.serviceNumber}}</td>
-        <td>{{this.rank}}</td>
-        <td style="white-space: nowrap;"><strong>{{this.fullName}}</strong></td>
-        <td>{{this.className}}</td>
-        <td>{{this.ship}}</td>
-        <td>{{#if this.command}}{{this.command}}{{else}}<span class="empty-cell">—</span>{{/if}}</td>
-        <td>{{this.formNumber}}</td>
+        <td class="text-center">{{this.serviceNumber}}</td>
+        <td class="text-center">{{this.rank}}</td>
+        <td class="text-center" style="white-space: nowrap;"><strong>{{this.fullName}}</strong></td>
+        <td class="text-center">{{this.className}}</td>
+        <td class="text-center">{{this.ship}}</td>
+        <td class="text-center">{{#if this.command}}{{this.command}}{{else}}<span class="empty-cell">—</span>{{/if}}</td>
         <td class="text-center">{{this.formYear}}</td>
-        <td style="white-space: nowrap;">{{this.officer}}</td>
-        <td style="font-size: 7px;">{{this.actionDate}}</td>
-        {{#if ../showRemarks}}<td>{{#if this.remarks}}{{this.remarks}}{{else}}<span class="empty-cell">—</span>{{/if}}</td>{{/if}}
+        <td class="text-center" style="white-space: nowrap;">{{this.officer}}</td>
+        <td class="text-center" style="font-size: 7px;">{{this.actionDate}}</td>
+        {{#if ../showRemarks}}<td class="text-center">{{#if this.remarks}}{{this.remarks}}{{else}}<span class="empty-cell">—</span>{{/if}}</td>{{/if}}
       </tr>
       {{/each}}
     </tbody>

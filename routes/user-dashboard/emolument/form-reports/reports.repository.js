@@ -23,8 +23,7 @@ const { getStageConfig, OFFICER_FIELD_SETS } = require("./reports.config");
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 
 const BASE_COLS = `
-  p.serviceNumber, p.Surname, p.OtherName, p.Rank, p.classes,
-  p.formNumber, p.FormYear, p.ship, p.command`;
+  p.serviceNumber, p.Surname, p.OtherName, p.Rank, p.classes, p.FormYear, p.ship, p.command`;
 
 function officerCols(fieldSetKey) {
   const set = fieldSetKey && OFFICER_FIELD_SETS[fieldSetKey];

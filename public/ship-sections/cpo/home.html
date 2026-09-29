@@ -1,123 +1,1303 @@
-<div class="p-4">
-  <div class="mb-6">
-    <p class="text-sm text-blue-900/50 mt-1">
-      Central Pay Officer — <span id="cpo-ship-name">—</span>
-    </p>
+<!-- FILE: emolument-sections/cpo/cpo-home.html
+     Data: GET /cpo/dashboard  → { summary, topShips, cached } -->
+
+<style>
+  .ch-name {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: rgb(30 64 175);
+    margin: 0 0 2px;
+  }
+
+  .ch-sub {
+    font-size: 0.75rem;
+    color: rgba(30, 64, 175, 0.45);
+    margin: 0;
+  }
+
+  .ch-lbl {
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: rgba(30, 64, 175, 0.38);
+    margin: 1.25rem 0 0.5rem;
+  }
+
+  /* skeleton */
+  .ch-sk {
+    display: inline-block;
+    background: rgba(251, 191, 36, 0.18);
+    border-radius: 0.25rem;
+    animation: ch-pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes ch-pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  @keyframes ch-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* progress bar */
+  .ch-prog-bar {
+    height: 6px;
+    background: rgba(251, 191, 36, 0.15);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .ch-prog-fill {
+    height: 100%;
+    border-radius: 999px;
+    width: 0%;
+    background: linear-gradient(90deg, #f5c842, rgb(30 64 175));
+    transition: width 1s ease;
+  }
+
+  /* top ships ticker */
+  .ch-ship-ticker-wrap {
+    position: relative;
+    min-height: 28px;
+    overflow: hidden;
+  }
+
+  .ch-ship-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.32rem 0;
+    position: absolute;
+    width: 100%;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+
+  .ch-ship-row.ch-tick-hidden {
+    opacity: 0;
+  }
+
+  .ch-ship-row.ch-tick-in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .ch-ship-row.ch-tick-out-up {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+
+  .ch-ship-row.ch-tick-out-down {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  .ch-ship-rank {
+    font-weight: 800;
+    color: rgba(30, 64, 175, 0.28);
+    min-width: 14px;
+  }
+
+  .ch-ship-name {
+    flex: 1;
+    font-weight: 700;
+    color: rgb(30 64 175);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .ch-ship-bar {
+    width: 40px;
+    height: 3px;
+    background: rgba(251, 191, 36, 0.18);
+    border-radius: 999px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .ch-ship-fill {
+    height: 100%;
+    background: rgb(30 64 175);
+    border-radius: 999px;
+    transition: width 0.7s ease;
+  }
+
+  .ch-ship-pct {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: rgba(30, 64, 175, 0.5);
+    min-width: 24px;
+    text-align: right;
+  }
+
+  .ch-ship-view {
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(30, 64, 175, 0.55);
+    background: rgba(30, 64, 175, 0.06);
+    border: 1px solid rgba(30, 64, 175, 0.15);
+    border-radius: 4px;
+    padding: 2px 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  .ch-ship-view:hover {
+    background: rgba(30, 64, 175, 0.12);
+  }
+
+  .ch-ticker-counter {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: rgba(30, 64, 175, 0.3);
+    text-align: right;
+  }
+
+  /* refresh badge */
+  .ch-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(30, 64, 175, 0.4);
+    background: rgba(30, 64, 175, 0.05);
+    border: 1px solid rgba(30, 64, 175, 0.1);
+    border-radius: 999px;
+    padding: 2px 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .ch-refresh:hover {
+    background: rgba(30, 64, 175, 0.1);
+  }
+
+  .ch-rdot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #22c55e;
+  }
+
+  .ch-rdot.stale {
+    background: #f59e0b;
+  }
+
+  /* ship modal */
+  .ch-modal-bg {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    backdrop-filter: blur(2px);
+  }
+
+  .ch-modal {
+    background: #fff;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 8px 32px rgba(30, 64, 175, 0.12);
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .ch-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .ch-modal-title {
+    font-size: 0.85rem;
+    font-weight: 900;
+    color: rgb(30 64 175);
+  }
+
+  .ch-modal-close {
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: rgba(30, 64, 175, 0.4);
+    background: none;
+    border: none;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .ch-modal-close:hover {
+    color: rgb(30 64 175);
+  }
+
+  .ch-modal-pct {
+    font-size: 2rem;
+    font-weight: 900;
+    color: rgb(30 64 175);
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+
+  .ch-modal-prog-bar {
+    height: 6px;
+    background: rgba(251, 191, 36, 0.15);
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 0.5rem 0 1rem;
+  }
+
+  .ch-modal-prog-fill {
+    height: 100%;
+    border-radius: 999px;
+    width: 0%;
+    background: linear-gradient(90deg, #f5c842, rgb(30 64 175));
+    transition: width 0.8s ease;
+  }
+
+  .ch-modal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.07);
+    font-size: 0.72rem;
+  }
+
+  .ch-modal-row:last-child {
+    border-bottom: none;
+  }
+
+  .ch-modal-row-lbl {
+    color: rgba(30, 64, 175, 0.5);
+    font-weight: 600;
+  }
+
+  .ch-modal-row-val {
+    font-weight: 800;
+    color: rgb(30 64 175);
+  }
+
+  .ch-modal-badge {
+    display: inline-block;
+    font-size: 0.55rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  .ch-badge-green {
+    background: rgba(34, 197, 94, 0.12);
+    color: #166534;
+  }
+
+  .ch-badge-amber {
+    background: rgba(245, 158, 11, 0.12);
+    color: #92400e;
+  }
+
+  .ch-badge-red {
+    background: rgba(239, 68, 68, 0.1);
+    color: #991b1b;
+  }
+</style>
+
+<div class="p-2 md:p-4 lg:p-6">
+
+  <!-- Greeting + refresh -->
+
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;margin-bottom:1rem;">
+    <div>
+      <h2 class="ch-name" id="ch-name">CPO Dashboard</h2>
+      <p class="ch-sub">Central Pay Officer &mdash; all commands</p>
+    </div>
+
+    <button class="ch-refresh" onclick="window.chLoad(true)">
+      <span class="ch-rdot" id="ch-rdot"></span>
+      <span id="ch-rlbl">Live</span>
+      <i class="fas fa-sync-alt" style="font-size:8px" id="ch-rspin"></i>
+    </button>
+
   </div>
 
-  <!-- Summary totals across all ships in this command -->
-  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6" id="cpo-summary-cards">
-    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 text-center">
-      <div class="text-2xl font-black text-amber-500" id="cpo-stat-pending">—</div>
-      <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(30,64,175,.4);" class="mt-1">For Confirmation</div>
+  <!-- Stat cards -->
+
+  <section class="flex justify-center p-2 md:p-4">
+    <div class="w-full max-w-7xl grid grid-cols-2 lg:grid-cols-4 gap-3">
+
+      <div
+        class="relative overflow-hidden rounded-lg bg-cyan-600 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]">
+        <i class="fas fa-users absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"></i>
+
+        <p class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8" id="c-total">
+          <span class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"></span>
+        </p>
+
+        <p class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8">
+          Total Personnel
+        </p>
+      </div>
+
+      <div
+        class="relative overflow-hidden rounded-lg bg-green-600 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]">
+        <i class="fas fa-stamp absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"></i>
+
+        <p class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8" id="c-conf">
+          <span class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"></span>
+        </p>
+
+        <p class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8">
+          Confirmed By Me
+        </p>
+      </div>
+
+      <div
+        class="relative overflow-hidden rounded-lg bg-amber-500 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]">
+        <i class="fas fa-user-clock absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"></i>
+
+        <p class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8" id="c-pend">
+          <span class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"></span>
+        </p>
+
+        <p class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8">
+          Pending Confirmation
+        </p>
+      </div>
+
+      <div
+        class="relative overflow-hidden rounded-lg bg-red-500 p-3 md:p-4 text-white shadow-sm min-h-[80px] md:min-h-[90px]">
+        <i class="fas fa-user-times absolute right-2 bottom-1 text-3xl md:text-4xl opacity-15 pointer-events-none"></i>
+
+        <p class="relative z-10 text-xl md:text-3xl font-bold leading-tight truncate pr-8" id="c-rej">
+          <span class="inline-block w-16 h-6 bg-white/30 rounded animate-pulse"></span>
+        </p>
+
+        <p class="relative z-10 text-[10px] md:text-xs font-medium mt-1 truncate pr-8">
+          Rejected By Me
+        </p>
+      </div>
+
     </div>
-    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 text-center">
-      <div class="text-2xl font-black text-green-600" id="cpo-stat-confirmed">—</div>
-      <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(30,64,175,.4);" class="mt-1">Confirmed</div>
-    </div>
-    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 text-center">
-      <div class="text-2xl font-black text-blue-600" id="cpo-stat-total">—</div>
-      <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(30,64,175,.4);" class="mt-1">Total Staff</div>
-    </div>
-    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 text-center">
-      <div class="text-2xl font-black text-red-400" id="cpo-stat-rejected">—</div>
-      <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(30,64,175,.4);" class="mt-1">Rejected</div>
-    </div>
+    ```
+
+  </section>
+
+  <!-- Overall completion + Top ships -->
+
+  <div class="mt-4 md:grid md:grid-cols-2 md:gap-4">
+
+    <!-- Overall completion -->
+    <section class="flex justify-center mb-4 md:mb-0">
+      <div class="frame-2 w-full p-4">
+
+        <p class="ch-lbl" style="margin-top:0">
+          Overall Completion
+        </p>
+
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.4rem;">
+          <span style="font-size:1.6rem;font-weight:900;color:rgb(30 64 175);line-height:1;" id="ch-pct">
+            —%
+          </span>
+
+          <span style="font-size:.72rem;color:rgba(30,64,175,.45);" id="ch-of">
+            — / — personnel
+          </span>
+        </div>
+
+        <div class="ch-prog-bar mb-2">
+          <div class="ch-prog-fill" id="ch-fill"></div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;font-size:.65rem;color:rgba(30,64,175,.38);">
+          <span id="ch-conf-lbl">— confirmed</span>
+          <span id="ch-nf-lbl">— rejected</span>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Top ships -->
+    <section class="flex justify-center">
+
+      <div class="frame-2 w-full p-4">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem;">
+          <p class="ch-lbl" style="margin-top:0;margin-bottom:0">
+            Top Ships by Completion
+          </p>
+
+          <span class="ch-ticker-counter" id="ch-ticker-counter"></span>
+        </div>
+
+        <div class="ch-ship-ticker-wrap md:mt-5" id="ch-ships-list">
+
+          <div class="ch-ship-row ch-tick-hidden" id="ch-ship-ticker">
+
+            <span class="ch-ship-rank text-sm md:text-lg" id="ch-t-rank">
+              1
+            </span>
+
+            <span class="ch-ship-name text-sm md:text-lg" id="ch-t-name">
+              —
+            </span>
+
+            <div class="ch-ship-bar">
+              <div class="ch-ship-fill" id="ch-t-bar" style="width:0%">
+              </div>
+            </div>
+
+            <span class="ch-ship-pct" id="ch-t-pct">
+              —%
+            </span>
+
+            <button class="ch-ship-view" id="ch-t-view">
+              View
+            </button>
+
+          </div>
+
+        </div>
+
+        <div id="ch-ships-sk">
+
+          <div class="ch-sk" style="height:10px;width:70%;margin-bottom:8px;display:block;border-radius:4px;">
+          </div>
+
+          <div class="ch-sk" style="height:10px;width:85%;margin-bottom:8px;display:block;border-radius:4px;">
+          </div>
+
+          <div class="ch-sk" style="height:10px;width:55%;display:block;border-radius:4px;">
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
   </div>
 
-  <!-- NEW: per-ship breakdown table -->
-  <div class="bg-white/60 rounded-xl border border-amber-100 shadow overflow-hidden overflow-x-auto mb-6">
-    <table class="w-full text-sm border-collapse">
-      <thead>
-        <tr class="text-left text-xs font-bold text-navy/60 uppercase tracking-wide border-b border-amber-100 bg-white/40">
-          <th class="py-2.5 px-4">Ship</th>
-          <th class="py-2.5 px-4 text-center">For Confirmation</th>
-          <th class="py-2.5 px-4 text-center">Confirmed</th>
-          <th class="py-2.5 px-4 text-center">Total</th>
-          <th class="py-2.5 px-4 text-center">Rejected</th>
-        </tr>
-      </thead>
-      <tbody id="cpo-ship-stats-body">
-        <tr><td colspan="5" class="text-center py-6 text-navy/30"><i class="fas fa-spinner fa-spin"></i></td></tr>
-      </tbody>
-    </table>
-  </div>
+  <!-- Action cards -->
 
-  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mt-4">
+
+    ```
     <div class="flex items-center gap-4">
+
       <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
         <i class="fas fa-stamp text-green-600 fa-lg"></i>
       </div>
+
       <div class="flex-1">
-        <div class="font-bold text-navy">Forms Awaiting CPO Confirmation</div>
-        <div class="text-xs text-blue-900/40 mt-0.5">FO-approved forms pending your final confirmation</div>
+
+        <div class="font-bold text-navy">
+          Forms Awaiting CPO Confirmation
+        </div>
+
+        <div class="text-xs text-blue-900/40 mt-0.5">
+          FO-approved forms pending your final confirmation
+        </div>
+
       </div>
-      <button
-        onclick="if (window.shipNav) window.shipNav.navigate('pending');"
-        class="px-4 py-2 bg-navy text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors flex-shrink-0"
-      >
-        Confirm <i class="fas fa-chevron-right ml-1" style="font-size:11px"></i>
+
+      <button onclick="if (window.shipNav) window.shipNav.navigate('pending');"
+        class="px-4 py-2 bg-navy text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors flex-shrink-0">
+        Confirm
+        <i class="fas fa-chevron-right ml-1" style="font-size:11px"></i>
       </button>
+
     </div>
+    ```
+
   </div>
 
-  <div class="bg-amber-50/60 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-    <i class="fas fa-info-circle mr-2"></i>As CPO, your confirmation is the final stage. Confirmed forms are synced to payroll by the admin.
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mt-4">
+
+    ```
+    <div class="flex items-center gap-4">
+
+      <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-table text-blue-600 fa-lg"></i>
+      </div>
+
+      <div class="flex-1">
+
+        <div class="font-bold text-navy">
+          Command / Ship Breakdown
+        </div>
+
+        <div class="text-xs text-blue-900/40 mt-0.5">
+          Pending, confirmed, rejected and total per ship
+        </div>
+
+      </div>
+
+      <button onclick="if (window.shipNav) window.shipNav.navigate('breakdown');"
+        class="px-4 py-2 bg-navy text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors flex-shrink-0">
+        View
+        <i class="fas fa-chevron-right ml-1" style="font-size:11px"></i>
+      </button>
+
+    </div>
+    ```
+
   </div>
+
+  <div class="bg-amber-50/60 border border-amber-200 rounded-xl p-4 text-sm text-amber-800 mt-4">
+    <i class="fas fa-info-circle mr-2"></i>
+    As CPO, your confirmation is the final stage. Confirmed forms are synced to payroll by the admin.
+  </div>
+
+</div>
+
+<!-- Ship stats modal -->
+
+<div class="ch-modal-bg" id="ch-modal" style="display:none" onclick="if (event.target === this) window.chCloseModal();">
+
+  <div class="ch-modal">
+
+    ```
+    <div class="ch-modal-head">
+
+      <span class="ch-modal-title" id="ch-modal-title">
+        Ship Stats
+      </span>
+
+      <button class="ch-modal-close" onclick="window.chCloseModal()">
+        &#x2715;
+      </button>
+
+    </div>
+
+    <div id="ch-modal-body"></div>
+    ```
+
+  </div>
+
 </div>
 
 <script>
   (function () {
-    const command = sessionStorage.getItem("active_ship") || "—";
-    const token = localStorage.getItem("token");
-    const el = document.getElementById("cpo-ship-name");
-    if (el) el.textContent = command;
-    if (!token) return;
 
-    fetch("/cpo/command/" + encodeURIComponent(command) + "/stats", {
-      headers: { Authorization: "Bearer " + token },
-    })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((rows) => {
-        rows = Array.isArray(rows) ? rows : [];
+    /* ─────────────────────────────────────────────
+       Cleanup from previous mount
+    ───────────────────────────────────────────── */
 
-        // Summary totals across all ships
-        const sum = rows.reduce(
-          (acc, r) => ({
-            pending: acc.pending + (r.pending || 0),
-            confirmed: acc.confirmed + (r.confirmed || 0),
-            total: acc.total + (r.total || 0),
-            rejected: acc.rejected + (r.rejected || 0),
-          }),
-          { pending: 0, confirmed: 0, total: 0, rejected: 0 },
-        );
-        document.getElementById("cpo-stat-pending").textContent = sum.pending;
-        document.getElementById("cpo-stat-confirmed").textContent = sum.confirmed;
-        document.getElementById("cpo-stat-total").textContent = sum.total;
-        document.getElementById("cpo-stat-rejected").textContent = sum.rejected;
+    if (window.__chTickTimer) {
+      clearInterval(window.__chTickTimer);
+      window.__chTickTimer = null;
+    }
 
-        // Per-ship table
-        const body = document.getElementById("cpo-ship-stats-body");
-        if (!rows.length) {
-          body.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-navy/30">No data</td></tr>`;
+    document
+      .querySelectorAll("body > #ch-modal")
+      .forEach(function (n) {
+        n.remove();
+      });
+
+    const TOKEN = localStorage.getItem("token");
+
+    /* ─────────────────────────────────────────────
+       Greeting
+    ───────────────────────────────────────────── */
+
+    try {
+      const name = localStorage.getItem("full_name") || "CPO";
+      const parts = name.trim().split(/\s+/);
+
+      const h = new Date().getHours();
+
+      const part =
+        h < 12
+          ? "Morning"
+          : h < 17
+            ? "Afternoon"
+            : "Evening";
+
+      const el = document.getElementById("ch-name");
+
+      if (el) {
+        el.textContent =
+          "Good " +
+          part +
+          ", " +
+          (parts[0] || "CPO") +
+          " " +
+          (parts[1] || "");
+      }
+
+    } catch (e) {
+      console.warn("CPO greeting error:", e);
+    }
+
+    /* ─────────────────────────────────────────────
+       Helpers
+    ───────────────────────────────────────────── */
+
+    function N(v) {
+      return v === undefined || v === null
+        ? "0"
+        : Number(v).toLocaleString();
+    }
+
+    function pct(a, b) {
+      if (!b) return 0;
+
+      const value = (Number(a) / Number(b)) * 100;
+
+      /*
+       * Keep two decimal places for very small percentages.
+       * Examples:
+       * 1 / 27431 = 0.0036% → 0.00%
+       * 10 / 27431 = 0.036% → 0.04%
+       * 100 / 27431 = 0.364% → 0.36%
+       */
+      if (value < 1) {
+        return Number(value.toFixed(2));
+      }
+
+      return Math.round(value);
+    }
+
+    function sid(id, html) {
+      const el = document.getElementById(id);
+
+      if (el) {
+        el.innerHTML = html;
+      }
+    }
+
+    function esc(v) {
+      return String(v == null ? "" : v).replace(
+        /[&<>"']/g,
+        function (c) {
+          return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+          }[c];
+        }
+      );
+    }
+
+    /* ─────────────────────────────────────────────
+       Ticker
+    ───────────────────────────────────────────── */
+
+    let _ships = [];
+    let _tickIdx = 0;
+
+    function showShip(i, enterClass) {
+
+      const s = _ships[i];
+
+      const row =
+        document.getElementById("ch-ship-ticker");
+
+      if (!s || !row) {
+        return;
+      }
+
+      const bar =
+        document.getElementById("ch-t-bar");
+
+      if (bar) {
+        bar.style.transition = "none";
+        bar.style.width = "0%";
+      }
+
+      row.className =
+        "ch-ship-row ch-tick-hidden";
+
+      const rank =
+        document.getElementById("ch-t-rank");
+
+      if (rank) {
+        rank.textContent = i + 1;
+      }
+
+      const nameEl =
+        document.getElementById("ch-t-name");
+
+      if (nameEl) {
+        nameEl.textContent = s.ship || "—";
+        nameEl.title = s.command || "";
+      }
+
+      const pctEl =
+        document.getElementById("ch-t-pct");
+
+      if (pctEl) {
+        pctEl.textContent =
+          (Number(s.completion_pct) || 0) + "%";
+      }
+
+      const view =
+        document.getElementById("ch-t-view");
+
+      if (view) {
+        view.onclick = function () {
+          window.chOpenModal(i);
+        };
+      }
+
+      const counter =
+        document.getElementById("ch-ticker-counter");
+
+      if (counter) {
+        counter.textContent =
+          (i + 1) + " / " + _ships.length;
+      }
+
+      requestAnimationFrame(function () {
+
+        row.className =
+          "ch-ship-row " + enterClass;
+
+        setTimeout(function () {
+
+          if (bar) {
+
+            bar.style.transition =
+              "width 0.7s ease";
+
+            bar.style.width =
+              (Number(s.completion_pct) || 0) + "%";
+          }
+
+        }, 50);
+
+      });
+    }
+
+    function tickNext() {
+
+      const row =
+        document.getElementById("ch-ship-ticker");
+
+      if (!row) {
+
+        if (window.__chTickTimer) {
+          clearInterval(window.__chTickTimer);
+          window.__chTickTimer = null;
+        }
+
+        return;
+      }
+
+      row.className =
+        "ch-ship-row ch-tick-out-up";
+
+      setTimeout(function () {
+
+        if (!_ships.length) {
           return;
         }
-        body.innerHTML = rows
-          .map(
-            (r) => `
-          <tr class="border-b border-amber-50 last:border-0 hover:bg-amber-50/40">
-            <td class="py-2.5 px-4 font-bold text-navy">${r.ship || "—"}</td>
-            <td class="py-2.5 px-4 text-center text-amber-600 font-bold">${r.pending}</td>
-            <td class="py-2.5 px-4 text-center text-green-600 font-bold">${r.confirmed}</td>
-            <td class="py-2.5 px-4 text-center text-blue-600 font-bold">${r.total}</td>
-            <td class="py-2.5 px-4 text-center text-red-400 font-bold">${r.rejected}</td>
-          </tr>`,
-          )
-          .join("");
-      })
-      .catch(() => {
-        document.getElementById("cpo-ship-stats-body").innerHTML =
-          `<tr><td colspan="5" class="text-center py-6 text-red-400">Failed to load</td></tr>`;
-      });
+
+        _tickIdx =
+          (_tickIdx + 1) % _ships.length;
+
+        showShip(
+          _tickIdx,
+          "ch-tick-out-down"
+        );
+
+        requestAnimationFrame(function () {
+
+          setTimeout(function () {
+
+            const r =
+              document.getElementById("ch-ship-ticker");
+
+            if (r) {
+              r.className =
+                "ch-ship-row ch-tick-in";
+            }
+
+          }, 20);
+
+        });
+
+      }, 350);
+    }
+
+    function startTicker() {
+
+      const sk =
+        document.getElementById("ch-ships-sk");
+
+      if (sk) {
+        sk.style.display = "none";
+      }
+
+      if (window.__chTickTimer) {
+        clearInterval(window.__chTickTimer);
+        window.__chTickTimer = null;
+      }
+
+      _tickIdx = 0;
+
+      showShip(
+        0,
+        "ch-tick-in"
+      );
+
+      if (_ships.length > 1) {
+
+        window.__chTickTimer =
+          setInterval(
+            tickNext,
+            3000
+          );
+      }
+    }
+
+    /* ─────────────────────────────────────────────
+       Modal
+    ───────────────────────────────────────────── */
+
+    window.chOpenModal = function (i) {
+
+      const s = _ships[i];
+
+      if (!s) {
+        return;
+      }
+
+      const title =
+        document.getElementById("ch-modal-title");
+
+      if (title) {
+        title.textContent =
+          s.ship || "Ship";
+      }
+
+      const cp =
+        Number(s.completion_pct) || 0;
+
+      const total =
+        Number(s.total) || 0;
+
+      const confirmed =
+        Number(s.confirmed) || 0;
+
+      const rejected =
+        Number(s.rejected) || 0;
+
+      const pending =
+        Number(s.pending) || 0;
+
+      const body =
+        document.getElementById("ch-modal-body");
+
+      if (!body) {
+        return;
+      }
+
+      body.innerHTML =
+        '<div style="margin-bottom:0.75rem;">' +
+
+        '<span class="ch-modal-pct">' +
+        cp +
+        "%" +
+        "</span>" +
+
+        '<div class="ch-modal-prog-bar">' +
+        '<div class="ch-modal-prog-fill" id="ch-mpf"></div>' +
+        "</div>" +
+
+        "</div>" +
+
+        '<div class="ch-modal-row">' +
+        '<span class="ch-modal-row-lbl">Command</span>' +
+        '<span class="ch-modal-row-val">' +
+        esc(s.command || "—") +
+        "</span>" +
+        "</div>" +
+
+        '<div class="ch-modal-row">' +
+        '<span class="ch-modal-row-lbl">Total Personnel</span>' +
+        '<span class="ch-modal-row-val">' +
+        N(total) +
+        "</span>" +
+        "</div>" +
+
+        '<div class="ch-modal-row">' +
+        '<span class="ch-modal-row-lbl">Confirmed by Me</span>' +
+        '<span class="ch-modal-row-val" style="color:#166534">' +
+        N(confirmed) +
+        "</span>" +
+        "</div>" +
+
+        '<div class="ch-modal-row">' +
+        '<span class="ch-modal-row-lbl">Rejected by Me</span>' +
+        '<span class="ch-modal-row-val" style="color:#991b1b">' +
+        N(rejected) +
+        "</span>" +
+        "</div>" +
+
+        '<div class="ch-modal-row">' +
+        '<span class="ch-modal-row-lbl">Awaiting Confirmation</span>' +
+        '<span class="ch-modal-row-val" style="color:#92400e">' +
+        N(pending) +
+        "</span>" +
+        "</div>" +
+
+        '<div class="ch-modal-row">' +
+        '<span class="ch-modal-row-lbl">My Rank</span>' +
+        '<span class="ch-modal-row-val">#' +
+        (i + 1) +
+        " of " +
+        _ships.length +
+        "</span>" +
+        "</div>";
+
+      const modal =
+        document.getElementById("ch-modal");
+
+      if (modal) {
+        modal.style.display = "flex";
+      }
+
+      setTimeout(function () {
+
+        const f =
+          document.getElementById("ch-mpf");
+
+        if (f) {
+          f.style.width =
+            cp + "%";
+        }
+
+      }, 80);
+    };
+
+    window.chCloseModal = function () {
+
+      const modal =
+        document.getElementById("ch-modal");
+
+      if (modal) {
+        modal.style.display = "none";
+      }
+    };
+
+    /* ─────────────────────────────────────────────
+       Render API response
+    ───────────────────────────────────────────── */
+
+    function render(data) {
+
+      if (!data) {
+        console.warn(
+          "CPO dashboard: empty response"
+        );
+        return;
+      }
+
+      console.log(
+        "CPO dashboard payload:",
+        data
+      );
+
+      const g =
+        data.summary || {};
+
+      _ships =
+        Array.isArray(data.topShips)
+          ? data.topShips
+          : [];
+
+      const total =
+        Number(g.total_personnel) || 0;
+
+      const conf =
+        Number(g.total_confirmed) || 0;
+
+      const pending =
+        Number(g.total_pending) || 0;
+
+      const rejected =
+        Number(g.total_rejected) || 0;
+
+      const p =
+        pct(conf, total);
+
+      /* ── Stat cards ── */
+
+      sid(
+        "c-total",
+        N(total)
+      );
+
+      sid(
+        "c-conf",
+        N(conf)
+      );
+
+      sid(
+        "c-pend",
+        N(pending)
+      );
+
+      sid(
+        "c-rej",
+        N(rejected)
+      );
+
+      /* ── Overall completion ── */
+
+      sid(
+        "ch-pct",
+        p + "%"
+      );
+
+      sid(
+        "ch-of",
+        conf.toLocaleString() +
+        " / " +
+        total.toLocaleString() +
+        " personnel"
+      );
+
+      sid(
+        "ch-conf-lbl",
+        conf.toLocaleString() +
+        " confirmed by me"
+      );
+
+      sid(
+        "ch-nf-lbl",
+        rejected.toLocaleString() +
+        " rejected by me"
+      );
+
+      setTimeout(function () {
+
+        const f =
+          document.getElementById("ch-fill");
+
+        if (f) {
+          f.style.width =
+            Math.min(100, p) + "%";
+        }
+
+      }, 80);
+
+      /* ── Cache status ── */
+
+      const dot =
+        document.getElementById("ch-rdot");
+
+      const lbl =
+        document.getElementById("ch-rlbl");
+
+      if (dot) {
+
+        dot.className =
+          "ch-rdot" +
+          (data.cached ? " stale" : "");
+      }
+
+      if (lbl) {
+        lbl.textContent =
+          data.cached
+            ? "Cached"
+            : "Live";
+      }
+
+      /* ── Ships ── */
+
+      if (_ships.length) {
+
+        startTicker();
+
+      } else {
+
+        if (window.__chTickTimer) {
+
+          clearInterval(
+            window.__chTickTimer
+          );
+
+          window.__chTickTimer = null;
+        }
+
+        const sk =
+          document.getElementById("ch-ships-sk");
+
+        if (sk) {
+
+          sk.style.display =
+            "block";
+
+          sk.innerHTML =
+            '<p style="font-size:.75rem;color:rgba(30,64,175,.4);">' +
+            "No confirmations yet. Ships you confirm forms for will show up here." +
+            "</p>";
+        }
+      }
+    }
+
+    /* ─────────────────────────────────────────────
+       Fetch
+    ───────────────────────────────────────────── */
+
+    function load(bust) {
+
+      if (!TOKEN) {
+
+        console.warn(
+          "CPO dashboard: no token found in localStorage"
+        );
+
+        return;
+      }
+
+      const spin =
+        document.getElementById("ch-rspin");
+
+      if (spin) {
+        spin.style.animation =
+          "ch-spin 0.7s linear infinite";
+      }
+
+      fetch(
+        "/cpo/dashboard" +
+        (bust ? "?refresh=1" : ""),
+        {
+          method: "GET",
+          headers: {
+            Authorization:
+              "Bearer " + TOKEN,
+
+            Accept:
+              "application/json"
+          }
+        }
+      )
+
+        .then(function (r) {
+
+          if (!r.ok) {
+
+            console.error(
+              "CPO dashboard HTTP error:",
+              r.status,
+              r.statusText
+            );
+
+            throw new Error(
+              "Dashboard request failed: " +
+              r.status
+            );
+          }
+
+          return r.json();
+        })
+
+        .then(function (res) {
+
+          console.log(
+            "CPO dashboard raw response:",
+            res
+          );
+
+          if (!res) {
+            return;
+          }
+
+          /*
+           * Your actual API response is:
+           *
+           * {
+           *   summary: {...},
+           *   topShips: [...],
+           *   cached: true
+           * }
+           *
+           * Therefore use res directly.
+           *
+           * The previous code expected:
+           * { global: ... }
+           * or
+           * { data: ... }
+           *
+           * which caused render() never to run.
+           */
+
+          const payload =
+            res.data || res;
+
+          render(payload);
+        })
+
+        .catch(function (err) {
+
+          console.error(
+            "CPO dashboard fetch error:",
+            err
+          );
+
+        })
+
+        .finally(function () {
+
+          if (spin) {
+            spin.style.animation = "";
+          }
+
+        });
+    }
+
+    /* ─────────────────────────────────────────────
+       Public refresh function
+    ───────────────────────────────────────────── */
+
+    window.chLoad = function (bust) {
+      load(bust);
+    };
+
+    /* ─────────────────────────────────────────────
+       Initial load
+    ───────────────────────────────────────────── */
+
+    load(false);
+
+    /* ─────────────────────────────────────────────
+       Hoist modal to body
+    ───────────────────────────────────────────── */
+
+    const modal =
+      document.getElementById("ch-modal");
+
+    if (modal) {
+      document.body.appendChild(modal);
+    }
+
   })();
 </script>

@@ -241,4 +241,11 @@ router.get("/ship/:ship/reviewed", requireEmolRole("DO"), async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────
+// REPORTS — pending / approved / rejected, PDF & Excel
+// ─────────────────────────────────────────────────────────────
+router.use(require("./do.reports.routes"));
+
+module.exports = router;
+
 module.exports = router;

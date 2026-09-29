@@ -12,7 +12,7 @@
       </h3>
       <div class="flex items-center gap-2">
         <input type="checkbox" id="cpoBulkSelectAll" onchange="cpoToggleAll(this)" class="accent-navy w-4 h-4" />
-        <label for="cpoBulkSelectAll" class="text-xs font-bold text-navy/60">Select All</label>
+        <label for="cpoBulkSelectAll" class="text-xs font-bold text-navy/60">Select All (this page)</label>
       </div>
     </div>
 
@@ -22,6 +22,10 @@
         <input type="text" id="cpoBulkSearch" placeholder="Search by name or service number..."
           class="w-full pl-9 pr-3 py-2 border border-amber-100 rounded-lg text-sm text-navy bg-white focus:outline-none focus:border-navy" />
       </div>
+      <select id="cpoCommandFilter"
+        class="rounded-lg border border-amber-100 bg-white px-3 py-2 text-sm text-navy focus:outline-none">
+        <option value="">All Commands</option>
+      </select>
       <select id="cpoBulkShipFilter"
         class="rounded-lg border border-amber-100 bg-white px-3 py-2 text-sm text-navy focus:outline-none">
         <option value="">All Ships</option>
@@ -42,7 +46,7 @@
     </div>
   </div>
 
-  <button onclick="executeCpoBulk()"
+  <button id="cpoBulkBtn" onclick="executeCpoBulk()"
     class="w-full py-3 bg-green-600 text-white font-bold text-sm rounded-xl hover:bg-green-700 transition-colors cursor-pointer border-none">
     <i class="fas fa-check-double mr-2"></i>Confirm Selected
   </button>
@@ -55,27 +59,17 @@
   var cpoBulkCurrentSearch = "";
   var cpoBulkShip = "";
   var cpoBulkClasses = "";
+  var cpoBulkBusy = false;
+  var cpoCommandFilter = "";
+  var cpoAllStatsRows = [];
 
-  function loadCpoBulkShipFilterOptions() {
-    fetch("/cpo/command/" + encodeURIComponent(command) + "/stats", {
-      headers: { Authorization: "Bearer " + token },
-    })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((rows) => {
-        const select = document.getElementById("cpoBulkShipFilter");
-        (Array.isArray(rows) ? rows : []).forEach((r) => {
-          if (!r.ship) return;
-          const o = document.createElement("option");
-          o.value = r.ship;
-          o.textContent = r.ship;
-          select.appendChild(o);
-        });
-      })
-      .catch(() => { });
+  function cpoEsc(v) {
+    return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
   }
 
-
-  function debounce(fn, delay) {
+  function cpoDebounce(fn, delay) {
     let t;
     return (...args) => {
       clearTimeout(t);
@@ -83,6 +77,47 @@
     };
   }
 
+  /* ── Filter options: commands + ships (ship depends on command) ── */
+  function loadCpoFilterOptions() {
+    fetch("/cpo/stats", { headers: { Authorization: "Bearer " + token } })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows) => {
+        cpoAllStatsRows = Array.isArray(rows) ? rows : [];
+        const cmdSelect = document.getElementById("cpoCommandFilter");
+        cmdSelect.innerHTML = '<option value="">All Commands</option>';
+        [...new Set(cpoAllStatsRows.map((r) => r.command))]
+          .filter(Boolean)
+          .sort()
+          .forEach((c) => {
+            const o = document.createElement("option");
+            o.value = c;
+            o.textContent = c;
+            cmdSelect.appendChild(o);
+          });
+        populateShipOptions("");
+      })
+      .catch(() => {});
+  }
+
+  function populateShipOptions(command) {
+    const shipSelect = document.getElementById("cpoBulkShipFilter");
+    shipSelect.innerHTML = '<option value="">All Ships</option>';
+    [...new Set(
+      cpoAllStatsRows
+        .filter((r) => !command || r.command === command)
+        .map((r) => r.ship),
+    )]
+      .filter(Boolean)
+      .sort()
+      .forEach((s) => {
+        const o = document.createElement("option");
+        o.value = s;
+        o.textContent = s;
+        shipSelect.appendChild(o);
+      });
+  }
+
+  /* ── List ── */
   function loadCpoBulkList(page, search) {
     page = page || 1;
     search = search !== undefined ? search : cpoBulkCurrentSearch;
@@ -90,17 +125,19 @@
     cpoBulkCurrentSearch = search;
 
     const el = document.getElementById("cpoBulkList");
-    el.innerHTML = `<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>`;
+    el.innerHTML =
+      '<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
 
     const qs = new URLSearchParams({
-      page,
+      page: page,
       limit: CPO_CONFIRMED_PAGE_SIZE,
       search: search || "",
+      command: cpoCommandFilter,
       ship: cpoBulkShip,
       classes: cpoBulkClasses,
     });
 
-    fetch("/cpo/pending/" + encodeURIComponent(command) + "?" + qs.toString(), {
+    fetch("/cpo/pending?" + qs.toString(), {
       headers: { Authorization: "Bearer " + token },
     })
       .then((r) => (r.ok ? r.json() : { forms: [], total: 0 }))
@@ -111,9 +148,9 @@
 
         document.getElementById("cpoBulkSelectAll").checked = false;
 
-        if (!rows.length && page === 1) {
+        if (!rows.length) {
           el.innerHTML = search
-            ? `<div class="text-center py-8 text-blue-900/30 text-sm"><i class="fas fa-search fa-2x mb-2 block"></i>No matches for "${search}"</div>`
+            ? `<div class="text-center py-8 text-blue-900/30 text-sm"><i class="fas fa-search fa-2x mb-2 block"></i>No matches for "${cpoEsc(search)}"</div>`
             : '<div class="text-center py-8 text-blue-900/30 text-sm"><i class="fas fa-check-circle fa-2x mb-2 block text-green-300"></i>No forms pending CPO confirmation</div>';
           return;
         }
@@ -126,92 +163,92 @@
                 <th class="py-2.5 px-4 w-10"></th>
                 <th class="py-2.5 px-4">Name</th>
                 <th class="py-2.5 px-4">Service No.</th>
+                <th class="py-2.5 px-4">Command</th>
+                <th class="py-2.5 px-4">Ship</th>
                 <th class="py-2.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               ${rows
-            .map(
-              (r, i) => `
+                .map(
+                  (r, i) => `
                 <tr class="border-b border-amber-50 last:border-0 hover:bg-amber-50/40 transition-colors bg-white/60">
                   <td class="py-2.5 px-4">
                     <input type="checkbox" class="cpo-bulk-chk accent-navy w-4 h-4" data-idx="${i}" />
                   </td>
-                  <td class="py-2.5 px-4 font-bold text-navy">${r.Surname || ""} ${r.OtherName || ""}</td>
-                  <td class="py-2.5 px-4 text-blue-900/50">${r.serviceNumber}</td>
+                  <td class="py-2.5 px-4 font-bold text-navy">${cpoEsc(r.Surname || "")} ${cpoEsc(r.OtherName || "")}</td>
+                  <td class="py-2.5 px-4 text-blue-900/50">${cpoEsc(r.serviceNumber)}</td>
+                  <td class="py-2.5 px-4 text-blue-900/60">${cpoEsc(r.command || "-")}</td>
+                  <td class="py-2.5 px-4 text-blue-900/60">${cpoEsc(r.ship || "-")}</td>
                   <td class="py-2.5 px-4">
                     <div class="flex gap-2 justify-end items-center">
                       <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-500">FO Approved</span>
-                      <button onclick="viewForm('${r.serviceNumber}', 'EMOL_CPO')" class="px-2 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg cursor-pointer border border-blue-200 hover:bg-blue-100 transition-colors">
+                      <button
+                        data-svc="${cpoEsc(r.serviceNumber)}"
+                        data-cmd="${cpoEsc(r.command || "")}"
+                        onclick="viewForm(this.dataset.svc,'EMOL_CPO',this.dataset.cmd)"
+                        class="px-2 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg cursor-pointer border border-blue-200 hover:bg-blue-100 transition-colors">
                         <i class="fas fa-eye mr-1"></i>View
                       </button>
                     </div>
                   </td>
                 </tr>`,
-            )
-            .join("")}
+                )
+                .join("")}
             </tbody>
           </table>
         </div>
         ${paginatorHTML(page, Math.ceil(total / CPO_CONFIRMED_PAGE_SIZE), "cpoPending")}`;
 
         el.querySelectorAll('[data-paginator="cpoPending"]').forEach((btn) => {
-          btn.addEventListener("click", () =>
-            loadCpoBulkList(+btn.dataset.page),
-          );
+          btn.addEventListener("click", () => loadCpoBulkList(+btn.dataset.page));
         });
       })
       .catch(() => {
-        el.innerHTML =
-          '<div class="text-center py-6 text-red-400 text-sm">Failed to load</div>';
+        el.innerHTML = '<div class="text-center py-6 text-red-400 text-sm">Failed to load</div>';
       });
   }
 
-  const debouncedCpoBulkSearch = debounce(
-    (val) => loadCpoBulkList(1, val),
-    350,
-  );
-  document.getElementById("cpoBulkSearch").addEventListener("input", (e) => {
-    debouncedCpoBulkSearch(e.target.value.trim());
-  });
-
   function cpoToggleAll(cb) {
-    document
-      .querySelectorAll(".cpo-bulk-chk")
-      .forEach((c) => (c.checked = cb.checked));
+    document.querySelectorAll(".cpo-bulk-chk").forEach((c) => (c.checked = cb.checked));
   }
 
-  function viewForm(svcno, role) {
+  /* ── View form ── */
+  function viewForm(svcno, role, rowCommand) {
     sessionStorage.setItem("emolument_form_return_page", "ship-dashboard");
-    // NOTE: the form viewer uses the EMOL_* role vocabulary; the ship dashboard
-    // uses DO/FO/CPO. Keep them in separate keys so viewing a form cannot
-    // corrupt the ship dashboard's role on refresh.
+    // The form viewer uses the EMOL_* role vocabulary; the ship dashboard
+    // uses DO/FO/CPO. Separate keys so viewing a form can't corrupt the
+    // dashboard's role on refresh.
     sessionStorage.setItem("active_form_role", role);
     sessionStorage.setItem("emolument_form_svcno", svcno);
     window.location.href =
-      "../../pages/emolument-form.html?svcno=" +
-      encodeURIComponent(svcno) +
-      "&role=" +
-      encodeURIComponent(role) +
-      "&admin=1" +
-      "&command=" +
-      encodeURIComponent(command);
+      "../../pages/emolument-form.html?svcno=" + encodeURIComponent(svcno) +
+      "&role=" + encodeURIComponent(role) +
+      "&admin=1&command=" + encodeURIComponent(rowCommand || "");
   }
 
+  /* ── Bulk confirm ── */
   function executeCpoBulk() {
+    if (cpoBulkBusy) return;
+
     const selected = [...document.querySelectorAll(".cpo-bulk-chk:checked")]
       .map((c) => cpoBulkForms[Number(c.dataset.idx)]?.form_id)
       .filter(Boolean);
     const msg = document.getElementById("cpoBulkMsg");
+
     if (!selected.length) {
-      msg.className =
-        "p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
+      msg.className = "mt-3 p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
       msg.textContent = "No forms selected.";
       msg.classList.remove("hidden");
       return;
     }
     if (!confirm("Confirm " + selected.length + " form(s)?")) return;
-    fetch("/cpo/" + encodeURIComponent(command) + "/confirm/bulk", {
+
+    cpoBulkBusy = true;
+    const btn = document.getElementById("cpoBulkBtn");
+    if (btn) btn.disabled = true;
+
+    fetch("/cpo/confirm/bulk", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -222,10 +259,10 @@
       .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
       .then(({ ok, d }) => {
         msg.className =
-          "p-3 rounded-lg text-sm font-semibold " +
+          "mt-3 p-3 rounded-lg text-sm font-semibold " +
           (ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600");
         msg.textContent = ok
-          ? d.message || selected.length + " forms approved."
+          ? d.message || selected.length + " forms confirmed."
           : d.error || "Failed";
         msg.classList.remove("hidden");
         setTimeout(() => {
@@ -234,23 +271,39 @@
         }, 2000);
       })
       .catch(() => {
-        msg.className =
-          "p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
+        msg.className = "mt-3 p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
         msg.textContent = "Server error";
         msg.classList.remove("hidden");
+      })
+      .finally(() => {
+        cpoBulkBusy = false;
+        if (btn) btn.disabled = false;
       });
   }
 
-  loadCpoBulkShipFilterOptions();
-  loadCpoBulkList(1, "");
+  /* ── Wire up ── */
+  var cpoDebouncedBulkSearch = cpoDebounce((val) => loadCpoBulkList(1, val), 350);
+  document.getElementById("cpoBulkSearch").addEventListener("input", (e) => {
+    cpoDebouncedBulkSearch(e.target.value.trim());
+  });
 
-  // NEW
+  document.getElementById("cpoCommandFilter").addEventListener("change", function () {
+    cpoCommandFilter = this.value;
+    cpoBulkShip = "";
+    populateShipOptions(cpoCommandFilter);
+    loadCpoBulkList(1);
+  });
+
   document.getElementById("cpoBulkShipFilter").addEventListener("change", function () {
     cpoBulkShip = this.value;
     loadCpoBulkList(1);
   });
+
   document.getElementById("cpoBulkClassFilter").addEventListener("change", function () {
     cpoBulkClasses = this.value;
     loadCpoBulkList(1);
   });
+
+  loadCpoFilterOptions();
+  loadCpoBulkList(1, "");
 </script>

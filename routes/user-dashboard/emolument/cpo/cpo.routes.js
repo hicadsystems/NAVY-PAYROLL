@@ -46,13 +46,19 @@ router.use(verifyToken);
 // Returns array of command codes, or 'ALL' if EMOL_ADMIN.
 // ─────────────────────────────────────────────────────────────
 
+// function resolveCpoCommands(req) {
+//   if (req.isEmolAdmin) return "ALL";
+//   return (req.emolRoles || [])
+//     .filter(
+//       (r) => r.role === "CPO" && r.scope_type === "COMMAND" && r.scope_value,
+//     )
+//     .map((r) => r.scope_value);
+// }
+
 function resolveCpoCommands(req) {
   if (req.isEmolAdmin) return "ALL";
-  return (req.emolRoles || [])
-    .filter(
-      (r) => r.role === "CPO" && r.scope_type === "COMMAND" && r.scope_value,
-    )
-    .map((r) => r.scope_value);
+  const hasCpo = (req.emolRoles || []).some((r) => r.role === "CPO");
+  return hasCpo ? "ALL" : [];
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -61,30 +67,64 @@ function resolveCpoCommands(req) {
 // requireEmolRole('CPO') — scope comes from the CPO's roles.
 // ─────────────────────────────────────────────────────────────
 
-router.get("/pending", requireEmolRole("CPO"), async (req, res) => {
-  const commands = resolveCpoCommands(req);
+// router.get("/pending", requireEmolRole("CPO"), async (req, res) => {
+//   const commands = resolveCpoCommands(req);
 
-  // For scoped CPOs — collect all their commands and merge results
-  // For EMOL_ADMIN — query needs a command; return 400 if none scoped
-  if (commands !== "ALL" && commands.length === 0) {
-    return res.status(403).json({ error: "No command scope assigned." });
-  }
+//   // For scoped CPOs — collect all their commands and merge results
+//   // For EMOL_ADMIN — query needs a command; return 400 if none scoped
+//   if (commands !== "ALL" && commands.length === 0) {
+//     return res.status(403).json({ error: "No command scope assigned." });
+//   }
+
+//   try {
+//     // If EMOL_ADMIN, they should use /pending/:command to scope the query
+//     if (commands === "ALL") {
+//       return res.status(400).json({
+//         error: "Please specify a command: GET /cpo/pending/:command",
+//       });
+//     }
+
+//     // Fetch for all assigned commands in parallel
+//     const results = await Promise.all(
+//       commands.map((cmd) => cpoService.listFoApprovedForms(cmd)),
+//     );
+
+//     const merged = results.flatMap((r) => (r.success ? r.data : []));
+//     return res.json(merged);
+//   } catch (err) {
+//     console.error("❌ GET /cpo/pending:", err);
+//     return res.status(500).json({ error: "Server error" });
+//   }
+// });
+
+router.get("/pending", requireEmolRole("CPO"), async (req, res) => {
+ if (resolveCpoCommands(req) !== "ALL") {
+  return res.status(403).json({ error: "No CPO role assigned." });
+}
+
+
+  const {
+    command = "",
+    ship = "",
+    classes = "",
+    search = "",
+    page = 1,
+    limit,
+  } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
 
   try {
-    // If EMOL_ADMIN, they should use /pending/:command to scope the query
-    if (commands === "ALL") {
-      return res.status(400).json({
-        error: "Please specify a command: GET /cpo/pending/:command",
-      });
-    }
-
-    // Fetch for all assigned commands in parallel
-    const results = await Promise.all(
-      commands.map((cmd) => cpoService.listFoApprovedForms(cmd)),
+    const result = await cpoService.listFoApprovedForms(
+      command,
+      Number(limit),
+      offset,
+      search,
+      ship,
+      classes,
     );
-
-    const merged = results.flatMap((r) => (r.success ? r.data : []));
-    return res.json(merged);
+    if (!result.success)
+      return res.status(result.code).json({ error: result.message });
+    return res.json(result.data);
   } catch (err) {
     console.error("❌ GET /cpo/pending:", err);
     return res.status(500).json({ error: "Server error" });
@@ -96,6 +136,7 @@ router.get("/pending", requireEmolRole("CPO"), async (req, res) => {
 // List FO_APPROVED forms for a specific command.
 // Used by EMOL_ADMIN and CPOs who want to filter by command.
 // requireEmolRole('CPO') with command in params.
+// INACTIVE
 // ─────────────────────────────────────────────────────────────
 
 router.get("/pending/:command", requireEmolRole("CPO"), async (req, res) => {
@@ -255,190 +296,253 @@ router.post(
 
 // ─────────────────────────────────────────────────────────────
 // BULK CONFIRM — selected form numbers
-// POST /cpo/:command/confirm/bulk
+// POST /cpo/:command/confirm/bulk [OLD]
+// POST /cpo/confirm/bulk
 // Body: { selected: string[] }
 // ─────────────────────────────────────────────────────────────
 
-router.post(
-  "/:command/confirm/bulk",
-  requireEmolRole("CPO"),
-  async (req, res) => {
-    const command = req.params.command;
+// router.post(
+//   "/:command/confirm/bulk",
+//   requireEmolRole("CPO"),
+//   async (req, res) => {
+//     const command = req.params.command;
 
-    const cpoCommand = req.params.command || req.formScope?.command;
+//     const cpoCommand = req.params.command || req.formScope?.command;
 
-    if (!cpoCommand) {
-      return res
-        .status(403)
-        .json({ error: "Command scope could not be resolved." });
-    }
+//     if (!cpoCommand) {
+//       return res
+//         .status(403)
+//         .json({ error: "Command scope could not be resolved." });
+//     }
 
-    try {
-      const result = await cpoService.confirmBulk(
-        req.body,
-        {
-          cpo_svcno: req.user_id,
-          cpo_name: req.user_name,
-          cpo_rank: req.user_rank,
-        },
-        cpoCommand,
-        req.ip,
-      );
-      if (!result.success)
-        return res.status(result.code).json({ error: result.message });
-      return res.json({ message: result.message, data: result.data });
-    } catch (err) {
-      console.error("❌ POST /cpo/ships/:ship/confirm/bulk:", err);
-      return res.status(500).json({ error: "Server error" });
-    }
-  },
-);
+//     try {
+//       const result = await cpoService.confirmBulk(
+//         req.body,
+//         {
+//           cpo_svcno: req.user_id,
+//           cpo_name: req.user_name,
+//           cpo_rank: req.user_rank,
+//         },
+//         cpoCommand,
+//         req.ip,
+//       );
+//       if (!result.success)
+//         return res.status(result.code).json({ error: result.message });
+//       return res.json({ message: result.message, data: result.data });
+//     } catch (err) {
+//       console.error("❌ POST /cpo/ships/:ship/confirm/bulk:", err);
+//       return res.status(500).json({ error: "Server error" });
+//     }
+//   },
+// );
+
+router.post("/confirm/bulk", requireEmolRole("CPO"), async (req, res) => {
+  try {
+    const result = await cpoService.confirmBulk(
+      req.body,
+      {
+        cpo_svcno: req.user_id,
+        cpo_name: req.user_name,
+        cpo_rank: req.user_rank,
+      },
+      "ALL",
+      req.ip,
+    );
+    if (!result.success)
+      return res.status(result.code).json({ error: result.message });
+    return res.json({ message: result.message, data: result.data });
+  } catch (err) {
+    console.error("❌ POST /cpo/confirm/bulk:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
 
 // ─────────────────────────────────────────────────────────────
 // CLASS CONFIRM — all forms of a given class
-// POST /cpo/:command/confirm/class
+// POST /cpo/:command/confirm/class[OLD]
+// POST /cpo/confirm/class
 // Body: { classes: 1 | 2 | 3 }
 // ─────────────────────────────────────────────────────────────
 
-router.post(
-  "/:command/confirm/class",
-  requireEmolRole("CPO"),
-  async (req, res) => {
-    const command = req.params.command || req.formScope?.command;
+// router.post(
+//   "/:command/confirm/class",
+//   requireEmolRole("CPO"),
+//   async (req, res) => {
+//     const command = req.params.command || req.formScope?.command;
 
-    const cpoCommand = req.params.command || req.formScope?.command;
+//     const cpoCommand = req.params.command || req.formScope?.command;
 
-    if (!cpoCommand) {
-      return res
-        .status(403)
-        .json({ error: "Command scope could not be resolved." });
-    }
+//     if (!cpoCommand) {
+//       return res
+//         .status(403)
+//         .json({ error: "Command scope could not be resolved." });
+//     }
 
-    try {
-      const result = await cpoService.confirmClass(
-        command,
-        req.body,
-        {
-          cpo_svcno: req.user_id,
-          cpo_name: req.user_name,
-          cpo_rank: req.user_rank,
-        },
-        cpoCommand,
-        req.ip,
-      );
-      if (!result.success)
-        return res.status(result.code).json({ error: result.message });
-      return res.json({ message: result.message, data: result.data });
-    } catch (err) {
-      console.error("❌ POST /cpo/ships/:ship/confirm/class:", err);
-      return res.status(500).json({ error: "Server error" });
-    }
-  },
-);
+//     try {
+//       const result = await cpoService.confirmClass(
+//         command,
+//         req.body,
+//         {
+//           cpo_svcno: req.user_id,
+//           cpo_name: req.user_name,
+//           cpo_rank: req.user_rank,
+//         },
+//         cpoCommand,
+//         req.ip,
+//       );
+//       if (!result.success)
+//         return res.status(result.code).json({ error: result.message });
+//       return res.json({ message: result.message, data: result.data });
+//     } catch (err) {
+//       console.error("❌ POST /cpo/ships/:ship/confirm/class:", err);
+//       return res.status(500).json({ error: "Server error" });
+//     }
+//   },
+// );
+
+router.post("/confirm/class", requireEmolRole("CPO"), async (req, res) => {
+  try {
+    const result = await cpoService.confirmClass(
+      req.body, // { classes, command? }
+      {
+        cpo_svcno: req.user_id,
+        cpo_name: req.user_name,
+        cpo_rank: req.user_rank,
+      },
+      "ALL",
+      req.ip,
+    );
+    if (!result.success)
+      return res.status(result.code).json({ error: result.message });
+    return res.json({ message: result.message, data: result.data });
+  } catch (err) {
+    console.error("❌ POST /cpo/confirm/class:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
 
 // ─────────────────────────────────────────────────────────────
+// GET /cpo/confirmed/:command[OLD]
 // GET /cpo/confirmed
-// List all FO_APPROVED forms across all CPO's commands.
-// requireEmolRole('CPO') — scope comes from the CPO's roles.
+// List CPO_CONFIRMED forms for a specific command.
+// Used by EMOL_ADMIN and CPOs who want to filter by command.
+// requireEmolRole('CPO') with command in params.
+// INACTIVE
 // ─────────────────────────────────────────────────────────────
+
+// router.get("/confirmed/:command", requireEmolRole("CPO"), async (req, res) => {
+//   const { command } = req.params;
+//   const cpoCommands = resolveCpoCommands(req);
+//   const svc = req.user_id;
+
+//   const { limit, page = 1, search = "", ship = "", classes = "" } = req.query;
+//   const offset = (Number(page) - 1) * Number(limit);
+
+//   if (cpoCommands !== "ALL" && !cpoCommands.includes(command)) {
+//     return res.status(403).json({
+//       error: `Access denied. Command '${command}' is not under your scope.`,
+//     });
+//   }
+
+//   try {
+//     const result = await cpoService.listConfirmedForms(
+//       command,
+//       svc,
+//       Number(limit),
+//       offset,
+//       search,
+//       ship,
+//       classes,
+//     );
+//     if (!result.success)
+//       return res.status(result.code).json({ error: result.message });
+//     return res.json(result.data);
+//   } catch (err) {
+//     console.error("❌ GET /cpo/confirmed/:command:", err);
+//     return res.status(500).json({ error: "Server error" });
+//   }
+// });
 
 router.get("/confirmed", requireEmolRole("CPO"), async (req, res) => {
-  const commands = resolveCpoCommands(req);
-
-  const { limit, page = 1 } = req.query;
+  const { command = "", ship = "", classes = "", search = "", page = 1, limit } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
 
-  // For scoped CPOs — collect all their commands and merge results
-  // For EMOL_ADMIN — query needs a command; return 400 if none scoped
-  if (commands !== "ALL" && commands.length === 0) {
-    return res.status(403).json({ error: "No command scope assigned." });
-  }
-
   try {
-    // If EMOL_ADMIN, they should use /confirmed/:command to scope the query
-    if (commands === "ALL") {
-      return res.status(400).json({
-        error: "Please specify a command: GET /cpo/confirmed/:command",
-      });
-    }
-
-    // Fetch for all assigned commands in parallel
-    const results = await Promise.all(
-      commands.map((cmd) =>
-        cpoService.listFoApprovedForms(cmd, Number(limit), offset),
-      ),
+    const result = await cpoService.listConfirmedForms(
+      command, req.user_id, Number(limit), offset, search, ship, classes,
     );
-
-    const merged = results.flatMap((r) => (r.success ? r.data : []));
-    return res.json(merged);
+    if (!result.success) return res.status(result.code).json({ error: result.message });
+    return res.json(result.data);
   } catch (err) {
     console.error("❌ GET /cpo/confirmed:", err);
     return res.status(500).json({ error: "Server error" });
   }
 });
 
+
 // ─────────────────────────────────────────────────────────────
-// GET /cpo/confirmed/:command
-// List FO_APPROVED forms for a specific command.
-// Used by EMOL_ADMIN and CPOs who want to filter by command.
+// GET /cpo/command/:command/stats  [OLD]
+// GET /cpo/stats
+// List status statistics for forms in a command.
 // requireEmolRole('CPO') with command in params.
 // ─────────────────────────────────────────────────────────────
 
-router.get("/confirmed/:command", requireEmolRole("CPO"), async (req, res) => {
-  const { command } = req.params;
-  const cpoCommands = resolveCpoCommands(req);
-  const svc = req.user_id;
+// router.get(
+//   "/command/:command/stats",
+//   requireEmolRole("CPO"),
+//   async (req, res) => {
+//     const { command } = req.params;
+//     const svc = req.user_id; // Use CPO's service number to get their specific stats if needed
+//     try {
+//       const result = await cpoService.getStatusStats(command, svc);
+//       if (!result.success)
+//         return res.status(result.code).json({ error: result.message });
+//       return res.json(result.data);
+//     } catch (err) {
+//       console.error("❌ GET /cpo/command/:command/stats:", err);
+//       return res.status(500).json({ error: "Server error" });
+//     }
+//   },
+// );
 
-  const { limit, page = 1, search = "", ship = "", classes = "" } = req.query;
-  const offset = (Number(page) - 1) * Number(limit);
 
-  if (cpoCommands !== "ALL" && !cpoCommands.includes(command)) {
-    return res.status(403).json({
-      error: `Access denied. Command '${command}' is not under your scope.`,
-    });
-  }
-
+router.get("/stats", requireEmolRole("CPO"), async (req, res) => {
+  const { command = "" } = req.query;
   try {
-    const result = await cpoService.listConfirmedForms(
-      command,
-      svc,
-      Number(limit),
-      offset,
-      search,
-      ship,
-      classes,
-    );
-    if (!result.success)
-      return res.status(result.code).json({ error: result.message });
+    const result = await cpoService.getStatusStats(command, req.user_id);
+    if (!result.success) return res.status(result.code).json({ error: result.message });
     return res.json(result.data);
   } catch (err) {
-    console.error("❌ GET /cpo/confirmed/:command:", err);
+    console.error("❌ GET /cpo/stats:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+
+// ─────────────────────────────────────────────────────────────
+// GET /cpo/dashboard
+// List dashboard statistics for forms in all commands.
+// requireEmolRole('CPO') with command in params.
+// ─────────────────────────────────────────────────────────────
+
+router.get("/dashboard", requireEmolRole("CPO"), async (req, res) => {
+  try {
+    const result = await cpoService.getDashboard(req.user_id, req.query.refresh === "1");
+    if (!result.success) return res.status(result.code).json({ error: result.message });
+    return res.json(result.data);
+  } catch (err) {
+    console.error("❌ GET /cpo/dashboard:", err);
     return res.status(500).json({ error: "Server error" });
   }
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /cpo/command/:command/stats
-// List status statistics for forms in a command.
-// requireEmolRole('CPO') with command in params.
+// REPORTS — pending / approved / rejected, PDF & Excel
 // ─────────────────────────────────────────────────────────────
+router.use(require("./cpo.reports.routes"));
 
-router.get(
-  "/command/:command/stats",
-  requireEmolRole("CPO"),
-  async (req, res) => {
-    const { command } = req.params;
-    const svc = req.user_id; // Use CPO's service number to get their specific stats if needed
-    try {
-      const result = await cpoService.getStatusStats(command, svc);
-      if (!result.success)
-        return res.status(result.code).json({ error: result.message });
-      return res.json(result.data);
-    } catch (err) {
-      console.error("❌ GET /cpo/command/:command/stats:", err);
-      return res.status(500).json({ error: "Server error" });
-    }
-  },
-);
+module.exports = router;
 
 module.exports = router;

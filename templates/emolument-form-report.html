@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    @page { size: A4 landscape; margin: 0.5mm; background-color: #f8fbff; }
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 8pt; margin: 0; }
+
+    .header-wrapper {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 8px;
+      border-bottom: 2px solid #1a1a1a;
+      padding-bottom: 5px;
+    }
+    .role-tag {
+      flex-shrink: 0;
+      margin-right: 20px;
+      align-self: center;
+      font-size: 9pt;
+      font-weight: bold;
+      color: #1e40af;
+    }
+    .header { flex-grow: 1; text-align: center; }
+    .header h1 {
+      font-size: 13pt;
+      font-weight: bold;
+      margin: 0 0 2px;
+      letter-spacing: 1.5px;
+      color: #1e40af;
+      font-family: 'Libre Baskerville', Georgia, serif;
+    }
+    .header h2 {
+      font-size: 10pt;
+      font-weight: normal;
+      margin: 2px 0 0;
+      color: #4a4a4a;
+      font-family: 'Libre Baskerville', Georgia, serif;
+    }
+
+    .header-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 10px 0;
+      font-size: 9pt;
+    }
+
+    .summary-box {
+      border-top: 1.5px solid #0070C0;
+      border-bottom: 1.5px solid #0070C0;
+      padding: 8px 0;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .summary-item {
+      text-align: center;
+      padding: 0 15px;
+      border-right: 1px solid #ddd;
+      flex-grow: 1;
+    }
+    .summary-item:last-child { border-right: none; }
+    .summary-item .label {
+      font-size: 8px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+    .summary-item .value { font-size: 12px; font-weight: bold; color: #1F4E78; }
+
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 7.5px; }
+    th {
+      color: #1e40af;
+      padding: 8px 4px;
+      text-align: left;
+      font-weight: bold;
+      font-size: 7.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      border-bottom: 1px solid #0056A0;
+    }
+    td { padding: 6px 4px; border: none; vertical-align: middle; }
+    .text-center { text-align: center; }
+
+    .footer {
+      padding-top: 10px;
+      border-top: 0.5px solid #1a1a1a;
+      text-align: center;
+      font-size: 8pt;
+      color: #64748b;
+      margin-top: 20px;
+    }
+
+    .empty-cell { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="header-wrapper">
+    <div class="role-tag">{{role}}</div>
+    <div class="header">
+      <h1>Nigerian Navy (Naval Headquarters)</h1>
+      <h2>CENTRAL PAY OFFICE, 23 POINT ROAD APAPA</h2>
+    </div>
+  </div>
+
+  <div class="header-info">
+    <div class="left"><strong>{{title}}</strong></div>
+    <div class="center">
+      <span>PRODUCED ON</span> <strong>{{producedOn}}</strong>
+    </div>
+    <div class="right"><strong>{{statistics.total}}</strong> <span>FORMS</span></div>
+  </div>
+
+  {{#if scopeLabel}}
+  <div style="margin-bottom: 10px; font-size: 8pt; color: #4a4a4a; font-style: italic;">
+    Scope: {{scopeLabel}}
+  </div>
+  {{/if}}
+
+  <div class="summary-box">
+    <div class="summary-item">
+      <div class="label">Total Forms</div>
+      <div class="value">{{statistics.total}}</div>
+    </div>
+    {{#each statistics.byClass}}
+    <div class="summary-item">
+      <div class="label">{{this.name}}</div>
+      <div class="value">{{this.count}}</div>
+    </div>
+    {{/each}}
+    <div class="summary-item">
+      <div class="label">Prepared By</div>
+      <div class="value" style="font-size: 10px;">{{preparedBy}}{{#if preparedBySvcNo}} ({{preparedBySvcNo}}){{/if}}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="text-center" style="width: 3%;">S/N</th>
+        <th class="text-center" style="width: 8%;">Svc No.</th>
+        <th class="text-center" style="width: 5%;">Rank</th>
+        <th class="text-center">Full Name</th>
+        <th class="text-center" style="width: 7%;">Class</th>
+        <th class="text-center" style="width: 9%;">Ship</th>
+        <th class="text-center" style="width: 9%;">Command</th>
+        <th class="text-center"style="width: 5%;">Year</th>
+        <th class="text-center" style="width: 14%;">Officer</th>
+        <th class="text-center" style="width: 8%;">{{dateLabel}}</th>
+        {{#if showRemarks}}<th style="width: 16%;" class="text-center">Remarks</th>{{/if}}
+      </tr>
+    </thead>
+    <tbody>
+      {{#each data}}
+      <tr>
+        <td class="text-center">{{this.sn}}</td>
+        <td class="text-center">{{this.serviceNumber}}</td>
+        <td class="text-center">{{this.rank}}</td>
+        <td class="text-center" style="white-space: nowrap;"><strong>{{this.fullName}}</strong></td>
+        <td class="text-center">{{this.className}}</td>
+        <td class="text-center">{{this.ship}}</td>
+        <td class="text-center">{{#if this.command}}{{this.command}}{{else}}<span class="empty-cell">—</span>{{/if}}</td>
+        <td class="text-center">{{this.formYear}}</td>
+        <td class="text-center" style="white-space: nowrap;">{{this.officer}}</td>
+        <td class="text-center" style="font-size: 7px;">{{this.actionDate}}</td>
+        {{#if ../showRemarks}}<td class="text-center">{{#if this.remarks}}{{this.remarks}}{{else}}<span class="empty-cell">—</span>{{/if}}</td>{{/if}}
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+  </div>
+</body>
+</html>

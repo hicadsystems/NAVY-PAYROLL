@@ -424,6 +424,7 @@ router.put("/roles/:role/menus", async (req, res) => {
 router.get("/personnel", async (req, res) => {
   const filters = {
     serviceNumber: req.query.serviceNumber || undefined,
+    q: req.query.q || undefined,
     surname: req.query.surname || undefined,
     ship: req.query.ship || undefined,
     command: req.query.command || undefined,

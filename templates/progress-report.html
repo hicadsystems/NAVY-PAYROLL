@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{title}}</title>
+  <style>
+    @page { size: A4 landscape; margin: 8mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #333;
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 8pt;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .header {
+      padding: 0 0 7px;
+      margin-bottom: 9px;
+      border-bottom: 2px solid #1a1a1a;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0 0 2px;
+      color: #1e40af;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 14pt;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+    }
+    .header h2 {
+      margin: 2px 0 0;
+      color: #4a4a4a;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 10pt;
+      font-weight: 400;
+    }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin: 10px 0;
+      font-size: 8pt;
+    }
+    .filter { color: #334155; }
+    .produced { color: #475569; text-align: center; white-space: nowrap; }
+    .ship-count {
+      color: #1e40af;
+      font-weight: 700;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .stat-table {
+      width: 100%;
+      margin: 0 0 11px;
+      border-collapse: separate;
+      border-spacing: 4px;
+      table-layout: fixed;
+    }
+    .stat-table td {
+      width: 20%;
+      padding: 6px 8px;
+      border: .5px solid rgba(30, 64, 175, .2);
+      border-radius: 4px;
+      vertical-align: top;
+    }
+    .stat-label {
+      margin-bottom: 3px;
+      color: rgba(30, 64, 175, .55);
+      font-size: 6.5pt;
+      font-weight: 800;
+      letter-spacing: .6px;
+      text-transform: uppercase;
+    }
+    .stat-value {
+      color: #1e40af;
+      font-size: 12pt;
+      font-weight: 900;
+      line-height: 1.15;
+    }
+
+    table.data {
+      width: 100%;
+      margin: 0 0 15px;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 7.5pt;
+    }
+    table.data thead { display: table-header-group; }
+    table.data th {
+      padding: 6px 4px;
+      border-bottom: 1.5px solid #1e40af;
+      color: #1e40af;
+      font-size: 7pt;
+      font-weight: 700;
+      letter-spacing: .3px;
+      text-align: left;
+      text-transform: uppercase;
+    }
+    table.data td {
+      padding: 5px 4px;
+      border-bottom: .5px solid rgba(30, 64, 175, .12);
+      vertical-align: middle;
+      overflow-wrap: anywhere;
+    }
+    table.data tbody tr { break-inside: avoid; page-break-inside: avoid; }
+    table.data tbody tr:nth-child(even) { background: #f8fafc; }
+    .numeric { text-align: right; white-space: nowrap; }
+    .ship-name { color: #1e40af; font-weight: 700; }
+    .command-name { color: #52627b; }
+    .confirmed { color: #166534; font-weight: 700; }
+    .not-filed { color: #991b1b; font-weight: 700; }
+    .completion {
+      display: inline-block;
+      min-width: 44px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 7pt;
+      font-weight: 800;
+      text-align: center;
+    }
+    .completion.green { background: rgba(34, 197, 94, .12); color: #166534; }
+    .completion.amber { background: rgba(245, 158, 11, .12); color: #92400e; }
+    .completion.red { background: rgba(239, 68, 68, .1); color: #991b1b; }
+    .total-row td {
+      border-top: 1.5px solid #1e40af;
+      border-bottom: 0;
+      font-weight: 700;
+    }
+    .empty-row { padding: 18px; color: #64748b; text-align: center; font-style: italic; }
+
+    .footer {
+      margin-top: 16px;
+      padding-top: 8px;
+      border-top: .5px solid #1a1a1a;
+      color: #64748b;
+      font-size: 7.5pt;
+      text-align: center;
+    }
+    .footer p { margin: 2px 0; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>NIGERIAN NAVY E-EMOLUMENT</h1>
+    <h2>SHIP COMPLETION PROGRESS REPORT</h2>
+  </header>
+
+  <section class="meta">
+    <div class="filter"><strong>FILTER: {{filterLabel}}</strong></div>
+    <div class="produced">
+      <span>PRODUCED ON </span><strong>{{producedOn}}</strong>
+      <span> AT </span><strong>{{producedAt}}</strong>
+    </div>
+    <div class="ship-count"><strong>{{statistics.shipCount}}</strong> SHIP(S)</div>
+  </section>
+
+  <table class="stat-table">
+    <tr>
+      <td><div class="stat-label">Total Ships</div><div class="stat-value">{{statistics.shipCount}}</div></td>
+      <td><div class="stat-label">Total Personnel</div><div class="stat-value">{{statistics.totalPersonnel}}</div></td>
+      <td><div class="stat-label">Completed</div><div class="stat-value">{{statistics.completed}}</div></td>
+      <td><div class="stat-label">Completion</div><div class="stat-value">{{statistics.completionPercent}}</div></td>
+      <td><div class="stat-label">Not Filed</div><div class="stat-value">{{statistics.notFiled}}</div></td>
+    </tr>
+  </table>
+
+  <table class="data">
+    <thead>
+      <tr>
+        <th style="width: 20%;">Ship Name</th>
+        <th style="width: 18%;">Command</th>
+        <th class="numeric" style="width: 10%;">Total</th>
+        <th class="numeric" style="width: 10%;">Filled</th>
+        <th class="numeric" style="width: 11%;">FO Approved</th>
+        <th class="numeric" style="width: 11%;">CPO Confirmed</th>
+        <th class="numeric" style="width: 10%;">Not Filed</th>
+        <th class="numeric" style="width: 10%;">% Done</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each data}}
+        <tr>
+          <td class="ship-name">{{this.shipName}}</td>
+          <td class="command-name">{{this.commandName}}</td>
+          <td class="numeric">{{this.total}}</td>
+          <td class="numeric">{{this.submitted}}</td>
+          <td class="numeric">{{this.foApproved}}</td>
+          <td class="numeric confirmed">{{this.cpoConfirmed}}</td>
+          <td class="numeric not-filed">{{this.notFiled}}</td>
+          <td class="numeric"><span class="completion {{this.completionClass}}">{{this.completionPercent}}</span></td>
+        </tr>
+      {{else}}
+        <tr><td colspan="8" class="empty-row">No ships match the selected filters.</td></tr>
+      {{/each}}
+      <tr class="total-row">
+        <td colspan="2">TOTAL — {{statistics.shipCount}} ship(s)</td>
+        <td class="numeric">{{totals.total}}</td>
+        <td class="numeric">{{totals.submitted}}</td>
+        <td class="numeric">{{totals.foApproved}}</td>
+        <td class="numeric confirmed">{{totals.cpoConfirmed}}</td>
+        <td class="numeric not-filed">{{totals.notFiled}}</td>
+        <td class="numeric">{{totals.completionPercent}}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <footer class="footer">
+    <p>Generated by: <strong>{{preparedBy}}</strong></p>
+    <p>All rights reserved &#xA9; Hicad Systems Limited.</p>
+  </footer>
+</body>
+</html>

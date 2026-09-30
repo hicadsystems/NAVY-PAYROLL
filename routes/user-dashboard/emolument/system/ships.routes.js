@@ -11,6 +11,7 @@
  *
  *  Ships:
  *  GET    /system/ships                  → list ships (?commandid=&openship=)
+ *  GET    /system/ships/export           → filtered ships PDF (?search=&commandid=&openship=)
  *  GET    /system/ships/:id              → single ship
  *  POST   /system/ships                  → create ship      (EMOL_ADMIN)
  *  PUT    /system/ships/:id              → update ship      (EMOL_ADMIN)
@@ -32,6 +33,7 @@ const {
   requireAnyEmolRole,
 } = require("../../../../middware/emolumentAuth");
 const repo = require("./ships.repository");
+const shipsReportController = require("./ships-report.controller");
 
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 
@@ -85,6 +87,15 @@ router.get("/ships", requireAnyEmolRole, async (req, res) => {
     return res.status(500).json({ error: "Server error" });
   }
 });
+
+// ─────────────────────────────────────────────────────────────
+// GET /system/ships/export
+// Filtered PDF export; all matching ships are included, not paginated.
+// ─────────────────────────────────────────────────────────────
+
+router.get("/ships/export", requireAnyEmolRole, (req, res) =>
+  shipsReportController.generate(req, res),
+);
 
 // ─────────────────────────────────────────────────────────────
 // GET /system/ships/:id

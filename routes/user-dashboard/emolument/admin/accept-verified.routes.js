@@ -13,6 +13,9 @@
  *
  * ─── ROUTE MAP ───────────────────────────────────────────────
  *
+ *  GET  /admin/form-listing/report       → PDF listing using the same
+ *                                          frontend filters as personnel search
+ *
  *  GET  /admin/verified                  → list all CPO_CONFIRMED
  *                                          not yet synced, grouped by class
  *                                          Query: ?payrollclass=1&ship=&command=
@@ -45,6 +48,7 @@ const verifyToken = require("../../../../middware/authentication");
 const { requireEmolRole } = require("../../../../middware/emolumentAuth");
 const repo = require("./accept-verified.repository");
 const adminRepo = require("./admin.repository");
+const formListingController = require("./form-listing.controller");
 
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 
@@ -53,6 +57,15 @@ router.use((req, res, next) => {
   next();
 });
 router.use(verifyToken, requireEmolRole("EMOL_ADMIN"));
+
+// ─────────────────────────────────────────────────────────────
+// GET /admin/form-listing/report
+// Generates the full matching set (not only the current table page).
+// ─────────────────────────────────────────────────────────────
+
+router.get("/form-listing/report", (req, res) =>
+  formListingController.generate(req, res),
+);
 
 // ─────────────────────────────────────────────────────────────
 // GET /admin/verified

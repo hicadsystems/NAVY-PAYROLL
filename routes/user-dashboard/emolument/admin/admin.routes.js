@@ -8,6 +8,7 @@
  *
  *  Role management:
  *  GET    /admin/roles                        → list active role assignments
+ *  GET    /admin/roles/export                 → filtered ship-users PDF
  *  POST   /admin/roles/assign                 → assign a role
  *  DELETE /admin/roles/:role_id/revoke        → revoke a role
  *  GET    /admin/roles/template               → download bulk-upload template (.xlsx)
@@ -71,6 +72,7 @@ const adminRepo = require("./admin.repository");
 const { buildShipUsersTemplate } = require("./ship-users-template");
 const { buildPersonnelTemplate } = require("./personnel-template");
 const { buildCommissionTemplate } = require("./commission-template");
+const shipUsersReportController = require("./ship-users-report.controller");
 
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 
@@ -257,6 +259,10 @@ const COMMISSION_REQUIRED = ["old_svc_no", "new_svc_no"];
 // ─────────────────────────────────────────────────────────────
 // ROLE MANAGEMENT
 // ─────────────────────────────────────────────────────────────
+
+router.get("/roles/export", (req, res) =>
+  shipUsersReportController.generate(req, res),
+);
 
 router.get("/roles", async (req, res) => {
   const filters = {

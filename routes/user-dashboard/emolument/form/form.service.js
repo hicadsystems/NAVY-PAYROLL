@@ -280,8 +280,8 @@ async function submitForm(serviceNo, body, performedBy, ip) {
   const formNoCol = resolveFormNoColumn(person.payrollclass);
   const formNumber = await repo.getCurrentFormNumber(formNoCol);
 
-  const legacyStatus = toLegacyStatus(FORM_STATUS.DO_REVIEWED); // → 'Filled'
-  const formStatus = FORM_STATUS.DO_REVIEWED;
+  const legacyStatus = toLegacyStatus(FORM_STATUS.SUBMITTED); // → 'Filled'
+  const formStatus = FORM_STATUS.SUBMITTED;
 
   // ── Atomic write — everything rolls back on any failure ───
   try {

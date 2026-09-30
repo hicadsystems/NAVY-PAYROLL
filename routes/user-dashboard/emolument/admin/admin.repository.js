@@ -221,6 +221,13 @@ function buildPersonnelSearchClause(filters = {}) {
     );
     params.push(`${filters.surname}*`);
   }
+ if (filters.q) {
+  conditions.push(
+    "(MATCH(p.Surname, p.OtherName) AGAINST (? IN BOOLEAN MODE) OR p.serviceNumber LIKE ?)"
+  );
+
+  params.push(`${filters.q}*`, `${filters.q}%`);
+}
   if (filters.ship) {
     conditions.push("p.ship = ?");
     params.push(filters.ship);

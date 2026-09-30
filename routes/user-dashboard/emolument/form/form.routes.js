@@ -53,6 +53,7 @@
 
 const express = require("express");
 const pool = require("../../../../config/db"); // mysql2 pool
+const config = require("../../../../config");
 const verifyToken = require("../../../../middware/authentication");
 const {
   requirePersonnel,

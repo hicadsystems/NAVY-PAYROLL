@@ -103,11 +103,11 @@ async function assignRole(body, performedBy, ip) {
       code: 400,
       message: `scope_value is required when scope_type is ${scope_type}.`,
     };
-  if (scope_type === "GLOBAL" && role !== "EMOL_ADMIN")
+  if (scope_type === "GLOBAL" && role !== "EMOL_ADMIN" && role !== "CPO")
     return {
       success: false,
       code: 400,
-      message: "Only EMOL_ADMIN can have GLOBAL scope.",
+      message: "Only EMOL_ADMIN and CPO can have GLOBAL scope.",
     };
 
   const ok = await repo.assignRole(

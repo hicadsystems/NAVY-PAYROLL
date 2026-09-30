@@ -2,21 +2,6 @@
  * FILE: routes/user-dashboard/emolument/form/form.service.js
  *
  * Business logic for emolument form lifecycle.
- * Assembles form data from normalized tables.
- * Writes back to multiple tables on save/submit.
- *
- * Status mapping is handled entirely through emolument.constants:
- *   ef_emolument_forms.status  → clean enum  (FORM_STATUS)
- *   ef_personalinfos.Status    → legacy string (LEGACY_STATUS)
- *   toLegacyStatus()           → converts for writes to ef_personalinfos
- *   toFormStatus()             → converts for reads from ef_personalinfos
- *
- * First-timer init (no ef_ records at all):
- *   loadForm() detects getPersonCore() === null and falls back to
- *   hr_employees lookup. If found with emolumentform != 'Yes',
- *   a bare ef_personalinfos row is auto-created and the form loads
- *   prefilled from hr_employees fields. Completely transparent to the
- *   frontend — the response shape is identical to an existing personnel.
  */
 
 "use strict";
@@ -33,21 +18,33 @@ const {
   resolveFormNoColumn,
 } = require("../emolument.constants");
 
+const controlService = require("../system/system.service");
+
 // ─────────────────────────────────────────────────────────────
-// GATE CHECK
-// Checks ef_control directly — no ef_systeminfos dependency.
-// resolveEffectiveStatus queries NOW() BETWEEN startdate AND enddate
-// and returns isOpen based on status IN ('Open','Reopen').
-// ef_ships.openship is kept in sync by the scheduler but we check
-// ef_control here as the single source of truth.
+// GCB MAPPING
+// The frontend sends GCB inside allowances.GCB, but it is stored on
+// ef_personalinfos as GBC / GBC_Number. Move it into body.core and
+// remove it from allowances so it isn't inserted into ef_allowances.
 // ─────────────────────────────────────────────────────────────
 
-const controlService = require("../system/system.service");
+function mapGcb(body) {
+  const gcb = body?.allowances?.GCB;
+  if (gcb) {
+    body.core = body.core || {};
+    body.core.GBC = gcb.is_active ? 1 : null; // adjust if your column type differs
+    body.core.GBC_Number = gcb.is_active ? gcb.gcb_number || null : null;
+    delete body.allowances.GCB;
+  }
+  return body;
+}
+
+// ─────────────────────────────────────────────────────────────
+// GATE CHECK
+// ─────────────────────────────────────────────────────────────
 
 async function checkFormEligibility(person) {
   const formType = resolveFormType(person.payrollclass);
 
-  // Resolve against ef_control — ship='All' covers everyone
   const { isOpen } = await controlService.resolveEffectiveStatus(
     person.ship || "All",
     formType,
@@ -81,19 +78,6 @@ async function checkFormEligibility(person) {
 
 // ─────────────────────────────────────────────────────────────
 // LOAD FORM
-// Fetches all pieces in parallel then assembles into one object.
-//
-// First-timer path (no ef_ record exists):
-//   1. getPersonCore() returns null
-//   2. Lookup hr_employees WHERE Empl_ID = serviceNo
-//      AND emolumentform != 'Yes'
-//   3. If found → INSERT bare row into ef_personalinfos from hr_employees
-//   4. Continue with normal load — child tables return empty (expected)
-//   5. Frontend gets a prefilled form from hr_employees fields
-//      with all extended fields blank, ready to fill in
-//
-// Existing personnel path (ef_ record exists):
-//   Normal load — all child tables fetched in parallel.
 // ─────────────────────────────────────────────────────────────
 
 async function loadForm(serviceNo) {
@@ -115,7 +99,6 @@ async function loadForm(serviceNo) {
     // Create the bare ef_personalinfos row from hr_employees data
     await repo.initPersonnelFromHr(hrEmp);
 
-    // Re-fetch so person has the correct shape for all downstream logic
     person = await repo.getPersonCore(serviceNo);
     if (!person) {
       return {
@@ -126,7 +109,6 @@ async function loadForm(serviceNo) {
       };
     }
   }
-  // ── End first-timer path ─────────────────────────────────
 
   const formType = resolveFormType(person.payrollclass);
   const isTraining = formType === "TRAINING";
@@ -153,11 +135,6 @@ async function loadForm(serviceNo) {
   const eligibility = await checkFormEligibility(person);
   const currentFormStatus = toFormStatus(person.Status);
 
-  // Ensure ef_emolument_forms row exists from first open.
-  // Idempotent — does nothing if row already exists.
-  // This gives the form a stable form_id before submission so
-  // DO/FO/CPO routes can always reference it via ef_emolument_forms.
-
   let formId = core.formId;
   if (formYear && currentFormStatus === FORM_STATUS.DRAFT) {
     formId = await repo.initDraftForm(
@@ -168,19 +145,13 @@ async function loadForm(serviceNo) {
       person.command,
     );
   }
-console.log(currentFormStatus, person.Status)
+
   return {
     success: true,
     data: {
       ...core,
-
-      // Stable form ID from ef_emolument_forms — present from first load
       formId,
-
-      // Clean enum status for frontend — never expose raw legacy strings
       formStatus: currentFormStatus,
-
-      // Related tables — structured, not flat
       nok,
       spouse,
       children,
@@ -191,8 +162,6 @@ console.log(currentFormStatus, person.Status)
         nokPassport: documents["NOK_PASSPORT"] || null,
         altNokPassport: documents["ALT_NOK_PASSPORT"] || null,
       },
-
-      // Form metadata
       formYear,
       formType,
       canEdit: eligibility.allowed,
@@ -203,7 +172,6 @@ console.log(currentFormStatus, person.Status)
 
 // ─────────────────────────────────────────────────────────────
 // LOAD FORM OPTIONS
-// Fetches all form options from their respective tables
 // ─────────────────────────────────────────────────────────────
 
 async function loadFormOptions() {
@@ -218,8 +186,6 @@ async function loadFormOptions() {
 
 // ─────────────────────────────────────────────────────────────
 // LOAD HISTORICAL FORM
-// Full data comes from ef_emolument_forms.snapshot.
-// ef_personalinfoshist provides index metadata only.
 // ─────────────────────────────────────────────────────────────
 
 async function loadFormHistory(serviceNo, year) {
@@ -232,9 +198,6 @@ async function loadFormHistory(serviceNo, year) {
     };
   }
 
-  // If snapshot exists, the frontend gets the full form data.
-  // If not (pre-migration legacy form), the frontend gets index
-  // metadata only and should display a notice.
   return {
     success: true,
     data: formData,
@@ -246,7 +209,6 @@ async function loadFormHistory(serviceNo, year) {
 
 // ─────────────────────────────────────────────────────────────
 // SAVE DRAFT
-// Writes to all relevant tables. Does NOT change Status.
 // ─────────────────────────────────────────────────────────────
 
 async function saveDraft(serviceNo, body, performedBy, ip) {
@@ -261,6 +223,8 @@ async function saveDraft(serviceNo, body, performedBy, ip) {
   const eligibility = await checkFormEligibility(person);
   if (!eligibility.allowed)
     return { success: false, code: 403, message: eligibility.reason };
+
+  mapGcb(body);
 
   await repo.savePersonCore(serviceNo, body.core || {});
   await repo.saveNok(serviceNo, body.nok?.primary, body.nok?.alternate);
@@ -284,22 +248,6 @@ async function saveDraft(serviceNo, body, performedBy, ip) {
 
 // ─────────────────────────────────────────────────────────────
 // SUBMIT FORM
-// All 7 table writes are wrapped in a single transaction.
-// If any write fails, everything rolls back — no partial state.
-//
-// Steps INSIDE transaction (repo.submitAllTables):
-//   savePersonCore, saveNok, saveSpouse, saveChildren,
-//   saveLoans, saveAllowances, markSubmitted
-//
-// Steps OUTSIDE transaction (after commit):
-//   upsertEmolumentForm, incrementFormNumber,
-//   insertFormApproval, insertAuditLog
-//
-// Form number assignment strategy:
-//   Read current counter → use it → commit all writes → increment.
-//   Gaps in form numbers are acceptable (crash between commit + increment).
-//   Duplicate form numbers are NOT acceptable — the gate in markSubmitted
-//   (WHERE Status IS NULL) prevents double submission.
 // ─────────────────────────────────────────────────────────────
 
 async function submitForm(serviceNo, body, performedBy, ip) {
@@ -327,20 +275,17 @@ async function submitForm(serviceNo, body, performedBy, ip) {
     };
   }
 
-  // Resolve form number column from constants
+  mapGcb(body);
+
   const formNoCol = resolveFormNoColumn(person.payrollclass);
   const formNumber = await repo.getCurrentFormNumber(formNoCol);
 
-  // Legacy status string for ef_personalinfos
   const legacyStatus = toLegacyStatus(FORM_STATUS.DO_REVIEWED); // → 'Filled'
-
-  // Clean enum status for ef_emolument_forms
   const formStatus = FORM_STATUS.DO_REVIEWED;
 
-  // ── Atomic write — all 7 tables in one transaction ────────
-  let affectedRows;
+  // ── Atomic write — everything rolls back on any failure ───
   try {
-    affectedRows = await pool.smartTransaction(async (conn) => {
+    await pool.smartTransaction(async (conn) => {
       return repo.submitAllTables(
         conn,
         serviceNo,
@@ -353,6 +298,14 @@ async function submitForm(serviceNo, body, performedBy, ip) {
       );
     });
   } catch (err) {
+    if (err.message === "ALREADY_SUBMITTED") {
+      return {
+        success: false,
+        code: 409,
+        message:
+          "Form could not be submitted. It may already be in review or completed.",
+      };
+    }
     console.error("❌ submitForm transaction failed:", err.message);
     return {
       success: false,
@@ -360,18 +313,8 @@ async function submitForm(serviceNo, body, performedBy, ip) {
       message: "Form submission failed. Please try again.",
     };
   }
-
-  if (!affectedRows) {
-    return {
-      success: false,
-      code: 409,
-      message:
-        "Form could not be submitted. It may already be in review or completed.",
-    };
-  }
   // ── Transaction committed ─────────────────────────────────
 
-  // Upsert ef_emolument_forms — safe outside transaction, idempotent
   await repo.upsertEmolumentForm(
     serviceNo,
     formYear,
@@ -382,14 +325,10 @@ async function submitForm(serviceNo, body, performedBy, ip) {
     formStatus,
   );
 
-  // Get form id for approval log
   const formId = await repo.getEmolumentFormId(serviceNo, formYear);
 
-  // Increment form number counter — outside transaction intentionally.
-  // A gap (crash here) is acceptable. A duplicate is not.
   await repo.incrementFormNumber(formNoCol);
 
-  // Approval trail
   if (formId) {
     await repo.insertFormApproval({
       formId,
@@ -402,7 +341,6 @@ async function submitForm(serviceNo, body, performedBy, ip) {
     });
   }
 
-  // Audit log
   await repo.insertAuditLog({
     tableName: "ef_personalinfos",
     action: "UPDATE",
@@ -426,12 +364,8 @@ async function submitForm(serviceNo, body, performedBy, ip) {
 
 // ─────────────────────────────────────────────────────────────
 // OPEN NEW CYCLE
-//
-// Called by admin when creating/activating a new processing year.
-// Archives unconfirmed submissions from the previous year and
-// resets their Status so they can fill the form again.
-//
-// previousYear: the year being closed e.g. '2025'
+// NOTE: repo.archiveAndResetCycle is not defined in form.repository.js.
+// Add it there (or import it from where it lives) before using this.
 // ─────────────────────────────────────────────────────────────
 
 async function openNewCycle(previousYear, performedBy, ip) {
@@ -471,4 +405,5 @@ module.exports = {
   saveDraft,
   submitForm,
   loadFormOptions,
+  openNewCycle,
 };

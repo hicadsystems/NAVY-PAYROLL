@@ -5,7 +5,7 @@
         <h3
           class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
         >
-          Personnel Form List
+          Personnel Forms
         </h3>
         <span
           class="text-xl text-blue-900/40 font-bold"
@@ -53,13 +53,12 @@
         >
           <option value="">All Statuses</option>
           <option value="NotFilled">Not Filled</option>
-          <option value="Filled">Submitted</option>
-          <!-- "DO Reviewed" (Status code "FO") removed from filter options per request.
-               STATUS_CLS / STATUS_LBL below still recognize it so any row that comes
-               back with this status still renders correctly in the table; it's just
-               not selectable as a filter.
-          <option value="FO">DO Reviewed</option>
-          -->
+          <!-- Value is the real Status code "FO", labeled "Submitted" —
+               the backend auto-advances every submission straight past
+               the DO-review stage, so nothing ever sits at Status='Filled'
+               in practice. Masking that here so the admin sees "Submitted"
+               rather than a misleading "DO Reviewed". -->
+          <option value="FO">Submitted</option>
           <option value="CPO">FO Approved</option>
           <option value="Verified">Confirmed</option>
           <option value="Completed">Completed</option>
@@ -67,7 +66,7 @@
       </div>
     </div>
     <p class="text-sm text-blue-900/50">
-      <!-- Review forms across all approval stages before syncing to payroll -->
+      Review forms across all approval stages before syncing to payroll
     </p>
   </div>
 
@@ -299,17 +298,25 @@
     const ITEMS_PER_PAGE = 50;
 
     // Status code → badge color classes
+    // NOTE: "FO" is displayed as if it were the "Submitted" stage (amber),
+    // not "DO Reviewed" (its literal meaning) — see STATUS_LBL below for why.
     const STATUS_CLS = {
       Filled: "bg-amber-50 text-amber-600",
-      FO: "bg-blue-50 text-blue-600",
+      FO: "bg-amber-50 text-amber-600",
       CPO: "bg-purple-50 text-purple-600",
       Verified: "bg-green-50 text-green-600",
     };
 
     // Status code → human-readable label
+    // The backend auto-advances every submission straight from NULL to
+    // Status='FO', skipping the DO-review step entirely (intentional,
+    // left as-is on the backend). In practice nothing ever sits at
+    // Status='Filled', so we mask 'FO' as "Submitted" here rather than
+    // show admins a "DO Reviewed" label that doesn't reflect what
+    // actually happened to the form.
     const STATUS_LBL = {
       Filled: "Submitted",
-      FO: "DO Reviewed",
+      FO: "Submitted",
       CPO: "FO Approved",
       Verified: "Confirmed",
     };
@@ -317,7 +324,7 @@
     // Status code → icon
     const STATUS_ICON = {
       Filled: "fa-file",
-      FO: "fa-eye",
+      FO: "fa-file",
       CPO: "fa-check",
       Verified: "fa-certificate",
     };

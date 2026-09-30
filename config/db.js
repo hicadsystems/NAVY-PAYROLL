@@ -10,9 +10,9 @@ const MASTER_TABLES = new Set([
   // Employee and Personal Info
   "hr_employees",
   "py_emplhistory",
-  "Spouse",
-  "Children",
-  "NextOfKin",
+  "spouse",
+  "children",
+  "nextofkin",
 
   // Organizational Structure
   "ac_businessline",
@@ -24,8 +24,8 @@ const MASTER_TABLES = new Set([
 
   // Payroll Configuration
   "py_bank",
-  //'py_elementType',
-  //'py_exclusiveType',
+  //'py_elementtype',
+  //'py_exclusivetype',
   "py_functionType",
   "py_Grade",
   "py_gradelevel",
@@ -42,16 +42,16 @@ const MASTER_TABLES = new Set([
   "py_specialisationarea",
 
   // Lookup/Reference Tables
-  "py_MaritalStatus",
+  "py_maritalstatus",
   "py_pfa",
   "py_relationship",
   "py_religion",
   "py_status",
-  "py_tblLga",
+  "py_tbllga",
   "py_tblstates",
   "geozone",
-  "py_Country",
-  "py_Title",
+  "py_country",
+  "py_title",
   "py_sex",
 
   // System Tables
@@ -205,11 +205,10 @@ const pool = {
     }
 
     if (process.env.DB_TRACE_QUERIES === "1") {
-      const sqlPreview =
-        (typeof sql === "string" ? sql : sql?.sql || "")
-          .replace(/\s+/g, " ")
-          .trim()
-          .slice(0, 80);
+      const sqlPreview = (typeof sql === "string" ? sql : sql?.sql || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 80);
       console.log(
         `🎯 [${new Date().toISOString()}] EXEC db=${currentDatabase} session=${sessionId} sql="${sqlPreview}"`,
       );
@@ -233,7 +232,9 @@ const pool = {
           console.log(`   ✅ [SANITY] MySQL confirms active_db=${actualDb}`);
         }
       } catch (checkErr) {
-        console.error(`   ⚠️ [SANITY] DATABASE() check failed: ${checkErr.message}`);
+        console.error(
+          `   ⚠️ [SANITY] DATABASE() check failed: ${checkErr.message}`,
+        );
       }
     }
 
@@ -263,11 +264,10 @@ const pool = {
     }
 
     if (process.env.DB_TRACE_QUERIES === "1") {
-      const sqlPreview =
-        (typeof sql === "string" ? sql : sql?.sql || "")
-          .replace(/\s+/g, " ")
-          .trim()
-          .slice(0, 80);
+      const sqlPreview = (typeof sql === "string" ? sql : sql?.sql || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 80);
       console.log(
         `🎯 [${new Date().toISOString()}] EXEC db=${currentDatabase} session=${sessionId} sql="${sqlPreview}"`,
       );

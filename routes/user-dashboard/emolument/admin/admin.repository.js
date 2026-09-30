@@ -242,6 +242,14 @@ async function searchPersonnel(filters = {}, limit = 50, offset = 0) {
   if (filters.status !== undefined) {
     if (filters.status === null || filters.status === "") {
       conditions.push("(p.Status IS NULL OR p.Status = '')");
+    } else if (filters.status === "Completed") {
+      // Filed, but never routed through DO/FO/CPO approval — no Status value set.
+      conditions.push("(p.Status = 'Updated') AND p.emolumentform = 'Yes'");
+    } else if (filters.status === "NotFilled") {
+      // Never filed at all.
+      conditions.push(
+        "(p.Status IS NULL OR p.Status = '') AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')",
+      );
     } else {
       conditions.push("p.Status = ?");
       params.push(filters.status);

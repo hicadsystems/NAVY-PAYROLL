@@ -30,7 +30,9 @@ const { getConfig } = require("./config/db-config");
       continue;
     }
 
-    console.log(`▶ Testing class "${className}" → requested database "${dbName}"`);
+    console.log(
+      `▶ Testing class "${className}" → requested database "${dbName}"`,
+    );
 
     let connection;
     try {
@@ -54,18 +56,24 @@ const { getConfig } = require("./config/db-config");
       const info = rows[0];
       const match = info.active_db === dbName;
 
-      console.log(`   requested="${dbName}"  active_db="${info.active_db}"  ${match ? "✅ MATCH" : "🚨 MISMATCH"}`);
-      console.log(`   curr_user=${info.curr_user}  server=${info.server_hostname}:${info.server_port}  connection_id=${info.connection_id}`);
+      console.log(
+        `   requested="${dbName}"  active_db="${info.active_db}"  ${match ? "✅ MATCH" : "🚨 MISMATCH"}`,
+      );
+      console.log(
+        `   curr_user=${info.curr_user}  server=${info.server_hostname}:${info.server_port}  connection_id=${info.connection_id}`,
+      );
 
       // Also show row counts for a couple of tables we know differ,
       // if this happens to be one of the affected classes.
       try {
         const [cnt] = await connection.query(
-          "SELECT COUNT(*) AS c FROM py_elementType",
+          "SELECT COUNT(*) AS c FROM py_elementtype",
         );
-        console.log(`   py_elementType row count on this connection: ${cnt[0].c}`);
+        console.log(
+          `   py_elementtype row count on this connection: ${cnt[0].c}`,
+        );
       } catch (e) {
-        console.log(`   (couldn't count py_elementType: ${e.message})`);
+        console.log(`   (couldn't count py_elementtype: ${e.message})`);
       }
     } catch (err) {
       console.log(`   ❌ Connection/query failed: ${err.message}`);

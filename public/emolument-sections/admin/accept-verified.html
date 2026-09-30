@@ -5,7 +5,7 @@
         <h3
           class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
         >
-          CPO-Verified Forms
+          Personnel Form List
         </h3>
         <span
           class="text-xl text-blue-900/40 font-bold"
@@ -46,10 +46,28 @@
           <option value="5">Ratings C</option>
           <option value="6">Trainees</option>
         </select>
+        <select
+          id="filterStatus"
+          onchange="applyFilters()"
+          class="text-xs border border-amber-100 rounded-lg px-3 py-1.5 bg-white text-navy focus:outline-none focus:border-navy"
+        >
+          <option value="">All Statuses</option>
+          <option value="NotFilled">Not Filled</option>
+          <option value="Filled">Submitted</option>
+          <!-- "DO Reviewed" (Status code "FO") removed from filter options per request.
+               STATUS_CLS / STATUS_LBL below still recognize it so any row that comes
+               back with this status still renders correctly in the table; it's just
+               not selectable as a filter.
+          <option value="FO">DO Reviewed</option>
+          -->
+          <option value="CPO">FO Approved</option>
+          <option value="Verified">Confirmed</option>
+          <option value="Completed">Completed</option>
+        </select>
       </div>
     </div>
     <p class="text-sm text-blue-900/50">
-      Review CPO-confirmed forms before syncing to payroll
+      <!-- Review forms across all approval stages before syncing to payroll -->
     </p>
   </div>
 
@@ -280,6 +298,30 @@
   <script>
     const ITEMS_PER_PAGE = 50;
 
+    // Status code → badge color classes
+    const STATUS_CLS = {
+      Filled: "bg-amber-50 text-amber-600",
+      FO: "bg-blue-50 text-blue-600",
+      CPO: "bg-purple-50 text-purple-600",
+      Verified: "bg-green-50 text-green-600",
+    };
+
+    // Status code → human-readable label
+    const STATUS_LBL = {
+      Filled: "Submitted",
+      FO: "DO Reviewed",
+      CPO: "FO Approved",
+      Verified: "Confirmed",
+    };
+
+    // Status code → icon
+    const STATUS_ICON = {
+      Filled: "fa-file",
+      FO: "fa-eye",
+      CPO: "fa-check",
+      Verified: "fa-certificate",
+    };
+
     const verifiedState = {
       page: 1,
       pageSize: ITEMS_PER_PAGE,
@@ -334,25 +376,39 @@
         .catch(() => {});
     })();
 
-    // ── Load verified forms ──
+    // ── Load forms (all statuses, filterable) ──
     function loadVerifiedForms(page = 1) {
       page = Math.max(page, 1);
       verifiedState.page = page;
 
       const ship = document.getElementById("filterShip")?.value || "";
       const cls = document.getElementById("filterClass")?.value || "";
+      const status = document.getElementById("filterStatus")?.value || "";
       const search = verifiedState.search || "";
 
       const params = new URLSearchParams({ page, pageSize: ITEMS_PER_PAGE });
       if (ship) params.set("ship", ship);
       if (cls) params.set("payrollclass", cls);
-      if (search) params.set("search", search);
+      // "Completed" / "Not Filled" aren't literal Status values — they're
+      // rows with no approval-stage Status, split by whether the form was
+      // filed (emolumentform = 'Yes') or never filed. admin.repository.js's
+      // searchPersonnel() special-cases these two string values; everything
+      // else (Filled/CPO/Verified) hits the plain p.Status = ? branch.
+      if (status) params.set("status", status);
+      if (search) {
+        // Heuristic: leading letter+digit looks like a service number,
+        // otherwise treat the text as a surname search.
+        const looksLikeSvcNo = /^[A-Za-z]\d/i.test(search);
+        if (looksLikeSvcNo) params.set("serviceNumber", search);
+        else params.set("surname", search);
+      }
+
       const tbody = document.getElementById("verifiedTableBody");
 
       tbody.innerHTML =
         '<tr><td colspan="5" class="text-center py-12 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></td></tr>';
 
-      fetch(`/admin/verified?${params}`, {
+      fetch(`/admin/personnel?${params}`, {
         headers: { Authorization: "Bearer " + token },
       })
         .then((r) => (r.ok ? r.json() : Promise.reject(r)))
@@ -369,7 +425,7 @@
           // showBatchActionsIfNeeded(); // batch actions disabled
         })
         .catch((err) => {
-          console.error("Error loading verified forms:", err);
+          console.error("Error loading forms:", err);
           tbody.innerHTML =
             '<tr><td colspan="5" class="text-center py-12 text-navy/40">Failed to load forms. Please try again.</td></tr>';
         });
@@ -384,8 +440,8 @@
         tbody.innerHTML = `
       <tr>
         <td colspan="5" class="text-center py-16 text-blue-900/30">
-          <i class="fas fa-check-circle fa-2x mb-3 block text-green-300"></i>
-          <p class="font-semibold">No CPO-confirmed forms pending</p>
+          <i class="fas fa-inbox fa-2x mb-3 block text-navy/20"></i>
+          <p class="font-semibold">No forms found</p>
         </td>
       </tr>`;
         return;
@@ -394,6 +450,20 @@
       tbody.innerHTML = data
         .map((row) => {
           const name = `${row.Surname || ""} ${row.OtherName || ""}`.trim();
+          const cls = STATUS_CLS[row.Status] || "bg-gray-100 text-gray-500";
+          const lbl =
+            STATUS_LBL[row.Status] ||
+            (row.emolumentform === "Yes" ? "Completed" : "Not Filed");
+          const icon = row.Status
+            ? STATUS_ICON[row.Status] || "fa-circle"
+            : row.emolumentform === "Yes"
+              ? "fa-check-circle"
+              : "fa-exclamation-circle";
+          const badgeCls = row.Status
+            ? cls
+            : row.emolumentform === "Yes"
+              ? "bg-green-50 text-green-600"
+              : "bg-red-50 text-red-400";
 
           return `
         <tr class="border-b border-amber-50 hover:bg-amber-50/40 transition-colors">
@@ -402,8 +472,8 @@
           <td class="px-3 py-3 text-navy/70">${row.Rank}</td>
           <td class="px-3 py-3 text-navy/70">${row.ship || "N/A"}</td>
           <td class="px-3 py-3">
-            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-lg whitespace-nowrap">
-              <i class="fas fa-check-circle mr-1"></i>CPO Verified
+            <span class="px-2 py-1 ${badgeCls} text-xs font-semibold rounded-lg whitespace-nowrap">
+              <i class="fas ${icon} mr-1"></i>${lbl}
             </span>
           </td>
           <!-- Actions column commented out — no actions on this page

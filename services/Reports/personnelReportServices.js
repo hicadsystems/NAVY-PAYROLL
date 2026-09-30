@@ -373,7 +373,7 @@ class PersonnelReportService {
           h.Title as code,
           COALESCE(t.Description, h.Title) as description
         FROM hr_employees h
-        LEFT JOIN py_Title t ON t.Titlecode = h.Title
+        LEFT JOIN py_title t ON t.Titlecode = h.Title
         WHERE h.Title IS NOT NULL AND h.Title != ''
           AND h.payrollclass = ?
           AND (LENGTH(IFNULL(h.DateLeft, '')) = 0 

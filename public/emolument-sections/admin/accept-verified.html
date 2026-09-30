@@ -396,11 +396,8 @@
       // else (Filled/CPO/Verified) hits the plain p.Status = ? branch.
       if (status) params.set("status", status);
       if (search) {
-        // Heuristic: leading letter+digit looks like a service number,
-        // otherwise treat the text as a surname search.
-        const looksLikeSvcNo = /^[A-Za-z]\d/i.test(search);
-        if (looksLikeSvcNo) params.set("serviceNumber", search);
-        else params.set("surname", search);
+      
+         params.set("q", search);
       }
 
       const tbody = document.getElementById("verifiedTableBody");

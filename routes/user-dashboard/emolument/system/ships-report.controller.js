@@ -54,7 +54,7 @@ function buildFilterSummary(query, rows) {
     );
     summary.push({
       label: "Command",
-      value: matchedCommand?.commandName || `Command ID ${query.commandid}`,
+      value: matchedCommand?.commandName || "Selected command",
     });
   }
   if (query.openship !== "") {
@@ -113,9 +113,7 @@ class ShipsReportController extends BaseReportController {
         return {
           sn: index + 1,
           shipName: ship.shipName || "—",
-          code: ship.code || "—",
           commandName: ship.commandName || "—",
-          commandId: ship.commandid == null ? "—" : String(ship.commandid),
           status: open ? "Open" : "Closed",
           statusClass: open ? "open" : "closed",
         };

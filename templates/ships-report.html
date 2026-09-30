@@ -46,10 +46,6 @@
     .record-count { color: #1e40af; font-weight: 700; text-align: right; text-transform: uppercase; white-space: nowrap; }
     .filter-summary {
       margin: 0 0 9px;
-      padding: 6px 9px;
-      border: 1px solid #dbe4f0;
-      border-left: 3px solid #1e40af;
-      background: #f5f8fc;
       color: #475569;
       line-height: 1.6;
     }
@@ -79,7 +75,6 @@
     tbody tr { break-inside: avoid; page-break-inside: avoid; }
     .center { text-align: center; }
     .ship-name { color: #1e40af; font-weight: 700; }
-    .code { font-family: 'Courier New', monospace; }
     .status { font-weight: 700; text-transform: uppercase; }
     .status.open { color: #166534; }
     .status.closed { color: #991b1b; }
@@ -122,12 +117,10 @@
   <table>
     <thead>
       <tr>
-        <th class="center" style="width: 6%;">S/N</th>
-        <th style="width: 27%;">Ship</th>
-        <th style="width: 15%;">Ship Code</th>
-        <th style="width: 25%;">Command</th>
-        <th class="center" style="width: 12%;">Command ID</th>
-        <th class="center" style="width: 15%;">Status</th>
+        <th class="center" style="width: 7%;">S/N</th>
+        <th style="width: 38%;">Ship</th>
+        <th style="width: 35%;">Command</th>
+        <th class="center" style="width: 20%;">Status</th>
       </tr>
     </thead>
     <tbody>
@@ -135,13 +128,11 @@
         <tr>
           <td class="center">{{this.sn}}</td>
           <td class="ship-name">{{this.shipName}}</td>
-          <td class="code">{{this.code}}</td>
           <td>{{this.commandName}}</td>
-          <td class="center">{{this.commandId}}</td>
           <td class="center status {{this.statusClass}}">{{this.status}}</td>
         </tr>
       {{else}}
-        <tr><td colspan="6" class="empty-row">No ships match the selected filters.</td></tr>
+        <tr><td colspan="4" class="empty-row">No ships match the selected filters.</td></tr>
       {{/each}}
     </tbody>
   </table>

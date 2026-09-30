@@ -12,6 +12,7 @@
  * ─── ROUTE MAP ───────────────────────────────────────────────
  *
  *  GET  /reports/progress                    → all ships (grouped by command)
+ *  GET  /reports/progress/export             → filtered progress-report PDF
  *  GET  /reports/dashboard                   → aggregate counts + top ships
  *  GET  /reports/years                       → historical year summary
  *  GET  /reports/ship/:ship                  → one ship detail + personnel list
@@ -36,6 +37,7 @@ const {
   requireEmolRole,
 } = require("../../../../middware/emolumentAuth");
 const reportsService = require("./reports.service");
+const progressReportController = require("./progress-report.controller");
 
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 
@@ -47,6 +49,15 @@ router.use((req, res, next) => {
 
 // All routes require authentication
 router.use(verifyToken);
+
+// ─────────────────────────────────────────────────────────────
+// GET /reports/progress/export
+// Filtered printable PDF; filters match the progress page controls.
+// ─────────────────────────────────────────────────────────────
+
+router.get("/progress/export", requireAnyEmolRole, (req, res) =>
+  progressReportController.generate(req, res),
+);
 
 // ─────────────────────────────────────────────────────────────
 // GET /reports/progress

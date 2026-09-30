@@ -313,8 +313,8 @@
     <span class="text-xs text-blue-900/40" id="pr-count"></span>
     <button onclick="window.prGenerateReport()" id="pr-export-btn"
       class="flex items-center gap-1.5 px-3 py-1.5 bg-navy text-white text-xs font-bold rounded-lg hover:bg-blue-800 transition-colors cursor-pointer border-none">
-      <i class="fas fa-file-alt" style="font-size:10px"></i>
-      Export Report
+      <i class="fas fa-print" style="font-size:10px" aria-hidden="true"></i>
+      Print Report
     </button>
     </div>
     <button class="pr-btn-clear" onclick="window.prClearFilters()">
@@ -344,6 +344,52 @@
 
 </div>
 
+<!-- Filtered progress-report PDF preview -->
+<div
+  id="pr-report-preview-modal"
+  class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="pr-report-preview-title"
+>
+  <div class="bg-gray-50 rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div class="shrink-0 bg-navy px-5 py-3 flex justify-between items-center gap-3">
+      <h3 id="pr-report-preview-title" class="text-sm md:text-lg font-bold text-white">
+        Ship Completion Progress Report
+      </h3>
+      <button
+        type="button"
+        onclick="window.prCloseReportPreview()"
+        class="text-white/80 hover:text-white text-2xl leading-none"
+        aria-label="Close report preview"
+      >&times;</button>
+    </div>
+    <div class="overflow-auto flex-1" style="background: #d1d5db;">
+      <iframe
+        id="pr-report-preview-iframe"
+        title="Ship Completion Progress Report PDF"
+        style="width: 100%; height: 72vh; min-height: 420px; border: none; background: white; display: block;"
+      ></iframe>
+    </div>
+    <div class="shrink-0 bg-gray-50 border-t border-gray-200 px-5 py-3 flex flex-wrap justify-end gap-2">
+      <button
+        type="button"
+        onclick="window.prCloseReportPreview()"
+        class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-300 transition-colors"
+      >
+        Close
+      </button>
+      <button
+        type="button"
+        onclick="window.prDownloadReport()"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 text-white text-sm font-bold rounded-lg hover:bg-blue-800 transition-colors"
+      >
+        <i class="fas fa-download" aria-hidden="true"></i>Download PDF
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
   (function () {
     const TOKEN = localStorage.getItem('token');
@@ -352,6 +398,8 @@
     let _allShips = [];   // flat list of all ship rows (from all commands)
     let _filtered = [];   // after search + command filter
     let _page = 1;
+    let _reportBlob = null;
+    let _reportBlobUrl = null;
 
     function N(v) { return (!v && v !== 0) ? '0' : Number(v).toLocaleString(); }
 
@@ -514,180 +562,79 @@
       renderTable();
     };
 
-    /* ── Generate / Print report ── */
-    window.prGenerateReport = function () {
-      var rows = _filtered;
-      if (!rows.length) { alert('No data to export. Load the report first.'); return; }
-
-      var now = new Date();
-      var dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-      var timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
-      var genBy = localStorage.getItem('full_name') || 'System User';
-
-      var searchVal = (document.getElementById('pr-search').value || '').trim();
-      var commandVal = (document.getElementById('pr-command').value || '').trim();
-      var filterNote = [
-        commandVal ? 'Command: ' + commandVal : '',
-        searchVal ? 'Ship: ' + searchVal : '',
-      ].filter(Boolean).join(' · ') || 'All Ships';
-
-      var totTotal = rows.reduce(function (a, s) { return a + Number(s.total || 0); }, 0);
-      var totSubmitted = rows.reduce(function (a, s) { return a + Number(s.submitted || 0); }, 0);
-      // var totDO = rows.reduce(function (a, s) { return a + Number(s.do_reviewed || 0); }, 0);
-      var totFO = rows.reduce(function (a, s) { return a + Number(s.fo_approved || 0); }, 0);
-      var totConf = rows.reduce(function (a, s) { return a + Number(s.cpo_confirmed || 0); }, 0);
-      var totCompleted = rows.reduce(function (a, s) { return a + Number(s.completed || 0); }, 0);
-      var totNotFiled = rows.reduce(function (a, s) { return a + Number(s.not_filed || 0); }, 0);
-      var overallPct = totTotal > 0 ? (totCompleted / totTotal * 100).toFixed(1) : '0.0';
-
-      function NP(v) { return (!v && v !== 0) ? '0' : Number(v).toLocaleString(); }
-
-      function pctCell(pct) {
-        var p = parseFloat(pct);
-        var color = p >= 75 ? '#166534' : p >= 40 ? '#92400e' : '#991b1b';
-        return '<span style="font-weight:800;color:' + color + ';">' + p + '%</span>';
+    /* ── Generate and preview the filtered PDF report ── */
+    window.prGenerateReport = async function () {
+      if (!_allShips.length) {
+        alert('Load the progress report first.');
+        return;
+      }
+      if (!_filtered.length) {
+        alert('No ships match the current filters.');
+        return;
       }
 
-      var tableRows = rows.map(function (s) {
-        var pct = s.completion_pct !== undefined
-          ? parseFloat(s.completion_pct)
-          : (s.total > 0 ? Math.round(s.completed / s.total * 100) : 0);
-        return '<tr>' +
-          '<td>' + (s.ship_name || '—') + '</td>' +
-          '<td>' + (s.commandName || '—') + '</td>' +
-          '<td class="r">' + NP(s.total) + '</td>' +
-          '<td class="r">' + NP(s.submitted) + '</td>' +
-          '<td class="r">' + NP(s.do_reviewed) + '</td>' +
-          '<td class="r">' + NP(s.fo_approved) + '</td>' +
-          '<td class="r" style="color:#166534;font-weight:700;">' + NP(s.cpo_confirmed) + '</td>' +
-          '<td class="r" style="color:#991b1b;font-weight:700;">' + NP(s.not_filed) + '</td>' +
-          '<td class="r">' + pctCell(pct) + '</td>' +
-          '</tr>';
-      }).join('');
+      const button = document.getElementById('pr-export-btn');
+      const originalHTML = button.innerHTML;
+      const params = new URLSearchParams();
+      const search = (document.getElementById('pr-search').value || '').trim();
+      const command = (document.getElementById('pr-command').value || '').trim();
+      if (search) params.set('search', search);
+      if (command) params.set('command', command);
 
-      var totRow =
-        '<tr style="border-top:1.5px solid #1e40af;font-weight:bold;">' +
-        '<td colspan="2">TOTAL — ' + rows.length + ' ship(s)</td>' +
-        '<td class="r">' + NP(totTotal) + '</td>' +
-        '<td class="r">' + NP(totSubmitted) + '</td>' +
-        // '<td class="r">' + NP(totDO) + '</td>' +
-        '<td class="r">' + NP(totFO) + '</td>' +
-        '<td class="r" style="color:#166534;">' + NP(totConf) + '</td>' +
-        '<td class="r" style="color:#991b1b;">' + NP(totNotFiled) + '</td>' +
-        '<td class="r">' + pctCell(overallPct) + '</td>' +
-        '</tr>';
+      button.disabled = true;
+      button.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Preparing report…';
 
-      /* ── Stat strip: rendered as a plain single-row table so print engines
-            honour column widths and don't stretch boxes to full page height ── */
-      /* var statStrip =
-        '<table class="stat-tbl"><tr>' +
-        '<td><div class="sl">TOTAL PERSONNEL</div><div class="sv">' + NP(totTotal) + '</div></td>' +
-        '<td><div class="sl">COMPLETED</div><div class="sv">' + NP(totCompleted) + '</div><div class="ss">' + overallPct + '% overall</div></td>' +
-        '<td><div class="sl">IN PIPELINE</div><div class="sv">' + NP(totSubmitted + totDO + totFO) + '</div></td>' +
-        '<td><div class="sl">CPO CONFIRMED</div><div class="sv">' + NP(totConf) + '</div></td>' +
-        '<td><div class="sl">NOT FILED</div><div class="sv">' + NP(totNotFiled) + '</div></td>' +
-        '</tr></table>';*/
-
-      var html =
-        '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Progress Report</title><style>' +
-        '@page{size:A4 landscape;margin:10mm}' +
-        'body{font-family:Helvetica,Arial,sans-serif;font-size:8pt;margin:0;padding:0;color:#333;position:relative}' +
-        'body::before{content:"";position:fixed;top:0;left:0;width:100%;height:100%;' +
-        'background-image:url("../photos/logo.png");background-size:auto 100%;' +
-        'background-repeat:no-repeat;background-position:center;opacity:0.02;z-index:-1;pointer-events:none}' +
-
-        /* Header — identical to payments report */
-        '.hdr-wrap{display:flex;align-items:flex-start;margin-bottom:8px;border-bottom:2px solid #1a1a1a;padding-bottom:5px}' +
-        '.hdr{flex:1;text-align:center}' +
-        '.hdr h1{font-size:13pt;font-weight:bold;margin:0 0 2px;letter-spacing:1.5px;color:#1e40af;font-family:"Libre Baskerville",Georgia,serif}' +
-        '.hdr h2{font-size:10pt;font-weight:normal;margin:2px 0 0;color:#4a4a4a;font-family:"Libre Baskerville",Georgia,serif}' +
-
-        /* Meta row — identical structure to payments report */
-        '.meta{display:flex;justify-content:space-between;align-items:center;margin:10px 0;font-size:9pt}' +
-
-        /* Stat strip as table — avoids browser stretching flex boxes */
-        '.stat-tbl{width:100%;border-collapse:separate;border-spacing:4px;margin-bottom:8px}' +
-        '.stat-tbl td{border:0.5px solid rgba(30,64,175,0.2);border-radius:4px;padding:4px 6px;vertical-align:top;width:20%}' +
-        '.sl{font-size:6pt;font-weight:800;text-transform:uppercase;letter-spacing:0.07em;color:rgba(30,64,175,0.5);margin-bottom:2px}' +
-        '.sv{font-size:13pt;font-weight:900;color:#1e40af;line-height:1.15}' +
-        '.ss{font-size:6pt;color:rgba(30,64,175,0.4);margin-top:1px}' +
-
-        /* Data table */
-        'table.data{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:7.5pt}' +
-        'table.data th{color:#1e40af;padding:6px 4px;text-align:left;font-weight:bold;font-size:7pt;' +
-        'text-transform:uppercase;letter-spacing:0.3px;border-bottom:1.5px solid #1e40af}' +
-        'table.data td{padding:5px 4px;border:none;vertical-align:middle;border-bottom:0.5px solid rgba(30,64,175,0.08)}' +
-        'td.r{text-align:right}' +
-
-        /* Footer */
-        '.footer{padding-top:8px;border-top:0.5px solid #1a1a1a;text-align:center;font-size:8pt;color:#64748b;margin-top:16px}' +
-
-        '@media print{' +
-        'body{print-color-adjust:exact;-webkit-print-color-adjust:exact}' +
-        'body::before{position:fixed;display:block}' +
-        '}' +
-        '</style></head><body>' +
-
-        /* Header */
-        '<div class="hdr-wrap"><div class="hdr">' +
-        '<h1>NIGERIAN NAVY E-EMOLUMENT</h1>' +
-        '<h2>SHIP COMPLETION PROGRESS REPORT</h2>' +
-        '</div></div>' +
-
-        /* Meta */
-        '<div class="meta">' +
-        '<div><strong>FILTER: ' + filterNote + '</strong></div>' +
-        '<div><span>PRODUCED ON </span><strong>' + dateStr + '</strong><span> AT </span><strong>' + timeStr + '</strong></div>' +
-        '<div><strong>' + rows.length + '</strong> SHIP(S)</div>' +
-        '</div>' +
-
-        /* Stat strip */
-        //statStrip +
-
-        /* Data table */
-        '<table class="data"><thead><tr>' +
-        '<th>Ship Name</th>' +
-        '<th>Command</th>' +
-        '<th style="text-align:right">Total</th>' +
-        '<th style="text-align:right">Filled</th>' +
-        // '<th style="text-align:right">DO Reviewed</th>' +
-        '<th style="text-align:right">FO Approved</th>' +
-        '<th style="text-align:right">CPO Confirmed</th>' +
-        '<th style="text-align:right">Not Filed</th>' +
-        '<th style="text-align:right">% Done</th>' +
-        '</tr></thead>' +
-        '<tbody>' + tableRows + totRow + '</tbody></table>' +
-
-        /* Footer */
-        '<div class="footer">' +
-        '<p>Generated by: <strong>' + genBy + '</strong></p>' +
-        '<p>All rights reserved &#xA9; Hicad Systems Limited.</p>' +
-        '</div>' +
-        '</body></html>';
-
-      /* ── iframe print — keeps parent window focus intact so selects keep working ── */
-      var old = document.getElementById('pr-print-frame');
-      if (old) old.parentNode.removeChild(old);
-
-      var iframe = document.createElement('iframe');
-      iframe.id = 'pr-print-frame';
-      iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
-      document.body.appendChild(iframe);
-
-      var idoc = iframe.contentDocument || iframe.contentWindow.document;
-      idoc.open();
-      idoc.write(html);
-      idoc.close();
-
-      /* Small delay lets the iframe's CSS fully parse before print dialog */
-      setTimeout(function () {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-        /* Remove frame after dialog closes (afterprint fires in modern browsers) */
-        iframe.contentWindow.addEventListener('afterprint', function () {
-          document.body.removeChild(iframe);
+      try {
+        const response = await fetch('/reports/progress/export?' + params.toString(), {
+          headers: { Authorization: 'Bearer ' + TOKEN },
         });
-      }, 400);
+        if (!response.ok) {
+          const errorData = await response.json().catch(function () { return {}; });
+          throw new Error(errorData.error || 'Could not generate the progress report.');
+        }
+
+        const blob = await response.blob();
+        if (_reportBlobUrl) URL.revokeObjectURL(_reportBlobUrl);
+        _reportBlob = blob;
+        _reportBlobUrl = URL.createObjectURL(blob);
+
+        const modal = document.getElementById('pr-report-preview-modal');
+        if (modal.parentElement !== document.body) document.body.appendChild(modal);
+        const iframe = document.getElementById('pr-report-preview-iframe');
+        iframe.removeAttribute('srcdoc');
+        iframe.src = _reportBlobUrl + '#toolbar=0';
+        modal.classList.remove('hidden');
+      } catch (error) {
+        console.error('Error generating progress report:', error);
+        alert(error.message || 'Could not generate the progress report.');
+      } finally {
+        button.disabled = false;
+        button.innerHTML = originalHTML;
+      }
+    };
+
+    window.prCloseReportPreview = function () {
+      document.getElementById('pr-report-preview-modal').classList.add('hidden');
+      const iframe = document.getElementById('pr-report-preview-iframe');
+      iframe.src = 'about:blank';
+      iframe.removeAttribute('srcdoc');
+      if (_reportBlobUrl) {
+        URL.revokeObjectURL(_reportBlobUrl);
+        _reportBlobUrl = null;
+      }
+      _reportBlob = null;
+    };
+
+    window.prDownloadReport = function () {
+      if (!_reportBlob) return;
+      const url = URL.createObjectURL(_reportBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'progress-report-' + new Date().toISOString().slice(0, 10) + '.pdf';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     };
 
     load();

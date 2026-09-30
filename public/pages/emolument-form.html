@@ -565,7 +565,7 @@
             <div class="header-title-block">
               <p class="text-blue-800  leading-tight text-2xl sm:text-3xl">
                 Nigerian Navy Central Pay Office
-  
+
               </p>
               <p class="text-blue-800 text-2xl mb-1">
                 E-Emolument Form
@@ -1740,11 +1740,10 @@
         gsm_number: data.gsm_number,
         gsm_number2: data.gsm_number2,
         email: data.email,
-        home_address: data.AddressofAcommodation,
+        home_address: data.home_address,
+        AddressofAcommodation: data.AddressofAcommodation,
         DateEmpl: toDateStr(data.DateEmpl),
-        expirationOfEngagementDate: toDateStr(
-          data.expirationOfEngagementDate,
-        ),
+        expirationOfEngagementDate: toDateStr(data.expirationOfEngagementDate),
         advanceDate: toDateStr(data.advanceDate),
         yearOfPromotion: data.yearOfPromotion,
         specialisation: data.specialisation,
@@ -1772,6 +1771,7 @@
       );
       setVal(ambiguousFieldId("runoutDate"), toDateStr(data.runoutDate));
 
+      // Ship depends on command
       if (data.command) {
         populateSelect(
           "ship",
@@ -1843,28 +1843,12 @@
       // Photos
       const docs = data.documents || {};
       if (docs.passport?.url)
-        showPhotoPreview(
-          "preview-passport",
-          "placeholder-passport",
-          "zone-passport",
-          docs.passport.url,
-        );
+        showPhotoPreview("preview-passport", "placeholder-passport", "zone-passport", docs.passport.url);
       if (docs.nokPassport?.url)
-        showPhotoPreview(
-          "preview-nok",
-          "placeholder-nok",
-          "zone-nok",
-          docs.nokPassport.url,
-        );
+        showPhotoPreview("preview-nok", "placeholder-nok", "zone-nok", docs.nokPassport.url);
       if (docs.altNokPassport?.url)
-        showPhotoPreview(
-          "preview-altnok",
-          "placeholder-altnok",
-          "zone-altnok",
-          docs.altNokPassport.url,
-        );
+        showPhotoPreview("preview-altnok", "placeholder-altnok", "zone-altnok", docs.altNokPassport.url);
     }
-
     function prefillNok(prefix, nok) {
       setVal(`${prefix}_full_name`, nok.full_name);
       setVal(`${prefix}_relationship`, nok.relationship);
@@ -2044,30 +2028,19 @@
         AcommodationStatus: gv("AcommodationStatus"),
         AddressofAcommodation: gv("AddressofAcommodation"),
       };
-      const nok = {
-        primary: {
-          full_name: gv("nok_primary_full_name"),
-          relationship: gv("nok_primary_relationship"),
-          national_id: gv("nok_primary_national_id"),
-          phone1: gv("nok_primary_phone1"),
-          phone2: gv("nok_primary_phone2"),
-          email: gv("nok_primary_email"),
-          address: gv("nok_primary_address"),
-          bank: gv("nok_primary_bank"),
-          account_number: gv("nok_primary_account_number"),
-        },
-        alternate: {
-          full_name: gv("nok_alt_full_name"),
-          relationship: gv("nok_alt_relationship"),
-          national_id: gv("nok_alt_national_id"),
-          phone1: gv("nok_alt_phone1"),
-          phone2: gv("nok_alt_phone2"),
-          email: gv("nok_alt_email"),
-          address: gv("nok_alt_address"),
-          bank: gv("nok_alt_bank"),
-          account_number: gv("nok_alt_account_number"),
-        },
-      };
+
+      const nokFor = (p) => ({
+        full_name: gv(`${p}_full_name`),
+        relationship: gv(`${p}_relationship`),
+        national_id: gv(`${p}_national_id`),
+        phone1: gv(`${p}_phone1`),
+        phone2: gv(`${p}_phone2`),
+        email: gv(`${p}_email`),
+        address: gv(`${p}_address`),
+        bank: gv(`${p}_bank`),
+        account_number: gv(`${p}_account_number`),
+      });
+      const nok = { primary: nokFor("nok_primary"), alternate: nokFor("nok_alt") };
 
       const spouse = {
         full_name: gv("sp_full_name"),
@@ -2091,21 +2064,30 @@
           };
       });
 
+      // Send every loan valid for this form type so unchecked ones get deleted
       const loans = {};
-      LOANS.forEach(({ key, specify }) => {
-        const cb = document.getElementById(`loan_${key}_active`);
-        const year = document.getElementById(`loan_${key}_year`)?.value.trim() || null;
-        if (cb?.checked) {
-          loans[key] = { is_active: true, year_taken: year };
-          if (specify) {
-            loans[key].specify =
-              document.getElementById(`loan_${key}_specify`)?.value.trim() || null;
+      LOANS.filter((l) => !l.officersOnly || formType === "OFFICER").forEach(
+        ({ key, specify }) => {
+          const cb = document.getElementById(`loan_${key}_active`);
+          if (!cb) return;
+          if (cb.checked) {
+            loans[key] = {
+              is_active: true,
+              year_taken:
+                document.getElementById(`loan_${key}_year`)?.value.trim() || null,
+            };
+            if (specify) {
+              loans[key].specify =
+                document.getElementById(`loan_${key}_specify`)?.value.trim() || null;
+            }
+          } else {
+            loans[key] = { is_active: false };
           }
-        }
-      });
+        },
+      );
+
       return { core, nok, spouse, children, loans, allowances };
     }
-
     // ── Save / submit ────────────────────────────────────────
     async function saveDraft() {
       try {

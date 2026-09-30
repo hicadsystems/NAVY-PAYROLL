@@ -4,12 +4,7 @@
  * All SQL for the emolument form lifecycle.
  * ef_personalinfos holds core identity/service only.
  * Related data lives in normalized tables:
- *   ef_nok        → next of kin (rows, nok_order 1 & 2)
- *   ef_spouse     → spouse
- *   ef_children   → children (rows, birth_order 1-4)
- *   ef_loans      → loans (rows per loan_type)
- *   ef_allowances → allowances (rows per allow_type)
- *   ef_documents  → photo URLs (rows per doc_type)
+ *   ef_nok, ef_spouse, ef_children, ef_loans, ef_allowances, ef_documents
  */
 
 "use strict";
@@ -52,12 +47,7 @@ async function getShipOpenStatus(shipName) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// FIRST-TIMER INIT — hr_employees lookup + ef_personalinfos create
-//
-// Called when getPersonCore() returns null — personnel authenticated
-// via hr_employees but have never been in any ef_ table before.
-// Condition: emolumentform != 'Yes' ensures we never re-init someone
-// who has already been confirmed in a previous cycle.
+// FIRST-TIMER INIT
 // ─────────────────────────────────────────────────────────────
 
 async function getFromHrEmployees(serviceNo) {
@@ -91,7 +81,6 @@ async function getFromHrEmployees(serviceNo) {
 async function initPersonnelFromHr(emp) {
   pool.useDatabase(DB());
 
-  // Resolve classes from payrollclass
   const payrollclass = String(emp.payrollclass);
   let classes;
   if (payrollclass === "1") classes = 1;
@@ -147,7 +136,7 @@ async function getPersonCore(serviceNo) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// LOAD FORM — each piece separately, assembled in service layer
+// LOAD FORM
 // ─────────────────────────────────────────────────────────────
 
 async function loadPersonCore(serviceNo) {
@@ -196,7 +185,8 @@ async function loadNok(serviceNo) {
   pool.useDatabase(DB());
   const [rows] = await pool.query(
     `SELECT nok_order, full_name, relationship, phone1, phone2,
-            email, address, national_id
+            email, address, national_id,
+            nok_bank AS bank, nok_acc AS account_number
      FROM ef_nok
      WHERE service_no = ?
      ORDER BY nok_order ASC`,
@@ -251,8 +241,7 @@ async function loadAllowances(serviceNo) {
     [serviceNo],
   );
 
-  // For GBC => GCB (wrong data typing and storage)
-
+  // GCB is stored on ef_personalinfos as GBC / GBC_Number
   const [gbc] = await pool.query(
     `SELECT GBC, GBC_Number from ef_personalinfos WHERE serviceNumber = ? AND GBC IS NOT NULL LIMIT 1`,
     [serviceNo],
@@ -262,14 +251,14 @@ async function loadAllowances(serviceNo) {
   rows.forEach((r) => {
     out[r.allow_type] = r;
   });
-  out["GCB"] = gbc[0]?.GBC
-    ? {
-        allow_type: "GCB",
-        is_active: 1,
-        specify: null,
-        gcb_number: gbc[0].GBC_Number,
-      }
-    : undefined;
+  if (gbc[0]?.GBC) {
+    out["GCB"] = {
+      allow_type: "GCB",
+      is_active: 1,
+      specify: null,
+      gcb_number: gbc[0].GBC_Number,
+    };
+  }
   return out;
 }
 
@@ -288,25 +277,12 @@ async function loadDocuments(serviceNo) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// LOAD HISTORICAL FORM — fetch from snapshot (post-migration)
-//
-// After migration_drop_flat_columns.sql is run,
-// ef_personalinfoshist is a slim index table only.
-// Full historical form data lives in ef_emolument_forms.snapshot.
-//
-// This function:
-//   1. Looks up the index row in ef_personalinfoshist (for metadata)
-//   2. Fetches the full snapshot from ef_emolument_forms
-//   3. Returns both merged — snapshot is the authoritative data source
-//
-// If no snapshot exists (form confirmed before this system was live),
-// falls back to whatever is in ef_personalinfoshist index row.
+// LOAD HISTORICAL FORM
 // ─────────────────────────────────────────────────────────────
 
 async function loadHistoricalForm(serviceNo, year) {
   pool.useDatabase(DB());
 
-  // 1. Get index row from ef_personalinfoshist
   const [histRows] = await pool.query(
     `SELECT
        h.FormYear, h.serviceNumber, h.Surname, h.OtherName,
@@ -329,7 +305,6 @@ async function loadHistoricalForm(serviceNo, year) {
 
   const histRow = histRows[0] || null;
 
-  // 2. Get full snapshot from ef_emolument_forms
   const [snapRows] = await pool.query(
     `SELECT snapshot, submitted_at, updated_at
      FROM ef_emolument_forms
@@ -342,10 +317,8 @@ async function loadHistoricalForm(serviceNo, year) {
 
   const snapRow = snapRows[0] || null;
 
-  // No data at all — form never confirmed for this year
   if (!histRow && !snapRow) return null;
 
-  // 3. Parse snapshot if available
   let snapshotData = null;
   if (snapRow?.snapshot) {
     try {
@@ -354,15 +327,11 @@ async function loadHistoricalForm(serviceNo, year) {
           ? JSON.parse(snapRow.snapshot)
           : snapRow.snapshot;
     } catch {
-      // Snapshot malformed — log and continue with index row only
       console.warn(`⚠️  Malformed snapshot for ${serviceNo}/${year}`);
     }
   }
 
-  // 4. Merge: snapshot is authoritative for form data,
-  //    histRow provides index metadata as fallback
   return {
-    // Index metadata (always from histRow where available)
     FormYear: histRow?.FormYear ?? year,
     serviceNumber: histRow?.serviceNumber ?? serviceNo,
     Surname: histRow?.Surname,
@@ -395,7 +364,6 @@ async function loadHistoricalForm(serviceNo, year) {
     fo_date: histRow?.fo_date,
     NIN: histRow?.NIN,
 
-    // Full snapshot data — null if not available (pre-migration forms)
     snapshot: snapshotData,
     hasSnapshot: snapshotData !== null,
     submittedAt: snapRow?.submitted_at ?? null,
@@ -403,118 +371,90 @@ async function loadHistoricalForm(serviceNo, year) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// SAVE — ef_personalinfos core columns only
+// SHARED WRITE HELPERS
+// Every one takes an executor (pool or transaction conn) so that
+// saveDraft and submit use EXACTLY the same SQL.
 // ─────────────────────────────────────────────────────────────
 
-async function savePersonCore(serviceNo, f) {
-  pool.useDatabase(DB());
-  const [result] = await pool.query(
-    `UPDATE ef_personalinfos SET
-       Surname                    = ?,
-       OtherName                  = ?,
-       Sex                        = ?,
-       MaritalStatus              = ?,
-       Birthdate                  = ?,
-       religion                   = ?,
-       gsm_number                 = ?,
-       gsm_number2                = ?,
-       email                      = ?,
-       home_address               = ?,
-       BankACNumber               = ?,
-       Bankcode                   = ?,
-       bankbranch                 = ?,
-       pfacode                    = ?,
-       specialisation             = ?,
-       command                    = ?,
-       branch                     = ?,
-       DateEmpl                   = ?,
-       seniorityDate              = ?,
-       yearOfPromotion            = ?,
-       expirationOfEngagementDate = ?,
-       StateofOrigin              = ?,
-       LocalGovt                  = ?,
-       TaxCode                    = ?,
-       entry_mode                 = ?,
-       gradelevel                 = ?,
-       gradetype                  = ?,
-       taxed                      = ?,
-       accomm_type                = ?,
-       AcommodationStatus         = ?,
-       AddressofAcommodation      = ?,
-       GBC                        = ?,
-       GBC_Number                 = ?,
-       NSITFcode                  = ?,
-       NHFcode                    = ?,
-       qualification              = ?,
-       division                   = ?,
-       entitlement                = ?,
-       advanceDate                = ?,
-       runoutDate                 = ?,
-       NIN                        = ?,
-       AccountName                = ?,
-       dateModify                 = NOW()
-     WHERE serviceNumber = ?`,
-    [
-      f.Surname,
-      f.OtherName,
-      f.Sex,
-      f.MaritalStatus,
-      f.Birthdate,
-      f.religion,
-      f.gsm_number,
-      f.gsm_number2,
-      f.email,
-      f.home_address,
-      f.BankACNumber,
-      f.Bankcode,
-      f.bankbranch,
-      f.pfacode,
-      f.specialisation,
-      f.command,
-      f.branch,
-      f.DateEmpl,
-      f.seniorityDate,
-      f.yearOfPromotion,
-      f.expirationOfEngagementDate,
-      f.StateofOrigin,
-      f.LocalGovt,
-      f.TaxCode,
-      f.entry_mode,
-      f.gradelevel,
-      f.gradetype,
-      f.taxed,
-      f.accomm_type,
-      f.AcommodationStatus,
-      f.AddressofAcommodation,
-      f.GBC,
-      f.GBC_Number,
-      f.NSITFcode,
-      f.NHFcode,
-      f.qualification,
-      f.division,
-      f.entitlement,
-      f.advanceDate,
-      f.runoutDate,
-      f.NIN,
-      f.AccountName || `${f.Surname} ${f.OtherName}`,
-      serviceNo,
-    ],
-  );
+// Only columns present in the payload (not undefined) are updated,
+// so fields the form doesn't send are never wiped to NULL.
+const CORE_COLUMNS = [
+  "Surname",
+  "OtherName",
+  "Rank",
+  "Sex",
+  "MaritalStatus",
+  "Birthdate",
+  "religion",
+  "gsm_number",
+  "gsm_number2",
+  "email",
+  "home_address",
+  "BankACNumber",
+  "Bankcode",
+  "bankbranch",
+  "pfacode",
+  "specialisation",
+  "command",
+  "branch",
+  "ship",
+  "DateEmpl",
+  "seniorityDate",
+  "yearOfPromotion",
+  "expirationOfEngagementDate",
+  "StateofOrigin",
+  "LocalGovt",
+  "TaxCode",
+  "entry_mode",
+  "gradelevel",
+  "gradetype",
+  "taxed",
+  "accomm_type",
+  "AcommodationStatus",
+  "AddressofAcommodation",
+  "GBC",
+  "GBC_Number",
+  "NSITFcode",
+  "NHFcode",
+  "qualification",
+  "division",
+  "entitlement",
+  "advanceDate",
+  "runoutDate",
+  "NIN",
+  "AccountName",
+  "confirmedBy", // Nature of Appointment (Permanent / Contract)
+];
+
+async function writeCore(exec, serviceNo, f) {
+  const data = { ...(f || {}) };
+
+  if (data.AccountName === undefined && data.Surname) {
+    data.AccountName = `${data.Surname} ${data.OtherName ?? ""}`.trim();
+  }
+
+  const cols = CORE_COLUMNS.filter((c) => data[c] !== undefined);
+  if (!cols.length) return true;
+
+  const sql = `UPDATE ef_personalinfos SET
+      ${cols.map((c) => `\`${c}\` = ?`).join(", ")},
+      dateModify = NOW()
+    WHERE serviceNumber = ?`;
+
+  const [result] = await exec.query(sql, [
+    ...cols.map((c) => data[c]),
+    serviceNo,
+  ]);
   return result.affectedRows > 0;
 }
 
-// ─────────────────────────────────────────────────────────────
-// SAVE — ef_nok
-// ─────────────────────────────────────────────────────────────
-
-async function saveNok(serviceNo, primary, alternate) {
-  pool.useDatabase(DB());
-  const upsertNok = (order, data) =>
-    pool.query(
-      `INSERT INTO ef_nok
+async function writeNok(exec, serviceNo, order, data) {
+  if (!data) return;
+  await exec.query(
+    `INSERT INTO ef_nok
        (service_no, nok_order, full_name, relationship, phone1, phone2,
-        email, address, national_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        email, address, national_id, nok_bank, nok_acc)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
        full_name    = VALUES(full_name),
        relationship = VALUES(relationship),
@@ -522,32 +462,28 @@ async function saveNok(serviceNo, primary, alternate) {
        phone2       = VALUES(phone2),
        email        = VALUES(email),
        address      = VALUES(address),
-       national_id  = VALUES(national_id)`,
-      [
-        serviceNo,
-        order,
-        data.full_name ?? null,
-        data.relationship ?? null,
-        data.phone1 ?? null,
-        data.phone2 ?? null,
-        data.email ?? null,
-        data.address ?? null,
-        data.national_id ?? null,
-      ],
-    );
-
-  if (primary) await upsertNok(1, primary);
-  if (alternate) await upsertNok(2, alternate);
+       national_id  = VALUES(national_id),
+       nok_bank     = VALUES(nok_bank),
+       nok_acc      = VALUES(nok_acc)`,
+    [
+      serviceNo,
+      order,
+      data.full_name ?? null,
+      data.relationship ?? null,
+      data.phone1 ?? null,
+      data.phone2 ?? null,
+      data.email ?? null,
+      data.address ?? null,
+      data.national_id ?? null,
+      data.bank ?? null,
+      data.account_number ?? null,
+    ],
+  );
 }
 
-// ─────────────────────────────────────────────────────────────
-// SAVE — ef_spouse
-// ─────────────────────────────────────────────────────────────
-
-async function saveSpouse(serviceNo, spouse) {
+async function writeSpouse(exec, serviceNo, spouse) {
   if (!spouse) return;
-  pool.useDatabase(DB());
-  await pool.query(
+  await exec.query(
     `INSERT INTO ef_spouse (service_no, full_name, phone1, phone2, email)
      VALUES (?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
@@ -565,33 +501,33 @@ async function saveSpouse(serviceNo, spouse) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// SAVE — ef_children (delete + re-insert for clean ordering)
-// ─────────────────────────────────────────────────────────────
-
-async function saveChildren(serviceNo, children) {
+async function writeChildren(exec, serviceNo, children) {
   if (!Array.isArray(children)) return;
-  pool.useDatabase(DB());
-  await pool.query(`DELETE FROM ef_children WHERE service_no = ?`, [serviceNo]);
+  await exec.query(`DELETE FROM ef_children WHERE service_no = ?`, [serviceNo]);
   const valid = children.slice(0, 4).filter((c) => c?.child_name?.trim());
   for (const [i, child] of valid.entries()) {
-    await pool.query(
+    await exec.query(
       `INSERT INTO ef_children (service_no, child_name, birth_order) VALUES (?, ?, ?)`,
       [serviceNo, child.child_name.trim(), child.birth_order ?? i + 1],
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// SAVE — ef_loans
-// ─────────────────────────────────────────────────────────────
-
-async function saveLoans(serviceNo, loans, validLoanTypes) {
+async function writeLoans(exec, serviceNo, loans, validLoanTypes) {
   if (!loans || typeof loans !== "object") return;
-  pool.useDatabase(DB());
   for (const [loanType, data] of Object.entries(loans)) {
     if (!validLoanTypes.includes(loanType)) continue;
-    await pool.query(
+
+    // Unchecked loan → remove the stored row
+    if (!data || data.is_active === false) {
+      await exec.query(
+        `DELETE FROM ef_loans WHERE service_no = ? AND loan_type = ?`,
+        [serviceNo, loanType],
+      );
+      continue;
+    }
+
+    await exec.query(
       `INSERT INTO ef_loans
          (service_no, loan_type, amount, year_taken, tenor, balance, specify)
        VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -614,16 +550,11 @@ async function saveLoans(serviceNo, loans, validLoanTypes) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// SAVE — ef_allowances
-// ─────────────────────────────────────────────────────────────
-
-async function saveAllowances(serviceNo, allowances, validAllowTypes) {
+async function writeAllowances(exec, serviceNo, allowances, validAllowTypes) {
   if (!allowances || typeof allowances !== "object") return;
-  pool.useDatabase(DB());
   for (const [allowType, data] of Object.entries(allowances)) {
     if (!validAllowTypes.includes(allowType)) continue;
-    await pool.query(
+    await exec.query(
       `INSERT INTO ef_allowances (service_no, allow_type, is_active, specify)
        VALUES (?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
@@ -635,26 +566,44 @@ async function saveAllowances(serviceNo, allowances, validAllowTypes) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// SAVE (draft) — thin wrappers over the shared helpers
+// ─────────────────────────────────────────────────────────────
+
+async function savePersonCore(serviceNo, f) {
+  pool.useDatabase(DB());
+  return writeCore(pool, serviceNo, f);
+}
+
+async function saveNok(serviceNo, primary, alternate) {
+  pool.useDatabase(DB());
+  await writeNok(pool, serviceNo, 1, primary);
+  await writeNok(pool, serviceNo, 2, alternate);
+}
+
+async function saveSpouse(serviceNo, spouse) {
+  pool.useDatabase(DB());
+  await writeSpouse(pool, serviceNo, spouse);
+}
+
+async function saveChildren(serviceNo, children) {
+  pool.useDatabase(DB());
+  await writeChildren(pool, serviceNo, children);
+}
+
+async function saveLoans(serviceNo, loans, validLoanTypes) {
+  pool.useDatabase(DB());
+  await writeLoans(pool, serviceNo, loans, validLoanTypes);
+}
+
+async function saveAllowances(serviceNo, allowances, validAllowTypes) {
+  pool.useDatabase(DB());
+  await writeAllowances(pool, serviceNo, allowances, validAllowTypes);
+}
+
+// ─────────────────────────────────────────────────────────────
 // SUBMIT — atomic multi-table write (transaction version)
-//
-// Accepts a smartConnection from pool.smartTransaction so all
-// writes participate in a single transaction. If any write fails
-// the entire transaction rolls back — no partial state.
-//
-// Steps inside transaction:
-//   1. savePersonCore     → ef_personalinfos (all form fields)
-//   2. saveNok            → ef_nok (primary + alternate)
-//   3. saveSpouse         → ef_spouse
-//   4. saveChildren       → ef_children (delete + re-insert)
-//   5. saveLoans          → ef_loans
-//   6. saveAllowances     → ef_allowances
-//   7. markSubmitted      → ef_personalinfos.Status = 'Filled'
-//
-// Steps OUTSIDE transaction (called by service after commit):
-//   - upsertEmolumentForm → ef_emolument_forms (safe to retry)
-//   - incrementFormNumber → ef_control counter
-//   - insertFormApproval  → ef_form_approvals
-//   - insertAuditLog      → ef_audit_logs
+// Throws "ALREADY_SUBMITTED" when the status gate matches 0 rows so
+// the whole transaction rolls back.
 // ─────────────────────────────────────────────────────────────
 
 async function submitAllTables(
@@ -667,211 +616,24 @@ async function submitAllTables(
   validLoanTypes,
   validAllowTypes,
 ) {
-  const f = body.core || {};
-  const primary = body.nok?.primary;
-  const alternate = body.nok?.alternate;
-  const spouse = body.spouse;
-  const children = Array.isArray(body.children) ? body.children : [];
-  const loans = body.loans || {};
-  const allows = body.allowances || {};
-
-  // 1. Save core personal info
-  await conn.query(
-    `UPDATE ef_personalinfos SET
-       Surname                    = ?,
-       OtherName                  = ?,
-       Sex                        = ?,
-       MaritalStatus              = ?,
-       Birthdate                  = ?,
-       religion                   = ?,
-       gsm_number                 = ?,
-       gsm_number2                = ?,
-       email                      = ?,
-       home_address               = ?,
-       BankACNumber               = ?,
-       Bankcode                   = ?,
-       bankbranch                 = ?,
-       pfacode                    = ?,
-       specialisation             = ?,
-       command                    = ?,
-       branch                     = ?,
-       DateEmpl                   = ?,
-       seniorityDate              = ?,
-       yearOfPromotion            = ?,
-       expirationOfEngagementDate = ?,
-       StateofOrigin              = ?,
-       LocalGovt                  = ?,
-       TaxCode                    = ?,
-       entry_mode                 = ?,
-       gradelevel                 = ?,
-       gradetype                  = ?,
-       taxed                      = ?,
-       accomm_type                = ?,
-       AcommodationStatus         = ?,
-       AddressofAcommodation      = ?,
-       GBC                        = ?,
-       GBC_Number                 = ?,
-       NSITFcode                  = ?,
-       NHFcode                    = ?,
-       qualification              = ?,
-       division                   = ?,
-       entitlement                = ?,
-       advanceDate                = ?,
-       runoutDate                 = ?,
-       NIN                        = ?,
-       AccountName                = ?,
-       dateModify                 = NOW()
-     WHERE serviceNumber = ?`,
-    [
-      f.Surname,
-      f.OtherName,
-      f.Sex,
-      f.MaritalStatus,
-      f.Birthdate,
-      f.religion,
-      f.gsm_number,
-      f.gsm_number2,
-      f.email,
-      f.home_address,
-      f.BankACNumber,
-      f.Bankcode,
-      f.bankbranch,
-      f.pfacode,
-      f.specialisation,
-      f.command,
-      f.branch,
-      f.DateEmpl,
-      f.seniorityDate,
-      f.yearOfPromotion,
-      f.expirationOfEngagementDate,
-      f.StateofOrigin,
-      f.LocalGovt,
-      f.TaxCode,
-      f.entry_mode,
-      f.gradelevel,
-      f.gradetype,
-      f.taxed,
-      f.accomm_type,
-      f.AcommodationStatus,
-      f.AddressofAcommodation,
-      f.GBC,
-      f.GBC_Number,
-      f.NSITFcode,
-      f.NHFcode,
-      f.qualification,
-      f.division,
-      f.entitlement,
-      f.advanceDate,
-      f.runoutDate,
-      f.NIN,
-      f.AccountName || `${f.Surname} ${f.OtherName}`,
-      serviceNo,
-    ],
+  await writeCore(conn, serviceNo, body.core || {});
+  await writeNok(conn, serviceNo, 1, body.nok?.primary);
+  await writeNok(conn, serviceNo, 2, body.nok?.alternate);
+  await writeSpouse(conn, serviceNo, body.spouse);
+  await writeChildren(
+    conn,
+    serviceNo,
+    Array.isArray(body.children) ? body.children : [],
+  );
+  await writeLoans(conn, serviceNo, body.loans || {}, validLoanTypes);
+  await writeAllowances(
+    conn,
+    serviceNo,
+    body.allowances || {},
+    validAllowTypes,
   );
 
-  // 2. Save NOK
-  const upsertNok = async (order, data) => {
-    if (!data) return;
-    await conn.query(
-      `INSERT INTO ef_nok
-         (service_no, nok_order, full_name, relationship, phone1, phone2,
-          email, address, national_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         full_name    = VALUES(full_name),
-         relationship = VALUES(relationship),
-         phone1       = VALUES(phone1),
-         phone2       = VALUES(phone2),
-         email        = VALUES(email),
-         address      = VALUES(address),
-         national_id  = VALUES(national_id)`,
-      [
-        serviceNo,
-        order,
-        data.full_name ?? null,
-        data.relationship ?? null,
-        data.phone1 ?? null,
-        data.phone2 ?? null,
-        data.email ?? null,
-        data.address ?? null,
-        data.national_id ?? null,
-      ],
-    );
-  };
-  await upsertNok(1, primary);
-  await upsertNok(2, alternate);
-
-  // 3. Save spouse
-  if (spouse) {
-    await conn.query(
-      `INSERT INTO ef_spouse (service_no, full_name, phone1, phone2, email)
-       VALUES (?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         full_name = VALUES(full_name),
-         phone1    = VALUES(phone1),
-         phone2    = VALUES(phone2),
-         email     = VALUES(email)`,
-      [
-        serviceNo,
-        spouse.full_name ?? null,
-        spouse.phone1 ?? null,
-        spouse.phone2 ?? null,
-        spouse.email ?? null,
-      ],
-    );
-  }
-
-  // 4. Save children — delete + re-insert for clean ordering
-  await conn.query(`DELETE FROM ef_children WHERE service_no = ?`, [serviceNo]);
-  const validChildren = children
-    .slice(0, 4)
-    .filter((c) => c?.child_name?.trim());
-  for (const [i, child] of validChildren.entries()) {
-    await conn.query(
-      `INSERT INTO ef_children (service_no, child_name, birth_order) VALUES (?, ?, ?)`,
-      [serviceNo, child.child_name.trim(), child.birth_order ?? i + 1],
-    );
-  }
-
-  // 5. Save loans
-  for (const [loanType, data] of Object.entries(loans)) {
-    if (!validLoanTypes.includes(loanType)) continue;
-    await conn.query(
-      `INSERT INTO ef_loans
-         (service_no, loan_type, amount, year_taken, tenor, balance, specify)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         amount     = VALUES(amount),
-         year_taken = VALUES(year_taken),
-         tenor      = VALUES(tenor),
-         balance    = VALUES(balance),
-         specify    = VALUES(specify)`,
-      [
-        serviceNo,
-        loanType,
-        data.amount ?? null,
-        data.year_taken ?? null,
-        data.tenor ?? null,
-        data.balance ?? null,
-        data.specify ?? null,
-      ],
-    );
-  }
-
-  // 6. Save allowances
-  for (const [allowType, data] of Object.entries(allows)) {
-    if (!validAllowTypes.includes(allowType)) continue;
-    await conn.query(
-      `INSERT INTO ef_allowances (service_no, allow_type, is_active, specify)
-       VALUES (?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         is_active = VALUES(is_active),
-         specify   = VALUES(specify)`,
-      [serviceNo, allowType, data.is_active ? 1 : 0, data.specify ?? null],
-    );
-  }
-
-  // 7. Mark as submitted — gate ensures this only fires once
+  // Mark as submitted — gate ensures this only fires once
   const [result] = await conn.query(
     `UPDATE ef_personalinfos
      SET Status      = ?,
@@ -885,15 +647,12 @@ async function submitAllTables(
     [legacyStatus, formNumber, formYear, serviceNo],
   );
 
-  // Return affectedRows so service can detect if already submitted
+  if (!result.affectedRows) throw new Error("ALREADY_SUBMITTED");
   return result.affectedRows;
 }
 
 // ─────────────────────────────────────────────────────────────
-// INIT DRAFT — create ef_emolument_forms row on first load
-// Idempotent — ON DUPLICATE KEY does nothing if row exists.
-// Gives the form a stable ID from the moment it is first opened,
-// so DO/FO/CPO routes can always reference a form_id.
+// INIT DRAFT
 // ─────────────────────────────────────────────────────────────
 
 async function initDraftForm(serviceNo, formYear, payrollClass, ship, command) {
@@ -903,10 +662,9 @@ async function initDraftForm(serviceNo, formYear, payrollClass, ship, command) {
        (service_no, form_year, payroll_class, ship, command, status)
      VALUES (?, ?, ?, ?, ?, 'DRAFT')
      ON DUPLICATE KEY UPDATE
-       updated_at = updated_at`, // no-op touch — preserves existing status
+       updated_at = updated_at`,
     [serviceNo, formYear, payrollClass, ship ?? null, command ?? null],
   );
-  // Return inserted id or existing id
   if (result.insertId) return result.insertId;
 
   const [rows] = await pool.query(
@@ -916,11 +674,6 @@ async function initDraftForm(serviceNo, formYear, payrollClass, ship, command) {
   );
   return rows[0]?.id || null;
 }
-
-// ─────────────────────────────────────────────────────────────
-// SUBMIT — set Status='Filled' + formNumber + formYear
-// Uses legacy status string to match old SP behaviour.
-// ─────────────────────────────────────────────────────────────
 
 async function submitForm(serviceNo, formNumber, formYear, legacyStatus) {
   pool.useDatabase(DB());
@@ -938,10 +691,6 @@ async function submitForm(serviceNo, formNumber, formYear, legacyStatus) {
   );
   return result.affectedRows > 0;
 }
-
-// ─────────────────────────────────────────────────────────────
-// ef_emolument_forms — upsert form record (clean enum status)
-// ─────────────────────────────────────────────────────────────
 
 async function upsertEmolumentForm(
   serviceNo,
@@ -1067,23 +816,8 @@ async function getEmolumentFormId(serviceNo, formYear) {
 // FORM OPTIONS
 // ─────────────────────────────────────────────────────────────
 
-// Gets Banks, Ships, Specializations and all other select options in the frontend
-//
-// All of these tables are now in MASTER_TABLES (config/db.js), so pool.query()
-// auto-qualifies them to the master database and runs on the CALLER's own
-// already-correct pooled connection — no need to borrow a connection and
-// manually USE a different database.
-//
-// Previously this used pool.getConnection() + a raw `USE ??` [DB()], then
-// released the connection back into whatever pool it came from (e.g. the
-// hicaddata5 pool) without switching it back — leaving a connection in that
-// pool permanently pointed at the officers database. Any later query that
-// happened to get handed that connection would silently run against the
-// wrong database. See project memory on the hicaddata5 pool-poisoning bug
-// (2026-07-24).
 async function getFormOptions() {
   try {
-    // Fetch all options in parallel for better performance
     const [
       banksResult,
       bankBranchesResult,
@@ -1097,49 +831,22 @@ async function getFormOptions() {
       entryModesResult,
       rankResult,
     ] = await Promise.all([
-      // Banks
       pool.query("SELECT bankcode AS id, bankname AS name FROM ef_banks"),
-
-      // Bank Branches
-      pool.query("SELECT branchcode AS id, bankcode AS code, branchname AS name FROM ef_bank_branches"),
-
-      // Commands
       pool.query(
-        "SELECT code as id, commandName AS name FROM ef_commands",
+        "SELECT branchcode AS id, bankcode AS code, branchname AS name FROM ef_bank_branches",
       ),
-
-      // Branches
-      pool.query(
-        "SELECT code AS id, branchName AS name FROM ef_branches",
-      ),
-
-      // Ships (with command association)
-      pool.query(
-        "SELECT Id AS id, shipName AS name, code FROM ef_ships",
-      ),
-
-      // Specializations
+      pool.query("SELECT code as id, commandName AS name FROM ef_commands"),
+      pool.query("SELECT code AS id, branchName AS name FROM ef_branches"),
+      pool.query("SELECT Id AS id, shipName AS name, code FROM ef_ships"),
       pool.query(
         "SELECT Id AS id, specname AS name FROM ef_specialisationareas",
       ),
-
-      // States
       pool.query("SELECT StateId AS id, Name AS name FROM ef_states"),
-
-      // Local Governments (with state association)
       pool.query(
         "SELECT Id AS id, lgaName AS name, stateId FROM ef_localgovts",
       ),
-
-      // Relationships (for NOK)
-      pool.query(
-        "SELECT Id AS id, description AS name FROM ef_relationships",
-      ),
-
-      // Entry Modes (Type of Commissioning)
+      pool.query("SELECT Id AS id, description AS name FROM ef_relationships"),
       pool.query("SELECT Id AS id, Name AS name FROM ef_entrymodes"),
-
-      // Ranks
       pool.query(
         "SELECT Id AS id, rankName AS name, rankType AS type FROM ef_ranks",
       ),

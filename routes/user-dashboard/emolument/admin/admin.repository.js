@@ -205,13 +205,7 @@ async function setMenusForRole(role, menuIds) {
 // PERSONNEL SEARCH + UPDATE
 // ─────────────────────────────────────────────────────────────
 
-async function searchPersonnel(filters = {}, limit = 50, offset = 0) {
-  pool.useDatabase(DB());
-
-  // Hard cap — never let a missing limit parameter return unbounded rows
-  const safeLimit = Math.min(Number(limit) || 50, 200);
-  const safeOffset = Math.max(Number(offset) || 0, 0);
-
+function buildPersonnelSearchClause(filters = {}) {
   const conditions = [];
   const params = [];
 
@@ -263,15 +257,30 @@ async function searchPersonnel(filters = {}, limit = 50, offset = 0) {
     }
   }
 
-  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  return {
+    where: conditions.length ? `WHERE ${conditions.join(" AND ")}` : "",
+    params,
+  };
+}
+
+const PERSONNEL_SEARCH_SELECT = `
+  SELECT
+    p.serviceNumber, p.Surname, p.OtherName, p.Rank,
+    p.payrollclass, p.classes, p.ship, p.command,
+    p.email, p.gsm_number, p.Status, p.emolumentform,
+    p.formNumber, p.FormYear
+  FROM ef_personalinfos p`;
+
+async function searchPersonnel(filters = {}, limit = 50, offset = 0) {
+  pool.useDatabase(DB());
+
+  // Hard cap — never let a missing limit parameter return unbounded rows
+  const safeLimit = Math.min(Number(limit) || 50, 200);
+  const safeOffset = Math.max(Number(offset) || 0, 0);
+  const { where, params } = buildPersonnelSearchClause(filters);
 
   const [rows] = await pool.query(
-    `SELECT
-       p.serviceNumber, p.Surname, p.OtherName, p.Rank,
-       p.payrollclass, p.classes, p.ship, p.command,
-       p.email, p.gsm_number, p.Status, p.emolumentform,
-       p.formNumber, p.FormYear
-     FROM ef_personalinfos p
+    `${PERSONNEL_SEARCH_SELECT}
      ${where}
      ORDER BY p.Surname ASC, p.OtherName ASC
      LIMIT ? OFFSET ?`,
@@ -284,6 +293,22 @@ async function searchPersonnel(filters = {}, limit = 50, offset = 0) {
   );
 
   return { rows, total };
+}
+
+// Same filters and ordering as the paginated personnel table, but returns
+// every match so the form-listing PDF covers all filtered pages.
+async function getPersonnelForListing(filters = {}) {
+  pool.useDatabase(DB());
+  const { where, params } = buildPersonnelSearchClause(filters);
+
+  const [rows] = await pool.query(
+    `${PERSONNEL_SEARCH_SELECT}
+     ${where}
+     ORDER BY p.Surname ASC, p.OtherName ASC`,
+    params,
+  );
+
+  return rows;
 }
 
 async function getPersonnelByServiceNo(serviceNo) {
@@ -868,6 +893,7 @@ module.exports = {
   setMenusForRole,
   // personnel
   searchPersonnel,
+  getPersonnelForListing,
   getPersonnelByServiceNo,
   updatePersonnelContact,
   upsertPersonnel,

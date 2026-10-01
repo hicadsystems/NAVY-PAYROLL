@@ -15,6 +15,7 @@
 
 const pool = require("../../../../config/db");
 const config = require("../../../../config");
+const { filledStatusInList } = require("../emolument.constants");
 
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 
@@ -22,7 +23,16 @@ const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 // PROGRESS REPORT — ProgressReport SP equivalent
 // Per ship: total / submitted / do_reviewed / fo_approved /
 //           cpo_confirmed / rejected / not_filed
+//
+// "submitted" (rendered as the *Filled* column on progress.html and in the
+// printed report) counts every person who has filled the form and is still
+// waiting on the FO.  The DO-review stage is bypassed in the live workflow,
+// so those rows sit at Status='FO' rather than Status='Filled' — matching
+// only 'Filled' reported 0 for every ship.  FILLED_STATUS_IN covers both
+// spellings (see emolument.constants.js).
 // ─────────────────────────────────────────────────────────────
+
+const FILLED_STATUS_IN = filledStatusInList("p.Status");
 
 async function getProgressReport() {
   pool.useDatabase(DB());
@@ -32,7 +42,7 @@ async function getProgressReport() {
        s.commandid,
        cmd.commandName,
        COUNT(p.Id)                                              AS total,
-       SUM(CASE WHEN p.Status = 'Filled'    THEN 1 ELSE 0 END) AS submitted,
+       SUM(CASE WHEN ${FILLED_STATUS_IN}    THEN 1 ELSE 0 END) AS submitted,
        SUM(CASE WHEN p.Status = 'FO'        THEN 1 ELSE 0 END) AS do_reviewed,
        SUM(CASE WHEN p.Status = 'CPO'       THEN 1 ELSE 0 END) AS fo_approved,
        SUM(CASE WHEN p.Status = 'Verified'  THEN 1 ELSE 0 END) AS cpo_confirmed,

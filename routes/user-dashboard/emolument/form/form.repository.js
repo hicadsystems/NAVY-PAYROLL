@@ -71,7 +71,6 @@ async function getFromHrEmployees(serviceNo) {
        emolumentform
      FROM hr_employees
      WHERE Empl_ID = ?
-       AND (emolumentform IS NULL OR emolumentform != 'Yes')
      LIMIT 1`,
     [serviceNo],
   );

@@ -29,7 +29,8 @@ function officerCols(fieldSetKey) {
   const set = fieldSetKey && OFFICER_FIELD_SETS[fieldSetKey];
   if (!set) {
     return {
-      select: "NULL AS officer_name, NULL AS officer_rank, NULL AS officer_svcno, NULL AS officer_date",
+      select:
+        "NULL AS officer_name, NULL AS officer_rank, NULL AS officer_svcno, NULL AS officer_date",
     };
   }
   return {
@@ -62,7 +63,10 @@ function buildScopeClause({ scopeMode, ship, command }) {
     }
   }
 
-  return { clause: clauses.length ? `AND ${clauses.join(" AND ")}` : "", params };
+  return {
+    clause: clauses.length ? `AND ${clauses.join(" AND ")}` : "",
+    params,
+  };
 }
 
 async function getReportRows({ role, stage, ship, command, performedBy }) {
@@ -82,7 +86,9 @@ async function getReportRows({ role, stage, ship, command, performedBy }) {
   let params;
 
   if (stageCfg.mode === "personalinfos_status") {
-    const statusPlaceholders = stageCfg.personalinfoStatus.map(() => "?").join(",");
+    const statusPlaceholders = stageCfg.personalinfoStatus
+      .map(() => "?")
+      .join(",");
     const formStatusClause = stageCfg.formStatus ? "AND ef.status = ?" : "";
     const extraWhere = stageCfg.extraWhere ? `AND ${stageCfg.extraWhere}` : "";
 
@@ -106,7 +112,9 @@ async function getReportRows({ role, stage, ship, command, performedBy }) {
       ...scopeParams,
     ];
   } else if (stageCfg.mode === "approval_trail") {
-    const performerClause = stageCfg.filterByPerformer ? "AND fa.performed_by = ?" : "";
+    const performerClause = stageCfg.filterByPerformer
+      ? "AND fa.performed_by = ?"
+      : "";
 
     sql = `
       SELECT ${BASE_COLS}, ${officer.select},
@@ -127,11 +135,13 @@ async function getReportRows({ role, stage, ship, command, performedBy }) {
       ...scopeParams,
     ];
   } else if (stageCfg.mode === "rejection_trail") {
-    const performerClause = stageCfg.filterByPerformer ? "AND r.rejected_by = ?" : "";
+    const performerClause = stageCfg.filterByPerformer
+      ? "AND r.rejected_by = ?"
+      : "";
 
     sql = `
       SELECT ${BASE_COLS}, ${officer.select},
-             r.rejected_at AS action_date,
+             r.created_at AS action_date,
              r.remarks     AS remarks
         FROM ef_form_rejections r
         JOIN ef_emolument_forms ef ON ef.id = r.form_id
@@ -141,7 +151,7 @@ async function getReportRows({ role, stage, ship, command, performedBy }) {
          ${performerClause}
          ${scopeClause}
        ORDER BY p.classes ASC, p.Surname ASC, p.OtherName ASC`;
-    // CONFIRM: ef_form_rejections is assumed to have a `rejected_at`
+    // CONFIRM: ef_form_rejections is assumed to have a `created_at`
     // timestamp column (see fo.reports note in an earlier revision).
     // Rename here if yours differs (e.g. created_at).
 

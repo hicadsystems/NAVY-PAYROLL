@@ -31,6 +31,7 @@ const {
   buildNameOrServiceNumberClause,
   buildServiceNumberClause,
 } = require("../emolument.search");
+const { LEGACY_STATUS, filledStatusInList } = require("../emolument.constants");
 
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 
@@ -270,6 +271,19 @@ function buildPersonnelSearchClause(filters = {}) {
       conditions.push(
         "(p.Status IS NULL OR p.Status = '') AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')",
       );
+    } else if (filters.status === LEGACY_STATUS.DO_REVIEWED) {
+      // 'FO' is what the UI labels "Submitted".  The DO-review stage is
+      // bypassed so submissions sit here — but a row can still be at
+      // 'Filled', and both personnel.html and accept-verified.html label
+      // 'Filled' AND 'FO' as "Submitted".  Matching 'FO' alone therefore
+      // returned a strict subset of the rows the admin sees labelled
+      // "Submitted" (the unfiltered list shows both), so match the whole
+      // filled set instead — same constant the progress report uses.
+      //
+      // NOTE: bulkApprovePreview() passes FO_BULK_FILTER_STATUS = 'Filled',
+      // which is NOT this branch, so the bulk-approve gate keeps the exact
+      // old-SP behaviour it must not change.
+      conditions.push(filledStatusInList("p.Status"));
     } else {
       conditions.push("p.Status = ?");
       params.push(filters.status);

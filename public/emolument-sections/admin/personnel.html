@@ -229,6 +229,27 @@
           <option value="">All Commands</option>
         </select>
 
+        <!-- Same status option set as accept-verified.html ("Personnel Forms"),
+             and the same values the backend already understands on
+             GET /admin/personnel — NotFilled / FO / CPO / Verified / Completed. -->
+        <select
+          id="rptStatusFilter"
+          onchange="window.loadPersonnelList(1)"
+          class="sm:w-40 sm:shrink-0 border border-amber-100 rounded-lg px-2 py-2 text-sm text-navy bg-white/80 focus:outline-none cursor-pointer"
+        >
+          <option value="">All Statuses</option>
+          <option value="NotFilled">Not Filled</option>
+          <!-- Value is the real Status code "FO", labeled "Submitted" — the
+               backend auto-advances every submission straight past the
+               DO-review stage, so nothing ever sits at Status='Filled' in
+               practice. Masking that here so the admin sees "Submitted"
+               rather than a misleading "DO Reviewed". -->
+          <option value="FO">Submitted</option>
+          <option value="CPO">FO Approved</option>
+          <option value="Verified">Confirmed</option>
+          <option value="Completed">Completed</option>
+        </select>
+
         <button
           onclick="window.clearRptSearch()"
           class="sm:shrink-0 px-3 py-2 bg-gray-100 text-navy/60 text-sm font-bold rounded-lg cursor-pointer border border-amber-100 hover:bg-gray-200 transition-colors"
@@ -681,17 +702,22 @@
 
       window._pfoHiddenEls = [];
 
+      // Clean-enum form status → label / badge colour for the form-overlay
+      // header.  The DO-review stage is bypassed in the live workflow, so
+      // DO_REVIEWED is presented as "Submitted" in the same amber as
+      // SUBMITTED — the mapping the List table, accept-verified.html and the
+      // form-listing PDF all use — never a literal "DO Reviewed".
       const STATUS_LABELS = {
         DRAFT: "Draft",
         SUBMITTED: "Submitted",
-        DO_REVIEWED: "DO Reviewed",
+        DO_REVIEWED: "Submitted",
         FO_APPROVED: "FO Approved",
         CPO_CONFIRMED: "Confirmed",
       };
       const STATUS_COLORS = {
         DRAFT: "rgba(255,255,255,.1)",
         SUBMITTED: "rgba(196,147,42,.25)",
-        DO_REVIEWED: "rgba(59,130,246,.3)",
+        DO_REVIEWED: "rgba(196,147,42,.25)",
         FO_APPROVED: "rgba(139,92,246,.3)",
         CPO_CONFIRMED: "rgba(34,197,94,.25)",
       };
@@ -927,8 +953,10 @@
 
       const params = new URLSearchParams({ page, pageSize: PAGE_SIZE });
       const command = document.getElementById("rptCommandFilter").value;
+      const status = document.getElementById("rptStatusFilter")?.value || "";
       const q = document.getElementById("rptSearch").value.trim();
       if (command) params.set("command", command);
+      if (status) params.set("status", status);
       // One term → the backend matches it against the name columns AND the
       // service number (NN/0001, NN0001 and 000001 all find the same person).
       if (q) params.set("q", q);

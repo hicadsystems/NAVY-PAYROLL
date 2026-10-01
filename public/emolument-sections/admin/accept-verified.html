@@ -454,10 +454,10 @@
       if (cls) params.set("payrollclass", cls);
       if (status) params.set("status", status);
       if (search) {
-        // Match the same service-number/name heuristic used by the listing.
-        const looksLikeSvcNo = /^[A-Za-z]\d/i.test(search);
-        if (looksLikeSvcNo) params.set("serviceNumber", search);
-        else params.set("surname", search);
+        // One term, matched against the name columns AND the service number
+        // by the backend — NN/0001, NN0001 and 000001 all resolve to the
+        // same person, so no client-side guessing is needed any more.
+        params.set("q", search);
         if (includeSearchLabel) params.set("search", search);
       }
 

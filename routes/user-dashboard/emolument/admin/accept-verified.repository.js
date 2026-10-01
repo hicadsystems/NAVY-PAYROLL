@@ -23,6 +23,7 @@
 
 const pool = require("../../../../config/db");
 const config = require("../../../../config");
+const { buildNameOrServiceNumberClause } = require("../emolument.search");
 
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 
@@ -63,13 +64,17 @@ async function getPendingVerified(filters = {}, limit = 50, offset = 0) {
     params.push(filters.command);
   }
 
-  // search filter — matches Surname, OtherName, or service number
+  // search filter — matches Surname, OtherName, or service number.
+  // Separator-tolerant on the service number, so NN/0001, NN0001 and
+  // 000001 all resolve to the same person.
   if (filters.search) {
-    conditions.push(
-      `(p.Surname LIKE ? OR p.OtherName LIKE ? OR p.serviceNumber LIKE ?)`,
+    const { sql, params: searchParams } = buildNameOrServiceNumberClause(
+      filters.search,
     );
-    const like = `%${filters.search}%`;
-    params.push(like, like, like);
+    if (sql) {
+      conditions.push(sql);
+      params.push(...searchParams);
+    }
   }
 
   // accepted filter — presence of ADMIN_ACCEPTED row

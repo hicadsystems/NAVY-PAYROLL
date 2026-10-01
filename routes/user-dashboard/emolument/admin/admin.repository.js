@@ -26,6 +26,11 @@
 
 const pool = require("../../../../config/db");
 const config = require("../../../../config");
+const {
+  buildNameClause,
+  buildNameOrServiceNumberClause,
+  buildServiceNumberClause,
+} = require("../emolument.search");
 
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 
@@ -209,25 +214,39 @@ function buildPersonnelSearchClause(filters = {}) {
   const conditions = [];
   const params = [];
 
+  // Free-text box — personnel.html "Search / Update" + "List", the
+  // accept-verified.html filter bar and the form-listing PDF all send this.
+  // Matches the name columns AND the service number in one pass, so
+  // 'NN/0001', 'NN0001' and '000001' all find the same person.
+  if (filters.q) {
+    const { sql, params: qParams } = buildNameOrServiceNumberClause(filters.q);
+    if (sql) {
+      conditions.push(sql);
+      params.push(...qParams);
+    }
+  }
+
+  // Single-field filters. Kept working for API/back-compat (saved links,
+  // report URLs) and now separator-tolerant on the service number.
   if (filters.serviceNumber) {
-    conditions.push("p.serviceNumber LIKE ?");
-    params.push(`${filters.serviceNumber}%`); // prefix-only — index-safe
+    const { sql, params: svcParams } = buildServiceNumberClause(
+      filters.serviceNumber,
+    );
+    if (sql) {
+      conditions.push(sql);
+      params.push(...svcParams);
+    }
   }
   if (filters.surname) {
-    // Use FULLTEXT if the ft_pi_name index exists (added in index migration).
-    // Fall back to prefix LIKE — never leading-wildcard LIKE.
-    conditions.push(
-      "MATCH(p.Surname, p.OtherName) AGAINST (? IN BOOLEAN MODE)",
-    );
-    params.push(`${filters.surname}*`);
+    // Substring match on both name columns — 'Adam' has to find
+    // OtherName = 'John Adam'. Same convention as the FO listings.
+    const { sql, params: nameParams } = buildNameClause(filters.surname);
+    if (sql) {
+      conditions.push(sql);
+      params.push(...nameParams);
+    }
   }
- if (filters.q) {
-  conditions.push(
-    "(MATCH(p.Surname, p.OtherName) AGAINST (? IN BOOLEAN MODE) OR p.serviceNumber LIKE ?)"
-  );
 
-  params.push(`${filters.q}*`, `${filters.q}%`);
-}
   if (filters.ship) {
     conditions.push("p.ship = ?");
     params.push(filters.ship);

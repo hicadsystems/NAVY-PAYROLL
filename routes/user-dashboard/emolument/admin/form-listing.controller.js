@@ -56,8 +56,12 @@ function getDisplayStatus(row) {
 function buildFilterSummary(query) {
   const summary = [];
 
-  if (query.search?.trim()) {
-    summary.push({ label: "Search", value: query.search.trim() });
+  // The UI sends the raw term as `search`; `q` is the parameter the
+  // listing itself filters on. Accept either so the printed header always
+  // shows what the admin actually typed.
+  const searchTerm = String(query.search ?? query.q ?? "").trim();
+  if (searchTerm) {
+    summary.push({ label: "Search", value: searchTerm });
   }
   if (query.ship) {
     summary.push({ label: "Ship", value: query.ship });
@@ -84,7 +88,8 @@ class FormListingController extends BaseReportController {
       // The report uses the same fields/semantics as GET /admin/personnel,
       // but intentionally omits pagination so it covers every matching row.
       const filters = {
-        serviceNumber: req.query.serviceNumber || undefined,
+        q: req.query.q?.trim() || undefined,
+        serviceNumber: req.query.serviceNumber?.trim() || undefined,
         surname: req.query.surname?.trim() || undefined,
         ship: req.query.ship || undefined,
         payrollclass: req.query.payrollclass || undefined,

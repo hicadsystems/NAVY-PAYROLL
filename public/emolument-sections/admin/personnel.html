@@ -355,9 +355,7 @@
     const token = localStorage.getItem("token");
     const TOKEN = token;
     const PAGE_SIZE = 10;
-    let _page = 1,
-      _allRows = [],
-      _filtered = [];
+    let _page = 1;
 
     // ── Authenticated file download helper ──────────────────────
     // The template endpoints sit behind verifyToken, so a plain <a href>
@@ -469,11 +467,6 @@
       const msg = document.getElementById("commMsg");
       msg.textContent = "";
       msg.classList.add("hidden");
-    };
-
-    window.clearRptSearch = function () {
-      document.getElementById("rptSearch").value = "";
-      renderTable(_allRows);
     };
 
     // ── Core functions ────────────────────────────────────────
@@ -936,14 +929,9 @@
       const command = document.getElementById("rptCommandFilter").value;
       const q = document.getElementById("rptSearch").value.trim();
       if (command) params.set("command", command);
-      // Pass search query to backend — looksLikeSvcNo → serviceNumber filter, else surname
-      if (q) {
-        if (/^[A-Za-z]\d/i.test(q)) {
-          params.set("serviceNumber", q);
-        } else {
-          params.set("surname", q);
-        }
-      }
+      // One term → the backend matches it against the name columns AND the
+      // service number (NN/0001, NN0001 and 000001 all find the same person).
+      if (q) params.set("q", q);
 
       fetch("/admin/personnel?" + params, {
         headers: { Authorization: "Bearer " + TOKEN },
@@ -952,8 +940,6 @@
         .then((data) => {
           const rows = data.rows || [];
           const pagination = data.pagination || {};
-          _allRows = rows;
-          _filtered = rows;
 
           if (countEl)
             countEl.textContent =
@@ -974,15 +960,21 @@
           '<div class="text-center py-8 text-blue-900/30 text-sm">No records found</div>';
         return;
       }
+      // Status code → badge colour / label.
+      // The backend auto-advances every submission straight past the
+      // DO-review stage, so a submitted form actually sits at Status='FO'.
+      // 'FO' is therefore presented as "Submitted" (amber) — the same
+      // mapping accept-verified.html and the form-listing PDF use — instead
+      // of a literal "DO Reviewed" that never happened.
       const STATUS_CLS = {
         Filled: "bg-amber-50 text-amber-600",
-        FO: "bg-blue-50 text-blue-600",
+        FO: "bg-amber-50 text-amber-600",
         CPO: "bg-purple-50 text-purple-600",
         Verified: "bg-green-50 text-green-600",
       };
       const STATUS_LBL = {
         Filled: "Submitted",
-        FO: "DO Reviewed",
+        FO: "Submitted",
         CPO: "FO Approved",
         Verified: "Confirmed",
       };

@@ -166,6 +166,41 @@ const VALID_DOC_TYPES = Object.freeze([
 const FO_BULK_FILTER_STATUS = LEGACY_STATUS.SUBMITTED; // 'Filled'
 
 // ─────────────────────────────────────────────────────────────
+// "FILLED THE FORM" STATUS SET — reporting
+//
+// The DO-review stage is bypassed in the live workflow: a submission is
+// auto-advanced straight past it, so in practice nothing sits at
+// Status = 'Filled' and submitted forms are found at Status = 'FO'
+// (the legacy spelling of DO_REVIEWED).
+//
+// Any report that counts "personnel who have filled the form" must accept
+// BOTH stages, otherwise the count collapses to zero as soon as the DO
+// step is skipped.  The clean-enum spellings are included as well because
+// older rows carry them (fo.repository.js already guards on
+// `Status IN ('FO','DO_REVIEWED')` for the same reason).
+//
+// Values are internal constants only — never user input — so they are safe
+// to inline into a SQL IN(...) list via filledStatusInList().
+// ─────────────────────────────────────────────────────────────
+
+const FILLED_STATUS_VALUES = Object.freeze([
+  LEGACY_STATUS.SUBMITTED, //   'Filled'
+  LEGACY_STATUS.DO_REVIEWED, // 'FO'
+  FORM_STATUS.SUBMITTED, //     'SUBMITTED'
+  FORM_STATUS.DO_REVIEWED, //   'DO_REVIEWED'
+]);
+
+/**
+ * Render FILLED_STATUS_VALUES as a quoted SQL IN(...) list.
+ * @param {string} [column='Status'] — column to test, e.g. 'p.Status'
+ * @returns {string} e.g. "p.Status IN ('Filled', 'FO', 'SUBMITTED', 'DO_REVIEWED')"
+ */
+function filledStatusInList(column = 'Status') {
+  const values = FILLED_STATUS_VALUES.map((v) => `'${v}'`).join(', ');
+  return `${column} IN (${values})`;
+}
+
+// ─────────────────────────────────────────────────────────────
 // EXPORTS
 // ─────────────────────────────────────────────────────────────
 
@@ -178,6 +213,8 @@ module.exports = {
   VALID_ALLOW_TYPES,
   VALID_DOC_TYPES,
   FO_BULK_FILTER_STATUS,
+  FILLED_STATUS_VALUES,
+  filledStatusInList,
   toLegacyStatus,
   toFormStatus,
   resolveFormType,

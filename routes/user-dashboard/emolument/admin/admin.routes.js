@@ -453,16 +453,14 @@ router.get("/personnel", async (req, res) => {
 });
 
 // GET /admin/personnel/search?q=
-// Quick single-field search used by personnel.html.
-// Tries to match as service number prefix first, then as surname prefix.
+// Quick search used by personnel.html "Search / Update".
+// One term is matched against the name columns AND the service number,
+// so 'NN/0001', 'NN0001', '000001' and 'Abubakar' all work from the same box.
 router.get("/personnel/search", async (req, res) => {
   const q = (req.query.q || "").trim();
   if (!q) return res.status(400).json({ error: "q is required." });
 
-  // Heuristic: starts with a letter that looks like a service-no prefix → serviceNumber,
-  // otherwise treat as surname search.  Both are index-safe prefix matches.
-  const looksLikeSvcNo = /^[A-Za-z]\d/i.test(q);
-  const filters = looksLikeSvcNo ? { serviceNumber: q } : { surname: q };
+  const filters = { q };
 
   try {
     const result = await adminService.searchPersonnel(filters, 1, 50);

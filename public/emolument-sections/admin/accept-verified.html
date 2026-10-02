@@ -5,12 +5,24 @@
         <h3
           class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
         >
-          Personnel Form List
+          Personnel Forms
         </h3>
-        <span
-          class="text-xl text-blue-900/40 font-bold"
-          id="verifiedCount"
-        ></span>
+        <div class="flex items-center gap-3">
+          <span
+            class="text-sm md:text-lg text-blue-900/50 font-bold"
+            id="verifiedCount"
+          ></span>
+          <button
+            id="printFormListingBtn"
+            type="button"
+            onclick="generateFormListingReport()"
+            class="inline-flex items-center gap-2 px-4 py-2 bg-navy text-white text-xs md:text-sm font-bold rounded-lg border border-navy hover:bg-navy transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-30 disabled:cursor-not-allowed"
+            aria-label="Print the personnel forms matching the selected filters"
+          >
+            <i class="fas fa-print" aria-hidden="true"></i>
+            <span>Print Report</span>
+          </button>
+        </div>
       </div>
 
       <div class="flex items-center gap-2 flex-wrap flex-1 min-w-[280px]">
@@ -53,13 +65,12 @@
         >
           <option value="">All Statuses</option>
           <option value="NotFilled">Not Filled</option>
-          <option value="Filled">Submitted</option>
-          <!-- "DO Reviewed" (Status code "FO") removed from filter options per request.
-               STATUS_CLS / STATUS_LBL below still recognize it so any row that comes
-               back with this status still renders correctly in the table; it's just
-               not selectable as a filter.
-          <option value="FO">DO Reviewed</option>
-          -->
+          <!-- Value is the real Status code "FO", labeled "Submitted" —
+               the backend auto-advances every submission straight past
+               the DO-review stage, so nothing ever sits at Status='Filled'
+               in practice. Masking that here so the admin sees "Submitted"
+               rather than a misleading "DO Reviewed". -->
+          <option value="FO">Submitted</option>
           <option value="CPO">FO Approved</option>
           <option value="Verified">Confirmed</option>
           <option value="Completed">Completed</option>
@@ -67,7 +78,7 @@
       </div>
     </div>
     <p class="text-sm text-blue-900/50">
-      <!-- Review forms across all approval stages before syncing to payroll -->
+      Review forms across all approval stages before syncing to payroll
     </p>
   </div>
 
@@ -163,6 +174,71 @@
     >
       Next <i class="fas fa-chevron-right ml-1"></i>
     </button>
+  </div>
+
+  <!-- Filtered form-listing PDF preview -->
+  <div
+    id="formListingPreviewModal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="formListingPreviewTitle"
+  >
+    <div
+      class="bg-gray-50 rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
+    >
+      <div
+        class="shrink-0 bg-navy px-5 py-3 flex justify-between items-center gap-3"
+      >
+        <h3
+          id="formListingPreviewTitle"
+          class="text-sm md:text-lg font-bold text-white"
+        >
+          Personnel Form Listing Preview
+        </h3>
+        <button
+          type="button"
+          onclick="closeFormListingPreview()"
+          class="text-white/80 hover:text-white text-2xl leading-none"
+          aria-label="Close report preview"
+        >
+          &times;
+        </button>
+      </div>
+      <div class="overflow-auto flex-1" style="background: #d1d5db">
+        <iframe
+          id="formListingPreviewIframe"
+          title="Filtered Personnel Form Listing PDF"
+          style="
+            width: 100%;
+            height: 72vh;
+            min-height: 420px;
+            border: none;
+            background: white;
+            display: block;
+          "
+        ></iframe>
+      </div>
+      <div
+        class="shrink-0 bg-gray-50 border-t border-gray-200 px-5 py-3 flex flex-wrap justify-end gap-2"
+      >
+        <button
+          type="button"
+          onclick="closeFormListingPreview()"
+          class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-300 transition-colors"
+        >
+          Close
+        </button>
+        <button
+          id="formListingDownloadBtn"
+          type="button"
+          onclick="downloadCurrentFormListing()"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 text-white text-sm font-bold rounded-lg hover:bg-blue-800 transition-colors"
+        >
+          <i class="fas fa-download" aria-hidden="true"></i>Download PDF
+        </button>
+      </div>
+    </div>
   </div>
 
   <!--
@@ -299,17 +375,25 @@
     const ITEMS_PER_PAGE = 50;
 
     // Status code → badge color classes
+    // NOTE: "FO" is displayed as if it were the "Submitted" stage (amber),
+    // not "DO Reviewed" (its literal meaning) — see STATUS_LBL below for why.
     const STATUS_CLS = {
       Filled: "bg-amber-50 text-amber-600",
-      FO: "bg-blue-50 text-blue-600",
+      FO: "bg-amber-50 text-amber-600",
       CPO: "bg-purple-50 text-purple-600",
       Verified: "bg-green-50 text-green-600",
     };
 
     // Status code → human-readable label
+    // The backend auto-advances every submission straight from NULL to
+    // Status='FO', skipping the DO-review step entirely (intentional,
+    // left as-is on the backend). In practice nothing ever sits at
+    // Status='Filled', so we mask 'FO' as "Submitted" here rather than
+    // show admins a "DO Reviewed" label that doesn't reflect what
+    // actually happened to the form.
     const STATUS_LBL = {
       Filled: "Submitted",
-      FO: "DO Reviewed",
+      FO: "Submitted",
       CPO: "FO Approved",
       Verified: "Confirmed",
     };
@@ -317,7 +401,7 @@
     // Status code → icon
     const STATUS_ICON = {
       Filled: "fa-file",
-      FO: "fa-eye",
+      FO: "fa-file",
       CPO: "fa-check",
       Verified: "fa-certificate",
     };
@@ -336,6 +420,8 @@
     };
 
     let searchDebounceTimer = null;
+    let formListingBlob = null;
+    let formListingBlobUrl = null;
 
     // ── Debounced search input ──
     function onSearchInput() {
@@ -351,6 +437,31 @@
     // ── Apply filters (reset to page 1) ──
     function applyFilters() {
       loadVerifiedForms(1);
+    }
+
+    // Build one shared filter set for both the on-screen list and the report.
+    // The report request intentionally does not add pagination parameters.
+    function buildVerifiedFilterParams(includeSearchLabel = false) {
+      const ship = document.getElementById("filterShip")?.value || "";
+      const cls = document.getElementById("filterClass")?.value || "";
+      const status = document.getElementById("filterStatus")?.value || "";
+      const search =
+        document.getElementById("filterSearch")?.value.trim() || "";
+      const params = new URLSearchParams();
+
+      verifiedState.search = search;
+      if (ship) params.set("ship", ship);
+      if (cls) params.set("payrollclass", cls);
+      if (status) params.set("status", status);
+      if (search) {
+        // Match the same service-number/name heuristic used by the listing.
+        const looksLikeSvcNo = /^[A-Za-z]\d/i.test(search);
+        if (looksLikeSvcNo) params.set("serviceNumber", search);
+        else params.set("surname", search);
+        if (includeSearchLabel) params.set("search", search);
+      }
+
+      return params;
     }
 
     // ── Populate ship dropdown ──
@@ -381,24 +492,9 @@
       page = Math.max(page, 1);
       verifiedState.page = page;
 
-      const ship = document.getElementById("filterShip")?.value || "";
-      const cls = document.getElementById("filterClass")?.value || "";
-      const status = document.getElementById("filterStatus")?.value || "";
-      const search = verifiedState.search || "";
-
-      const params = new URLSearchParams({ page, pageSize: ITEMS_PER_PAGE });
-      if (ship) params.set("ship", ship);
-      if (cls) params.set("payrollclass", cls);
-      // "Completed" / "Not Filled" aren't literal Status values — they're
-      // rows with no approval-stage Status, split by whether the form was
-      // filed (emolumentform = 'Yes') or never filed. admin.repository.js's
-      // searchPersonnel() special-cases these two string values; everything
-      // else (Filled/CPO/Verified) hits the plain p.Status = ? branch.
-      if (status) params.set("status", status);
-      if (search) {
-      
-         params.set("q", search);
-      }
+      const params = buildVerifiedFilterParams();
+      params.set("page", page);
+      params.set("pageSize", ITEMS_PER_PAGE);
 
       const tbody = document.getElementById("verifiedTableBody");
 
@@ -426,6 +522,89 @@
           tbody.innerHTML =
             '<tr><td colspan="5" class="text-center py-12 text-navy/40">Failed to load forms. Please try again.</td></tr>';
         });
+    }
+
+    // ── Generate, preview, and download the filtered PDF ──
+    async function generateFormListingReport() {
+      clearTimeout(searchDebounceTimer);
+      const button = document.getElementById("printFormListingBtn");
+      const originalHTML = button.innerHTML;
+      const previousSearch = verifiedState.search;
+      const params = buildVerifiedFilterParams(true);
+
+      if (previousSearch !== verifiedState.search) loadVerifiedForms(1);
+
+      button.disabled = true;
+      button.innerHTML =
+        '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i><span>Preparing report…</span>';
+
+      try {
+        const response = await fetch(`/admin/form-listing/report?${params}`, {
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("token"),
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.error || "Could not generate the filtered form listing.",
+          );
+        }
+
+        const blob = await response.blob();
+        if (formListingBlobUrl) URL.revokeObjectURL(formListingBlobUrl);
+        formListingBlob = blob;
+        formListingBlobUrl = URL.createObjectURL(blob);
+
+        const previewModal = document.getElementById("formListingPreviewModal");
+        if (previewModal.parentElement !== document.body) {
+          document.body.appendChild(previewModal);
+        }
+
+        const iframe = document.getElementById("formListingPreviewIframe");
+        iframe.removeAttribute("srcdoc");
+        // Hide the PDF viewer's built-in toolbar; the modal supplies one Download PDF action.
+        iframe.src = formListingBlobUrl + "#toolbar=0";
+        previewModal.classList.remove("hidden");
+      } catch (error) {
+        console.error("Error generating form-listing report:", error);
+        showToast(
+          "✗ " + (error.message || "Failed to generate report"),
+          "bg-red-100 text-red-700",
+        );
+      } finally {
+        button.disabled = false;
+        button.innerHTML = originalHTML;
+      }
+    }
+
+    function closeFormListingPreview() {
+      document
+        .getElementById("formListingPreviewModal")
+        .classList.add("hidden");
+      const iframe = document.getElementById("formListingPreviewIframe");
+      iframe.src = "about:blank";
+      iframe.removeAttribute("srcdoc");
+
+      if (formListingBlobUrl) {
+        URL.revokeObjectURL(formListingBlobUrl);
+        formListingBlobUrl = null;
+      }
+      formListingBlob = null;
+    }
+
+    function downloadCurrentFormListing() {
+      if (!formListingBlob) return;
+
+      const url = URL.createObjectURL(formListingBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `form-listing-${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
     // ── Render table ──

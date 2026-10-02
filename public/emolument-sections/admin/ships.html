@@ -86,9 +86,9 @@
         class="flex items-center gap-1.5 h-9 px-4 bg-gold hover:bg-gold-hover text-white text-xs font-bold rounded-lg transition-colors hidden">
         <i class="fas fa-plus"></i> New Ship
       </button>
-      <button onclick="exportShips()"
+      <button id="s-export-btn" onclick="exportShips()"
         class="flex items-center gap-1.5 h-9 px-3 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-semibold rounded-lg transition-colors">
-        <i class="fas fa-download"></i> Export
+        <i class="fas fa-print"></i> Print Report
       </button>
       <span id="sCountLabel" class="text-xs text-slate-400 ml-auto whitespace-nowrap">— ships</span>
     </div>
@@ -151,9 +151,9 @@
         class="flex items-center gap-1.5 h-9 px-3 bg-navy hover:bg-navy-hover text-white text-xs font-bold rounded-lg transition-colors">
         <i class="fas fa-upload"></i> Upload
       </button>
-      <button onclick="exportUsers()"
+      <button id="u-export-btn" onclick="exportUsers()"
         class="flex items-center gap-1.5 h-9 px-3 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-semibold rounded-lg transition-colors">
-        <i class="fas fa-download"></i> Export
+        <i class="fas fa-print"></i> Print Report
       </button>
       <span id="uCountLabel" class="text-xs text-slate-400 ml-auto whitespace-nowrap">— users</span>
     </div>
@@ -184,6 +184,35 @@
         class="hidden border-t border-slate-100 bg-slate-50 px-4 py-2.5 flex items-center justify-between">
         <span id="uPageInfo" class="text-xs text-slate-400"></span>
         <div id="uPageBtns" class="flex gap-1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared filtered-PDF preview for the Ships and Ship Users reports -->
+  <div id="ships-report-preview-modal"
+    data-ships-report-preview
+    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="ships-report-preview-title"
+    onclick="window.closeShipsReportPreview(event)">
+    <div class="bg-gray-50 rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div class="shrink-0 bg-navy px-5 py-3 flex justify-between items-center gap-3">
+        <h3 id="ships-report-preview-title" class="text-sm md:text-lg font-bold text-white">Ships Report</h3>
+        <button type="button" onclick="window.closeShipsReportPreview()"
+          class="text-white/80 hover:text-white text-2xl leading-none" aria-label="Close report preview">&times;</button>
+      </div>
+      <div class="overflow-auto flex-1" style="background:#d1d5db;">
+        <iframe id="ships-report-preview-iframe" title="Ships PDF report preview"
+          style="width:100%;height:72vh;min-height:420px;border:none;background:white;display:block;"></iframe>
+      </div>
+      <div class="shrink-0 bg-gray-50 border-t border-gray-200 px-5 py-3 flex flex-wrap justify-end gap-2">
+        <button type="button" onclick="window.closeShipsReportPreview()"
+          class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-300 transition-colors">Close</button>
+        <button type="button" onclick="window.downloadShipsReportPDF()"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 text-white text-sm font-bold rounded-lg hover:bg-blue-800 transition-colors">
+          <i class="fas fa-download" aria-hidden="true"></i>Download PDF
+        </button>
       </div>
     </div>
   </div>
@@ -415,6 +444,17 @@
     let _editingShipId = null;
     let _editingUserSvcNo = null;
     let _usersLoaded = false;
+    let _reportBlob = null;
+    let _reportBlobUrl = null;
+    let _reportFilename = '';
+    let _reportRequestId = 0;
+
+    const reportPreviewModal = document.getElementById('ships-report-preview-modal');
+    document.querySelectorAll('[data-ships-report-preview]').forEach(modal => {
+      if (modal === reportPreviewModal) return;
+      if (modal.dataset.objectUrl) URL.revokeObjectURL(modal.dataset.objectUrl);
+      modal.remove();
+    });
 
     /* ══ PANEL SWITCH ══ */
     function switchPanel(p) {
@@ -632,12 +672,115 @@
       renderPageBtns('sPageBtns', 'sPageInfo', _sPage, pages, total, p => { _sPage = p; renderShipsPage(); });
     }
 
-    /* ── Export ships ── */
+    /* ── Filtered PDF reports ── */
     function exportShips() {
-      const cols = ['shipName', 'code', 'commandName', 'commandid', 'openship'];
-      const rows = [cols.join(','), ..._ships.map(s => cols.map(c => `"${s[c] ?? ''}"`).join(','))];
-      dlCSV('ships.csv', rows.join('\n'));
+      if (!_ships.length) {
+        toast('Ships have not loaded yet.', false);
+        return;
+      }
+      if (!_shipsFiltered.length) {
+        toast('No ships match the current filters.', false);
+        return;
+      }
+
+      const params = new URLSearchParams();
+      const search = document.getElementById('sSearch').value;
+      const commandid = document.getElementById('sCmdFilter').value;
+      const openship = document.getElementById('sStFilter').value;
+      if (search) params.set('search', search);
+      if (commandid) params.set('commandid', commandid);
+      if (openship !== '') params.set('openship', openship);
+
+      return generateAndPreviewPDF({
+        buttonId: 's-export-btn',
+        endpoint: '/system/ships/export',
+        params,
+        title: 'Ships Report',
+        filename: 'ships-report',
+        errorMessage: 'Could not generate the ships report.',
+      });
     }
+
+    async function generateAndPreviewPDF(options) {
+      const button = document.getElementById(options.buttonId);
+      if (!button || !reportPreviewModal) return;
+
+      const requestId = ++_reportRequestId;
+      const originalHTML = button.innerHTML;
+      button.disabled = true;
+      button.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Preparing report…';
+
+      try {
+        const response = await fetch(options.endpoint + '?' + options.params.toString(), {
+          headers: H,
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || options.errorMessage);
+        }
+
+        const blob = await response.blob();
+        if (blob.type && blob.type !== 'application/pdf') {
+          throw new Error(options.errorMessage);
+        }
+        // Ignore a late response if dashboard navigation removed its trigger.
+        if (!button.isConnected || requestId !== _reportRequestId) return;
+
+        if (_reportBlobUrl) URL.revokeObjectURL(_reportBlobUrl);
+        _reportBlob = blob;
+        _reportBlobUrl = URL.createObjectURL(blob);
+        _reportFilename = options.filename + '-' + new Date().toISOString().slice(0, 10) + '.pdf';
+        reportPreviewModal.dataset.objectUrl = _reportBlobUrl;
+
+        reportPreviewModal.querySelector('#ships-report-preview-title').textContent = options.title;
+        const iframe = reportPreviewModal.querySelector('#ships-report-preview-iframe');
+        iframe.removeAttribute('srcdoc');
+        iframe.src = _reportBlobUrl + '#toolbar=0';
+        if (reportPreviewModal.parentElement !== document.body) {
+          document.body.appendChild(reportPreviewModal);
+        }
+        reportPreviewModal.classList.remove('hidden');
+      } catch (error) {
+        console.error('Error generating PDF report:', error);
+        if (button.isConnected && requestId === _reportRequestId) {
+          toast(error.message || options.errorMessage, false);
+        }
+      } finally {
+        if (button.isConnected) {
+          button.disabled = false;
+          button.innerHTML = originalHTML;
+        }
+      }
+    }
+
+    window.closeShipsReportPreview = function (event) {
+      if (event && event.target !== reportPreviewModal) return;
+      if (!reportPreviewModal) return;
+      _reportRequestId += 1;
+      reportPreviewModal.classList.add('hidden');
+      const iframe = reportPreviewModal.querySelector('#ships-report-preview-iframe');
+      iframe.src = 'about:blank';
+      iframe.removeAttribute('srcdoc');
+      if (_reportBlobUrl) URL.revokeObjectURL(_reportBlobUrl);
+      _reportBlobUrl = null;
+      _reportBlob = null;
+      _reportFilename = '';
+      delete reportPreviewModal.dataset.objectUrl;
+      // Detach the hoisted modal so dashboard navigation cannot leave a stale copy.
+      reportPreviewModal.remove();
+    };
+
+    window.downloadShipsReportPDF = function () {
+      if (!_reportBlob) return;
+      const url = URL.createObjectURL(_reportBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = _reportFilename || 'report.pdf';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
 
     /* ── Ship modal ── */
     function openShipModal(ship) {
@@ -707,19 +850,23 @@ function submitShip() {
         });
     }
 
-    function applyUFiltersAndRender() {
+    function getFilteredUsers() {
       const q = document.getElementById('uSearch').value.trim().toLowerCase();
       const sh = document.getElementById('uShipFilter').value;
       const role = document.getElementById('uRoleFilter').value;
 
-      const filtered = _uAllRows.filter(r => {
-        if (q && !((r.Surname || '') + ' ' + (r.OtherName || '')).toLowerCase().includes(q)
-          && !(r.user_id || '').toLowerCase().includes(q)) return false;
+      return _uAllRows.filter(r => {
+        const name = `${r.Surname || ''} ${r.OtherName || ''}`.toLowerCase();
+        const serviceNumber = String(r.user_id || '').toLowerCase();
+        if (q && !name.includes(q) && !serviceNumber.includes(q)) return false;
         if (sh && r.scope_value !== sh) return false;
         if (role && r.role !== role) return false;
         return true;
       });
+    }
 
+    function applyUFiltersAndRender() {
+      const filtered = getFilteredUsers();
       _uTotal = filtered.length;
       const totalPages = Math.ceil(_uTotal / U_PER_PAGE) || 1;
       _uPage = Math.max(1, Math.min(_uPage, totalPages));
@@ -779,8 +926,31 @@ function submitShip() {
     }
 
     function exportUsers() {
-      const cols = ['user_id', 'Surname', 'OtherName', 'Rank', 'role', 'scope_type', 'scope_value'];
-      dlCSV('ship-users.csv', [cols.join(','), ..._uAllRows.map(r => cols.map(c => `"${r[c] ?? ''}"`).join(','))].join('\n'));
+      if (!_usersLoaded) {
+        toast('Load ship users first.', false);
+        return;
+      }
+      if (!getFilteredUsers().length) {
+        toast('No ship users match the current filters.', false);
+        return;
+      }
+
+      const params = new URLSearchParams();
+      const search = document.getElementById('uSearch').value.trim();
+      const ship = document.getElementById('uShipFilter').value;
+      const role = document.getElementById('uRoleFilter').value;
+      if (search) params.set('search', search);
+      if (ship) params.set('ship', ship);
+      if (role) params.set('role', role);
+
+      return generateAndPreviewPDF({
+        buttonId: 'u-export-btn',
+        endpoint: '/admin/roles/export',
+        params,
+        title: 'Ship Users Report',
+        filename: 'ship-users-report',
+        errorMessage: 'Could not generate the ship users report.',
+      });
     }
 
     /* ── User modal ── */
@@ -956,12 +1126,6 @@ function submitShip() {
     function esc(s) {
       return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
-    function dlCSV(filename, content) {
-      const a = document.createElement('a');
-      a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(content);
-      a.download = filename; a.click();
-    }
-
     // Hoist modals to body so overlay covers full viewport including sidebar
     const modalIds = ["shipModal", "userModal", "confirmModal", "uploadModal"];
     modalIds.forEach(id => {

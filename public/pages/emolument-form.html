@@ -1097,7 +1097,7 @@
               name="NIN"
               placeholder="11-digit NIN"
               maxlength="11"
-              disabled
+              
             />
           </div>
 
@@ -2587,19 +2587,26 @@
 
       async function submitForm() {
         const required = [
-          "Surname",
-          "OtherName",
-          "Birthdate",
-          "gsm_number",
-          "home_address",
+          // ── Personal Information ──
+          // "Surname",          // disabled
+          // "OtherName",        // disabled
+          // "serviceNumber",    // disabled
+          // "Birthdate",        // disabled
+          // "DateEmpl",         // disabled
           "Rank",
+          "home_address",
+          "command",
           "ship",
-          // "BankACNumber",
-          // "Bankcode",
-          // "BankBranch",
+          "StateofOrigin",
+          "LocalGovt",
+          "gsm_number",
+          "MaritalStatus",
+
+          // ── Primary Next of Kin ──
           "nok_primary_full_name",
           "nok_primary_phone1",
           "nok_primary_address",
+          "nok_primary_relationship",
           // "nok_primary_bank",
           // "nok_primary_account_number",
         ];
@@ -2608,13 +2615,23 @@
         );
 
         if (missing.length) {
-          showToast(
-            "Please fill all required fields before submitting.",
-            "error",
-          );
+          showToast("Please fill all required fields before submitting.", "error");
           document
             .getElementById(missing[0])
             ?.scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
+
+        // ── Command / Ship consistency check ──
+        if (!isShipUnderCommand(gv("ship"), gv("command"))) {
+          showToast(
+            "The selected Ship / Establishment does not belong to the selected Command.",
+            "error",
+          );
+          const shipEl = document.getElementById("ship");
+          shipEl.style.borderColor = "#dc2626";
+          shipEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          shipEl.focus();
           return;
         }
 
@@ -2772,8 +2789,22 @@
               true, // useName=true, matching your existing ship populate call
             );
             setVal("ship", ""); // reset ship when command changes
+            document.getElementById("ship").style.borderColor = "";
           });
+            document.getElementById("ship")?.addEventListener("change", function () {
+              this.style.borderColor = "";
+            });
       }
+
+      function isShipUnderCommand(shipName, commandId) {
+        if (!shipName || !commandId) return false;
+        return (formOptions?.ships || []).some(
+          (s) =>
+            String(s.name).trim() === String(shipName).trim() &&
+            String(s.code).trim() === String(commandId).trim(),
+        );
+      }
+
       function setupStateLGAFiltering() {
         document
           .getElementById("StateofOrigin")

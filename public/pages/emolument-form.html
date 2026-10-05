@@ -814,7 +814,7 @@
               id="Surname"
               name="Surname"
               placeholder="e.g. ADEYEMI"
-              disabled
+            
             />
           </div>
 
@@ -829,7 +829,7 @@
               id="OtherName"
               name="OtherName"
               placeholder="e.g. Babatunde Kolade"
-              disabled
+              
             />
           </div>
 
@@ -867,7 +867,7 @@
               type="date"
               id="Birthdate"
               name="Birthdate"
-              disabled
+              
             />
           </div>
 
@@ -881,7 +881,7 @@
               type="date"
               id="DateEmpl"
               name="DateEmpl"
-              disabled
+              
             />
           </div>
 
@@ -895,7 +895,7 @@
               type="date"
               id="expirationOfEngagementDate"
               name="expirationOfEngagementDate"
-              disabled
+              
             />
           </div>
 
@@ -908,7 +908,7 @@
               type="text"
               id="yearOfPromotion"
               name="yearOfPromotion"
-              disabled
+              
             />
           </div>
 
@@ -1123,7 +1123,7 @@
               type="date"
               id="advanceDate"
               name="advanceDate"
-              disabled
+              
             />
           </div>
 
@@ -1581,7 +1581,7 @@
       </p>
 
       <div
-        class="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto flex-wrap items-center justify-center"
+        class="flex gap-2 flex-shrink-0 w-full sm:w-auto flex-wrap items-center justify-center"
       >
         <!-- Back button -->
         <button
@@ -2588,11 +2588,11 @@
       async function submitForm() {
         const required = [
           // ── Personal Information ──
-          // "Surname",          // disabled
-          // "OtherName",        // disabled
+          "Surname",          // disabled
+          "OtherName",        // disabled
           // "serviceNumber",    // disabled
-          // "Birthdate",        // disabled
-          // "DateEmpl",         // disabled
+          "Birthdate",        // disabled
+          "DateEmpl",         // disabled
           "Rank",
           "home_address",
           "command",

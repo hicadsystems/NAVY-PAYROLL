@@ -362,16 +362,30 @@ async function getPersonnelByServiceNo(serviceNo) {
 }
 
 async function updatePersonnelContact(serviceNo, email, phoneNumber) {
-  pool.useDatabase(DB());
-  const [result] = await pool.query(
-    `UPDATE ef_personalinfos
-     SET email      = ?,
-         gsm_number = ?,
-         dateModify = NOW()
-     WHERE serviceNumber = ?`,
-    [email, phoneNumber, serviceNo],
-  );
-  return result.affectedRows > 0;
+  return pool.smartTransaction(async (conn) => {
+    const [personnelResult] = await conn.query(
+      `UPDATE ef_personalinfos
+       SET email      = ?,
+           gsm_number = ?,
+           dateModify = NOW()
+       WHERE serviceNumber = ?`,
+      [email, phoneNumber, serviceNo],
+    );
+
+    if (personnelResult.affectedRows === 0) {
+      // No such personnel: nothing to sync, skip hr_employees
+      return false;
+    }
+
+    await conn.query(
+      `UPDATE hr_employees
+       SET email = ?
+       WHERE Empl_ID = ?`,
+      [email, serviceNo],
+    );
+
+    return true;
+  });
 }
 
 // ─────────────────────────────────────────────────────────────

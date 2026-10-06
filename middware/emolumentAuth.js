@@ -290,6 +290,51 @@ const requireEmolRole = (...requiredRoles) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// MIDDLEWARE FACTORY: requireEmolRoleAnyScope(role)
+// Gates access to a role without requiring the request to contain a ship or
+// command. This is intentionally separate from requireEmolRole: most workflow
+// endpoints must remain scoped, while a small number of explicitly global
+// officer tools (for example, FO personnel contact lookup) must be able to
+// search across every ship.
+// EMOL_ADMIN always bypasses.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const requireEmolRoleAnyScope = (...requiredRoles) => {
+  if (!requiredRoles.length) {
+    throw new Error("requireEmolRoleAnyScope: at least one role must be specified");
+  }
+
+  return async (req, res, next) => {
+    if (!req.user_id) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      await attachRoles(req);
+
+      const passes =
+        req.isEmolAdmin ||
+        req.emolRoles.some((r) => requiredRoles.includes(r.role));
+
+      if (!passes) {
+        return res.status(403).json({
+          error: `Access denied. Required emolument role: ${requiredRoles.join(" or ")}`,
+        });
+      }
+
+      req.isPersonnel = await isPersonnel(req.user_id);
+      next();
+    } catch (err) {
+      console.error(
+        `❌ requireEmolRoleAnyScope(${requiredRoles.join(", ")}) error:`,
+        err,
+      );
+      res.status(500).json({ error: "Server error" });
+    }
+  };
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MIDDLEWARE FACTORY: requireFormRole(role)
 // Same as requireEmolRole but resolves scope from ef_emolument_forms
 // using req.params.form_id when ship/command is not in the request itself.
@@ -522,6 +567,7 @@ module.exports = {
   loadEmolRoles,
   requirePersonnel,
   requireEmolRole,
+  requireEmolRoleAnyScope,
   requireFormRole,
   requireShipAccess,
   requireCommandAccess,

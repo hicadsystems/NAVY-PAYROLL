@@ -1,0 +1,268 @@
+<div class="p-4 md:p-5">
+  <div class="mb-4">
+    <p class="text-sm text-blue-900/50 mt-1">
+      Search any personnel and update their email address.
+    </p>
+  </div>
+
+  <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 md:p-5">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-users-cog text-blue-500"></i>
+      </div>
+      <div>
+        <h3 class="font-bold text-navy text-sm uppercase tracking-wide">
+          Search / Update Personnel
+        </h3>
+        <p class="text-xs text-blue-900/40 mt-0.5">
+          Search is not limited to your active ship.
+        </p>
+      </div>
+    </div>
+
+    <div class="flex gap-2">
+      <input
+        id="foPersonnelSearch"
+        type="search"
+        placeholder="Service number or name..."
+        autocomplete="off"
+        class="flex-1 min-w-0 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none focus:border-navy"
+      />
+      <button
+        id="foPersonnelClear"
+        type="button"
+        title="Clear search"
+        class="px-3 py-2 bg-gray-100 text-navy/60 text-sm font-bold rounded-lg cursor-pointer border border-amber-100 hover:bg-gray-200 transition-colors"
+      >
+        <i class="fas fa-times"></i>
+      </button>
+      <button
+        id="foPersonnelSearchButton"
+        type="button"
+        class="px-4 py-2 bg-navy text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors"
+      >
+        <i class="fas fa-search mr-1"></i>Search
+      </button>
+    </div>
+
+    <p class="text-[11px] text-blue-900/35 mt-2">
+      Enter a service number or part of a name, then select Edit email on a result.
+    </p>
+
+    <div id="foPersonnelResults" class="mt-4">
+      <div class="text-center py-8 text-blue-900/30 text-sm">
+        Search for a personnel record to begin.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    "use strict";
+
+    const searchInput = document.getElementById("foPersonnelSearch");
+    const searchButton = document.getElementById("foPersonnelSearchButton");
+    const clearButton = document.getElementById("foPersonnelClear");
+    const results = document.getElementById("foPersonnelResults");
+    if (!searchInput || !searchButton || !clearButton || !results) return;
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function setResultsMessage(message, className) {
+      results.innerHTML =
+        '<div class="text-center py-8 text-sm ' +
+        (className || "text-blue-900/30") +
+        '">' +
+        escapeHtml(message) +
+        "</div>";
+    }
+
+    function setCardMessage(card, message, ok) {
+      const messageEl = card.querySelector("[data-email-message]");
+      if (!messageEl) return;
+      messageEl.textContent = message;
+      messageEl.className =
+        "text-xs font-semibold rounded px-2 py-1 " +
+        (ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600");
+      messageEl.classList.remove("hidden");
+    }
+
+    function renderRows(rows) {
+      if (!rows.length) {
+        setResultsMessage("No personnel records found.");
+        return;
+      }
+
+      results.innerHTML =
+        '<div class="space-y-2">' +
+        rows
+          .map(function (person) {
+            const serviceNumber = String(person.serviceNumber || "");
+            const fullName = [person.Surname, person.OtherName]
+              .filter(Boolean)
+              .join(" ");
+            const meta = [person.Rank, person.ship]
+              .filter(Boolean)
+              .join(" · ");
+
+            return (
+              '<article class="border border-amber-100 rounded-xl bg-white/40 overflow-hidden" data-personnel-card data-service-number="' +
+              escapeHtml(serviceNumber) +
+              '">' +
+              '<div class="flex items-center gap-3 p-3">' +
+              '<div class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">' +
+              '<i class="fas fa-user text-blue-400" style="font-size:14px"></i>' +
+              "</div>" +
+              '<div class="flex-1 min-w-0">' +
+              '<div class="font-bold text-navy text-sm">' +
+              escapeHtml(fullName || "Unnamed personnel") +
+              "</div>" +
+              '<div class="text-xs text-blue-900/40 mt-0.5">' +
+              escapeHtml(serviceNumber) +
+              (meta ? " · " + escapeHtml(meta) : "") +
+              "</div>" +
+              '<div class="text-xs text-blue-900/55 mt-1 truncate" data-email-display>' +
+              escapeHtml(person.email || "No email on record") +
+              "</div>" +
+              "</div>" +
+              '<button type="button" data-action="edit" class="text-xs font-bold text-amber-600 hover:text-amber-800 cursor-pointer border border-amber-200 rounded px-2 py-1 bg-amber-50">' +
+              "Edit email</button>" +
+              "</div>" +
+              '<div class="hidden border-t border-amber-100 p-3 bg-amber-50/30" data-email-editor>' +
+              '<label class="block text-xs font-bold text-navy/50 uppercase tracking-wide mb-2">Email address</label>' +
+              '<input type="email" data-email-input value="' +
+              escapeHtml(person.email || "") +
+              '" placeholder="name@example.com" class="w-full border border-amber-100 rounded-lg px-3 py-1.5 text-xs text-navy bg-white focus:outline-none focus:border-navy" />' +
+              '<div class="flex gap-2 mt-2">' +
+              '<button type="button" data-action="save" class="flex-1 py-1.5 bg-navy text-white text-xs font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800">Save email</button>' +
+              '<button type="button" data-action="cancel" class="flex-1 py-1.5 bg-gray-100 text-navy/60 text-xs font-bold rounded-lg cursor-pointer border border-amber-100">Cancel</button>' +
+              "</div>" +
+              '<div class="hidden mt-2" data-email-message></div>' +
+              "</div>" +
+              "</article>"
+            );
+          })
+          .join("") +
+        "</div>";
+    }
+
+    async function searchPersonnel() {
+      const query = searchInput.value.trim();
+      if (!query) {
+        setResultsMessage("Enter a service number or name to search.");
+        searchInput.focus();
+        return;
+      }
+
+      searchButton.disabled = true;
+      searchButton.innerHTML =
+        '<i class="fas fa-spinner fa-spin mr-1"></i>Searching';
+      setResultsMessage("Searching...", "text-navy/30");
+
+      try {
+        const response = await fetch(
+          "/fo/personnel/search?q=" + encodeURIComponent(query),
+          {
+            headers: {
+              Authorization: "Bearer " + localStorage.getItem("token"),
+            },
+          },
+        );
+        const data = await response.json().catch(function () {
+          return {};
+        });
+        if (!response.ok) throw new Error(data.error || "Search failed.");
+        renderRows(Array.isArray(data) ? data : data.rows || []);
+      } catch (error) {
+        setResultsMessage(error.message || "Search failed.", "text-red-400");
+      } finally {
+        searchButton.disabled = false;
+        searchButton.innerHTML =
+          '<i class="fas fa-search mr-1"></i>Search';
+      }
+    }
+
+    async function saveEmail(card, button) {
+      const serviceNumber = card.dataset.serviceNumber;
+      const input = card.querySelector("[data-email-input]");
+      if (!serviceNumber || !input) return;
+
+      const email = input.value.trim();
+      if (!email || !input.checkValidity()) {
+        setCardMessage(card, "Enter a valid email address.", false);
+        input.focus();
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Saving...";
+      try {
+        const response = await fetch(
+          "/fo/personnel/" +
+            encodeURIComponent(serviceNumber) +
+            "/contact",
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + localStorage.getItem("token"),
+            },
+            body: JSON.stringify({ email: email }),
+          },
+        );
+        const data = await response.json().catch(function () {
+          return {};
+        });
+        if (!response.ok) throw new Error(data.error || "Update failed.");
+
+        const display = card.querySelector("[data-email-display]");
+        if (display) display.textContent = email;
+        setCardMessage(card, data.message || "Email updated successfully.", true);
+      } catch (error) {
+        setCardMessage(card, error.message || "Update failed.", false);
+      } finally {
+        button.disabled = false;
+        button.textContent = "Save email";
+      }
+    }
+
+    searchButton.addEventListener("click", searchPersonnel);
+    searchInput.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") searchPersonnel();
+    });
+    clearButton.addEventListener("click", function () {
+      searchInput.value = "";
+      setResultsMessage("Search for a personnel record to begin.");
+      searchInput.focus();
+    });
+
+    results.addEventListener("click", function (event) {
+      const actionButton = event.target.closest("[data-action]");
+      if (!actionButton) return;
+      const card = actionButton.closest("[data-personnel-card]");
+      if (!card) return;
+
+      const editor = card.querySelector("[data-email-editor]");
+      if (actionButton.dataset.action === "edit") {
+        editor.classList.toggle("hidden");
+        if (!editor.classList.contains("hidden")) {
+          card.querySelector("[data-email-input]")?.focus();
+        }
+      } else if (actionButton.dataset.action === "cancel") {
+        editor.classList.add("hidden");
+        const message = card.querySelector("[data-email-message]");
+        message?.classList.add("hidden");
+      } else if (actionButton.dataset.action === "save") {
+        saveEmail(card, actionButton);
+      }
+    });
+  })();
+</script>

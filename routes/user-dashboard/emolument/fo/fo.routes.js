@@ -8,6 +8,8 @@
  *
  * ─── ROUTE MAP ───────────────────────────────────────────────
  *
+ *  GET  /fo/personnel/search             → search any personnel (not ship-scoped)
+ *  PUT  /fo/personnel/:svcno/contact     → update one personnel email
  *  GET  /fo/ship/:ship/personnel          → list DO_REVIEWED forms on ship
  *  GET  /fo/forms/:form_id               → view full form detail
  *  POST /fo/forms/:form_id/approve       → individual approve → FO_APPROVED
@@ -24,9 +26,11 @@ const config = require("../../../../config");
 const verifyToken = require("../../../../middware/authentication");
 const {
   requireEmolRole,
+  requireEmolRoleAnyScope,
   requireFormRole,
 } = require("../../../../middware/emolumentAuth");
 const foService = require("./fo.service");
+const adminService = require("../admin/admin.service");
 
 const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 
@@ -38,6 +42,86 @@ router.use((req, res, next) => {
 
 // All routes require authentication
 router.use(verifyToken);
+
+// ─────────────────────────────────────────────────────────────
+// PERSONNEL CONTACT LOOKUP
+//
+// These two endpoints intentionally do not accept or infer a ship. An FO may
+// use the personnel tab to find anyone in the personnel database and update
+// that person's email. The normal form-approval routes below remain ship
+// scoped and continue to use requireEmolRole/requireFormRole.
+// ─────────────────────────────────────────────────────────────
+
+router.get(
+  "/personnel/search",
+  requireEmolRoleAnyScope("FO"),
+  async (req, res) => {
+    const q = String(req.query.q || "").trim();
+    if (!q) return res.status(400).json({ error: "q is required." });
+
+    try {
+      const result = await adminService.searchPersonnel({ q }, 1, 50);
+      if (!result.success) {
+        return res.status(result.code).json({ error: result.message });
+      }
+
+      // Return only the fields needed by the FO search/update panel. In
+      // particular, do not expose phone numbers or workflow metadata through
+      // this intentionally narrow personnel tool.
+      const data = result.data || {};
+      return res.json({
+        ...data,
+        rows: (data.rows || []).map((person) => ({
+          serviceNumber: person.serviceNumber,
+          Surname: person.Surname,
+          OtherName: person.OtherName,
+          Rank: person.Rank,
+          ship: person.ship,
+          email: person.email,
+        })),
+      });
+    } catch (err) {
+      console.error("❌ GET /fo/personnel/search:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  },
+);
+
+router.put(
+  "/personnel/:svcno/contact",
+  requireEmolRoleAnyScope("FO"),
+  async (req, res) => {
+    const email =
+      typeof req.body?.email === "string" ? req.body.email.trim() : "";
+    if (!email) {
+      return res.status(400).json({ error: "email is required." });
+    }
+
+    try {
+      // Deliberately pass only email. FO personnel management cannot change
+      // phone numbers or any other personnel fields.
+      const result = await adminService.updateContact(
+        req.params.svcno,
+        { email },
+        req.user_id,
+        req.ip,
+      );
+      if (!result.success) {
+        return res.status(result.code).json({ error: result.message });
+      }
+      return res.json({
+        message: result.message,
+        data: {
+          serviceNumber: req.params.svcno,
+          email,
+        },
+      });
+    } catch (err) {
+      console.error("❌ PUT /fo/personnel/:svcno/contact:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  },
+);
 
 // ─────────────────────────────────────────────────────────────
 // HELPER — extract FO's assigned ships from req.emolRoles

@@ -66,7 +66,7 @@ async function getDoReviewedForms(ship, limit, offset, search) {
        p.serviceNumber, p.Surname, p.OtherName, p.Rank,
        p.payrollclass, p.classes, p.formNumber, p.FormYear,
        p.Status, p.datecreated,
-       p.div_off_name, p.div_off_rank, p.div_off_svcno, p.div_off_date,
+       p.div_off_name, p.div_off_rank, p.div_off_svcno, p.div_off_date, p.dateModify as date_modified,
        ef.id          AS form_id,
        ef.status      AS form_status,
        ef.submitted_at
@@ -75,7 +75,7 @@ async function getDoReviewedForms(ship, limit, offset, search) {
             ON ef.service_no = p.serviceNumber
            AND ef.ship       = p.ship
      WHERE p.ship   = ?
-       AND p.Status IN ('FO', 'DO_REVIEWED')
+       AND p.Status IN ('FO', 'DO_REVIEWED', 'Filled', 'SUBMITTED')
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
        ${searchClause}
      ORDER BY p.Surname ASC, p.OtherName ASC
@@ -86,7 +86,7 @@ async function getDoReviewedForms(ship, limit, offset, search) {
       SELECT COUNT(*) AS total
       FROM ef_personalinfos p
       WHERE p.ship   = ?
-       AND p.Status IN ('FO', 'DO_REVIEWED')
+       AND p.Status IN ('FO', 'DO_REVIEWED', 'Filled', 'SUBMITTED')
        AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
        ${searchClause};
     `;
@@ -118,7 +118,7 @@ async function getApprovedForms(ship, svc, limit, offset, search) {
   const approvedQuery = `SELECT
        p.serviceNumber, p.Surname, p.OtherName, p.Rank,
        p.payrollclass, p.classes, p.formNumber, p.FormYear,
-       p.div_off_name, p.div_off_rank, p.div_off_svcno, p.div_off_date,
+       p.div_off_name, p.div_off_rank, p.div_off_svcno, p.div_off_date, p.dateModify as date_modified,
        p.fo_date,
        p.Status, p.datecreated,
        ef.id         AS form_id,
@@ -178,7 +178,7 @@ async function getFormDetail(formId) {
        p.GBC, p.GBC_Number, p.NSITFcode, p.NHFcode,
        p.qualification, p.division, p.NIN,
        p.formNumber, p.FormYear, p.Status,
-       p.div_off_name, p.div_off_rank, p.div_off_svcno, p.div_off_date,
+       p.div_off_name, p.div_off_rank, p.div_off_svcno, p.div_off_date, p.dateModify as date_modified,
        p.fo_name, p.fo_rank, p.fo_svcno, p.fo_date,
        cmd.commandName,
        br.branchName,
@@ -195,7 +195,7 @@ async function getFormDetail(formId) {
      LEFT JOIN ef_localgovts lga ON lga.Id     = p.LocalGovt
      LEFT JOIN ef_states     st  ON st.StateId = p.StateofOrigin
      WHERE ef.id     = ?
-       AND ef.status = 'DO_REVIEWED'
+       AND ef.status IN ('SUBMITTED','DO_REVIEWED')
      LIMIT 1`,
     [formId],
   );
@@ -312,7 +312,7 @@ async function approveSingle(
            dateModify = NOW()
        WHERE serviceNumber = ?
          AND ship          = ?
-         AND Status        = 'FO'`,
+         AND Status        IN ('SUBMITTED','FO')`,
       [legacyStatus, foName, foRank, foSvcNo, serviceNo, ship],
     );
 
@@ -328,7 +328,7 @@ async function approveSingle(
        SET status     = 'FO_APPROVED',
            updated_at = NOW()
        WHERE id     = ?
-         AND status  = 'DO_REVIEWED'`,
+         AND status  IN ('SUBMITTED','DO_REVIEWED')`,
       [formId],
     );
 
@@ -390,7 +390,7 @@ async function approveBulk(
            dateModify = NOW()
        WHERE ship    = ?
         AND serviceNumber IN (${svcPlaceholders})
-        AND Status  = 'FO'
+        AND Status  IN ('SUBMITTED','FO')
         AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
       [
         legacyStatus,
@@ -448,7 +448,7 @@ async function approveClass(
       `SELECT serviceNumber FROM ef_personalinfos
        WHERE ship    = ?
          AND classes = ?
-         AND Status  = 'FO'
+         AND Status  IN ('SUBMITTED','FO')
          AND (emolumentform IS NULL OR emolumentform != 'Yes')
        FOR UPDATE`,
       [ship, classes],
@@ -467,7 +467,7 @@ async function approveClass(
            dateModify = NOW()
        WHERE ship    = ?
          AND classes = ?
-         AND Status  = 'FO'
+         AND Status  IN ('SUBMITTED','FO')
          AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
       [legacyStatus, foName, foRank, foSvcNo, ship, classes],
     );
@@ -521,7 +521,7 @@ async function rejectForm(serviceNo, formId, ship) {
            dateModify = NOW()
        WHERE serviceNumber = ?
          AND ship          = ?
-         AND Status        = 'FO'`,
+         AND Status        IN ('Filled','FO')`,
       [serviceNo, ship],
     );
 
@@ -536,7 +536,7 @@ async function rejectForm(serviceNo, formId, ship) {
        SET status     = 'REJECTED',
            updated_at = NOW()
        WHERE id     = ?
-         AND status  = 'DO_REVIEWED'`,
+         AND status  IN ('SUBMITTED','DO_REVIEWED')`,
       [formId],
     );
 
@@ -671,7 +671,7 @@ async function getStatusStats(ship, svc) {
         (SELECT COUNT(*)
            FROM ef_personalinfos
           WHERE ship = ?
-            AND status IN ('FO', 'DO_REVIEWED')
+            AND status IN ('FO', 'DO_REVIEWED', 'SUBMITTED', 'Filled')
         ) AS pending,
 
         (SELECT COUNT(*)

@@ -132,7 +132,7 @@
               <tr class="text-left text-xs font-bold text-navy/60 uppercase tracking-wide border-b border-amber-100">
                 <th class="py-3 px-4">Name</th>
                 <th class="py-3 px-4">Service No.</th>
-                <th class="py-3 px-4">DO Reviewed</th>
+                <th class="py-3 px-4">Submitted</th>
                 <th class="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -145,8 +145,8 @@
                   <td class="py-3 px-4 text-blue-900/50">${r.serviceNumber}</td>
                   <td class="py-3 px-4 text-blue-900/50">
                     ${
-                      r.div_off_date
-                        ? new Date(r.div_off_date).toLocaleDateString("en-GB", {
+                      r.date_modified
+                        ? new Date(r.date_modified).toLocaleDateString("en-GB", {
                             day: "2-digit",
                             month: "short",
                           })

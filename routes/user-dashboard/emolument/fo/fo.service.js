@@ -32,6 +32,7 @@ const {
   toLegacyStatus,
   FO_BULK_FILTER_STATUS,
 } = require("../emolument.constants");
+const { sendMessage } = require("../../email/email.service");
 
 // ─────────────────────────────────────────────────────────────
 // LIST DO_REVIEWED FORMS
@@ -450,7 +451,8 @@ async function rejectForm(formId, foShip, body, performedBy, ip) {
   });
 
   const message = `Your emolument form (ID: ${formId}) has been rejected by the Financial Officer (${fo_rank} ${fo_name}).\n\nRemarks: ${remarks.trim()}\n\nPlease re-fill and resubmit the form.`;
-  await sendMessage({
+  console.log(`Sending rejection message to ${form.serviceNumber}: ${message}`);
+ const res =  await sendMessage({
     userId: fo_svcno,
     userFullname: fo_name,
     to_user_id: form.serviceNumber,

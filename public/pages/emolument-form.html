@@ -814,7 +814,6 @@
               id="Surname"
               name="Surname"
               placeholder="e.g. ADEYEMI"
-            
             />
           </div>
 
@@ -829,7 +828,6 @@
               id="OtherName"
               name="OtherName"
               placeholder="e.g. Babatunde Kolade"
-              
             />
           </div>
 
@@ -862,13 +860,7 @@
             <label class="field-label"
               >Date of Birth <span class="req">*</span></label
             >
-            <input
-              class="field"
-              type="date"
-              id="Birthdate"
-              name="Birthdate"
-              
-            />
+            <input class="field" type="date" id="Birthdate" name="Birthdate" />
           </div>
 
           <!-- Date of Joining Service -->
@@ -876,13 +868,7 @@
             <label class="field-label"
               >Date of Joining Service <span class="req">*</span></label
             >
-            <input
-              class="field"
-              type="date"
-              id="DateEmpl"
-              name="DateEmpl"
-              
-            />
+            <input class="field" type="date" id="DateEmpl" name="DateEmpl" />
           </div>
 
           <!-- Rating-only fields -->
@@ -895,7 +881,6 @@
               type="date"
               id="expirationOfEngagementDate"
               name="expirationOfEngagementDate"
-              
             />
           </div>
 
@@ -908,7 +893,6 @@
               type="text"
               id="yearOfPromotion"
               name="yearOfPromotion"
-              
             />
           </div>
 
@@ -1097,7 +1081,6 @@
               name="NIN"
               placeholder="11-digit NIN"
               maxlength="11"
-              
             />
           </div>
 
@@ -1123,7 +1106,6 @@
               type="date"
               id="advanceDate"
               name="advanceDate"
-              
             />
           </div>
 
@@ -1533,7 +1515,6 @@
               id="AccountName"
               name="AccountName"
               placeholder="Name as on account"
-              disabled
             />
           </div>
 
@@ -2588,11 +2569,11 @@
       async function submitForm() {
         const required = [
           // ── Personal Information ──
-          "Surname",          // disabled
-          "OtherName",        // disabled
+          "Surname", // disabled
+          "OtherName", // disabled
           // "serviceNumber",    // disabled
-          "Birthdate",        // disabled
-          "DateEmpl",         // disabled
+          "Birthdate", // disabled
+          "DateEmpl", // disabled
           "Rank",
           "home_address",
           "command",
@@ -2615,7 +2596,10 @@
         );
 
         if (missing.length) {
-          showToast("Please fill all required fields before submitting.", "error");
+          showToast(
+            "Please fill all required fields before submitting.",
+            "error",
+          );
           document
             .getElementById(missing[0])
             ?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -2791,9 +2775,11 @@
             setVal("ship", ""); // reset ship when command changes
             document.getElementById("ship").style.borderColor = "";
           });
-            document.getElementById("ship")?.addEventListener("change", function () {
-              this.style.borderColor = "";
-            });
+        document
+          .getElementById("ship")
+          ?.addEventListener("change", function () {
+            this.style.borderColor = "";
+          });
       }
 
       function isShipUnderCommand(shipName, commandId) {

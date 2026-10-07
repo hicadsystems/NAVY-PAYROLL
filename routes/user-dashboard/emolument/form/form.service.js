@@ -319,9 +319,9 @@ async function submitForm(serviceNo, body, performedBy, ip) {
     serviceNo,
     formYear,
     String(formNumber),
-    person.payrollclass,
-    person.ship,
-    person.command,
+    body?.payrollclass||person.payrollclass,
+    body?.ship?.trim() || person.ship,
+    body?.command?.trim() || person.command,
     formStatus,
   );
 

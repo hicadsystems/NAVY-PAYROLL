@@ -178,6 +178,17 @@ async function startServer() {
       break;
     }
 
+    // ── container: plain HTTP on all interfaces (Coolify/Docker) ──
+    // TLS is terminated by the Coolify proxy (Traefik/Caddy).
+    case "container": {
+      const server = http.createServer(app);
+      server.listen(PORT || 5500, "0.0.0.0", () => {
+        attachSocketIO(server);
+        console.log(`🐳 HTTP server  → http://0.0.0.0:${PORT || 5500}`);
+      });
+      break;
+    }
+
     // ── localhost: plain HTTP, no SSL, local only ─────────────
     case "localhost": {
       const server = http.createServer(app);

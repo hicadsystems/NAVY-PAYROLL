@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "deploy": {
+    "startCommand": "node server.js",
+    "aptPackages": [
+      "chromium",
+      "fonts-liberation",
+      "fonts-noto-core",
+      "fonts-noto-color-emoji",
+      "fontconfig",
+      "ca-certificates"
+    ]
+  }
+}

@@ -182,9 +182,10 @@ async function startServer() {
     // TLS is terminated by the Coolify proxy (Traefik/Caddy).
     case "container": {
       const server = http.createServer(app);
-      server.listen(PORT || 5500, "0.0.0.0", () => {
+      // "::" = dual-stack: accepts IPv6 and IPv4 (Coolify networks are dual-stack)
+      server.listen(PORT || 5500, "::", () => {
         attachSocketIO(server);
-        console.log(`🐳 HTTP server  → http://0.0.0.0:${PORT || 5500}`);
+        console.log(`🐳 HTTP server  → http://[::]:${PORT || 5500} (IPv4 + IPv6)`);
       });
       break;
     }

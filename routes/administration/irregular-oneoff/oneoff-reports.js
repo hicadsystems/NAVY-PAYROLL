@@ -47,6 +47,38 @@ async function launchBrowser() {
   // App home directory (replaces hardcoded /home/hicadng)
   const APP_HOME = process.env.PDF_APP_HOME || "/home/hicadng";
 
+  // Coolify / Docker: system Chromium (apt). cPanel: leave unset → Sparticuz.
+  const systemChromium =
+    process.env.PDF_CHROMIUM_EXECUTABLE ||
+    process.env.PUPPETEER_EXECUTABLE_PATH;
+
+  if (isProduction && systemChromium) {
+    const puppeteer = require("puppeteer-core");
+    const tempDir = process.env.PDF_CHROMIUM_TEMP_DIR || "/tmp/.chromium-temp";
+    fs.mkdirSync(tempDir, { recursive: true });
+    console.log("📍 System Chromium path:", systemChromium);
+
+    return puppeteer.launch({
+      executablePath: systemChromium,
+      headless: "new",
+      ignoreHTTPSErrors: true,
+      userDataDir: tempDir,
+      args: [
+        "--disable-gpu",
+        "--disable-dev-shm-usage",
+        "--disable-setuid-sandbox",
+        "--no-sandbox",
+        "--allow-file-access-from-files",
+        "--disable-web-security",
+        `--disk-cache-dir=${tempDir}`,
+      ],
+      env: {
+        ...process.env,
+        FONTCONFIG_PATH: process.env.PDF_SYSTEM_FONTCONFIG_PATH || "/etc/fonts",
+      },
+    });
+  }
+
   if (isProduction) {
     const chromium = require("@sparticuz/chromium");
     const puppeteer = require("puppeteer-core");

@@ -315,13 +315,16 @@ async function submitForm(serviceNo, body, performedBy, ip) {
   }
   // ── Transaction committed ─────────────────────────────────
 
+  const ef_ship = body?.core?.ship?.trim() || person.ship;
+  const ef_command = body?.core?.command?.trim() || person.command;
+  const ef_pyclass = body?.core?.payrollclass || person.payrollclass;
   await repo.upsertEmolumentForm(
     serviceNo,
     formYear,
     String(formNumber),
-    body?.payrollclass||person.payrollclass,
-    body?.ship?.trim() || person.ship,
-    body?.command?.trim() || person.command,
+    ef_pyclass,
+    ef_ship,
+    ef_command,
     formStatus,
   );
 

@@ -75,6 +75,7 @@
 
   function isOptionLike(node) {
     if (!node || typeof node !== 'object') return false;
+    if (node.__cddOption) return true; // pseudo option from wrapper.options[...]
     if (node.nodeType === 1) return node.tagName === 'OPTION' || node.tagName === 'OPTGROUP';
     if (node.nodeType === 11) return !!node.querySelector('option');
     return false;
@@ -565,8 +566,21 @@
     // ------------------------------------------------------ option handling
     _addNodes(nodes, fromMarkup) {
       const opts = [];
-      nodes.forEach((n) => collectOptions(n, opts));
-      const entries = opts.map((o) => readOptionNode(o, fromMarkup));
+      const pseudo = [];
+      nodes.forEach((n) => {
+        if (n && n.__cddOption) pseudo.push(n);
+        else collectOptions(n, opts);
+      });
+      // Re-inserted options taken from .options[i] (e.g. "save first option,
+      // clear, append it back"). Their old `selected` flag is ignored so the
+      // normal restore/pending logic decides the selection.
+      const entries = pseudo.map((o) => ({
+        value: str(o.value).trim(),
+        text: str(o.text).trim(),
+        selected: false,
+        disabled: !!o.disabled,
+        attrs: Object.assign({}, o.__attrs || {}),
+      })).concat(opts.map((o) => readOptionNode(o, fromMarkup)));
       opts.forEach((o) => { if (o.parentNode && o.parentNode.nodeType === 1) o.parentNode.removeChild(o); });
       this._addEntries(entries, { autoFirst: true });
     }
@@ -667,7 +681,7 @@
         Object.keys(a).forEach((k) => {
           if (k.startsWith('data-')) dataset[k.slice(5).replace(/-([a-z])/g, (m, c) => c.toUpperCase())] = a[k];
         });
-        return {
+        const opt = {
           value,
           text,
           label: text,
@@ -680,9 +694,13 @@
           dataset,
           tagName: 'OPTION',
           nodeName: 'OPTION',
+          __cddOption: true,
+          __attrs: a,
+          remove: () => self._removeAt(list.indexOf(opt)),
           getAttribute: (n) => (n === 'value' ? value : (Object.prototype.hasOwnProperty.call(a, n) ? a[n] : null)),
           hasAttribute: (n) => n === 'value' || Object.prototype.hasOwnProperty.call(a, n),
         };
+        return opt;
       };
       if (this.placeholderOption) {
         list.push(make('', this.placeholderOption.text, this.placeholderOption.attrs, false, this.selectedValue === null));

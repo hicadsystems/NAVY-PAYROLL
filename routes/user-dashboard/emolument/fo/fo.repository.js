@@ -312,7 +312,7 @@ async function approveSingle(
            dateModify = NOW()
        WHERE serviceNumber = ?
          AND ship          = ?
-         AND Status        IN ('SUBMITTED','FO')`,
+         AND Status        IN ('SUBMITTED','FO', 'Filled','DO_REVIEWED')`,
       [legacyStatus, foName, foRank, foSvcNo, serviceNo, ship],
     );
 
@@ -390,7 +390,7 @@ async function approveBulk(
            dateModify = NOW()
        WHERE ship    = ?
         AND serviceNumber IN (${svcPlaceholders})
-        AND Status  IN ('SUBMITTED','FO')
+        AND Status  IN ('SUBMITTED','FO', 'Filled','DO_REVIEWED')
         AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
       [
         legacyStatus,
@@ -448,7 +448,7 @@ async function approveClass(
       `SELECT serviceNumber FROM ef_personalinfos
        WHERE ship    = ?
          AND classes = ?
-         AND Status  IN ('SUBMITTED','FO')
+         AND Status  IN ('SUBMITTED','FO', 'Filled','DO_REVIEWED')
          AND (emolumentform IS NULL OR emolumentform != 'Yes')
        FOR UPDATE`,
       [ship, classes],
@@ -467,7 +467,7 @@ async function approveClass(
            dateModify = NOW()
        WHERE ship    = ?
          AND classes = ?
-         AND Status  IN ('SUBMITTED','FO')
+         AND Status  IN ('SUBMITTED','FO', 'Filled','DO_REVIEWED')
          AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
       [legacyStatus, foName, foRank, foSvcNo, ship, classes],
     );
@@ -536,7 +536,7 @@ async function rejectForm(serviceNo, formId, ship) {
        SET status     = 'REJECTED',
            updated_at = NOW()
        WHERE id     = ?
-         AND status  IN ('SUBMITTED','DO_REVIEWED')`,
+         AND status  IN ('SUBMITTED','DO_REVIEWED', 'Filled','FO')`,
       [formId],
     );
 

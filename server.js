@@ -79,8 +79,6 @@ const corsOrigins = [
   LOCAL_IP ? `http://${LOCAL_IP}` : null,
   LOCAL_IP ? `http://${LOCAL_IP}:${HTTP_PORT}` : null,
   "https://hicad.ng",
-  "staging.nncpo.ng",
-  "app.nncpo.ng",
 ].filter(Boolean);
 
 app.use(

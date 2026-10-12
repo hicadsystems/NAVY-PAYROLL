@@ -185,7 +185,9 @@ async function startServer() {
       // "::" = dual-stack: accepts IPv6 and IPv4 (Coolify networks are dual-stack)
       server.listen(PORT || 5500, "::", () => {
         attachSocketIO(server);
-        console.log(`🐳 HTTP server  → http://[::]:${PORT || 5500} (IPv4 + IPv6)`);
+        console.log(
+          `🐳 HTTP server  → http://[::]:${PORT || 5500} (IPv4 + IPv6)`,
+        );
       });
       break;
     }

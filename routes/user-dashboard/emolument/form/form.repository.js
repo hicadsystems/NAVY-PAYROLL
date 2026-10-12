@@ -703,15 +703,18 @@ async function upsertEmolumentForm(
 ) {
   pool.useDatabase(DB());
   const [result] = await pool.query(
-    `INSERT INTO ef_emolument_forms
-       (service_no, form_year, form_number, payroll_class, ship, command, status, snapshot, submitted_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
-     ON DUPLICATE KEY UPDATE
-       form_number  = VALUES(form_number),
-       status       = VALUES(status),
-       snapshot     = COALESCE(VALUES(snapshot), snapshot),
-       submitted_at = IF(status = 'DRAFT', NOW(), submitted_at),
-       updated_at   = NOW()`,
+      `INSERT INTO ef_emolument_forms
+        (service_no, form_year, form_number, payroll_class, ship, command, status, snapshot, submitted_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      ON DUPLICATE KEY UPDATE
+        submitted_at = IF(status = 'DRAFT' AND VALUES(status) <> 'DRAFT', NOW(), submitted_at),
+        form_number  = VALUES(form_number),
+        status       = VALUES(status),
+        ship         = VALUES(ship),
+        command      = VALUES(command),
+        payroll_class = VALUES(payroll_class),
+        snapshot     = COALESCE(VALUES(snapshot), snapshot),
+        updated_at   = NOW()`,
     [
       serviceNo,
       formYear,

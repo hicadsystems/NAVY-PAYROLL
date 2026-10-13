@@ -37,6 +37,26 @@ async function getProcessingYear(isTraining = false) {
   return rows[0]?.processingyear || null;
 }
 
+// Resolve the command a ship belongs to, plus the name of the command the
+// user picked. ef_ships.commandid -> ef_commands.Id; personnel store the
+// command CODE (ef_commands.code) and the ship NAME (ef_ships.shipName).
+async function getShipCommandMatch(shipName, commandCode) {
+  pool.useDatabase(DB());
+  const [shipRows] = await pool.query(
+    `SELECT s.shipName, s.commandid, c.code AS commandCode, c.commandName
+       FROM ef_ships s
+       LEFT JOIN ef_commands c ON c.Id = s.commandid
+      WHERE TRIM(s.shipName) = TRIM(?)
+      LIMIT 1`,
+    [shipName],
+  );
+  const [cmdRows] = await pool.query(
+    `SELECT code, commandName FROM ef_commands WHERE TRIM(code) = TRIM(?) LIMIT 1`,
+    [commandCode],
+  );
+  return { ship: shipRows[0] || null, command: cmdRows[0] || null };
+}
+
 async function getShipOpenStatus(shipName) {
   pool.useDatabase(DB());
   const [rows] = await pool.query(
@@ -924,6 +944,7 @@ module.exports = {
   submitForm,
   submitAllTables,
   initDraftForm,
+  getShipCommandMatch,
   upsertEmolumentForm,
   getCurrentFormNumber,
   incrementFormNumber,

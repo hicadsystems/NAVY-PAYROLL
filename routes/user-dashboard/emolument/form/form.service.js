@@ -135,7 +135,14 @@ async function loadForm(serviceNo) {
   const eligibility = await checkFormEligibility(person);
   const currentFormStatus = toFormStatus(person.Status);
 
+  // loadPersonCore LEFT JOINs ef_emolument_forms on service_no only, so a
+  // person with several form rows (previous years / stray drafts) gets an
+  // arbitrary id. Always resolve the row for the current processing year.
   let formId = core.formId;
+  if (formYear) {
+    const currentId = await repo.getEmolumentFormId(serviceNo, formYear);
+    if (currentId) formId = currentId;
+  }
   if (formYear && currentFormStatus === FORM_STATUS.DRAFT) {
     formId = await repo.initDraftForm(
       serviceNo,

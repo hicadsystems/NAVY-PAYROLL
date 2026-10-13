@@ -656,22 +656,25 @@ async function submitAllTables(
 
 async function initDraftForm(serviceNo, formYear, payrollClass, ship, command) {
   pool.useDatabase(DB());
+
+  // Reuse the existing row for this year (no reliance on a UNIQUE key —
+  // the old ON DUPLICATE KEY version inserted a new DRAFT on every load).
+  const [existing] = await pool.query(
+    `SELECT id FROM ef_emolument_forms
+     WHERE service_no = ? AND form_year = ?
+     ORDER BY (status <> 'DRAFT') DESC, id DESC
+     LIMIT 1`,
+    [serviceNo, formYear],
+  );
+  if (existing.length) return existing[0].id;
+
   const [result] = await pool.query(
     `INSERT INTO ef_emolument_forms
        (service_no, form_year, payroll_class, ship, command, status)
-     VALUES (?, ?, ?, ?, ?, 'DRAFT')
-     ON DUPLICATE KEY UPDATE
-       updated_at = updated_at`,
+     VALUES (?, ?, ?, ?, ?, 'DRAFT')`,
     [serviceNo, formYear, payrollClass, ship ?? null, command ?? null],
   );
-  if (result.insertId) return result.insertId;
-
-  const [rows] = await pool.query(
-    `SELECT id FROM ef_emolument_forms
-     WHERE service_no = ? AND form_year = ? LIMIT 1`,
-    [serviceNo, formYear],
-  );
-  return rows[0]?.id || null;
+  return result.insertId || null;
 }
 
 async function submitForm(serviceNo, formNumber, formYear, legacyStatus) {
@@ -702,19 +705,41 @@ async function upsertEmolumentForm(
   snapshot = null,
 ) {
   pool.useDatabase(DB());
-  const [result] = await pool.query(
-      `INSERT INTO ef_emolument_forms
-        (service_no, form_year, form_number, payroll_class, ship, command, status, snapshot, submitted_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
-      ON DUPLICATE KEY UPDATE
-        submitted_at = IF(status = 'DRAFT' AND VALUES(status) <> 'DRAFT', NOW(), submitted_at),
-        form_number  = VALUES(form_number),
-        status       = VALUES(status),
-        ship         = VALUES(ship),
-        command      = VALUES(command),
-        payroll_class = VALUES(payroll_class),
-        snapshot     = COALESCE(VALUES(snapshot), snapshot),
-        updated_at   = NOW()`,
+  const snap = snapshot ? JSON.stringify(snapshot) : null;
+
+  // Update the person's existing row for this year explicitly instead of
+  // relying on ON DUPLICATE KEY: without a UNIQUE(service_no, form_year) key
+  // the old upsert INSERTed a second row and left the draft row (the one
+  // getEmolumentFormId returned) stuck at DRAFT.
+  const [upd] = await pool.query(
+    `UPDATE ef_emolument_forms
+        SET submitted_at  = IF(status = 'DRAFT' AND ? <> 'DRAFT', NOW(), submitted_at),
+            form_number   = ?,
+            status        = ?,
+            ship          = ?,
+            command       = ?,
+            payroll_class = ?,
+            snapshot      = COALESCE(?, snapshot),
+            updated_at    = NOW()
+      WHERE service_no = ? AND form_year = ?`,
+    [
+      formStatus,
+      formNumber,
+      formStatus,
+      ship ?? null,
+      command ?? null,
+      payrollClass,
+      snap,
+      serviceNo,
+      formYear,
+    ],
+  );
+  if (upd.affectedRows > 0) return true;
+
+  const [ins] = await pool.query(
+    `INSERT INTO ef_emolument_forms
+       (service_no, form_year, form_number, payroll_class, ship, command, status, snapshot, submitted_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
     [
       serviceNo,
       formYear,
@@ -723,10 +748,10 @@ async function upsertEmolumentForm(
       ship ?? null,
       command ?? null,
       formStatus,
-      snapshot ? JSON.stringify(snapshot) : null,
+      snap,
     ],
   );
-  return result.affectedRows > 0;
+  return ins.affectedRows > 0;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -808,7 +833,9 @@ async function getEmolumentFormId(serviceNo, formYear) {
   pool.useDatabase(DB());
   const [rows] = await pool.query(
     `SELECT id FROM ef_emolument_forms
-     WHERE service_no = ? AND form_year = ? LIMIT 1`,
+     WHERE service_no = ? AND form_year = ?
+     ORDER BY (status <> 'DRAFT') DESC, id DESC
+     LIMIT 1`,
     [serviceNo, formYear],
   );
   return rows[0]?.id || null;

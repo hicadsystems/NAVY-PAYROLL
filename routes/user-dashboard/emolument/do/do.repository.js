@@ -314,13 +314,20 @@ async function markDoReviewed(
     }
 
     // 2. Update ef_emolument_forms with clean enum status
-    await conn.query(
+    const [efRes] = await conn.query(
       `UPDATE ef_emolument_forms
        SET status     = 'DO_REVIEWED',
            updated_at = NOW()
        WHERE id = ? AND status = 'SUBMITTED'`,
       [formId],
     );
+
+    if (efRes.affectedRows === 0) {
+      throw Object.assign(
+        new Error("ef_emolument_forms row not in expected status"),
+        { code: "STALE_STATUS" },
+      );
+    }
 
     return true;
   });
@@ -353,13 +360,20 @@ async function rejectForm(serviceNo, formId, ship) {
     }
 
     // 2. Reset ef_emolument_forms
-    await conn.query(
+    const [efRes] = await conn.query(
       `UPDATE ef_emolument_forms
        SET status     = 'REJECTED',
            updated_at = NOW()
        WHERE id = ? AND status = 'SUBMITTED'`,
       [formId],
     );
+
+    if (efRes.affectedRows === 0) {
+      throw Object.assign(
+        new Error("ef_emolument_forms row not in expected status"),
+        { code: "STALE_STATUS" },
+      );
+    }
 
     return true;
   });

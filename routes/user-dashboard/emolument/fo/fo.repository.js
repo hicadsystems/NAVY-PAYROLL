@@ -323,7 +323,7 @@ async function approveSingle(
     }
 
     // 2. Update ef_emolument_forms — gate on DO_REVIEWED
-    await conn.query(
+    const [efRes] = await conn.query(
       `UPDATE ef_emolument_forms
        SET status     = 'FO_APPROVED',
            updated_at = NOW()
@@ -331,6 +331,13 @@ async function approveSingle(
          AND status  IN ('SUBMITTED','DO_REVIEWED')`,
       [formId],
     );
+
+    if (efRes.affectedRows === 0) {
+      throw Object.assign(
+        new Error("ef_emolument_forms row not in expected status"),
+        { code: "STALE_STATUS" },
+      );
+    }
 
     return true;
   });
@@ -565,7 +572,7 @@ async function rejectForm(serviceNo, formId, ship) {
       });
     }
 
-    await conn.query(
+    const [efRes] = await conn.query(
       `UPDATE ef_emolument_forms
        SET status     = 'REJECTED',
            updated_at = NOW()
@@ -573,6 +580,13 @@ async function rejectForm(serviceNo, formId, ship) {
          AND status  IN ('SUBMITTED','DO_REVIEWED', 'Filled','FO')`,
       [formId],
     );
+
+    if (efRes.affectedRows === 0) {
+      throw Object.assign(
+        new Error("ef_emolument_forms row not in expected status"),
+        { code: "STALE_STATUS" },
+      );
+    }
 
     return true;
   });
@@ -747,8 +761,8 @@ async function getPendingReport(ship) {
       ON ef.service_no = p.serviceNumber
      AND ef.ship       = p.ship
     WHERE p.ship = ?
-      AND p.Status IN ('FO', 'DO_REVIEWED')
-      AND ef.status = 'DO_REVIEWED'
+      AND p.Status IN ('Filled', 'SUBMITTED', 'FO', 'DO_REVIEWED')
+      AND ef.status IN ('SUBMITTED', 'DO_REVIEWED')
       AND (p.emolumentform IS NULL OR p.emolumentform != 'Yes')
     ORDER BY
       p.Surname ASC,

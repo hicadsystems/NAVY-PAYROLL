@@ -22,6 +22,17 @@ const {
 } = require("../emolument.constants");
 const { sendMessage } = require("../../email/email.service");
 
+// Repository transactions throw STALE_STATUS when a gated UPDATE matches no
+// row. Return false so the caller answers 409 instead of crashing with 500.
+async function runGated(fn) {
+  try {
+    return await fn();
+  } catch (err) {
+    if (err && err.code === "STALE_STATUS") return false;
+    throw err;
+  }
+}
+
 // ─────────────────────────────────────────────────────────────
 // LIST SUBMITTED FORMS
 // ─────────────────────────────────────────────────────────────
@@ -125,13 +136,15 @@ async function reviewForm(formId, doShip, performedBy, ip) {
   // Legacy status to write to ef_personalinfos
   const legacyStatus = toLegacyStatus(FORM_STATUS.DO_REVIEWED); // → 'FO'
 
-  const updated = await repo.markDoReviewed(
-    form.serviceNumber,
-    formId,
-    do_name,
-    do_rank,
-    do_svcno, // DO's own service number
-    legacyStatus,
+  const updated = await runGated(() =>
+    repo.markDoReviewed(
+      form.serviceNumber,
+      formId,
+      do_name,
+      do_rank,
+      do_svcno, // DO's own service number
+      legacyStatus,
+    ),
   );
 
   if (!updated) {
@@ -214,7 +227,9 @@ async function rejectForm(formId, doShip, body, performedBy, ip) {
     };
   }
 
-  const reset = await repo.rejectForm(form.serviceNumber, formId, form.ship);
+  const reset = await runGated(() =>
+    repo.rejectForm(form.serviceNumber, formId, form.ship),
+  );
   if (!reset) {
     return {
       success: false,

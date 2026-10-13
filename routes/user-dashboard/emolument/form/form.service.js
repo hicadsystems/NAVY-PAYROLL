@@ -135,7 +135,14 @@ async function loadForm(serviceNo) {
   const eligibility = await checkFormEligibility(person);
   const currentFormStatus = toFormStatus(person.Status);
 
+  // loadPersonCore LEFT JOINs ef_emolument_forms on service_no only, so a
+  // person with several form rows (previous years / stray drafts) gets an
+  // arbitrary id. Always resolve the row for the current processing year.
   let formId = core.formId;
+  if (formYear) {
+    const currentId = await repo.getEmolumentFormId(serviceNo, formYear);
+    if (currentId) formId = currentId;
+  }
   if (formYear && currentFormStatus === FORM_STATUS.DRAFT) {
     formId = await repo.initDraftForm(
       serviceNo,
@@ -250,6 +257,29 @@ async function saveDraft(serviceNo, body, performedBy, ip) {
 // SUBMIT FORM
 // ─────────────────────────────────────────────────────────────
 
+// Returns an error message when the ship does not belong to the command,
+// or null when they tally (or there is nothing to compare).
+async function checkShipCommand(shipName, commandCode) {
+  if (!shipName || !commandCode) {
+    return "Ship and command are required. Please select both.";
+  }
+  const { ship, command } = await repo.getShipCommandMatch(shipName, commandCode);
+  const commandName = command?.commandName || commandCode;
+
+  if (!ship) return `Ship: ${shipName} is not a recognised ship.`;
+  if (!command) return `Command: ${commandCode} is not a recognised command.`;
+  if (!ship.commandCode) return null; // ship has no command mapped — nothing to check
+
+  if (String(ship.commandCode).trim() !== String(command.code).trim()) {
+    return (
+      `Ship and command do not match. Ship: ${ship.shipName} does not belong to ` +
+      `Command: ${commandName}` +
+      (ship.commandName ? ` (it belongs to ${ship.commandName}).` : ".")
+    );
+  }
+  return null;
+}
+
 async function submitForm(serviceNo, body, performedBy, ip) {
   const person = await repo.getPersonCore(serviceNo);
   if (!person)
@@ -276,6 +306,13 @@ async function submitForm(serviceNo, body, performedBy, ip) {
   }
 
   mapGcb(body);
+
+  // ── Ship must belong to the selected command ─────────────
+  const mismatch = await checkShipCommand(
+    body?.core?.ship?.trim() || person.ship,
+    body?.core?.command?.trim() || person.command,
+  );
+  if (mismatch) return { success: false, code: 400, message: mismatch };
 
   const formNoCol = resolveFormNoColumn(person.payrollclass);
   const formNumber = await repo.getCurrentFormNumber(formNoCol);

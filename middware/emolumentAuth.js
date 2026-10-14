@@ -349,7 +349,9 @@ const requireEmolRoleAnyScope = (...requiredRoles) => {
 // to requireEmolRole behaviour).
 // ─────────────────────────────────────────────────────────────────────────────
 
-const requireFormRole = (requiredRole) => {
+// opts.anyScope: any active `requiredRole` passes regardless of its scope
+// (used by CPO, whose lists already span every command).
+const requireFormRole = (requiredRole, { anyScope = false } = {}) => {
   return async (req, res, next) => {
     if (!req.user_id) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -379,6 +381,7 @@ const requireFormRole = (requiredRole) => {
 
         const passes = req.emolRoles.some((r) => {
           if (r.role !== requiredRole) return false;
+          if (anyScope) return true;
           if (r.scope_type === "GLOBAL") return true;
           if (r.scope_type === "SHIP")
             return shipVal && r.scope_value === shipVal;
@@ -407,6 +410,7 @@ const requireFormRole = (requiredRole) => {
 
       const passes = req.emolRoles.some((r) => {
         if (r.role !== requiredRole) return false;
+          if (anyScope) return true;
         if (r.scope_type === "GLOBAL") return true;
         if (r.scope_type === "SHIP")
           return formScope.ship && r.scope_value === formScope.ship;

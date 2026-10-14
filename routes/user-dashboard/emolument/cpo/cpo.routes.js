@@ -27,6 +27,7 @@ const verifyToken = require("../../../../middware/authentication");
 const {
   requireEmolRole,
   requireFormRole,
+  requireEmolRoleAnyScope,
 } = require("../../../../middware/emolumentAuth");
 const cpoService = require("./cpo.service");
 
@@ -97,7 +98,7 @@ function resolveCpoCommands(req) {
 //   }
 // });
 
-router.get("/pending", requireEmolRole("CPO"), async (req, res) => {
+router.get("/pending", requireEmolRoleAnyScope("CPO"), async (req, res) => {
  if (resolveCpoCommands(req) !== "ALL") {
   return res.status(403).json({ error: "No CPO role assigned." });
 }
@@ -139,7 +140,7 @@ router.get("/pending", requireEmolRole("CPO"), async (req, res) => {
 // INACTIVE
 // ─────────────────────────────────────────────────────────────
 
-router.get("/pending/:command", requireEmolRole("CPO"), async (req, res) => {
+router.get("/pending/:command", requireEmolRoleAnyScope("CPO"), async (req, res) => {
   const { command } = req.params;
   const cpoCommands = resolveCpoCommands(req);
 
@@ -176,7 +177,7 @@ router.get("/pending/:command", requireEmolRole("CPO"), async (req, res) => {
 // requireFormRole resolves command from ef_emolument_forms.
 // ─────────────────────────────────────────────────────────────
 
-router.get("/forms/:form_id", requireFormRole("CPO"), async (req, res) => {
+router.get("/forms/:form_id", requireFormRole("CPO", { anyScope: true }), async (req, res) => {
   const formId = Number(req.params.form_id);
   const cpoCommands = resolveCpoCommands(req);
 
@@ -204,7 +205,7 @@ router.get("/forms/:form_id", requireFormRole("CPO"), async (req, res) => {
 
 router.post(
   "/forms/:form_id/confirm",
-  requireFormRole("CPO"),
+  requireFormRole("CPO", { anyScope: true }),
   async (req, res) => {
     const formId = Number(req.params.form_id);
 
@@ -213,7 +214,9 @@ router.post(
     }
 
     // For scoped CPO — resolve command from formScope attached by requireFormRole
-    const cpoCommand = req.isEmolAdmin ? "ALL" : req.formScope?.command || null;
+    // Same policy as the lists (resolveCpoCommands): any CPO covers all commands
+    const cpoCommand =
+      resolveCpoCommands(req) === "ALL" ? "ALL" : req.formScope?.command || null;
 
     if (!cpoCommand) {
       return res
@@ -250,7 +253,7 @@ router.post(
 
 router.post(
   "/forms/:form_id/reject",
-  requireFormRole("CPO"),
+  requireFormRole("CPO", { anyScope: true }),
   async (req, res) => {
     const formId = Number(req.params.form_id);
 
@@ -264,7 +267,9 @@ router.post(
         .json({ error: "Rejection reason (remarks) is required." });
     }
 
-    const cpoCommand = req.isEmolAdmin ? "ALL" : req.formScope?.command || null;
+    // Same policy as the lists (resolveCpoCommands): any CPO covers all commands
+    const cpoCommand =
+      resolveCpoCommands(req) === "ALL" ? "ALL" : req.formScope?.command || null;
 
     if (!cpoCommand) {
       return res
@@ -336,7 +341,7 @@ router.post(
 //   },
 // );
 
-router.post("/confirm/bulk", requireEmolRole("CPO"), async (req, res) => {
+router.post("/confirm/bulk", requireEmolRoleAnyScope("CPO"), async (req, res) => {
   try {
     const result = await cpoService.confirmBulk(
       req.body,
@@ -400,7 +405,7 @@ router.post("/confirm/bulk", requireEmolRole("CPO"), async (req, res) => {
 //   },
 // );
 
-router.post("/confirm/class", requireEmolRole("CPO"), async (req, res) => {
+router.post("/confirm/class", requireEmolRoleAnyScope("CPO"), async (req, res) => {
   try {
     const result = await cpoService.confirmClass(
       req.body, // { classes, command? }
@@ -464,7 +469,7 @@ router.post("/confirm/class", requireEmolRole("CPO"), async (req, res) => {
 //   }
 // });
 
-router.get("/confirmed", requireEmolRole("CPO"), async (req, res) => {
+router.get("/confirmed", requireEmolRoleAnyScope("CPO"), async (req, res) => {
   const { command = "", ship = "", classes = "", search = "", page = 1, limit } = req.query;
   const offset = (Number(page) - 1) * Number(limit);
 
@@ -507,7 +512,7 @@ router.get("/confirmed", requireEmolRole("CPO"), async (req, res) => {
 // );
 
 
-router.get("/stats", requireEmolRole("CPO"), async (req, res) => {
+router.get("/stats", requireEmolRoleAnyScope("CPO"), async (req, res) => {
   const { command = "" } = req.query;
   try {
     const result = await cpoService.getStatusStats(command, req.user_id);
@@ -527,7 +532,7 @@ router.get("/stats", requireEmolRole("CPO"), async (req, res) => {
 // requireEmolRole('CPO') with command in params.
 // ─────────────────────────────────────────────────────────────
 
-router.get("/dashboard", requireEmolRole("CPO"), async (req, res) => {
+router.get("/dashboard", requireEmolRoleAnyScope("CPO"), async (req, res) => {
   try {
     const result = await cpoService.getDashboard(req.user_id, req.query.refresh === "1");
     if (!result.success) return res.status(result.code).json({ error: result.message });

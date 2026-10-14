@@ -22,11 +22,12 @@
 
 "use strict";
 
-const { requireEmolRole } = require("../../../../middware/emolumentAuth");
+const { requireEmolRoleAnyScope } = require("../../../../middware/emolumentAuth");
 const { buildReportRoutes } = require("../form-reports/reports.routes");
 
 module.exports = buildReportRoutes({
   role: "CPO",
-  requireEmolRole,
+  // CPO is not command-scoped (see resolveCpoCommands in cpo.routes.js)
+  requireEmolRole: requireEmolRoleAnyScope,
   mountPath: "/reports",
 });

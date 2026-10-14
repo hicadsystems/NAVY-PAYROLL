@@ -581,6 +581,38 @@
       if (search) params.set('search', search);
       if (command) params.set('command', command);
 
+      if (!window.chooseReportFormat) {
+        await new Promise(function (resolve) {
+          var s = document.createElement("script");
+          s.src = "/script/report-format.js";
+          s.onload = s.onerror = resolve;
+          document.head.appendChild(s);
+        });
+      }
+      const exportFormat = window.chooseReportFormat
+        ? await window.chooseReportFormat(button)
+        : "pdf";
+      if (!exportFormat) return;
+      if (exportFormat === 'excel') {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Preparing Excel…';
+        try {
+          await window.downloadReportExcel({
+            endpoint: '/reports/progress/export',
+            params: params,
+            headers: { Authorization: 'Bearer ' + TOKEN },
+            filename: 'progress-report',
+          });
+        } catch (error) {
+          console.error('Error exporting progress report:', error);
+          alert(error.message || 'Could not generate the Excel report.');
+        } finally {
+          button.disabled = false;
+          button.innerHTML = originalHTML;
+        }
+        return;
+      }
+
       button.disabled = true;
       button.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Preparing report…';
 

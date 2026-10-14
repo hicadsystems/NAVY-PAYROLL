@@ -24,15 +24,23 @@ const DB = () => process.env.DB_OFFICERS || config.databases.officers;
 // Per ship: total / submitted / do_reviewed / fo_approved /
 //           cpo_confirmed / rejected / not_filed
 //
-// "submitted" (rendered as the *Filled* column on progress.html and in the
-// printed report) counts every person who has filled the form and is still
-// waiting on the FO.  The DO-review stage is bypassed in the live workflow,
+// Counts are CUMULATIVE: "submitted" (the *Filled* column) counts everyone
+// who has filled the form at any stage; fo_approved / cpo_confirmed count
+// everyone who has reached that stage or beyond.  The DO-review stage is bypassed in the live workflow,
 // so those rows sit at Status='FO' rather than Status='Filled' — matching
 // only 'Filled' reported 0 for every ship.  FILLED_STATUS_IN covers both
 // spellings (see emolument.constants.js).
 // ─────────────────────────────────────────────────────────────
 
 const FILLED_STATUS_IN = filledStatusInList("p.Status");
+
+// Legacy + clean spellings for "reached this stage or beyond"
+//   FO approved  : CPO / FO_APPROVED, then Verified / CPO_CONFIRMED, Updated / SYNCED
+//   CPO confirmed: Verified / CPO_CONFIRMED, Updated / SYNCED
+const STAGE_CPO_CONFIRMED_OR_LATER =
+  "'Verified','CPO_CONFIRMED','Updated','SYNCED'";
+const STAGE_FO_APPROVED_OR_LATER =
+  "'CPO','FO_APPROVED'," + STAGE_CPO_CONFIRMED_OR_LATER;
 
 async function getProgressReport() {
   pool.useDatabase(DB());
@@ -42,10 +50,22 @@ async function getProgressReport() {
        s.commandid,
        cmd.commandName,
        COUNT(p.Id)                                              AS total,
-       SUM(CASE WHEN ${FILLED_STATUS_IN}    THEN 1 ELSE 0 END) AS submitted,
-       SUM(CASE WHEN p.Status = 'FO'        THEN 1 ELSE 0 END) AS do_reviewed,
-       SUM(CASE WHEN p.Status = 'CPO'       THEN 1 ELSE 0 END) AS fo_approved,
-       SUM(CASE WHEN p.Status = 'Verified'  THEN 1 ELSE 0 END) AS cpo_confirmed,
+       -- Cumulative stage counts: a form that moves on to the next stage is
+       -- still counted in every earlier one (Filled >= FO Approved >=
+       -- CPO Confirmed >= Completed), so approving never lowers a column.
+       SUM(CASE WHEN ${FILLED_STATUS_IN}
+                  OR p.Status IN (${STAGE_FO_APPROVED_OR_LATER})
+                  OR p.emolumentform = 'Yes'
+                THEN 1 ELSE 0 END)                             AS submitted,
+       SUM(CASE WHEN p.Status IN ('FO','DO_REVIEWED', ${STAGE_FO_APPROVED_OR_LATER})
+                  OR p.emolumentform = 'Yes'
+                THEN 1 ELSE 0 END)                             AS do_reviewed,
+       SUM(CASE WHEN p.Status IN (${STAGE_FO_APPROVED_OR_LATER})
+                  OR p.emolumentform = 'Yes'
+                THEN 1 ELSE 0 END)                             AS fo_approved,
+       SUM(CASE WHEN p.Status IN (${STAGE_CPO_CONFIRMED_OR_LATER})
+                  OR p.emolumentform = 'Yes'
+                THEN 1 ELSE 0 END)                             AS cpo_confirmed,
        SUM(CASE WHEN p.emolumentform = 'Yes' THEN 1 ELSE 0 END) AS completed,
        SUM(CASE WHEN p.Id IS NOT NULL
                  AND (p.Status IS NULL OR p.Status = '')

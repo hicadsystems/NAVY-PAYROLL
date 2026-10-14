@@ -3,6 +3,7 @@
 const path = require("path");
 const BaseReportController = require("../../../../controllers/Reports/reportsFallbackController");
 const adminRepository = require("./admin.repository");
+const { wantsExcel, sendExcelReport } = require("../report-excel.helper");
 
 const TEMPLATE_PATH = path.join(
   __dirname,
@@ -119,6 +120,25 @@ class ShipUsersReportController extends BaseReportController {
         },
         data,
       };
+
+      if (wantsExcel(req)) {
+        return sendExcelReport(res, {
+          title: viewModel.title,
+          filterSummary,
+          emptyFilterSummary: viewModel.emptyFilterSummary,
+          preparedBy: viewModel.preparedBy,
+          columns: [
+            { header: "S/N", key: "sn", width: 6, align: "center" },
+            { header: "Name", key: "name", width: 32 },
+            { header: "Rank", key: "rank", width: 12 },
+            { header: "Svc No.", key: "serviceNumber", width: 16 },
+            { header: "Ship / Scope", key: "shipScope", width: 30 },
+            { header: "Role", key: "role", width: 10, align: "center" },
+          ],
+          data,
+          filename: "ship-users-report",
+        });
+      }
 
       const pdfBuffer = await this.generatePDFWithFallback(
         TEMPLATE_PATH,

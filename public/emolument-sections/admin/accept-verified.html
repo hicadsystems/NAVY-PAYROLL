@@ -534,6 +534,42 @@
 
       if (previousSearch !== verifiedState.search) loadVerifiedForms(1);
 
+      if (!window.chooseReportFormat) {
+        await new Promise(function (resolve) {
+          var s = document.createElement("script");
+          s.src = "/script/report-format.js";
+          s.onload = s.onerror = resolve;
+          document.head.appendChild(s);
+        });
+      }
+      const exportFormat = window.chooseReportFormat
+        ? await window.chooseReportFormat(button)
+        : "pdf";
+      if (!exportFormat) return;
+      if (exportFormat === "excel") {
+        button.disabled = true;
+        button.innerHTML =
+          '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i><span>Preparing Excel…</span>';
+        try {
+          await window.downloadReportExcel({
+            endpoint: "/admin/form-listing/report",
+            params: params,
+            headers: { Authorization: "Bearer " + localStorage.getItem("token") },
+            filename: "form-listing",
+          });
+        } catch (error) {
+          console.error("Error exporting form listing:", error);
+          showToast(
+            "✗ " + (error.message || "Failed to generate Excel report"),
+            "bg-red-100 text-red-700",
+          );
+        } finally {
+          button.disabled = false;
+          button.innerHTML = originalHTML;
+        }
+        return;
+      }
+
       button.disabled = true;
       button.innerHTML =
         '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i><span>Preparing report…</span>';

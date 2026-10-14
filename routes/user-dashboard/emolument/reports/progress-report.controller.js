@@ -3,6 +3,7 @@
 const path = require("path");
 const BaseReportController = require("../../../../controllers/Reports/reportsFallbackController");
 const reportsService = require("./reports.service");
+const { wantsExcel, sendExcelReport } = require("../report-excel.helper");
 
 const TEMPLATE_PATH = path.join(
   __dirname,
@@ -183,6 +184,69 @@ class ProgressReportController extends BaseReportController {
       }
 
       const now = new Date();
+
+      if (wantsExcel(req)) {
+        const vm = buildViewModel(rows, query, req, now);
+        const sum = { total: 0, submitted: 0, foApproved: 0, cpoConfirmed: 0, notFiled: 0, completed: 0 };
+        const data = rows.map((row, index) => {
+          const total = asNumber(row.total);
+          const completed = asNumber(row.completed);
+          const percent =
+            row.completion_pct !== undefined
+              ? asNumber(row.completion_pct)
+              : total > 0 ? (completed / total) * 100 : 0;
+          sum.total += total;
+          sum.submitted += asNumber(row.submitted);
+          sum.foApproved += asNumber(row.fo_approved);
+          sum.cpoConfirmed += asNumber(row.cpo_confirmed);
+          sum.notFiled += asNumber(row.not_filed);
+          sum.completed += completed;
+          return {
+            sn: index + 1,
+            shipName: row.ship_name || "—",
+            commandName: row.commandName || "—",
+            total,
+            submitted: asNumber(row.submitted),
+            foApproved: asNumber(row.fo_approved),
+            cpoConfirmed: asNumber(row.cpo_confirmed),
+            notFiled: asNumber(row.not_filed),
+            completionPercent: Math.round(percent * 10) / 10,
+          };
+        });
+        const overall = sum.total > 0 ? Math.round((sum.completed / sum.total) * 1000) / 10 : 0;
+
+        return sendExcelReport(res, {
+          title: vm.title,
+          filterSummary: vm.filterSummary,
+          emptyFilterSummary: "All Ships",
+          preparedBy: vm.preparedBy,
+          columns: [
+            { header: "S/N", key: "sn", width: 6, align: "center" },
+            { header: "Ship", key: "shipName", width: 30 },
+            { header: "Command", key: "commandName", width: 28 },
+            { header: "Total", key: "total", width: 10, numeric: true },
+            { header: "Filled", key: "submitted", width: 10, numeric: true },
+            { header: "FO Approved", key: "foApproved", width: 12, numeric: true },
+            { header: "CPO Confirmed", key: "cpoConfirmed", width: 14, numeric: true },
+            { header: "Not Filed", key: "notFiled", width: 11, numeric: true },
+            { header: "Completion %", key: "completionPercent", width: 13, numeric: true, numFmt: '0.0"%"' },
+          ],
+          data,
+          totals: {
+            label: "TOTALS:",
+            values: {
+              4: sum.total,
+              5: sum.submitted,
+              6: sum.foApproved,
+              7: sum.cpoConfirmed,
+              8: sum.notFiled,
+              9: overall,
+            },
+          },
+          filename: "progress-report",
+        });
+      }
+
       const pdfBuffer = await this.generatePDFWithFallback(
         TEMPLATE_PATH,
         buildViewModel(rows, query, req, now),

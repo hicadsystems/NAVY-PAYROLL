@@ -158,6 +158,8 @@ function attachSocketIO(server) {
 async function startServer() {
   await seamlessWrapper.initialize();
   // await emailService.startup();
+  // Long PDF/Excel exports → background jobs (keeps them alive behind Cloudflare)
+  require("./middware/asyncExport").mount(app);
   require("./routes")(app);
 
   const ssl = getSSLOptions();

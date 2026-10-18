@@ -44,6 +44,94 @@
     } catch (e) {}
   }
 
+  var CHUNK_BYTES = 4 * 1024 * 1024;
+
+  // One byte range, retried on network errors
+  async function getChunk(url, headers, start, end) {
+    var lastError = null;
+    for (var attempt = 1; attempt <= 4; attempt++) {
+      try {
+        var h = Object.assign({}, headers, {
+          Range: "bytes=" + start + "-" + end,
+        });
+        var r = await nativeFetch(url, { headers: h, cache: "no-store" });
+        // 404 / 409 / 5xx JSON from the job endpoint → hand back as-is
+        if (r.status !== 206 && r.status !== 200) return { response: r };
+        var buf = await r.arrayBuffer();
+        return { response: r, buf: buf };
+      } catch (e) {
+        lastError = e;
+        console.warn(
+          "[async-export] chunk " + start + "-" + end + " attempt " + attempt + " failed:",
+          e && e.message ? e.message : e,
+        );
+        await sleep(1000 * attempt);
+      }
+    }
+    throw lastError || new Error("download failed");
+  }
+
+  // Pull the finished file in byte ranges and rebuild the original Response
+  // (status, Content-Type, Content-Disposition) in memory, so the caller's
+  // response.ok / .blob() / .json() behave exactly as with a direct download.
+  async function downloadResult(resultUrl, headers, jobId, sourceUrl) {
+    try {
+      var first = await getChunk(resultUrl, headers, 0, CHUNK_BYTES - 1);
+      if (!first.buf) return first.response;
+
+      var r = first.response;
+      var total =
+        parseInt(r.headers.get("X-Export-Size") || "0", 10) || first.buf.byteLength;
+      var status = parseInt(r.headers.get("X-Export-Status") || "200", 10) || 200;
+      var type = r.headers.get("X-Export-Content-Type") || "application/octet-stream";
+      var disposition = r.headers.get("X-Export-Content-Disposition");
+
+      var parts = [first.buf];
+      var received = first.buf.byteLength;
+
+      while (received < total) {
+        var next = await getChunk(
+          resultUrl,
+          headers,
+          received,
+          Math.min(received + CHUNK_BYTES, total) - 1,
+        );
+        if (!next.buf) return next.response;
+        if (next.buf.byteLength === 0) throw new Error("server sent an empty chunk");
+        parts.push(next.buf);
+        received += next.buf.byteLength;
+        emit("async-export:download", {
+          jobId: jobId,
+          url: sourceUrl,
+          received: received,
+          total: total,
+        });
+      }
+
+      if (received !== total) {
+        throw new Error("incomplete download (" + received + " of " + total + " bytes)");
+      }
+
+      var outHeaders = new Headers({
+        "Content-Type": type,
+        "Content-Length": String(total),
+      });
+      if (disposition) outHeaders.set("Content-Disposition", disposition);
+
+      return new Response(new Blob(parts, { type: type }), {
+        status: status,
+        headers: outHeaders,
+      });
+    } catch (e) {
+      return errorResponse(
+        502,
+        "The report was generated but could not be downloaded" +
+          (e && e.message ? " (" + e.message + ")" : "") +
+          ". Please try again.",
+      );
+    }
+  }
+
   async function waitForJob(jobId, authHeader, sourceUrl) {
     var headers = {};
     if (authHeader) headers.Authorization = authHeader;
@@ -89,10 +177,7 @@
       });
 
       if (status.status === "done") {
-        var result = await nativeFetch(statusUrl + "/result", {
-          headers: headers,
-          cache: "no-store",
-        });
+        var result = await downloadResult(statusUrl + "/result", headers, jobId, sourceUrl);
         emit("async-export:done", { jobId: jobId, url: sourceUrl });
         return result;
       }

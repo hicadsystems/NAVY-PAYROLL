@@ -56,18 +56,17 @@ const EXPORT_WORDS = [
 ];
 const EXPORT_FORMATS = new Set(["pdf", "excel", "xlsx"]);
 
-const HOP_BY_HOP = new Set([
-  "connection",
-  "keep-alive",
-  "proxy-authenticate",
-  "proxy-authorization",
-  "te",
-  "trailer",
-  "transfer-encoding",
-  "upgrade",
-  "content-length",
-  "date",
-]);
+// Only these response headers are carried over to the stored result.
+// (etag, CSP, set-cookie, vary, length, encoding… are deliberately dropped)
+function pickResultHeaders(raw) {
+  const out = {};
+  for (const [k, v] of Object.entries(raw || {})) {
+    const key = k.toLowerCase();
+    if (key === "content-type" || key === "content-disposition") out[key] = v;
+    else if (key.startsWith("x-") && key !== "x-powered-by") out[key] = v;
+  }
+  return out;
+}
 
 const jobs = new Map(); // id -> job
 const queue = []; // pending starters
@@ -227,10 +226,7 @@ function replay(job, req) {
       },
       (resp) => {
         job.statusCode = resp.statusCode;
-        job.headers = {};
-        for (const [k, v] of Object.entries(resp.headers)) {
-          if (!HOP_BY_HOP.has(k.toLowerCase())) job.headers[k] = v;
-        }
+        job.headers = pickResultHeaders(resp.headers);
 
         const out = fs.createWriteStream(job.file);
         resp.pipe(out);
@@ -244,7 +240,8 @@ function replay(job, req) {
           finish(job, "failed", `Could not store export: ${err.message}`);
           resolve();
         });
-        out.on("finish", () => {
+        out.on("close", () => {
+          if (job.status === "failed") return resolve();
           try {
             job.size = fs.statSync(job.file).size;
           } catch (_) {
@@ -271,26 +268,36 @@ function replay(job, req) {
 
 // ── Send a finished result ──────────────────────────────────────────────────
 
+// Reads the whole result into memory and sends it with an exact
+// Content-Length. The file is kept until RESULT_TTL_MS so the browser can
+// retry the download if the connection drops mid-transfer.
 function sendResult(job, res) {
   if (res.headersSent) return;
 
-  res.status(job.statusCode || 200);
-  for (const [k, v] of Object.entries(job.headers || {})) {
-    try {
-      res.setHeader(k, v);
-    } catch (_) {}
-  }
-  res.setHeader("Content-Length", String(job.size || 0));
-  res.setHeader("Cache-Control", "no-store");
+  fs.readFile(job.file, (err, buf) => {
+    if (err) {
+      console.error(`❌ asyncExport read ${job.id}:`, err.message);
+      if (!res.headersSent) {
+        res
+          .status(500)
+          .json({ error: "Could not read the generated report. Please try again." });
+      }
+      return;
+    }
 
-  const stream = fs.createReadStream(job.file);
-  stream.on("error", (err) => {
-    console.error(`❌ asyncExport read ${job.id}:`, err.message);
-    if (!res.headersSent) res.status(500);
-    res.end();
+    res.status(job.statusCode || 200);
+    for (const [k, v] of Object.entries(job.headers || {})) {
+      try {
+        res.setHeader(k, v);
+      } catch (_) {}
+    }
+    res.setHeader("Content-Length", String(buf.length));
+    res.setHeader("Cache-Control", "no-store");
+    res.end(buf);
+
+    job.downloads = (job.downloads || 0) + 1;
+    job.lastDownloadAt = Date.now();
   });
-  res.on("finish", () => removeJob(job));
-  stream.pipe(res);
 }
 
 // ── Middleware ──────────────────────────────────────────────────────────────
@@ -373,6 +380,11 @@ function statusHandler(req, res) {
   res.json(publicStatus(job));
 }
 
+// The result is served as neutral binary (no application/pdf, no
+// Content-Disposition) so download managers / extensions don't hijack it,
+// and in byte ranges so the browser pulls it in small chunks it can retry.
+// The original status / type / filename travel in X-Export-* headers and
+// the browser shim rebuilds the real Response from them.
 function resultHandler(req, res) {
   const job = findOwnedJob(req, res);
   if (!job) return;
@@ -383,7 +395,55 @@ function resultHandler(req, res) {
   if (job.status !== "done") {
     return res.status(409).json(publicStatus(job));
   }
-  sendResult(job, res);
+
+  fs.readFile(job.file, (err, buf) => {
+    if (err) {
+      console.error(`❌ asyncExport read ${job.id}:`, err.message);
+      if (!res.headersSent) {
+        res
+          .status(500)
+          .json({ error: "Could not read the generated report. Please try again." });
+      }
+      return;
+    }
+
+    const total = buf.length;
+    const meta = job.headers || {};
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("X-Export-Status", String(job.statusCode || 200));
+    res.setHeader("X-Export-Size", String(total));
+    if (meta["content-type"]) {
+      res.setHeader("X-Export-Content-Type", meta["content-type"]);
+    }
+    if (meta["content-disposition"]) {
+      res.setHeader("X-Export-Content-Disposition", meta["content-disposition"]);
+    }
+
+    const m = /^bytes=(\d+)-(\d*)$/.exec(req.get("range") || "");
+    if (!m) {
+      res.setHeader("Content-Length", String(total));
+      return res.status(200).end(buf);
+    }
+
+    const start = parseInt(m[1], 10);
+    const end = Math.min(m[2] ? parseInt(m[2], 10) : total - 1, total - 1);
+    if (start >= total || start > end) {
+      res.setHeader("Content-Range", `bytes */${total}`);
+      return res.status(416).end();
+    }
+
+    const slice = buf.subarray(start, end + 1);
+    res.setHeader("Content-Range", `bytes ${start}-${end}/${total}`);
+    res.setHeader("Content-Length", String(slice.length));
+    res.status(206).end(slice);
+
+    if (end === total - 1) {
+      job.downloads = (job.downloads || 0) + 1;
+      job.lastDownloadAt = Date.now();
+    }
+  });
 }
 
 // ── Housekeeping ────────────────────────────────────────────────────────────

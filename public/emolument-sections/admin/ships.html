@@ -196,15 +196,15 @@
     aria-modal="true"
     aria-labelledby="ships-report-preview-title"
     onclick="window.closeShipsReportPreview(event)">
-    <div class="bg-gray-50 rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div style="height: 90vh;" class="bg-gray-50 rounded-xl shadow-2xl w-full max-w-6xl overflow-hidden flex flex-col">
       <div class="shrink-0 bg-navy px-5 py-3 flex justify-between items-center gap-3">
         <h3 id="ships-report-preview-title" class="text-sm md:text-lg font-bold text-white">Ships Report</h3>
         <button type="button" onclick="window.closeShipsReportPreview()"
           class="text-white/80 hover:text-white text-2xl leading-none" aria-label="Close report preview">&times;</button>
       </div>
-      <div class="overflow-auto flex-1" style="background:#d1d5db;">
+      <div class="flex-1 overflow-hidden" style="background:#d1d5db; min-height: 0;">
         <iframe id="ships-report-preview-iframe" title="Ships PDF report preview"
-          style="width:100%;height:72vh;min-height:420px;border:none;background:white;display:block;"></iframe>
+          style="width:100%; border:none; background:white; display:block; height: 100%;"></iframe>
       </div>
       <div class="shrink-0 bg-gray-50 border-t border-gray-200 px-5 py-3 flex flex-wrap justify-end gap-2">
         <button type="button" onclick="window.closeShipsReportPreview()"

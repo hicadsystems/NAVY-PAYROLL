@@ -101,19 +101,19 @@
   id="reports-preview-modal"
   class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
 >
-  <div class="bg-gray-50 rounded-xl shadow-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+  <div style="height: 90vh;" class="bg-gray-50 rounded-xl shadow-lg w-full max-w-5xl overflow-hidden flex flex-col">
     <div class="bg-navy px-6 py-3 flex justify-between items-center flex-shrink-0">
       <h3 class="text-white font-bold" id="reports-preview-title">Report Preview</h3>
       <button id="reports-preview-close" class="text-white/80 hover:text-white text-2xl leading-none">
         &times;
       </button>
     </div>
-    <div class="flex-1 overflow-auto" style="background: #d1d5db">
+    <div class="flex-1 overflow-hidden" style="background: #d1d5db; min-height: 0;">
       <iframe
         id="reports-preview-iframe"
         title="Report Preview"
-        class="w-full h-full bg-white"
-        style="min-height: 70vh; border: none; display: block;"
+        class="w-full bg-white"
+        style="border: none; display: block; height: 100%;"
       ></iframe>
     </div>
     <div class="bg-gray-50 border-t border-amber-100 px-6 py-3 flex justify-end gap-2 flex-shrink-0">

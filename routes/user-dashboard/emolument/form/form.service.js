@@ -137,11 +137,42 @@ async function loadForm(serviceNo) {
 
   // loadPersonCore LEFT JOINs ef_emolument_forms on service_no only, so a
   // person with several form rows (previous years / stray drafts) gets an
-  // arbitrary id. Always resolve the row for the current processing year.
-  let formId = core.formId;
+  // arbitrary id. Always resolve the row for the current processing year —
+  // never fall back to another year's row.
+  let formId = formYear ? null : core.formId;
   if (formYear) {
-    const currentId = await repo.getEmolumentFormId(serviceNo, formYear);
-    if (currentId) formId = currentId;
+    let row = await repo.getEmolumentFormRow(serviceNo, formYear);
+
+    // Self-heal: the form is in the workflow (Status set on
+    // ef_personalinfos) but this cycle has no ef_emolument_forms row, or only
+    // a DRAFT one. That happens with legacy/migrated submissions and when the
+    // post-commit upsert in submitForm fails. Without a matching row every
+    // FO/CPO action posts /forms/null/... and gets 404.
+    if (
+      currentFormStatus !== FORM_STATUS.DRAFT &&
+      (!row || row.status === FORM_STATUS.DRAFT)
+    ) {
+      try {
+        await repo.upsertEmolumentForm(
+          serviceNo,
+          formYear,
+          core.formNumber != null ? String(core.formNumber) : null,
+          core.payrollclass,
+          core.ship,
+          core.command,
+          currentFormStatus,
+        );
+        row = await repo.getEmolumentFormRow(serviceNo, formYear);
+        console.warn(
+          `⚠️ loadForm: backfilled ef_emolument_forms for ${serviceNo} ` +
+            `(${formYear}, ${currentFormStatus}) → id ${row?.id ?? "none"}`,
+        );
+      } catch (err) {
+        console.error(`❌ loadForm: form-row backfill failed for ${serviceNo}:`, err);
+      }
+    }
+
+    if (row) formId = row.id;
   }
   if (formYear && currentFormStatus === FORM_STATUS.DRAFT) {
     formId = await repo.initDraftForm(
@@ -268,7 +299,13 @@ async function checkShipCommand(shipName, commandCode) {
 
   if (!ship) return `Ship: ${shipName} is not a recognised ship.`;
   if (!command) return `Command: ${commandCode} is not a recognised command.`;
-  if (!ship.commandCode) return null; // ship has no command mapped — nothing to check
+  // A ship with no command mapped can't be verified, so it can't be accepted.
+  if (!ship.commandCode) {
+    return (
+      `Ship: ${ship.shipName} is not assigned to any command. ` +
+      `Please contact the emolument administrator.`
+    );
+  }
 
   if (String(ship.commandCode).trim() !== String(command.code).trim()) {
     return (
@@ -308,11 +345,21 @@ async function submitForm(serviceNo, body, performedBy, ip) {
   mapGcb(body);
 
   // ── Ship must belong to the selected command ─────────────
-  const mismatch = await checkShipCommand(
-    body?.core?.ship?.trim() || person.ship,
-    body?.core?.command?.trim() || person.command,
-  );
+  // Resolve the values once and write them back into body.core, so what
+  // submitAllTables saves is exactly what was checked. An empty/null field
+  // falls back to the stored value instead of being saved as NULL.
+  if (!body.core) body.core = {};
+  const effShip =
+    String(body.core.ship ?? "").trim() || String(person.ship ?? "").trim();
+  const effCommand =
+    String(body.core.command ?? "").trim() ||
+    String(person.command ?? "").trim();
+
+  const mismatch = await checkShipCommand(effShip, effCommand);
   if (mismatch) return { success: false, code: 400, message: mismatch };
+
+  body.core.ship = effShip;
+  body.core.command = effCommand;
 
   const formNoCol = resolveFormNoColumn(person.payrollclass);
   const formNumber = await repo.getCurrentFormNumber(formNoCol);

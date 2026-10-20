@@ -554,6 +554,23 @@ async function upsertPersonnel(data) {
     dateOfJoining,
   } = data;
 
+  // Keep command in step with the uploaded ship: take it from the ship's own
+  // command (ef_ships.commandid -> ef_commands.code). If the ship doesn't
+  // resolve, command is left as it is (NULL for a new row).
+  let shipCommand = null;
+  if (ship) {
+    const [cmdRows] = await pool.query(
+      `SELECT c.code
+         FROM ef_ships s
+         JOIN ef_commands c ON c.Id = s.commandid
+        WHERE TRIM(s.shipName) = TRIM(?)
+        ORDER BY s.Id ASC
+        LIMIT 1`,
+      [ship],
+    );
+    shipCommand = cmdRows[0]?.code ?? null;
+  }
+
   const [existing] = await pool.query(
     `SELECT serviceNumber FROM ef_personalinfos WHERE serviceNumber = ? LIMIT 1`,
     [serviceNumber],
@@ -563,9 +580,9 @@ async function upsertPersonnel(data) {
     await pool.query(
       `INSERT INTO ef_personalinfos
          (serviceNumber, Surname, OtherName, email, gsm_number, Rank,
-          ship, AccountName, BankACNumber, Bankcode, DateEmpl,
+          ship, command, AccountName, BankACNumber, Bankcode, DateEmpl,
           Birthdate, classes, payrollclass)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         serviceNumber,
         surname,
@@ -574,6 +591,7 @@ async function upsertPersonnel(data) {
         phoneNumber,
         rank,
         ship ?? null,
+        shipCommand,
         `${surname} ${otherName}`,
         accountNo ?? null,
         bankCode ?? null,
@@ -595,6 +613,7 @@ async function upsertPersonnel(data) {
            gsm_number   = ?,
            Rank         = ?,
            ship         = ?,
+           command      = COALESCE(?, command),
            AccountName  = ?,
            BankACNumber = ?,
            Bankcode     = ?,
@@ -610,6 +629,7 @@ async function upsertPersonnel(data) {
         phoneNumber,
         rank,
         ship ?? null,
+        shipCommand,
         `${surname} ${otherName}`,
         accountNo ?? null,
         bankCode ?? null,

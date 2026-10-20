@@ -42,13 +42,16 @@ async function getProcessingYear(isTraining = false) {
 // command CODE (ef_commands.code) and the ship NAME (ef_ships.shipName).
 async function getShipCommandMatch(shipName, commandCode) {
   pool.useDatabase(DB());
+  // If the same ship name exists more than once, prefer the row under the
+  // selected command, then the lowest Id — never an arbitrary row.
   const [shipRows] = await pool.query(
     `SELECT s.shipName, s.commandid, c.code AS commandCode, c.commandName
        FROM ef_ships s
        LEFT JOIN ef_commands c ON c.Id = s.commandid
       WHERE TRIM(s.shipName) = TRIM(?)
+      ORDER BY (TRIM(c.code) = TRIM(?)) DESC, s.Id ASC
       LIMIT 1`,
-    [shipName],
+    [shipName, commandCode],
   );
   const [cmdRows] = await pool.query(
     `SELECT code, commandName FROM ef_commands WHERE TRIM(code) = TRIM(?) LIMIT 1`,
@@ -849,6 +852,19 @@ async function insertFormApproval({
   );
 }
 
+// Same row getEmolumentFormId picks, with its status.
+async function getEmolumentFormRow(serviceNo, formYear) {
+  pool.useDatabase(DB());
+  const [rows] = await pool.query(
+    `SELECT id, status FROM ef_emolument_forms
+     WHERE service_no = ? AND form_year = ?
+     ORDER BY (status <> 'DRAFT') DESC, id DESC
+     LIMIT 1`,
+    [serviceNo, formYear],
+  );
+  return rows[0] || null;
+}
+
 async function getEmolumentFormId(serviceNo, formYear) {
   pool.useDatabase(DB());
   const [rows] = await pool.query(
@@ -886,7 +902,13 @@ async function getFormOptions() {
       ),
       pool.query("SELECT code as id, commandName AS name FROM ef_commands"),
       pool.query("SELECT code AS id, branchName AS name FROM ef_branches"),
-      pool.query("SELECT Id AS id, shipName AS name, code FROM ef_ships"),
+      // commandCode = the command the ship belongs to (ef_ships.commandid ->
+      // ef_commands.code) — the same rule the submit check uses.
+      pool.query(
+        `SELECT s.Id AS id, s.shipName AS name, s.code, c.code AS commandCode
+           FROM ef_ships s
+           LEFT JOIN ef_commands c ON c.Id = s.commandid`,
+      ),
       pool.query(
         "SELECT Id AS id, specname AS name FROM ef_specialisationareas",
       ),
@@ -945,6 +967,7 @@ module.exports = {
   submitAllTables,
   initDraftForm,
   getShipCommandMatch,
+  getEmolumentFormRow,
   upsertEmolumentForm,
   getCurrentFormNumber,
   incrementFormNumber,

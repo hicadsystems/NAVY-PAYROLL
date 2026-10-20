@@ -2214,7 +2214,7 @@
           populateSelect(
             "ship",
             formOptions.ships.filter(
-              (s) => String(s.code) === String(data.command),
+              (s) => String(s.commandCode ?? "").trim() === String(data.command).trim(),
             ),
             true,
           );
@@ -2769,7 +2769,7 @@
             populateSelect(
               "ship",
               formOptions.ships.filter(
-                (s) => String(s.code) === String(this.value),
+                (s) => String(s.commandCode ?? "").trim() === String(this.value).trim(),
               ),
               true, // useName=true, matching your existing ship populate call
             );
@@ -2788,7 +2788,7 @@
         return (formOptions?.ships || []).some(
           (s) =>
             String(s.name).trim() === String(shipName).trim() &&
-            String(s.code).trim() === String(commandId).trim(),
+            String(s.commandCode ?? "").trim() === String(commandId).trim(),
         );
       }
 
@@ -3065,6 +3065,16 @@
 
         const svcno = formData?.serviceNumber;
         const formId = formData?.formId;
+
+        // Every action except admin-accept is keyed by the form row id.
+        if (actionType !== "admin-accept" && !formId) {
+          showToast(
+            "This form has no record for the current cycle. Reload the page and try again; if it persists, contact the emolument administrator.",
+            "error",
+          );
+          return;
+        }
+
         const btn = document.getElementById("roleActionConfirmBtn");
         btn.disabled = true;
         btn.textContent = "Processing…";

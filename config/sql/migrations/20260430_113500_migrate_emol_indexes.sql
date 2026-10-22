@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: migrate_emol_indexes
 -- Created: 2026-04-30T11:35:00.792Z
 

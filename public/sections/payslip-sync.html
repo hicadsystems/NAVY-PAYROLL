@@ -1,0 +1,790 @@
+<!-- PAYSLIP SYNC CONSOLE (Utilities → Payslip Sync) -->
+<!-- Upload a package from the payroll network, check it, Go live, withdraw, roll back. -->
+<style>
+  .ps-chip { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .4rem; padding: .3rem .7rem; border-radius: 9999px; font-size: .78rem; border: 1px solid #e5e7eb; background: #f9fafb; color: #374151; max-width: 100%; }
+  @media (max-width: 640px) { .ps-chip { border-radius: .6rem; } }
+  .ps-chip b { font-weight: 600; color: #111827; }
+  .ps-chip.warn { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+  .ps-chip.good { background: #ecfdf5; border-color: #6ee7b7; color: #065f46; }
+  .ps-chip.bad { background: #fef2f2; border-color: #fca5a5; color: #991b1b; }
+  .ps-tab { padding: .5rem 1rem; font-size: .9rem; color: #4b5563; border-bottom: 2px solid transparent; cursor: pointer; }
+  .ps-tab.active { color: #1d4ed8; border-color: #1d4ed8; font-weight: 600; }
+  .ps-card { border: 1px solid #e5e7eb; border-radius: .6rem; background: #fff; padding: 1rem; }
+  .ps-table { width: 100%; font-size: .85rem; border-collapse: collapse; }
+  .ps-table th { text-align: left; font-weight: 600; color: #4b5563; background: #f9fafb; padding: .5rem .6rem; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+  .ps-table td { padding: .5rem .6rem; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+  .ps-num { font-variant-numeric: tabular-nums; text-align: right; }
+  .ps-bar { height: 10px; border-radius: 9999px; background: #e5e7eb; overflow: hidden; }
+  .ps-bar > div { height: 100%; background: #2563eb; transition: width .3s; }
+  .ps-timing { display: flex; height: 22px; border-radius: .4rem; overflow: hidden; font-size: .7rem; color: #fff; }
+  .ps-timing > div { display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: nowrap; min-width: 2px; }
+  .ps-status { font-size: .75rem; padding: .1rem .5rem; border-radius: 9999px; background: #f3f4f6; color: #374151; white-space: nowrap; }
+  .ps-status.prepared { background: #fffbeb; color: #92400e; }
+  .ps-status.live, .ps-status.published, .ps-status.applied { background: #ecfdf5; color: #065f46; }
+  .ps-status.failed, .ps-status.rejected { background: #fef2f2; color: #991b1b; }
+  .ps-status.withdrawn, .ps-status.rolled_back, .ps-status.partly_rolled_back { background: #eef2ff; color: #3730a3; }
+  .ps-status.checking, .ps-status.checked { background: #ecfeff; color: #155e75; }
+  .ps-status.check_failed { background: #fef2f2; color: #991b1b; }
+  .ps-status.superseded { background: #f3f4f6; color: #9ca3af; }
+  .ps-approve { background: #d97706; }
+  .ps-approve:hover { background: #b45309; }
+  .ps-modal-box { width: 28rem; max-width: 92vw; }
+  .ps-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+</style>
+
+<section class="p-3" id="payslipSync">
+  <!-- Title row -->
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+    <div>
+      <h2 class="text-xl font-bold text-gray-800">Payslip sync</h2>
+      <p class="text-sm text-gray-500">Load a month from the payroll network and publish it to staff payslips.</p>
+    </div>
+    <div class="flex gap-2">
+      <button id="psUploadBtn" class="px-4 py-2 rounded-lg border border-blue-600 text-blue-700 hover:bg-blue-50 text-sm font-medium">
+        <i class="fas fa-upload mr-1"></i> Upload package
+      </button>
+      <button id="psGoLiveBtn" class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+        <i class="fas fa-bolt mr-1"></i> Go live
+      </button>
+    </div>
+  </div>
+
+  <!-- Status chips -->
+  <div id="psChips" class="flex flex-wrap gap-2 mb-4">
+    <span class="ps-chip">Loading…</span>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex border-b border-gray-200 mb-4 overflow-x-auto">
+    <div class="ps-tab active" data-tab="overview">Overview</div>
+    <div class="ps-tab" data-tab="upload">Upload</div>
+    <div class="ps-tab" data-tab="runs">Runs</div>
+    <div class="ps-tab" data-tab="publications">Publications</div>
+    <div class="ps-tab" data-tab="checks">Checks</div>
+  </div>
+
+  <!-- Overview -->
+  <div data-panel="overview">
+    <div id="psCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+    <p class="text-xs text-gray-500 mt-3">While a month is prepared but not live, staff still see the previous month.</p>
+  </div>
+
+  <!-- Upload -->
+  <div data-panel="upload" class="hidden">
+    <div class="ps-card max-w-3xl">
+      <label class="block text-sm font-medium text-gray-700 mb-2">Package file (.npsync) from the approved media</label>
+      <input id="psFile" type="file" accept=".npsync"
+        class="block w-full border border-blue-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+
+      <div id="psPreview" class="hidden mt-4">
+        <table class="ps-table"><tbody id="psPreviewBody"></tbody></table>
+        <p class="text-xs text-gray-500 mt-2">Compare the fingerprint with the one written in the media log before uploading.</p>
+      </div>
+
+      <div id="psRefusal" class="hidden mt-4 p-3 rounded-lg bg-red-50 text-red-800 text-sm"></div>
+
+      <div id="psProgress" class="hidden mt-4">
+        <div class="flex justify-between text-sm mb-1"><span id="psProgressLabel">Uploading…</span><span id="psProgressPct" class="ps-mono">0%</span></div>
+        <div class="ps-bar"><div id="psProgressBar" style="width:0%"></div></div>
+      </div>
+
+      <label class="flex items-start gap-2 mt-4 text-sm text-gray-700">
+        <input id="psCheckOnly" type="checkbox" class="mt-1" />
+        <span><b>Check only</b>: verify, decrypt and compare everything with this database, load nothing. You can load it afterwards with one click.</span>
+      </label>
+      <div class="flex gap-2 mt-3">
+        <button id="psStartUpload" class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium disabled:opacity-40" disabled>Upload</button>
+        <button id="psResumeUpload" class="hidden px-4 py-2 rounded-lg border border-blue-600 text-blue-700 hover:bg-blue-50 text-sm">Resume</button>
+        <button id="psCancelUpload" class="hidden px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm">Cancel</button>
+      </div>
+
+      <!-- Approval of a new exporter (super admin) -->
+      <div id="psApproval" class="hidden mt-5 p-4 rounded-lg border border-yellow-300 bg-amber-50 text-sm">
+        <p class="font-semibold text-amber-800 mb-1">New exporter</p>
+        <p id="psApprovalText" class="text-amber-800 mb-3"></p>
+        <div id="psApprovalForm" class="hidden">
+          <label class="block text-xs text-amber-800 mb-1">Type the key id shown on the exporter's screen (read out by the payroll officer or written in the media log)</label>
+          <div class="flex gap-2">
+            <input id="psApprovalKey" class="ps-mono border border-yellow-300 rounded px-3 py-2 w-64 uppercase" placeholder="XXXX-XXXX-XXXX-XXXX" />
+            <button id="psApproveBtn" class="px-4 py-2 rounded-lg ps-approve text-white">Approve and continue</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Processing result -->
+      <div id="psRunResult" class="hidden mt-5"></div>
+    </div>
+  </div>
+
+  <!-- Runs -->
+  <div data-panel="runs" class="hidden">
+    <div class="ps-card overflow-x-auto">
+      <table class="ps-table">
+        <thead><tr>
+          <th>Date</th><th>Seq</th><th>Kind</th><th>Period</th><th>Status</th>
+          <th class="ps-num">Rows</th><th class="ps-num">MB</th><th class="ps-num">Machine time</th><th>Uploaded by</th><th></th>
+        </tr></thead>
+        <tbody id="psRunsBody"><tr><td colspan="10" class="text-gray-500">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div id="psRunDetail" class="hidden ps-card mt-4"></div>
+  </div>
+
+  <!-- Publications -->
+  <div data-panel="publications" class="hidden">
+    <div class="ps-card overflow-x-auto">
+      <table class="ps-table">
+        <thead><tr>
+          <th>Period</th><th>Database</th><th>Status</th><th class="ps-num">Staff</th><th class="ps-num">Total net</th>
+          <th>Seq</th><th>Published</th><th>Withdrawn / rolled back</th><th></th>
+        </tr></thead>
+        <tbody id="psPubsBody"><tr><td colspan="9" class="text-gray-500">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Checks -->
+  <div data-panel="checks" class="hidden">
+    <div class="ps-card max-w-4xl">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div>
+          <div class="font-semibold text-gray-800">System checks</div>
+          <div class="text-xs text-gray-500">Run with the database login the website uses for sync. Nothing is changed.</div>
+        </div>
+        <div class="flex gap-2">
+          <button id="psRunChecks" class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium">Run checks</button>
+          <button id="psProbeSwitch" class="px-4 py-2 rounded-lg border border-blue-600 text-blue-700 hover:bg-blue-50 text-sm">Test the Go live switch</button>
+        </div>
+      </div>
+      <div id="psChecksBody" class="text-sm text-gray-500">Click Run checks.</div>
+      <p class="text-xs text-gray-500 mt-3">The Go live switch test copies <span class="ps-mono">py_stdrate</span> in each database, swaps the copy in and straight back in one step, then removes it. Staff never see a difference.</p>
+    </div>
+  </div>
+
+  <!-- Confirm modal -->
+  <div id="psModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-lg ps-modal-box p-6">
+      <h3 id="psModalTitle" class="text-lg font-semibold text-gray-800 mb-2"></h3>
+      <div id="psModalBody" class="text-sm text-gray-700 mb-5"></div>
+      <div class="flex justify-end gap-2">
+        <button id="psModalCancel" class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm">Cancel</button>
+        <button id="psModalOk" class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium">Confirm</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  (function () {
+    const API = "/api/sync";
+    const DB_LABELS = {
+      officers: "Officers", wofficers: "Warrant officers", ratings: "Ratings",
+      ratingsA: "Ratings A", ratingsB: "Ratings B", juniorTrainee: "Junior trainee",
+    };
+    const HEADER_BYTES = 12 + 16384; // magic + length + reserved header (Package format)
+    const FIFTEEN_MIN = 15 * 60 * 1000;
+    const root = document.getElementById("payslipSync");
+    const $ = (id) => document.getElementById(id);
+
+    let status = null;
+    let file = null;
+    let fileHeader = null;
+    let upload = null; // { fingerprint, chunkSize, chunkCount, held:Set }
+    let cancelled = false;
+    let pollTimer = null;
+
+    // ── helpers ──────────────────────────────────────────
+    function token() {
+      return localStorage.getItem("token");
+    }
+    async function call(method, path, body, raw) {
+      const headers = { Authorization: `Bearer ${token()}` };
+      let payload;
+      if (raw) {
+        headers["Content-Type"] = "application/octet-stream";
+        payload = raw;
+      } else if (body !== undefined) {
+        headers["Content-Type"] = "application/json";
+        payload = JSON.stringify(body);
+      }
+      const res = await fetch(API + path, { method, headers, body: payload });
+      let json = {};
+      try { json = await res.json(); } catch (_) {}
+      if (!res.ok || json.success === false) {
+        const err = new Error(json.message || `Request failed (${res.status})`);
+        err.code = json.code; err.status = res.status; err.body = json;
+        throw err;
+      }
+      return json.data;
+    }
+    const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const periodLabel = (p) => {
+      if (!p || String(p).length !== 6) return p || "—";
+      const d = new Date(Number(String(p).slice(0, 4)), Number(String(p).slice(4)) - 1, 1);
+      return d.toLocaleString(undefined, { month: "short", year: "numeric" });
+    };
+    const fmtNum = (n) => (n == null || n === "" ? "—" : Number(n).toLocaleString());
+    const fmtMoney = (n) => (n == null || n === "" ? "—" : Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    const fmtDate = (d) => (d ? new Date(String(d).replace(" ", "T")).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "—");
+    const fmtMs = (ms) => {
+      if (ms == null) return "—";
+      const s = Math.round(ms / 1000);
+      return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, "0")} s`;
+    };
+    const fmtMB = (b) => (b ? (Number(b) / 1048576).toFixed(1) : "—");
+    const statusBadge = (s) => `<span class="ps-status ${esc(s)}">${esc(String(s || "").replace(/_/g, " "))}</span>`;
+
+    function confirmBox(title, html, okLabel = "Confirm", danger = false) {
+      return new Promise((resolve) => {
+        $("psModalTitle").textContent = title;
+        $("psModalBody").innerHTML = html;
+        const ok = $("psModalOk");
+        ok.textContent = okLabel;
+        ok.className = `px-4 py-2 rounded-lg text-white text-sm font-medium ${danger ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"}`;
+        $("psModal").classList.remove("hidden");
+        const done = (v) => { $("psModal").classList.add("hidden"); ok.onclick = null; $("psModalCancel").onclick = null; resolve(v); };
+        ok.onclick = () => done(true);
+        $("psModalCancel").onclick = () => done(false);
+      });
+    }
+    function toast(msg, ok = true) {
+      if (window.showNotification) return window.showNotification(msg, ok ? "success" : "error");
+      let box = document.getElementById("psToasts");
+      if (!box) {
+        box = document.createElement("div");
+        box.id = "psToasts";
+        box.className = "fixed bottom-4 right-4 z-50 flex flex-col gap-2";
+        document.body.appendChild(box);
+      }
+      const t = document.createElement("div");
+      t.className = `px-4 py-3 rounded-lg shadow text-sm text-white ${ok ? "bg-green-600" : "bg-red-600"}`;
+      t.textContent = msg;
+      box.appendChild(t);
+      setTimeout(() => t.remove(), 6000);
+    }
+
+    // ── tabs ─────────────────────────────────────────────
+    function showTab(name) {
+      root.querySelectorAll(".ps-tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
+      root.querySelectorAll("[data-panel]").forEach((p) => p.classList.toggle("hidden", p.dataset.panel !== name));
+      if (name === "runs") loadRuns();
+      if (name === "publications") loadStatus().then(loadPublications);
+      if (name === "overview") loadStatus();
+    }
+    root.querySelectorAll(".ps-tab").forEach((t) => t.addEventListener("click", () => showTab(t.dataset.tab)));
+    $("psUploadBtn").addEventListener("click", () => showTab("upload"));
+
+    // ── status chips + overview ──────────────────────────
+    async function loadStatus() {
+      try {
+        status = await call("GET", "/status");
+      } catch (e) {
+        $("psChips").innerHTML = `<span class="ps-chip bad">${esc(e.message)}</span>`;
+        return;
+      }
+      const s = status;
+      const chips = [];
+      chips.push(s.lastPackage
+        ? `<span class="ps-chip">Last package <b>seq ${esc(s.lastPackage.seq)}</b> · ${esc(periodLabel(s.lastPackage.period))} · ${statusBadge(s.lastPackage.status)}</span>`
+        : `<span class="ps-chip">No package yet</span>`);
+      const live = s.databases.map((d) => d.livePeriod).filter(Boolean).sort().pop();
+      chips.push(`<span class="ps-chip">Live period <b>${esc(periodLabel(live))}</b></span>`);
+      if (s.prepared) chips.push(`<span class="ps-chip warn">Prepared, not live: <b>${esc(periodLabel(s.prepared.period))}</b> (seq ${esc(s.prepared.seq)})</span>`);
+      if (s.lastPublish) {
+        const over = s.lastPublish.machineMs > FIFTEEN_MIN;
+        chips.push(`<span class="ps-chip ${over ? "bad" : "good"}">Last publish ${esc(fmtDate(s.lastPublish.at))} · machine time <b>${esc(fmtMs(s.lastPublish.machineMs))}</b></span>`);
+      }
+      $("psChips").innerHTML = chips.join("");
+      $("psGoLiveBtn").disabled = !s.prepared;
+
+      $("psCards").innerHTML = s.databases.map((d) => `
+        <div class="ps-card">
+          <div class="flex items-center justify-between mb-2">
+            <div class="font-semibold text-gray-800">${esc(DB_LABELS[d.database] || d.database)}</div>
+            <div class="text-xs text-gray-400 ps-mono">${esc(d.schema || "not configured")}</div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div><div class="text-xs text-gray-500">Live month</div><div class="font-medium">${esc(periodLabel(d.livePeriod))}</div></div>
+            <div><div class="text-xs text-gray-500">Prepared</div><div class="font-medium ${d.preparedPeriod ? "text-amber-700" : ""}">${esc(d.preparedPeriod ? periodLabel(d.preparedPeriod) : "—")}</div></div>
+            <div><div class="text-xs text-gray-500">Staff</div><div class="ps-mono">${esc(fmtNum(d.preparedStaff != null ? d.preparedStaff : d.liveStaff))}</div></div>
+            <div><div class="text-xs text-gray-500">Total net</div><div class="ps-mono">${esc(fmtMoney(d.preparedNet != null ? d.preparedNet : d.liveNet))}</div></div>
+          </div>
+        </div>`).join("");
+    }
+
+    // ── Go live ──────────────────────────────────────────
+    $("psGoLiveBtn").addEventListener("click", async () => {
+      if (!status || !status.prepared) return;
+      const p = status.prepared;
+      const rows = status.databases.filter((d) => d.preparedPeriod).map((d) =>
+        `<tr><td>${esc(DB_LABELS[d.database] || d.database)}</td><td class="ps-num">${esc(fmtNum(d.preparedStaff))}</td><td class="ps-num">${esc(fmtMoney(d.preparedNet))}</td></tr>`).join("");
+      const ok = await confirmBox(`Go live: ${periodLabel(p.period)}`,
+        `<p class="mb-3">Staff will see <b>${esc(periodLabel(p.period))}</b> payslips from package seq ${esc(p.seq)} as soon as you confirm.</p>
+         <table class="ps-table"><thead><tr><th>Database</th><th class="ps-num">Staff</th><th class="ps-num">Total net</th></tr></thead><tbody>${rows}</tbody></table>`,
+        "Go live");
+      if (!ok) return;
+      $("psGoLiveBtn").disabled = true;
+      try {
+        const r = await call("POST", "/golive", { period: p.period });
+        toast(`${periodLabel(p.period)} is live (${fmtMs(r.ms)}).`);
+      } catch (e) {
+        toast(e.message, false);
+      }
+      loadStatus();
+    });
+
+    // ── Upload ───────────────────────────────────────────
+    function resetUploadUi() {
+      $("psRefusal").classList.add("hidden");
+      $("psProgress").classList.add("hidden");
+      $("psApproval").classList.add("hidden");
+      $("psRunResult").classList.add("hidden");
+      $("psResumeUpload").classList.add("hidden");
+      $("psCancelUpload").classList.add("hidden");
+      if (pollTimer) clearTimeout(pollTimer);
+    }
+    function fpOf(h) {
+      return String((h && h.payloadSha256) || "").slice(0, 12).toUpperCase().replace(/(.{4})(?=.)/g, "$1-");
+    }
+
+    // The file was uploaded before (e.g. with Check only) but not loaded yet.
+    function receivedNotLoaded(fingerprint) {
+      const box = $("psRefusal");
+      box.innerHTML = `<p class="mb-2"><b>Already received</b>, not loaded yet. There is no need to upload it again.</p>
+        <div class="flex flex-wrap gap-2">
+          <button id="psLoadReceived" class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium">Load and prepare</button>
+          <button id="psCheckReceived" class="px-4 py-2 rounded-lg border border-blue-600 text-blue-700 hover:bg-blue-50 text-sm">Check again</button>
+        </div>`;
+      box.classList.remove("hidden");
+      const go = async (path) => {
+        try {
+          const out = await call("POST", `/packages/${fingerprint}/${path}`);
+          box.classList.add("hidden");
+          watchRun(out.runUuid);
+        } catch (err) {
+          toast(err.message, false);
+        }
+      };
+      $("psLoadReceived").onclick = () => go("reprocess");
+      $("psCheckReceived").onclick = () => go("check");
+    }
+
+    function refuse(msg) {
+      $("psRefusal").textContent = msg;
+      $("psRefusal").classList.remove("hidden");
+    }
+
+    $("psFile").addEventListener("change", async (ev) => {
+      resetUploadUi();
+      file = ev.target.files[0] || null;
+      fileHeader = null;
+      upload = null;
+      $("psPreview").classList.add("hidden");
+      $("psStartUpload").disabled = true;
+      if (!file) return;
+      try {
+        const buf = await file.slice(0, HEADER_BYTES).arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        const magic = new TextDecoder().decode(bytes.slice(0, 8));
+        if (magic !== "NPSYNC01") return refuse("This is not a payslip package.");
+        const len = new DataView(buf).getUint32(8, false);
+        if (len > 1024 * 1024 || 12 + len > bytes.length) return refuse("The package header is damaged. Export again.");
+        fileHeader = JSON.parse(new TextDecoder().decode(bytes.slice(12, 12 + len)).trim());
+      } catch (e) {
+        return refuse("The package header is damaged. Export again.");
+      }
+      const h = fileHeader;
+      const fp = String(h.payloadSha256 || "").slice(0, 12).toUpperCase().replace(/(.{4})(?=.)/g, "$1-");
+      const dryRun = /dry/i.test(h.kind || "") || h.dryrunOf;
+      $("psPreviewBody").innerHTML = [
+        ["File", `${esc(file.name)} · ${fmtMB(file.size)} MB`],
+        ["Kind", esc(h.kind)],
+        ["Period", esc(periodLabel(h.period))],
+        ["Sequence", `${esc(h.seq)}${h.baseSeq != null ? ` (follows ${esc(h.baseSeq)})` : ""}`],
+        ["Databases", esc((h.databases || []).map((d) => DB_LABELS[d] || d).join(", "))],
+        ["Exporter", `${esc(h.exporterId)} · ${esc(h.operator || "")}`],
+        ["Created", esc(fmtDate(h.createdAt))],
+        ["Fingerprint", `<span class="ps-mono text-lg font-semibold">${esc(fp)}</span>`],
+      ].map(([k, v]) => `<tr><th style="width:8rem">${k}</th><td>${v}</td></tr>`).join("");
+      $("psPreview").classList.remove("hidden");
+      if (dryRun) return refuse("Dry-run packages are for timing only.");
+      $("psStartUpload").disabled = false;
+    });
+
+    async function startOrResume() {
+      if (!file || !fileHeader) return;
+      $("psStartUpload").disabled = true;
+      $("psResumeUpload").classList.add("hidden");
+      $("psRefusal").classList.add("hidden");
+      cancelled = false;
+      try {
+        const s = await call("POST", "/packages", { header: fileHeader, totalBytes: file.size });
+        upload = { fingerprint: s.fingerprint, chunkSize: s.chunkSize, chunkCount: s.chunkCount, held: new Set(s.chunksHeld || []) };
+      } catch (e) {
+        $("psStartUpload").disabled = false;
+        if (e.code === "duplicate" && e.body && e.body.packageStatus === "received") {
+          return receivedNotLoaded(fpOf(fileHeader));
+        }
+        return refuse(e.message);
+      }
+      $("psProgress").classList.remove("hidden");
+      $("psCancelUpload").classList.remove("hidden");
+      const started = Date.now();
+      try {
+        for (let n = 0; n < upload.chunkCount; n++) {
+          if (cancelled) return;
+          if (upload.held.has(n)) { progress(); continue; }
+          const blob = file.slice(n * upload.chunkSize, Math.min(file.size, (n + 1) * upload.chunkSize));
+          let tries = 0;
+          for (;;) {
+            try {
+              await call("PUT", `/packages/${upload.fingerprint}/chunks/${n}`, undefined, blob);
+              break;
+            } catch (e) {
+              if (++tries >= 3 || (e.status && e.status < 500 && e.status !== 408)) throw e;
+              await new Promise((r) => setTimeout(r, 1500 * tries));
+            }
+          }
+          upload.held.add(n);
+          progress(started);
+        }
+        $("psProgressLabel").textContent = "Upload complete. Checking…";
+        $("psCancelUpload").classList.add("hidden");
+        const r = await call("POST", `/packages/${upload.fingerprint}/complete`, { checkOnly: $("psCheckOnly").checked });
+        watchRun(r.runUuid);
+      } catch (e) {
+        if (cancelled) return;
+        $("psProgressLabel").textContent = "Upload interrupted.";
+        $("psResumeUpload").classList.remove("hidden");
+        refuse(`${e.message} Check the connection, then Resume. Only the missing parts are sent again.`);
+      }
+    }
+    function progress(started) {
+      const pct = Math.round((upload.held.size / upload.chunkCount) * 100);
+      $("psProgressBar").style.width = pct + "%";
+      $("psProgressPct").textContent = pct + "%";
+      if (started) {
+        const secs = Math.max(1, (Date.now() - started) / 1000);
+        $("psProgressLabel").textContent = `Uploading… ${fmtMB(upload.held.size * upload.chunkSize)} of ${fmtMB(file.size)} MB · ${Math.round(secs)} s`;
+      }
+    }
+    $("psStartUpload").addEventListener("click", startOrResume);
+    $("psResumeUpload").addEventListener("click", startOrResume);
+    $("psCancelUpload").addEventListener("click", async () => {
+      if (!upload) return;
+      cancelled = true;
+      try { await call("POST", `/packages/${upload.fingerprint}/cancel`); } catch (_) {}
+      resetUploadUi();
+      $("psStartUpload").disabled = false;
+      toast("Upload cancelled.");
+    });
+
+    // ── processing result ────────────────────────────────
+    function watchRun(runUuid) {
+      const box = $("psRunResult");
+      box.classList.remove("hidden");
+      const tick = async () => {
+        let r;
+        try {
+          r = await call("GET", `/runs/${runUuid}`);
+        } catch (e) {
+          box.innerHTML = `<div class="p-3 rounded-lg bg-red-50 text-red-800 text-sm">${esc(e.message)}</div>`;
+          return;
+        }
+        if (r.error_code === "unknown-exporter" && r.status === "received") {
+          showApproval(r);
+          return;
+        }
+        if (["checked", "check_failed"].includes(r.status)) {
+          $("psProgress").classList.add("hidden");
+          box.innerHTML = checkReport(r, true);
+          const lp = $("psLoadAfterCheck");
+          if (lp) lp.onclick = async () => {
+            lp.disabled = true;
+            try {
+              const out = await call("POST", `/packages/${r.fingerprint}/reprocess`);
+              watchRun(out.runUuid);
+            } catch (e) { toast(e.message, false); lp.disabled = false; }
+          };
+          loadStatus();
+          return;
+        }
+        if (["received", "verifying", "loading", "validating", "checking"].includes(r.status)) {
+          box.innerHTML = `<div class="text-sm text-gray-700"><i class="fas fa-spinner fa-spin mr-2"></i>${esc(r.status)}${r.stage ? ` · ${esc(r.stage)}` : ""}</div>`;
+          pollTimer = setTimeout(tick, 1500);
+          return;
+        }
+        $("psProgress").classList.add("hidden");
+        box.innerHTML = resultCards(r);
+        loadStatus();
+      };
+      tick();
+    }
+
+    // Report of a "check only" run
+    function checkReport(r, withLoadButton) {
+      const c = (r.summary && r.summary.check) || null;
+      if (!c) {
+        return `<div class="p-4 rounded-lg bg-red-50 text-red-800 text-sm"><p class="font-semibold mb-1">Check failed</p><p>${esc(r.error || r.error_code)}</p></div>`;
+      }
+      const icon = (st) => st === "ok" ? '<span class="text-green-700">✔</span>' : st === "warn" ? '<span class="text-amber-700">!</span>' : '<span class="text-red-700">✘</span>';
+      const items = c.items.map((i) => `<tr><td class="w-6">${icon(i.status)}</td><td class="font-medium">${esc(i.label)}</td><td>${esc(i.detail)}</td></tr>`).join("");
+      const rows = c.tables.map((t) => `<tr>
+          <td>${esc(DB_LABELS[t.database] || t.database)}</td>
+          <td class="ps-mono">${esc(t.table)}${t.scope ? ` <span class="text-xs text-gray-500">${esc(Object.entries(t.scope).map(([k, v]) => `${k} ${v}`).join(", "))}</span>` : ""}</td>
+          <td class="text-xs">${esc(t.mode || "")}${t.applyAt ? ` · ${esc(t.applyAt)}` : ""}</td>
+          <td class="ps-num">${esc(fmtNum(t.rows))}</td>
+          <td>${t.problems && t.problems.length ? `<span class="text-red-700">${esc(t.problems.join("; "))}</span>` : '<span class="text-green-700">ok</span>'}${t.note ? ` <span class="text-xs text-gray-500">${esc(t.note)}</span>` : ""}${t.warnings && t.warnings.length ? `<div class="text-xs text-amber-700">${esc(t.warnings.join("; "))}</div>` : ""}</td></tr>`).join("");
+      const totals = Object.entries(c.totals || {}).map(([d, t]) => `<span class="ps-chip">${esc(DB_LABELS[d] || d)}: staff <b>${esc(fmtNum(t && t.staffCount))}</b> · net <b>${esc(fmtMoney(t && t.totalNet))}</b></span>`).join(" ");
+      const ok = r.status === "checked";
+      return `<div class="p-3 mb-3 rounded-lg ${ok ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"} text-sm">
+          <b>${ok ? "Package checks out." : "Problems found."}</b> Nothing was loaded.${ok && withLoadButton ? " Load it when you are ready." : ""}
+        </div>
+        <table class="ps-table mb-3"><tbody>${items}</tbody></table>
+        ${totals ? `<div class="flex flex-wrap gap-2 mb-3">${totals}</div>` : ""}
+        <div class="overflow-x-auto"><table class="ps-table"><thead><tr><th>Database</th><th>Table</th><th>Applied</th><th class="ps-num">Rows</th><th>Check</th></tr></thead><tbody>${rows}</tbody></table></div>
+        ${ok && withLoadButton ? `<button id="psLoadAfterCheck" class="mt-3 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium">Load and prepare</button>` : ""}`;
+    }
+
+    function resultCards(r) {
+      const s = r.summary || {};
+      if (r.status === "failed") {
+        const list = (s.failures || []).map((f) => `<li>${esc(f)}</li>`).join("");
+        return `<div class="p-4 rounded-lg bg-red-50 text-red-800 text-sm">
+          <p class="font-semibold mb-1">Failed: nothing staff can see has changed.</p>
+          <p>${esc(r.error || r.error_code)}</p>${list ? `<ul class="list-disc ml-4 mt-2">${list}</ul>` : ""}</div>`;
+      }
+      const totals = s.totals || {};
+      const checks = s.checks || {};
+      const cards = Object.keys(totals).map((d) => {
+        const t = totals[d] || {};
+        const c = (checks[d] && checks[d].tables) || [];
+        const passed = c.every((x) => x.ok !== false);
+        return `<div class="ps-card">
+          <div class="flex justify-between mb-1"><b>${esc(DB_LABELS[d] || d)}</b><span class="${passed ? "text-green-700" : "text-red-700"} text-sm">${passed ? "✓ checks passed" : "checks failed"}</span></div>
+          <div class="text-sm text-gray-700">Staff <span class="ps-mono">${esc(fmtNum(t.staffCount))}</span> · Total net <span class="ps-mono">${esc(fmtMoney(t.totalNet))}</span></div>
+          <div class="text-xs text-gray-500 mt-1">${c.length} tables, ${fmtNum(c.reduce((a, x) => a + (Number(x.loadedRows) || 0), 0))} rows</div>
+          ${notInPackageNote(s, d)}
+        </div>`;
+      }).join("");
+      return `<div class="p-3 mb-3 rounded-lg bg-amber-50 text-amber-800 text-sm">
+          <b>Prepared.</b> Review the staff counts and totals against the payroll office figures, then click <b>Go live</b>. Machine time so far ${esc(fmtMs(r.machineMs))}.
+        </div><div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${cards}</div>`;
+    }
+
+    // Staff on the website but not in the package: flagged, never deleted (login data).
+    function notInPackageNote(s, d) {
+      const f = s.notInPackage && s.notInPackage[d];
+      if (!f) return "";
+      const more = f.count > f.sample.length ? ` and ${fmtNum(f.count - f.sample.length)} more` : "";
+      return `<details class="mt-2 text-xs text-amber-800">
+        <summary class="cursor-pointer">${fmtNum(f.count)} staff on the website are not in this package</summary>
+        <p class="mt-1">Kept as they are. Check them with payroll (renumbered, left, or created on the website):</p>
+        <p class="ps-mono mt-1">${f.sample.map(esc).join(", ")}${more}</p></details>`;
+    }
+
+    function showApproval(r) {
+      const a = (r.summary && r.summary.approval) || {};
+      $("psApproval").classList.remove("hidden");
+      $("psApprovalText").innerHTML = `This package was made by <b>${esc(a.exporterId)}</b>, key id <span class="ps-mono font-semibold">${esc(a.keyIdFormatted)}</span>, which this website has not approved yet.`;
+      $("psApprovalForm").classList.remove("hidden");
+      $("psRunResult").innerHTML = "";
+      $("psApproveBtn").onclick = async () => {
+        try {
+          const out = await call("POST", "/exporters/approve", { fingerprint: r.fingerprint, keyIdConfirmed: $("psApprovalKey").value.trim() });
+          $("psApproval").classList.add("hidden");
+          toast(`Exporter ${out.exporterId} approved.`);
+          watchRun(out.runUuid);
+        } catch (e) {
+          toast(e.message, false);
+        }
+      };
+    }
+
+    // ── Runs ─────────────────────────────────────────────
+    async function loadRuns() {
+      const body = $("psRunsBody");
+      try {
+        const runs = await call("GET", "/runs");
+        if (!runs.length) { body.innerHTML = `<tr><td colspan="10" class="text-gray-500">No uploads yet.</td></tr>`; return; }
+        body.innerHTML = runs.map((r) => {
+          const over = r.machineMs > FIFTEEN_MIN;
+          return `<tr>
+            <td>${esc(fmtDate(r.started_at))}</td><td class="ps-mono">${esc(r.seq)}</td><td>${esc(r.kind)}</td>
+            <td>${esc(periodLabel(r.period))}</td><td>${statusBadge(r.status)}</td>
+            <td class="ps-num">${esc(fmtNum(r.rows))}</td><td class="ps-num">${esc(fmtMB(r.bytes))}</td>
+            <td class="ps-num ${over ? "text-red-700 font-semibold" : ""}">${esc(fmtMs(r.machineMs))}</td>
+            <td>${esc(r.uploaded_by || "")}</td>
+            <td><button class="text-blue-700 hover:underline text-sm" data-run="${esc(r.run_uuid)}">Detail</button></td>
+          </tr>`;
+        }).join("");
+        body.querySelectorAll("[data-run]").forEach((b) => b.addEventListener("click", () => showRun(b.dataset.run)));
+      } catch (e) {
+        body.innerHTML = `<tr><td colspan="10" class="text-red-700">${esc(e.message)}</td></tr>`;
+      }
+    }
+
+    const STAGE_COLORS = { export: "#6b7280", upload: "#0891b2", verify: "#7c3aed", load: "#2563eb", validate: "#059669", apply: "#d97706", golive: "#dc2626" };
+    async function showRun(uuid) {
+      const box = $("psRunDetail");
+      box.classList.remove("hidden");
+      box.innerHTML = "Loading…";
+      try {
+        const r = await call("GET", `/runs/${uuid}`);
+        const s = r.summary || {};
+        if (s.checkOnly || ["checking", "checked", "check_failed"].includes(r.status)) {
+          box.innerHTML = `<div class="mb-3"><b>Seq ${esc(r.seq)}</b> · ${esc(r.kind)} · ${esc(periodLabel(r.period))} · ${statusBadge(r.status)} <span class="text-xs text-gray-500 ps-mono ml-2">${esc(r.fingerprint)}</span> <span class="text-xs text-gray-500">check only</span></div>` + checkReport(r, false) +
+            (r.status === "checked" && r.package_status === "received"
+              ? `<button id="psLoadFromRun" class="mt-3 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium">Load and prepare</button>`
+              : "");
+          const lr = $("psLoadFromRun");
+          if (lr) lr.onclick = async () => {
+            lr.disabled = true;
+            try {
+              const out = await call("POST", `/packages/${r.fingerprint}/reprocess`);
+              showTab("upload");
+              $("psRunResult").classList.remove("hidden");
+              watchRun(out.runUuid);
+            } catch (e) { toast(e.message, false); lr.disabled = false; }
+          };
+          return;
+        }
+        const t = s.timings || {};
+        const total = Object.keys(STAGE_COLORS).reduce((a, k) => a + (Number(t[k]) || 0), 0) || 1;
+        const bar = Object.keys(STAGE_COLORS).filter((k) => t[k] != null).map((k) =>
+          `<div style="width:${(100 * t[k]) / total}%;background:${STAGE_COLORS[k]}" title="${k}: ${fmtMs(t[k])}">${(100 * t[k]) / total > 8 ? `${k} ${fmtMs(t[k])}` : ""}</div>`).join("");
+        const legend = Object.keys(STAGE_COLORS).filter((k) => t[k] != null).map((k) =>
+          `<span class="inline-flex items-center mr-3"><span style="width:10px;height:10px;background:${STAGE_COLORS[k]};display:inline-block;border-radius:2px;margin-right:4px"></span>${k} ${fmtMs(t[k])}</span>`).join("");
+        const rows = [];
+        for (const [d, c] of Object.entries(s.checks || {})) {
+          for (const x of c.tables || []) {
+            const ap = (s.applied || {})[`${d}/${String(x.table).toLowerCase()}`] || {};
+            rows.push(`<tr><td>${esc(DB_LABELS[d] || d)}</td><td class="ps-mono">${esc(x.table)}${x.scope ? ` <span class="text-xs text-gray-500">${esc(Object.entries(x.scope).map(([k, v]) => `${k} ${v}`).join(", "))}</span>` : ""}</td>
+              <td class="ps-num">${esc(fmtNum(x.expectedRows))}</td><td class="ps-num">${esc(fmtNum(x.loadedRows))}</td>
+              <td>${x.ok === false ? '<span class="text-red-700">failed</span>' : '<span class="text-green-700">ok</span>'} <span class="text-xs text-gray-500">${esc(x.checksum === "ok" ? "checksum ok" : x.checksum || x.note || "")}</span></td>
+              <td class="text-xs">${esc(ap.skipped ? "skipped (unchanged)" : ap.at === "golive" ? "switched at Go live" : ap.mode || "")}</td></tr>`);
+          }
+        }
+        const over = r.machineMs > FIFTEEN_MIN;
+        box.innerHTML = `
+          <div class="flex flex-wrap justify-between gap-2 mb-3">
+            <div><b>Seq ${esc(r.seq)}</b> · ${esc(r.kind)} · ${esc(periodLabel(r.period))} · ${statusBadge(r.status)} <span class="text-xs text-gray-500 ps-mono ml-2">${esc(r.fingerprint)}</span></div>
+            <div class="${over ? "text-red-700 font-semibold" : "text-gray-700"}">Machine time ${esc(fmtMs(r.machineMs))} ${over ? "(over 15 min)" : ""}</div>
+          </div>
+          ${r.error ? `<div class="p-3 mb-3 rounded-lg bg-red-50 text-red-800 text-sm">${esc(r.error)}</div>` : ""}
+          <div class="ps-timing mb-1">${bar}</div><div class="text-xs text-gray-600 mb-4">${legend}</div>
+          ${Object.keys(s.notInPackage || {}).map((d) => `<div class="mb-2"><b class="text-sm">${esc(DB_LABELS[d] || d)}</b>${notInPackageNote(s, d)}</div>`).join("")}
+          <div class="overflow-x-auto"><table class="ps-table"><thead><tr><th>Database</th><th>Table</th><th class="ps-num">Expected</th><th class="ps-num">Loaded</th><th>Check</th><th>Applied</th></tr></thead>
+          <tbody>${rows.join("") || '<tr><td colspan="6" class="text-gray-500">No table checks recorded.</td></tr>'}</tbody></table></div>
+          ${["failed", "received"].includes(r.status) && r.package_status !== "applied" ? `<button id="psReprocess" class="mt-3 px-3 py-2 rounded-lg border border-blue-600 text-blue-700 text-sm hover:bg-blue-50">Process this package again</button>` : ""}`;
+        const rp = $("psReprocess");
+        if (rp) rp.onclick = async () => {
+          try {
+            const out = await call("POST", `/packages/${r.fingerprint}/reprocess`);
+            toast("Processing again.");
+            showTab("upload");
+            $("psRunResult").classList.remove("hidden");
+            watchRun(out.runUuid);
+          } catch (e) { toast(e.message, false); }
+        };
+      } catch (e) {
+        box.innerHTML = `<span class="text-red-700">${esc(e.message)}</span>`;
+      }
+    }
+
+    // ── Publications ─────────────────────────────────────
+    async function loadPublications() {
+      const body = $("psPubsBody");
+      try {
+        const pubs = await call("GET", "/publications");
+        if (!pubs.length) { body.innerHTML = `<tr><td colspan="9" class="text-gray-500">Nothing published yet.</td></tr>`; return; }
+        body.innerHTML = pubs.map((p) => {
+          const acts = [];
+          const canGoLive = status && status.prepared && status.prepared.period === p.period;
+          if (p.status === "prepared" && canGoLive) acts.push(`<button class="text-blue-700 hover:underline" data-act="golive" data-period="${esc(p.period)}">Go live</button>`);
+          if (p.status === "withdrawn") acts.push(`<button class="text-blue-700 hover:underline" data-act="golive" data-period="${esc(p.period)}">Publish again</button>`);
+          if (p.status === "published") acts.push(`<button class="text-amber-700 hover:underline" data-act="withdraw" data-db="${esc(p.database_name)}" data-period="${esc(p.period)}">Withdraw</button>`);
+          if (["published", "prepared", "withdrawn"].includes(p.status) && status && status.rollbackPeriod === p.period) acts.push(`<button class="text-red-700 hover:underline" data-act="rollback" data-db="${esc(p.database_name)}" data-period="${esc(p.period)}">Roll back</button>`);
+          const off = p.status === "withdrawn" && p.withdrawn_at ? `${esc(fmtDate(p.withdrawn_at))} · ${esc(p.withdrawn_by)}`
+            : p.status === "rolled_back" && p.rolled_back_at ? `${esc(fmtDate(p.rolled_back_at))} · ${esc(p.rolled_back_by)}` : "—";
+          return `<tr>
+            <td>${esc(periodLabel(p.period))}</td><td>${esc(DB_LABELS[p.database_name] || p.database_name)}</td><td>${statusBadge(p.status)}</td>
+            <td class="ps-num">${esc(fmtNum(p.staff_count))}</td><td class="ps-num">${esc(fmtMoney(p.total_net))}</td><td class="ps-mono">${esc(p.seq || "")}</td>
+            <td>${p.published_at ? `${esc(fmtDate(p.published_at))} · ${esc(p.published_by)}` : "—"}</td><td>${off}</td>
+            <td class="whitespace-nowrap space-x-3">${acts.join("")}</td></tr>`;
+        }).join("");
+        body.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", () => pubAction(b.dataset)));
+      } catch (e) {
+        body.innerHTML = `<tr><td colspan="9" class="text-red-700">${esc(e.message)}</td></tr>`;
+      }
+    }
+
+    async function pubAction({ act, db, period }) {
+      const label = DB_LABELS[db] || db;
+      try {
+        if (act === "golive") {
+          if (!(await confirmBox(`Publish ${periodLabel(period)}`, `Staff will see ${esc(periodLabel(period))} payslips.`, "Go live"))) return;
+          await call("POST", "/golive", { period });
+          toast(`${periodLabel(period)} is live.`);
+        } else if (act === "withdraw") {
+          if (!(await confirmBox(`Withdraw ${periodLabel(period)} · ${label}`, `Staff in ${esc(label)} will see "not ready yet" for ${esc(periodLabel(period))} until it is published again. No data is removed.`, "Withdraw", true))) return;
+          await call("POST", `/publications/${encodeURIComponent(db)}/${period}/withdraw`);
+          toast(`${periodLabel(period)} withdrawn for ${label}.`);
+        } else if (act === "rollback") {
+          if (!(await confirmBox(`Roll back ${periodLabel(period)} · ${label}`,
+            `<p class="mb-2">${esc(label)} goes back to the previous month: payroll tables, staff details and IPPIS rows return to how they were before this package.</p>
+             <p class="mb-2">Only the latest package can be rolled back. Roll back every database of the package.</p>
+             <p>Afterwards the payroll officer must run <span class="ps-mono">navy-sync-exporter --discard-last</span> before the next export.</p>`, "Roll back", true))) return;
+          const r = await call("POST", `/publications/${encodeURIComponent(db)}/${period}/rollback`);
+          toast(r.remaining && r.remaining.length ? `${label} rolled back. Still to roll back: ${r.remaining.map((d) => DB_LABELS[d] || d).join(", ")}.` : `${label} rolled back. ${r.instruction}`);
+        }
+      } catch (e) {
+        toast(e.message, false);
+      }
+      loadPublications();
+      loadStatus();
+    }
+
+    // ── Checks tab ───────────────────────────────────────
+    function checkRows(list) {
+      const icon = (st) => st === "ok" ? '<span class="text-green-700">✔</span>' : st === "warn" ? '<span class="text-amber-700">!</span>' : st === "info" ? '<span class="text-gray-500">·</span>' : '<span class="text-red-700">✘</span>';
+      let html = "";
+      let group = null;
+      for (const i of list) {
+        if (i.group !== group) {
+          group = i.group;
+          html += `<tr><th colspan="3" class="pt-3">${esc(group)}</th></tr>`;
+        }
+        html += `<tr><td class="w-6">${icon(i.status)}</td><td class="font-medium">${esc(i.label)}</td><td>${esc(i.detail)}</td></tr>`;
+      }
+      return html;
+    }
+    $("psRunChecks").addEventListener("click", async () => {
+      const body = $("psChecksBody");
+      body.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Checking…';
+      try {
+        const list = await call("GET", "/checks");
+        const fails = list.filter((i) => i.status === "fail").length;
+        const warns = list.filter((i) => i.status === "warn").length;
+        body.innerHTML = `<div class="p-3 mb-2 rounded-lg ${fails ? "bg-red-50 text-red-800" : warns ? "bg-amber-50 text-amber-800" : "bg-green-50 text-green-800"}">
+            ${fails ? `<b>${fails} problem(s)</b>` : "<b>All checks passed</b>"}${warns ? ` · ${warns} to review` : ""}</div>
+          <table class="ps-table"><tbody>${checkRows(list)}</tbody></table>`;
+      } catch (e) {
+        body.innerHTML = `<span class="text-red-700">${esc(e.message)}</span>`;
+      }
+    });
+    $("psProbeSwitch").addEventListener("click", async () => {
+      const btn = $("psProbeSwitch");
+      btn.disabled = true;
+      try {
+        const r = await call("POST", "/checks/golive-switch");
+        toast(`Go live switch: ${r.detail}`, r.status !== "fail");
+      } catch (e) {
+        toast(e.message, false);
+      }
+      btn.disabled = false;
+    });
+
+    loadStatus();
+  })();
+</script>

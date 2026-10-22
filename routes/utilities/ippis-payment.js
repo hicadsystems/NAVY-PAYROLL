@@ -478,47 +478,27 @@ router.post("/import", verifyToken, upload.single("file"), async (req, res) => {
         else if (typePrefix === "PR") category = "DEDUCTIONS";
         else if (typePrefix === "PL") category = "LOAN";
 
-        // Check if record exists
-        const [existing] = await connection.query(
-          "SELECT id FROM py_ipis_payhistory WHERE numb = ? AND type = ? AND period = ?",
-          [employeeId, PaymentType, period],
+        // One upsert on the primary key (period, numb, Type).
+        // The table has no id / updated_at columns (payroll index fixes migration).
+        const [upsert] = await connection.query(
+          `INSERT INTO py_ipis_payhistory
+             (numb, period, type, bpm, bpc, bp, bpa, datecreated)
+           VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+           ON DUPLICATE KEY UPDATE
+             bpm = VALUES(bpm), bpc = VALUES(bpc), bp = VALUES(bp), bpa = VALUES(bpa)`,
+          [
+            employeeId,
+            period,
+            PaymentType,
+            amount,
+            typePrefix,
+            headerMapping[PaymentType],
+            category,
+          ],
         );
-
-        if (existing.length > 0) {
-          // Update existing record
-          await connection.query(
-            `UPDATE py_ipis_payhistory 
-             SET bpm = ?, bpc = ?, bp = ?, bpa = ?, updated_at = NOW()
-             WHERE numb = ? AND type = ? AND period = ?`,
-            [
-              amount,
-              typePrefix,
-              headerMapping[PaymentType],
-              category,
-              employeeId,
-              PaymentType,
-              period,
-            ],
-          );
-          updatedRecords++;
-        } else {
-          // Insert new record
-          await connection.query(
-            `INSERT INTO py_ipis_payhistory 
-             (numb, period, type, bpm, bpc, bp, bpa, datecreated) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
-            [
-              employeeId,
-              period,
-              PaymentType,
-              amount,
-              typePrefix,
-              headerMapping[PaymentType],
-              category,
-            ],
-          );
-          insertedRecords++;
-        }
+        // affectedRows: 1 = inserted, 2 = updated, 0 = unchanged
+        if (upsert.affectedRows === 1) insertedRecords++;
+        else updatedRecords++;
       }
 
       processedCount++;

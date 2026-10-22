@@ -100,6 +100,7 @@ class MenuHighlighter {
       // Utilities menu items
       'emolument-form-processing': 'utilities',
       'ippis-payments': 'utilities',
+      'payslip-sync': 'utilities',
       'consolidated-payslip': 'utilities',
       'database-backup': 'utilities',
       'database-restore': 'utilities',

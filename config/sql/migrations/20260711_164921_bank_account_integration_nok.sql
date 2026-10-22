@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: bank_account_integration_nok
 -- Created: 2026-07-11T16:49:21.132Z
 

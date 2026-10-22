@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: ef_control_update
 -- Created: 2026-06-01T10:32:57.883Z
 

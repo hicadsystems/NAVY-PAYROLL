@@ -338,6 +338,12 @@ class QuickAccessManager {
         section: "ippis-payments",
         title: "Pull IPPIS Payments",
       },
+      "payslip-sync": {
+        id: "payslip-sync",
+        label: "Payslip Sync",
+        section: "payslip-sync",
+        title: "Payslip Sync",
+      },
       "consolidated-payslip": {
         id: "consolidated-payslip",
         label: "Consolidated Payslip",

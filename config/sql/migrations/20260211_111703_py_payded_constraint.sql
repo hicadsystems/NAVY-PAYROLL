@@ -1,3 +1,4 @@
+-- @scope: all   (every payroll database)
 -- Migration: py_payded_constraint
 -- Created: 2026-02-11T11:17:03.669Z
 

@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: gcb_number_allowance_integration
 -- Created: 2026-05-11T13:39:55.967Z
 

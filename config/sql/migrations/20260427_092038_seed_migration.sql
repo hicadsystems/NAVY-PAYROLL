@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: seed_migration
 -- Created: 2026-04-27T09:20:38.605Z
 

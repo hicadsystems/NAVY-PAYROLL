@@ -26,6 +26,7 @@
     "mssql": "^11.0.1",
     "multer": "^2.1.1",
     "mysql2": "^3.14.4",
+    "navy-payslip-sync": "file:vendor/navy-payslip-sync-0.1.0.tgz",
     "node-cache": "^5.1.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^9.0.1",
@@ -53,7 +54,8 @@
     "migrate:make": "node migrate.js make",
     "migrate:up": "node migrate.js up",
     "migrate:down": "node migrate.js down",
-    "migrate:status": "node migrate.js status"
+    "migrate:status": "node migrate.js status",
+    "test:sync": "node --test --test-concurrency=1 test/sync/e2e.test.js"
   },
   "repository": {
     "type": "git",

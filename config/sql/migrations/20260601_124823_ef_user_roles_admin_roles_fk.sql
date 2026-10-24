@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: ef_user_roles_admin_roles_fk
 -- Created: 2026-06-01T12:48:23.393Z
 

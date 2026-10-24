@@ -66,6 +66,34 @@ class Migrator {
     }
   }
 
+  /**
+   * Where a migration runs, from a "-- @scope:" line near the top of the file:
+   *   -- @scope: master   hicaddata (officers) only: users, login, emolument (ef_*), sync_*
+   *   -- @scope: all      every payroll database: payroll tables (py_*)
+   * A file without the line counts as "all" (with a warning).
+   */
+  async getScope(filename) {
+    const fh = await fs.open(path.join(this.migrationsDir, filename), "r");
+    try {
+      const buf = Buffer.alloc(2048);
+      const { bytesRead } = await fh.read(buf, 0, buf.length, 0);
+      const m = buf.toString("utf8", 0, bytesRead).match(/--\s*@scope:\s*(master|all)\b/i);
+      if (m) return m[1].toLowerCase();
+    } finally {
+      await fh.close();
+    }
+    this._untagged = this._untagged || new Set();
+    if (!this._untagged.has(filename)) {
+      this._untagged.add(filename);
+      console.warn(`⚠️  ${filename} has no "-- @scope: master|all" line; running it on every database`);
+    }
+    return "all";
+  }
+
+  isMasterDatabase(database = this.targetDatabase) {
+    return String(database || "").toLowerCase() === String(config.databases.officers || "").toLowerCase();
+  }
+
   async getPendingMigrations() {
     const files = await fs.readdir(this.migrationsDir);
     const sqlFiles = files
@@ -75,7 +103,14 @@ class Migrator {
     const executed = await this.getExecutedMigrations();
     const executedNames = executed.map((e) => e.name);
 
-    return sqlFiles.filter((f) => !executedNames.includes(f));
+    const pending = [];
+    for (const f of sqlFiles) {
+      if (executedNames.includes(f)) continue;
+      // master-scoped migrations never run (or count as pending) on the class databases
+      if (!this.isMasterDatabase() && (await this.getScope(f)) === "master") continue;
+      pending.push(f);
+    }
+    return pending;
   }
 
   async executeMigration(filename, batch) {
@@ -420,7 +455,8 @@ class Migrator {
     const filename = `${timestamp}_${name}.sql`;
     const filepath = path.join(`${this.migrationsDir}`, filename);
 
-    const template = `-- Migration: ${name}
+    const template = `-- @scope: all   (all = every payroll database, for py_* tables; master = hicaddata only, for users / emolument / sync)
+-- Migration: ${name}
 -- Created: ${new Date().toISOString()}
 
 -- UP

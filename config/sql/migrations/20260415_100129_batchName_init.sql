@@ -1,3 +1,4 @@
+-- @scope: all   (every payroll database)
 -- Migration: batchName_init
 -- Created: 2026-04-15
 

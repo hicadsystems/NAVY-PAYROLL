@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: ef_personalinfos_formNumber_index
 -- Created: 2026-06-03T11:32:07.377Z
 

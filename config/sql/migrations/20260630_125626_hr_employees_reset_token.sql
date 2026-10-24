@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: hr_employees_reset_token
 -- Created: 2026-06-30T12:56:26.176Z
 

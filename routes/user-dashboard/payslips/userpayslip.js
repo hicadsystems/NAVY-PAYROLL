@@ -11,6 +11,7 @@ const fs = require("fs");
 const pool = require("../../../config/db");
 const verifyToken = require("../../../middware/authentication");
 const BaseReportController = require("../../../controllers/Reports/reportsFallbackController");
+const syncPublications = require("../../../services/sync/publication.service");
 
 // ── Payrollclass → DB name map ────────────────────────────
 async function getPayrollClassDb(classcode) {
@@ -204,8 +205,23 @@ router.post("/generate", verifyToken, async (req, res) => {
     await conn.query(`USE \`${targetDb}\``);
     switchedDb = true;
 
+    // ── 4b. Published check (Payslip Sync) ─────────────────
+    // A month loaded from the payroll network shows only after Go live.
+    // Months before the first synced publication stay visible.
+    const pub = await syncPublications.isPeriodVisible(targetDb, period);
+    if (!pub.visible) {
+      return res.status(202).json({
+        notReady: true,
+        error:
+          "Sorry, payslip for selected month and year is not ready yet. Please check again later.",
+      });
+    }
+
+    // Steps 5–8 run on `conn`, the connection that ran USE <targetDb>.
+    // pool.query may be routed to another database.
+
     // ── 5. Fetch BT05 (current processing period) ──────
-    const [[bt05]] = await pool.query(
+    const [[bt05]] = await conn.query(
       `SELECT ord, mth FROM py_stdrate WHERE type = 'BT05' LIMIT 1`,
     );
 
@@ -224,13 +240,13 @@ router.post("/generate", verifyToken, async (req, res) => {
     // If no IPPIS rows exist for this employee + period, payslip is not ready.
     // For current period this means upload hasn't happened yet.
     // For historical periods it means IPPIS was never uploaded for that month.
-    const [[ippisCheck]] = await pool.query(
+    const [[ippisCheck]] = await conn.query(
       `SELECT COUNT(*) AS cnt FROM py_ipis_payhistory
        WHERE numb = ? AND period = ?`,
       [userId, period],
     );
 
-    if (!ippisCheck || ippisCheck.cnt === 0) {
+    if (!ippisCheck || Number(ippisCheck.cnt) === 0) {
       // For historical periods that had no IPPIS (e.g. NAVY-only months),
       // allow through — block only if it's the current processing period
       if (isCurrentPeriod) {
@@ -244,7 +260,7 @@ router.post("/generate", verifyToken, async (req, res) => {
     }
 
     // ── 7. Call stored procedure ───────────────────────
-    await pool.query(`CALL py_generate_combined_payslip(?, ?, ?, ?, ?, ?)`, [
+    await conn.query(`CALL py_generate_combined_payslip(?, ?, ?, ?, ?, ?)`, [
       userId,
       userId,
       period,
@@ -254,7 +270,7 @@ router.post("/generate", verifyToken, async (req, res) => {
     ]);
 
     // ── 8. Fetch generated rows ────────────────────────
-    const [monthData] = await pool.query(
+    const [monthData] = await conn.query(
       `SELECT mthdesc FROM ac_months WHERE cmonth = ? LIMIT 1`,
       [inputMonth],
     );

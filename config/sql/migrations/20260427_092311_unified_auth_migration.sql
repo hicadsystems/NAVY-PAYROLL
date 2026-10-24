@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: unified_auth_migration
 -- Created: 2026-04-27T09:23:11.991Z
 

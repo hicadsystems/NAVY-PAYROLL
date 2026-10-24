@@ -1,3 +1,4 @@
+-- @scope: all   (every payroll database)
 -- Migration: payded_verification_columns
 -- Created: 2026-06-24
 -- Purpose: Support Payment/Deductions Validation flow (BT05.sat staged lock/verify)

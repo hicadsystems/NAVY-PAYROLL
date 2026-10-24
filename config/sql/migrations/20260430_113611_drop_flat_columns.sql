@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- =============================================================================
 -- Migration: drop_flat_columns
 -- Created: 2026-04-30T11:36:11.507Z

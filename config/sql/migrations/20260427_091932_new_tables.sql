@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: new_tables
 -- Created: 2026-04-27T09:19:32.091Z
 

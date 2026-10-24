@@ -101,3 +101,11 @@ scripts/migratePasswords.backup.2026-07-30T20-19-41-251Z.csv
 scripts/migratePasswords.duplicates.csv
 scripts/migratePasswords.junkkeys.csv
 scripts/migratePasswords.unmatched.csv
+
+# Payslip Sync: never commit keys, packages (payroll data) or loose packed libraries
+*.pem
+*.npsync
+navy-payslip-sync-*.tgz
+!vendor/navy-payslip-sync-*.tgz
+sync-preflight.log
+config/sql/procedures/*.sql.bak

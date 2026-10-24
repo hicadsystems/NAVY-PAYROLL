@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: ef_tickets_create
 -- Created: 2026-06-01T10:39:31.085Z
 

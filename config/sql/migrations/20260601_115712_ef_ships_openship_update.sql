@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: ef_ships_openship_update
 -- Created: 2026-06-01T11:57:12.633Z
 

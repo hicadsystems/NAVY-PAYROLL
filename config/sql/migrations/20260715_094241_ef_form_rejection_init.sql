@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: ef_form_rejection_init
 -- Created: 2026-07-15T09:42:41.754Z
 

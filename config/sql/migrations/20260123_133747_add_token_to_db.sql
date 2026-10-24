@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: add_token_to_db
 -- Created: 2026-01-23T13:37:47.968Z
 

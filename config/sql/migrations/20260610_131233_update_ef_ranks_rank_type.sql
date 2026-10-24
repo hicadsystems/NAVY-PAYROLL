@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: update_ef_ranks_rank_type
 -- Created: 2026-06-10T13:12:33.827Z
 

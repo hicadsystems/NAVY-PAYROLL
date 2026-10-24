@@ -51,6 +51,7 @@ const calculationReportsRoutes = require("./payroll-calculations/calculationRepo
 const backupRoutes = require("./utilities/backup-db");
 const restoreRoutes = require("./utilities/restore-db");
 const ippisRoutes = require("./utilities/ippis-payment");
+const payslipSyncRoutes = require("./sync"); // Payslip Sync (/api/sync)
 const consolidatedPayslipRoutes = require("./utilities/consolidated-payslips");
 
 //refrence tables
@@ -202,6 +203,7 @@ module.exports = (app) => {
   app.use("/api/backup-db", backupRoutes);
   app.use("/api/restore-db", restoreRoutes);
   app.use("/ippis", ippisRoutes);
+  app.use("/api/sync", payslipSyncRoutes);
   app.use("/consolidated", consolidatedPayslipRoutes);
 
   //refrence tables

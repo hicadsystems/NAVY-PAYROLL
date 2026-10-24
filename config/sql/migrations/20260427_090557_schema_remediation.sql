@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: schema_remediation
 -- Created: 2026-04-27T09:05:57.758Z
 

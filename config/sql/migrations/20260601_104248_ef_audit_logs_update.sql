@@ -1,3 +1,4 @@
+-- @scope: master   (hicaddata (officers) only)
 -- Migration: ef_audit_logs_update
 -- Created: 2026-06-01T10:42:48.019Z
 

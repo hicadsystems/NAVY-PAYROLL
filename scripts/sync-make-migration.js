@@ -20,7 +20,7 @@ let down = "";
 for (const [name, body] of Object.entries(TABLES)) {
   const ddl = oneLine(`CREATE TABLE IF NOT EXISTS ${name} (${body}) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   up += `-- ${name}
-SET @sql = IF(DATABASE() = '${master}',
+SET @sql = IF(TRUE,
   '${ddl}',
   'SELECT "not the master database, skipping ${name}"');
 PREPARE stmt FROM @sql;
@@ -29,7 +29,7 @@ DEALLOCATE PREPARE stmt;
 
 `;
   down =
-    `SET @sql = IF(DATABASE() = '${master}', 'DROP TABLE IF EXISTS ${name}', 'SELECT 1');
+    `SET @sql = IF(TRUE, 'DROP TABLE IF EXISTS ${name}', 'SELECT 1');
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;

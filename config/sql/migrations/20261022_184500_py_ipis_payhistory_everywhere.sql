@@ -4,7 +4,8 @@
 -- The payslip procedure reads py_ipis_payhistory for every payroll class, so the
 -- table must exist in every payroll database even when it is empty (hicaddata5,
 -- juniorTrainee, had none). Created with the same structure and primary key as
--- hicaddata.py_ipis_payhistory. Nothing happens where the table already exists.
+-- py_ipis_payhistory in the master database: this database's name without its trailing
+-- digits (nncpong_hicaddata5 → nncpong_hicaddata). Nothing happens where the table already exists.
 -- Agreed with Dev A (navy-payslip-sync v0.1.2: py_ipis_payhistory is optional per
 -- database in a package; the website keeps the table anyway).
 
@@ -15,9 +16,15 @@
 SET @has_tbl = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES
   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'py_ipis_payhistory');
 
-SET @sql = IF(@has_tbl = 0,
-  'CREATE TABLE py_ipis_payhistory LIKE hicaddata.py_ipis_payhistory',
-  'SELECT "py_ipis_payhistory already exists"');
+SET @master = REGEXP_REPLACE(DATABASE(), '[0-9]+$', '');
+SET @has_src = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES
+  WHERE TABLE_SCHEMA = @master AND TABLE_NAME = 'py_ipis_payhistory');
+
+SET @sql = IF(@has_tbl = 1,
+  'SELECT "py_ipis_payhistory already exists"',
+  IF(@has_src = 1,
+    CONCAT('CREATE TABLE py_ipis_payhistory LIKE `', @master, '`.py_ipis_payhistory'),
+    'SELECT `ABORT_master_py_ipis_payhistory_not_found`'));
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;

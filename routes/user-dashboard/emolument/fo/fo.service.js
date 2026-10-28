@@ -140,6 +140,7 @@ async function approveForm(formId, foShip, performedBy, ip) {
     fo_rank,
     fo_svcno, // FO's own service number
     legacyStatus,
+    null, // remarks — approval trail is written inside the same transaction
   );
 
   if (!updated) {
@@ -152,16 +153,6 @@ async function approveForm(formId, foShip, performedBy, ip) {
   }
 
   invalidateShipCache(form.ship);
-
-  await repo.insertFormApproval({
-    formId: form.form_id,
-    action: "FO_APPROVED",
-    fromStatus: FORM_STATUS.DO_REVIEWED,
-    toStatus: FORM_STATUS.FO_APPROVED,
-    performedBy: fo_svcno,
-    performerRole: "FO",
-    remarks: null,
-  });
 
   await repo.insertAuditLog({
     tableName: "ef_personalinfos",
@@ -214,13 +205,16 @@ async function approveBulk(ship, body, performedBy, ip) {
   // Legacy status — FO bulk sets 'CPO' on ef_personalinfos
   const legacyStatus = toLegacyStatus(FORM_STATUS.FO_APPROVED); // → 'CPO'
 
-  const { count, serviceNumbers } = await repo.approveBulk(
+  // The approval trail is written by the repository, in the same transaction,
+  // for exactly the forms whose status changed.
+  const { count, skipped = [] } = await repo.approveBulk(
     ship,
     selected,
     fo_name,
     fo_rank,
     fo_svcno,
     legacyStatus,
+    `Bulk approval — ship: ${ship} for selected service numbers`,
   );
 
   if (count === 0) {
@@ -232,22 +226,6 @@ async function approveBulk(ship, body, performedBy, ip) {
   }
 
   invalidateShipCache(ship);
-
-  // Write approval trail for each affected form
-  const formRows = await repo.getFormIdsByServiceNos(serviceNumbers, ship);
-  await Promise.all(
-    formRows.map((f) =>
-      repo.insertFormApproval({
-        formId: f.id,
-        action: "FO_APPROVED",
-        fromStatus: FORM_STATUS.DO_REVIEWED, // bulk came from 'Filled' = SUBMITTED, but for approval trail we show DO_REVIEWED → FO_APPROVED
-        toStatus: FORM_STATUS.FO_APPROVED,
-        performedBy: fo_svcno,
-        performerRole: "FO",
-        remarks: `Bulk approval — ship: ${ship} for selected service numbers`,
-      }),
-    ),
-  );
 
   // Single audit log entry for the bulk operation
   await repo.insertAuditLog({
@@ -273,10 +251,11 @@ async function approveBulk(ship, body, performedBy, ip) {
 
   return {
     success: true,
-    message: `Bulk approval complete. ${count} form(s) approved.`,
+    message: `Bulk approval complete. ${count} form(s) approved.${skipped.length ? ` ${skipped.length} skipped.` : ""}`,
     data: {
       ship,
       approved: count,
+      skipped,
       newStatus: FORM_STATUS.FO_APPROVED,
       selectedServiceNumbers: selected,
     },
@@ -297,11 +276,11 @@ async function approveClass(ship, body, performedBy, ip) {
   const { classes } = body;
   const { fo_svcno, fo_name, fo_rank } = performedBy;
 
-  if (!fo_name || !fo_rank || !fo_date) {
+  if (!fo_name || !fo_rank) {
     return {
       success: false,
       code: 400,
-      message: "fo_name, fo_rank, and fo_date are required.",
+      message: "fo_name and fo_rank are required.",
     };
   }
 
@@ -316,40 +295,31 @@ async function approveClass(ship, body, performedBy, ip) {
   // Legacy status — FO bulk sets 'CPO' on ef_personalinfos
   const legacyStatus = toLegacyStatus(FORM_STATUS.FO_APPROVED); // → 'CPO'
 
-  const { count, serviceNumbers } = await repo.approveClass(
+  // The approval trail is written by the repository, in the same transaction,
+  // for exactly the forms whose status changed. Personnel without a submitted
+  // form on this ship are skipped (reported back), never approved without a record.
+  const { count, skipped = [] } = await repo.approveClass(
     ship,
     Number(classes),
     fo_name,
     fo_rank,
     fo_svcno,
     legacyStatus,
+    `Bulk approval — ship: ${ship}, classes: ${classes}`,
   );
 
   if (count === 0) {
     return {
       success: false,
       code: 404,
-      message: `No forms found with Status='${FORM_STATUS.FO_APPROVED}' for ship '${ship}' and classes=${classes}.`,
+      message: skipped.length
+        ? `No approvable forms for ship '${ship}' and classes=${classes}: ${skipped.length} personnel have no submitted form on this ship.`
+        : `No submitted forms for ship '${ship}' and classes=${classes}.`,
+      data: { skipped },
     };
   }
 
   invalidateShipCache(ship);
-
-  // Write approval trail for each affected form
-  const formRows = await repo.getFormIdsByServiceNos(serviceNumbers, ship);
-  await Promise.all(
-    formRows.map((f) =>
-      repo.insertFormApproval({
-        formId: f.form_id,
-        action: "FO_APPROVED",
-        fromStatus: FORM_STATUS.DO_REVIEWED, // bulk came from 'Filled' = SUBMITTED, but for approval trail we show DO_REVIEWED → FO_APPROVED
-        toStatus: FORM_STATUS.FO_APPROVED,
-        performedBy: fo_svcno,
-        performerRole: "FO",
-        remarks: `Bulk approval — ship: ${ship}, classes: ${classes}`,
-      }),
-    ),
-  );
 
   // Single audit log entry for the bulk operation
   await repo.insertAuditLog({
@@ -364,18 +334,20 @@ async function approveClass(ship, body, performedBy, ip) {
       fo_svcno,
       fo_date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
       affectedCount: count,
+      skippedCount: skipped.length,
     },
-    performedBy,
+    performedBy: fo_svcno,
     ipAddress: ip,
   });
 
   return {
     success: true,
-    message: `Bulk approval complete. ${count} form(s) approved.`,
+    message: `Bulk approval complete. ${count} form(s) approved.${skipped.length ? ` ${skipped.length} skipped (no submitted form on this ship).` : ""}`,
     data: {
       ship,
       classes: Number(classes),
       approved: count,
+      skipped,
       newStatus: FORM_STATUS.FO_APPROVED,
     },
   };

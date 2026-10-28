@@ -5,7 +5,7 @@
 
 const express = require("express");
 const verifyToken = require("../../middware/authentication");
-const { actor } = require("../../middware/syncAuth");
+const { actor, access, requireSync, requireSyncAdmin } = require("../../middware/syncAuth");
 const db = require("../../services/sync/db");
 const runSvc = require("../../services/sync/run.service");
 const golive = require("../../services/sync/golive.service");
@@ -15,8 +15,10 @@ const checks = require("../../services/sync/checks.service");
 const { send, fail } = require("./respond");
 
 const router = express.Router();
-// Access: logged in; who sees Payslip Sync is set by the app's roles and permissions.
-const guard = [verifyToken];
+// Access: a payroll login whose role has Payslip Sync (middware/syncAuth.js).
+// Approving an exporter key: super admin only.
+const guard = [verifyToken, requireSync];
+const adminGuard = [verifyToken, requireSyncAdmin];
 
 // ── status chips + overview cards ──────────────────────────
 router.get("/status", ...guard, async (req, res) => {
@@ -44,19 +46,38 @@ router.get("/status", ...guard, async (req, res) => {
         ? { run_uuid: latest.run_uuid, period: latest.period, seq: latest.seq }
         : null;
 
-    const databases = db.DATABASE_KEYS.map((k) => {
-      const mine = pubs.filter((p) => p.database_name === k);
+    // One card per payroll class in py_payrollclass, plus any package database
+    // that has no class row (shown as not set up).
+    const cls = db.classes();
+    const rowsFor = [
+      ...cls.list.map((c) => ({ ...c })),
+      ...db.DATABASE_KEYS.filter((k) => !cls.list.some((c) => c.key === k)).map((k) => {
+        const c = cls.byKey.get(k);
+        return { key: k, classcode: db.CLASS_CODES[k], classname: null, status: null, schema: c ? c.schema : null, missing: cls.source === "py_payrollclass" && k !== db.MASTER_KEY };
+      }),
+    ];
+    const seenKey = new Set();
+    const databases = rowsFor.map((c) => {
+      // a second class row pointing at the same package database is shown, not used
+      const k = c.key && !seenKey.has(c.key) ? c.key : null;
+      if (k) seenKey.add(k);
+      const mine = k ? pubs.filter((p) => p.database_name === k) : [];
       const live = mine.find((p) => p.status === "published");
       const prep = mine.find((p) => p.status === "prepared");
       return {
         database: k,
-        schema: (() => {
+        classcode: c.classcode || null,
+        classname: c.classname || null,
+        classStatus: c.status || null,
+        inPackages: !!k,
+        missingClass: !!c.missing,
+        schema: k ? (() => {
           try {
             return db.schemaFor(k);
           } catch (_) {
             return null;
           }
-        })(),
+        })() : c.schema,
         livePeriod: live ? live.period : null,
         liveStaff: live ? live.staff_count : null,
         liveNet: live ? live.total_net : null,
@@ -72,12 +93,15 @@ router.get("/status", ...guard, async (req, res) => {
       lastPublish = { at: lastLive.live_at, runUuid: lastLive.run_uuid, machineMs: runSvc.machineMs(s.timings || {}) };
     }
     return send(res, {
+      you: access(req),
       lastPackage: lastPkg || null,
       lastAppliedSeq: Object.fromEntries(applied.map((a) => [a.exporter_id, Number(a.seq)])),
       prepared: prepared || null,
       // Only the latest applied run can be rolled back.
       rollbackPeriod: latest && ["prepared", "live", "partly_rolled_back"].includes(latest.status) ? latest.period : null,
       lastPublish,
+      classesFrom: cls.source, // "py_payrollclass", or "config" when it could not be read
+      classesNote: cls.source === "config" ? cls.reason || null : null,
       databases,
     });
   } catch (e) {
@@ -178,7 +202,7 @@ router.get("/exporters", ...guard, async (req, res) => {
  * the package (inspectNewExporter); the super admin confirms the key id
  * read out by the payroll officer. Processing then continues.
  */
-router.post("/exporters/approve", ...guard, async (req, res) => {
+router.post("/exporters/approve", ...adminGuard, async (req, res) => {
   try {
     const { fingerprint, keyIdConfirmed } = req.body || {};
     const [[p]] = await db.query(`SELECT * FROM ${db.ctl("sync_packages")} WHERE fingerprint = ?`, [fingerprint]);

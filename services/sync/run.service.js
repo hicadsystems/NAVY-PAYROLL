@@ -210,6 +210,8 @@ async function recoverInterruptedRuns() {
 // ── the pipeline ───────────────────────────────────────────
 
 async function processRun(runId) {
+  // Which database each payroll class is in: py_payrollclass as it is now.
+  await db.refreshClasses({ force: true });
   const run = await getRun(runId);
   const summary = run.summary || {};
   summary.timings = summary.timings || {};

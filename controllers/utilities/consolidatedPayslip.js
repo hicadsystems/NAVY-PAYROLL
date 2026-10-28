@@ -160,6 +160,14 @@ class ConsolidatedPayslipController extends BaseReportController {
         success: false,
         error: error.message || "An unexpected error occurred",
       });
+    } finally {
+      // py_webpayslip is scratch output of the stored procedure: clear this request's rows
+      // (same database: pool.query follows this request's session context, like the CALL).
+      try {
+        await pool.query("DELETE FROM py_webpayslip WHERE work_station = ?", [sessionKey]);
+      } catch (e) {
+        console.warn("⚠️ py_webpayslip cleanup failed:", e.message);
+      }
     }
   }
 

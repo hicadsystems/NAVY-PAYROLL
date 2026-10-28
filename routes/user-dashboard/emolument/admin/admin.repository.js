@@ -405,12 +405,14 @@ async function bulkApproveShip(
   foRank,
   foSvcNo,
   legacyStatus,
+  trail = {},
 ) {
   return withTransaction(async (conn) => {
-    // 1. Pre-fetch inside transaction + lock rows
+    const norm = (v) => String(v ?? "").trim();
+    if (!selected || !selected.length) return { count: 0, serviceNumbers: [], skipped: [] };
 
+    // 1. Lock the eligible personnel
     const placeholders = selected.map(() => "?").join(",");
-
     const [affected] = await conn.query(
       `SELECT serviceNumber FROM ef_personalinfos
      WHERE ship   = ?
@@ -420,10 +422,26 @@ async function bulkApproveShip(
        FOR UPDATE`,
       [ship, ...selected.map(String)],
     );
+    if (affected.length === 0) return { count: 0, serviceNumbers: [], skipped: [] };
 
-    if (affected.length === 0) return { count: 0, serviceNumbers: [] };
+    // 2. Lock their submitted forms on this ship (only these get approved and recorded)
+    const svcNos = affected.map((r) => r.serviceNumber);
+    const [forms] = await conn.query(
+      `SELECT id, service_no, status FROM ef_emolument_forms
+       WHERE ship = ?
+         AND service_no IN (${svcNos.map(() => "?").join(",")})
+         AND status IN ('SUBMITTED', 'DO_REVIEWED')
+       FOR UPDATE`,
+      [ship, ...svcNos],
+    );
+    const withForm = new Set(forms.map((f) => norm(f.service_no)));
+    const approveSvc = svcNos.filter((s) => withForm.has(norm(s)));
+    const skipped = svcNos
+      .filter((s) => !withForm.has(norm(s)))
+      .map((s) => ({ serviceNumber: s, reason: "no submitted form on this ship" }));
+    if (approveSvc.length === 0) return { count: 0, serviceNumbers: [], skipped };
 
-    // 2. Bulk update ef_personalinfos
+    // 3. Update ef_personalinfos for those personnel only
     const [result] = await conn.query(
       `UPDATE ef_personalinfos
      SET fo_name    = ?,
@@ -434,25 +452,40 @@ async function bulkApproveShip(
          dateModify = NOW()
      WHERE ship   = ?
        AND Status = 'Filled'
-       AND formNumber IN (${placeholders})
+       AND serviceNumber IN (${approveSvc.map(() => "?").join(",")})
        AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
-      [foName, foSvcNo, foRank, legacyStatus, ship, ...selected.map(String)],
+      [foName, foSvcNo, foRank, legacyStatus, ship, ...approveSvc],
     );
+    if (result.affectedRows !== approveSvc.length) {
+      throw new Error(
+        `bulkApproveShip: expected ${approveSvc.length} personnel updates, got ${result.affectedRows}`,
+      );
+    }
 
-    // 3. Bulk update ef_emolument_forms
-    const serviceNumbers = affected.map((r) => r.serviceNumber);
-    const svcPlaceholders = serviceNumbers.map(() => "?").join(",");
+    // 4. Update exactly the locked forms
+    const formIds = forms.map((f) => f.id);
     await conn.query(
       `UPDATE ef_emolument_forms
        SET status     = 'FO_APPROVED',
            updated_at = NOW()
-       WHERE service_no IN (${svcPlaceholders})
-         AND ship     = ?
-         AND status   IN ('SUBMITTED', 'DO_REVIEWED')`,
-      [...serviceNumbers, ship],
+       WHERE id IN (${formIds.map(() => "?").join(",")})`,
+      formIds,
     );
 
-    return { count: result.affectedRows, serviceNumbers };
+    // 5. Approval trail for exactly these forms, same transaction
+    const rows = forms.map(() => "(?, 'FO_APPROVED', ?, 'FO_APPROVED', ?, ?, ?, NOW())").join(", ");
+    const params = [];
+    for (const f of forms) {
+      params.push(f.id, f.status || null, foSvcNo, trail.performerRole || "EMOL_ADMIN", trail.remarks || null);
+    }
+    await conn.query(
+      `INSERT INTO ef_form_approvals
+         (form_id, action, from_status, to_status, performed_by, performer_role, remarks, performed_at)
+       VALUES ${rows}`,
+      params,
+    );
+
+    return { count: result.affectedRows, serviceNumbers: approveSvc, skipped };
   });
 }
 

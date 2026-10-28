@@ -360,13 +360,16 @@ async function bulkApproveShip(ship, selected, performedBy, ip) {
 
   const legacyStatus = toLegacyStatus(FORM_STATUS.FO_APPROVED); // 'CPO'
 
-  const { count, serviceNumbers } = await repo.bulkApproveShip(
+  // The approval trail is written by the repository, in the same transaction,
+  // for exactly the forms whose status changed.
+  const { count, skipped = [] } = await repo.bulkApproveShip(
     ship,
     selected,
     fo_name,
     fo_rank,
     fo_svcno,
     legacyStatus,
+    { performerRole: "EMOL_ADMIN", remarks: `Admin bulk approval — ship: ${ship} (DO bypassed)` },
   );
 
   if (count === 0) {
@@ -379,21 +382,6 @@ async function bulkApproveShip(ship, selected, performedBy, ip) {
 
   invalidateShipCache(ship);
 
-  const formRows = await repo.getFormIdsByServiceNos(serviceNumbers, ship);
-  await Promise.all(
-    formRows.map((f) =>
-      repo.insertFormApproval({
-        formId: f.id,
-        action: "FO_APPROVED",
-        fromStatus: FORM_STATUS.SUBMITTED,
-        toStatus: FORM_STATUS.FO_APPROVED,
-        performedBy: fo_svcno,
-        performerRole: "EMOL_ADMIN",
-        remarks: `Admin bulk approval — ship: ${ship} (DO bypassed)`,
-      }),
-    ),
-  );
-
   await repo.insertAuditLog({
     tableName: "ef_personalinfos",
     action: "UPDATE",
@@ -403,6 +391,7 @@ async function bulkApproveShip(ship, selected, performedBy, ip) {
       Status: legacyStatus,
       fo_svcno: fo_svcno,
       affectedCount: count,
+      skippedCount: skipped.length,
     },
     performedBy: fo_svcno,
     ipAddress: ip,
@@ -410,8 +399,8 @@ async function bulkApproveShip(ship, selected, performedBy, ip) {
 
   return {
     success: true,
-    message: `Admin bulk approval complete. ${count} form(s) approved for ship '${ship}' (DO bypassed).`,
-    data: { ship, approved: count, newStatus: FORM_STATUS.FO_APPROVED },
+    message: `Admin bulk approval complete. ${count} form(s) approved for ship '${ship}' (DO bypassed).${skipped.length ? ` ${skipped.length} skipped (no submitted form on this ship).` : ""}`,
+    data: { ship, approved: count, skipped, newStatus: FORM_STATUS.FO_APPROVED },
   };
 }
 

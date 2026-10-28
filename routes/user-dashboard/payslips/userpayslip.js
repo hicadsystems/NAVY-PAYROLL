@@ -10,7 +10,8 @@ const path = require("path");
 const fs = require("fs");
 const pool = require("../../../config/db");
 const verifyToken = require("../../../middware/authentication");
-const BaseReportController = require("../../../controllers/Reports/reportsFallbackController");
+const Handlebars = require("handlebars");
+const chromiumPdfGenerator = require("../../../lib/chromiumPdfGenerator");
 const syncPublications = require("../../../services/sync/publication.service");
 
 // ── Payrollclass → DB name map ────────────────────────────
@@ -26,12 +27,54 @@ async function getPayrollClassDb(classcode) {
   return row ? row.db_name : null;
 }
 
-// Lazy singleton for PDF generation
-let _controller = null;
-function getController() {
-  if (!_controller) _controller = new BaseReportController();
-  return _controller;
+// ── Payslip PDF: template, images and helpers kept in memory ──
+// Read and compiled once (recompiled if the file changes), not on every request.
+const PAYSLIP_TEMPLATE = path.join(__dirname, "../../../templates/user-payslip.html");
+const PHOTOS_DIR = path.join(__dirname, "../../../public/photos");
+let _payslipTemplate = null; // { mtimeMs, render }
+
+function payslipTemplate() {
+  const st = fs.statSync(PAYSLIP_TEMPLATE);
+  if (!_payslipTemplate || _payslipTemplate.mtimeMs !== st.mtimeMs) {
+    _payslipTemplate = {
+      mtimeMs: st.mtimeMs,
+      render: Handlebars.compile(fs.readFileSync(PAYSLIP_TEMPLATE, "utf8")),
+    };
+  }
+  return _payslipTemplate.render;
 }
+
+const _images = new Map();
+function imageDataUrl(file) {
+  if (!_images.has(file)) {
+    const p = path.join(PHOTOS_DIR, file);
+    _images.set(
+      file,
+      fs.existsSync(p) ? `data:image/png;base64,${fs.readFileSync(p).toString("base64")}` : "",
+    );
+  }
+  return _images.get(file);
+}
+
+// The same helpers the payslip template had before (passed per render, so the
+// app-wide Handlebars helpers used by other reports are not replaced).
+const PAYSLIP_HELPERS = {
+  formatCurrency(value) {
+    if (!value && value !== 0) return "0.00";
+    return parseFloat(value)
+      .toFixed(2)
+      .replace(/\d(?=(\d{3})+\.)/g, "$&,");
+  },
+  formatDate(date) {
+    const d = new Date(date);
+    const months = ["January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"];
+    return d.getDate() + " " + months[d.getMonth()] + " " + d.getFullYear();
+  },
+  ifCond(a, b, options) {
+    return a === b ? options.fn(this) : options.inverse(this);
+  },
+};
 
 // ============================================================
 // HELPERS
@@ -43,6 +86,16 @@ function zeroPad(n) {
 
 function buildPeriod(year, month) {
   return `${year}${zeroPad(month)}`;
+}
+
+/**
+ * Write key for py_webpayslip.work_station, unique per request (as in adminpayslip.js).
+ * py_webpayslip is only a scratch table for the stored procedure's output: the rows are
+ * read once and deleted straight away, so no payslip data stays stored. A unique key
+ * also keeps two requests of the same user (double click, two tabs) apart.
+ */
+function makeSessionKey() {
+  return `usr_${Date.now()}_${Math.floor(Math.random() * 0xffff).toString(16)}`;
 }
 
 /**
@@ -200,6 +253,8 @@ router.post("/generate", verifyToken, async (req, res) => {
   // ── 4. All payroll DB work on a dedicated connection ──────────
   const conn = await pool.getConnection();
   let switchedDb = false;
+  const sessionKey = makeSessionKey();
+  let wroteRows = false;
 
   try {
     await conn.query(`USE \`${targetDb}\``);
@@ -260,12 +315,14 @@ router.post("/generate", verifyToken, async (req, res) => {
     }
 
     // ── 7. Call stored procedure ───────────────────────
+    // Output goes to py_webpayslip under this request's key; deleted in finally.
+    wroteRows = true;
     await conn.query(`CALL py_generate_combined_payslip(?, ?, ?, ?, ?, ?)`, [
       userId,
       userId,
       period,
       payrollclass,
-      userId,
+      sessionKey,
       "1",
     ]);
 
@@ -288,7 +345,7 @@ router.post("/generate", verifyToken, async (req, res) => {
       `SELECT * FROM py_webpayslip
        WHERE work_station = ? AND ord = ? AND desc1 = ?
        ORDER BY source DESC, bpc, bp`,
-      [userId, String(inputYear), monthdesc],
+      [sessionKey, String(inputYear), monthdesc],
     );
 
     if (!rawRows || rawRows.length === 0) {
@@ -307,6 +364,15 @@ router.post("/generate", verifyToken, async (req, res) => {
       .status(500)
       .json({ error: "An error occurred while generating your payslip." });
   } finally {
+    // ── Clear py_webpayslip: nothing stays stored once the user has the data ──
+    // (also rows left under the service number by the old code)
+    if (wroteRows) {
+      try {
+        await conn.query(`DELETE FROM py_webpayslip WHERE work_station IN (?, ?)`, [sessionKey, String(userId)]);
+      } catch (e) {
+        console.warn("⚠️ py_webpayslip cleanup failed:", e.message);
+      }
+    }
     // ── Safe connection return — same pattern as adminPayslip ──
     if (switchedDb) {
       try {
@@ -325,82 +391,65 @@ router.post("/generate", verifyToken, async (req, res) => {
 // ============================================================
 // POST /payslip/pdf
 // Body: { data: <mapped employee object>, stamp: true/false }
+//
+// Built to survive hundreds of staff printing at once on a small server:
+//   - one shared Chromium for the whole app, at most PDF_MAX_CONCURRENT
+//     pages rendering at a time (lib/pdfGate.js, default 2)
+//   - a few requests may wait for a slot (PDF_MAX_WAITING, default 12, up to
+//     PDF_MAX_WAIT_MS, default 20 s); beyond that the answer is
+//     503 + Retry-After and the page retries by itself after that many seconds
+//   - template, logo and stamp are kept in memory; jsreport (one new Chrome
+//     per PDF) is not used for payslips
 // ============================================================
 router.post("/pdf", verifyToken, async (req, res) => {
-  const { data, stamp } = req.body;
+  const { data, stamp } = req.body || {};
 
-  if (!data) {
+  if (!data || typeof data !== "object") {
     return res.status(400).json({ error: "No payslip data provided." });
   }
 
   try {
-    const templatePath = path.join(
-      __dirname,
-      "../../../templates/user-payslip.html",
-    );
+    const showStamp = !!stamp;
+    const logoDataUrl = imageDataUrl("logo.png");
+    const stampDataUrl = showStamp ? imageDataUrl("cpo-stamp.png") : "";
 
-    // Load logo as base64
-    const logoPath = path.join(__dirname, "../../../public/photos/logo.png");
-    let logoDataUrl = "";
-    if (fs.existsSync(logoPath)) {
-      const buf = fs.readFileSync(logoPath);
-      logoDataUrl = `data:image/png;base64,${buf.toString("base64")}`;
-    }
-
-    // Only load stamp when requested
-    let stampDataUrl = "";
-    if (stamp) {
-      const stampPath = path.join(
-        __dirname,
-        "../../../public/photos/cpo-stamp.png",
-      );
-      if (fs.existsSync(stampPath)) {
-        const buf = fs.readFileSync(stampPath);
-        stampDataUrl = `data:image/png;base64,${buf.toString("base64")}`;
-      }
-    }
-
-    const controller = getController();
-
-    const pdfBuffer = await controller.generateBatchedPDF(
-      templatePath,
-      [{ ...data, stampDataUrl, showStamp: !!stamp }], // single employee array — template iterates {{#each employees}}
-      1,
-      {
-        format: "A5",
-        landscape: false,
-        timeout: 60000,
-        helpers: `
-          function formatCurrency(value) {
-            if (!value && value !== 0) return '0.00';
-            return parseFloat(value).toFixed(2).replace(/\\d(?=(\\d{3})+\\.)/g, '$&,');
-          }
-          function formatDate(date) {
-            const d = new Date(date);
-            const months = ['January','February','March','April','May','June',
-                            'July','August','September','October','November','December'];
-            return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
-          }
-          function ifCond(a, b, options) {
-            return a === b ? options.fn(this) : options.inverse(this);
-          }
-        `,
-      },
+    // single employee array — the template iterates {{#each employees}}
+    const html = payslipTemplate()(
       {
         payDate: new Date(),
         logoDataUrl,
         stampDataUrl,
-        showStamp: !!stamp,
+        showStamp,
+        employees: [{ ...data, stampDataUrl, showStamp }],
       },
+      { helpers: PAYSLIP_HELPERS },
     );
+
+    const pdf = await chromiumPdfGenerator.generateFromHTML(html, {
+      format: "A5",
+      landscape: false,
+      margin: { top: "5mm", right: "5mm", bottom: "5mm", left: "5mm" },
+      timeout: 30000,
+      priority: "high", // staff payslips go before report batches
+    });
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", "attachment; filename=payslip.pdf");
-    return res.send(pdfBuffer);
+    res.setHeader("Cache-Control", "no-store");
+    return res.send(Buffer.from(pdf)); // puppeteer returns a Uint8Array
   } catch (err) {
+    if (err && err.code === "PDF_BUSY") {
+      res.setHeader("Retry-After", String(err.retryAfter));
+      return res.status(503).json({ busy: true, retryAfter: err.retryAfter, error: err.message });
+    }
     console.error("❌ Payslip PDF error:", err);
     return res.status(500).json({ error: "PDF generation failed." });
   }
+});
+
+// GET /payslip/pdf/status — how busy PDF generation is (for monitoring)
+router.get("/pdf/status", verifyToken, (req, res) => {
+  return res.json(require("../../../lib/pdfGate").stats());
 });
 
 module.exports = router;

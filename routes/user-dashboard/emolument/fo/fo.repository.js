@@ -48,6 +48,32 @@ async function withTransaction(fn) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// APPROVAL TRAIL — inside the caller's transaction
+//
+// Written on the same connection as the status change, from the same
+// form rows, so a status never changes without its approval record
+// (and a failed approval leaves no record either).
+//   forms: [{ id, status }]   status = the form's status before the change
+// ─────────────────────────────────────────────────────────────
+
+async function insertApprovalsTx(conn, forms, { action, toStatus, performedBy, performerRole, remarks }) {
+  if (!forms.length) return;
+  const rows = forms.map(() => "(?, ?, ?, ?, ?, ?, ?, NOW())").join(", ");
+  const params = [];
+  for (const f of forms) {
+    params.push(f.id, action, f.status || null, toStatus, performedBy, performerRole || null, remarks || null);
+  }
+  await conn.query(
+    `INSERT INTO ef_form_approvals
+       (form_id, action, from_status, to_status, performed_by, performer_role, remarks, performed_at)
+     VALUES ${rows}`,
+    params,
+  );
+}
+
+const FO_TRAIL = { action: "FO_APPROVED", toStatus: "FO_APPROVED", performerRole: "FO" };
+
+// ─────────────────────────────────────────────────────────────
 // LIST — DO_REVIEWED forms on a ship
 // ─────────────────────────────────────────────────────────────
 
@@ -299,8 +325,22 @@ async function approveSingle(
   foRank,
   foSvcNo,
   legacyStatus,
+  remarks = null,
 ) {
   return withTransaction(async (conn) => {
+    // 0. Lock the form and read its current status (for the approval trail)
+    const [[form]] = await conn.query(
+      `SELECT id, status FROM ef_emolument_forms
+       WHERE id = ? AND status IN ('SUBMITTED','DO_REVIEWED')
+       FOR UPDATE`,
+      [formId],
+    );
+    if (!form) {
+      throw Object.assign(new Error("ef_emolument_forms row not in expected status"), {
+        code: "STALE_STATUS",
+      });
+    }
+
     // 1. Update ef_personalinfos — gate on Status='FO' AND ship match
     const [r1] = await conn.query(
       `UPDATE ef_personalinfos
@@ -339,6 +379,9 @@ async function approveSingle(
       );
     }
 
+    // 3. Approval trail, same transaction
+    await insertApprovalsTx(conn, [form], { ...FO_TRAIL, performedBy: foSvcNo, remarks });
+
     return true;
   });
 }
@@ -364,6 +407,7 @@ async function approveBulk(
   foRank,
   foSvcNo,
   legacyStatus,
+  remarks = null,
 ) {
   const ids = [...new Set((selected || []).map(Number))];
   if (ids.length === 0 || ids.some(Number.isNaN)) {
@@ -376,7 +420,7 @@ async function approveBulk(
 
     // 1. Lock approvable forms
     const [forms] = await conn.query(
-      `SELECT id, service_no FROM ef_emolument_forms
+      `SELECT id, service_no, status FROM ef_emolument_forms
        WHERE ship = ?
          AND id IN (${idPlaceholders})
          AND status IN ('DO_REVIEWED', 'SUBMITTED')
@@ -451,6 +495,9 @@ async function approveBulk(
       [ship, ...formIds],
     );
 
+    // 6. Approval trail for exactly these forms, same transaction
+    await insertApprovalsTx(conn, approvable, { ...FO_TRAIL, performedBy: foSvcNo, remarks });
+
     return {
       count: formIds.length,
       serviceNumbers: [...new Set(approvable.map((f) => norm(f.service_no)))],
@@ -480,12 +527,13 @@ async function approveClass(
   foRank,
   foSvcNo,
   legacyStatus,
+  remarks = null,
 ) {
   return withTransaction(async (conn) => {
-    // 1. Fetch affected personnel inside the transaction
-    //    FOR UPDATE locks the rows so no concurrent bulk approve
-    //    can grab the same set between our SELECT and UPDATE.
-    const [affected] = await conn.query(
+    const norm = (v) => String(v ?? "").trim();
+
+    // 1. Lock the eligible personnel of this ship and class
+    const [eligible] = await conn.query(
       `SELECT serviceNumber FROM ef_personalinfos
        WHERE ship    = ?
          AND classes = ?
@@ -494,10 +542,29 @@ async function approveClass(
        FOR UPDATE`,
       [ship, classes],
     );
+    if (eligible.length === 0) return { count: 0, serviceNumbers: [], skipped: [] };
 
-    if (affected.length === 0) return { count: 0, serviceNumbers: [] };
+    // 2. Lock their approvable forms on this ship
+    const svcNos = eligible.map((r) => r.serviceNumber);
+    const [forms] = await conn.query(
+      `SELECT id, service_no, status FROM ef_emolument_forms
+       WHERE ship = ?
+         AND service_no IN (${svcNos.map(() => "?").join(",")})
+         AND status IN ('SUBMITTED', 'DO_REVIEWED')
+       FOR UPDATE`,
+      [ship, ...svcNos],
+    );
 
-    // 2. Bulk update ef_personalinfos
+    // 3. Only personnel with a form are approved, so every status change has an
+    //    approval record. The others are reported back and left untouched.
+    const withForm = new Set(forms.map((f) => norm(f.service_no)));
+    const approveSvc = svcNos.filter((s) => withForm.has(norm(s)));
+    const skipped = svcNos
+      .filter((s) => !withForm.has(norm(s)))
+      .map((s) => ({ serviceNumber: s, reason: "no submitted form on this ship" }));
+    if (approveSvc.length === 0) return { count: 0, serviceNumbers: [], skipped };
+
+    // 4. Update ef_personalinfos
     const [result] = await conn.query(
       `UPDATE ef_personalinfos
        SET Status     = ?,
@@ -507,27 +574,31 @@ async function approveClass(
            fo_date    = NOW(),
            dateModify = NOW()
        WHERE ship    = ?
-         AND classes = ?
+         AND serviceNumber IN (${approveSvc.map(() => "?").join(",")})
          AND Status  IN ('SUBMITTED','FO', 'Filled','DO_REVIEWED')
          AND (emolumentform IS NULL OR emolumentform != 'Yes')`,
-      [legacyStatus, foName, foRank, foSvcNo, ship, classes],
+      [legacyStatus, foName, foRank, foSvcNo, ship, ...approveSvc],
     );
+    if (result.affectedRows !== approveSvc.length) {
+      throw new Error(
+        `approveClass: expected ${approveSvc.length} personnel updates, got ${result.affectedRows}`,
+      );
+    }
 
-    const serviceNumbers = affected.map((r) => r.serviceNumber);
-
-    // 3. Bulk update ef_emolument_forms
-    const placeholders = serviceNumbers.map(() => "?").join(",");
+    // 5. Update exactly the locked forms
+    const formIds = forms.map((f) => f.id);
     await conn.query(
       `UPDATE ef_emolument_forms
        SET status     = 'FO_APPROVED',
            updated_at = NOW()
-       WHERE service_no IN (${placeholders})
-         AND ship     = ?
-         AND status   IN ('SUBMITTED', 'DO_REVIEWED')`,
-      [...serviceNumbers, ship],
+       WHERE id IN (${formIds.map(() => "?").join(",")})`,
+      formIds,
     );
 
-    return { count: result.affectedRows, serviceNumbers };
+    // 6. Approval trail, same transaction
+    await insertApprovalsTx(conn, forms, { ...FO_TRAIL, performedBy: foSvcNo, remarks });
+
+    return { count: result.affectedRows, serviceNumbers: approveSvc, skipped };
   });
 }
 

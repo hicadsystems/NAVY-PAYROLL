@@ -2246,18 +2246,48 @@
       };
     }
 
-    function downloadPayslipPdf(data, showStamp) {
+    // When many staff download at once the server answers 503 "busy" with
+    // Retry-After (seconds). The download then waits that long and tries again
+    // by itself, showing a countdown, up to PDF_MAX_TRIES times.
+    var PDF_MAX_TRIES = 20;
+
+    function fetchPayslipPdf(data, showStamp, dlBtn, tryNo) {
       var token = localStorage.getItem('token');
+      return fetch('/payslip/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ data: data, stamp: showStamp })
+      }).then(function (r) {
+        if (r.status === 503 && tryNo < PDF_MAX_TRIES) {
+          var hdr = parseInt(r.headers.get('Retry-After'), 10);
+          return r.json().catch(function () { return {}; }).then(function (j) {
+            var wait = Math.max(2, Math.min(120, hdr || (j && j.retryAfter) || 5));
+            return new Promise(function (resolve) {
+              var left = wait;
+              var tick = function () {
+                if (dlBtn) dlBtn.textContent = 'Busy, retrying in ' + left + 's…';
+                if (left <= 0) { resolve(); return; }
+                left -= 1;
+                setTimeout(tick, 1000);
+              };
+              tick();
+            }).then(function () {
+              if (dlBtn) dlBtn.textContent = 'Preparing…';
+              return fetchPayslipPdf(data, showStamp, dlBtn, tryNo + 1);
+            });
+          });
+        }
+        if (!r.ok) throw new Error(r.status === 503 ? 'busy' : 'failed');
+        return r.blob();
+      });
+    }
+
+    function downloadPayslipPdf(data, showStamp) {
       var dlBtn = document.getElementById('attPreviewDownloadBtn');
       if (dlBtn) { dlBtn.disabled = true; dlBtn.textContent = 'Preparing…'; }
 
       // Single-employee PDF always goes through /payslip/pdf (same as original)
-      fetch('/payslip/pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ data: data, stamp: showStamp })
-      })
-        .then(function (r) { if (!r.ok) throw new Error('failed'); return r.blob(); })
+      fetchPayslipPdf(data, showStamp, dlBtn, 1)
         .then(function (blob) {
           var url = URL.createObjectURL(blob);
           var link = document.createElement('a');
@@ -2277,9 +2307,13 @@
               + 'd="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> Download';
           }
         })
-        .catch(function () {
+        .catch(function (err) {
           if (dlBtn) { dlBtn.disabled = false; dlBtn.textContent = 'Download'; }
-          if (typeof DashAlertModal !== 'undefined') DashAlertModal.show('PDF generation failed. Please try again.');
+          if (typeof DashAlertModal !== 'undefined') {
+            DashAlertModal.show(err && err.message === 'busy'
+              ? 'Many people are downloading payslips right now. Please try again in a few minutes.'
+              : 'PDF generation failed. Please try again.');
+          }
         });
     }
 

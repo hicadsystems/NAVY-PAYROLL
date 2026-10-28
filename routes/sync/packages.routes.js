@@ -11,15 +11,17 @@
 
 const express = require("express");
 const verifyToken = require("../../middware/authentication");
-const { actor } = require("../../middware/syncAuth");
+const { actor, requireSync } = require("../../middware/syncAuth");
 const upload = require("../../services/sync/upload.service");
 const runSvc = require("../../services/sync/run.service");
 const { send, fail } = require("./respond");
 
 const router = express.Router();
+// Every upload step: a payroll login whose role has Payslip Sync.
+const guard = [verifyToken, requireSync];
 const rawChunk = express.raw({ type: () => true, limit: upload.CHUNK_SIZE + 1024 });
 
-router.post("/packages", verifyToken, async (req, res) => {
+router.post("/packages", ...guard, async (req, res) => {
   try {
     const { header, totalBytes } = req.body || {};
     const out = await upload.startUpload({ header, totalBytes, by: actor(req) });
@@ -29,7 +31,7 @@ router.post("/packages", verifyToken, async (req, res) => {
   }
 });
 
-router.put("/packages/:fingerprint/chunks/:n", verifyToken, rawChunk, async (req, res) => {
+router.put("/packages/:fingerprint/chunks/:n", ...guard, rawChunk, async (req, res) => {
   try {
     const out = await upload.putChunk(req.params.fingerprint, req.params.n, req.body);
     return send(res, out);
@@ -38,7 +40,7 @@ router.put("/packages/:fingerprint/chunks/:n", verifyToken, rawChunk, async (req
   }
 });
 
-router.post("/packages/:fingerprint/complete", verifyToken, async (req, res) => {
+router.post("/packages/:fingerprint/complete", ...guard, async (req, res) => {
   try {
     const p = await upload.completeUpload(req.params.fingerprint);
     // checkOnly: verify and compare everything, load nothing (Console "Check only")
@@ -50,7 +52,7 @@ router.post("/packages/:fingerprint/complete", verifyToken, async (req, res) => 
   }
 });
 
-router.post("/packages/:fingerprint/cancel", verifyToken, async (req, res) => {
+router.post("/packages/:fingerprint/cancel", ...guard, async (req, res) => {
   try {
     return send(res, await upload.cancelUpload(req.params.fingerprint));
   } catch (e) {
@@ -58,7 +60,7 @@ router.post("/packages/:fingerprint/cancel", verifyToken, async (req, res) => {
   }
 });
 
-router.post("/packages/:fingerprint/check", verifyToken, async (req, res) => {
+router.post("/packages/:fingerprint/check", ...guard, async (req, res) => {
   try {
     const p = await upload.getPackageByFingerprint(req.params.fingerprint);
     if (!p) return fail(res, Object.assign(new Error("Unknown package."), { code: "not-found", status: 404 }));
@@ -69,7 +71,7 @@ router.post("/packages/:fingerprint/check", verifyToken, async (req, res) => {
   }
 });
 
-router.post("/packages/:fingerprint/reprocess", verifyToken, async (req, res) => {
+router.post("/packages/:fingerprint/reprocess", ...guard, async (req, res) => {
   try {
     const p = await upload.getPackageByFingerprint(req.params.fingerprint);
     if (!p) return fail(res, Object.assign(new Error("Unknown package."), { code: "not-found", status: 404 }));

@@ -70,6 +70,24 @@ async function systemChecks() {
     return out;
   }
 
+  // ── payroll classes (py_payrollclass → database) ──
+  const cls = await db.refreshClasses({ force: true });
+  if (cls.source === "py_payrollclass") {
+    const used = db.DATABASE_KEYS.filter((k) => cls.byKey.has(k));
+    const missing = db.DATABASE_KEYS.filter((k) => !cls.byKey.has(k));
+    const extra = cls.list.filter((c) => !c.key);
+    add(
+      "Setup",
+      "Payroll classes",
+      missing.length ? "warn" : "ok",
+      used.map((k) => `${k} = class ${cls.byKey.get(k).classcode} → ${cls.byKey.get(k).schema || "no db_name"}`).join("; ") +
+        (missing.length ? ` | no py_payrollclass row for: ${missing.map((k) => `${k} (classcode ${db.CLASS_CODES[k]})`).join(", ")}` : "") +
+        (extra.length ? ` | not in packages: ${extra.map((c) => `${c.classcode} ${c.classname || ""}`.trim()).join(", ")}` : ""),
+    );
+  } else {
+    add("Setup", "Payroll classes", "warn", `py_payrollclass could not be read (${cls.reason}); using the .env databases`);
+  }
+
   // ── databases on this server ──
   const [schemas] = await db.query("SELECT LOWER(SCHEMA_NAME) AS s FROM INFORMATION_SCHEMA.SCHEMATA");
   const have = new Set(schemas.map((r) => r.s));

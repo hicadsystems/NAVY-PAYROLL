@@ -19,6 +19,7 @@ const db = require("./db");
  * @returns {Promise<{visible: boolean, reason: string}>}
  */
 async function isPeriodVisible(schema, period) {
+  await db.refreshClasses(); // cached 60 s, never throws
   const dbKey = db.keyForSchema(schema);
   if (!dbKey) return { visible: true, reason: "database not synced" };
   let rows;

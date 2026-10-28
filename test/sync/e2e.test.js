@@ -28,6 +28,8 @@ try {
   process.exit(0);
 }
 process.env.SYNC_CHUNK_BYTES = String(32 * 1024);
+process.env.SYNC_ADMIN_ROLES = "SUPER ADMIN";
+process.env.SYNC_MENU_KEYS = "payslip-sync";
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -55,6 +57,7 @@ process.env.SYNC_UPLOAD_DIR = path.join(tmp, "uploads");
     req.user_id = "TEST1";
     req.user_fullname = "Test Officer";
     req.user_role = req.headers["x-test-role"];
+    req.current_class = "t_hicaddata"; // a payroll login (middware/syncAuth.js)
     next();
   };
   require.cache[authPath] = stub;
@@ -114,7 +117,9 @@ async function setupSchemas() {
     // like the real website table: website settings the payroll side does not have
     await sql(`CREATE TABLE ${T("py_payrollclass")} (classcode VARCHAR(5) PRIMARY KEY, classname VARCHAR(60), db_name VARCHAR(30),
       status VARCHAR(10), year INT NOT NULL, month INT NOT NULL)`);
-    await sql(`INSERT INTO ${T("py_payrollclass")} VALUES ('1','OFFICERS','t_hicaddata','active',2026,9), ('2','W/OFFICERS','t_hicaddata1','active',2026,9)`);
+    await sql(`INSERT INTO ${T("py_payrollclass")} VALUES ('1','OFFICERS','t_hicaddata','active',2026,9), ('2','W/OFFICERS','t_hicaddata1','active',2026,9),
+      ('3','RATINGS','t_hicaddata2','active',2026,9), ('4','RATINGS A','t_hicaddata3','active',2026,9),
+      ('5','RATINGS B','t_hicaddata4','active',2026,9), ('6','JUNIOR/TRAINEE','t_hicaddata5','active',2026,9)`);
     for (const t of ["py_elementtype", "py_bank", "py_pfa", "ac_businessline", "ac_costcentre"]) {
       await sql(`CREATE TABLE ${T(t)} (code VARCHAR(10) PRIMARY KEY, name VARCHAR(60))`);
     }
@@ -128,6 +133,13 @@ async function setupSchemas() {
     );
   }
   for (const s of schema.createStatements((t) => `t_hicaddata.${t}`)) await sql(s);
+  // the app's roles / menu permissions (middware/syncAuth.js reads these)
+  await sql("CREATE TABLE t_hicaddata.roles (id INT PRIMARY KEY, name VARCHAR(60))");
+  await sql("CREATE TABLE t_hicaddata.menu_items (id INT PRIMARY KEY, menu_key VARCHAR(60))");
+  await sql("CREATE TABLE t_hicaddata.role_menu_permissions (role_id INT, menu_item_id INT)");
+  await sql("INSERT INTO t_hicaddata.roles VALUES (1, 'SYNC OFFICER'), (2, 'CLERK'), (3, 'SUPER ADMIN')");
+  await sql("INSERT INTO t_hicaddata.menu_items VALUES (10, 'payslip-sync'), (11, 'reports')");
+  await sql("INSERT INTO t_hicaddata.role_menu_permissions VALUES (1, 10), (2, 11)");
 }
 
 function staffRows(n, surname = (i) => `Surname${i}`) {
@@ -250,6 +262,12 @@ let fullHeader;
 test("access: a request without a login is refused", async () => {
   const r = await api("GET", "/api/sync/status", { role: "" });
   assert.equal(r.status, 401);
+});
+
+test("access: a role without the Payslip Sync menu is refused", async () => {
+  const r = await api("GET", "/api/sync/status", { role: "CLERK" });
+  assert.equal(r.status, 403, JSON.stringify(r.body));
+  assert.equal((await api("GET", "/api/sync/status")).status, 200);
 });
 
 test("full package: unknown exporter → approval → prepared", async () => {
@@ -606,4 +624,51 @@ test("check only looks both ways: a required website column the package lacks is
   } finally {
     await sql("ALTER TABLE t_hicaddata.py_stdrate DROP COLUMN must_have, DROP COLUMN nice_to_have");
   }
+});
+
+test("delete a check-only run: record, package and file go; loads cannot be deleted", async () => {
+  const { file } = await makePkg("check-delete.npsync", { kind: "full", seq: 70, baseSeq: null, period: "202701", databases: ["officers"], staffPerDb: { officers: 5 } });
+  const buf = fs.readFileSync(file);
+  const { header } = await lib.reader.readHeader(file);
+  const st = await api("POST", "/api/sync/packages", { json: { header, totalBytes: buf.length } });
+  assert.equal(st.status, 201, JSON.stringify(st.body));
+  const { fingerprint, chunkSize, chunkCount } = st.body.data;
+  for (let n = 0; n < chunkCount; n++) {
+    await api("PUT", `/api/sync/packages/${fingerprint}/chunks/${n}`, { raw: buf.subarray(n * chunkSize, Math.min(buf.length, (n + 1) * chunkSize)) });
+  }
+  const done = await api("POST", `/api/sync/packages/${fingerprint}/complete`, { json: { checkOnly: true } });
+  const run = await waitRun(done.body.data.runId);
+  assert.ok(["checked", "check_failed"].includes(run.status), run.status);
+  const pkgFile = (await one("SELECT file_path FROM t_hicaddata.sync_packages WHERE fingerprint = ?", [fingerprint])).file_path;
+  assert.ok(fs.existsSync(pkgFile));
+
+  const del = await api("DELETE", `/api/sync/runs/${run.run_uuid}`);
+  assert.equal(del.status, 200, JSON.stringify(del.body));
+  assert.equal(del.body.data.packageRemoved, true);
+  assert.equal((await one("SELECT COUNT(*) n FROM t_hicaddata.sync_runs WHERE run_uuid = ?", [run.run_uuid])).n, 0);
+  assert.equal((await one("SELECT COUNT(*) n FROM t_hicaddata.sync_packages WHERE fingerprint = ?", [fingerprint])).n, 0);
+  assert.equal((await one("SELECT COUNT(*) n FROM t_hicaddata.sync_upload_chunks WHERE fingerprint = ?", [fingerprint])).n, 0);
+  assert.equal(fs.existsSync(pkgFile), false);
+  // the same file can be uploaded again (no "Already received")
+  const again = await api("POST", "/api/sync/packages", { json: { header, totalBytes: buf.length } });
+  assert.equal(again.status, 201, JSON.stringify(again.body));
+  await api("POST", `/api/sync/packages/${fingerprint}/cancel`);
+
+  // a check followed by Load and prepare: deleting the check keeps the package
+  const kept = (await runSvc.listRuns({ limit: 500 })).find(
+    (r) => r.status === "checked" && r.package_status !== "received",
+  );
+  if (kept) {
+    const d2 = await api("DELETE", `/api/sync/runs/${kept.run_uuid}`);
+    assert.equal(d2.status, 200, JSON.stringify(d2.body));
+    assert.equal(d2.body.data.packageRemoved, false);
+    assert.equal((await one("SELECT COUNT(*) n FROM t_hicaddata.sync_packages WHERE fingerprint = ?", [kept.fingerprint])).n, 1);
+  }
+
+  // loads, Go live and rollbacks stay in the history
+  const other = (await runSvc.listRuns({ limit: 500 })).find((r) => !["checked", "check_failed"].includes(r.status));
+  const refused = await api("DELETE", `/api/sync/runs/${other.run_uuid}`);
+  assert.equal(refused.status, 400, JSON.stringify(refused.body));
+  assert.equal((await one("SELECT COUNT(*) n FROM t_hicaddata.sync_runs WHERE run_uuid = ?", [other.run_uuid])).n, 1);
+  assert.equal((await api("DELETE", "/api/sync/runs/00000000-0000-0000-0000-000000000000")).status, 404);
 });

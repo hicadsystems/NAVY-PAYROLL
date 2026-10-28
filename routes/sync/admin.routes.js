@@ -171,6 +171,15 @@ router.get("/runs/:runId", ...guard, async (req, res) => {
   }
 });
 
+// Delete a check-only run (and its uploaded package when nothing else uses it).
+router.delete("/runs/:runId", ...guard, async (req, res) => {
+  try {
+    return send(res, await runSvc.deleteCheckRun(req.params.runId, actor(req)));
+  } catch (e) {
+    return fail(res, e);
+  }
+});
+
 // ── Go live / publications ─────────────────────────────────
 router.post("/golive", ...guard, async (req, res) => {
   try {

@@ -20,8 +20,8 @@
  *   CLOUDINARY_API_SECRET
  *
  * Upload folder structure on Cloudinary:
- *   emolument/{doc_type}/{serviceNumber}
- *   e.g. emolument/PASSPORT/N00001
+ *   public_id    emolument/{doc_type}/{serviceNumber}   e.g. emolument/passport/nn_12345
+ *   asset_folder emolument/{doc_type}                   (Media Library folder)
  *
  * Personnel can only upload their own documents.
  * EMOL_ADMIN can upload for any service number.
@@ -62,6 +62,11 @@ function buildPublicId(serviceNo, docType) {
   const safeService = serviceNo.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
   const safeType = docType.toLowerCase();
   return `emolument/${safeType}/${safeService}`;
+}
+
+function assetFolder(docType) {
+  // e.g. emolument/passport — same path as the public_id prefix
+  return `emolument/${docType.toLowerCase()}`;
 }
 
 function validateDocType(docType) {
@@ -137,9 +142,13 @@ async function uploadDocument(
   try {
     uploadResult = await cloudinary.uploader.upload(fileData, {
       public_id: publicId,
+      // Media Library folder. Accounts on Cloudinary's "dynamic folders" mode do not
+      // turn the slashes in public_id into folders, so name the folder explicitly
+      // (fixed-folder accounts ignore this and use the public_id path).
+      asset_folder: assetFolder(docType),
       overwrite: true,
+      invalidate: true, // drop the CDN copy of the replaced image
       resource_type: "image",
-      folder: "", // public_id already contains path
       transformation: [
         { width: 600, height: 800, crop: "limit" },
         { quality: "auto", fetch_format: "auto" },

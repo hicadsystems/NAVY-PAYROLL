@@ -498,6 +498,54 @@ async function reprocess(packageId, by) {
   return startRun(packageId, by);
 }
 
+/**
+ * Delete a check-only run (checked / check_failed). A check never changes
+ * payroll or staff data, so only the record goes. When the package has no other
+ * runs and was never applied, the package record, its upload chunks and the
+ * uploaded file go too (the same file can then be uploaded again).
+ */
+const DELETABLE_RUNS = ["checked", "check_failed"];
+
+async function deleteCheckRun(idOrUuid, by) {
+  const run = await getRun(idOrUuid);
+  if (!run) throw new SyncError("not-found", "Unknown run.", 404);
+  if (!DELETABLE_RUNS.includes(run.status)) {
+    throw new SyncError(
+      "bad-request",
+      `Only check-only runs can be deleted; this run is ${run.status}. Loads, Go live and rollbacks stay in the history.`,
+    );
+  }
+  if (active.has(run.id)) throw new SyncError("busy", "This run is still working.", 409);
+
+  const out = await db.transaction(async (conn) => {
+    await conn.query(`DELETE FROM ${db.ctl("sync_runs")} WHERE id = ?`, [run.id]);
+    const [[pkg]] = await conn.query(
+      `SELECT id, status, file_path, fingerprint FROM ${db.ctl("sync_packages")} WHERE id = ? FOR UPDATE`,
+      [run.package_id],
+    );
+    const [[left]] = await conn.query(
+      `SELECT COUNT(*) AS n FROM ${db.ctl("sync_runs")} WHERE package_id = ?`,
+      [run.package_id],
+    );
+    if (!pkg || Number(left.n) > 0 || !["received", "rejected"].includes(pkg.status)) {
+      return { packageRemoved: false, file: null };
+    }
+    await conn.query(`DELETE FROM ${db.ctl("sync_upload_chunks")} WHERE fingerprint = ?`, [pkg.fingerprint]);
+    await conn.query(`DELETE FROM ${db.ctl("sync_packages")} WHERE id = ?`, [pkg.id]);
+    return { packageRemoved: true, file: pkg.file_path };
+  });
+
+  if (out.file) {
+    await require("fs").promises.rm(out.file, { force: true }).catch((e) =>
+      console.error(`⚠️  sync: could not remove ${out.file}: ${e.message}`),
+    );
+  }
+  console.log(
+    `🗑️  sync: ${by} deleted check run ${run.run_uuid} (seq ${run.seq}, ${run.fingerprint})${out.packageRemoved ? " and its uploaded package" : ""}`,
+  );
+  return { runUuid: run.run_uuid, fingerprint: run.fingerprint, packageRemoved: out.packageRemoved };
+}
+
 module.exports = {
   LOCK_NAME,
   withLock,
@@ -511,6 +559,8 @@ module.exports = {
   processRun,
   undoApplied,
   reprocess,
+  deleteCheckRun,
+  DELETABLE_RUNS,
   parseSummary,
   saveSummary,
 };

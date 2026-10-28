@@ -4,7 +4,7 @@
 //
 // Everything about the package file (format, crypto, manifest) comes
 // from Dev A's repo, installed as a dependency pinned to a tag:
-//   "navy-payslip-sync": "github:hicadsystems/navy-payslip-sync#v0.1.2"
+//   "navy-payslip-sync": "github:hicadsystems/navy-payslip-sync#v0.1.4"
 //
 // SYNC_SHARED_MODULE can point at another module path (tests only).
 // ============================================================

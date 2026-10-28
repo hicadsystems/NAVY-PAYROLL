@@ -875,8 +875,18 @@
         .filter(Boolean)
         .sort()
         .pop();
+      // Nothing published through sync yet: staff see the website's current data,
+      // whose period is py_stdrate BT05.
+      const site = s.databases
+        .filter((d) => d.inPackages)
+        .map((d) => d.sitePeriod)
+        .filter(Boolean)
+        .sort()
+        .pop();
       chips.push(
-        `<span class="ps-chip">Live period <b>${esc(periodLabel(live))}</b></span>`,
+        live
+          ? `<span class="ps-chip">Live period <b>${esc(periodLabel(live))}</b></span>`
+          : `<span class="ps-chip" title="Nothing has gone live through Payslip Sync yet. Staff see the website's current data, which is on this period (py_stdrate BT05).">Live period <b>${esc(site ? periodLabel(site) : "—")}</b>${site ? " · current data, before sync" : ""}</span>`,
       );
       chips.push(
         s.classesFrom === "config"
@@ -919,7 +929,7 @@
             <div class="text-xs text-gray-400 ps-mono text-right">${esc(d.schema || "no database")}</div>
           </div>
           <div class="grid grid-cols-2 gap-2 text-sm">
-            <div><div class="text-xs text-gray-500">Live month</div><div class="font-medium">${esc(periodLabel(d.livePeriod))}</div></div>
+            <div><div class="text-xs text-gray-500">Live month</div><div class="font-medium">${d.livePeriod ? esc(periodLabel(d.livePeriod)) : d.sitePeriod ? `${esc(periodLabel(d.sitePeriod))} <span class="text-xs text-gray-400 font-normal">before sync</span>` : "—"}</div></div>
             <div><div class="text-xs text-gray-500">Prepared</div><div class="font-medium ${d.preparedPeriod ? "text-amber-700" : ""}">${esc(d.preparedPeriod ? periodLabel(d.preparedPeriod) : "—")}</div></div>
             <div><div class="text-xs text-gray-500">Staff</div><div class="ps-mono">${esc(fmtNum(d.preparedStaff != null ? d.preparedStaff : d.liveStaff))}</div></div>
             <div><div class="text-xs text-gray-500">Total net</div><div class="ps-mono">${esc(fmtMoney(d.preparedNet != null ? d.preparedNet : d.liveNet))}</div></div>

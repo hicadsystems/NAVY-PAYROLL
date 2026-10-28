@@ -87,6 +87,23 @@ router.get("/status", ...guard, async (req, res) => {
       };
     });
 
+    // The period each database is on now (py_stdrate BT05): what staff see in a
+    // database no sync has published to yet (before the first Go live).
+    await Promise.all(
+      databases.map(async (d) => {
+        d.sitePeriod = null;
+        if (!d.schema) return;
+        try {
+          const [[r]] = await db.query(
+            `SELECT ord, mth FROM ${db.qt(d.schema, "py_stdrate")} WHERE type = 'BT05' LIMIT 1`,
+          );
+          const y = r && parseInt(String(r.ord).trim(), 10);
+          const m = r && parseInt(String(r.mth).trim(), 10);
+          if (y && m >= 1 && m <= 12) d.sitePeriod = `${y}${String(m).padStart(2, "0")}`;
+        } catch (_) {}
+      }),
+    );
+
     let lastPublish = null;
     if (lastLive) {
       const s = runSvc.parseSummary(lastLive.summary);

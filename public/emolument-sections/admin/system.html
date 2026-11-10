@@ -573,14 +573,25 @@
       }
 
       // ── Ships card ───────────────────────────────────────
-      // Count distinct ships (excluding 'All') with at least one
-      // Open or Reopen cycle row. Reopen counts as open.
-      const openShips = new Set(
-        allCycles
-          .filter((c) => c.ship !== "All" && (c.status === "Open" || c.status === "Reopen"))
-          .map((c) => c.ship),
-      );
-      document.getElementById("sys-stat-ships-open").textContent = openShips.size;
+      // How many ships can submit right now: ef_ships.openship, which the
+      // scheduler keeps in step with ef_control every minute (a Global
+      // window opens every ship, a ship window opens that ship).
+      // "All (N)" when every ship is open, otherwise "x of N".
+      const shipsEl = document.getElementById("sys-stat-ships-open");
+      const hasOpenFlag = ships.length && ships.some((s) => s.openship !== undefined && s.openship !== null);
+      if (hasOpenFlag) {
+        const total = ships.length;
+        const openCount = ships.filter((s) => Number(s.openship) === 1 || s.openship === true).length;
+        shipsEl.textContent = openCount === total ? `All (${total})` : `${openCount} of ${total}`;
+      } else {
+        // Ship list without openship: count ships with their own open window (Reopen counts as open).
+        const openShips = new Set(
+          allCycles
+            .filter((c) => c.ship !== "All" && (c.status === "Open" || c.status === "Reopen"))
+            .map((c) => c.ship),
+        );
+        shipsEl.textContent = openShips.size;
+      }
     }
 
     /* ── filter + sort ────────────────────────────────── */

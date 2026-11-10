@@ -69,6 +69,7 @@ function pickResultHeaders(raw) {
 }
 
 const jobs = new Map(); // id -> job
+let warnedNoPort = false;
 const queue = []; // pending starters
 let running = 0;
 
@@ -315,6 +316,20 @@ async function asyncExportMiddleware(req, res, next) {
 
     if (req.get("x-async-export") !== "1") return next();
     if (req.method !== "GET" && req.method !== "POST") return next();
+
+    // The replay calls back into this app on the port the request arrived on.
+    // Under cPanel / Passenger the app listens on a Unix socket (no TCP port),
+    // so a loopback call would land on the web server on port 80 instead
+    // (404). Without a port to replay to, serve the request directly.
+    if (!req.socket || !req.socket.localPort) {
+      if (!warnedNoPort) {
+        warnedNoPort = true;
+        console.warn(
+          "⚠️  [asyncExport] App is not on a TCP port (Passenger/Unix socket) — exports are served directly, without background jobs.",
+        );
+      }
+      return next();
+    }
     if (hasOtherBody(req)) return next(); // multipart / form / raw uploads
     if (!isExportRequest(req)) return next();
 

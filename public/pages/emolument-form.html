@@ -1784,6 +1784,12 @@
       let pendingRoleAction = null;
       // Fix 3: track whether the viewing user owns this form
       let isOwnForm = false;
+      // Opened from the admin "Review & Approve" overlay (?admin=1&review=1)
+      // with "Admins can edit forms" switched on: every field is editable and
+      // Save writes to this personnel's form through the admin endpoint.
+      let adminReviewEdit = false;
+      // Why the switch is on but this form still opens read-only (synced).
+      let adminEditLockedReason = null;
 
       // ── Constants ────────────────────────────────────────────
       const LABEL_OVERRIDES = {
@@ -1857,7 +1863,8 @@
       });
 
       window.addEventListener("beforeunload", (e) => {
-        if (formLocked || !isDirty) return;
+        // In the admin review overlay the parent asks before discarding edits.
+        if (formLocked || !isDirty || adminReviewEdit) return;
         e.preventDefault();
         e.returnValue = "";
       });
@@ -1974,6 +1981,10 @@
 
           if (isAdmin) hideSpaSurroundings();
 
+          if (isAdmin && svcno && params.get("review") === "1") {
+            await resolveAdminEditState(svcno);
+          }
+
           const url =
             isAdmin && svcno
               ? `/form/load?admin=1&svcno=${encodeURIComponent(svcno)}&ship=${encodeURIComponent(ship)}&command=${encodeURIComponent(command)}`
@@ -2086,9 +2097,10 @@
         renderLoans(data.loans || {});
 
         const isLocked =
-          isAdmin ||
-          data.canEdit === false ||
-          LOCKED_STATUSES.has(data.formStatus);
+          !adminReviewEdit &&
+          (isAdmin ||
+            data.canEdit === false ||
+            LOCKED_STATUSES.has(data.formStatus));
 
         // Fix 2: Action bar is always shown; Back button is always visible.
         showEl("action-bar", true);
@@ -2100,7 +2112,9 @@
         // isLocked above) gets editable fields.
         const readOnlyForReviewer = !isAdmin && !isOwnForm;
 
-        if (isLocked) {
+        if (adminReviewEdit) {
+          enableAdminEditing();
+        } else if (isLocked) {
           formLocked = true;
           document
             .querySelectorAll(".field")
@@ -2126,6 +2140,8 @@
                 "This form is currently under review and cannot be edited.",
               "fa-lock",
             );
+          } else if (adminEditLockedReason) {
+            showFormNotice("blue", adminEditLockedReason, "fa-lock");
           }
         } else if (readOnlyForReviewer) {
           formLocked = true;
@@ -2152,7 +2168,153 @@
           });
         }
 
-        initRoleButtons();
+        // The Review & Approve overlay has its own Approve / Reject buttons.
+        if (new URLSearchParams(location.search).get("review") !== "1") {
+          initRoleButtons();
+        }
+      }
+
+      // ── Admin edit (Review & Approve overlay) ────────────────
+      // Editable when "Admins can edit forms" is on AND the form has not been
+      // synced to payroll — the server decides both (GET /admin/form-review/status).
+      async function resolveAdminEditState(svcno) {
+        adminReviewEdit = false;
+        adminEditLockedReason = null;
+        try {
+          const res = await fetch(
+            `/admin/form-review/status?svcno=${encodeURIComponent(svcno)}`,
+            { headers: { Authorization: `Bearer ${getToken()}` } },
+          );
+          if (!res.ok) return;
+          const s = await res.json();
+          adminReviewEdit = s?.editable === true;
+          if (s?.adminCanEditForms && !s?.canEdit) {
+            adminEditLockedReason =
+              "This form has been synced to payroll, so it can no longer be edited.";
+          }
+        } catch {
+          /* stay read-only */
+        }
+      }
+
+      // Tracked apart from isDirty: the tick-box handlers set isDirty before
+      // our listener runs, so isDirty can't tell us whether the parent knows.
+      let parentKnowsDirty = false;
+
+      function notifyParentDirty(dirty) {
+        parentKnowsDirty = dirty;
+        if (window === window.top) return;
+        window.parent.postMessage({ type: "emol_form_dirty", dirty }, "*");
+      }
+
+      function markAdminDirty() {
+        isDirty = true;
+        if (!parentKnowsDirty) notifyParentDirty(true);
+      }
+
+      function enableAdminEditing() {
+        formLocked = false;
+
+        // Every field opens up, including the ones personnel can't change
+        // (bank details etc.). The service number stays fixed: it is the
+        // record key and is changed from Personnel Mgt → Change SVC No.
+        document.querySelectorAll(".field").forEach((el) => {
+          if (el.id === "serviceNumber") return;
+          el.disabled = false;
+          el.addEventListener("input", markAdminDirty);
+          el.addEventListener("change", markAdminDirty);
+        });
+        document.querySelectorAll(".toggle-row input").forEach((el) => {
+          el.disabled = false;
+          el.addEventListener("change", markAdminDirty);
+        });
+
+        // Inputs that only apply while their tick-box is on.
+        LOANS.forEach(({ key }) => {
+          const on = document.getElementById(`loan_${key}_active`)?.checked;
+          ["year", "specify"].forEach((part) => {
+            const el = document.getElementById(`loan_${key}_${part}`);
+            if (el) el.disabled = !on;
+          });
+        });
+        const gcbNumber = document.getElementById("gcb_number");
+        if (gcbNumber) {
+          gcbNumber.disabled = !document.getElementById("allow_GCB")?.checked;
+        }
+
+        // Photo uploads post to the signed-in user's own record, so they
+        // stay off here.
+        document.querySelectorAll(".photo-zone").forEach((zone) => {
+          zone.style.pointerEvents = "none";
+          zone.style.opacity = "0.6";
+          zone.style.cursor = "not-allowed";
+        });
+
+        const save = document.getElementById("btn-save");
+        save.onclick = adminSaveForm;
+        save.title = "Save Changes";
+        const saveLabel = save.querySelector("span");
+        if (saveLabel) saveLabel.textContent = "Save Changes";
+        showEl("btn-save");
+        hide("btn-submit");
+
+        showFormNotice(
+          "amber",
+          "Admin editing is on. Change any field, then press Save Changes. Saving does not change the form's status.",
+          "fa-pen",
+        );
+      }
+
+      async function adminSaveForm() {
+        const svcno = new URLSearchParams(location.search).get("svcno");
+        if (!adminReviewEdit || !svcno) return;
+
+        const ship = gv("ship");
+        const command = gv("command");
+        if (ship && command && !isShipUnderCommand(ship, command)) {
+          showToast(
+            "The selected Ship / Establishment does not belong to the selected Command.",
+            "error",
+          );
+          document
+            .getElementById("ship")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
+
+        const save = document.getElementById("btn-save");
+        save.disabled = true;
+        try {
+          const res = await fetch(
+            `/admin/form-review/form?svcno=${encodeURIComponent(svcno)}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getToken()}`,
+              },
+              body: JSON.stringify(buildBody()),
+            },
+          );
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            isDirty = false;
+            notifyParentDirty(false);
+            if (window !== window.top) {
+              window.parent.postMessage({ type: "emol_form_saved", svcNo: svcno }, "*");
+            }
+            showToast(data.message || "Changes saved.", "success");
+          } else {
+            showToast(data.error || "Could not save changes.", "error");
+          }
+        } catch {
+          showToast(
+            "Network error. Please check your connection and try again.",
+            "error",
+          );
+        } finally {
+          save.disabled = false;
+        }
       }
 
       function onFieldInput() {
@@ -2549,6 +2711,10 @@
 
       // ── Save / submit ────────────────────────────────────────
       async function saveDraft() {
+        // /form/save writes to the SIGNED-IN user's own form. An admin viewing
+        // someone else's form (?admin=1) must never trigger it — tick-box
+        // auto-saves included. Admin edits go through adminSaveForm().
+        if (new URLSearchParams(location.search).get("admin") === "1") return;
         try {
           const res = await fetch("/form/save", {
             method: "PUT",

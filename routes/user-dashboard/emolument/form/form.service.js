@@ -518,4 +518,7 @@ module.exports = {
   submitForm,
   loadFormOptions,
   openNewCycle,
+  // shared with the admin form-review module
+  mapGcb,
+  checkShipCommand,
 };

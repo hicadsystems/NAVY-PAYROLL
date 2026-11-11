@@ -628,13 +628,13 @@ async function saveAllowances(serviceNo, allowances, validAllowTypes) {
 // the whole transaction rolls back.
 // ─────────────────────────────────────────────────────────────
 
-async function submitAllTables(
+// Writes every form table from a request body, without touching Status.
+// Shared by submitAllTables (personnel submit) and the admin form-review
+// edit, so both persist the form with exactly the same SQL.
+async function saveAllTables(
   conn,
   serviceNo,
   body,
-  formNumber,
-  formYear,
-  legacyStatus,
   validLoanTypes,
   validAllowTypes,
 ) {
@@ -654,6 +654,19 @@ async function submitAllTables(
     body.allowances || {},
     validAllowTypes,
   );
+}
+
+async function submitAllTables(
+  conn,
+  serviceNo,
+  body,
+  formNumber,
+  formYear,
+  legacyStatus,
+  validLoanTypes,
+  validAllowTypes,
+) {
+  await saveAllTables(conn, serviceNo, body, validLoanTypes, validAllowTypes);
 
   // Mark as submitted — gate ensures this only fires once
   const [result] = await conn.query(
@@ -964,6 +977,7 @@ module.exports = {
   saveLoans,
   saveAllowances,
   submitForm,
+  saveAllTables,
   submitAllTables,
   initDraftForm,
   getShipCommandMatch,

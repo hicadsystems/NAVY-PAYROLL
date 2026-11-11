@@ -116,6 +116,8 @@ const emolRolesRoutes = require("../routes/user-dashboard/emolument/admin/roles.
 const formViewRoutes = require("../routes/user-dashboard/emolument/admin/form-view.routes");
 //-- accept verified --
 const acceptVerifiedRoutes = require("../routes/user-dashboard/emolument/admin/accept-verified.routes");
+//-- review & approve (any ship / command) --
+const formReviewRoutes = require("../routes/user-dashboard/emolument/admin/form-review.routes");
 //-- audit --
 const emolumentAuditRoutes = require("../routes/user-dashboard/emolument/audit/audit.routes");
 //-- form --
@@ -263,6 +265,7 @@ module.exports = (app) => {
     emolRolesRoutes,
     formViewRoutes,
     acceptVerifiedRoutes,
+    formReviewRoutes,
   );
   //-- audit --
   app.use("/audit", emolumentAuditRoutes);

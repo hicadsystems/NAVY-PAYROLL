@@ -3,279 +3,1133 @@
     <h3
       class="text-sm lg:text-lg font-bold mb-1 border-b text-navy text-center"
     >
-      Review and Approve Forms for a ship or command at once
+      Review and Approve or Reject Forms for any ship or command
     </h3>
   </div>
 
-  <div
-    class="max-w-lg mr-auto ml-auto bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4"
-  >
-    <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-4">
-      Select Ship / Command
-    </h3>
-    <div class="flex flex-col sm:flex-row gap-2">
-      <select
-        id="bulkShipSelect"
-        class="min-w-0 flex-1 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
-      >
-        <option value="">— Select ship or command —</option>
-      </select>
-      <button
-        onclick="loadBulkPreview(1)"
-        class="shrink-0 px-4 py-2 bg-navy text-white text-sm font-bold rounded-lg cursor-pointer border-none hover:bg-blue-800 transition-colors"
-      >
-        <i class="fas fa-search"></i>
-      </button>
-    </div>
-  </div>
-
-  <div id="bulkPreviewWrapper" class="hidden">
-    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-5 mb-4">
-      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div>
-          <h3 class="font-bold text-navy text-sm uppercase tracking-wide">
-            Forms Ready for Approval
-          </h3>
-          <p class="text-xs text-blue-900/40 mt-0.5" id="bulkPreviewMeta"></p>
-        </div>
+  <div class="max-w-4xl mr-auto ml-auto">
+    <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 mb-4">
+      <!-- Title row: count + settings -->
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h3 class="font-bold text-navy text-sm uppercase tracking-wide">
+          Forms
+        </h3>
         <div class="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="selectAll"
-            onchange="toggleAll(this)"
-            class="accent-navy w-4 h-4"
-          />
-          <label for="selectAll" class="text-xs font-bold text-navy/60"
-            >Select All</label
+          <span class="text-xs text-blue-900/40" id="frCount"></span>
+          <span
+            id="frEditBadge"
+            class="hidden text-xs font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600"
+            title="Admins can edit any field of any form"
           >
+            <i class="fas fa-pen" style="font-size: 9px"></i> Editing on
+          </span>
+          <div class="fr-settings-wrap">
+            <button
+              id="frSettingsBtn"
+              type="button"
+              class="fr-icon-btn"
+              title="Settings"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              <i class="fas fa-cog"></i>
+            </button>
+            <div id="frSettingsPanel" class="fr-settings-panel hidden">
+              <div
+                class="font-bold text-navy text-xs uppercase tracking-wide mb-3"
+              >
+                Settings
+              </div>
+              <label class="fr-switch-row" for="frEditToggle">
+                <span class="min-w-0">
+                  <span class="block text-sm font-semibold text-navy"
+                    >Admins can edit forms</span
+                  >
+                  <span class="block text-xs text-blue-900/50"
+                    >Every field, whatever the form's status</span
+                  >
+                </span>
+                <span class="fr-switch">
+                  <input type="checkbox" id="frEditToggle" />
+                  <span class="fr-slider"></span>
+                </span>
+              </label>
+              <div id="frSettingsMsg" class="hidden text-xs font-semibold mt-2"></div>
+            </div>
+          </div>
         </div>
       </div>
-      <div id="bulkList"></div>
-    </div>
 
-    <div class="flex gap-3">
-      <button
-        onclick="executeBulkApprove()"
-        class="flex-1 py-2.5 bg-green-600 text-white font-bold text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none"
+      <!-- Filters: search · select ship / command · class -->
+      <div id="frFilters" class="flex flex-col sm:flex-row gap-2 mb-2">
+        <input
+          id="frSearch"
+          type="text"
+          placeholder="Name or service no. (comma-separate several)"
+          class="flex-1 min-w-0 border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white/80 focus:outline-none"
+          autocomplete="off"
+        />
+
+        <select
+          id="frScope"
+          class="sm:w-44 sm:shrink-0 border border-amber-100 rounded-lg px-2 py-2 text-sm text-navy bg-white/80 focus:outline-none cursor-pointer"
+          title="Select ship / command"
+        >
+          <option value="">All ships &amp; commands</option>
+        </select>
+
+        <select
+          id="frClass"
+          class="sm:w-40 sm:shrink-0 border border-amber-100 rounded-lg px-2 py-2 text-sm text-navy bg-white/80 focus:outline-none cursor-pointer"
+        >
+          <option value="">All Classes</option>
+          <option value="1">Officers</option>
+          <option value="2">Warrant Officers</option>
+          <option value="3">Ratings A</option>
+          <option value="4">Ratings B</option>
+          <option value="5">Ratings C</option>
+          <option value="6">Trainees</option>
+        </select>
+
+        <button
+          id="frClearBtn"
+          type="button"
+          title="Clear filters"
+          class="sm:shrink-0 px-3 py-2 bg-gray-100 text-navy/60 text-sm font-bold rounded-lg cursor-pointer border border-amber-100 hover:bg-gray-200 transition-colors"
+        >
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <p id="frSearchHint" class="hidden text-xs text-blue-900/50 mb-2"></p>
+
+      <!-- Bulk bar -->
+      <div
+        class="flex items-center justify-between gap-2 flex-wrap mt-3 mb-2 px-1"
       >
-        <i class="fas fa-check-double mr-2"></i>Approve Selected (<span
-          id="selectedCount"
-          >0</span
-        >)
+        <label
+          class="flex items-center gap-2 text-xs font-bold text-navy/60 cursor-pointer"
+        >
+          <input
+            type="checkbox"
+            id="frSelectAll"
+            class="accent-navy w-4 h-4"
+          />
+          Select all on page
+        </label>
+        <div class="flex items-center gap-2">
+          <button
+            id="frClearSel"
+            type="button"
+            class="hidden text-xs font-bold text-navy/50 hover:text-navy cursor-pointer border-none bg-transparent"
+          >
+            Clear selection
+          </button>
+          <button
+            id="frBulkApprove"
+            type="button"
+            disabled
+            class="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors cursor-pointer border-none disabled:opacity-40"
+          >
+            <i class="fas fa-check-double mr-1"></i>Approve Selected (<span
+              id="frSelCount"
+              >0</span
+            >)
+          </button>
+        </div>
+      </div>
+
+      <div id="frTable">
+        <div class="flex items-center justify-center py-8 text-navy/30">
+          <i class="fas fa-spinner fa-spin mr-2"></i>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div
+        id="frPagination"
+        class="flex items-center justify-between mt-3 hidden"
+      >
+        <button
+          id="frPrevBtn"
+          type="button"
+          class="px-3 py-1.5 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer border-solid transition-colors disabled:opacity-30"
+        >
+          <i class="fas fa-chevron-left mr-1"></i>Prev
+        </button>
+        <span class="text-xs text-navy/50" id="frPageInfo"></span>
+        <button
+          id="frNextBtn"
+          type="button"
+          class="px-3 py-1.5 text-xs font-bold text-navy border border-amber-100 rounded-lg bg-white/60 hover:bg-amber-50 cursor-pointer border-solid transition-colors disabled:opacity-30"
+        >
+          Next<i class="fas fa-chevron-right ml-1"></i>
+        </button>
+      </div>
+
+      <div
+        id="frMsg"
+        class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"
+      ></div>
+    </div>
+  </div>
+</div>
+
+<!-- Reject modal -->
+<div
+  id="frRejectModal"
+  class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+>
+  <div
+    class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 relative"
+  >
+    <button
+      id="frRejectClose"
+      type="button"
+      class="absolute top-4 right-4 text-navy/40 hover:text-navy text-lg cursor-pointer border-none bg-transparent"
+    >
+      <i class="fas fa-times"></i>
+    </button>
+    <h3 class="font-bold text-navy text-sm uppercase tracking-wide mb-1">
+      Reject Form
+    </h3>
+    <p class="text-sm text-blue-900/50 mb-3" id="frRejectMeta"></p>
+    <div
+      id="frRejectWarn"
+      class="hidden mb-3 p-3 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700"
+    ></div>
+    <label
+      class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
+      for="frRejectRemarks"
+      >Reason <span class="text-red-500">*</span></label
+    >
+    <textarea
+      id="frRejectRemarks"
+      rows="3"
+      placeholder="Tell the personnel what needs fixing…"
+      class="w-full border border-amber-100 rounded-lg px-3 py-2 text-sm text-navy bg-white focus:outline-none focus:border-navy resize-none mb-3"
+    ></textarea>
+    <div class="flex gap-2">
+      <button
+        id="frRejectCancel"
+        type="button"
+        class="flex-1 py-2.5 bg-gray-100 text-navy/60 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors cursor-pointer border border-amber-100"
+      >
+        Cancel
+      </button>
+      <button
+        id="frRejectConfirm"
+        type="button"
+        class="flex-1 py-2.5 bg-red-600 text-white font-bold text-sm rounded-lg hover:bg-red-700 transition-colors cursor-pointer border-none"
+      >
+        <i class="fas fa-times mr-2"></i>Reject Form
       </button>
     </div>
     <div
-      id="bulkMsg"
+      id="frRejectMsg"
       class="hidden mt-3 p-3 rounded-lg text-sm font-semibold"
     ></div>
   </div>
 </div>
 
+<style>
+  .fr-settings-wrap {
+    position: relative;
+  }
+  .fr-icon-btn {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid #fde68a;
+    background: rgba(255, 255, 255, 0.7);
+    color: rgba(30, 64, 175, 0.55);
+    font-size: 13px;
+    cursor: pointer;
+    transition:
+      background 0.15s,
+      color 0.15s;
+  }
+  .fr-icon-btn:hover,
+  .fr-icon-btn[aria-expanded="true"] {
+    background: #fffbeb;
+    color: rgb(30, 64, 175);
+  }
+  .fr-settings-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 30;
+    width: 270px;
+    max-width: calc(100vw - 32px);
+    background: #fff;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+    padding: 14px;
+  }
+  .fr-switch-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+  }
+  .fr-switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 38px;
+    height: 22px;
+  }
+  .fr-switch input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+  .fr-slider {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: #cbd5e1;
+    transition: background 0.2s;
+    pointer-events: none;
+  }
+  .fr-slider::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s;
+  }
+  .fr-switch input:checked + .fr-slider {
+    background: rgb(30, 64, 175);
+  }
+  .fr-switch input:checked + .fr-slider::after {
+    transform: translateX(16px);
+  }
+  .fr-switch input:focus-visible + .fr-slider {
+    outline: 2px solid rgba(30, 64, 175, 0.4);
+    outline-offset: 2px;
+  }
+  .fr-switch input:disabled + .fr-slider {
+    opacity: 0.5;
+  }
+  .fr-act {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 3px 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    transition: background 0.15s;
+  }
+  .fr-act-view {
+    color: #4f46e5;
+    background: #eef2ff;
+    border-color: #c7d2fe;
+  }
+  .fr-act-view:hover {
+    background: #e0e7ff;
+  }
+  .fr-act-ok {
+    color: #15803d;
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+  }
+  .fr-act-ok:hover {
+    background: #dcfce7;
+  }
+  .fr-act-no {
+    color: #dc2626;
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+  .fr-act-no:hover {
+    background: #fee2e2;
+  }
+  .fr-act:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .fr-act-label {
+    display: none;
+  }
+  @media (min-width: 768px) {
+    .fr-act-label {
+      display: inline;
+    }
+  }
+  .fr-row-chk:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  /* Room for "All ships & commands" (no wider sm:w-* is compiled). */
+  @media (min-width: 640px) {
+    #frScope {
+      width: 14rem;
+    }
+  }
+</style>
+
 <script>
-  let currentPage = 1;
-  let totalForms = 0;
-  let currentPageForms = []; // forms on the current page only
-  const selectedFormNumbers = new Set(); // persists across page turns
+  (() => {
+    const TOKEN = localStorage.getItem("token");
+    const PAGE_SIZE = 25;
+    const OVERLAY_KEY = "fr_form_svcno";
 
-  const PAGE_SIZE = 16;
+    const CLASS_LABEL = {
+      1: "Officers",
+      2: "Warrant Officers",
+      3: "Ratings A",
+      4: "Ratings B",
+      5: "Ratings C",
+      6: "Trainees",
+    };
+    const STAGE_CLS = {
+      NOT_FILLED: "bg-red-50 text-red-400",
+      SUBMITTED: "bg-amber-50 text-amber-600",
+      FO_APPROVED: "bg-purple-50 text-purple-600",
+      CPO_CONFIRMED: "bg-green-50 text-green-600",
+      SYNCED: "bg-green-100 text-green-700",
+      OTHER: "bg-gray-100 text-gray-500",
+    };
+    // Stages a bulk approve may move. Not Filled needs the form opened
+    // (admin submits on the personnel's behalf); Confirmed/Completed have
+    // no next stage here — payroll sync lives in Payroll Update.
+    const BULK_STAGES = new Set(["SUBMITTED", "FO_APPROVED"]);
 
-  (function () {
-    fetch("/admin/ships", { headers: { Authorization: "Bearer " + token } })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((ships) => {
-        const sel = document.getElementById("bulkShipSelect");
+    let page = 1;
+    let totalPages = 1;
+    let pageRows = [];
+    const selected = new Map(); // serviceNumber → { serviceNumber, stage, stageLabel, nextStageLabel }
+    let adminCanEdit = false;
+    let rejectTarget = null;
+    let searchTimer = null;
 
-        ships.forEach((s) => {
-          const name = s.name || s.ship_name || s.shipName || "";
-          const code = s.code ? ` [${s.code}]` : "";
+    const $ = (id) => document.getElementById(id);
 
-          const opt = document.createElement("option");
-          opt.value = name;
-          opt.textContent = `${name} -- ${code}`;
-          opt.title = code ? `Code: ${s.code}` : name;
-          sel.appendChild(opt);
+    function esc(v) {
+      return String(v ?? "").replace(
+        /[&<>"']/g,
+        (c) =>
+          ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+          })[c],
+      );
+    }
+
+    async function api(url, { method = "GET", body } = {}) {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          Authorization: "Bearer " + TOKEN,
+          ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+        },
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Request failed (" + res.status + ")");
+      return data;
+    }
+
+    function showMsg(el, ok, text) {
+      el.className =
+        el.id === "frSettingsMsg"
+          ? "text-xs font-semibold mt-2 " + (ok ? "text-green-700" : "text-red-600")
+          : "mt-3 p-3 rounded-lg text-sm font-semibold " +
+            (ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600");
+      el.textContent = text;
+    }
+
+    function fullName(r) {
+      return [r.Surname, r.OtherName].filter(Boolean).join(" ");
+    }
+
+    // ── Select ship / command ──────────────────────────────────
+    // One dropdown, ordered by command: "All of <command>" then its ships.
+    // Plain <option>s only: the shell's choices.js turns this <select> into a
+    // searchable dropdown, and that widget has no <optgroup> support.
+    function addOption(sel, value, text) {
+      const o = document.createElement("option");
+      o.value = value;
+      o.textContent = text;
+      sel.appendChild(o);
+    }
+
+    async function loadScopes() {
+      try {
+        const [ships, cmdsRaw] = await Promise.all([
+          api("/admin/ships"),
+          api("/system/commands").catch(() => []),
+        ]);
+        const cmds = Array.isArray(cmdsRaw) ? cmdsRaw : cmdsRaw?.data || [];
+        const sel = $("frScope");
+        const byCommandId = new Map();
+        cmds.forEach((c) => byCommandId.set(String(c.Id), { cmd: c, ships: [] }));
+        const orphans = [];
+        (Array.isArray(ships) ? ships : []).forEach((s) => {
+          const name = s.shipName || s.name || s.ship_name || "";
+          if (!name) return;
+          const bucket = byCommandId.get(String(s.commandid));
+          (bucket ? bucket.ships : orphans).push(name);
         });
 
-        const sorted = [...sel.options]
-          .slice(1)
-          .sort((a, b) =>
-            a.textContent.trim().localeCompare(b.textContent.trim()),
-          );
+        const groups = [...byCommandId.values()].sort((a, b) =>
+          String(a.cmd.commandName).localeCompare(String(b.cmd.commandName)),
+        );
+        const added = new Set();
+        const addShips = (names) =>
+          [...new Set(names)]
+            .sort((a, b) => a.localeCompare(b))
+            .forEach((n) => {
+              if (added.has(n)) return; // same name under two commands
+              added.add(n);
+              addOption(sel, "ship:" + n, n);
+            });
 
-        sorted.forEach((opt) => sel.appendChild(opt));
-      })
-      .catch(() => {});
-  })();
-  async function loadBulkPreview(page = 1) {
-    const ship = document.getElementById("bulkShipSelect").value;
-    if (!ship) return;
-
-    // Reset selections when changing ship (new search from page 1)
-    if (page === 1) selectedFormNumbers.clear();
-
-    currentPage = page;
-
-    const el = document.getElementById("bulkList");
-    el.innerHTML =
-      '<div class="flex items-center justify-center py-6 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
-    document.getElementById("bulkPreviewWrapper").classList.remove("hidden");
-
-    fetch(
-      `/admin/bulk-approve/preview?ship=${encodeURIComponent(ship)}&page=${page}&limit=${PAGE_SIZE}`,
-      {
-        headers: { Authorization: "Bearer " + token },
-      },
-    )
-      .then((r) => (r.ok ? r.json() : { eligible: 0, rows: [] }))
-      .then((res) => {
-        currentPageForms = res.rows || [];
-        totalForms = res.eligible || 0;
-
-        // Auto-select incoming rows that haven't been explicitly deselected.
-        // On page 1 (fresh search) selectedFormNumbers was just cleared so
-        // all rows get selected. On subsequent pages, only new rows are added.
-        currentPageForms.forEach((r) => {
-          if (r.formNumber) selectedFormNumbers.add(r.formNumber);
+        groups.forEach(({ cmd, ships: names }) => {
+          addOption(sel, "command:" + (cmd.code || cmd.commandName), "All of " + cmd.commandName);
+          addShips(names);
         });
+        addShips(orphans);
+      } catch (_) {
+        /* dropdown stays at "All" */
+      }
+    }
 
-        document.getElementById("bulkPreviewMeta").textContent =
-          ship + " · " + totalForms + " form(s) pending approval";
+    // ── Settings ───────────────────────────────────────────────
+    function applyEditSetting(on) {
+      adminCanEdit = !!on;
+      $("frEditToggle").checked = adminCanEdit;
+      $("frEditBadge").classList.toggle("hidden", !adminCanEdit);
+    }
 
-        if (!currentPageForms.length) {
-          el.innerHTML =
-            '<div class="text-center py-6 text-blue-900/30 text-sm">No forms pending approval for this ship</div>';
-          updateSelectAllState();
-          updateSelectedCount();
-          return;
+    async function loadSettings() {
+      try {
+        const s = await api("/admin/form-review/settings");
+        applyEditSetting(s.adminCanEditForms);
+      } catch (_) {
+        applyEditSetting(false);
+      }
+    }
+
+    function toggleSettingsPanel(force) {
+      const panel = $("frSettingsPanel");
+      const open = force ?? panel.classList.contains("hidden");
+      panel.classList.toggle("hidden", !open);
+      $("frSettingsBtn").setAttribute("aria-expanded", String(open));
+      if (!open) $("frSettingsMsg").classList.add("hidden");
+    }
+
+    async function onEditToggle(e) {
+      const want = e.target.checked;
+      e.target.disabled = true;
+      try {
+        const r = await api("/admin/form-review/settings", {
+          method: "PUT",
+          body: { adminCanEditForms: want },
+        });
+        applyEditSetting(r.data?.adminCanEditForms ?? want);
+        showMsg($("frSettingsMsg"), true, r.message || "Saved.");
+        reloadOverlayForm();
+      } catch (err) {
+        applyEditSetting(!want);
+        showMsg($("frSettingsMsg"), false, err.message);
+      } finally {
+        e.target.disabled = false;
+      }
+    }
+
+    // ── List ───────────────────────────────────────────────────
+    function currentFilters() {
+      const params = new URLSearchParams();
+      const q = $("frSearch").value.trim();
+      const scope = $("frScope").value;
+      const cls = $("frClass").value;
+      if (q) params.set("q", q);
+      if (scope.startsWith("ship:")) params.set("ship", scope.slice(5));
+      else if (scope.startsWith("command:")) params.set("command", scope.slice(8));
+      if (cls) params.set("payrollclass", cls);
+      return params;
+    }
+
+    async function loadList(p = 1) {
+      page = Math.max(1, p);
+      const tableEl = $("frTable");
+      tableEl.innerHTML =
+        '<div class="flex items-center justify-center py-8 text-navy/30"><i class="fas fa-spinner fa-spin mr-2"></i></div>';
+
+      const params = currentFilters();
+      params.set("page", page);
+      params.set("pageSize", PAGE_SIZE);
+
+      try {
+        const data = await api("/admin/form-review/forms?" + params);
+        pageRows = data.rows || [];
+        const pg = data.pagination || {};
+        totalPages = pg.totalPages || 1;
+        $("frCount").textContent = (pg.total || 0).toLocaleString() + " form(s)";
+
+        const terms = data.searchTerms || [];
+        const hint = $("frSearchHint");
+        if (terms.length > 1) {
+          hint.textContent = "Matching any of: " + terms.join(" · ");
+          hint.classList.remove("hidden");
+        } else {
+          hint.classList.add("hidden");
         }
 
-        el.innerHTML = `
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
-            ${currentPageForms
-              .map((r) => {
-                const isSel = selectedFormNumbers.has(r.formNumber);
-                return `
-                <div class="bg-white/60 rounded-xl border border-amber-100 shadow p-4 flex items-center gap-4">
-                  <input type="checkbox" class="fo-bulk-chk accent-navy w-4 h-4 flex-shrink-0"
-                    data-formnumber="${r.formNumber}" ${isSel ? "checked" : ""}
-                    onchange="toggleCard(this)" />
-                  <div class="flex-1 min-w-0">
-                    <div class="font-bold text-navy text-sm">${r.Surname || ""} ${r.OtherName || ""}</div>
-                    <div class="text-xs text-blue-900/40">${r.serviceNumber}</div>
-                  </div>
-                  <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-500 flex-shrink-0">
-                    ${(r.Status || "").replace("_", " ")}
-                  </span>
-                </div>`;
-              })
-              .join("")}
+        renderTable();
+        renderPagination(pg);
+      } catch (err) {
+        pageRows = [];
+        tableEl.innerHTML =
+          '<div class="text-center py-8 text-red-400 text-sm">' + esc(err.message || "Failed to load forms") + "</div>";
+        $("frPagination").classList.add("hidden");
+      }
+      syncSelectionUI();
+    }
+
+    function renderTable() {
+      const tableEl = $("frTable");
+      if (!pageRows.length) {
+        tableEl.innerHTML =
+          '<div class="text-center py-8 text-blue-900/30 text-sm">No forms found</div>';
+        return;
+      }
+
+      const rowsHtml = pageRows
+        .map((r) => {
+          const svc = esc(r.serviceNumber);
+          const bulkable = BULK_STAGES.has(r.stage);
+          const chkTitle = bulkable
+            ? "Select for bulk approve"
+            : r.stage === "NOT_FILLED"
+              ? "Not filled yet. Open the form to submit it for the personnel."
+              : "Already confirmed. Nothing to approve.";
+          const approveBtn =
+            r.canProgress && r.stage !== "NOT_FILLED"
+              ? `<button type="button" class="fr-act fr-act-ok" data-act="approve" data-svc="${svc}" title="Approve → ${esc(r.nextStageLabel)}">
+                   <i class="fas fa-check" style="font-size:10px"></i><span class="fr-act-label">Approve</span>
+                 </button>`
+              : "";
+          const rejectBtn = r.canReject
+            ? `<button type="button" class="fr-act fr-act-no" data-act="reject" data-svc="${svc}" title="Reject">
+                 <i class="fas fa-times" style="font-size:10px"></i><span class="fr-act-label">Reject</span>
+               </button>`
+            : "";
+          return `<tr class="border-b border-amber-50 hover:bg-amber-50/30">
+            <td class="py-2 pr-2 w-6">
+              <input type="checkbox" class="fr-row-chk accent-navy w-4 h-4" data-svc="${svc}"
+                ${bulkable ? "" : "disabled"} ${selected.has(r.serviceNumber) ? "checked" : ""}
+                title="${esc(chkTitle)}" />
+            </td>
+            <td class="py-2 font-semibold text-navy text-xs whitespace-nowrap">${svc}</td>
+            <td class="py-2 text-blue-900/70 text-xs">${esc(fullName(r))}
+              <div class="text-blue-900/40 md:hidden">${esc(r.ship || "—")}</div>
+            </td>
+            <td class="py-2 text-blue-900/50 text-xs hidden md:table-cell">${esc(r.ship || "—")}</td>
+            <td class="py-2 text-blue-900/50 text-xs hidden lg:table-cell">${esc(CLASS_LABEL[r.payrollclass] || r.payrollclass || "—")}</td>
+            <td class="py-2"><span class="text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${STAGE_CLS[r.stage] || STAGE_CLS.OTHER}">${esc(r.stageLabel)}</span></td>
+            <td class="py-2">
+              <div class="flex items-center justify-end gap-1">
+                <button type="button" class="fr-act fr-act-view" data-act="view" data-svc="${svc}" title="View form">
+                  <i class="fas fa-eye" style="font-size:10px"></i><span class="fr-act-label">View</span>
+                </button>
+                ${approveBtn}${rejectBtn}
+              </div>
+            </td>
+          </tr>`;
+        })
+        .join("");
+
+      tableEl.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-sm">
+        <thead><tr class="border-b border-amber-100">
+          <th class="py-2 w-6"></th>
+          <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Svc No</th>
+          <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Name</th>
+          <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide hidden md:table-cell">Ship</th>
+          <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide hidden lg:table-cell">Class</th>
+          <th class="text-left py-2 text-xs font-bold text-navy/50 uppercase tracking-wide">Status</th>
+          <th class="py-2 text-xs font-bold text-navy/50 uppercase tracking-wide text-right">Actions</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody></table></div>`;
+    }
+
+    function renderPagination(p) {
+      const el = $("frPagination");
+      if (!p.totalPages || p.totalPages <= 1) {
+        el.classList.add("hidden");
+        return;
+      }
+      el.classList.remove("hidden");
+      $("frPageInfo").textContent = `Page ${p.page} of ${p.totalPages} · ${(p.total || 0).toLocaleString()} total`;
+      $("frPrevBtn").disabled = p.page <= 1;
+      $("frNextBtn").disabled = p.page >= p.totalPages;
+    }
+
+    // ── Selection ──────────────────────────────────────────────
+    function rowBySvc(svc) {
+      return pageRows.find((r) => r.serviceNumber === svc);
+    }
+
+    function selectRow(r, on) {
+      if (on && BULK_STAGES.has(r.stage)) {
+        selected.set(r.serviceNumber, {
+          serviceNumber: r.serviceNumber,
+          stage: r.stage,
+          stageLabel: r.stageLabel,
+          nextStageLabel: r.nextStageLabel,
+        });
+      } else {
+        selected.delete(r.serviceNumber);
+      }
+    }
+
+    function syncSelectionUI() {
+      const eligible = pageRows.filter((r) => BULK_STAGES.has(r.stage));
+      const onPage = eligible.filter((r) => selected.has(r.serviceNumber)).length;
+      const all = $("frSelectAll");
+      all.disabled = eligible.length === 0;
+      all.checked = eligible.length > 0 && onPage === eligible.length;
+      all.indeterminate = onPage > 0 && onPage < eligible.length;
+      $("frSelCount").textContent = selected.size;
+      $("frBulkApprove").disabled = selected.size === 0;
+      $("frClearSel").classList.toggle("hidden", selected.size === 0);
+    }
+
+    function clearSelection() {
+      selected.clear();
+      document.querySelectorAll("#frTable .fr-row-chk").forEach((c) => (c.checked = false));
+      syncSelectionUI();
+    }
+
+    // ── Approve (progress one stage) ───────────────────────────
+    async function progress(items, { allowNotFilled = false } = {}) {
+      return api("/admin/form-review/progress", {
+        method: "POST",
+        body: { items, allowNotFilled },
+      });
+    }
+
+    function summarize(result) {
+      const skipped = result.data?.skipped || [];
+      if (!skipped.length) return result.message;
+      const first = skipped
+        .slice(0, 3)
+        .map((s) => `${s.serviceNumber}: ${s.reason}`)
+        .join(" | ");
+      return `${result.message} ${first}${skipped.length > 3 ? " …" : ""}`;
+    }
+
+    async function approveOne(r) {
+      if (!confirm(`Approve ${fullName(r)} (${r.serviceNumber})?\n\n${r.stageLabel} → ${r.nextStageLabel}`)) return;
+      const msg = $("frMsg");
+      try {
+        const res = await progress([{ serviceNumber: r.serviceNumber, stage: r.stage }]);
+        showMsg(msg, !(res.data?.skipped || []).length, summarize(res));
+      } catch (err) {
+        showMsg(msg, false, err.message);
+      }
+      selected.delete(r.serviceNumber);
+      loadList(page);
+    }
+
+    async function bulkApprove() {
+      const items = [...selected.values()];
+      if (!items.length) return;
+      const counts = {};
+      items.forEach((i) => {
+        const k = `${i.stageLabel} → ${i.nextStageLabel}`;
+        counts[k] = (counts[k] || 0) + 1;
+      });
+      const lines = Object.entries(counts)
+        .map(([k, n]) => `• ${n} × ${k}`)
+        .join("\n");
+      if (!confirm(`Approve ${items.length} form(s) to their next stage?\n\n${lines}`)) return;
+
+      const btn = $("frBulkApprove");
+      const msg = $("frMsg");
+      btn.disabled = true;
+      try {
+        const res = await progress(items.map((i) => ({ serviceNumber: i.serviceNumber, stage: i.stage })));
+        showMsg(msg, !(res.data?.skipped || []).length, summarize(res));
+        selected.clear();
+      } catch (err) {
+        showMsg(msg, false, err.message);
+      }
+      loadList(page);
+    }
+
+    // ── Reject ─────────────────────────────────────────────────
+    function openReject(target) {
+      rejectTarget = target;
+      $("frRejectMeta").textContent = `${target.name || target.serviceNumber} (${target.serviceNumber}) · ${target.stageLabel}`;
+      const warn = $("frRejectWarn");
+      if (target.stage === "CPO_CONFIRMED" || target.stage === "SYNCED") {
+        warn.textContent =
+          target.stage === "SYNCED"
+            ? "This form has already been synced to payroll. Rejecting it sends it back to the personnel; it will need to be approved, confirmed and synced again."
+            : "This form has already been confirmed. Rejecting it sends it back to the personnel; it will need to be approved and confirmed again.";
+        warn.classList.remove("hidden");
+      } else {
+        warn.classList.add("hidden");
+      }
+      $("frRejectRemarks").value = "";
+      $("frRejectMsg").classList.add("hidden");
+      $("frRejectModal").classList.remove("hidden");
+      $("frRejectModal").classList.add("flex");
+      setTimeout(() => $("frRejectRemarks").focus(), 50);
+    }
+
+    function closeReject() {
+      $("frRejectModal").classList.add("hidden");
+      $("frRejectModal").classList.remove("flex");
+      rejectTarget = null;
+    }
+
+    async function confirmReject() {
+      if (!rejectTarget) return;
+      const remarks = $("frRejectRemarks").value.trim();
+      const msgEl = $("frRejectMsg");
+      if (!remarks) {
+        showMsg(msgEl, false, "Please give a reason for rejecting.");
+        return;
+      }
+      const btn = $("frRejectConfirm");
+      btn.disabled = true;
+      try {
+        const res = await api("/admin/form-review/reject", {
+          method: "POST",
+          body: { serviceNumber: rejectTarget.serviceNumber, remarks },
+        });
+        selected.delete(rejectTarget.serviceNumber);
+        closeReject();
+        showMsg($("frMsg"), true, res.message);
+        loadList(page);
+        refreshOverlayStatus(true);
+      } catch (err) {
+        showMsg(msgEl, false, err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // ── Form overlay (view / edit / approve / reject) ──────────
+    let overlaySvc = null;
+    let overlayStatus = null;
+    let overlayDirty = false;
+    let listDirty = false;
+
+    function formUrl(svc) {
+      return `./emolument-form.html?svcno=${encodeURIComponent(svc)}&admin=1&review=1`;
+    }
+
+    function confirmDiscard() {
+      return !overlayDirty || confirm("You have unsaved changes on this form. Discard them?");
+    }
+
+    function reloadOverlayForm() {
+      const iframe = $("frIframe");
+      if (!iframe || !overlaySvc) return;
+      if (overlayDirty && !confirm("Reload the form? Unsaved changes will be lost.")) return;
+      overlayDirty = false;
+      iframe.src = formUrl(overlaySvc);
+    }
+
+    function renderOverlayStatus() {
+      const s = overlayStatus;
+      const badge = $("fro-stage");
+      const approve = $("fro-approve");
+      const reject = $("fro-reject");
+      const edit = $("fro-edit");
+      if (!badge) return;
+      if (edit) edit.style.display = adminCanEdit ? "inline-flex" : "none";
+      if (!s) {
+        badge.style.display = "none";
+        approve.style.display = "none";
+        reject.style.display = "none";
+        return;
+      }
+      badge.textContent = s.stageLabel;
+      badge.style.display = "inline-block";
+      if (s.canProgress) {
+        approve.style.display = "inline-flex";
+        $("fro-approve-label").textContent =
+          s.stage === "NOT_FILLED" ? "Submit for personnel" : `Approve → ${s.nextStageLabel}`;
+      } else {
+        approve.style.display = "none";
+      }
+      reject.style.display = s.canReject ? "inline-flex" : "none";
+    }
+
+    async function refreshOverlayStatus(reloadForm = false) {
+      if (!overlaySvc) return;
+      try {
+        overlayStatus = await api("/admin/form-review/status?svcno=" + encodeURIComponent(overlaySvc));
+      } catch (_) {
+        overlayStatus = null;
+      }
+      renderOverlayStatus();
+      if (reloadForm) {
+        overlayDirty = false;
+        const iframe = $("frIframe");
+        if (iframe) iframe.src = formUrl(overlaySvc);
+      }
+    }
+
+    async function overlayApprove() {
+      const s = overlayStatus;
+      if (!s?.canProgress) return;
+      if (!confirmDiscard()) return;
+      const question =
+        s.stage === "NOT_FILLED"
+          ? `Submit this form on behalf of ${s.name || s.serviceNumber}?\n\nIt will move to Submitted, as if the personnel had submitted it.`
+          : `Approve ${s.name || s.serviceNumber}?\n\n${s.stageLabel} → ${s.nextStageLabel}`;
+      if (!confirm(question)) return;
+      const btn = $("fro-approve");
+      btn.disabled = true;
+      try {
+        const res = await progress([{ serviceNumber: s.serviceNumber, stage: s.stage }], {
+          allowNotFilled: s.stage === "NOT_FILLED",
+        });
+        const skipped = res.data?.skipped || [];
+        if (skipped.length) alert(skipped[0].reason);
+        listDirty = true;
+        selected.delete(s.serviceNumber);
+        await refreshOverlayStatus(true);
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function overlayReject() {
+      const s = overlayStatus;
+      if (!s?.canReject || !confirmDiscard()) return;
+      listDirty = true;
+      openReject(s);
+    }
+
+    function openForm(svc) {
+      if (!svc) return;
+      closeForm(true);
+      overlaySvc = svc;
+      overlayStatus = null;
+      overlayDirty = false;
+
+      const overlay = document.createElement("div");
+      overlay.id = "frFormOverlay";
+      overlay.style.cssText =
+        "position:fixed;inset:0;z-index:2147483646;display:flex;flex-direction:column;background:#0B1E3D";
+      const btn =
+        "border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;";
+      overlay.innerHTML = `
+        <div style="flex-shrink:0;background:#0B1E3D;padding:8px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,0.08);flex-wrap:wrap;">
+          <i class="fas fa-id-card" style="color:#C4932A;font-size:14px;flex-shrink:0"></i>
+          <div style="display:flex;flex-direction:column;line-height:1.2;min-width:0">
+            <span id="fro-name" style="font-weight:700;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px">${esc(svc)}</span>
+            <span id="fro-meta" style="font-size:10px;color:rgba(196,147,42,0.7);font-weight:600;letter-spacing:.04em"></span>
           </div>
-          ${paginatorHTML(page, Math.ceil(totalForms / PAGE_SIZE), "adminBulkList")}`;
+          <span id="fro-stage" style="display:none;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.04em;background:rgba(255,255,255,.12);color:rgba(255,255,255,.85);flex-shrink:0"></span>
+          <span id="fro-edit" title="Admin editing is on: change any field, then Save Changes" style="display:none;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(196,147,42,.2);color:#C4932A;flex-shrink:0"><i class="fas fa-pen" style="font-size:9px"></i>Editing on</span>
+          <span style="flex:1;min-width:0"></span>
+          <button id="fro-approve" style="display:none;${btn}background:#16a34a;border:1px solid #16a34a;color:#fff">
+            <i class="fas fa-check" style="font-size:11px"></i><span id="fro-approve-label">Approve</span>
+          </button>
+          <button id="fro-reject" style="display:none;${btn}background:#dc2626;border:1px solid #dc2626;color:#fff">
+            <i class="fas fa-times" style="font-size:11px"></i>Reject
+          </button>
+          <button id="fro-refresh" title="Reload form" style="${btn}background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,.7)">
+            <i class="fas fa-sync-alt" style="font-size:11px"></i>
+          </button>
+          <button id="fro-close" style="${btn}background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);color:#fff">
+            <i class="fas fa-times" style="font-size:11px"></i> Close
+          </button>
+        </div>
+        <iframe id="frIframe" src="${formUrl(svc)}" style="flex:1;border:none;width:100%;background:#f0f3f8;"></iframe>`;
 
-        el.querySelectorAll('[data-paginator="adminBulkList"]').forEach(
-          (btn) => {
-            btn.addEventListener("click", () =>
-              loadBulkPreview(+btn.dataset.page),
-            );
-          },
-        );
+      document.body.appendChild(overlay);
+      document.body.style.overflow = "hidden";
+      try {
+        localStorage.setItem(OVERLAY_KEY, svc);
+      } catch (_) {}
+      window.top.postMessage({ type: "pfo_overlay_open" }, "*");
 
-        updateSelectAllState();
-        updateSelectedCount();
-      })
-      .catch((err) => {
-        console.error(err);
-        el.innerHTML =
-          '<div class="text-center py-6 text-red-400 text-sm">Failed to load</div>';
+      overlay.querySelector("#fro-close").addEventListener("click", () => {
+        if (confirmDiscard()) closeForm();
       });
-  }
-
-  function toggleCard(checkbox) {
-    const formNumber = checkbox.dataset.formnumber;
-    if (checkbox.checked) selectedFormNumbers.add(formNumber);
-    else selectedFormNumbers.delete(formNumber);
-    updateSelectAllState();
-    updateSelectedCount();
-  }
-
-  function toggleAll(cb) {
-    if (cb.checked) {
-      // Select every form on the current page
-      currentPageForms.forEach((r) => {
-        if (r.formNumber) selectedFormNumbers.add(r.formNumber);
+      overlay.querySelector("#fro-refresh").addEventListener("click", () => {
+        reloadOverlayForm();
+        refreshOverlayStatus();
       });
-    } else {
-      // Deselect every form on the current page only
-      currentPageForms.forEach((r) => {
-        if (r.formNumber) selectedFormNumbers.delete(r.formNumber);
-      });
+      overlay.querySelector("#fro-approve").addEventListener("click", overlayApprove);
+      overlay.querySelector("#fro-reject").addEventListener("click", overlayReject);
+
+      renderOverlayStatus();
+      refreshOverlayStatus();
     }
-    // Sync visible checkboxes
-    document.querySelectorAll(".fo-bulk-chk").forEach((c) => {
-      c.checked = cb.checked;
+
+    function closeForm(silent = false) {
+      const overlay = $("frFormOverlay");
+      if (!overlay) return;
+      overlay.remove();
+      document.body.style.overflow = "";
+      overlaySvc = null;
+      overlayStatus = null;
+      overlayDirty = false;
+      try {
+        localStorage.removeItem(OVERLAY_KEY);
+      } catch (_) {}
+      if (!silent) window.top.postMessage({ type: "pfo_overlay_closed" }, "*");
+      if (listDirty) {
+        listDirty = false;
+        loadList(page);
+      }
+    }
+
+    // Messages from the form iframe
+    window.addEventListener("message", (e) => {
+      if (!overlaySvc || e.source !== $("frIframe")?.contentWindow) return;
+      const d = e.data || {};
+      if (d.type === "emol_form_ready") {
+        $("fro-name").textContent = d.name || d.svcNo || overlaySvc;
+        const typeLabel = { OFFICER: "Officer", RATING: "Rating", TRAINING: "Training" }[d.formType] || d.formType;
+        $("fro-meta").textContent = [d.rank, d.svcNo, typeLabel, d.formYear].filter(Boolean).join(" · ");
+      } else if (d.type === "emol_close_overlay") {
+        if (confirmDiscard()) closeForm();
+      } else if (d.type === "emol_form_dirty") {
+        overlayDirty = !!d.dirty;
+      } else if (d.type === "emol_form_saved") {
+        overlayDirty = false;
+        listDirty = true;
+        refreshOverlayStatus();
+      }
     });
-    updateSelectedCount();
-  }
 
-  function updateSelectAllState() {
-    const selectAll = document.getElementById("selectAll");
-    if (!currentPageForms.length) {
-      selectAll.checked = false;
-      selectAll.indeterminate = false;
-      return;
-    }
-    const checkedOnPage = currentPageForms.filter((r) =>
-      selectedFormNumbers.has(r.formNumber),
-    ).length;
-    selectAll.indeterminate =
-      checkedOnPage > 0 && checkedOnPage < currentPageForms.length;
-    selectAll.checked = checkedOnPage === currentPageForms.length;
-  }
+    // ── Wiring ─────────────────────────────────────────────────
+    $("frSettingsBtn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleSettingsPanel();
+    });
+    document.addEventListener("click", (e) => {
+      const wrap = document.querySelector(".fr-settings-wrap");
+      if (wrap && !wrap.contains(e.target)) toggleSettingsPanel(false);
+    });
+    $("frEditToggle").addEventListener("change", onEditToggle);
 
-  function updateSelectedCount() {
-    document.getElementById("selectedCount").textContent =
-      selectedFormNumbers.size;
-  }
+    $("frSearch").addEventListener("input", () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        clearSelection();
+        loadList(1);
+      }, 400);
+    });
+    $("frSearch").addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      clearTimeout(searchTimer);
+      clearSelection();
+      loadList(1);
+    });
+    // choices.js swaps the two <select>s for custom dropdowns (same ids), so a
+    // listener bound to the original element would be lost. Their `change`
+    // events bubble, so listen on the filter row instead.
+    let resettingFilters = false;
+    $("frFilters").addEventListener("change", (e) => {
+      const id = e.target?.id;
+      if (resettingFilters || (id !== "frScope" && id !== "frClass")) return;
+      clearSelection();
+      loadList(1);
+    });
+    $("frClearBtn").addEventListener("click", () => {
+      resettingFilters = true; // setting .value can fire `change`; reload once below
+      try {
+        $("frSearch").value = "";
+        $("frScope").value = "";
+        $("frClass").value = "";
+      } finally {
+        resettingFilters = false;
+      }
+      clearSelection();
+      loadList(1);
+    });
 
-  async function executeBulkApprove() {
-    const selected = [...selectedFormNumbers];
-    const msg = document.getElementById("bulkMsg");
-    const ship = document.getElementById("bulkShipSelect").value;
+    $("frPrevBtn").addEventListener("click", () => page > 1 && loadList(page - 1));
+    $("frNextBtn").addEventListener("click", () => page < totalPages && loadList(page + 1));
 
-    if (!selected.length) {
-      msg.className =
-        "mt-3 p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
-      msg.textContent = "No forms selected.";
-      msg.classList.remove("hidden");
-      return;
-    }
-
-    if (!confirm(`Approve ${selected.length} form(s)?`)) return;
-
-    fetch("/admin/bulk-approve", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token,
-      },
-      body: JSON.stringify({ selected, ship }),
-    })
-      .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
-      .then(async ({ ok, d }) => {
-        msg.className =
-          "mt-3 p-3 rounded-lg text-sm font-semibold " +
-          (ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600");
-        msg.textContent = ok
-          ? d.message || `${selected.length} forms approved.`
-          : d.error || "Failed";
-        msg.classList.remove("hidden");
-        if (ok) await loadBulkPreview(1);
-      })
-      .catch(() => {
-        msg.className =
-          "mt-3 p-3 rounded-lg text-sm font-semibold bg-red-50 text-red-600";
-        msg.textContent = "Server error";
-        msg.classList.remove("hidden");
+    $("frSelectAll").addEventListener("change", (e) => {
+      pageRows.forEach((r) => selectRow(r, e.target.checked));
+      document.querySelectorAll("#frTable .fr-row-chk").forEach((c) => {
+        if (!c.disabled) c.checked = e.target.checked;
       });
-  }
+      syncSelectionUI();
+    });
+    $("frClearSel").addEventListener("click", clearSelection);
+    $("frBulkApprove").addEventListener("click", bulkApprove);
+
+    $("frTable").addEventListener("change", (e) => {
+      const chk = e.target.closest(".fr-row-chk");
+      if (!chk) return;
+      const r = rowBySvc(chk.dataset.svc);
+      if (r) selectRow(r, chk.checked);
+      syncSelectionUI();
+    });
+    $("frTable").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-act]");
+      if (!btn) return;
+      const r = rowBySvc(btn.dataset.svc);
+      if (!r) return;
+      if (btn.dataset.act === "view") openForm(r.serviceNumber);
+      else if (btn.dataset.act === "approve") approveOne(r);
+      else if (btn.dataset.act === "reject")
+        openReject({ ...r, name: fullName(r) });
+    });
+
+    $("frRejectClose").addEventListener("click", closeReject);
+    $("frRejectCancel").addEventListener("click", closeReject);
+    $("frRejectConfirm").addEventListener("click", confirmReject);
+    $("frRejectModal").addEventListener("click", function (e) {
+      if (e.target === this) closeReject();
+    });
+
+    // Hoist the modal to <body> so it sits above the form overlay too.
+    const rejectModal = $("frRejectModal");
+    rejectModal.style.zIndex = "2147483647";
+    document.body.appendChild(rejectModal);
+
+    // ── Boot ───────────────────────────────────────────────────
+    loadScopes();
+    loadSettings().then(() => renderOverlayStatus());
+    loadList(1);
+
+    // Restore the form overlay if the page was refreshed while it was open.
+    // While this script runs the shell has not yet recorded the new section,
+    // so "bulk-approve" here means a refresh of this section — not a later
+    // visit, where a leftover key would pop a form open unasked.
+    try {
+      const saved = localStorage.getItem(OVERLAY_KEY);
+      if (saved && sessionStorage.getItem("emol_active_section") === "bulk-approve") {
+        setTimeout(() => openForm(saved), 150);
+      } else if (saved) {
+        localStorage.removeItem(OVERLAY_KEY);
+      }
+    } catch (_) {}
+  })();
 </script>

@@ -231,11 +231,31 @@ async function getFormRow(serviceNo, formYear) {
   return rows[0] || null;
 }
 
+// A row that has been pushed to payroll: 'Updated', or the legacy
+// "filed with no Status" shape (emolumentform = 'Yes', Status empty).
+function isSyncedRow(p) {
+  const s = String(p?.Status ?? "").trim();
+  if (s === LEGACY_STATUS.SYNCED || s === FORM_STATUS.SYNCED) return true;
+  return !s && p?.emolumentform === "Yes";
+}
+
 // Admin edit — writes every form table in one transaction, no status change.
+// The personnel row is locked first, so a payroll sync can't slip in between
+// the "not synced yet" check and the write.
 async function saveFormTables(serviceNo, body, validLoanTypes, validAllowTypes) {
-  return withTransaction((conn) =>
-    formRepo.saveAllTables(conn, serviceNo, body, validLoanTypes, validAllowTypes),
-  );
+  return withTransaction(async (conn) => {
+    const [[person]] = await conn.query(
+      `SELECT Status, emolumentform FROM ef_personalinfos
+       WHERE serviceNumber = ? LIMIT 1 FOR UPDATE`,
+      [serviceNo],
+    );
+    if (!person) throw staleError("Personnel record not found.");
+    if (isSyncedRow(person))
+      throw staleError("Form has been synced to payroll, so it can no longer be edited.");
+
+    await formRepo.saveAllTables(conn, serviceNo, body, validLoanTypes, validAllowTypes);
+    return true;
+  });
 }
 
 // Keep the form row's routing (ship/command) in step with an admin edit,
@@ -422,15 +442,24 @@ async function confirmAsCpo(serviceNo, formId, formYear, admin, snapshot, remark
 }
 
 // ─────────────────────────────────────────────────────────────
-// REJECT — any stage after submission
+// REJECT — Submitted or FO Approved only
+//
+// Approve/reject stop once a form is confirmed, so the status is re-checked
+// here under the row lock: a CPO confirming at the same moment wins and the
+// reject is refused rather than undoing a confirmation.
 //
 // Resets the personnel row so they can re-fill, marks the cycle's form row
 // REJECTED, clears the approval trail and records the rejection — the same
-// convention the DO/FO/CPO rejects follow. For a confirmed form the year's
-// history row is removed too, since that confirmation no longer stands.
+// convention the DO/FO/CPO rejects follow.
 // ─────────────────────────────────────────────────────────────
 
-async function rejectAnyStage(serviceNo, formYear, rejectedBy, remarks) {
+const REJECTABLE_STATUS = new Set([
+  ...FILLED_STATUS_VALUES, // Submitted ('Filled', 'FO', ...)
+  LEGACY_STATUS.FO_APPROVED, // 'CPO'
+  FORM_STATUS.FO_APPROVED,
+]);
+
+async function rejectInReview(serviceNo, formYear, rejectedBy, remarks) {
   return withTransaction(async (conn) => {
     const [[person]] = await conn.query(
       `SELECT Status, emolumentform FROM ef_personalinfos
@@ -440,15 +469,16 @@ async function rejectAnyStage(serviceNo, formYear, rejectedBy, remarks) {
     if (!person) throw staleError("Personnel record not found.");
 
     const status = String(person.Status ?? "").trim();
-    if (!status && person.emolumentform !== "Yes")
-      throw staleError("Form has not been submitted, so there is nothing to reject.");
-    const wasConfirmed = person.emolumentform === "Yes";
+    if (person.emolumentform === "Yes" || !REJECTABLE_STATUS.has(status))
+      throw staleError(
+        status || person.emolumentform === "Yes"
+          ? "Form is no longer awaiting approval, so it can't be rejected. Refresh and try again."
+          : "Form has not been submitted, so there is nothing to reject.",
+      );
 
     await conn.query(
       `UPDATE ef_personalinfos
-       SET Status        = NULL,
-           emolumentform = NULL,
-           dateModify    = NOW()
+       SET Status = NULL, dateModify = NOW()
        WHERE serviceNumber = ?`,
       [serviceNo],
     );
@@ -459,7 +489,7 @@ async function rejectAnyStage(serviceNo, formYear, rejectedBy, remarks) {
         `UPDATE ef_emolument_forms
          SET status = 'REJECTED', updated_at = NOW()
          WHERE service_no = ? AND form_year = ?
-           AND status NOT IN ('DRAFT', 'REJECTED')`,
+           AND status IN ('SUBMITTED', 'DO_REVIEWED', 'FO_APPROVED')`,
         [serviceNo, String(formYear)],
       );
 
@@ -471,13 +501,6 @@ async function rejectAnyStage(serviceNo, formYear, rejectedBy, remarks) {
         [serviceNo, String(formYear)],
       );
       formId = form?.id ?? null;
-
-      if (wasConfirmed) {
-        await conn.query(
-          `DELETE FROM ef_personalinfoshist WHERE serviceNumber = ? AND FormYear = ?`,
-          [serviceNo, formYear],
-        );
-      }
     }
 
     if (formId) {
@@ -489,7 +512,7 @@ async function rejectAnyStage(serviceNo, formYear, rejectedBy, remarks) {
       );
     }
 
-    return { formId, previousStatus: person.Status ?? null, wasConfirmed };
+    return { formId, previousStatus: person.Status ?? null };
   });
 }
 
@@ -509,5 +532,5 @@ module.exports = {
   markSubmittedByAdmin,
   approveAsFo,
   confirmAsCpo,
-  rejectAnyStage,
+  rejectInReview,
 };

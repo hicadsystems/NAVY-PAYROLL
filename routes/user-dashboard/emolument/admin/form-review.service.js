@@ -7,16 +7,20 @@
  *   listForms                     → alphabetical list, any status
  *   progressForms                 → move forms ONE stage forward
  *                                   (single from the form view, bulk from the list)
- *   rejectForm                    → reject at any stage after submission
- *   saveForm                      → admin edit of every form field, any status
+ *   rejectForm                    → reject a Submitted / FO Approved form
+ *   saveForm                      → admin edit of every form field
  *
  * Stages, in order:
  *   NOT_FILLED → SUBMITTED → FO_APPROVED → CPO_CONFIRMED → SYNCED
  *
- * "Progress" stops at CPO_CONFIRMED: pushing a confirmed form to payroll
- * stays with the Payroll Update section. Not Filled → Submitted (admin
- * submits on the personnel's behalf) is only done when the caller asks for
- * it, so a bulk approve can never submit an empty form.
+ * Admin rules:
+ *   • Approve and reject stop once a form is CPO_CONFIRMED. Pushing a
+ *     confirmed form to payroll stays with the Payroll Update section.
+ *   • Editing (while the switch is on) is open at every stage until the
+ *     form is SYNCED to payroll.
+ *   • Not Filled → Submitted (admin submits on the personnel's behalf) is
+ *     only done when the caller asks for it, so a bulk approve can never
+ *     submit an empty form.
  */
 
 "use strict";
@@ -74,6 +78,13 @@ const NEXT_STAGE = Object.freeze({
   FO_APPROVED: STAGE.CPO_CONFIRMED,
 });
 
+// Approve / reject stop at Confirmed; only a form in the review pipeline
+// can be sent back.
+const REJECTABLE = new Set([STAGE.SUBMITTED, STAGE.FO_APPROVED]);
+
+// Editing stays open until the form has been synced to payroll.
+const stageAllowsEdit = (stage) => stage !== STAGE.SYNCED;
+
 /**
  * Where a personnel record sits in the workflow, read from
  * ef_personalinfos (the column every other admin screen shows).
@@ -102,7 +113,10 @@ function describeStage(person) {
     nextStage,
     nextStageLabel: nextStage ? STAGE_LABEL[nextStage] : null,
     canProgress: Boolean(nextStage),
-    canReject: stage !== STAGE.NOT_FILLED,
+    canReject: REJECTABLE.has(stage),
+    // Stage allows editing; the "admins can edit forms" switch is applied
+    // on top of this (see getFormStatus / saveForm).
+    canEdit: stageAllowsEdit(stage),
   };
 }
 
@@ -274,6 +288,8 @@ async function getFormStatus(serviceNo) {
   if (!serviceNo) return fail(400, "Service number is required.");
   const person = await repo.getPersonForReview(serviceNo);
   if (!person) return fail(404, "Personnel record not found.");
+  const stage = describeStage(person);
+  const adminCanEditForms = await isAdminEditEnabled();
   return {
     success: true,
     data: {
@@ -282,7 +298,10 @@ async function getFormStatus(serviceNo) {
       rank: person.Rank ?? null,
       ship: person.ship ?? null,
       command: person.command ?? null,
-      ...describeStage(person),
+      ...stage,
+      adminCanEditForms,
+      // What the form view should do: switch on AND not yet synced.
+      editable: adminCanEditForms && stage.canEdit,
     },
   };
 }
@@ -528,7 +547,7 @@ async function progressForms(body, user, ip) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// REJECT — any stage after submission
+// REJECT — Submitted or FO Approved only (stops at Confirmed)
 // ─────────────────────────────────────────────────────────────
 
 async function rejectForm(body, user, ip) {
@@ -543,13 +562,17 @@ async function rejectForm(body, user, ip) {
   const stage = resolveStage(person);
   if (stage === STAGE.NOT_FILLED)
     return fail(409, "Form has not been submitted, so there is nothing to reject.");
+  if (stage === STAGE.CPO_CONFIRMED || stage === STAGE.SYNCED)
+    return fail(409, "Form is already confirmed, so it can no longer be rejected.");
+  if (!REJECTABLE.has(stage))
+    return fail(409, `Form status '${person.Status}' is not recognised.`);
 
   const admin = adminIdentity(user);
   const formYear = await resolveFormYear(person);
 
   let result;
   try {
-    result = await repo.rejectAnyStage(svc, formYear, admin.svcNo, remarks);
+    result = await repo.rejectInReview(svc, formYear, admin.svcNo, remarks);
   } catch (err) {
     if (err.code === "STALE_STATUS") return fail(409, err.message);
     throw err;
@@ -559,7 +582,7 @@ async function rejectForm(body, user, ip) {
   await audit(
     svc,
     { Status: person.Status ?? null, emolumentform: person.emolumentform ?? null },
-    { Status: null, emolumentform: null, rejectedBy: admin.svcNo, stage, remarks },
+    { Status: null, rejectedBy: admin.svcNo, stage, remarks },
     admin.svcNo,
     ip,
   );
@@ -592,7 +615,7 @@ async function rejectForm(body, user, ip) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// ADMIN EDIT — every field, any status (when the switch is on)
+// ADMIN EDIT — every field, any status until synced (switch on)
 // ─────────────────────────────────────────────────────────────
 
 async function saveForm(serviceNo, body, user, ip) {
@@ -608,6 +631,8 @@ async function saveForm(serviceNo, body, user, ip) {
 
   const person = await repo.getPersonForReview(serviceNo);
   if (!person) return fail(404, "Personnel record not found.");
+  if (!stageAllowsEdit(resolveStage(person)))
+    return fail(409, "Form has been synced to payroll, so it can no longer be edited.");
 
   formService.mapGcb(body);
 
@@ -627,7 +652,12 @@ async function saveForm(serviceNo, body, user, ip) {
   body.core.ship = newShip || null;
   body.core.command = newCommand || null;
 
-  await repo.saveFormTables(serviceNo, body, VALID_LOAN_TYPES, VALID_ALLOW_TYPES);
+  try {
+    await repo.saveFormTables(serviceNo, body, VALID_LOAN_TYPES, VALID_ALLOW_TYPES);
+  } catch (err) {
+    if (err.code === "STALE_STATUS") return fail(409, err.message);
+    throw err;
+  }
 
   if (placementChanged) {
     const formYear = await resolveFormYear(person);

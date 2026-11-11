@@ -14,14 +14,17 @@
  *                                                     service number terms)
  *                                          &ship= &command= &payrollclass=
  *                                          &page=1 &pageSize=25
- *  GET  /admin/form-review/status?svcno= → one form's stage + next stage
+ *  GET  /admin/form-review/status?svcno= → one form's stage, next stage and
+ *                                          whether the form view is editable
  *
  *  POST /admin/form-review/progress      → move forms ONE stage forward
  *                                          Body: { items: [{ serviceNumber, stage }],
  *                                                  remarks?, allowNotFilled? }
- *  POST /admin/form-review/reject        → reject at any stage after submission
+ *  POST /admin/form-review/reject        → reject a Submitted / FO Approved form
+ *                                          (approve and reject stop at Confirmed)
  *                                          Body: { serviceNumber, remarks }
  *  PUT  /admin/form-review/form?svcno=   → save every form field, any status
+ *                                          until synced to payroll
  *                                          (only while adminCanEditForms is on)
  *                                          Body: same shape as PUT /form/save
  */

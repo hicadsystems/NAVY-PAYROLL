@@ -46,7 +46,7 @@
                     >Admins can edit forms</span
                   >
                   <span class="block text-xs text-blue-900/50"
-                    >Every field, whatever the form's status</span
+                    >Every field, at any status until synced to payroll</span
                   >
                 </span>
                 <span class="fr-switch">
@@ -193,10 +193,6 @@
       Reject Form
     </h3>
     <p class="text-sm text-blue-900/50 mb-3" id="frRejectMeta"></p>
-    <div
-      id="frRejectWarn"
-      class="hidden mb-3 p-3 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700"
-    ></div>
     <label
       class="block text-xs font-bold text-navy/60 uppercase tracking-wide mb-1"
       for="frRejectRemarks"
@@ -547,6 +543,7 @@
         });
         applyEditSetting(r.data?.adminCanEditForms ?? want);
         showMsg($("frSettingsMsg"), true, r.message || "Saved.");
+        refreshOverlayStatus();
         reloadOverlayForm();
       } catch (err) {
         applyEditSetting(!want);
@@ -781,16 +778,6 @@
     function openReject(target) {
       rejectTarget = target;
       $("frRejectMeta").textContent = `${target.name || target.serviceNumber} (${target.serviceNumber}) · ${target.stageLabel}`;
-      const warn = $("frRejectWarn");
-      if (target.stage === "CPO_CONFIRMED" || target.stage === "SYNCED") {
-        warn.textContent =
-          target.stage === "SYNCED"
-            ? "This form has already been synced to payroll. Rejecting it sends it back to the personnel; it will need to be approved, confirmed and synced again."
-            : "This form has already been confirmed. Rejecting it sends it back to the personnel; it will need to be approved and confirmed again.";
-        warn.classList.remove("hidden");
-      } else {
-        warn.classList.add("hidden");
-      }
       $("frRejectRemarks").value = "";
       $("frRejectMsg").classList.add("hidden");
       $("frRejectModal").classList.remove("hidden");
@@ -860,7 +847,18 @@
       const reject = $("fro-reject");
       const edit = $("fro-edit");
       if (!badge) return;
-      if (edit) edit.style.display = adminCanEdit ? "inline-flex" : "none";
+      if (edit) {
+        // Editing is open until the form is synced to payroll.
+        const synced = s && s.adminCanEditForms && !s.canEdit;
+        edit.style.display = s && (s.editable || synced) ? "inline-flex" : "none";
+        edit.style.background = synced ? "rgba(255,255,255,.1)" : "rgba(196,147,42,.2)";
+        edit.style.color = synced ? "rgba(255,255,255,.6)" : "#C4932A";
+        edit.title = synced
+          ? "Synced to payroll: this form can no longer be edited"
+          : "Admin editing is on: change any field, then Save Changes";
+        $("fro-edit-icon").className = synced ? "fas fa-lock" : "fas fa-pen";
+        $("fro-edit-label").textContent = synced ? "Read-only: synced" : "Editing on";
+      }
       if (!s) {
         badge.style.display = "none";
         approve.style.display = "none";
@@ -949,7 +947,7 @@
             <span id="fro-meta" style="font-size:10px;color:rgba(196,147,42,0.7);font-weight:600;letter-spacing:.04em"></span>
           </div>
           <span id="fro-stage" style="display:none;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.04em;background:rgba(255,255,255,.12);color:rgba(255,255,255,.85);flex-shrink:0"></span>
-          <span id="fro-edit" title="Admin editing is on: change any field, then Save Changes" style="display:none;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(196,147,42,.2);color:#C4932A;flex-shrink:0"><i class="fas fa-pen" style="font-size:9px"></i>Editing on</span>
+          <span id="fro-edit" style="display:none;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;flex-shrink:0"><i id="fro-edit-icon" class="fas fa-pen" style="font-size:9px"></i><span id="fro-edit-label">Editing on</span></span>
           <span style="flex:1;min-width:0"></span>
           <button id="fro-approve" style="display:none;${btn}background:#16a34a;border:1px solid #16a34a;color:#fff">
             <i class="fas fa-check" style="font-size:11px"></i><span id="fro-approve-label">Approve</span>

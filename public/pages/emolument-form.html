@@ -1788,6 +1788,8 @@
       // with "Admins can edit forms" switched on: every field is editable and
       // Save writes to this personnel's form through the admin endpoint.
       let adminReviewEdit = false;
+      // Why the switch is on but this form still opens read-only (synced).
+      let adminEditLockedReason = null;
 
       // ── Constants ────────────────────────────────────────────
       const LABEL_OVERRIDES = {
@@ -1980,7 +1982,7 @@
           if (isAdmin) hideSpaSurroundings();
 
           if (isAdmin && svcno && params.get("review") === "1") {
-            adminReviewEdit = await fetchAdminEditSetting();
+            await resolveAdminEditState(svcno);
           }
 
           const url =
@@ -2138,6 +2140,8 @@
                 "This form is currently under review and cannot be edited.",
               "fa-lock",
             );
+          } else if (adminEditLockedReason) {
+            showFormNotice("blue", adminEditLockedReason, "fa-lock");
           }
         } else if (readOnlyForReviewer) {
           formLocked = true;
@@ -2171,16 +2175,25 @@
       }
 
       // ── Admin edit (Review & Approve overlay) ────────────────
-      async function fetchAdminEditSetting() {
+      // Editable when "Admins can edit forms" is on AND the form has not been
+      // synced to payroll — the server decides both (GET /admin/form-review/status).
+      async function resolveAdminEditState(svcno) {
+        adminReviewEdit = false;
+        adminEditLockedReason = null;
         try {
-          const res = await fetch("/admin/form-review/settings", {
-            headers: { Authorization: `Bearer ${getToken()}` },
-          });
-          if (!res.ok) return false;
-          const data = await res.json();
-          return data?.adminCanEditForms === true;
+          const res = await fetch(
+            `/admin/form-review/status?svcno=${encodeURIComponent(svcno)}`,
+            { headers: { Authorization: `Bearer ${getToken()}` } },
+          );
+          if (!res.ok) return;
+          const s = await res.json();
+          adminReviewEdit = s?.editable === true;
+          if (s?.adminCanEditForms && !s?.canEdit) {
+            adminEditLockedReason =
+              "This form has been synced to payroll, so it can no longer be edited.";
+          }
         } catch {
-          return false;
+          /* stay read-only */
         }
       }
 

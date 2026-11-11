@@ -26,13 +26,16 @@ payroll, and the record of what happened.
 
 ---
 
-## SCENE 3 — Authenticate Ships
+## SCENE 3 — Review & Approve
 
 | NARRATION | ON SCREEN |
 |---|---|
-| **Authenticate Ships** is there to keep things moving. Where a ship has a backlog of forms sitting at the same stage, you can clear them from here in one action instead of waiting for them to be worked through one at a time. | Open **Authenticate Ships**. |
-| Choose the ship, tick the forms or use **Select All**, and approve the selection. | Select a ship, **Select All**, approve. |
-| It is a throughput tool, so use it where the delay is the problem — a ship that has stalled, or a deadline that is close. Where the records themselves are in doubt, leave them with the ship. Whatever you clear here is recorded against you in the audit trail. | Hold on the Select All checkbox. |
+| **Review & Approve** is where you review, approve or reject forms for any ship or command. Every form is listed in alphabetical order, whatever its status. | Open **Review & Approve**. |
+| Search by name or service number. To find several people at once, separate them with commas. Narrow the list with **Select Ship / Command** and by payroll class. | Type two service numbers separated by a comma, then pick a ship. |
+| Approve moves a form one stage forward: Submitted to FO Approved, then FO Approved to Confirmed. Tick the forms or use **Select All on Page**, and approve the selection in one action. | Tick several forms, **Approve Selected**. |
+| Open any form with **View** to read it in full, approve it or reject it from there. Approve and reject stop once a form is confirmed; until then, Reject sends the form back to the personnel to re-fill. A form that was never filled can be submitted on the personnel's behalf from the same screen. | Open a form, show **Approve** and **Reject**. |
+| The settings button decides whether admins can edit forms. When it is on, every field of a form can be changed at any status until it is synced to payroll, and saved with **Save Changes**. | Open the settings button, switch editing on. |
+| Use it where the delay is the problem — a ship that has stalled, or a deadline that is close. Whatever you approve, reject or edit here is recorded against you in the audit trail. | Hold on the list. |
 
 ---
 
@@ -94,7 +97,7 @@ The window is open and forms are moving through the chain. This video covers the
 
 Progress Report is your formal picture. Filter by command and you get every ship with its personnel total broken into Not Filed, In Pipeline — meaning filled, reviewed or approved — and Completed. It is laid out as the Nigerian Navy E-Emolument Ship Completion Progress Report, with the production date on it, so it can go straight to a superior as evidence of where the exercise stands. Read it against the calendar. A ship with a high Not Filed count a week from the deadline needs a signal, not a surprise.
 
-Authenticate Ships is there to keep things moving. Where a ship has a backlog of forms sitting at the same stage, you can clear them from here in one action instead of waiting for them to be worked through one at a time. Choose the ship, tick the forms or use Select All, and approve the selection. It is a throughput tool, so use it where the delay is the problem — a ship that has stalled, or a deadline that is close. Where the records themselves are in doubt, leave them with the ship. Whatever you clear here is recorded against you in the audit trail.
+Review & Approve is where you review, approve or reject forms for any ship or command. Every form is listed in alphabetical order, whatever its status. Search by name or service number, and separate several with commas to find them at once; narrow the list with Select Ship / Command and by payroll class. Approve moves a form one stage forward — Submitted to FO Approved, then FO Approved to Confirmed. Tick the forms or use Select All on Page, and approve the selection in one action. Open any form with View to read it in full, approve it or reject it from there. Approve and reject stop once a form is confirmed; until then, Reject sends the form back to the personnel to re-fill. A form that was never filled can be submitted on the personnel's behalf from the same screen. The settings button decides whether admins can edit forms; when it is on, every field of a form can be changed at any status until it is synced to payroll. Use it where the delay is the problem — a ship that has stalled, or a deadline that is close. Whatever you approve, reject or edit here is recorded against you in the audit trail.
 
 Accept Verified Forms is the last step of the approval chain. It lists every form the Central Pay Officers have confirmed, waiting on you. Filter by ship and by payroll class — officers, warrant officers, ratings A, B and C, and trainees. Open any form to see it in full together with its approval trail: who authenticated, who approved, who confirmed, and when. Tick the forms you are accepting, or Select All, and accept the batch. Accepted forms are then ready for the payroll update.
 

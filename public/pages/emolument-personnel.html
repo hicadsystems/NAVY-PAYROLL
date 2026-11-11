@@ -276,6 +276,17 @@
       const container = document.getElementById("shipBtnContainer");
       strip.style.display = "flex";
 
+      // Ship names reach the page as escaped text and the clicks are wired
+      // in JS. They used to be pasted into inline onclick="...('${label}')"
+      // strings, so a name with an apostrophe (e.g. COMMANDER'S BARGE) threw
+      // "missing ) after argument list" and the ship button did nothing.
+      const esc = (v) =>
+        String(v ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+        );
+
       if (allAssignments.length === 1) {
         const a = allAssignments[0];
 
@@ -283,36 +294,51 @@
         const label = a.type === "GLOBAL" ? "Global Access" : a.label;
 
         container.innerHTML = `
-    <button
-      class="ship-btn"
-      onclick="openShipDashboard('${a.label}','${a.role}','${a.type}')"
-    >
+    <button type="button" class="ship-btn">
       <span class="ship-dot"></span>
       <i class="fas fa-${icon}" style="font-size:11px"></i>
-      ${label}
+      ${esc(label)}
     </button>`;
+        container
+          .querySelector(".ship-btn")
+          .addEventListener("click", () =>
+            openShipDashboard(a.label, a.role, a.type),
+          );
       } else {
         container.innerHTML = `
-          <button class="ship-btn" onclick="openShipPicker()">
+          <button type="button" class="ship-btn">
             <span class="ship-dot"></span>
             <i class="fas fa-ship" style="font-size:11px"></i>
             Ships (${allAssignments.length})
           </button>`;
+        container
+          .querySelector(".ship-btn")
+          .addEventListener("click", openShipPicker);
+
         // Populate modal options
         const list = document.getElementById("shipOptionsList");
         list.innerHTML = allAssignments
           .map(
-            (a) => `
-          <div class="ship-option" onclick="openShipDashboard('${a.label}','${a.role}','${a.type}'); document.getElementById('shipModalBackdrop').classList.remove('open')">
+            (a, i) => `
+          <div class="ship-option" data-idx="${i}">
             <div>
-              <div class="ship-option-name"> <i class="fas fa-${a.type === "GLOBAL" ? "globe" : a.type === "COMMAND" ? "building" : "ship"} mr-1"></i>${a.type === "GLOBAL" ? "Global Access" : a.label}</div>
-              <div style="font-size:0.7rem;color:rgba(30,64,175,0.5);margin-top:2px;">${a.type}</div>
+              <div class="ship-option-name"> <i class="fas fa-${a.type === "GLOBAL" ? "globe" : a.type === "COMMAND" ? "building" : "ship"} mr-1"></i>${esc(a.type === "GLOBAL" ? "Global Access" : a.label)}</div>
+              <div style="font-size:0.7rem;color:rgba(30,64,175,0.5);margin-top:2px;">${esc(a.type)}</div>
             </div>
-            <span class="ship-role-badge badge-${a.role}">${a.role}</span>
+            <span class="ship-role-badge badge-${esc(a.role)}">${esc(a.role)}</span>
           </div>
         `,
           )
           .join("");
+        list.querySelectorAll(".ship-option").forEach((opt) => {
+          opt.addEventListener("click", () => {
+            const a = allAssignments[Number(opt.dataset.idx)];
+            openShipDashboard(a.label, a.role, a.type);
+            document
+              .getElementById("shipModalBackdrop")
+              .classList.remove("open");
+          });
+        });
       }
     }
 

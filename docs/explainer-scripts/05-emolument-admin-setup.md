@@ -23,7 +23,7 @@ Part 2 covers running the cycle through to payroll.
 | Sign in and open the admin dashboard. | Admin dashboard loads. |
 | The top of the screen gives you the whole exercise in four numbers: **Total Personnel**, **Not Filed**, **In Pipeline**, and **Confirmed (CPO)**. Beside them, **Overall Completion**. | Highlight the four tiles and the completion figure. |
 | Below, **Ship Stats** and **Fleet Rank** — ship-by-ship completion, ordered so the ships falling behind rise to the top. That is your daily working view once a cycle is running. | Scroll Ship Stats and Fleet Rank. |
-| Your left menu runs the full set: **Dashboard**, **Role Management**, **Progress Report**, **Accept Verified Forms**, **My Form**, **Personnel Mgt**, **Ships Overview**, **Authenticate Ships**, **Control System**, **Payroll Update**, **View Tickets**, and **Audit Trail**. | Pan the left menu slowly. |
+| Your left menu runs the full set: **Dashboard**, **Role Management**, **Progress Report**, **Accept Verified Forms**, **My Form**, **Personnel Mgt**, **Ships Overview**, **Review & Approve**, **Control System**, **Payroll Update**, **View Tickets**, and **Audit Trail**. | Pan the left menu slowly. |
 
 ---
 
@@ -86,7 +86,7 @@ Part 2 covers running the cycle through to payroll.
 
 As Emolument Administrator you run the exercise. This first video covers the setup: opening the form window, deciding who holds which approving role, and getting your ships and personnel records right before anyone starts filling.
 
-Sign in and open the admin dashboard. The top of the screen gives you the whole exercise in four numbers: Total Personnel, Not Filed, In Pipeline, and Confirmed by Central Pay Officer. Beside them, Overall Completion. Below, Ship Stats and Fleet Rank — ship-by-ship completion, ordered so the ships falling behind rise to the top. That is your daily working view once a cycle is running. Your left menu runs the full set: Dashboard, Role Management, Progress Report, Accept Verified Forms, My Form, Personnel Management, Ships Overview, Authenticate Ships, Control System, Payroll Update, View Tickets, and Audit Trail.
+Sign in and open the admin dashboard. The top of the screen gives you the whole exercise in four numbers: Total Personnel, Not Filed, In Pipeline, and Confirmed by Central Pay Officer. Beside them, Overall Completion. Below, Ship Stats and Fleet Rank — ship-by-ship completion, ordered so the ships falling behind rise to the top. That is your daily working view once a cycle is running. Your left menu runs the full set: Dashboard, Role Management, Progress Report, Accept Verified Forms, My Form, Personnel Management, Ships Overview, Review & Approve, Control System, Payroll Update, View Tickets, and Audit Trail.
 
 Start with Control System. This is where a form cycle is opened and closed, and nothing else can happen until you do. Create a cycle for the year, choose the form type — Officers, Ratings, Trainees, Training, or All for a global cycle — and choose whether it applies to a specific ship or across the board. Add a note if there is authority to record. Once open, personnel on that ship and in that class can fill and submit. Existing cycles show as Open or Closed. You have three controls on an existing cycle: Extend Closing Date when a ship needs more time, Close to stop further submissions, and Reopen where a closed cycle has to be brought back. Use extend rather than reopen where you can — it keeps a cleaner record.
 

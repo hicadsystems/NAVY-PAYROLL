@@ -109,4 +109,7 @@ navy-payslip-sync-*.tgz
 !vendor/navy-payslip-sync-*.tgz
 sync-preflight.log
 config/sql/procedures/*.sql.bak
+
+# Emolument passport photos (DOCUMENT_STORAGE_DIR) — personnel data, back up separately
+storage/
 cloudinary-move-failed.json

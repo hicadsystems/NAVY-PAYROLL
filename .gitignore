@@ -109,3 +109,4 @@ navy-payslip-sync-*.tgz
 !vendor/navy-payslip-sync-*.tgz
 sync-preflight.log
 config/sql/procedures/*.sql.bak
+cloudinary-move-failed.json
